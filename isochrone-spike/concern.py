@@ -69,3 +69,11 @@ class RoadNetwork(object):
 
     def takes_time(self, ht, d):
         return d/ROAD_MAXSPEED[ht]
+
+    def isochrone_to_csv(self, isochrone, filename):
+        coords = [self.nodes[x] for x in isochrone.keys()]
+
+        with open(filename, 'w') as f:
+            f.write("# lat,lon\n")
+            for lon, lat in coords:
+                f.write(str(lat) + "," + str(lon) + "\n")
