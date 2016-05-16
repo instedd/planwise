@@ -11,7 +11,7 @@ class Collector(object):
 
     def coords_callback(self, coords):
         for osmid, lon, lat in coords:
-            self.nodes[osmid] = (lon, lat)
+            self.nodes[osmid] = (lat, lon)
 
     def add_edges(self, nodes, ht):
         for n1, n2 in nodes:
