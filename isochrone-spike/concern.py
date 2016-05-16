@@ -1,3 +1,6 @@
+import sys
+from LatLon import LatLon, Latitude, Longitude
+
 ROAD_MAXSPEED = {
     'motorway_link': 100,
     'motorway': 100,
@@ -58,7 +61,6 @@ class RoadNetwork(object):
                         node_to_time[neighbour] = time_to_neigh
                         time_to_node.add((time_to_neigh, neighbour))
                     elif time_to_neigh < node_to_time[neighbour]:
-                        # remove tuple?
                         time_to_node.remove((node_to_time[neighbour], neighbour))
                         node_to_time[neighbour] = time_to_neigh
                         time_to_node.add((time_to_neigh, neighbour))
@@ -77,3 +79,17 @@ class RoadNetwork(object):
             f.write("# lat,lon\n")
             for lon, lat in coords:
                 f.write(str(lat) + "," + str(lon) + "\n")
+
+    def closest_to(self, lat, lon):
+        origin = LatLon(Latitude(lat), Longitude(lon))
+        min_dist = sys.maxint
+        closest = None
+        for node_id, (node_lat, node_lon) in self.nodes.iteritems():
+            node_position = LatLon(Latitude(node_lat), Longitude(node_lon))
+            dist_to_origin = origin.distance(node_position)
+            if dist_to_origin < min_dist:
+                min_dist = dist_to_origin
+                closest = node_id
+
+        return closest
+
