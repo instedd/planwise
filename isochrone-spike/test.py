@@ -55,38 +55,6 @@ def calculate_distances(network):
             updated.append((n2, ht, d))
         network.adjacency[n1] = updated
 
-def isochrone(self, origin, time):
-    isochrone = []
-    time_to_node = set((0, origin))
-    node_to_time = {origin: 0}
-    visited = set()
-    while not time_to_node.empty():
-        closest = min(time_to_node)
-        time_to_node.remove(closest)
-        del node_to_time[closest]
-
-        if closest[0] > time:
-            break
-
-        for neighbour, ht, d in self.adjacency[closest[1]]:
-            if neighbour in visited: continue
-            time_to_neigh = takes_time(ht, d)+closest[0]
-            if neighbour not in node_to_time:
-                node_to_time[neighbour] = time_to_neigh
-                time_to_node.add((time_to_neigh, neighbour))
-            elif time_to_neigh < node_to_time[neighbour]:
-                # remove tuple?
-                time_to_node.remove((node_to_time[neighbour], neighbour))
-                node_to_time[neighbour] = time_to_neigh
-                time_to_node.add((time_to_neigh, neighbour))
-
-        visited.add(closest[1])
-
-def takes_time(self, ht, d):
-    return d/ROAD_MAXSPEED[ht]
-
-
-
 collector = Collector()
 p = OSMParser(concurrency=4, coords_callback=collector.coords_callback, ways_callback=collector.ways_callback)
 p.parse('kenya-latest.osm.pbf')
