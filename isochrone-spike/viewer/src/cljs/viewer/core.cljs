@@ -11,7 +11,8 @@
 
 (def initial-app-state {:position [-1.29 36.83]
                         :zoom 11
-                        :points []})
+                        :points []
+                        :geojson nil})
 
 (defonce app (atom initial-app-state))
 
@@ -31,6 +32,13 @@
 (defn fetch-points []
   (GET "/data/data.csv" {:handler on-points-data}))
 
+(defn on-geojson-data [data]
+  (let [geojson (.parse js/JSON data)]
+    (swap! app assoc-in [:geojson] geojson)))
+
+(defn fetch-geojson []
+  (GET "/data/poly.geojson" {:handler on-geojson-data}))
+
 ;; -------------------------
 ;; Views
 
@@ -38,13 +46,15 @@
   (fn []
     (let [position (:position @app)
           zoom (:zoom @app)
-          points (:points @app)]
+          points (:points @app)
+          geojson (:geojson @app)]
       [:div
        [:h2 "Leaflet Map"]
        [:p "Lat " (format-coord (first position)) " Lon " (format-coord (second position)) " Zoom " zoom]
        [leaflet/map-component {:position position
                                :zoom zoom
                                :points points
+                               :geojson geojson
                                :on-position-changed (fn [new-pos]
                                                       (swap! app assoc-in [:position] new-pos))
                                :on-zoom-changed (fn [new-zoom]
@@ -76,5 +86,6 @@
      (fn [path]
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
-  (fetch-points)
+  ;; (fetch-points)
+  (fetch-geojson)
   (mount-root))
