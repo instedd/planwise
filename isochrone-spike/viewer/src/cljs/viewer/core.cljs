@@ -9,12 +9,20 @@
               [clojure.string :as string]
               [viewer.leaflet :as leaflet]))
 
-(def initial-app-state {:position [-1.29 36.83]
-                        :zoom 11
-                        :points []
-                        :geojson nil})
+(def initial-position-and-zoom {:position [-1.29 36.83]
+                                :zoom 9})
+(def initial-state (merge {:threshold 40000} initial-position-and-zoom))
 
-(defonce app (atom initial-app-state))
+(defonce app (atom initial-state))
+
+(defn debounced
+  ([f timeout]
+   (let [id (atom nil)]
+     (fn [& args]
+       (js/clearTimeout @id)
+       (reset! id (js/setTimeout
+                   (apply partial (cons f args))
+                   timeout))))))
 
 (defn format-coord [x]
   (gstring/format "%.4f" x))
@@ -39,6 +47,38 @@
 (defn fetch-geojson []
   (GET "/data/poly.geojson" {:handler on-geojson-data}))
 
+(defn fetch-isochrone* [node-id threshold]
+  (POST "/isochrone" {:format :raw
+                      :params {:node-id node-id
+                               :threshold threshold}
+                      :handler on-geojson-data}))
+
+(def fetch-isochrone
+  (debounced fetch-isochrone* 500))
+
+(defn on-nearest-node [data]
+  (when-not (empty? data)
+    (let [node-data (.parse js/JSON data)
+          node-id (.-id node-data)
+          geojson (.parse js/JSON (.-point node-data))
+          point (reverse (js->clj (.-coordinates geojson)))
+          threshold (or (:threshold @app) 10000)]
+      (swap! app merge {:node-id node-id
+                        :points [point]})
+      (fetch-isochrone node-id threshold))))
+
+(defn zoom-to-radius [zoom]
+  (Math/pow 10 (- (/ zoom 5))))
+
+(defn fetch-nearest-node [lat lon]
+  (let [zoom (:zoom @app)
+        radius (zoom-to-radius zoom)]
+    (POST "/nearest-node" {:format :raw
+                           :params {:lat lat
+                                    :lon lon
+                                    :radius radius}
+                           :handler on-nearest-node})))
+
 ;; -------------------------
 ;; Views
 
@@ -47,20 +87,34 @@
     (let [position (:position @app)
           zoom (:zoom @app)
           points (:points @app)
-          geojson (:geojson @app)]
+          geojson (:geojson @app)
+          threshold (:threshold @app)]
       [:div
-       [:h2 "Leaflet Map"]
-       [:p "Lat " (format-coord (first position)) " Lon " (format-coord (second position)) " Zoom " zoom]
+       [:div.threshold-control
+        [:input {:type "range"
+                 :min 5000 :max 400000
+                 :value threshold
+                 :on-change (fn [e]
+                              (let [node-id (:node-id @app)
+                                    new-threshold (js/parseInt (-> e .-target .-value))]
+                                (when node-id
+                                  (fetch-isochrone node-id new-threshold))
+                                (swap! app assoc-in [:threshold] new-threshold)))}
+         [:span.small (str threshold)]]]
        [leaflet/map-component {:position position
                                :zoom zoom
                                :points points
                                :geojson geojson
+                               :on-click (fn [lat lon]
+                                           (fetch-nearest-node lat lon))
                                :on-position-changed (fn [new-pos]
                                                       (swap! app assoc-in [:position] new-pos))
                                :on-zoom-changed (fn [new-zoom]
                                                   (swap! app assoc-in [:zoom] new-zoom))}]
        [:div.actions
-        [:button {:on-click #(swap! app (constantly initial-app-state))} "Reset view"]]])))
+        [:button {:on-click #(swap! app merge initial-position-and-zoom)} "Reset view"]
+        [:div.pull-right
+         [:span.small "Lat " (format-coord (first position)) " Lon " (format-coord (second position)) " Zoom " zoom]]]])))
 
 (defn current-page []
   [:div [(session/get :current-page)]])
@@ -87,5 +141,5 @@
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
   ;; (fetch-points)
-  (fetch-geojson)
+  ;; (fetch-geojson)
   (mount-root))

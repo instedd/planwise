@@ -1,6 +1,6 @@
 .body-container {
   font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
-  max-width: 600px;
+  max-width: 900px;
   margin: 0 auto;
   padding-top: 72px;
   -webkit-font-smoothing: antialiased;
@@ -31,4 +31,32 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+.pull-right {
+  float: right;
+}
+
+.small {
+  font-size: 80%;
+}
+
+.threshold-control {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.threshold-control input, .threshold-control span {
+  display: block;
+}
+
+.threshold-control input {
+  flex-grow: 10;
+}
+
+.threshold-control span {
+  flex-grow: 1;
+  text-align: right;
 }

@@ -5,12 +5,13 @@
 (declare leaflet-draw-geojson)
 
 (defn leaflet-did-mount [this]
-  (let [map (.map js/L "map")
+  (let [map (.map js/L (reagent/dom-node this))
         props (reagent/props this)
         position (:position props)
         zoom (:zoom props)
         on-position-changed (:on-position-changed props)
         on-zoom-changed (:on-zoom-changed props)
+        on-click (:on-click props)
         points (:points props)
         geojson (:geojson props)]
     (reagent/set-state this {:map map
@@ -20,10 +21,10 @@
     (leaflet-draw-geojson this geojson)
     (.setView map (clj->js position) zoom)
     (.addTo (.tileLayer js/L "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
-                        (clj->js {:attribution "&copy; Mapbox"
-                                  :maxZoom 18
-                                  :mapid "ggiraldez.056e1919"
-                                  :accessToken "pk.eyJ1IjoiZ2dpcmFsZGV6IiwiYSI6ImNpb2E1Zmh3eDAzOWR2YWtqMTV6eDBma2gifQ.kMQcRBGO5cnrJowATNNHLA"}))
+                        #js {:attribution "&copy; Mapbox"
+                             :maxZoom 18
+                             :mapid "ggiraldez.056e1919"
+                             :accessToken "pk.eyJ1IjoiZ2dpcmFsZGV6IiwiYSI6ImNpb2E1Zmh3eDAzOWR2YWtqMTV6eDBma2gifQ.kMQcRBGO5cnrJowATNNHLA"})
             map)
     (.on map "moveend" (fn [e]
                          (let [c (.getCenter map)
@@ -35,12 +36,18 @@
                            (when (and on-position-changed (not= new-pos current-pos))
                              (on-position-changed new-pos))
                            (when (and on-zoom-changed (not= new-zoom current-zoom))
-                             (on-zoom-changed new-zoom)))))))
+                             (on-zoom-changed new-zoom)))))
+    (.on map "click" (fn [e]
+                       (when on-click
+                         (let [latlng (.-latlng e)
+                               lat (.-lat latlng)
+                               lon (.-lng latlng)]
+                           (on-click lat lon)))))))
 
 
 (defn create-circle [[lat lon]]
   (let [latLng (.latLng js/L lat lon)]
-    (.circleMarker js/L latLng #js {:radius 5})))
+    (.marker js/L latLng #js {:clickable false})))
 
 (defn leaflet-draw-points [this points]
   (let [state (reagent/state this)
@@ -61,7 +68,7 @@
         old-geojson (:geojson state)
         old-geolayer (:geolayer state)]
     (when (not= geojson old-geojson)
-      (let [new-layer (.geoJson js/L geojson)]
+      (let [new-layer (.geoJson js/L geojson #js {:clickable false})]
         (println "updating geojson")
 
         (when (some? old-geolayer)
@@ -83,7 +90,7 @@
     (leaflet-draw-geojson this geojson)))
 
 (defn map-render []
-  [:div#map {:style {:height "360px"}}])
+  [:div {:style {:height "600px"}}])
 
 (defn map-component [props]
   (reagent/create-class {:reagent-render map-render

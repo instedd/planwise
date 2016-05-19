@@ -1,5 +1,4 @@
-(ns viewer.middleware
-  (:require [ring.middleware.defaults :refer [site-defaults wrap-defaults]]))
+(ns viewer.middleware)
 
 (defn wrap-middleware [handler]
-  (wrap-defaults handler site-defaults))
+  handler)

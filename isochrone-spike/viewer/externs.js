@@ -12,7 +12,14 @@ var L = {
     "lat": null,
     "lng": null
   },
+  "marker": {
+    "addTo": function() {}
+  },
   "circleMarker": {
+    "addTo": function() {},
+    "setRadius": function() {}
+  },
+  "geoJson": {
     "addTo": function() {}
   }
 }
