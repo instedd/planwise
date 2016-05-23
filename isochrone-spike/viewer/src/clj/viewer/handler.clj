@@ -5,7 +5,7 @@
             [hiccup.page :refer [include-js include-css html5]]
             [viewer.middleware :refer [wrap-middleware]]
             [ring.util.response :refer [response]]
-            [viewer.data :as data]
+            [viewer.routing :as routing]
             [clojure.data.json :as json]
             [clojure.stacktrace :as stacktrace]
             [config.core :refer [env]]))
@@ -40,7 +40,7 @@
        :headers {}
        :body "invalid query"}
       (try
-        (let [polygon (data/isochrone (Integer. node-id) (Float. threshold))]
+        (let [polygon (routing/isochrone (Integer. node-id) (Float. threshold))]
           (response polygon))
         (catch Exception e
           (do
@@ -53,14 +53,13 @@
 
 (defn nearest-node [{:keys [params]}]
   (let [lat (:lat params)
-        lon (:lon params)
-        radius (or (:radius params) 0.001)]
+        lon (:lon params)]
     (if (or (empty? lat) (empty? lon))
       {:status 400
        :headers {}
        :body "invalid query"}
       (try
-        (let [node (data/nearest-node (Float. lat) (Float. lon) (Float. radius))]
+        (let [node (routing/nearest-node (Float. lat) (Float. lon))]
           (if node
             (response (json/write-str {:id (:id node)
                                        :point (:point node)}))

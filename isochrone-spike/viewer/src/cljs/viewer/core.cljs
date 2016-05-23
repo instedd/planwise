@@ -67,16 +67,11 @@
                         :points [point]})
       (fetch-isochrone node-id threshold))))
 
-(defn zoom-to-radius [zoom]
-  (Math/pow 10 (- (/ zoom 5))))
-
 (defn fetch-nearest-node [lat lon]
-  (let [zoom (:zoom @app)
-        radius (zoom-to-radius zoom)]
+  (let [zoom (:zoom @app)]
     (POST "/nearest-node" {:format :raw
                            :params {:lat lat
-                                    :lon lon
-                                    :radius radius}
+                                    :lon lon}
                            :handler on-nearest-node})))
 
 ;; -------------------------
