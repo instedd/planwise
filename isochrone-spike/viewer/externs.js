@@ -3,12 +3,14 @@ var L = {
     "setView": function() {},
     "removeLayer": function() {},
     "getCenter": function() {},
-    "getZoom": function() {}
+    "getZoom": function() {},
+    "on": function() {}
   },
   "tileLayer": {
     "addTo": function() {}
   },
   "latLng": {
+    "latlng": null,
     "lat": null,
     "lng": null
   },
@@ -22,4 +24,9 @@ var L = {
   "geoJson": {
     "addTo": function() {}
   }
+}
+var JsonObj = {
+  "node-id": null,
+  "point": null,
+  "coordinates": null
 }
