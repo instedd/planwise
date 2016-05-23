@@ -1,8 +1,8 @@
 (defproject viewer "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :description "Prototype isochrone viewer"
+  :url "http://github.com/instedd/planwise"
+  :license {:name "GNU General Public License v3"
+            :url "http://www.gnu.org/licenses/gpl-3.0.html"}
 
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [ring-server "0.4.0"]
@@ -18,6 +18,7 @@
                  [org.clojure/java.jdbc "0.6.1"]
                  [org.postgresql/postgresql "9.4.1208"]
                  [org.clojure/data.json "0.2.6"]
+                 [com.layerware/hugsql "0.4.7"]
                  [org.clojure/clojurescript "1.8.51"
                   :scope "provided"]
                  [cljs-ajax "0.5.4"]
@@ -29,6 +30,8 @@
             [lein-cljsbuild "1.1.1"]
             [lein-asset-minifier "0.2.7"
              :exclusions [org.clojure/clojure]]]
+
+  :aliases {"import-sites" ["run" "-m" "viewer.tasks.import-sites"]}
 
   :ring {:handler viewer.handler/app
          :uberwar-name "viewer.war"}
@@ -76,8 +79,7 @@
                                                 org.clojure/tools.analyzer.jvm]]
                                   [org.clojure/tools.nrepl "0.2.12"]
                                   [com.cemerick/piggieback "0.2.1"]
-                                  [pjstadig/humane-test-output "0.8.0"]
-                                  ]
+                                  [pjstadig/humane-test-output "0.8.0"]]
 
                    :source-paths ["env/dev/clj"]
                    :plugins [[lein-figwheel "0.5.3-1"
@@ -89,8 +91,7 @@
                                            org.clojure/tools.reader
                                            org.clojure/clojurescript
                                            org.clojure/core.async
-                                           org.clojure/tools.analyzer.jvm]]
-                             ]
+                                           org.clojure/tools.analyzer.jvm]]]
 
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]
@@ -98,8 +99,7 @@
                    :figwheel {:http-server-root "public"
                               :server-port 3449
                               :nrepl-port 7002
-                              :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"
-                                                 ]
+                              :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"]
                               :css-dirs ["resources/public/css"]
                               :ring-handler viewer.handler/app}
 
@@ -107,12 +107,7 @@
 
                    :cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]
                                               :compiler {:main "viewer.dev"
-                                                         :source-map true}}
-
-
-
-                                        }
-                               }}
+                                                         :source-map true}}}}}
 
              :uberjar {:hooks [minify-assets.plugin/hooks]
                        :source-paths ["env/prod/clj"]
