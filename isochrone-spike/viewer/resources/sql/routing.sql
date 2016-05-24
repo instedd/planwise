@@ -20,7 +20,7 @@ SELECT
                             id::integer, ST_X(the_geom)::float AS x, ST_Y(the_geom)::float AS y
                           FROM ways_vertices_pgr
                           WHERE id IN (SELECT node
-                                       FROM pgr_drivingDistance(''SELECT gid AS id, source, target, to_cost AS cost FROM ways'',
-                                                                $$ || :node-id || $$, $$ || :distance || $$))
+                                       FROM pgr_drivingDistance(''SELECT gid AS id, source, target, cost FROM ways'',
+                                                                $$ || :node-id || $$, $$ || :distance || $$, false))
                         $$, 0)) AS poly
 

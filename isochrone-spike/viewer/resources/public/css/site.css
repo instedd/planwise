@@ -33,8 +33,24 @@ a:hover {
   text-decoration: underline;
 }
 
-.pull-right {
-  float: right;
+.actions {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.left {
+  flex-grow: 1;
+  text-align: left;
+}
+
+.right {
+  flex-grow: 1;
+  text-align: right;
+}
+
+.center {
+  flex-grow: 1;
+  text-align: center;
 }
 
 .small {

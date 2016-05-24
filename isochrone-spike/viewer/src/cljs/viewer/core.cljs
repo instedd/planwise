@@ -11,7 +11,7 @@
 
 (def initial-position-and-zoom {:position [-1.29 36.83]
                                 :zoom 9})
-(def initial-state (merge {:threshold 40000} initial-position-and-zoom))
+(def initial-state (merge {:threshold 30} initial-position-and-zoom))
 
 (defonce app (atom initial-state))
 
@@ -50,7 +50,7 @@
 (defn fetch-isochrone* [node-id threshold]
   (POST "/isochrone" {:format :raw
                       :params {:node-id node-id
-                               :threshold threshold}
+                               :threshold (/ threshold 50.0)}
                       :handler on-geojson-data}))
 
 (def fetch-isochrone
@@ -62,7 +62,7 @@
           node-id (.-id node-data)
           geojson (.parse js/JSON (.-point node-data))
           point (reverse (js->clj (.-coordinates geojson)))
-          threshold (or (:threshold @app) 10000)]
+          threshold (or (:threshold @app) 10)]
       (swap! app merge {:node-id node-id
                         :points [point]})
       (fetch-isochrone node-id threshold))))
@@ -83,11 +83,12 @@
           zoom (:zoom @app)
           points (:points @app)
           geojson (:geojson @app)
-          threshold (:threshold @app)]
+          threshold (:threshold @app)
+          node-id (:node-id @app)]
       [:div
        [:div.threshold-control
         [:input {:type "range"
-                 :min 5000 :max 400000
+                 :min 1 :max 300
                  :value threshold
                  :on-change (fn [e]
                               (let [node-id (:node-id @app)
@@ -107,8 +108,11 @@
                                :on-zoom-changed (fn [new-zoom]
                                                   (swap! app assoc-in [:zoom] new-zoom))}]
        [:div.actions
-        [:button {:on-click #(swap! app merge initial-position-and-zoom)} "Reset view"]
-        [:div.pull-right
+        [:div.left
+         [:button {:on-click #(swap! app merge initial-position-and-zoom)} "Reset view"]]
+        [:div.center
+         [:span.small "Selected Node ID " node-id]]
+        [:div.right
          [:span.small "Lat " (format-coord (first position)) " Lon " (format-coord (second position)) " Zoom " zoom]]]])))
 
 (defn current-page []
