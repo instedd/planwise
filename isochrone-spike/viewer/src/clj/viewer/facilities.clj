@@ -1,10 +1,8 @@
 (ns viewer.facilities
   (:require [clojure.set :refer [rename-keys]]
             [clojure.java.jdbc :as jdbc]
+            [viewer.db :refer [db]]
             [hugsql.core :as hugsql]))
-
-(def db {:subprotocol "postgresql"
-         :subname "//localhost:5432/routing"})
 
 (hugsql/def-db-fns "sql/facilities.sql")
 ;; (hugsql/def-sqlvec-fns "sql/facilities.sql")

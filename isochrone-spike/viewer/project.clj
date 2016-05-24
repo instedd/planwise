@@ -31,6 +31,7 @@
             [lein-asset-minifier "0.2.7"
              :exclusions [org.clojure/clojure]]]
 
+  ;; utility tasks
   :aliases {"import-sites" ["run" "-m" "viewer.tasks.import-sites"]}
 
   :ring {:handler viewer.handler/app
