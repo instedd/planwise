@@ -13,12 +13,13 @@
 
 (defn home-page []
   (fn []
-    (let [position (:position @app)
-          zoom (:zoom @app)
-          points (:points @app)
-          geojson (:geojson @app)
-          threshold (:threshold @app)
-          node-id (:node-id @app)]
+    (let [app-state @app
+          position (:position app-state)
+          zoom (:zoom app-state)
+          points (:points app-state)
+          geojson (:geojson app-state)
+          threshold (:threshold app-state)
+          node-id (:node-id app-state)]
       [:div
        [threshold-slider {:value threshold
                           :on-change state/update-threshold}]
