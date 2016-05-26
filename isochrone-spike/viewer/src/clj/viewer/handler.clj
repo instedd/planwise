@@ -4,8 +4,9 @@
             [compojure.route :refer [not-found resources]]
             [hiccup.page :refer [include-js include-css html5]]
             [viewer.middleware :refer [wrap-middleware]]
-            [ring.util.response :refer [response]]
+            [ring.util.response :refer [content-type response]]
             [viewer.routing :as routing]
+            [viewer.facilities :as facilities]
             [clojure.data.json :as json]
             [clojure.stacktrace :as stacktrace]
             [config.core :refer [env]]))
@@ -73,6 +74,11 @@
              :headers {}
              :body "invalid query"}))))))
 
+(defn retrieve-facilities [req]
+  (let [facilities (facilities/get-facilities)]
+    (-> (response (json/write-str facilities))
+        (content-type "application/json"))))
+
 (defroutes site-routes
   (GET "/" [] loading-page)
 
@@ -80,8 +86,9 @@
   (not-found "Not Found"))
 
 (defroutes api-routes
-  (POST "/nearest-node" [] nearest-node)
-  (POST "/isochrone" [] calculate-isochrone))
+  (GET "/nearest-node" [] nearest-node)
+  (GET "/isochrone" [] calculate-isochrone)
+  (GET "/facilities" [] retrieve-facilities))
 
 (def all-routes
   (routes

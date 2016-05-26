@@ -24,3 +24,9 @@ VALUES
 
 -- :name delete-facilities! :!
 DELETE FROM facilities;
+
+-- :name select-facilities :?
+SELECT
+  id, name, lat, lon
+FROM facilities
+ORDER BY name;

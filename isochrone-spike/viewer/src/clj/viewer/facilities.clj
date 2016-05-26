@@ -44,3 +44,7 @@
 
 ;; (insert-facilities! facilities)
 ;; (delete-facilities! db)
+
+;; (select-facilities db)
+(defn get-facilities []
+  (select-facilities db))
