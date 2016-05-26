@@ -4,8 +4,19 @@
 (declare leaflet-draw-points)
 (declare leaflet-draw-geojson)
 
+(defn add-mapbox-layer [leaflet]
+  (.addTo (.tileLayer js/L "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
+                      #js {:attribution "&copy; Mapbox"
+                           :maxZoom 18
+                           :mapid "ggiraldez.056e1919"
+                           :accessToken "pk.eyJ1IjoiZ2dpcmFsZGV6IiwiYSI6ImNpb2E1Zmh3eDAzOWR2YWtqMTV6eDBma2gifQ.kMQcRBGO5cnrJowATNNHLA"})
+          leaflet))
+
+;; TODO: the event handlers are not changed when updating props because they are
+;; bound here at mount time.
+
 (defn leaflet-did-mount [this]
-  (let [map (.map js/L (reagent/dom-node this))
+  (let [leaflet (.map js/L (reagent/dom-node this))
         props (reagent/props this)
         position (:position props)
         zoom (:zoom props)
@@ -14,35 +25,30 @@
         on-click (:on-click props)
         points (:points props)
         geojson (:geojson props)]
-    (reagent/set-state this {:map map
+    (reagent/set-state this {:map leaflet
                              :position position
                              :zoom zoom})
     (leaflet-draw-points this points)
     (leaflet-draw-geojson this geojson)
-    (.setView map (clj->js position) zoom)
-    (.addTo (.tileLayer js/L "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
-                        #js {:attribution "&copy; Mapbox"
-                             :maxZoom 18
-                             :mapid "ggiraldez.056e1919"
-                             :accessToken "pk.eyJ1IjoiZ2dpcmFsZGV6IiwiYSI6ImNpb2E1Zmh3eDAzOWR2YWtqMTV6eDBma2gifQ.kMQcRBGO5cnrJowATNNHLA"})
-            map)
-    (.on map "moveend" (fn [e]
-                         (let [c (.getCenter map)
-                               new-pos [(.-lat c) (.-lng c)]
-                               new-zoom (.getZoom map)
-                               state (reagent/state this)
-                               current-pos (:position state)
-                               current-zoom (:zoom state)]
-                           (when (and on-position-changed (not= new-pos current-pos))
-                             (on-position-changed new-pos))
-                           (when (and on-zoom-changed (not= new-zoom current-zoom))
-                             (on-zoom-changed new-zoom)))))
-    (.on map "click" (fn [e]
-                       (when on-click
-                         (let [latlng (.-latlng e)
-                               lat (.-lat latlng)
-                               lon (.-lng latlng)]
-                           (on-click lat lon)))))))
+    (.setView leaflet (clj->js position) zoom)
+    (add-mapbox-layer leaflet)
+    (.on leaflet "moveend" (fn [e]
+                             (let [c (.getCenter leaflet)
+                                   new-pos [(.-lat c) (.-lng c)]
+                                   new-zoom (.getZoom leaflet)
+                                   state (reagent/state this)
+                                   current-pos (:position state)
+                                   current-zoom (:zoom state)]
+                               (when (and on-position-changed (not= new-pos current-pos))
+                                 (on-position-changed new-pos))
+                               (when (and on-zoom-changed (not= new-zoom current-zoom))
+                                 (on-zoom-changed new-zoom)))))
+    (.on leaflet "click" (fn [e]
+                           (when on-click
+                             (let [latlng (.-latlng e)
+                                   lat (.-lat latlng)
+                                   lon (.-lng latlng)]
+                               (on-click lat lon)))))))
 
 
 (defn create-circle [[lat lon]]
@@ -79,12 +85,12 @@
 
 (defn leaflet-did-update [this]
   (let [props (reagent/props this)
-        map (:map (reagent/state this))
+        leaflet (:map (reagent/state this))
         position (:position props)
         zoom (:zoom props)
         points (:points props)
         geojson (:geojson props)]
-    (.setView map (clj->js position) zoom)
+    (.setView leaflet (clj->js position) zoom)
     (reagent/set-state this {:position position :zoom zoom})
     (leaflet-draw-points this points)
     (leaflet-draw-geojson this geojson)))
@@ -92,7 +98,7 @@
 (defn map-render []
   [:div {:style {:height "600px"}}])
 
-(defn map-component [props]
+(defn map-widget [props]
   (reagent/create-class {:reagent-render map-render
                          :component-did-mount leaflet-did-mount
                          :component-did-update leaflet-did-update}))
