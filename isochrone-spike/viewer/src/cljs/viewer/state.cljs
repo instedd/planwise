@@ -19,9 +19,12 @@
    (let [id (atom nil)]
      (fn [& args]
        (js/clearTimeout @id)
-       (reset! id (js/setTimeout
-                   (apply partial (cons f args))
-                   timeout))))))
+       (condp = (first args)
+         :cancel nil
+         :immediate (apply f (drop 1 args))
+         (reset! id (js/setTimeout
+                     (apply partial (cons f args))
+                     timeout)))))))
 
 (defn async-handle [c success-fn]
   (go
@@ -43,8 +46,7 @@
   (async-handle (api/fetch-isochrone node-id threshold)
                 #(swap! app assoc-in [:geojson] %)))
 
-(def fetch-isochrone
-  (debounced fetch-isochrone* 500))
+(def fetch-isochrone (debounced fetch-isochrone* 500))
 
 (defn fetch-nearest-node [lat lon]
   (async-handle (api/fetch-nearest-node lat lon)
@@ -52,7 +54,7 @@
                   (let [threshold (or (:threshold @app) 10)]
                     (swap! app merge {:node-id node-id
                                       :points [point]})
-                    (fetch-isochrone node-id threshold)))))
+                    (fetch-isochrone :immediate node-id threshold)))))
 
 ;; Actions
 ;; -------------------------------

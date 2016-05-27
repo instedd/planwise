@@ -3,7 +3,7 @@
             [reagent.session :as session]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
-            [viewer.leaflet :refer [map-widget]]
+            [viewer.leaflet :as leaflet :refer [map-widget]]
             [viewer.slider :refer [threshold-slider]]
             [viewer.hud :refer [coords-and-info]]
             [viewer.state :as state :refer [app]]))
@@ -25,11 +25,11 @@
                           :on-change state/update-threshold}]
        [map-widget {:position position
                     :zoom zoom
-                    :points points
-                    :geojson geojson
                     :on-click state/fetch-nearest-node
                     :on-position-changed state/update-position
-                    :on-zoom-changed state/update-zoom}]
+                    :on-zoom-changed state/update-zoom}
+        [:point-layer {:points points}]
+        [:geojson-layer {:data geojson}]]
        [coords-and-info {:lat (first position)
                          :lon (second position)
                          :zoom zoom
