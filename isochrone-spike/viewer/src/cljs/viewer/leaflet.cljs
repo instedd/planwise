@@ -6,15 +6,29 @@
   (let [latLng (.latLng js/L lat lon)]
     (.marker js/L latLng #js {:clickable false})))
 
-(defmulti leaflet-layer first)
+(defn create-point [[lat lon]]
+  (let [latLng (.latLng js/L lat lon)]
+    (.circleMarker js/L latLng #js {:clickable false
+                                    :radius 5})))
+
+(defn layer-type [layer-def]
+  (first layer-def))
+
+(defmulti leaflet-layer layer-type)
 
 (defmethod leaflet-layer :default [layer-def]
   (throw (str "Unknown layer type " (first layer-def))))
 
-(defmethod leaflet-layer :point-layer [[_ props & children]]
+(defmethod leaflet-layer :marker-layer [[_ props & children]]
   (let [layer (.layerGroup js/L)
         points (:points props)]
     (doseq [point points] (.addLayer layer (create-marker point)))
+    layer))
+
+(defmethod leaflet-layer :point-layer [[_ props & children]]
+  (let [layer (.layerGroup js/L)
+        points (:points props)]
+    (doseq [point points] (.addLayer layer (create-point point)))
     layer))
 
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]
@@ -23,29 +37,46 @@
     (when data (.addData layer data))
     layer))
 
-;; TODO: move this into the leaflet-layer multi and define it via the children of the component
+(defmethod leaflet-layer :tile-layer [[_ props & children]]
+  (let [url (:url props)
+        attrs (dissoc props :url)
+        layer (.tileLayer js/L url (clj->js attrs))]
+    layer))
 
-(defn add-mapbox-layer [leaflet]
-  (.addTo (.tileLayer js/L "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
-                      #js {:attribution "&copy; Mapbox"
-                           :maxZoom 18
-                           :mapid "ggiraldez.056e1919"
-                           :accessToken "pk.eyJ1IjoiZ2dpcmFsZGV6IiwiYSI6ImNpb2E1Zmh3eDAzOWR2YWtqMTV6eDBma2gifQ.kMQcRBGO5cnrJowATNNHLA"})
-          leaflet))
+(defn leaflet-replace-layer [leaflet old-layer new-layer-def]
+  (when old-layer (.removeLayer leaflet old-layer))
+  (when-let [new-layer (when new-layer-def (leaflet-layer new-layer-def))]
+    (.addLayer leaflet new-layer)
+    new-layer))
 
 (defn leaflet-update-layers [this]
   (let [state (reagent/state this)
-        children (reagent/children this)
         leaflet (:map state)
-        old-children (:current-children state)
-        layers (map leaflet-layer children)]
-    (when-not (= old-children children)
-      (println "updating layers")
-      (when-let [old-layers (:layers state)]
-        (doseq [old-layer old-layers] (.removeLayer leaflet old-layer)))
-      (doseq [layer layers] (.addLayer leaflet layer))
-      (reagent/set-state this {:layers layers
-                               :current-children children}))))
+        new-children (reagent/children this)]
+
+    ;; go through all the layers, old and new, and update the Leaflet objects
+    ;; accordingly while updating the map
+    (loop [old-children (:current-children state)
+           old-layers (:layers state)
+           children new-children
+           layers []]
+      (let [old-child (first old-children)
+            old-layer (first old-layers)
+            child (first children)]
+        (if (or old-child child)
+          ;; either there was a layer, or we have a new one
+          (let [new-layer (if (= old-child child)
+                            old-layer
+                            (leaflet-replace-layer leaflet old-layer child))]
+            ;; next layer
+            (recur (rest old-children)
+                   (rest old-layers)
+                   (rest children)
+                   (conj layers new-layer)))
+
+          ;; finished looping over the layers
+          (reagent/set-state this {:layers layers
+                                   :current-children new-children}))))))
 
 (defn leaflet-update-viewport [this]
   (let [state (reagent/state this)
@@ -88,8 +119,6 @@
         geojson (:geojson props)
         children (reagent/children this)]
     (reagent/set-state this {:map leaflet})
-
-    (add-mapbox-layer leaflet)
 
     (leaflet-update-layers this)
     (leaflet-update-viewport this)

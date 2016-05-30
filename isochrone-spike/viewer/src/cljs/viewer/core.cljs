@@ -28,7 +28,12 @@
                     :on-click state/fetch-nearest-node
                     :on-position-changed state/update-position
                     :on-zoom-changed state/update-zoom}
-        [:point-layer {:points points}]
+        [:tile-layer {:url "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
+                      :attribution "&copy; Mapbox"
+                      :maxZoom 18
+                      :mapid "ggiraldez.056e1919"
+                      :accessToken "pk.eyJ1IjoiZ2dpcmFsZGV6IiwiYSI6ImNpb2E1Zmh3eDAzOWR2YWtqMTV6eDBma2gifQ.kMQcRBGO5cnrJowATNNHLA"}]
+        [:marker-layer {:points points}]
         [:geojson-layer {:data geojson}]]
        [coords-and-info {:lat (first position)
                          :lon (second position)
