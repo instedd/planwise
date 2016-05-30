@@ -33,8 +33,10 @@
     layer))
 
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]
-  (let [layer (.geoJson js/L nil #js {:clickable false})
-        data (:data props)]
+  (let [data (:data props)
+        attrs (dissoc props :data)
+        layer (.geoJson js/L nil #js {:clickable false
+                                      :style (constantly (clj->js attrs))})]
     (when data (.addData layer data))
     layer))
 
@@ -135,7 +137,8 @@
     (leaflet-update-viewport this)))
 
 (defn leaflet-render [props & children]
-  [:div {:style {:height "600px"}}])
+  (let [height (or (:height props) 600)]
+    [:div {:style {:height (str height "px")}}]))
 
 (defn map-widget [props]
   (reagent/create-class {:display-name "leaflet/map-widget"

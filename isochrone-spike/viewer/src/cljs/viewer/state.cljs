@@ -44,7 +44,7 @@
 
 (defn fetch-isochrone* [node-id threshold]
   (async-handle (api/fetch-isochrone node-id threshold)
-                #(swap! app assoc-in [:geojson] %)))
+                #(swap! app assoc-in [:isochrone] %)))
 
 (def fetch-isochrone (debounced fetch-isochrone* 500))
 

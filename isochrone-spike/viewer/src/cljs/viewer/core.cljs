@@ -18,13 +18,15 @@
           zoom (:zoom app-state)
           points (:points app-state)
           geojson (:geojson app-state)
+          isochrone (:isochrone app-state)
           threshold (:threshold app-state)
           facilities (:facilities app-state)
           node-id (:node-id app-state)]
       [:div
        [threshold-slider {:value threshold
                           :on-change state/update-threshold}]
-       [map-widget {:position position
+       [map-widget {:height 700
+                    :position position
                     :zoom zoom
                     :on-click state/fetch-nearest-node
                     :on-position-changed state/update-position
@@ -37,10 +39,16 @@
         [:point-layer {:points (map (fn [fac] [(fac "lat") (fac "lon")]) facilities)
                        :radius 3
                        :color "#f00"
-                       :opacity 0.1
-                       :fillOpacity 0.2}]
+                       :opacity 0.3
+                       :fillOpacity 0.3}]
+        [:geojson-layer {:data geojson
+                         :color "#f00"
+                         :opacity 0.2
+                         :weight 2}]
         [:marker-layer {:points points}]
-        [:geojson-layer {:data geojson}]]
+        [:geojson-layer {:data isochrone
+                         :weight 3
+                         :color "#00f"}]]
        [coords-and-info {:lat (first position)
                          :lon (second position)
                          :zoom zoom
