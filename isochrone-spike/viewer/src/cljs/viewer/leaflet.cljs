@@ -6,10 +6,10 @@
   (let [latLng (.latLng js/L lat lon)]
     (.marker js/L latLng #js {:clickable false})))
 
-(defn create-point [[lat lon]]
+(defn create-point [[lat lon] attrs]
   (let [latLng (.latLng js/L lat lon)]
-    (.circleMarker js/L latLng #js {:clickable false
-                                    :radius 5})))
+    (.circleMarker js/L latLng (clj->js (merge {:clickable false :radius 5}
+                                               attrs)))))
 
 (defn layer-type [layer-def]
   (first layer-def))
@@ -27,8 +27,9 @@
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]
   (let [layer (.layerGroup js/L)
-        points (:points props)]
-    (doseq [point points] (.addLayer layer (create-point point)))
+        points (:points props)
+        attrs (dissoc props :points)]
+    (doseq [point points] (.addLayer layer (create-point point attrs)))
     layer))
 
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]

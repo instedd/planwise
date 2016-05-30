@@ -19,6 +19,7 @@
           points (:points app-state)
           geojson (:geojson app-state)
           threshold (:threshold app-state)
+          facilities (:facilities app-state)
           node-id (:node-id app-state)]
       [:div
        [threshold-slider {:value threshold
@@ -33,6 +34,11 @@
                       :maxZoom 18
                       :mapid "ggiraldez.056e1919"
                       :accessToken "pk.eyJ1IjoiZ2dpcmFsZGV6IiwiYSI6ImNpb2E1Zmh3eDAzOWR2YWtqMTV6eDBma2gifQ.kMQcRBGO5cnrJowATNNHLA"}]
+        [:point-layer {:points (map (fn [fac] [(fac "lat") (fac "lon")]) facilities)
+                       :radius 3
+                       :color "#f00"
+                       :opacity 0.1
+                       :fillOpacity 0.2}]
         [:marker-layer {:points points}]
         [:geojson-layer {:data geojson}]]
        [coords-and-info {:lat (first position)

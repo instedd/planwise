@@ -65,6 +65,12 @@
                                          :lon lon}))
     c))
 
+(defn fetch-facilities []
+  (let [c (chan)]
+    (GET "/facilities" (assoc (async-handlers c identity)
+                              :format :json))
+    c))
+
 ;; Debugging utility functions
 
 (defn truncate

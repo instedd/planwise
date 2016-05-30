@@ -56,12 +56,17 @@
                                       :points [point]})
                     (fetch-isochrone :immediate node-id threshold)))))
 
+(defn fetch-facilities []
+  (async-handle (api/fetch-facilities)
+                #(swap! app assoc-in [:facilities] %)))
+
 ;; Actions
 ;; -------------------------------
 
 (defn init! []
   (let [c (chan)]
     (println "Initializing state")
+    (fetch-facilities)
     (reset! app (assoc initial-position-and-zoom
                        :threshold 30
                         :channel c))
