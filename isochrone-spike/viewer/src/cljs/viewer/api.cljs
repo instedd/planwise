@@ -40,12 +40,19 @@
     c))
 
 
+;; The threshold parameter for isochrones should be given in seconds
+;; Here the traffic-constant is an approximate modifier to the threshold using
+;; Google Maps directions for comparison. The topology graph was built using the
+;; mapconfig.xml in this repo.
+
+(def traffic-constant 0.66)
+
 (defn fetch-isochrone [node-id threshold]
   (let [c (chan)]
     (GET "/isochrone" (assoc (async-handlers c parse-geojson)
                              :format :raw
                              :params {:node-id node-id
-                                      :threshold (/ threshold 50.0)}))
+                                      :threshold (* threshold traffic-constant)}))
     c))
 
 (defn parse-node-info [data]

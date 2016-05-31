@@ -69,7 +69,7 @@
     (fetch-facilities)
     (reset! app (assoc initial-position-and-zoom
                        :threshold 30
-                        :channel c))
+                       :channel c))
     (go-loop []
       (let [msg (<! c)]
         (println (str "Application loop received " msg))
