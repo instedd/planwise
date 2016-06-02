@@ -1,0 +1,97 @@
+.error-page body {
+    background: #eee;
+}
+
+.error-page h1 {
+    margin: 15% 0 0 0;
+    text-align: center;
+    font-size: 42px;
+    color: #900;
+}
+
+.error-page h2 {
+    text-align: center;
+    font-size: 32px;
+    font-weight: normal;
+    color: #333;
+}
+
+.body-container {
+  font-family: 'Helvetica Neue', Verdana, Helvetica, Arial, sans-serif;
+  max-width: 900px;
+  margin: 0 auto;
+  padding-top: 20px;
+  -webkit-font-smoothing: antialiased;
+  font-size: 1.125em;
+  color: #333;
+  line-height: 1.5em;
+}
+
+h1, h2, h3 {
+  color: #000;
+}
+
+h1 {
+  font-size: 2.5em
+}
+
+h2 {
+  font-size: 2em
+}
+
+h3 {
+  font-size: 1.5em
+}
+
+a {
+  text-decoration: none;
+  color: #09f;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+.left {
+  flex-grow: 1;
+  text-align: left;
+}
+
+.right {
+  flex-grow: 1;
+  text-align: right;
+}
+
+.center {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.small {
+  font-size: 80%;
+}
+
+.threshold-control {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.threshold-control input, .threshold-control span {
+  display: block;
+}
+
+.threshold-control input {
+  flex-grow: 10;
+}
+
+.threshold-control span {
+  flex-grow: 1;
+  text-align: right;
+}
