@@ -68,7 +68,7 @@
     (println "Initializing state")
     (fetch-facilities)
     (reset! app (assoc initial-position-and-zoom
-                       :threshold 30
+                       :threshold 600
                        :channel c))
     (go-loop []
       (let [msg (<! c)]

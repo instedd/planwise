@@ -18,12 +18,16 @@ LIMIT 1
 --      highway type.
 
 SELECT
-  ST_AsGeoJSON(
+  ST_AsGeoJSON(ST_Buffer(
     pgr_pointsAsPolygon($$SELECT
                             id::integer, ST_X(the_geom)::float AS x, ST_Y(the_geom)::float AS y
                           FROM ways_vertices_pgr
                           WHERE id IN (SELECT node
                                        FROM pgr_drivingDistance(''SELECT gid AS id, source, target, cost_s AS cost FROM ways'',
                                                                 $$ || :node-id || $$, $$ || :distance || $$, false))
-                        $$, 0)) AS poly
+                        $$, 0), 0.002)) AS poly
 
+-- SELECT
+--   ST_AsGeoJSON(ST_Union(ST_Buffer(w.the_geom, 0.002))) AS poly
+-- FROM pgr_drivingDistance('SELECT gid AS id, source, target, cost_s AS cost FROM ways', :node-id, :distance, false) e
+-- JOIN ways w ON e.edge = w.gid;
