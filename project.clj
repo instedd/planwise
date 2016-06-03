@@ -37,9 +37,10 @@
   :cljsbuild
   {:builds
    {:main {:jar true
-           :source-paths ["src"]
+           :source-paths ["src" "prod"]
            :compiler {:output-to "target/cljsbuild/planwise/public/js/main.js"
-                      :optimizations :advanced}}}}
+                      :optimizations :advanced
+                      :externs ["prod/externs.js"]}}}}
   :aliases {"run-task" ["with-profile" "+repl" "run" "-m"]
             "setup"    ["run-task" "dev.tasks/setup"]}
   :profiles
