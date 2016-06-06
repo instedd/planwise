@@ -1,11 +1,13 @@
 dependencies:
   cache_directories:
-    - sassc
-    - libsass
+    - "~/sassc"
+    - "~/libsass"
   post:
-    - if [[ ! -e sassc ]]; then git clone -b 3.3.6 git@github.com:sass/sassc.git sassc; fi
-    - if [[ ! -e libsass ]]; then git clone --recursive -b 3.3.6 git@github.com:sass/libsass.git && cd sassc && export SASS_LIBSASS_PATH=$(readlink -f ../libsass) && make && cd ..; fi
+    - cd
+    - if [[ ! -e ~/sassc ]]; then git clone -b 3.3.6 git@github.com:sass/sassc.git ~/sassc; fi
+    - if [[ ! -e ~/libsass ]]; then git clone --recursive -b 3.3.6 git@github.com:sass/libsass.git ~/libsass && cd ~/sassc && export SASS_LIBSASS_PATH=$(readlink -f ../libsass) && make && cd ..; fi
     - ln -s ~/sassc/bin/sassc ~/bin/sassc
+    - cd planwise
 
 test:
   override:
