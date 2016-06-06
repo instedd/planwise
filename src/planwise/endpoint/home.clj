@@ -12,6 +12,7 @@
    [:meta {:charset "utf-8"}]
    [:meta {:name "viewport"
            :content "width=device-width, initial-scale=1"}]
+   [:title "PlanWise"]
    (include-css "/assets/normalize.css/normalize.css")
    (include-css "/assets/leaflet/leaflet.css")
    (include-css "/css/site.css")])

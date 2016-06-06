@@ -11,13 +11,15 @@
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [duct.component.figwheel :as figwheel]
             [dev.tasks :refer :all]
+            [dev.sass :as sass]
             [planwise.config :as config]
             [planwise.system :as system]))
 
 (def dev-config
   {:app {:middleware [wrap-stacktrace]}
    :figwheel
-   {:css-dirs ["resources/planwise/public/css"]
+   {:css-dirs ["resources/planwise/public/css"
+               "target/sass-repl"]
     :builds   [{:source-paths ["src" "dev"]
                 :build-options
                 {:optimizations :none
@@ -26,7 +28,11 @@
                  :output-to  "target/figwheel/planwise/public/js/main.js"
                  :output-dir "target/figwheel/planwise/public/js"
                  :source-map true
-                 :source-map-path "/js"}}]}})
+                 :source-map-path "/js"}}]}
+   :sass
+   {:input "resources/sass/site.scss"
+    :output "target/sass-repl/planwise/public/css/site.css"
+    :options ["-m"]}})
 
 (def config
   (meta-merge config/defaults
@@ -35,7 +41,10 @@
 
 (defn new-system []
   (into (system/new-system config)
-        {:figwheel (figwheel/server (:figwheel config))}))
+        {:sass (sass/sass-compiler (:sass config))
+         :figwheel (component/using
+                    (figwheel/server (:figwheel config))
+                    [:sass])}))
 
 (when (io/resource "local.clj")
   (load "local"))

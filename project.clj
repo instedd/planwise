@@ -29,11 +29,16 @@
                  [duct/hikaricp-component "0.1.0"]
                  [org.postgresql/postgresql "9.4.1208"]]
   :plugins [[lein-environ "1.0.3"]
-            [lein-cljsbuild "1.1.2"]]
+            [lein-cljsbuild "1.1.2"]
+            [lein-sass "0.3.7"]]
   :main ^:skip-aot planwise.main
   :target-path "target/%s/"
-  :resource-paths ["resources" "target/cljsbuild"]
-  :prep-tasks [["javac"] ["cljsbuild" "once"] ["compile"]]
+  :resource-paths ["resources" "target/cljsbuild" "target/sass"]
+  :prep-tasks [["javac"] ["cljsbuild" "once"] ["sass" "once"] ["compile"]]
+  :sass
+  {:src "resources/sass"
+   :output-directory "target/sass/planwise/public/css"
+   :style :compressed}
   :cljsbuild
   {:builds
    {:main {:jar true
@@ -46,7 +51,7 @@
   :profiles
   {:dev  [:project/dev  :profiles/dev]
    :test [:project/test :profiles/test]
-   :repl {:resource-paths ^:replace ["resources" "target/figwheel"]
+   :repl {:resource-paths ^:replace ["resources" "target/figwheel" "target/sass-repl"]
           :prep-tasks     ^:replace [["javac"] ["compile"]]}
    :uberjar {:aot :all}
    :profiles/dev  {}
@@ -59,7 +64,9 @@
                                   [kerodon "0.7.0"]
                                   [com.cemerick/piggieback "0.2.1"]
                                   [duct/figwheel-component "0.3.2"]
-                                  [figwheel "0.5.0-6"]]
+                                  [figwheel "0.5.0-6"]
+                                  ;; [hawk "0.2.10"]
+                                  ]
                    :source-paths ["dev"]
                    :repl-options {:init-ns user
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}

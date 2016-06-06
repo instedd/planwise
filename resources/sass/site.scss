@@ -55,6 +55,11 @@ a:hover {
 .actions {
   display: flex;
   flex-wrap: nowrap;
+
+  button {
+    font-size: 80%;
+    line-height: 1.5;
+  }
 }
 
 .left {
