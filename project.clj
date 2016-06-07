@@ -46,8 +46,9 @@
            :compiler {:output-to "target/cljsbuild/planwise/public/js/main.js"
                       :optimizations :advanced
                       :externs ["prod/externs.js"]}}}}
-  :aliases {"run-task" ["with-profile" "+repl" "run" "-m"]
-            "setup"    ["run-task" "dev.tasks/setup"]}
+  :aliases {"run-task"     ["with-profile" "+repl" "run" "-m"]
+            "setup"        ["run-task" "dev.tasks/setup"]
+            "import-sites" ["run-task" "dev.import-sites"]}
   :profiles
   {:dev  [:project/dev  :profiles/dev]
    :test [:project/test :profiles/test]
