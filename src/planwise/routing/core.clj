@@ -13,5 +13,10 @@
 ;; (isochrone-for-node-sqlvec {:node-id 1657 :distance 10000})
 ;; (isochrone-for-node routing-db {:node-id 1657 :distance 10000})
 
-(defn isochrone [db id distance]
-  (:poly (isochrone-for-node db {:node-id id :distance distance})))
+(defn isochrone [db id distance & [algorithm]]
+  (let [algorithm (or algorithm :alpha-shape)]
+    (let [func (condp = algorithm
+                 :alpha-shape isochrone-for-node-alpha-shape
+                 :buffer isochrone-for-node-buffer
+                 (throw (IllegalArgumentException. (str "Invalid algorithm " algorithm))))]
+      (:poly (func db {:node-id id :distance distance})))))

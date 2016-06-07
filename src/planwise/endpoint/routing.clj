@@ -9,6 +9,13 @@
    :headers {}
    :body "invalid query"})
 
+(defn coerce-algorithm [s]
+  (when (some? s)
+    (condp = (.toLowerCase s)
+      "alpha-shape" :alpha-shape
+      "buffer" :buffer
+      :invalid)))
+
 (defn routing-endpoint [{{db :spec} :db}]
   (context "/routing" []
     (GET "/" [] "routing endpoint")
@@ -22,8 +29,11 @@
                                        :point (:point node)}))
             (response nil)))))
 
-    (GET "/isochrone" [node-id threshold]
-      (if (or (empty? node-id) (empty? threshold))
-        invalid-query
-        (let [polygon (routing/isochrone db (Integer. node-id) (Float. threshold))]
-          (response polygon))))))
+    (GET "/isochrone" [node-id threshold algorithm]
+      (let [algorithm (coerce-algorithm algorithm)]
+        (if (or (empty? node-id) (empty? threshold) (= :invalid algorithm))
+          invalid-query
+          (let [node-id (Integer. node-id)
+                distance (Float. threshold)
+                polygon (routing/isochrone db node-id distance algorithm)]
+            (response polygon)))))))

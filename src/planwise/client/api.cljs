@@ -47,12 +47,13 @@
 
 (def traffic-constant 0.66)
 
-(defn fetch-isochrone [node-id threshold]
+(defn fetch-isochrone [node-id threshold & [algorithm]]
   (let [c (chan)]
     (GET "/routing/isochrone" (assoc (async-handlers c parse-geojson)
                                      :format :raw
                                      :params {:node-id node-id
-                                              :threshold (* threshold traffic-constant)}))
+                                              :threshold (* threshold traffic-constant)
+                                              :algorithm (some-> algorithm name)}))
     c))
 
 (defn parse-node-info [data]

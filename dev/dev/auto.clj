@@ -21,14 +21,12 @@
             watch (hawk/watch! [{:paths css-paths
                                  :filter hawk/file?
                                  :handler (fn [ctx e]
-                                            (println "CSS path changed" e)
                                             (sass/rebuild sass)
                                             (figwheel/refresh-css figwheel)
                                             ctx)}
                                 {:paths cljs-paths
                                  :filter hawk/file?
                                  :handler (fn [ctx e]
-                                            (println "CLJS path changed" e)
                                             (figwheel/build-cljs figwheel)
                                             ctx)}])]
         (println "Starting auto builder")

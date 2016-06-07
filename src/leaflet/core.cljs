@@ -112,8 +112,10 @@
     (when-let [on-click (:on-click (reagent/props this))]
       (let [latlng (.-latlng e)
             lat (.-lat latlng)
-            lon (.-lng latlng)]
-        (on-click lat lon)))))
+            lon (.-lng latlng)
+            originalEvent (aget e "originalEvent")
+            shiftKey (aget originalEvent "shiftKey")]
+        (on-click lat lon shiftKey)))))
 
 (defn leaflet-did-mount [this]
   (let [leaflet (.map js/L (reagent/dom-node this))

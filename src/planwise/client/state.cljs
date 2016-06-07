@@ -42,19 +42,25 @@
   (async-handle (api/fetch-geojson)
                 #(swap! app assoc-in [:geojson] %)))
 
-(defn fetch-isochrone* [node-id threshold]
-  (async-handle (api/fetch-isochrone node-id threshold)
+(defn fetch-isochrone* [node-id threshold & [algorithm]]
+  (async-handle (api/fetch-isochrone node-id threshold algorithm)
                 #(swap! app assoc-in [:isochrone] %)))
 
 (def fetch-isochrone (debounced fetch-isochrone* 500))
 
-(defn fetch-nearest-node [lat lon]
+(defn isochrone-algorithm [modifier?]
+  (if modifier?
+    :buffer
+    :alpha-shape))
+
+(defn fetch-nearest-node [lat lon modifier?]
   (async-handle (api/fetch-nearest-node lat lon)
                 (fn [{:keys [node-id point]}]
-                  (let [threshold (or (:threshold @app) 10)]
+                  (let [threshold (or (:threshold @app) 10)
+                        algorithm (isochrone-algorithm modifier?)]
                     (swap! app merge {:node-id node-id
                                       :points [point]})
-                    (fetch-isochrone :immediate node-id threshold)))))
+                    (fetch-isochrone :immediate node-id threshold algorithm)))))
 
 (defn fetch-facilities []
   (async-handle (api/fetch-facilities)

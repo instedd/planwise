@@ -28,7 +28,8 @@
        [map-widget {:height 700
                     :position position
                     :zoom zoom
-                    :on-click state/fetch-nearest-node
+                    :on-click (fn [lat lon modifier?]
+                                (state/fetch-nearest-node lat lon modifier?))
                     :on-position-changed state/update-position
                     :on-zoom-changed state/update-zoom}
         [:tile-layer {:url "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
