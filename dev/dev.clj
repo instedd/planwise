@@ -12,6 +12,7 @@
             [duct.component.figwheel :as figwheel]
             [dev.tasks :refer :all]
             [dev.sass :as sass]
+            [dev.auto :as auto]
             [planwise.config :as config]
             [planwise.system :as system]))
 
@@ -44,7 +45,10 @@
         {:sass (sass/sass-compiler (:sass config))
          :figwheel (component/using
                     (figwheel/server (:figwheel config))
-                    [:sass])}))
+                    [:sass])
+         :auto (component/using
+                (auto/auto-builder {:enabled true})
+                [:figwheel :sass])}))
 
 (when (io/resource "local.clj")
   (load "local"))
@@ -52,3 +56,4 @@
 (gen/set-ns-prefix 'planwise)
 
 (reloaded.repl/set-init! new-system)
+

@@ -65,8 +65,7 @@
                                   [com.cemerick/piggieback "0.2.1"]
                                   [duct/figwheel-component "0.3.2"]
                                   [figwheel "0.5.0-6"]
-                                  ;; [hawk "0.2.10"]
-                                  ]
+                                  [hawk "0.2.10"]]
                    :source-paths ["dev"]
                    :repl-options {:init-ns user
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
