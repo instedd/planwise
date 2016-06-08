@@ -21,6 +21,7 @@
                   :exclusions [org.clojure/tools.reader]]
                  [reagent-forms "0.5.23"]
                  [reagent-utils "0.1.8"]
+                 [re-frame "0.7.0"]
                  [cljs-ajax "0.5.4"]
                  [secretary "1.2.3"]
                  [venantius/accountant "0.1.7"

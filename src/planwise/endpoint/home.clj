@@ -20,10 +20,13 @@
 (def loading-page
   (html5
     (head)
-    [:body {:class "body-container"}
+    [:body
      mount-target
      (include-js "/assets/leaflet/leaflet.js")
-     (include-js "/js/main.js")]))
+     (include-js "/js/main.js")
+     [:script "planwise.client.core.main();"]]))
 
 (defn home-endpoint [system]
-  (GET "/" [] loading-page))
+  (routes
+   (GET "/" [] loading-page)
+   (GET "/playground" [] loading-page)))
