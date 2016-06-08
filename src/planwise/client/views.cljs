@@ -1,6 +1,6 @@
 (ns ^:figwheel-always planwise.client.views
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [planwise.client.views.playground :as playground]))
+            [planwise.client.playground.views :as playground]))
 
 
 (def nav-items
