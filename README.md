@@ -8,6 +8,14 @@ improvement of existing ones to maximize their impact in the community.
 
 ### Setup
 
+You need to have [Leiningen](http://leiningen.org) and the
+[SASS compiler](https://github.com/sass/sassc) installed. In Mac OS X using
+Homebrew, just run:
+
+```sh
+brew install leiningen sassc
+```
+
 When you first clone this repository, run:
 
 ```sh
@@ -50,6 +58,10 @@ dev=> (reset)
 :reloading (...)
 :resumed
 ```
+
+By default, changes to SASS or Clojurescript files will trigger a reload
+automatically. You can change that behaviour by disabling the auto-builder in
+`dev/dev.clj` (see the `:auto` component in `new-system`).
 
 If you want to access a ClojureScript REPL, make sure that the site is loaded
 in a browser and run:
