@@ -16,7 +16,8 @@
     (fn []
       (let [active @current-page]
         [:header
-         [:h1 "PlanWise"]
+         [:a.logo {:href "/"}
+          [:h1 "PlanWise"]]
          [:nav [:ul
                 (map-indexed (fn [idx item]
                                [nav-item (assoc item :key idx :active active)])
