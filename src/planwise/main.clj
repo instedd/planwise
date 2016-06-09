@@ -1,12 +1,15 @@
 (ns planwise.main
   (:gen-class)
   (:require [clojure.java.io :as io]
+            [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
             [duct.middleware.errors :refer [wrap-hide-errors]]
             [duct.util.runtime :refer [add-shutdown-hook]]
             [meta-merge.core :refer [meta-merge]]
             [planwise.config :as config]
             [planwise.system :refer [new-system]]))
+
+(timbre/refer-timbre)
 
 (def prod-config
   {:app {:middleware     [[wrap-hide-errors :internal-error]]
@@ -18,7 +21,8 @@
               prod-config))
 
 (defn -main [& args]
+  (timbre/set-level! :warn)
   (let [system (new-system config)]
-    (println "Starting HTTP server on port" (-> system :http :port))
+    (report "Starting HTTP server on port" (-> system :http :port))
     (add-shutdown-hook ::stop-system #(component/stop system))
     (component/start system)))

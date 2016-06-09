@@ -13,7 +13,8 @@
                  [ring/ring-defaults "0.2.0"]
                  [ring-jetty-component "0.3.1"]
                  [ring-webjars "0.1.1"]
-                 [org.slf4j/slf4j-nop "1.7.21"]
+                 [com.taoensso/timbre "4.3.1"]
+                 [com.fzakaria/slf4j-timbre "0.3.2"]
                  [hiccup "1.0.5"]
                  [org.webjars/normalize.css "3.0.2"]
                  [org.webjars/leaflet "0.7.7"]
@@ -27,11 +28,15 @@
                  [venantius/accountant "0.1.7"
                   :exclusions [org.clojure/tools.reader]]
                  [com.layerware/hugsql "0.4.7"]
-                 [duct/hikaricp-component "0.1.0"]
+                 [duct/hikaricp-component "0.1.0"
+                  :exclusions [org.slf4j/slf4j-nop]]
                  [org.postgresql/postgresql "9.4.1208"]]
   :plugins [[lein-environ "1.0.3"]
             [lein-cljsbuild "1.1.2"]
-            [lein-sass "0.3.7"]]
+            [lein-sass "0.3.7"
+             :exclusions
+             [org.apache.commons/commons-compress
+              org.codehaus.plexus/plexus-utils]]]
   :main ^:skip-aot planwise.main
   :target-path "target/%s/"
   :resource-paths ["resources" "target/cljsbuild" "target/sass"]
@@ -67,6 +72,7 @@
                                   [com.cemerick/piggieback "0.2.1"]
                                   [duct/figwheel-component "0.3.2"]
                                   [figwheel "0.5.0-6"]
+                                  [binaryage/devtools "0.6.1"]
                                   [hawk "0.2.10"]]
                    :source-paths ["dev"]
                    :repl-options {:init-ns user

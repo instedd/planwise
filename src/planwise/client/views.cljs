@@ -1,4 +1,4 @@
-(ns ^:figwheel-always planwise.client.views
+(ns planwise.client.views
   (:require [re-frame.core :refer [subscribe dispatch]]
             [planwise.client.playground.views :as playground]))
 

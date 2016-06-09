@@ -4,6 +4,7 @@
             [clojure.pprint :refer [pprint]]
             [clojure.tools.namespace.repl :refer [refresh]]
             [clojure.java.io :as io]
+            [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
             [duct.generate :as gen]
             [meta-merge.core :refer [meta-merge]]
@@ -15,6 +16,8 @@
             [dev.auto :as auto]
             [planwise.config :as config]
             [planwise.system :as system]))
+
+(timbre/set-level! :info)
 
 (def dev-config
   {:app {:middleware [wrap-stacktrace]}
