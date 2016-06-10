@@ -1,6 +1,7 @@
 (ns planwise.client.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub]]
+            [planwise.client.projects.subs]
             [planwise.client.playground.subs]))
 
 

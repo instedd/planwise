@@ -1,6 +1,7 @@
 (ns planwise.client.views
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [planwise.client.playground.views :as playground]))
+            [planwise.client.playground.views :as playground]
+            [planwise.client.projects.views :as projects]))
 
 
 (def nav-items
@@ -26,12 +27,10 @@
 (defmulti content-pane identity)
 
 (defmethod content-pane :home []
-  [:div
-   [:h1 "Projects"]])
+  [projects/list-view])
 
 (defmethod content-pane :playground []
-  [:div
-   [playground/playground-page]])
+  [playground/playground-page])
 
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]

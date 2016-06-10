@@ -3,6 +3,8 @@ var L = {
     "setView": function() {},
     "addLayer": function() {},
     "removeLayer": function() {},
+    "addControl": function() {},
+    "removeControl": function() {},
     "getCenter": function() {},
     "getZoom": function() {},
     "on": function() {}
@@ -28,5 +30,9 @@ var L = {
   },
   "layerGroup": {
     "addTo": function() {}
+  },
+  "control": {
+    "zoom": function() {},
+    "attribution": function() {}
   }
 }

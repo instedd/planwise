@@ -1,6 +1,50 @@
 (ns leaflet.core
   (:require [reagent.core :as reagent :refer [atom]]
-            [reagent.debug :as debug]))
+            [reagent.debug :as debug]
+            [clojure.data :as data]))
+
+
+(defn update-objects-from-decls
+  "Updates a collection of (possibly mutable) objects by comparing seqs of
+  declarations (which should correspond to those objects) and disposing/creating
+  new ones when the declarations change. Returns a vector of objects conforming
+  to new-decls."
+  [old-objects
+   old-decls
+   new-decls
+   dispose-fn!
+   create-fn!]
+
+  (letfn [(replace-object [old-object old-decl new-decl]
+            (if (= old-decl new-decl)
+              ;; declarations are identical, nothing to replace
+              old-object
+              (do
+                ;; dispose of the old object and return the new one
+                (when old-object (dispose-fn! old-object))
+                (let [new-object (when new-decl (create-fn! new-decl))]
+                  new-object))))]
+
+    (loop [old-objects old-objects
+           old-decls old-decls
+           new-objects []
+           new-decls new-decls]
+
+      (let [old-decl (first old-decls)
+            new-decl (first new-decls)]
+        (if (or old-decl new-decl)
+          (let [old-object (first old-objects)
+                new-object (replace-object old-object old-decl new-decl)]
+
+            ;; next declaration
+            (recur (rest old-objects)
+                   (rest old-decls)
+                   (conj new-objects new-object)
+                   (rest new-decls)))
+
+          ;; done iterating over the declarations
+          new-objects)))))
+
 
 (defn create-marker [[lat lon]]
   (let [latLng (.latLng js/L lat lon)]
@@ -52,6 +96,7 @@
     (.addLayer leaflet new-layer)
     new-layer))
 
+
 (defn leaflet-update-layers [this]
   (let [state (reagent/state this)
         leaflet (:map state)
@@ -59,27 +104,21 @@
 
     ;; go through all the layers, old and new, and update the Leaflet objects
     ;; accordingly while updating the map
-    (loop [old-children (:current-children state)
-           old-layers (:layers state)
-           children new-children
-           layers []]
-      (let [old-child (first old-children)
-            old-layer (first old-layers)
-            child (first children)]
-        (if (or old-child child)
-          ;; either there was a layer, or we have a new one
-          (let [new-layer (if (= old-child child)
-                            old-layer
-                            (leaflet-replace-layer leaflet old-layer child))]
-            ;; next layer
-            (recur (rest old-children)
-                   (rest old-layers)
-                   (rest children)
-                   (conj layers new-layer)))
-
-          ;; finished looping over the layers
-          (reagent/set-state this {:layers layers
-                                   :current-children new-children}))))))
+    (let [old-layers (:layers state)
+          old-children (:current-children state)
+          remove-layer-fn (fn [old-layer]
+                            (.removeLayer leaflet old-layer))
+          create-layer-fn (fn [new-child]
+                            (let [new-layer (leaflet-layer new-child)]
+                              (.addLayer leaflet new-layer)
+                              new-layer))
+          new-layers (update-objects-from-decls old-layers
+                                                old-children
+                                                new-children
+                                                remove-layer-fn
+                                                create-layer-fn)]
+      (reagent/set-state this {:layers new-layers
+                               :current-children new-children}))))
 
 (defn leaflet-update-viewport [this]
   (let [state (reagent/state this)
@@ -89,6 +128,37 @@
         leaflet (:map state)]
     (reagent/set-state this {:position position :zoom zoom})
     (.setView leaflet (clj->js position) zoom)))
+
+
+(defn leaflet-create-control [type]
+  (condp = type
+    :zoom (.zoom js/L.control)
+    :attribution (.attribution js/L.control #js {:prefix false})
+    (throw (str "Invalid control type " type))))
+
+(def default-controls [:zoom :attribution])
+
+(defn leaflet-update-controls [this]
+  (let [state (reagent/state this)
+        leaflet (:map state)
+        props (reagent/props this)
+        new-control-defs (or (:controls props) default-controls)]
+
+    (let [old-controls (:controls state)
+          old-control-defs (:current-controls state)
+          destroy-control-fn (fn [old-control]
+                               (.removeControl leaflet old-control))
+          create-control-fn (fn [new-control-def]
+                              (let [new-control (leaflet-create-control new-control-def)]
+                                (.addControl leaflet new-control)
+                                new-control))
+          new-controls (update-objects-from-decls old-controls
+                                                  old-control-defs
+                                                  new-control-defs
+                                                  destroy-control-fn
+                                                  create-control-fn)]
+      (reagent/set-state this {:current-controls new-control-defs
+                               :controls new-controls}))))
 
 (defn leaflet-moveend-handler [this]
   (fn [e]
@@ -118,29 +188,35 @@
         (on-click lat lon shiftKey)))))
 
 (defn leaflet-did-mount [this]
-  (let [leaflet (.map js/L (reagent/dom-node this))
-        props (reagent/props this)
-        points (:points props)
-        geojson (:geojson props)
-        children (reagent/children this)]
+  (let [leaflet (.map js/L (reagent/dom-node this)
+                      #js {:zoomControl false
+                           :attributionControl false})
+        props (reagent/props this)]
     (reagent/set-state this {:map leaflet})
 
+    (leaflet-update-controls this)
     (leaflet-update-layers this)
     (leaflet-update-viewport this)
 
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))))
 
-(defn leaflet-did-update [this]
+(defn leaflet-did-update [this old-argv]
   (let [state (reagent/state this)
         leaflet (:map state)]
 
     (leaflet-update-layers this)
     (leaflet-update-viewport this)))
 
+(defn size-style [width height]
+  (into {} (map (fn [k v] (when v) [k (if (number? v) (str v "px") v)])
+                [:width :height]
+                [width height])))
+
 (defn leaflet-render [props & children]
-  (let [height (or (:height props) 600)]
-    [:div {:style {:height (str height "px")}}]))
+  (let [height (:height props)
+        width (:width props)]
+    [:div {:style (size-style width height)}]))
 
 (defn map-widget [props]
   (reagent/create-class {:display-name "leaflet/map-widget"

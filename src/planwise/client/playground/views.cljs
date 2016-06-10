@@ -1,12 +1,9 @@
 (ns planwise.client.playground.views
   (:require [leaflet.core :refer [map-widget]]
+            [planwise.client.mapping :refer [default-base-tile-layer]]
             [planwise.client.slider :refer [threshold-slider]]
             [planwise.client.hud :refer [coords-and-info]]
             [re-frame.core :refer [subscribe dispatch]]))
-
-(def mapbox-tile-url "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}")
-(def mapbox-mapid "ggiraldez.056e1919")
-(def mapbox-access-token "pk.eyJ1IjoiZ2dpcmFsZGV6IiwiYSI6ImNpb2E1Zmh3eDAzOWR2YWtqMTV6eDBma2gifQ.kMQcRBGO5cnrJowATNNHLA")
 
 (defn playground-page []
   (let [playground (subscribe [:playground])]
@@ -32,11 +29,7 @@
                       #(dispatch [:playground/update-position %])
                       :on-zoom-changed
                       #(dispatch [:playground/update-zoom %])}
-          [:tile-layer {:url mapbox-tile-url
-                        :attribution "&copy; Mapbox"
-                        :maxZoom 18
-                        :mapid mapbox-mapid
-                        :accessToken mapbox-access-token}]
+          default-base-tile-layer
           [:point-layer {:points (map (fn [fac] [(fac "lat") (fac "lon")]) facilities)
                          :radius 3
                          :color "#f00"
