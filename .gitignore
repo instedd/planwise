@@ -12,3 +12,4 @@ pom.xml.asc
 dev/local.clj
 
 *.pyc
+.idea
