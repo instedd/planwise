@@ -20,12 +20,26 @@ LIMIT 1
 SELECT
   ST_AsGeoJSON(ST_Buffer(
     pgr_pointsAsPolygon($$SELECT
-                            id::integer, ST_X(the_geom)::float AS x, ST_Y(the_geom)::float AS y
-                          FROM ways_vertices_pgr
-                          WHERE id IN (SELECT node
-                                       FROM pgr_drivingDistance(''SELECT gid AS id, source, target, cost_s AS cost FROM ways'',
-                                                                $$ || :node-id || $$, $$ || :distance || $$, false))
+                            id::integer, lon::float AS x, lat::float AS y
+                          FROM ways_nodes
+                          WHERE gid IN (SELECT edge
+                                        FROM pgr_drivingDistance(''SELECT gid AS id, source, target, cost_s AS cost FROM ways'',
+                                                                 $$ || :node-id || $$, $$ || :distance || $$, false))
                         $$, 0), 0.004)) AS poly
+
+-- Old query which uses the terminal nodes of each way instead of all the points
+-- in them.
+
+-- SELECT
+--   ST_AsGeoJSON(ST_Buffer(
+--     pgr_pointsAsPolygon($$SELECT
+--                             id::integer, ST_X(the_geom)::float AS x, ST_Y(the_geom)::float AS y
+--                           FROM ways_vertices_pgr
+--                           WHERE id IN (SELECT node
+--                                        FROM pgr_drivingDistance(''SELECT gid AS id, source, target, cost_s AS cost FROM ways'',
+--                                                                 $$ || :node-id || $$, $$ || :distance || $$, false))
+--                         $$, 0), 0.004)) AS poly
+
 
 -- :name isochrone-for-node-buffer :? :1
 -- :doc Calculate the approximate isochrone from the given node. The node must
