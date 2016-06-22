@@ -64,8 +64,13 @@ $ cd viewer
 $ lein import-sites ../kenya-facilities.json
 ```
 
-10. Start the viewer in development mode using:
+## Create ways_nodes
 
-```$ lein figwheel```
+By default, the `ways` table will contain linestring of more than two points.
+For use in alpha shapes and to provide more granularity more points should be
+sent to `pgr_pointsAsPolygon`. To extract all the points in all the ways, run the script `scripts/create_ways_nodes.sql` by running:
 
-and open it in http://localhost:3449
+```
+$ psql routing
+psql> \i scripts/create_ways_nodes.sql
+```
