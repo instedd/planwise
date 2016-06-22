@@ -43,6 +43,9 @@
     :buffer
     :alpha-shape))
 
+(defn fetch-facilities-with-isochrones []
+  (async-handle (api/fetch-facilities-with-isochrones)
+                #(dispatch [:playground/facilities-with-isochrones-received %])))
 
 (def in-playground (path [:playground]))
 
@@ -120,3 +123,17 @@
  in-playground
  (fn [db [_ geojson]]
    (assoc db :geojson geojson)))
+
+(register-handler
+ :playground/facilities-with-isochrones-received
+ in-playground
+ (fn [db [_ facilities]]
+   (let [facilities (mapv (fn [fac]
+                            (let [facility_id (fac "facility_id")
+                                  point (fac "point")
+                                  isochrone (fac "isochrone")]
+                              {:id facility_id
+                               :point (.parse js/JSON point)
+                               :isochrone (.parse js/JSON isochrone)}))
+                          facilities)]
+     (assoc db :facilities-with-isochrones facilities))))

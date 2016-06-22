@@ -79,6 +79,12 @@
                               :format :json))
     c))
 
+(defn fetch-facilities-with-isochrones []
+  (let [c (chan)]
+    (GET "/facilities/with-isochrones" (assoc (async-handlers c identity)
+                                              :format :json))
+    c))
+
 ;; Debugging utility functions
 
 (defn truncate

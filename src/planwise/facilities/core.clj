@@ -46,3 +46,12 @@
 ;; (select-facilities db)
 (defn get-facilities [db]
   (select-facilities db))
+
+;; (def db (:spec (:db reloaded.repl/system)))
+;; (facilities-with-isochrones db {:threshold 90})
+
+(defn get-with-isochrones [db threshold]
+  (facilities-with-isochrones db {:threshold threshold}))
+
+(defn get-isochrone-facilities [db threshold]
+  (isochrone-for-facilities db {:threshold threshold}))

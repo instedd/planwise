@@ -8,4 +8,14 @@
   (context "/facilities" []
     (GET "/" [] (let [facilities (facilities/get-facilities db)]
                   (-> (response (json/write-str facilities))
-                      (content-type "application/json"))))))
+                      (content-type "application/json"))))
+
+    (GET "/with-isochrones" []
+      (let [facilities (facilities/get-with-isochrones db 5400)]
+        (-> (response (json/write-str facilities))
+            (content-type "application/json"))))
+
+    (GET "/isochrone" []
+      (let [isochrone (facilities/get-isochrone-facilities db 5400)]
+        (-> (response (json/write-str isochrone))
+            (content-type "application/json"))))))

@@ -16,7 +16,11 @@
             node-id (:node-id @playground)
             geojson (:geojson @playground)
             position (:position view)
-            zoom (:zoom view)]
+            zoom (:zoom view)
+            facilities-with-isochrones (:facilities-with-isochrones @playground)
+            isodata (clj->js (->> facilities-with-isochrones
+                                  (map :isochrone)
+                                  (filter some?)))]
         [:div
          [threshold-slider {:value threshold
                             :on-change #(dispatch [:playground/update-threshold %])}]
@@ -42,6 +46,11 @@
           [:geojson-layer {:data isochrone
                            :weight 3
                            :color "#00f"}]
+          [:geojson-layer {:data isodata
+                           :color "#0f0"
+                           :weight 3
+                           :fillOpacity 0.2
+                           :opacity 0.5}]
           [:marker-layer {:points points}]]
          [coords-and-info {:lat (first position)
                            :lon (second position)
