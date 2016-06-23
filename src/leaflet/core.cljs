@@ -201,6 +201,11 @@
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))))
 
+(defn leaflet-will-unmount [this]
+  (let [state (reagent/state this)
+        leaflet (:map state)]
+    (.remove leaflet)))
+
 (defn leaflet-did-update [this old-argv]
   (let [state (reagent/state this)
         leaflet (:map state)]
@@ -222,4 +227,5 @@
   (reagent/create-class {:display-name "leaflet/map-widget"
                          :reagent-render leaflet-render
                          :component-did-mount leaflet-did-mount
+                         :component-will-unmount leaflet-will-unmount
                          :component-did-update leaflet-did-update}))
