@@ -33,7 +33,7 @@ ORDER BY name;
 
 -- :name facilities-with-isochrones :?
 SELECT
-  fp.facility_id, ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone, ST_AsGeoJSON(f.the_geom) AS point
+  fp.facility_id, f.name, f.lat, f.lon, ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone
 FROM facilities_polygons fp
 INNER JOIN facilities f
 ON fp.facility_id = f.id

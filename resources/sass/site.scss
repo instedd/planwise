@@ -263,3 +263,15 @@ header {
     width: 100px;
   }
 }
+
+.playground-controls {
+  display: flex;
+  flex-direction: row;
+  &> div, select {
+    margin: 5px 20px;
+  }
+  span {
+    text-align: left;
+    margin-left: 5px;
+  }
+}
