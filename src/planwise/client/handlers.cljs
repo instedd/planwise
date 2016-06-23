@@ -17,5 +17,7 @@
 
 (register-handler
  :navigate
- (fn [db [_ page]]
-   (assoc db :current-page page)))
+ (fn [db [_ page & params]]
+   (assoc db
+          :current-page page
+          :page-params params)))

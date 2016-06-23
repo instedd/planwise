@@ -5,16 +5,11 @@
             [secretary.core :as secretary]
             [accountant.core :as accountant]
 
+            [planwise.client.routes]
             [planwise.client.handlers]
             [planwise.client.subs]
             [planwise.client.views :as views]))
 
-
-;; -------------------------
-;; Routes
-
-(defroute "/" [] (dispatch [:navigate :home]))
-(defroute "/playground" [] (dispatch [:navigate :playground]))
 
 ;; -------------------------
 ;; Initialize app
