@@ -14,4 +14,3 @@ dev/local.clj
 *.pyc
 .idea
 resources/planwise/public/data/
-*.iml
