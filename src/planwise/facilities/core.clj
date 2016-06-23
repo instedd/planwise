@@ -49,9 +49,13 @@
 
 ;; (def db (:spec (:db reloaded.repl/system)))
 ;; (facilities-with-isochrones db {:threshold 90})
-
-(defn get-with-isochrones [db threshold]
-  (facilities-with-isochrones db {:threshold threshold}))
+(defn get-with-isochrones
+  ([db threshold]
+   (get-with-isochrones db threshold "alpha-shape" 0.0))
+  ([db threshold method simplify]
+   (facilities-with-isochrones db {:threshold threshold,
+                                   :method method,
+                                   :simplify simplify})))
 
 (defn get-isochrone-facilities [db threshold]
   (isochrone-for-facilities db {:threshold threshold}))

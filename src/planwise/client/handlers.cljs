@@ -12,7 +12,7 @@
 (register-handler
  :initialise-db
  (fn [_ _]
-   (playground/fetch-facilities)
+   (playground/fetch-facilities-with-isochrones)
    db/initial-db))
 
 (register-handler
