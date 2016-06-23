@@ -40,12 +40,13 @@ declare
   to_cost integer;
   f_row facilities%rowtype;
 begin
-  create temporary table edges_agg_cost (
+  create temporary table if not exists edges_agg_cost (
     gid integer not null,
     agg_cost double precision
   );
 
-  for f_row in select * from facilities f loop
+  -- Process only facilities with 'hospital' in their name
+  for f_row in select * from facilities f where name ilike '%hospital%' loop
     insert into edges_agg_cost (
       select w.gid, e.agg_cost
       from pgr_drivingdistance(
@@ -57,29 +58,35 @@ begin
     );
 
     from_cost := 0;
-    to_cost   := threshold_start;
-    while to_cost <= threshold_finish loop
+    to_cost   := threshold_start * 60;
+    while to_cost <= threshold_finish * 60 loop
       insert into facilities_polygons (
         select f_row.id, to_cost, st_union(buffers.the_geom)
         from (
-          select wb.the_geom 
+          select wb.the_geom
           from edges_agg_cost eac
           join ways_buffers wb on wb.ways_gid = eac.gid
           where agg_cost >= from_cost and agg_cost < to_cost
           union
           select the_geom
           from facilities_polygons
-          where facility_id = f_row.id and threshold = (to_cost-threshold_jump)
+          where facility_id = f_row.id and threshold = (to_cost-threshold_jump * 60)
         ) as buffers
       );
+      -- Uncomment the following code to use the faster (but inaccurate) alpha
+      -- shape method
+      -- insert into facilities_polygons (
+      --        select f_row.id, to_cost, st_buffer(st_setsrid(pgr_pointsaspolygon('select id::integer, lon::float as x, lat::float as y from ways_nodes where gid in (select gid from edges_agg_cost where agg_cost < ' || to_cost || ')'),4326), 0.004));
       from_cost := to_cost;
-      to_cost   := to_cost + threshold_jump;
+      to_cost   := to_cost + threshold_jump * 60;
     end loop;
 
-    truncate table edges_agg_cost;
+    delete from edges_agg_cost;
   end loop;
 
-  drop table edges_agg_cost;
+  -- Cannot drop the temp table when running the alpha shape algorithm because
+  -- pgr holds a reference to it
+  -- drop table edges_agg_cost;
 
 end;
 $$ language plpgsql;
