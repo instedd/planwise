@@ -8,7 +8,6 @@
 /* $$ language plpgsql; */
 
 drop table if exists facilities_polygons;
-
 create table facilities_polygons (
         facility_id integer not null,
         threshold   integer not null,
@@ -16,7 +15,6 @@ create table facilities_polygons (
 );
 
 -- find closest node to a point
-drop function closest_node(geometry(point, 4326));
 create or replace function closest_node (original geometry(point, 4326))
 returns integer as $$
 declare
@@ -32,7 +30,6 @@ end;
 $$ language plpgsql;
 
 -- generates the isochrone polygons for all the facilities and thresholds
-drop function calculate_isochrones(integer, integer, integer);
 create or replace function calculate_isochrones(threshold_start integer, threshold_finish integer, threshold_jump integer)
 returns void as $$
 declare
@@ -48,13 +45,12 @@ begin
   -- Process only facilities with 'hospital' in their name
   for f_row in select * from facilities f where name ilike '%hospital%' loop
     insert into edges_agg_cost (
-      select w.gid, e.agg_cost
+      select e.edge, e.agg_cost
       from pgr_drivingdistance(
-        'select gid as id, source, target, cost_s as cost from ways', 
-        closest_node(f_row.the_geom), 
-        threshold_finish * 60, 
+        'select gid as id, source, target, cost_s as cost from ways',
+        closest_node(f_row.the_geom),
+        threshold_finish * 60,
         false) e
-      join ways w on e.edge = w.gid
     );
 
     from_cost := 0;
@@ -92,7 +88,6 @@ end;
 $$ language plpgsql;
 
 -- cache the buffers of the ways
-drop function cache_ways_buffers(float);
 create or replace function cache_ways_buffers(buffer_radius_in_meters float)
 returns void as $$
 begin
