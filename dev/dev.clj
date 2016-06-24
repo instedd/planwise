@@ -56,7 +56,9 @@
 (when (io/resource "local.clj")
   (load "local"))
 
+(defn db []
+  (:spec (:db system)))
+
 (gen/set-ns-prefix 'planwise)
 
 (reloaded.repl/set-init! new-system)
-

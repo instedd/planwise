@@ -1,5 +1,14 @@
 .playground {
   .header {
+    display: flex;
+    flex-direction: row;
+    > div {
+      margin: 5px 20px;
+    }
+    span {
+      text-align: left;
+      margin-left: 5px;
+    }
   }
   .body {
     position: absolute;
@@ -39,6 +48,5 @@
 
   .threshold-control span {
     flex-grow: 1;
-    text-align: right;
   }
 }

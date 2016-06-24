@@ -1,7 +1,7 @@
 (ns planwise.client.playground.views
   (:require [leaflet.core :refer [map-widget]]
             [planwise.client.mapping :refer [default-base-tile-layer]]
-            [planwise.client.slider :refer [threshold-slider]]
+            [planwise.client.slider :refer [threshold-slider decimal-slider]]
             [planwise.client.hud :refer [coords-and-info]]
             [re-frame.core :refer [subscribe dispatch]]))
 
@@ -13,18 +13,25 @@
             isochrone (:isochrone @playground)
             facilities (:facilities @playground)
             threshold (:threshold @playground)
+            simplify (:simplify @playground)
+            algorithm (:algorithm @playground)
             node-id (:node-id @playground)
             geojson (:geojson @playground)
             position (:position view)
             zoom (:zoom view)
-            facilities-with-isochrones (:facilities-with-isochrones @playground)
-            isodata (clj->js (->> facilities-with-isochrones
-                                  (map :isochrone)
-                                  (filter some?)))]
+            isodata (:isochrones @playground)
+            num-points (:num-points @playground)]
+
         [:article.playground
          [:div.header
           [threshold-slider {:value threshold
-                             :on-change #(dispatch [:playground/update-threshold %])}]]
+                             :on-change #(dispatch [:playground/update-threshold %])}]
+          [decimal-slider {:value simplify
+                           :on-change #(dispatch [:playground/update-simplify %])}]
+          [:div
+           [:select {:on-change #(dispatch [:playground/update-algorithm (-> % .-target .-value)])
+                     :value algorithm}
+            (map (fn [val] [:option {:value val :key val} val]) ["alpha-shape" "buffer"])]]]
          [:div.body
           [map-widget {:position position
                        :zoom zoom
@@ -35,7 +42,7 @@
                        :on-zoom-changed
                        #(dispatch [:playground/update-zoom %])}
            default-base-tile-layer
-           [:point-layer {:points (map (fn [fac] [(fac "lat") (fac "lon")]) facilities)
+           [:point-layer {:points (map (fn [fac] [(fac :lat) (fac :lon)]) facilities)
                           :radius 3
                           :color "#f00"
                           :opacity 0.3
@@ -58,6 +65,7 @@
                             :lon (second position)
                             :zoom zoom
                             :node-id node-id
+                            :num-points num-points
                             :on-reset-view
                             #(dispatch [:playground/reset-view])
                             :on-load-geojson

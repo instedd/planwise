@@ -7,7 +7,9 @@
   {:current-page :home
    :playground {:map-view initial-position-and-zoom
                 :loading? false
-                :threshold 600
+                :threshold 3600
+                :algorithm "alpha-shape"
+                :simplify 0.0
                 :node-id nil
                 :points []}})
 

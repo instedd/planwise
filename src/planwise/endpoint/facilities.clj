@@ -10,8 +10,8 @@
                   (-> (response (json/write-str facilities))
                       (content-type "application/json"))))
 
-    (GET "/with-isochrones" []
-      (let [facilities (facilities/get-with-isochrones db 5400)]
+    (GET "/with-isochrones" [threshold algorithm simplify]
+      (let [facilities (facilities/get-with-isochrones db (Integer. threshold) algorithm (Float. simplify))]
         (-> (response (json/write-str facilities))
             (content-type "application/json"))))
 

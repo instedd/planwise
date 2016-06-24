@@ -79,10 +79,13 @@
                               :format :json))
     c))
 
-(defn fetch-facilities-with-isochrones []
+(defn fetch-facilities-with-isochrones [threshold algorithm simplify]
   (let [c (chan)]
     (GET "/facilities/with-isochrones" (assoc (async-handlers c identity)
-                                              :format :json))
+                                              :format :json
+                                              :params {:threshold threshold
+                                                       :algorithm algorithm
+                                                       :simplify simplify}))
     c))
 
 ;; Debugging utility functions

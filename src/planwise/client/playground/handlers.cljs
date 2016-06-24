@@ -1,6 +1,7 @@
 (ns planwise.client.playground.handlers
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [planwise.client.db :as db]
+            [planwise.client.playground.db :refer [isochrone-params]]
             [planwise.client.api :as api]
             [cljs.core.async :as async :refer [chan >! <! put!]]
             [re-frame.core :refer [dispatch register-handler path]]))
@@ -43,9 +44,11 @@
     :buffer
     :alpha-shape))
 
-(defn fetch-facilities-with-isochrones []
-  (async-handle (api/fetch-facilities-with-isochrones)
+(defn fetch-facilities-with-isochrones* [{:keys [threshold algorithm simplify]}]
+  (async-handle (api/fetch-facilities-with-isochrones threshold algorithm simplify)
                 #(dispatch [:playground/facilities-with-isochrones-received %])))
+
+(def fetch-facilities-with-isochrones (debounced fetch-facilities-with-isochrones* 500))
 
 (def in-playground (path [:playground]))
 
@@ -101,9 +104,25 @@
  :playground/update-threshold
  in-playground
  (fn [db [_ new-threshold]]
-   (let [node-id (:node-id db)]
-     (fetch-isochrone node-id new-threshold :alpha-shape))
-   (assoc db :threshold new-threshold)))
+   (let [new-db (assoc db :threshold new-threshold)]
+     (fetch-facilities-with-isochrones (isochrone-params new-db))
+     new-db)))
+
+(register-handler
+ :playground/update-algorithm
+ in-playground
+ (fn [db [_ new-algorithm]]
+   (let [new-db (assoc db :algorithm new-algorithm)]
+     (fetch-facilities-with-isochrones (isochrone-params new-db))
+     new-db)))
+
+(register-handler
+ :playground/update-simplify
+ in-playground
+ (fn [db [_ new-simplify]]
+   (let [new-db (assoc db :simplify new-simplify)]
+     (fetch-facilities-with-isochrones (isochrone-params new-db))
+     new-db)))
 
 (register-handler
  :playground/reset-view
@@ -127,13 +146,26 @@
 (register-handler
  :playground/facilities-with-isochrones-received
  in-playground
- (fn [db [_ facilities]]
+ (fn [db [_ facilities-data]]
    (let [facilities (mapv (fn [fac]
                             (let [facility_id (fac "facility_id")
-                                  point (fac "point")
-                                  isochrone (fac "isochrone")]
+                                  name (fac "name")
+                                  lat (fac "lat")
+                                  lon (fac "lon")
+                                  isochrone (.parse js/JSON (fac "isochrone"))]
                               {:id facility_id
-                               :point (.parse js/JSON point)
-                               :isochrone (.parse js/JSON isochrone)}))
-                          facilities)]
-     (assoc db :facilities-with-isochrones facilities))))
+                               :name name
+                               :lat lat
+                               :lon lon
+                               :isochrone isochrone}))
+                          facilities-data)
+         isochrones (->> facilities (map :isochrone) (filter some?))
+         num-points (->> isochrones
+                      (map #(aget % "coordinates"))
+                      (js->clj)
+                      (flatten)
+                      (count))]
+     (assoc db
+       :facilities facilities
+       :isochrones (clj->js isochrones)
+       :num-points (/ num-points 2)))))
