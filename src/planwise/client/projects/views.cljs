@@ -52,7 +52,7 @@
 (defn list-view []
   (let [creating-project? (subscribe [:projects/creating?])]
     (fn []
-      [:div
+      [:article.project-list
        [search-box]
        [no-projects-view]
        (when @creating-project?
@@ -78,17 +78,18 @@
 (defn header-section [project-id selected-tab]
   [:div.project-header
    [:h2 "Test Project"]
-   [common/ul-menu (project-tab-items project-id) selected-tab]
-   [:a "Download Project"]])
+   [:nav
+    [common/ul-menu (project-tab-items project-id) selected-tab]
+    [:a "Download Project"]]])
 
 (defn sidebar-section [selected-tab]
-  (condp = selected-tab
-    :demographics
-    [:h3 "Demographics filters"]
-    :facilities
-    [:h3 "Facility filters"]
-    :transport
-    [:h3 "Transport filters"]))
+  [:aside (condp = selected-tab
+     :demographics
+     [:h3 "Demographics filters"]
+     :facilities
+     [:h3 "Facility filters"]
+     :transport
+     [:h3 "Transport filters"])])
 
 (defn project-tab [project-id selected-tab]
   (cond
@@ -98,11 +99,9 @@
      selected-tab)
     [:div
      [sidebar-section selected-tab]
-     [:div
-      [map-widget {:width 800
-                   :height 800
-                   :position [0 0]
-                   :zoom 1}
+     [:div.map-container
+      [map-widget {:position [0 0]
+                   :zoom 2}
        default-base-tile-layer]]]
     (= :scenarios selected-tab)
     [:div
@@ -113,6 +112,6 @@
     (fn []
       (let [project-id (first @page-params)
             selected-tab (nth @page-params 1)]
-        [:div
+        [:article.project-view
          [header-section project-id selected-tab]
          [project-tab project-id selected-tab]]))))

@@ -1,0 +1,104 @@
+@import 'defs';
+
+$header-height: 60px;
+
+html, body {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+#app {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: $header-height;
+}
+
+article {
+  position: absolute;
+  top: $header-height;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+header {
+  display: flex;
+  flow-direction: row;
+  background-color: white;
+
+
+  .logo {
+    flex-grow: 1;
+    background-image: url('/images/logo.png');
+    background-repeat: no-repeat;
+    background-position: center left;
+    padding-left: 45px;
+    display: inline-block;
+    height: 40px;
+    margin: ($header-height - 40px) / 2;
+
+    h1 {
+      font-size: 20px;
+      margin: 5px 10px;
+      color: #666;
+    }
+  }
+
+  a,
+  a:hover {
+    text-decoration: none;
+    color: #666;
+  }
+
+  nav {
+    margin-top: 20px;
+    flex-grow: 2;
+    ul {
+      margin: 0;
+      padding: 0;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    li {
+      margin: 0;
+      list-style: none;
+      display: inline-block;
+      margin-right: 20px;
+      padding-bottom: 10px;
+      box-sizing: border-box;
+      border: none;
+      border-bottom: 3px solid transparent;
+
+      &.active,
+      &.active:hover {
+        border: none;
+        border-bottom: 3px solid $green;
+      }
+
+      &:hover {
+        border-bottom: 3px dotted $green;
+      }
+
+      a,
+      a:hover {
+        padding: 10px;
+        text-decoration: none;
+      }
+    }
+  }
+}
