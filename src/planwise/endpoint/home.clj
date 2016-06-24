@@ -29,4 +29,9 @@
 (defn home-endpoint [system]
   (routes
    (GET "/" [] loading-page)
-   (GET "/playground" [] loading-page)))
+   (GET "/playground" [] loading-page)
+   (context "/projects/:id" []
+     (GET "/" [] loading-page)
+     (GET "/facilities" [] loading-page)
+     (GET "/transport" [] loading-page)
+     (GET "/scenarios" [] loading-page))))

@@ -13,3 +13,7 @@
  (fn [db _]
    (reaction (:current-page @db))))
 
+(register-sub
+ :page-params
+ (fn [db _]
+   (reaction (:page-params @db))))
