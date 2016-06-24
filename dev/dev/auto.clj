@@ -1,12 +1,16 @@
 (ns dev.auto
   (:require [com.stuartsierra.component :as c]
             [hawk.core :as hawk]
+            [clojure.java.io :as io]
             [figwheel-sidecar.components.cljs-autobuild :as fig-auto]
             [duct.component.figwheel :as figwheel]
             [dev.sass :as sass]))
 
 (defn compute-css-paths [sass]
-  [(:input sass)])
+  (let [path (-> (:input sass)
+                 (io/file)
+                 (.getParent))]
+    [path]))
 
 (defn compute-cljs-paths [figwheel]
   (mapcat fig-auto/source-paths-that-affect-build (:builds figwheel)))
