@@ -38,10 +38,7 @@ Then put the generated `osm2pgrouting` binary in some directory in your PATH.
 
 ```
 $ createdb routing
-$ psql routing
-psql> create extension postgis;
-psql> create extension pgrouting;
-psql> \q
+$ lein migrate
 ```
 
 6. (Optional) If you downloaded the OSM data in PBF format, you need to
@@ -60,17 +57,5 @@ file=kenya-latest.osm```
 9. Import the sites list into the database:
 
 ```
-$ cd viewer
 $ lein import-sites ../kenya-facilities.json
-```
-
-## Create ways_nodes
-
-By default, the `ways` table will contain linestring of more than two points.
-For use in alpha shapes and to provide more granularity more points should be
-sent to `pgr_pointsAsPolygon`. To extract all the points in all the ways, run the script `scripts/create_ways_nodes.sql` by running:
-
-```
-$ psql routing
-psql> \i scripts/create_ways_nodes.sql
 ```
