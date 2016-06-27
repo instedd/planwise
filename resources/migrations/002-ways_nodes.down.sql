@@ -1,1 +1,1 @@
-DROP TABLE ways_nodes;
+DROP TABLE IF EXISTS ways_nodes;
