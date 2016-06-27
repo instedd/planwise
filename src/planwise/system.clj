@@ -6,6 +6,7 @@
             [duct.component.hikaricp :refer [hikaricp]]
             [duct.middleware.not-found :refer [wrap-not-found]]
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
+            [duct.component.ragtime :refer [ragtime migrate rollback]]
             [meta-merge.core :refer [meta-merge]]
             [ring.component.jetty :refer [jetty-server]]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
@@ -29,6 +30,7 @@
          :app        (handler-component (:app config))
          :http       (jetty-server (:http config))
          :db         (hikaricp (:db config))
+         :ragtime    (ragtime {:resource-path "db/migrations"})
          :home       (endpoint-component home-endpoint)
          :facilities (endpoint-component facilities-endpoint)
          :routing    (endpoint-component routing-endpoint))
@@ -36,4 +38,5 @@
          {:http       [:app]
           :app        [:facilities :routing :home]
           :facilities [:db]
-          :routing    [:db]}))))
+          :routing    [:db]
+          :ragtime    [:db]}))))

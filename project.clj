@@ -28,6 +28,7 @@
                  [venantius/accountant "0.1.7"
                   :exclusions [org.clojure/tools.reader]]
                  [com.layerware/hugsql "0.4.7"]
+                 [duct/ragtime-component "0.1.4"]
                  [duct/hikaricp-component "0.1.0"
                   :exclusions [org.slf4j/slf4j-nop]]
                  [org.postgresql/postgresql "9.4.1208"]]
