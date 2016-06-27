@@ -12,6 +12,7 @@ web:
   autoredeploy: true
   ports:
     - "8080"
+  command: /bin/sh -c "/app/scripts/migrate && java -jar $JAR_PATH"
   environment:
     DATABASE_URL: "jdbc:postgresql://db/routing?user=planwise&password=PLANWISE_POSTGRES_PASSWORD"
     POSTGRES_PASSWORD: PLANWISE_POSTGRES_PASSWORD
