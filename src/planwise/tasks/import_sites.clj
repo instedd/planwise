@@ -1,4 +1,4 @@
-(ns dev.import-sites
+(ns planwise.tasks.import-sites
   (:require [planwise.facilities.core :as facilities]
             [clojure.java.io :as io]
             [clojure.data.json :as json]
