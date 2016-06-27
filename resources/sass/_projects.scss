@@ -1,5 +1,7 @@
 @import 'defs';
 
+$project-head-height: 100px;
+
 .search-box {
   padding: 10px;
   display: flex;
@@ -30,15 +32,18 @@
 article.project-view {
   .project-header {
     background: $gray1;
-    height: 80px;
+    height: $project-head-height;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 2px 2px rgba(0,0,0,0.2);
     h2 {
-      padding: 10px 0 10px 5px;
-      font-size: 18px;
+      padding: 20px 0 20px 15px;
+      font-size: 20px;
       font-weight: normal;
       margin: 0;
     }
     ul {
-      margin-top: -3px;
+      margin-top: 2px;
       padding: 5px;
       li {
         display: inline-block;
@@ -46,6 +51,7 @@ article.project-view {
         box-sizing: border-box;
         border: none;
         border-bottom: 3px solid transparent;
+        padding-bottom: 8px;
 
         &.active,
         &.active:hover {
@@ -83,7 +89,7 @@ article.project-view {
 
   .map-container {
     position: absolute;
-    top: 80px;
+    top: $project-head-height;
     bottom: 0;
     right: 0;
     left: 250px;
@@ -99,13 +105,63 @@ article.project-view {
 
   aside {
     position: absolute;
-    top: 80px;
+    top: $project-head-height;
     left: 0;
     width: 250px;
     bottom: 0;
+    overflow: auto;
+    background-color: $gray1;
 
     h3 {
       font-size: 16px;
+    }
+  }
+}
+
+.progress-bar {
+  height: 12px;
+  display: block;
+  background: $white;
+  margin: 5px 0px;
+  padding: 0;
+
+  .progress-filled {
+    background: $gray3;
+    display: block;
+    height: 12px;
+  }
+}
+
+.facility-filters {
+  background-color: $gray1;
+
+  .filter-info {
+    background-color: $gray2;
+    padding: 10px;
+    p {
+      margin: 0 0 10px 0;
+      color: $gray3;
+      line-height: 1;
+    }
+  }
+  fieldset {
+    padding: 35px 10px 10px;
+    border: none;
+    border-top: 1px solid $gray2;
+    position: relative;
+
+    legend {
+      font-size: 14px;
+      font-weight: bold;
+      position: absolute;
+      top: 5px;
+      left: 10px;
+    }
+
+    > div {
+      input[type=checkbox] {
+        margin-right: 5px;
+      }
     }
   }
 }

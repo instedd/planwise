@@ -80,14 +80,59 @@
    [:h2 "Test Project"]
    [:nav
     [common/ul-menu (project-tab-items project-id) selected-tab]
-    [:a "Download Project"]]])
+    #_[:a "Download Project"]]])
+
+(defn progress-bar [value]
+  (let [percent-width (-> value
+                          (* 100)
+                          (str "%"))]
+    [:div.progress-bar
+     [:div.progress-filled {:style {:width percent-width}}]]))
+
+(defn labeled-checkbox [label]
+  (let [elt-id (str "checkbox-" (hash label))]
+    [:div
+     [:input {:type :checkbox :id elt-id}]
+     [:label {:for elt-id} label]]))
+
+(defn facility-filters []
+  [:div.facility-filters
+   [:div.filter-info
+    [:p "Select the facilities that are satisfying the demand you are analyzing"]
+    [:p
+     [:div.small "Target / Total Facilities"]
+     [:div "6 / 125"]
+     [progress-bar (/ 6 125)]]]
+
+   [:fieldset
+    [:legend "Type"]
+    [labeled-checkbox "Dispensary"]
+    [labeled-checkbox "Health Center"]
+    [labeled-checkbox "District Hospital"]
+    [labeled-checkbox "Country Referral Hospital"]]
+
+   [:fieldset
+    [:legend "Ownership"]
+    [labeled-checkbox "MOH"]
+    [labeled-checkbox "Faith Based Organization"]
+    [labeled-checkbox "NGO"]
+    [labeled-checkbox "Private"]]
+
+   [:fieldset
+    [:legend "Services"]
+    [labeled-checkbox "Audiology"]
+    [labeled-checkbox "Cardiac Services Unit"]
+    [labeled-checkbox "Diabetes and Endocrinology"]
+    [labeled-checkbox "Haematology"]
+    [labeled-checkbox "BEmONC"]
+    [labeled-checkbox "CEmONC"]]])
 
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab
      :demographics
      [:h3 "Demographics filters"]
      :facilities
-     [:h3 "Facility filters"]
+     [facility-filters]
      :transport
      [:h3 "Transport filters"])])
 

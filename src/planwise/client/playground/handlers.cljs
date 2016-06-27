@@ -104,7 +104,9 @@
  :playground/update-threshold
  in-playground
  (fn [db [_ new-threshold]]
-   (let [new-db (assoc db :threshold new-threshold)]
+   (let [new-db (assoc db :threshold new-threshold)
+         node-id (:node-id db)]
+     (fetch-isochrone node-id new-threshold :alpha-shape)
      (fetch-facilities-with-isochrones (isochrone-params new-db))
      new-db)))
 
