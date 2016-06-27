@@ -1,7 +1,7 @@
 FROM java:8u91-jre
 
-# Install osm2pgrouting dependencies and add precompiled binary
-RUN apt-get update && apt-get -y install libboost-program-options-dev libpq-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install package dependencies and add precompiled binary
+RUN apt-get update && apt-get -y install postgresql-client libboost-program-options-dev libpq-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
 ADD docker/osm2pgrouting /usr/local/bin/osm2pgrouting
 
 # Add scripts folder
