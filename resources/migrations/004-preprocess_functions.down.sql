@@ -1,4 +1,4 @@
-DROP TABLE facilities_polygons;
+DROP TABLE IF EXISTS facilities_polygons;
 
 DROP FUNCTION closest_node;
 

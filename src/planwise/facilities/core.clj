@@ -5,14 +5,6 @@
 
 (hugsql/def-db-fns "planwise/facilities/facilities.sql")
 
-;; (create-facilities-table db)
-;; (create-facilities-spatial-index db)
-;; (drop-facilities-table! db)
-(defn init-facilities [db]
-  (drop-facilities-table! db)
-  (create-facilities-table db)
-  (create-facilities-spatial-index db))
-
 (defn sites-with-location [sites]
   (filter #(and (:lat %) (:long %)) sites))
 

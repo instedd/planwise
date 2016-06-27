@@ -30,7 +30,7 @@
         facilities (facilities/sites->facilities sites)]
     (println (str "Read " (count sites) " sites"))
     (println (str "Will import " (count facilities) " into the database"))
-    (facilities/init-facilities db)
+    (facilities/delete-facilities! db)
     (let [insert-count (facilities/insert-facilities! db facilities)]
       (println (str "Successfully imported " insert-count " facilities")))))
 
