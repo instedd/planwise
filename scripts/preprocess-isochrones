@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+USAGE="Usage: $0 BUFFER_RADIUS buffer|alpha-shape THRESHOLD_START THRESHOLD_FINISH THRESHOLD_JUMP"
+
+if [ $# -lt 5 ]; then
+	echo "$USAGE"
+	exit 1
+fi
+
+echo "Preprocessing isochrones"
+export PGPASSWORD=$POSTGRES_PASSWORD;
+psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
+
+SELECT cache_ways_buffers($1);
+SELECT calculate_isochrones('$2', '$3', '$4', '$5');
+
+SQL_SCRIPT

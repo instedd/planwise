@@ -1,0 +1,2 @@
+#!/bin/bash
+java -cp $JAR_PATH planwise.tasks.db migrate

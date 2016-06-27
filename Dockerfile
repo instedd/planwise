@@ -8,6 +8,7 @@ ADD docker/osm2pgrouting /usr/local/bin/osm2pgrouting
 ADD scripts /app/scripts
 
 # Add uberjar with app
-ADD ./target/uberjar/planwise-0.1.0-SNAPSHOT-standalone.jar /app/srv/
+ADD ./target/uberjar/planwise-0.1.0-SNAPSHOT-standalone.jar /app/lib/
+ENV JAR_PATH /app/lib/planwise-0.1.0-SNAPSHOT-standalone.jar
 
-CMD ["java", "-jar", "/app/srv/planwise-0.1.0-SNAPSHOT-standalone.jar"]
+CMD ["java", "-jar", "/app/lib/planwise-0.1.0-SNAPSHOT-standalone.jar"]
