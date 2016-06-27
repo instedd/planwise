@@ -1,14 +1,4 @@
-\set on_error_stop on
-
--- new function template
-/* create or replace function f */ 
-/* returns void */
-/* begin */
-/* end; */
-/* $$ language plpgsql; */
-
-drop table if exists facilities_polygons;
-create table facilities_polygons (
+CREATE TABLE facilities_polygons (
         facility_id integer not null,
         threshold   integer not null,
         method      varchar not null,
@@ -16,7 +6,7 @@ create table facilities_polygons (
 );
 
 -- find closest node to a point
-create or replace function closest_node (original geometry(point, 4326))
+CREATE OR REPLACE FUNCTION closest_node (original geometry(point, 4326))
 returns integer as $$
 declare
 	closest_node integer;
@@ -31,7 +21,7 @@ end;
 $$ language plpgsql;
 
 -- generates the isochrone polygons for all the facilities and thresholds
-create or replace function calculate_isochrones(method varchar, threshold_start integer, threshold_finish integer, threshold_jump integer)
+CREATE OR REPLACE FUNCTION calculate_isochrones(method varchar, threshold_start integer, threshold_finish integer, threshold_jump integer)
 returns void as $$
 declare
   from_cost integer;
@@ -96,7 +86,7 @@ end;
 $$ language plpgsql;
 
 -- cache the buffers of the ways
-create or replace function cache_ways_buffers(buffer_radius_in_meters float)
+CREATE OR REPLACE FUNCTION cache_ways_buffers(buffer_radius_in_meters float)
 returns void as $$
 begin
   create temporary table if not exists ways_buffers (
