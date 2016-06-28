@@ -1,0 +1,22 @@
+db:
+  image: starefossen/pgrouting:9.4-2.1-2.1
+  autorestart: always
+  environment:
+    POSTGRES_PASSWORD: PLANWISE_POSTGRES_PASSWORD
+    POSTGRES_USER: planwise
+    POSTGRES_DB: routing
+
+web:
+  image: instedd/planwise:latest
+  autorestart: always
+  autoredeploy: true
+  ports:
+    - "8080"
+  command: /bin/sh -c "/app/scripts/migrate && java -jar $JAR_PATH"
+  environment:
+    DATABASE_URL: "jdbc:postgresql://db/routing?user=planwise&password=PLANWISE_POSTGRES_PASSWORD"
+    POSTGRES_PASSWORD: PLANWISE_POSTGRES_PASSWORD
+    POSTGRES_USER: planwise
+    POSTGRES_DB: routing
+    POSTGRES_HOST: db
+    PORT: 8080

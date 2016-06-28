@@ -11,6 +11,7 @@
             [reloaded.repl :refer [system init start stop go reset]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [duct.component.figwheel :as figwheel]
+            [duct.component.ragtime :refer [ragtime migrate rollback]]
             [dev.tasks :refer :all]
             [dev.sass :as sass]
             [dev.auto :as auto]
@@ -51,7 +52,10 @@
                     [:sass])
          :auto (component/using
                 (auto/auto-builder {:enabled true})
-                [:figwheel :sass])}))
+                [:figwheel :sass])
+         :ragtime (component/using
+                   (ragtime {:resource-path "migrations"})
+                   [:db])}))
 
 (when (io/resource "local.clj")
   (load "local"))

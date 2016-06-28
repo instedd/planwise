@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+USAGE="Usage: $0 PATH_TO_DOCKERFILE NAME TAG1 TAG2 ... TAGN"
+
+if [ $# -lt 2 ]; then
+	echo "$USAGE"
+	exit 1
+fi
+
+NAME="$2"
+
+echo "Building $NAME from Dockerfile in $1"
+docker build -t $NAME $1
+shift 2
+
+for arg in "$@"; do
+  echo "Pushing $NAME to $arg"
+  docker tag $NAME $arg
+  docker push $arg
+done

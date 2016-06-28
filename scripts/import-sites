@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "Downloading Kenya sites"
+curl -XGET https://s3.amazonaws.com/planwise/data/kenya-facilities-20160627.json > kenya-facilities.json
+
+echo "Importing Kenya sites"
+java -cp $JAR_PATH planwise.tasks.import_sites `pwd`/kenya-facilities.json

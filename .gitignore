@@ -5,6 +5,7 @@ pom.xml
 pom.xml.asc
 *.jar
 *.class
+/.env
 /.lein-*
 /.nrepl-port
 /.dir-locals.el

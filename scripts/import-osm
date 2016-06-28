@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
+
+echo "Downloading Kenya OSM data and importing via osm2pgrouting"
+curl -XGET https://s3.amazonaws.com/planwise/data/kenya-20160627.osm.gz | gunzip > kenya.osm
+osm2pgrouting -f kenya.osm -c ./mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
+
+echo "Populating ways_nodes table"
+psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
+INSERT INTO ways_nodes (gid, lon, lat)
+SELECT
+gid,
+ST_x(ST_PointN(the_geom, g.generate_series)) AS lon,
+ST_y(ST_PointN(the_geom, g.generate_series)) AS lat
+FROM ways,
+(SELECT generate_series(1, (SELECT MAX(ST_NPoints(the_geom)) FROM ways))) g
+WHERE g.generate_series <= ST_NPoints(the_geom);
+SQL_SCRIPT

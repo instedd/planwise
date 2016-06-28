@@ -1,3 +1,7 @@
+machine:
+  services:
+    - docker
+
 dependencies:
   cache_directories:
     - "~/sassc"
@@ -10,3 +14,22 @@ dependencies:
 test:
   override:
     - lein test
+
+deployment:
+  docker-main:
+    branch:
+      - master
+      - stable
+      - docker
+    owner: instedd
+    commands:
+      - lein uberjar
+      - docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS} ${DOCKER_REGISTRY}
+      - docker/push . planwise ${DOCKER_REPOSITORY}:${CIRCLE_BRANCH/#master/latest}
+  docker-tag:
+    tag: /[0-9]+(\.[0-9]+)*(-pre\d+)?/
+    owner: instedd
+    commands:
+      - lein uberjar
+      - docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS} ${DOCKER_REGISTRY}
+      - docker/push . planwise ${DOCKER_REPOSITORY}:${CIRCLE_TAG}

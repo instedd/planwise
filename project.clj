@@ -28,6 +28,7 @@
                  [venantius/accountant "0.1.7"
                   :exclusions [org.clojure/tools.reader]]
                  [com.layerware/hugsql "0.4.7"]
+                 [duct/ragtime-component "0.1.4"]
                  [duct/hikaricp-component "0.1.0"
                   :exclusions [org.slf4j/slf4j-nop]]
                  [org.postgresql/postgresql "9.4.1208"]]
@@ -54,7 +55,9 @@
                       :externs ["prod/externs.js"]}}}}
   :aliases {"run-task"     ["with-profile" "+repl" "run" "-m"]
             "setup"        ["run-task" "dev.tasks/setup"]
-            "import-sites" ["run-task" "dev.import-sites"]}
+            "import-sites" ["run-task" "planwise.tasks.import-sites"]
+            "migrate"      ["run-task" "planwise.tasks.db" "migrate"]
+            "rollback"     ["run-task" "planwise.tasks.db" "rollback"]}
   :profiles
   {:dev  [:project/dev  :profiles/dev]
    :test [:project/test :profiles/test]
