@@ -7,7 +7,6 @@
             [duct.util.runtime :refer [add-shutdown-hook]]
             [meta-merge.core :refer [meta-merge]]
             [planwise.config :as config]
-            [ragtime.repl :as repl]
             [planwise.system :refer [new-system]]))
 
 (timbre/refer-timbre)
