@@ -5,6 +5,7 @@
 
 
 (def in-projects (path [:projects]))
+(def in-current-project (path [:current-project]))
 
 (register-handler
  :projects/begin-new-project
@@ -35,3 +36,14 @@
        (throw "Invalid project data"))
      (accountant/navigate! (routes/project-demographics {:id project-id}))
      (assoc-in db [:cache project-id] project-data))))
+
+(register-handler
+ :projects/toggle-filter
+ in-current-project
+ (fn [db [_ filter-group filter-key filter-value]]
+   (let [path [filter-group :filters filter-key]
+         current-filter (get-in db path)
+         toggled-filter (if (contains? current-filter filter-value)
+                          (disj current-filter filter-value)
+                          (conj current-filter filter-value))]
+     (assoc-in db path toggled-filter))))

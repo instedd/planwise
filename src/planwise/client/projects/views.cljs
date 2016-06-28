@@ -89,43 +89,45 @@
     [:div.progress-bar
      [:div.progress-filled {:style {:width percent-width}}]]))
 
-(defn labeled-checkbox [label]
-  (let [elt-id (str "checkbox-" (hash label))]
-    [:div
-     [:input {:type :checkbox :id elt-id}]
-     [:label {:for elt-id} label]]))
-
 (defn facility-filters []
-  [:div.facility-filters
-   [:div.filter-info
-    [:p "Select the facilities that are satisfying the demand you are analyzing"]
-    [:p
-     [:div.small "Target / Total Facilities"]
-     [:div "6 / 125"]
-     [progress-bar (/ 6 125)]]]
+  (let [facility-types (subscribe [:filter-definition :facility-type])
+        facility-ownerships (subscribe [:filter-definition :facility-ownership])
+        facility-services (subscribe [:filter-definition :facility-service])
+        filters (subscribe [:projects/facilities :filters])
+        filter-stats (subscribe [:projects/facilities :filter-stats])]
+    (fn []
+      (let [filter-count (:count @filter-stats)
+            filter-total (:total @filter-stats)
+            toggle-cons-fn (fn [field]
+                             #(dispatch [:projects/toggle-filter :facilities field %]))]
+        [:div.facility-filters
+         [:div.filter-info
+          [:p "Select the facilities that are satisfying the demand you are analyzing"]
+          [:p
+           [:div.small "Target / Total Facilities"]
+           [:div (str filter-count " / " filter-total)]
+           [progress-bar (/ filter-count filter-total)]]]
 
-   [:fieldset
-    [:legend "Type"]
-    [labeled-checkbox "Dispensary"]
-    [labeled-checkbox "Health Center"]
-    [labeled-checkbox "District Hospital"]
-    [labeled-checkbox "Country Referral Hospital"]]
+         [:fieldset
+          [:legend "Type"]
+          (common/filter-checkboxes
+           {:options @facility-types
+            :value (:type @filters)
+            :toggle-fn (toggle-cons-fn :type)})]
 
-   [:fieldset
-    [:legend "Ownership"]
-    [labeled-checkbox "MOH"]
-    [labeled-checkbox "Faith Based Organization"]
-    [labeled-checkbox "NGO"]
-    [labeled-checkbox "Private"]]
+         [:fieldset
+          [:legend "Ownership"]
+          (common/filter-checkboxes
+           {:options @facility-ownerships
+            :value (:ownership @filters)
+            :toggle-fn (toggle-cons-fn :ownership)})]
 
-   [:fieldset
-    [:legend "Services"]
-    [labeled-checkbox "Audiology"]
-    [labeled-checkbox "Cardiac Services Unit"]
-    [labeled-checkbox "Diabetes and Endocrinology"]
-    [labeled-checkbox "Haematology"]
-    [labeled-checkbox "BEmONC"]
-    [labeled-checkbox "CEmONC"]]])
+         [:fieldset
+          [:legend "Services"]
+          (common/filter-checkboxes
+           {:options @facility-services
+            :value (:services @filters)
+            :toggle-fn (toggle-cons-fn :services)})]]))))
 
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab
