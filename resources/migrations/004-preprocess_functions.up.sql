@@ -27,6 +27,8 @@ declare
   from_cost integer;
   to_cost integer;
   f_row facilities%rowtype;
+  facility_count integer;
+  facility_index integer;
 begin
   create temporary table if not exists edges_agg_cost (
     gid integer not null,
@@ -34,8 +36,10 @@ begin
   );
 
   -- Process only facilities with 'hospital' in their name
+  facility_count := (select count(*) from facilities where name ilike '%hospital%');
+  facility_index := 1;
   for f_row in select * from facilities f where name ilike '%hospital%' loop
-    RAISE NOTICE 'Processing %', f_row.id;
+    RAISE NOTICE 'Processing facility % (%/%)', f_row.id, facility_index, facility_count;
 
     insert into edges_agg_cost (
       select e.edge, e.agg_cost
@@ -45,6 +49,7 @@ begin
         threshold_finish * 60,
         false) e
     );
+    RAISE NOTICE '... with % reachable edges', (SELECT COUNT(*) FROM edges_agg_cost);
 
     from_cost := 0;
     to_cost   := threshold_start * 60;
@@ -65,14 +70,19 @@ begin
           ) as buffers
         );
       ELSIF method = 'alpha-shape' THEN
-        insert into facilities_polygons (
-               select f_row.id, to_cost, method, st_buffer(st_setsrid(pgr_pointsaspolygon('select id::integer, lon::float as x, lat::float as y from ways_nodes where gid in (select gid from edges_agg_cost where agg_cost < ' || to_cost || ')'),4326), 0.004));
+        BEGIN
+          insert into facilities_polygons (
+                 select f_row.id, to_cost, method, st_buffer(st_setsrid(pgr_pointsaspolygon('select id::integer, lon::float as x, lat::float as y from ways_nodes where gid in (select gid from edges_agg_cost where agg_cost < ' || to_cost || ')'),4326), 0.004));
+        EXCEPTION WHEN OTHERS THEN
+          RAISE NOTICE 'Failed to calculate alpha shape for facility %', f_row.id;
+        END;
       ELSE
         RAISE EXCEPTION 'Method % unknown', method USING HINT = 'Please use buffer or alpha-shape';
       END IF;
 
-      from_cost := to_cost;
-      to_cost   := to_cost + threshold_jump * 60;
+      from_cost      := to_cost;
+      to_cost        := to_cost + threshold_jump * 60;
+      facility_index := facility_index + 1;
     end loop;
 
     delete from edges_agg_cost;
