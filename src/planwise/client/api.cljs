@@ -1,8 +1,23 @@
 (ns planwise.client.api
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as async :refer [chan put! <!]]
-            [ajax.core :refer [GET]]
+            [ajax.core :refer [GET to-interceptor default-interceptors]]
             [clojure.string :as string]))
+
+
+;; Set default interceptor for adding CSRF token to all non-GET requests
+
+(def csrf-token
+  (atom (.-value (.getElementById js/document "__anti-forgery-token"))))
+
+(def csrf-token-interceptor
+  (to-interceptor {:name "CSRF Token Interceptor"
+                   :request (fn [req]
+                              (if (not= "GET" (:method req))
+                                (assoc-in req [:headers "X-CSRF-Token"] @csrf-token)
+                                req))}))
+
+(swap! default-interceptors (partial cons csrf-token-interceptor))
 
 
 ;; Default handlers to use with cljs-ajax to put the response back into a

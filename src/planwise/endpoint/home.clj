@@ -1,5 +1,6 @@
 (ns planwise.endpoint.home
   (:require [compojure.core :refer :all]
+            [ring.util.anti-forgery :refer [anti-forgery-field]]
             [hiccup.page :refer [include-js include-css html5]]))
 
 (def mount-target
@@ -17,11 +18,12 @@
    (include-css "/assets/leaflet/leaflet.css")
    (include-css "/css/site.css")])
 
-(def loading-page
+(defn loading-page [_]
   (html5
     (head)
     [:body
      mount-target
+     (anti-forgery-field)
      (include-js "/assets/leaflet/leaflet.js")
      (include-js "/js/main.js")
      [:script "planwise.client.core.main();"]]))
