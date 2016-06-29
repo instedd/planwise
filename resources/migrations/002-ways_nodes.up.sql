@@ -1,5 +1,5 @@
--- Creates a new table `ways_nodes` which contains all the points for all the
--- `ways` table. This *will* produce duplicate nodes as it is.
+-- Creates a new table `ways_nodes` to contain all the points for all the
+-- `ways` table. Used for alpha shape computation.
 
 CREATE TABLE ways_nodes (
 id SERIAL,
