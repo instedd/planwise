@@ -4,8 +4,12 @@ FROM java:8u91-jre
 RUN apt-get update && apt-get -y install postgresql-client libboost-program-options-dev libpq-dev && apt-get clean && rm -rf /var/lib/apt/lists/*
 ADD docker/osm2pgrouting /usr/local/bin/osm2pgrouting
 
-# Add scripts folder
-ADD scripts /app/scripts
+# Add docker scripts
+ADD docker/import-osm /app/scripts/import-osm
+ADD scripts/mapconfig.xml /app/scripts/mapconfig.xml
+ADD docker/import-sites /app/scripts/import-sites
+ADD docker/migrate /app/scripts/migrate
+ADD docker/preprocess-isochrones /app/scripts/preprocess-isochrones
 
 # Add uberjar with app
 ADD ./target/uberjar/planwise-0.1.0-SNAPSHOT-standalone.jar /app/lib/

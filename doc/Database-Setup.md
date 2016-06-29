@@ -49,7 +49,7 @@ file=kenya-latest.osm```
 
 7. Import the OSM data into the database using `osm2pgRouting`:
 
-```$ osm2pgrouting -f kenya-latest.osm -c mapconfig.xml -d routing -U $(whoami)```
+```$ osm2pgrouting -f kenya-latest.osm -c scripts/mapconfig.xml -d routing -U $(whoami)```
 
 8. Obtain the sites for the health facilities from Resourcemap in JSON format to
    import into the database.
@@ -59,3 +59,36 @@ file=kenya-latest.osm```
 ```
 $ lein import-sites ../kenya-facilities.json
 ```
+
+10. Populate `ways_nodes` table from `ways` imported at step 7. This table is
+    used for the alpha shape algorithm.
+
+```
+$ psql routing
+psql> select populate_ways_nodes();
+```
+
+11. Pre-process isochrones for facilities. This is very time consuming and CPU
+    intensive, though it can be done in multiple steps.
+
+    For alpha-shape isochrones:
+
+```
+$ psql routing
+psql> select calculate_isochrones('alpha-shape', 15, 60, 15);
+```
+
+    The second parameter to the `calculate_isochrones` function is the starting
+    threshold (in minutes), the third is the final threshold and the fourth is
+    the threshold step used when generating multiple isochrones.
+
+    For buffered reachable ways:
+    
+```
+$ psql routing
+psql> select cache_ways_buffers(300);
+psql> select calculate_isochrones('buffer', 15, 60, 15);
+```
+
+    Parameters for `calculate_isochrones` are the same as before and for
+    `cache_ways_buffers`, the parameter is the buffer in meters around each way.

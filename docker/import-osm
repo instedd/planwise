@@ -8,12 +8,5 @@ osm2pgrouting -f kenya.osm -c ./mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER 
 
 echo "Populating ways_nodes table"
 psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
-INSERT INTO ways_nodes (gid, lon, lat)
-SELECT
-gid,
-ST_x(ST_PointN(the_geom, g.generate_series)) AS lon,
-ST_y(ST_PointN(the_geom, g.generate_series)) AS lat
-FROM ways,
-(SELECT generate_series(1, (SELECT MAX(ST_NPoints(the_geom)) FROM ways))) g
-WHERE g.generate_series <= ST_NPoints(the_geom);
+SELECT populate_ways_nodes();
 SQL_SCRIPT
