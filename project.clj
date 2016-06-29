@@ -11,6 +11,7 @@
                  [meta-merge "0.1.1"]
                  [ring "1.4.0"]
                  [ring/ring-defaults "0.2.0"]
+                 [ring/ring-json "0.4.0"]
                  [ring-jetty-component "0.3.1"]
                  [ring-webjars "0.1.1"]
                  [com.taoensso/timbre "4.3.1"]

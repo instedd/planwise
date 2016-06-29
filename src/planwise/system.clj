@@ -9,6 +9,7 @@
             [meta-merge.core :refer [meta-merge]]
             [ring.component.jetty :refer [jetty-server]]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+            [ring.middleware.json :refer [wrap-json-response wrap-json-params]]
             [ring.middleware.webjars :refer [wrap-webjars]]
             [planwise.component.facilities :refer [facilities-service]]
             [planwise.component.routing :refer [routing-service]]
@@ -19,6 +20,8 @@
 (def base-config
   {:app {:middleware [[wrap-not-found :not-found]
                       [wrap-webjars]
+                      [wrap-json-params]
+                      [wrap-json-response]
                       [wrap-defaults :defaults]
                       [wrap-route-aliases :aliases]]
          :not-found  (io/resource "planwise/errors/404.html")
