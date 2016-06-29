@@ -3,6 +3,7 @@
             [planwise.client.mapping :refer [default-base-tile-layer]]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
+            [reagent.core :as r]
             [leaflet.core :refer [map-widget]]))
 
 (defn search-box []
@@ -21,33 +22,38 @@
      "New Project"]]])
 
 (defn new-project-dialog []
-  [:div.dialog
-   [:div.title
-    [:h1 "New Project"]
-    [:button.close {:on-click
-                    #(dispatch [:projects/cancel-new-project])}
-     "X"]]
-   [:div.form-control
-    [:label "Goal"]
-    [:input {:type "text" :placeholder "Describe your project's goal"}]]
-   [:div.form-control
-    [:label "Location"]
-    [:input {:type "search" :placeholder "Enter your project's location"}]]
-   [map-widget {:width 400
-                :height 300
-                :position [0 0]
-                :zoom 1
-                :controls []}
-    default-base-tile-layer]
-   [:div.actions
-    [:button.primary
-     {:on-click
-      #(dispatch [:projects/create-project])}
-     "Continue"]
-    [:button.cancel
-     {:on-click
-      #(dispatch [:projects/cancel-new-project])}
-     "Cancel"]]])
+  (let [new-project-goal (r/atom "")]
+    (fn []
+      [:div.dialog
+       [:div.title
+        [:h1 "New Project"]
+        [:button.close {:on-click
+                        #(dispatch [:projects/cancel-new-project])}
+         "X"]]
+       [:div.form-control
+        [:label "Goal"]
+        [:input {:type "text"
+                 :value @new-project-goal
+                 :placeholder "Describe your project's goal"
+                 :on-change #(reset! new-project-goal (-> % .-target .-value str))}]]
+       [:div.form-control
+        [:label "Location"]
+        [:input {:type "search" :placeholder "Enter your project's location"}]]
+       [map-widget {:width 400
+                    :height 300
+                    :position [0 0]
+                    :zoom 1
+                    :controls []}
+        default-base-tile-layer]
+       [:div.actions
+        [:button.primary
+         {:on-click
+          #(dispatch [:projects/create-project {:goal @new-project-goal}])}
+         "Continue"]
+        [:button.cancel
+         {:on-click
+          #(dispatch [:projects/cancel-new-project])}
+         "Cancel"]]])))
 
 (defn list-view []
   (let [creating-project? (subscribe [:projects/creating?])]
@@ -131,12 +137,12 @@
 
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab
-     :demographics
-     [:h3 "Demographics filters"]
-     :facilities
-     [facility-filters]
-     :transport
-     [:h3 "Transport filters"])])
+           :demographics
+           [:h3 "Demographics filters"]
+           :facilities
+           [facility-filters]
+           :transport
+           [:h3 "Transport filters"])])
 
 (defn project-tab [project-id selected-tab]
   (cond
