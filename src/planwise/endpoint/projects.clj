@@ -13,4 +13,4 @@
             (content-type "application/json"))))
 
     (POST "/" [goal]
-      (projects/create-project db {:goal goal}))))
+      (response (projects/create-project db {:goal goal})))))
