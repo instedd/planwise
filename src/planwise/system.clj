@@ -15,6 +15,7 @@
             [planwise.component.routing :refer [routing-service]]
             [planwise.endpoint.home :refer [home-endpoint]]
             [planwise.endpoint.facilities :refer [facilities-endpoint]]
+            [planwise.endpoint.projects :refer [projects-endpoint]]
             [planwise.endpoint.routing :refer [routing-endpoint]]))
 
 (def base-config
@@ -38,13 +39,17 @@
          :routing             (routing-service)
          :home-endpoint       (endpoint-component home-endpoint)
          :facilities-endpoint (endpoint-component facilities-endpoint)
+         :projects-endpoint   (endpoint-component projects-endpoint)
          :routing-endpoint    (endpoint-component routing-endpoint))
         (component/system-using
          {:http                [:app]
           :app                 [:facilities-endpoint
+                                :projects-endpoint
                                 :routing-endpoint
                                 :home-endpoint]
           :facilities          [:db]
+          :projects            [:db]
           :routing             [:db]
           :facilities-endpoint [:facilities]
+          :projects-endpoint   [:projects]
           :routing-endpoint    [:routing]}))))
