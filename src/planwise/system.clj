@@ -10,6 +10,8 @@
             [ring.component.jetty :refer [jetty-server]]
             [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
             [ring.middleware.webjars :refer [wrap-webjars]]
+            [planwise.component.facilities :refer [facilities-service]]
+            [planwise.component.routing :refer [routing-service]]
             [planwise.endpoint.home :refer [home-endpoint]]
             [planwise.endpoint.facilities :refer [facilities-endpoint]]
             [planwise.endpoint.routing :refer [routing-endpoint]]))
@@ -26,14 +28,20 @@
 (defn new-system [config]
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
-         :app        (handler-component (:app config))
-         :http       (jetty-server (:http config))
-         :db         (hikaricp (:db config))
-         :home       (endpoint-component home-endpoint)
-         :facilities (endpoint-component facilities-endpoint)
-         :routing    (endpoint-component routing-endpoint))
+         :app                 (handler-component (:app config))
+         :http                (jetty-server (:http config))
+         :db                  (hikaricp (:db config))
+         :facilities          (facilities-service)
+         :routing             (routing-service)
+         :home-endpoint       (endpoint-component home-endpoint)
+         :facilities-endpoint (endpoint-component facilities-endpoint)
+         :routing-endpoint    (endpoint-component routing-endpoint))
         (component/system-using
-         {:http       [:app]
-          :app        [:facilities :routing :home]
-          :facilities [:db]
-          :routing    [:db]}))))
+         {:http                [:app]
+          :app                 [:facilities-endpoint
+                                :routing-endpoint
+                                :home-endpoint]
+          :facilities          [:db]
+          :routing             [:db]
+          :facilities-endpoint [:facilities]
+          :routing-endpoint    [:routing]}))))

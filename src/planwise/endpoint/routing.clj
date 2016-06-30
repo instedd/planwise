@@ -1,8 +1,8 @@
 (ns planwise.endpoint.routing
-  (:require [compojure.core :refer :all]
+  (:require [planwise.boundary.routing :as routing]
+            [compojure.core :refer :all]
             [ring.util.response :refer [content-type response]]
-            [clojure.data.json :as json]
-            [planwise.routing.core :as routing]))
+            [clojure.data.json :as json]))
 
 (def invalid-query
   {:status 400
@@ -16,14 +16,14 @@
       "buffer" :buffer
       :invalid)))
 
-(defn routing-endpoint [{{db :spec} :db}]
+(defn routing-endpoint [{service :routing}]
   (context "/routing" []
     (GET "/" [] "routing endpoint")
 
     (GET "/nearest-node" [lat lon]
       (if (or (empty? lat) (empty? lon))
         invalid-query
-        (let [node (routing/nearest-node db (Float. lat) (Float. lon))]
+        (let [node (routing/nearest-node service (Float. lat) (Float. lon))]
           (if node
             (response (json/write-str {:id (:id node)
                                        :point (:point node)}))
@@ -35,5 +35,5 @@
           invalid-query
           (let [node-id (Integer. node-id)
                 distance (Float. threshold)
-                polygon (routing/isochrone db node-id distance algorithm)]
+                polygon (routing/compute-isochrone service node-id distance algorithm)]
             (response polygon)))))))
