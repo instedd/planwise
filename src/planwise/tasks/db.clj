@@ -1,5 +1,6 @@
 (ns planwise.tasks.db
   (:require [clojure.java.io :as io]
+            [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
             [duct.component.ragtime :refer [ragtime migrate rollback]]
             [duct.component.hikaricp :refer [hikaricp]]
@@ -20,6 +21,7 @@
         {:ragtime    [:db]})))
 
 (defn -main [& args]
+  (timbre/set-level! :warn)
   (if-let [cmd (first args)]
     (let [system (new-system config)
           system (component/start system)]
