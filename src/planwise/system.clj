@@ -13,6 +13,7 @@
             [ring.middleware.webjars :refer [wrap-webjars]]
             [planwise.component.facilities :refer [facilities-service]]
             [planwise.component.routing :refer [routing-service]]
+            [planwise.component.projects :refer [projects-service]]
             [planwise.endpoint.home :refer [home-endpoint]]
             [planwise.endpoint.facilities :refer [facilities-endpoint]]
             [planwise.endpoint.projects :refer [projects-endpoint]]
@@ -36,6 +37,7 @@
          :http                (jetty-server (:http config))
          :db                  (hikaricp (:db config))
          :facilities          (facilities-service)
+         :projects            (projects-service)
          :routing             (routing-service)
          :home-endpoint       (endpoint-component home-endpoint)
          :facilities-endpoint (endpoint-component facilities-endpoint)
