@@ -1,21 +1,24 @@
 (ns planwise.endpoint.facilities
-  (:require [compojure.core :refer :all]
+  (:require [planwise.boundary.facilities :as facilities]
+            [compojure.core :refer :all]
             [ring.util.response :refer [content-type response]]
-            [clojure.data.json :as json]
-            [planwise.facilities.core :as facilities]))
+            [clojure.data.json :as json]))
 
-(defn facilities-endpoint [{{db :spec} :db}]
+(defn facilities-endpoint [{service :facilities}]
   (context "/facilities" []
-    (GET "/" [] (let [facilities (facilities/get-facilities db)]
+    (GET "/" [] (let [facilities (facilities/list-facilities service)]
                   (-> (response (json/write-str facilities))
                       (content-type "application/json"))))
 
     (GET "/with-isochrones" [threshold algorithm simplify]
-      (let [facilities (facilities/get-with-isochrones db (Integer. threshold) algorithm (Float. simplify))]
+      (let [facilities (facilities/list-with-isochrones service
+                                                        (Integer. threshold)
+                                                        algorithm
+                                                        (Float. simplify))]
         (-> (response (json/write-str facilities))
             (content-type "application/json"))))
 
     (GET "/isochrone" []
-      (let [isochrone (facilities/get-isochrone-facilities db 5400)]
+      (let [isochrone (facilities/isochrone-all-facilities service 5400)]
         (-> (response (json/write-str isochrone))
             (content-type "application/json"))))))

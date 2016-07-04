@@ -1,11 +1,12 @@
 (ns planwise.tasks.import-sites
-  (:require [planwise.facilities.core :as facilities]
-            [clojure.java.io :as io]
-            [clojure.data.json :as json]
+  (:require [planwise.component.facilities :as facilities]
+            [planwise.config :as config]
             [com.stuartsierra.component :as component]
             [duct.component.hikaricp :refer [hikaricp]]
-            [meta-merge.core :refer [meta-merge]]
-            [planwise.config :as config])
+            [clojure.java.io :as io]
+            [clojure.data.json :as json]
+            [clojure.set :refer [rename-keys]]
+            [meta-merge.core :refer [meta-merge]])
   (:import (java.util.zip GZIPInputStream))
   (:gen-class))
 
@@ -25,13 +26,26 @@
         (json/read :key-fn keyword)
         (:sites))))
 
-(defn import-sites-from-file [{{db :spec} :db} file]
+(defn sites-with-location [sites]
+  (filter #(and (:lat %) (:long %)) sites))
+
+(defn site->facility [site]
+  (-> site
+      (select-keys [:id :name :lat :long])
+      (rename-keys {:long :lon})))
+
+(defn sites->facilities [sites]
+  (->> sites
+       (sites-with-location)
+       (map site->facility)))
+
+(defn import-sites-from-file [{service :facilities} file]
   (let [sites (load-sites file)
-        facilities (facilities/sites->facilities sites)]
+        facilities (sites->facilities sites)]
     (println (str "Read " (count sites) " sites"))
     (println (str "Will import " (count facilities) " into the database"))
-    (facilities/delete-facilities! db)
-    (let [insert-count (facilities/insert-facilities! db facilities)]
+    (facilities/destroy-facilities! service)
+    (let [insert-count (facilities/insert-facilities! service facilities)]
       (println (str "Successfully imported " insert-count " facilities")))))
 
 (def config
@@ -40,7 +54,10 @@
 
 (defn new-system [config]
   (-> (component/system-map
-       :db (hikaricp (:db config)))))
+       :db (hikaricp (:db config))
+       :facilities (facilities/facilities-service))
+      (component/system-using
+       :facilities [:db])))
 
 (defn -main [& args]
   (if-let [sites-file (first args)]
