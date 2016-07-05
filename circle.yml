@@ -7,9 +7,9 @@ machine:
 
 dependencies:
   pre:
-    - add-apt-repository ppa:georepublic/pgrouting
-    - apt-get update
-    - apt-get install pgrouting
+    - sudo add-apt-repository -y ppa:georepublic/pgrouting
+    - sudo apt-get update
+    - sudo apt-get -y install postgresql-9.5-pgrouting
   cache_directories:
     - "~/sassc"
     - "~/libsass"
