@@ -2,6 +2,8 @@ machine:
   services:
     - docker
     - postgresql
+  java:
+    version: oraclejdk8
 
 dependencies:
   cache_directories:
