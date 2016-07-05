@@ -1,5 +1,7 @@
 (ns planwise.client.common
-  (:require [reagent.core :as reagent]))
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require [reagent.core :as reagent]
+            [cljs.core.async :as async :refer [chan >! <! put!]]))
 
 ;; Navigation components
 
@@ -32,7 +34,6 @@
            children)]))
 
 
-
 ;; Filter checkboxes
 
 (defn labeled-checkbox [{:keys [value label checked toggle-fn]}]
@@ -57,3 +58,25 @@
                                               :checked checked
                                               :toggle-fn callback-fn)]))
                  options)))
+
+;; Debounce functions
+
+(defn debounced [f timeout]
+  (let [id (atom nil)]
+    (fn [& args]
+      (js/clearTimeout @id)
+      (condp = (first args)
+        :cancel nil
+        :immediate (apply f (drop 1 args))
+        (reset! id (js/setTimeout
+                    (apply partial (cons f args))
+                    timeout))))))
+
+;; Handler for API asyncs
+
+(defn async-handle [c success-fn]
+  (go
+   (let [result (<! c)]
+     (condp = (:status result)
+       :ok (success-fn (:data result))
+       :error (.error js/console (str "Error " (:code result) " performing AJAX request: " (:message result)))))))

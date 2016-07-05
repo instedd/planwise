@@ -3,27 +3,8 @@
   (:require [planwise.client.db :as db]
             [planwise.client.playground.db :refer [isochrone-params]]
             [planwise.client.api :as api]
-            [cljs.core.async :as async :refer [chan >! <! put!]]
+            [planwise.client.common :refer [debounced async-handle]]
             [re-frame.core :refer [dispatch register-handler path]]))
-
-(defn debounced
-  ([f timeout]
-   (let [id (atom nil)]
-     (fn [& args]
-       (js/clearTimeout @id)
-       (condp = (first args)
-         :cancel nil
-         :immediate (apply f (drop 1 args))
-         (reset! id (js/setTimeout
-                     (apply partial (cons f args))
-                     timeout)))))))
-
-(defn async-handle [c success-fn]
-  (go
-    (let [result (<! c)]
-      (condp = (:status result)
-        :ok (success-fn (:data result))
-        :error (.error js/console (str "Error " (:code result) " performing AJAX request: " (:message result)))))))
 
 (defn fetch-geojson []
   (async-handle (api/fetch-geojson)
