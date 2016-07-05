@@ -25,6 +25,22 @@ lein setup
 This will create files for local configuration, and prep your system
 for the project.
 
+Next create a development database:
+
+```bash
+$ createdb routing
+```
+
+And configure the connection URL in your `profiles.clj`:
+
+```clojure
+;; Local profile overrides
+{:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"}}}
+```
+
+See `doc/Database-Setup.md` for further database configuration.
+
+
 ### Environment
 
 To begin developing, start with a REPL.
@@ -86,6 +102,24 @@ Beside the migrations for controlling the schema, the DB can be populated throug
 * `preprocess-isochrones` can be ran any number of times with different parameters to calculate the isochrones for the facilities; for instance, `preprocess-isochrones 300 buffer 60 180 15` will calculate the isochrones using the buffer method (with a 300m threshold) for driving distances from 1 to 3 hours, at 15 min intervals.
 
 ### Testing
+
+Running the tests require a separate scratch database. No setup is necessary
+beyond creation though, as the migrations are executed automatically upon
+running the tests.
+
+```bash
+$ createdb routing-test
+```
+
+And add the connection configuration in the test-database-url configuration in
+your `profiles.clj`:
+
+```clojure
+;; Local profile overrides
+{:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"
+                       :test-database-url "jdbc:postgresql://localhost/routing-test"}}}
+```
+
 
 Testing is fastest through the REPL, as you avoid environment startup
 time.
