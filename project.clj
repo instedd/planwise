@@ -2,44 +2,62 @@
   :description "Facility Planner"
   :url "http://github.com/instedd/planwise"
   :min-lein-version "2.0.0"
-  :dependencies [[org.clojure/clojure "1.8.0"]
+  :dependencies [; Base infrastructure
+                 [org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.8.51"]
                  [com.stuartsierra/component "0.3.1"]
-                 [compojure "1.5.0"]
                  [duct "0.6.1"]
-                 [environ "1.0.3"]
-                 [meta-merge "0.1.1"]
+
+                 ; Web server and routing
+                 [compojure "1.5.0"]
                  [ring "1.4.0"]
                  [ring/ring-defaults "0.2.0"]
                  [ring/ring-json "0.4.0"]
                  [ring-jetty-component "0.3.1"]
                  [ring-webjars "0.1.1"]
+
+                 ; Configuration
+                 [environ "1.0.3"]
+                 [meta-merge "0.1.1"]
+
+                 ; Logging
                  [com.taoensso/timbre "4.5.1"]
                  [com.fzakaria/slf4j-timbre "0.3.2"]
                  [org.slf4j/log4j-over-slf4j "1.7.14"]
                  [org.slf4j/jul-to-slf4j "1.7.14"]
                  [org.slf4j/jcl-over-slf4j "1.7.14"]
+
+                 ; Rendering and data handling
                  [hiccup "1.0.5"]
-                 [org.webjars/normalize.css "3.0.2"]
-                 [org.webjars/leaflet "0.7.7"]
+                 [cheshire "5.6.3"]
+
+                 ; Client infrastructure
                  [reagent "0.5.1"
                   :exclusions [org.clojure/tools.reader]]
                  [reagent-forms "0.5.23"]
                  [reagent-utils "0.1.8"]
                  [re-frame "0.7.0"]
-                 [cljs-ajax "0.5.4"]
+                 [cljs-ajax "0.5.4"
+                  :exclusions [commons-codec]]
                  [secretary "1.2.3"]
                  [venantius/accountant "0.1.7"
                   :exclusions [org.clojure/tools.reader]]
-                 [com.layerware/hugsql "0.4.7"]
-                 [duct/ragtime-component "0.1.4"]
+
+                 ; Client assets and components
+                 [org.webjars/normalize.css "3.0.2"]
+                 [org.webjars/leaflet "0.7.7"]
+
+                 ; Database access
                  [duct/hikaricp-component "0.1.0"
                   :exclusions [org.slf4j/slf4j-nop]]
+                 [duct/ragtime-component "0.1.4"]
                  [org.postgresql/postgresql "9.4.1208"]
                  [net.postgis/postgis-jdbc "2.1.7.2"
                   :exclusions [postgresql
                                ch.qos.logback/logback-classic
-                               ch.qos.logback/logback-core]]]
+                               ch.qos.logback/logback-core]]
+                 [com.layerware/hugsql "0.4.7"]]
+
   :plugins [[lein-environ "1.0.3"]
             [lein-cljsbuild "1.1.2"]
             [lein-sass "0.3.7"
@@ -74,19 +92,30 @@
    :uberjar {:aot :all}
    :profiles/dev  {}
    :profiles/test {}
-   :project/dev   {:dependencies [[duct/generate "0.6.1"]
+   :project/dev   {:dependencies [; Framework
+                                  [duct/generate "0.6.1"
+                                   :exclusions [org.codehaus.plexus/plexus-utils
+                                                org.apache.maven.wagon/wagon-provider-api]]
+                                  [duct/figwheel-component "0.3.2"
+                                   :exclusions [org.clojure/data.priority-map
+                                                org.clojure/core.async]]
+
+                                  ; REPL tools
                                   [reloaded.repl "0.2.1"]
                                   [org.clojure/tools.namespace "0.2.11"]
                                   [org.clojure/tools.nrepl "0.2.12"]
+                                  [com.cemerick/piggieback "0.2.1"]
+
+                                  ; Testing libraries
                                   [eftest "0.1.1"]
                                   [kerodon "0.7.0"]
                                   [fixtures-component "0.4.1"
                                    :exclusions [org.clojure/java.jdbc]]
-                                  [com.cemerick/piggieback "0.2.1"]
-                                  [duct/figwheel-component "0.3.2"]
-                                  [figwheel "0.5.0-6"]
-                                  [binaryage/devtools "0.6.1"]
-                                  [hawk "0.2.10"]]
+
+                                  ; Helpers
+                                  [hawk "0.2.10"]
+                                  [binaryage/devtools "0.6.1"]]
+
                    :source-paths ["dev"]
                    :repl-options {:init-ns user
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
