@@ -9,8 +9,17 @@
 (defn setup []
   (gen/locals))
 
-(defn test []
-  (eftest/run-tests (eftest/find-tests "test") {:multithread? false}))
+(defn test
+  ([]
+   (eftest/run-tests (eftest/find-tests "test") {:multithread? false}))
+  ([pattern]
+   (let [pattern (re-pattern pattern)
+         filterer (fn [var-name]
+                    (->> (str var-name)
+                         (re-find pattern)))
+         tests (->> (eftest/find-tests "test")
+                    (filter filterer))]
+     (eftest/run-tests tests {:multithread? false}))))
 
 (defn cljs-repl []
   (figwheel/cljs-repl (:figwheel system)))
