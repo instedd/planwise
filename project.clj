@@ -94,8 +94,7 @@
    :profiles/test {}
    :project/dev   {:dependencies [; Framework
                                   [duct/generate "0.6.1"
-                                   :exclusions [org.codehaus.plexus/plexus-utils
-                                                org.apache.maven.wagon/wagon-provider-api]]
+                                   :exclusions [org.codehaus.plexus/plexus-utils]]
                                   [duct/figwheel-component "0.3.2"
                                    :exclusions [org.clojure/data.priority-map
                                                 org.clojure/core.async]]
