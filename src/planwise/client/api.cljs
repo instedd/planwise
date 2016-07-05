@@ -71,11 +71,10 @@
                                               :algorithm (some-> algorithm name)}))
     c))
 
-(defn parse-node-info [data]
-  (when-not (empty? data)
-    (let [node-data (.parse js/JSON data)
-          node-id (aget node-data "id")
-          geojson (.parse js/JSON (aget node-data "point"))
+(defn parse-node-info [node-data]
+  (when-not (empty? node-data)
+    (let [node-id (node-data "id")
+          geojson (.parse js/JSON (node-data "point"))
           point (reverse (js->clj (aget geojson "coordinates")))]
       {:node-id node-id
        :point point})))

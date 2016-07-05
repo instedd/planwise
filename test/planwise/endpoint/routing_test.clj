@@ -16,14 +16,8 @@
         (str "isochrone from " node-id " with " distance)))))
 
 (def handler
-  (wrap-params
-   (routing/routing-endpoint {:routing mocked-routing-service})))
-
-(defn json-body [state]
-  (-> state
-      (:response)
-      (:body)
-      (json/read-str)))
+  (-> (routing/routing-endpoint {:routing mocked-routing-service})
+      (wrap-params)))
 
 (deftest coerce-algorithm-test
   (is (nil?           (routing/coerce-algorithm nil)))
@@ -55,8 +49,9 @@
     (let [body (-> (session handler)
                    (visit "/routing/nearest-node?lat=10&lon=10")
                    (has (status? 200))
-                   (json-body))]
-      (is (= {"id" 123 "point" "a point"} body)))))
+                   (:response)
+                   (:body))]
+      (is (= {:id 123 :point "a point"} body)))))
 
 (deftest isochrone-test
   (testing "with missing parameters"

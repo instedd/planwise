@@ -26,4 +26,4 @@ SELECT
   ST_AsGeoJSON(ST_Union(the_geom))
 FROM facilities_polygons
 WHERE threshold = :threshold
-AND fp.method = 'alpha-shape';
+AND method = 'alpha-shape';
