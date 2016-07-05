@@ -6,6 +6,10 @@ machine:
     version: oraclejdk8
 
 dependencies:
+  pre:
+    - add-apt-repository ppa:georepublic/pgrouting
+    - apt-get update
+    - apt-get install pgrouting
   cache_directories:
     - "~/sassc"
     - "~/libsass"
