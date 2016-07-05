@@ -82,8 +82,9 @@ begin
 
       from_cost      := to_cost;
       to_cost        := to_cost + threshold_jump * 60;
-      facility_index := facility_index + 1;
     end loop;
+
+    facility_index := facility_index + 1;
 
     delete from edges_agg_cost;
   end loop;

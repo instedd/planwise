@@ -1,8 +1,15 @@
 machine:
   services:
     - docker
+    - postgresql
+  java:
+    version: oraclejdk8
 
 dependencies:
+  pre:
+    - sudo add-apt-repository -y ppa:georepublic/pgrouting
+    - sudo apt-get update
+    - sudo apt-get -y install postgresql-9.5-pgrouting
   cache_directories:
     - "~/sassc"
     - "~/libsass"
@@ -13,7 +20,8 @@ dependencies:
 
 test:
   override:
-    - lein test
+    - createdb test
+    - TEST_DATABASE_URL=jdbc:postgresql://localhost/test lein test
 
 deployment:
   docker-main:

@@ -13,8 +13,11 @@
                  [ring/ring-defaults "0.2.0"]
                  [ring-jetty-component "0.3.1"]
                  [ring-webjars "0.1.1"]
-                 [com.taoensso/timbre "4.3.1"]
+                 [com.taoensso/timbre "4.5.1"]
                  [com.fzakaria/slf4j-timbre "0.3.2"]
+                 [org.slf4j/log4j-over-slf4j "1.7.14"]
+                 [org.slf4j/jul-to-slf4j "1.7.14"]
+                 [org.slf4j/jcl-over-slf4j "1.7.14"]
                  [hiccup "1.0.5"]
                  [org.webjars/normalize.css "3.0.2"]
                  [org.webjars/leaflet "0.7.7"]
@@ -31,7 +34,11 @@
                  [duct/ragtime-component "0.1.4"]
                  [duct/hikaricp-component "0.1.0"
                   :exclusions [org.slf4j/slf4j-nop]]
-                 [org.postgresql/postgresql "9.4.1208"]]
+                 [org.postgresql/postgresql "9.4.1208"]
+                 [net.postgis/postgis-jdbc "2.1.7.2"
+                  :exclusions [postgresql
+                               ch.qos.logback/logback-classic
+                               ch.qos.logback/logback-core]]]
   :plugins [[lein-environ "1.0.3"]
             [lein-cljsbuild "1.1.2"]
             [lein-sass "0.3.7"
@@ -72,6 +79,8 @@
                                   [org.clojure/tools.nrepl "0.2.12"]
                                   [eftest "0.1.1"]
                                   [kerodon "0.7.0"]
+                                  [fixtures-component "0.4.1"
+                                   :exclusions [org.clojure/java.jdbc]]
                                   [com.cemerick/piggieback "0.2.1"]
                                   [duct/figwheel-component "0.3.2"]
                                   [figwheel "0.5.0-6"]

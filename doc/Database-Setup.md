@@ -1,4 +1,4 @@
-# Setup
+# Database Setup
 
 1. Install PostgreSQL, PostGIS and pgRouting using Homebrew:
 

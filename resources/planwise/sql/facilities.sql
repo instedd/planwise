@@ -10,7 +10,6 @@ DELETE FROM facilities;
 SELECT
     id, name, lat, lon
 FROM facilities
-WHERE name LIKE '%HOSPITAL%'
 ORDER BY name;
 
 -- :name facilities-with-isochrones :?

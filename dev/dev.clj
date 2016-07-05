@@ -18,6 +18,8 @@
             [planwise.config :as config]
             [planwise.system :as system]))
 
+;; Logging configuration for development
+(timbre/merge-config! {:ns-blacklist ["com.zaxxer.hikari.*"]})
 (timbre/set-level! :info)
 
 (def dev-config
