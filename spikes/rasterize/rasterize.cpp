@@ -54,7 +54,7 @@ void tearDown(OGRDataSourceH vectorDataSet, GDALDatasetH rasterDataSet) {
 GDALDatasetH createRaster(OGRLayerH layer, RasterConfig rasterConfig, GeoReferenceExtent geoReferenceExtent, const char* outFilename) {
     double dfXRes = (geoReferenceExtent.maxX-geoReferenceExtent.minX) / rasterConfig.xPixelsSize;
     double dfYRes = (geoReferenceExtent.maxY-geoReferenceExtent.minY) / rasterConfig.yPixelsSize;
-    GDALDataType eOutputType = GDT_Float64;
+    GDALDataType eOutputType = GDT_Float32;
     int bandCount = 1;
     char** papszCreateOptions = NULL;
     GDALDriverH hDriver = GDALGetDriverByName("GTiff");
