@@ -21,6 +21,8 @@ struct RasterConfig {
   int burnValue;
   int xPixelsSize;
   int yPixelsSize;
+  int xBlockSize;
+  int yBlockSize;
 };
 
 std::vector<OGRGeometryH> extractGeometries(OGRLayerH layer) {
@@ -57,6 +59,9 @@ GDALDatasetH createRaster(OGRLayerH layer, RasterConfig rasterConfig, GeoReferen
     GDALDataType eOutputType = GDT_Float32;
     int bandCount = 1;
     char** papszCreateOptions = NULL;
+    papszCreateOptions = CSLSetNameValue(papszCreateOptions, "TILED", "YES");
+    papszCreateOptions = CSLSetNameValue(papszCreateOptions, "BLOCKXSIZE", "128");
+    papszCreateOptions = CSLSetNameValue(papszCreateOptions, "BLOCKYSIZE", "128");
     GDALDriverH hDriver = GDALGetDriverByName("GTiff");
     GDALDatasetH hDstDS = GDALCreate(hDriver, outFilename, rasterConfig.xPixelsSize, rasterConfig.yPixelsSize,
 				     bandCount, eOutputType, papszCreateOptions);
@@ -133,6 +138,8 @@ int main()
   config.burnValue = 255;
   config.xPixelsSize = 9601;
   config.yPixelsSize = 12179;
+  config.xBlockSize = 128;
+  config.yBlockSize = 128;
 
   GeoReferenceExtent outputExtent;
   outputExtent.minX = 33.9126084;
