@@ -25,6 +25,9 @@
 ;; ----------------------------------------------------------------------
 ;; Service functions
 
+(defn list-projects [service]
+  (select-projects (get-db service)))
+
 (defn create-project [service project]
   (let [db (get-db service)
         id (-> (insert-project! db project) (first) (:id))]

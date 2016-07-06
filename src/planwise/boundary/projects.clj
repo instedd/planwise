@@ -8,7 +8,7 @@
     "Creates a project given a map of its attributes. Returns a map with the
     database generated id.")
 
-  (select-projects [this]
+  (list-projects [this]
     "Returns all projects in the database."))
 
 ;; Reference implementation
@@ -17,5 +17,5 @@
   planwise.component.projects.ProjectsService
   (create-project [service project]
     (service/create-project service project))
-  (select-projects [service]
-    (service/select-projects service)))
+  (list-projects [service]
+    (service/list-projects service)))

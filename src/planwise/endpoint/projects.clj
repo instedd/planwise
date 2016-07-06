@@ -8,9 +8,8 @@
   (context "/projects" []
 
     (GET "/" []
-      (let [projects (projects/select-projects service)]
-        (-> (response (json/write-str projects))
-            (content-type "application/json"))))
+      (let [projects (projects/list-projects service)]
+        (response projects)))
 
     (POST "/" [goal]
       (response (projects/create-project service {:goal goal})))))
