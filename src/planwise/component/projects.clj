@@ -17,8 +17,9 @@
 
 (defrecord ProjectsService [db])
 
-(defn projects-service []
+(defn projects-service
   "Constructs a Projects service component"
+  []
   (map->ProjectsService {}))
 
 

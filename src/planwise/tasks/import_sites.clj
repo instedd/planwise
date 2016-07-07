@@ -57,7 +57,7 @@
        :db (hikaricp (:db config))
        :facilities (facilities/facilities-service))
       (component/system-using
-       :facilities [:db])))
+       {:facilities [:db]})))
 
 (defn -main [& args]
   (if-let [sites-file (first args)]
