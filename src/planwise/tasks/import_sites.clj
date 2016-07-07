@@ -29,10 +29,19 @@
 (defn sites-with-location [sites]
   (filter #(and (:lat %) (:long %)) sites))
 
+(defn facility-type [site]
+  (let [f_type (get-in site [:properties :f_type])]
+    (case f_type
+      1 "hospital"
+      2 "general hospital"
+      3 "health center"
+      "dispensary")))
+
 (defn site->facility [site]
   (-> site
       (select-keys [:id :name :lat :long])
-      (rename-keys {:long :lon})))
+      (rename-keys {:long :lon})
+      (assoc :type (facility-type site))))
 
 (defn sites->facilities [sites]
   (->> sites
@@ -57,7 +66,7 @@
        :db (hikaricp (:db config))
        :facilities (facilities/facilities-service))
       (component/system-using
-       :facilities [:db])))
+       {:facilities [:db]})))
 
 (defn -main [& args]
   (if-let [sites-file (first args)]
