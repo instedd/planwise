@@ -1,5 +1,6 @@
 (ns planwise.system
   (:require [clojure.java.io :as io]
+            [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
             [duct.component.endpoint :refer [endpoint-component]]
             [duct.component.handler :refer [handler-component]]
@@ -8,9 +9,11 @@
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [meta-merge.core :refer [meta-merge]]
             [ring.component.jetty :refer [jetty-server]]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
+            [ring.middleware.defaults :refer [wrap-defaults api-defaults site-defaults]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-params]]
             [ring.middleware.webjars :refer [wrap-webjars]]
+            [ring.middleware.session.cookie :refer [cookie-store]]
+            [planwise.component.compound-handler :refer [compound-handler-component]]
             [planwise.component.facilities :refer [facilities-service]]
             [planwise.component.routing :refer [routing-service]]
             [planwise.component.projects :refer [projects-service]]
@@ -19,21 +22,34 @@
             [planwise.endpoint.projects :refer [projects-endpoint]]
             [planwise.endpoint.routing :refer [routing-endpoint]]))
 
+(timbre/refer-timbre)
+
 (def base-config
-  {:app {:middleware [[wrap-not-found :not-found]
-                      [wrap-webjars]
-                      [wrap-json-params]
+  {:api {:middleware [[wrap-json-params]
                       [wrap-json-response]
                       [wrap-defaults :defaults]
                       [wrap-route-aliases :aliases]]
+         :defaults   (meta-merge api-defaults {})
+         :aliases    {}}
+   :app {:middleware [[wrap-not-found :not-found]
+                      [wrap-webjars]
+                      [wrap-defaults :defaults]
+                      [wrap-route-aliases :aliases]]
          :not-found  (io/resource "planwise/errors/404.html")
-         :defaults   (meta-merge site-defaults {:static {:resources "planwise/public"}})
-         :aliases    {}}})
+         :defaults   (meta-merge site-defaults {:static {:resources "planwise/public"}
+                                                :session {:store (cookie-store)
+                                                          :cookie-name "planwise-session"}})
+         :aliases    {}}
+
+   :webapp {:handlers         ; Order matters; api handler is evaluated first
+            [:api :app]}})
 
 (defn new-system [config]
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
          :app                 (handler-component (:app config))
+         :api                 (handler-component (:api config))
+         :webapp              (compound-handler-component (:webapp config))
          :http                (jetty-server (:http config))
          :db                  (hikaricp (:db config))
          :facilities          (facilities-service)
@@ -44,11 +60,12 @@
          :projects-endpoint   (endpoint-component projects-endpoint)
          :routing-endpoint    (endpoint-component routing-endpoint))
         (component/system-using
-         {:http                [:app]
-          :app                 [:facilities-endpoint
+         {:http                {:app :webapp}
+          :webapp              [:app :api]
+          :api                 [:facilities-endpoint
                                 :projects-endpoint
-                                :routing-endpoint
-                                :home-endpoint]
+                                :routing-endpoint]
+          :app                 [:home-endpoint]
           :facilities          [:db]
           :projects            [:db]
           :routing             [:db]
