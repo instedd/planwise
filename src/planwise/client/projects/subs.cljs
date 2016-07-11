@@ -8,6 +8,11 @@
    (reaction (get-in @db [:projects :creating?]))))
 
 (register-sub
+ :projects/creating-waiting?
+ (fn [db [_]]
+  (reaction (get-in @db [:projects :creating-waiting?]))))
+
+(register-sub
  :projects/current
  (fn [db [_]]
    (reaction (get-in @db [:projects :current]))))

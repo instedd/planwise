@@ -13,7 +13,8 @@
  :projects/begin-new-project
  in-projects
  (fn [db [_]]
-   (assoc db :creating? true)))
+   (assoc db :creating? true
+             :creating-waiting? false)))
 
 (register-handler
  :projects/cancel-new-project
@@ -27,7 +28,7 @@
  (fn [db [_ project-data]]
    (async-handle (api/create-project project-data)
                  #(dispatch [:projects/project-created %]))
-   (assoc db :creating? false)))
+   (assoc db :creating-waiting? true)))
 
 (register-handler
  :projects/project-created
@@ -37,7 +38,9 @@
      (when (nil? project-id)
        (throw "Invalid project data"))
      (accountant/navigate! (routes/project-demographics {:id project-id}))
-     (assoc db :current project-data))))
+     (assoc db :creating-waiting? false
+               :creating? false
+               :current project-data))))
 
 (register-handler
  :projects/toggle-filter

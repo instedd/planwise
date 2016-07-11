@@ -29,6 +29,7 @@
    ;; Projects
    :projects
    {:creating? false
+    :creating-waiting? false
     :current nil}
 
    ;; Project currently viewing/editing

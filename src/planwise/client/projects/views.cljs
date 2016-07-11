@@ -23,7 +23,8 @@
      "New Project"]]])
 
 (defn new-project-dialog []
-  (let [new-project-goal (r/atom "")]
+  (let [new-project-goal (r/atom "")
+        creating-waiting? (subscribe [:projects/creating-waiting?])]
     (fn []
       [:div.dialog
        [:div.title
@@ -48,9 +49,11 @@
         default-base-tile-layer]
        [:div.actions
         [:button.primary
-         {:on-click
-          #(dispatch [:projects/create-project {:goal @new-project-goal}])}
-         "Continue"]
+         {:disabled @creating-waiting?
+          :on-click #(dispatch [:projects/create-project {:goal @new-project-goal}])}
+         (if @creating-waiting?
+           "Creating..."
+           "Create")]
         [:button.cancel
          {:on-click
           #(dispatch [:projects/cancel-new-project])}
