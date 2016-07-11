@@ -28,7 +28,8 @@
 
    ;; Projects
    :projects
-   {:creating? false}
+   {:creating? false
+    :current nil}
 
    ;; Project currently viewing/editing
    :current-project

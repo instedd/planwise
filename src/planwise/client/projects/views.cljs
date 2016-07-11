@@ -1,4 +1,5 @@
 (ns planwise.client.projects.views
+  (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [planwise.client.mapping :refer [default-base-tile-layer]]
             [planwise.client.routes :as routes]
@@ -81,9 +82,9 @@
       :href (routes/project-scenarios route-params)
       :title "Scenarios"}]))
 
-(defn header-section [project-id selected-tab]
+(defn header-section [project-id project-goal selected-tab]
   [:div.project-header
-   [:h2 "Test Project"]
+   [:h2 project-goal]
    [:nav
     [common/ul-menu (project-tab-items project-id) selected-tab]
     #_[:a "Download Project"]]])
@@ -161,10 +162,13 @@
      [:h1 "Scenarios"]]))
 
 (defn project-view []
-  (let [page-params (subscribe [:page-params])]
+  (let [page-params (subscribe [:page-params])
+        current-project (subscribe [:projects/current])
+        project-goal (reaction (:goal @current-project))]
     (fn []
       (let [project-id (first @page-params)
-            selected-tab (nth @page-params 1)]
+            selected-tab (nth @page-params 1)
+            project-goal @project-goal]
         [:article.project-view
-         [header-section project-id selected-tab]
+         [header-section project-id project-goal selected-tab]
          [project-tab project-id selected-tab]]))))

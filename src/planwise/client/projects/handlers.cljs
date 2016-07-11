@@ -37,7 +37,7 @@
      (when (nil? project-id)
        (throw "Invalid project data"))
      (accountant/navigate! (routes/project-demographics {:id project-id}))
-     (assoc-in db [:cache project-id] project-data))))
+     (assoc db :current project-data))))
 
 (register-handler
  :projects/toggle-filter

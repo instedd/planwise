@@ -8,6 +8,11 @@
    (reaction (get-in @db [:projects :creating?]))))
 
 (register-sub
+ :projects/current
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :current]))))
+
+(register-sub
  :projects/facilities
  (fn [db [_ data]]
    (let [facility-data (reaction (get-in @db [:current-project :facilities]))]
