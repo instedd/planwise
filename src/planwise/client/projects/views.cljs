@@ -1,5 +1,4 @@
 (ns planwise.client.projects.views
-  (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [planwise.client.mapping :refer [default-base-tile-layer]]
             [planwise.client.routes :as routes]
@@ -166,12 +165,11 @@
 
 (defn project-view []
   (let [page-params (subscribe [:page-params])
-        current-project (subscribe [:projects/current])
-        project-goal (reaction (:goal @current-project))]
+        current-project (subscribe [:projects/current])]
     (fn []
       (let [project-id (first @page-params)
             selected-tab (nth @page-params 1)
-            project-goal @project-goal]
+            project-goal (:goal @current-project)]
         [:article.project-view
          [header-section project-id project-goal selected-tab]
          [project-tab project-id selected-tab]]))))
