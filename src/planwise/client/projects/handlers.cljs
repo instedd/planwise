@@ -27,7 +27,8 @@
  (fn [db [_ project-id]]
    (async-handle (api/load-project project-id)
                  #(dispatch [:projects/project-loaded %]))
-   (assoc db :view-state :loading)))
+   (assoc db :view-state :loading
+             :current nil)))
 
 (register-handler
  :projects/create-project

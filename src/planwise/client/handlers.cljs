@@ -13,24 +13,21 @@
    (playground/fetch-facilities-with-isochrones :immediate (:playground db/initial-db))
    db/initial-db))
 
-(defmulti navigate-handler (fn [db [_ page & _]] page))
+(defmulti on-navigate (fn [db page params] page))
 
-(defmethod navigate-handler :projects [db [_ page & params]]
-  (let [id (js/parseInt (first params))
-        db (assoc db
-             :current-page page
-             :page-params params)]
-    (if (not= id (get-in db [:projects :current :id]))
-      (do
-        (dispatch [:projects/load-project id])
-        (assoc-in db [:projects :current] nil))
-      db)))
+(defmethod on-navigate :projects [db page {id :id}]
+  (let [id (js/parseInt id)]
+    (when (not= id (get-in db [:projects :current :id]))
+      (dispatch [:projects/load-project id]))
+    db))
 
-(defmethod navigate-handler :default [db [_ page & params]]
-  (assoc db
-   :current-page page
-   :page-params params))
+(defmethod on-navigate :default [db _ _]
+  db)
 
 (register-handler
  :navigate
- navigate-handler)
+ (fn [db [_ {page :page, :as params}]]
+   (let [new-db (assoc db
+                 :current-page page
+                 :page-params params)]
+     (on-navigate new-db page params))))

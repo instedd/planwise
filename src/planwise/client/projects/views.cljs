@@ -167,8 +167,8 @@
   (let [page-params (subscribe [:page-params])
         current-project (subscribe [:projects/current])]
     (fn []
-      (let [project-id (first @page-params)
-            selected-tab (nth @page-params 1)
+      (let [project-id (:id @page-params)
+            selected-tab (:section @page-params)
             project-goal (:goal @current-project)]
         [:article.project-view
          [header-section project-id project-goal selected-tab]
