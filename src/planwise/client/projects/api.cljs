@@ -6,7 +6,7 @@
 (defn load-project [id]
   (let [c (chan)]
     (GET
-      (str "/projects/" id "/details")
+      (str "/api/projects/" id)
       (assoc (async-handlers c identity)
             :format :json
             :response-format :json
@@ -16,7 +16,7 @@
 
 (defn create-project [params]
   (let [c (chan)]
-    (POST "/projects/" (assoc (async-handlers c identity)
+    (POST "/api/projects/" (assoc (async-handlers c identity)
                               :format :json
                               :response-format :json
                               :keywords? true

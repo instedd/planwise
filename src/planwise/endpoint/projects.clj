@@ -5,13 +5,13 @@
             [planwise.boundary.projects :as projects]))
 
 (defn projects-endpoint [{service :projects}]
-  (context "/projects" []
+  (context "/api/projects" []
 
     (GET "/" []
       (let [projects (projects/list-projects service)]
         (response projects)))
 
-    (GET "/:id/details" [id]
+    (GET "/:id" [id]
       (if-let [project (projects/get-project service (Integer/parseInt id))]
         (response project)
         (not-found {:error "Project not found"})))
