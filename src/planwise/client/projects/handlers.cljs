@@ -1,10 +1,8 @@
 (ns planwise.client.projects.handlers
   (:require [re-frame.core :refer [register-handler path dispatch]]
             [accountant.core :as accountant]
-            [planwise.client.common :refer [debounced async-handle]]
             [planwise.client.routes :as routes]
             [planwise.client.projects.api :as api]))
-
 
 (def in-projects (path [:projects]))
 (def in-current-project (path [:current-project]))
@@ -25,8 +23,7 @@
  :projects/load-project
  in-projects
  (fn [db [_ project-id]]
-   (async-handle (api/load-project project-id)
-                 #(dispatch [:projects/project-loaded %]))
+   (api/load-project project-id :projects/project-loaded)
    (assoc db :view-state :loading
              :current nil)))
 
@@ -34,8 +31,7 @@
  :projects/create-project
  in-projects
  (fn [db [_ project-data]]
-   (async-handle (api/create-project project-data)
-                 #(dispatch [:projects/project-created %]))
+   (api/create-project project-data :projects/project-created)
    (assoc db :view-state :creating)))
 
 (register-handler

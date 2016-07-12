@@ -2,8 +2,9 @@
   (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require [cljs.core.async :as async :refer [chan put! <!]]
             [ajax.core :refer [GET to-interceptor default-interceptors]]
+            [re-frame.utils :as c]
+            [re-frame.core :refer [dispatch]]
             [clojure.string :as string]))
-
 
 ;; Set default interceptor for adding CSRF token to all non-GET requests
 
@@ -19,6 +20,26 @@
 
 (swap! default-interceptors (partial cons csrf-token-interceptor))
 
+
+;; Common json-request definition to use with ajax requests
+(defn common-success-fn [data]
+  (c/log "API response: " data))
+
+(defn common-error-fn [{:keys [status status-text]}]
+  (c/error (str "Error " status " performing AJAX request: " status-text)))
+
+(defn json-request [params [success-fn error-fn]]
+  (let [success-handler (cond
+                          (fn? success-fn) success-fn
+                          (nil? success-fn) common-success-fn
+                          :else #(dispatch [success-fn %]))
+        error-handler (or error-fn common-error-fn)]
+    {:format :json
+     :response-format :json
+     :keywords? true
+     :params params
+     :handler success-handler
+     :error-handler error-handler}))
 
 ;; Default handlers to use with cljs-ajax to put the response back into a
 ;; core.async channel
