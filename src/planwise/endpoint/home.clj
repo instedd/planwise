@@ -2,6 +2,7 @@
   (:require [compojure.core :refer :all]
             [ring.util.anti-forgery :refer [anti-forgery-field]]
             [buddy.auth :refer [authenticated? throw-unauthorized]]
+            [planwise.component.auth :refer [create-jwe-token]]
             [hiccup.page :refer [include-js include-css html5]]))
 
 (def mount-target
@@ -19,7 +20,16 @@
    (include-css "/assets/leaflet/leaflet.css")
    (include-css "/css/site.css")])
 
-(defn loading-page [request]
+(defn identity-field [request]
+  (let [email (-> request :identity :user)]
+    [:input {:type :hidden :name "__identity" :value email}]))
+
+(defn jwe-token-field [auth request]
+  (let [email (-> request :identity :user)
+        token (create-jwe-token auth email)]
+    [:input {:type :hidden :name "__jwe_token" :value token}]))
+
+(defn loading-page [auth request]
   (if-not (authenticated? request)
     (throw-unauthorized)
     (html5
@@ -27,16 +37,19 @@
      [:body
       mount-target
       (anti-forgery-field)
+      (identity-field request)
+      (jwe-token-field auth request)
       (include-js "/assets/leaflet/leaflet.js")
       (include-js "/js/main.js")
       [:script "planwise.client.core.main();"]])))
 
-(defn home-endpoint [system]
-  (routes
-   (GET "/" [] loading-page)
-   (GET "/playground" [] loading-page)
-   (context "/projects/:id" []
+(defn home-endpoint [{:keys [auth]}]
+  (let [loading-page (partial loading-page auth)]
+    (routes
      (GET "/" [] loading-page)
-     (GET "/facilities" [] loading-page)
-     (GET "/transport" [] loading-page)
-     (GET "/scenarios" [] loading-page))))
+     (GET "/playground" [] loading-page)
+     (context "/projects/:id" []
+       (GET "/" [] loading-page)
+       (GET "/facilities" [] loading-page)
+       (GET "/transport" [] loading-page)
+       (GET "/scenarios" [] loading-page)))))

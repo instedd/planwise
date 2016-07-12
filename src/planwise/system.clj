@@ -124,6 +124,7 @@
           :projects            [:db]
           :routing             [:db]
           :auth-endpoint       [:auth]
+          :home-endpoint       [:auth]
           :facilities-endpoint [:facilities]
           :projects-endpoint   [:projects]
           :routing-endpoint    [:routing]}))))
