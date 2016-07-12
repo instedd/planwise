@@ -9,12 +9,19 @@
                  [duct "0.6.1"]
 
                  ; Web server and routing
-                 [compojure "1.5.0"]
+                 [compojure "1.5.0"
+                  :exclusions [commons-codec]]
                  [ring "1.4.0"]
                  [ring/ring-defaults "0.2.0"]
                  [ring/ring-json "0.4.0"]
                  [ring-jetty-component "0.3.1"]
                  [ring-webjars "0.1.1"]
+
+                 ; Security
+                 [buddy "1.0.0"]
+                 [org.openid4java/openid4java "1.0.0"
+                  :exclusions [commons-logging
+                               org.apache.httpcomponents/httpclient]]
 
                  ; Configuration
                  [environ "1.0.3"]
