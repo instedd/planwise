@@ -25,7 +25,7 @@
   [projects/list-view])
 
 (defmethod content-pane :projects []
-  [projects/project-view])
+  [projects/project-page])
 
 (defmethod content-pane :playground []
   [playground/playground-page])

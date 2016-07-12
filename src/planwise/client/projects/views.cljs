@@ -175,3 +175,10 @@
         [:article.project-view
          [header-section project-id project-goal selected-tab]
          [project-tab project-id selected-tab]]))))
+
+(defn project-page []
+  (let [loading? (subscribe [:projects/loading?])]
+    (fn []
+      (if @loading?
+        [:div "Loading"]
+        [project-view]))))

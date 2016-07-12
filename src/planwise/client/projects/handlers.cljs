@@ -23,12 +23,27 @@
    (assoc db :creating? false)))
 
 (register-handler
+ :projects/load-project
+ in-projects
+ (fn [db [_ project-id]]
+   (async-handle (api/load-project project-id)
+                 #(dispatch [:projects/project-loaded %]))
+   (assoc db :loading? true)))
+
+(register-handler
  :projects/create-project
  in-projects
  (fn [db [_ project-data]]
    (async-handle (api/create-project project-data)
                  #(dispatch [:projects/project-created %]))
    (assoc db :creating-waiting? true)))
+
+(register-handler
+ :projects/project-loaded
+ in-projects
+  (fn [db [_ project-data]]
+    (assoc db :loading? false
+              :current project-data)))
 
 (register-handler
  :projects/project-created

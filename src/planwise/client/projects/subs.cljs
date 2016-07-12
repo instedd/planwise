@@ -13,6 +13,11 @@
   (reaction (get-in @db [:projects :creating-waiting?]))))
 
 (register-sub
+ :projects/loading?
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :loading?]))))
+
+(register-sub
  :projects/current
  (fn [db [_]]
    (reaction (get-in @db [:projects :current]))))
