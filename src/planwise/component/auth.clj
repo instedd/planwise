@@ -3,12 +3,14 @@
             [taoensso.timbre :as timbre]
             [ring.util.request :refer [request-url]]
             [ring.util.response :as resp]
+            [clj-time.core :as time]
+            [buddy.sign.jwt :as jwt]
             [planwise.util.ring :refer [absolute-url]]
             [planwise.auth.guisso :as guisso]))
 
 (timbre/refer-timbre)
 
-(defrecord AuthService [manager openid-identifier realm]
+(defrecord AuthService [manager openid-identifier realm jwe-secret jwe-options]
   component/Lifecycle
   (start [component]
     (if-not (:manager component)
@@ -62,10 +64,18 @@
   [response request identity]
   (let [user-email (:email identity)
         session    (-> (:session request)
-                       (assoc :identity user-email))]
+                       (assoc :identity {:user user-email}))]
     (assoc response :session session)))
 
 (defn logout
   "Modifies the response to logout the currently authenticated user"
   [response]
   (assoc response :session nil))
+
+(defn create-jwe-token
+  [service user-email]
+  (let [secret  (:jwe-secret service)
+        options (:jwe-options service)
+        claims  {:user user-email
+                 :exp (time/plus (time/now) (time/seconds 3600))}]
+    (jwt/encrypt claims secret options)))

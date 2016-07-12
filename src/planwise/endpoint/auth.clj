@@ -3,6 +3,8 @@
             [ring.util.request :refer [request-url]]
             [ring.util.response :refer [content-type response redirect header]]
             [hiccup.page :refer [html5]]
+            [clojure.string :as string]
+            [buddy.auth :refer [throw-unauthorized authenticated?]]
             [planwise.component.auth :as auth]))
 
 (def logout-page
@@ -17,21 +19,37 @@
     [:p "Authentication failure"]
     [:p [:a {:href "/login"} "Try again"]]]))
 
+(defn next-url [req]
+  (let [next (-> req :params :next)]
+    (if (and next (not (string/blank? next)))
+      next
+      "/")))
+
 (defn auth-endpoint [{service :auth}]
   (routes
    (GET "/identity" req
-     (let [id (:identity (:session req))]
-       (html5
-        [:body
-         [:p (str "Current identity: " id)]
-         [:p [:a {:href "/logout"} "Logout"]]])))
+     (if-not (authenticated? req)
+       (throw-unauthorized)
+       (let [id (-> req :identity :user)]
+        (html5
+         [:body
+          [:p (str "Current identity: " id)]
+          [:p
+           "API Token:"
+           [:br]
+           [:code {:style {:white-space "normal"
+                           :word-wrap "break-word"}}
+            (auth/create-jwe-token service id)]]
+          [:p
+           [:a {:href "/logout"} "Logout"]]]))))
 
    (GET "/login" req
-     (auth/redirect service req "/openidcallback?"))
+     (let [next-url (-> req :params :next)]
+       (auth/redirect service req (str "/openidcallback?next=" next-url))))
 
    (GET "/openidcallback" req
      (if-let [identity (auth/validate service req)]
-       (-> (redirect "/identity")
+       (-> (redirect (next-url req))
            (auth/login req identity))
        (-> (response failure-page)
            (content-type "text/html"))))
