@@ -24,7 +24,7 @@
 
 (defn new-project-dialog []
   (let [new-project-goal (r/atom "")
-        creating-waiting? (subscribe [:projects/creating-waiting?])]
+        view-state (subscribe [:projects/view-state])]
     (fn []
       [:div.dialog
        [:div.title
@@ -49,9 +49,9 @@
         default-base-tile-layer]
        [:div.actions
         [:button.primary
-         {:disabled @creating-waiting?
+         {:disabled (= @view-state :creating)
           :on-click #(dispatch [:projects/create-project {:goal @new-project-goal}])}
-         (if @creating-waiting?
+         (if (= @view-state :creating)
            "Creating..."
            "Create")]
         [:button.cancel
@@ -60,12 +60,12 @@
          "Cancel"]]])))
 
 (defn list-view []
-  (let [creating-project? (subscribe [:projects/creating?])]
+  (let [view-state (subscribe [:projects/view-state])]
     (fn []
       [:article.project-list
        [search-box]
        [no-projects-view]
-       (when @creating-project?
+       (when (or (= @view-state :creating) (= @view-state :create-dialog))
          [common/modal-dialog {:on-backdrop-click
                                #(dispatch [:projects/cancel-new-project])}
           [new-project-dialog]])])))
@@ -177,8 +177,8 @@
          [project-tab project-id selected-tab]]))))
 
 (defn project-page []
-  (let [loading? (subscribe [:projects/loading?])]
+  (let [view-state (subscribe [:projects/view-state])]
     (fn []
-      (if @loading?
+      (if (= @view-state :loading)
         [:div "Loading"]
         [project-view]))))

@@ -13,14 +13,13 @@
  :projects/begin-new-project
  in-projects
  (fn [db [_]]
-   (assoc db :creating? true
-             :creating-waiting? false)))
+   (assoc db :view-state :create-dialog)))
 
 (register-handler
  :projects/cancel-new-project
  in-projects
  (fn [db [_]]
-   (assoc db :creating? false)))
+   (assoc db :view-state :view)))
 
 (register-handler
  :projects/load-project
@@ -28,7 +27,7 @@
  (fn [db [_ project-id]]
    (async-handle (api/load-project project-id)
                  #(dispatch [:projects/project-loaded %]))
-   (assoc db :loading? true)))
+   (assoc db :view-state :loading)))
 
 (register-handler
  :projects/create-project
@@ -36,13 +35,13 @@
  (fn [db [_ project-data]]
    (async-handle (api/create-project project-data)
                  #(dispatch [:projects/project-created %]))
-   (assoc db :creating-waiting? true)))
+   (assoc db :view-state :creating)))
 
 (register-handler
  :projects/project-loaded
  in-projects
   (fn [db [_ project-data]]
-    (assoc db :loading? false
+    (assoc db :view-state :view
               :current project-data)))
 
 (register-handler
@@ -53,8 +52,7 @@
      (when (nil? project-id)
        (throw "Invalid project data"))
      (accountant/navigate! (routes/project-demographics {:id project-id}))
-     (assoc db :creating-waiting? false
-               :creating? false
+     (assoc db :view-state :view
                :current project-data))))
 
 (register-handler

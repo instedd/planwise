@@ -28,9 +28,7 @@
 
    ;; Projects
    :projects
-   {:creating? false
-    :creating-waiting? false
-    :loading? false
+   {:view-state :view ; [:view :create-dialog :creating :loading]
     :current nil}
 
    ;; Project currently viewing/editing

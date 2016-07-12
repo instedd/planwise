@@ -3,19 +3,9 @@
   (:require [re-frame.core :refer [register-sub]]))
 
 (register-sub
- :projects/creating?
+ :projects/view-state
  (fn [db [_]]
-   (reaction (get-in @db [:projects :creating?]))))
-
-(register-sub
- :projects/creating-waiting?
- (fn [db [_]]
-  (reaction (get-in @db [:projects :creating-waiting?]))))
-
-(register-sub
- :projects/loading?
- (fn [db [_]]
-   (reaction (get-in @db [:projects :loading?]))))
+   (reaction (get-in @db [:projects :view-state]))))
 
 (register-sub
  :projects/current
