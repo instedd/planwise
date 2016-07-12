@@ -22,7 +22,8 @@
      "New Project"]]])
 
 (defn new-project-dialog []
-  (let [new-project-goal (r/atom "")]
+  (let [new-project-goal (r/atom "")
+        view-state (subscribe [:projects/view-state])]
     (fn []
       [:div.dialog
        [:div.title
@@ -47,21 +48,23 @@
         default-base-tile-layer]
        [:div.actions
         [:button.primary
-         {:on-click
-          #(dispatch [:projects/create-project {:goal @new-project-goal}])}
-         "Continue"]
+         {:disabled (= @view-state :creating)
+          :on-click #(dispatch [:projects/create-project {:goal @new-project-goal}])}
+         (if (= @view-state :creating)
+           "Creating..."
+           "Create")]
         [:button.cancel
          {:on-click
           #(dispatch [:projects/cancel-new-project])}
          "Cancel"]]])))
 
 (defn list-view []
-  (let [creating-project? (subscribe [:projects/creating?])]
+  (let [view-state (subscribe [:projects/view-state])]
     (fn []
       [:article.project-list
        [search-box]
        [no-projects-view]
-       (when @creating-project?
+       (when (or (= @view-state :creating) (= @view-state :create-dialog))
          [common/modal-dialog {:on-backdrop-click
                                #(dispatch [:projects/cancel-new-project])}
           [new-project-dialog]])])))
@@ -81,9 +84,9 @@
       :href (routes/project-scenarios route-params)
       :title "Scenarios"}]))
 
-(defn header-section [project-id selected-tab]
+(defn header-section [project-id project-goal selected-tab]
   [:div.project-header
-   [:h2 "Test Project"]
+   [:h2 project-goal]
    [:nav
     [common/ul-menu (project-tab-items project-id) selected-tab]
     #_[:a "Download Project"]]])
@@ -161,10 +164,19 @@
      [:h1 "Scenarios"]]))
 
 (defn project-view []
-  (let [page-params (subscribe [:page-params])]
+  (let [page-params (subscribe [:page-params])
+        current-project (subscribe [:projects/current])]
     (fn []
-      (let [project-id (first @page-params)
-            selected-tab (nth @page-params 1)]
+      (let [project-id (:id @page-params)
+            selected-tab (:section @page-params)
+            project-goal (:goal @current-project)]
         [:article.project-view
-         [header-section project-id selected-tab]
+         [header-section project-id project-goal selected-tab]
          [project-tab project-id selected-tab]]))))
+
+(defn project-page []
+  (let [view-state (subscribe [:projects/view-state])]
+    (fn []
+      (if (= @view-state :loading)
+        [:div "Loading"]
+        [project-view]))))

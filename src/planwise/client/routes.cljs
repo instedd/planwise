@@ -7,14 +7,14 @@
 ;; Routes
 
 (defroute home "/" []
-  (dispatch [:navigate :home]))
+  (dispatch [:navigate {:page :home}]))
 (defroute playground "/playground" []
-  (dispatch [:navigate :playground]))
+  (dispatch [:navigate {:page :playground}]))
 (defroute project-demographics "/projects/:id" [id]
-  (dispatch [:navigate :projects id :demographics]))
+  (dispatch [:navigate {:page :projects, :id id, :section :demographics}]))
 (defroute project-facilities "/projects/:id/facilities" [id]
-  (dispatch [:navigate :projects id :facilities]))
+  (dispatch [:navigate {:page :projects, :id id, :section :facilities}]))
 (defroute project-transport "/projects/:id/transport" [id]
-  (dispatch [:navigate :projects id :transport]))
+  (dispatch [:navigate {:page :projects, :id id, :section :transport}]))
 (defroute project-scenarios "/projects/:id/scenarios" [id]
-  (dispatch [:navigate :projects id :scenarios]))
+  (dispatch [:navigate {:page :projects, :id id, :section :scenarios}]))
