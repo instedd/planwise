@@ -9,7 +9,10 @@
     database generated id.")
 
   (list-projects [this]
-    "Returns all projects in the database."))
+    "Returns all projects in the database.")
+
+  (get-project [this id]
+    "Return project with the given ID."))
 
 ;; Reference implementation
 
@@ -18,4 +21,6 @@
   (create-project [service project]
     (service/create-project service project))
   (list-projects [service]
-    (service/list-projects service)))
+    (service/list-projects service))
+  (get-project [service id]
+    (service/get-project service id)))

@@ -11,5 +11,10 @@
       (let [projects (projects/list-projects service)]
         (response projects)))
 
+    (GET "/:id/details" [id]
+      (if-let [project (projects/get-project service (Integer/parseInt id))]
+        (response project)
+        (throw "not-found")))
+
     (POST "/" [goal]
       (response (projects/create-project service {:goal goal})))))
