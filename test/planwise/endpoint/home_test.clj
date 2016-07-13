@@ -1,11 +1,15 @@
 (ns planwise.endpoint.home-test
   (:require [planwise.endpoint.home :as home]
+            [buddy.core.nonce :as nonce]
             [clojure.test :refer :all]
             [kerodon.core :refer :all]
             [kerodon.test :refer :all]))
 
+(defn mock-auth-service []
+  {:jwe-secret (nonce/random-bytes 32)})
+
 (def handler
-  (home/home-endpoint {}))
+  (home/home-endpoint {:auth (mock-auth-service)}))
 
 (def home-paths ["/"
                  "/playground"
