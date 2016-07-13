@@ -6,11 +6,12 @@
             [clj-time.core :as time]
             [buddy.sign.jwt :as jwt]
             [planwise.util.ring :refer [absolute-url]]
+            [planwise.component.users :as users]
             [planwise.auth.guisso :as guisso]))
 
 (timbre/refer-timbre)
 
-(defrecord AuthService [manager guisso-url realm jwe-secret jwe-options]
+(defrecord AuthService [manager guisso-url realm jwe-secret jwe-options users-store]
   component/Lifecycle
   (start [component]
     (if-not (:manager component)
@@ -67,15 +68,19 @@
 
 (defn login
   "Updates the response to alter the session to include the authenticated user"
-  [response request identity]
-  (let [user-email (:email identity)
-        session    (-> (:session request)
-                       (assoc :identity {:user user-email}))]
+  [service response request identity]
+  (let [user-email  (:email identity)
+        users-store (:users-store service)
+        user        (users/find-or-create-user-by-email users-store user-email)
+        session     (-> (:session request)
+                        (assoc :identity {:user user-email}))]
+    (info (str "User " user-email " (id=" (:id user) ") authenticated successfully"))
+    (users/update-user-last-login! users-store (:id user))
     (assoc response :session session)))
 
 (defn logout
   "Modifies the response to logout the currently authenticated user"
-  [response]
+  [service response]
   (assoc response :session nil))
 
 (defn create-jwe-token

@@ -114,7 +114,8 @@
          :routing-endpoint    (endpoint-component routing-endpoint)
          :monitor-endpoint    (endpoint-component monitor-endpoint))
         (component/system-using
-         {:http                {:app :webapp}
+         {; Server and handlers
+          :http                {:app :webapp}
           :webapp              [:app :api]
           :api                 [:monitor-endpoint
                                 :facilities-endpoint
@@ -122,10 +123,15 @@
                                 :routing-endpoint]
           :app                 [:home-endpoint
                                 :auth-endpoint]
+
+          ; Components
           :facilities          [:db]
           :projects            [:db]
           :routing             [:db]
           :users-store         [:db]
+          :auth                [:users-store]
+
+          ; Endpoints
           :auth-endpoint       [:auth]
           :home-endpoint       [:auth]
           :facilities-endpoint [:facilities]

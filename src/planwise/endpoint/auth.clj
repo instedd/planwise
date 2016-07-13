@@ -49,12 +49,12 @@
 
    (GET "/openidcallback" req
      (if-let [identity (auth/validate service req)]
-       (-> (redirect (next-url req))
-           (auth/login req identity))
+       (as-> (redirect (next-url req)) $
+           (auth/login service $ req identity))
        (-> (response failure-page)
            (content-type "text/html"))))
 
    (GET "/logout" []
      (-> (response logout-page)
          (content-type "text/html")
-         (auth/logout)))))
+         (auth/logout service)))))
