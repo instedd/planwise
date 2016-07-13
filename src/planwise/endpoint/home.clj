@@ -3,6 +3,7 @@
             [ring.util.anti-forgery :refer [anti-forgery-field]]
             [buddy.auth :refer [authenticated? throw-unauthorized]]
             [planwise.component.auth :refer [create-jwe-token]]
+            [hiccup.form :refer [hidden-field]]
             [hiccup.page :refer [include-js include-css html5]]))
 
 (def mount-target
@@ -22,12 +23,12 @@
 
 (defn identity-field [request]
   (let [email (-> request :identity :user)]
-    [:input {:type :hidden :name "__identity" :value email}]))
+    (hidden-field "__identity" email)))
 
 (defn jwe-token-field [auth request]
   (let [email (-> request :identity :user)
         token (create-jwe-token auth email)]
-    [:input {:type :hidden :name "__jwe_token" :value token}]))
+    (hidden-field "__jwe-token" token)))
 
 (defn loading-page [auth request]
   (if-not (authenticated? request)
