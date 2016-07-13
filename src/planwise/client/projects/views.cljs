@@ -12,10 +12,12 @@
     #(dispatch [:projects/begin-new-project])}
    "New Project"])
 
-(defn search-box [show-new]
+(defn search-box [projects-count show-new]
   [:div.search-box
-   [:div "0 Projects"]
-   [:input {:type "search"}]
+   [:div (str projects-count " projects")]
+   [:input
+    {:type "search"
+     :on-change #(dispatch [:projects/search (-> % .-target .-value str)])}]
    (if show-new
     [new-project-button])])
 
@@ -71,22 +73,22 @@
       [:img.map-preview {:src (static-image)}]]])
 
 (defn projects-list [projects]
-  (if (empty? projects)
-    [no-projects-view]
-    [:ul.projects-list
-      (for [project projects]
-        [:li {:key (:id project)}
-          [project-card project]])]))
+  [:ul.projects-list
+    (for [project projects]
+      [:li {:key (:id project)}
+        [project-card project]])])
 
 (defn list-view []
   (let [view-state (subscribe [:projects/view-state])
-        projects (subscribe [:projects/list])]
+        projects (subscribe [:projects/list])
+        filtered-projects (subscribe [:projects/filtered-list])]
     (fn []
       [:article.project-list
-       [search-box (seq @projects)]
-       (if (= @view-state :loading)
-         [:div "Loading"]
-         [projects-list @projects])
+       [search-box (count @filtered-projects) (seq @projects)]
+       (cond
+         (= @view-state :loading) [:div "Loading"]
+         (empty? @projects) [no-projects-view]
+         :else [projects-list @filtered-projects])
        (when (or (= @view-state :creating) (= @view-state :create-dialog))
          [common/modal-dialog {:on-backdrop-click
                                #(dispatch [:projects/cancel-new-project])}

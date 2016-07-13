@@ -8,6 +8,12 @@
 (def in-current-project (path [:current-project]))
 
 (register-handler
+ :projects/search
+ in-projects
+ (fn [db [_ value]]
+   (assoc db :search-string value)))
+
+(register-handler
  :projects/begin-new-project
  in-projects
  (fn [db [_]]
