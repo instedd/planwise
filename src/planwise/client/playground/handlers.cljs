@@ -6,19 +6,13 @@
             [planwise.client.common :refer [debounced async-handle]]
             [re-frame.core :refer [dispatch register-handler path]]))
 
-(defn fetch-geojson []
-  (async-handle (api/fetch-geojson)
-                #(dispatch [:playground/geojson-received %])))
-
 (defn fetch-isochrone* [node-id threshold & [algorithm]]
-  (async-handle (api/fetch-isochrone node-id threshold algorithm)
-                #(dispatch [:playground/isochrone-received %])))
+  (api/fetch-isochrone node-id threshold algorithm :playground/isochrone-received))
 
 (def fetch-isochrone (debounced fetch-isochrone* 500))
 
 (defn fetch-facilities []
-  (async-handle (api/fetch-facilities)
-                #(dispatch [:playground/facilities-received %])))
+  (api/fetch-facilities :playground/facilities-received))
 
 (defn isochrone-algorithm [modifier?]
   (if modifier?
@@ -26,8 +20,7 @@
     :alpha-shape))
 
 (defn fetch-facilities-with-isochrones* [{:keys [threshold algorithm simplify]}]
-  (async-handle (api/fetch-facilities-with-isochrones threshold algorithm simplify)
-                #(dispatch [:playground/facilities-with-isochrones-received %])))
+  (api/fetch-facilities-with-isochrones threshold algorithm simplify :playground/facilities-with-isochrones-received))
 
 (def fetch-facilities-with-isochrones (debounced fetch-facilities-with-isochrones* 500))
 
@@ -52,8 +45,7 @@
  :playground/map-clicked
  in-playground
  (fn [db [_ lat lon modifier?]]
-   (async-handle (api/fetch-nearest-node lat lon)
-                 #(dispatch [:playground/nearest-node-received % modifier?]))
+   (api/fetch-nearest-node lat lon #(dispatch [:playground/nearest-node-received % modifier?]))
    (assoc-in db [:loading?] true)))
 
 (register-handler
@@ -117,7 +109,7 @@
  :playground/load-geojson
  in-playground
  (fn [db [_]]
-   (fetch-geojson)
+   (api/fetch-geojson :playground/geojson-received)
    db))
 
 (register-handler

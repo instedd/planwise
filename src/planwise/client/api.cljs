@@ -1,7 +1,5 @@
 (ns planwise.client.api
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
-  (:require [cljs.core.async :as async :refer [chan put! <!]]
-            [ajax.core :refer [GET to-interceptor default-interceptors]]
+  (:require [ajax.core :refer [GET to-interceptor default-interceptors]]
             [re-frame.utils :as c]
             [re-frame.core :refer [dispatch]]
             [clojure.string :as string]))
@@ -22,58 +20,30 @@
 
 
 ;; Common json-request definition to use with ajax requests
-(defn common-success-fn [data]
-  (c/log "API response: " data))
-
 (defn common-error-fn [{:keys [status status-text]}]
   (c/error (str "Error " status " performing AJAX request: " status-text)))
 
-(defn json-request [params [success-fn error-fn]]
-  (let [success-handler (cond
-                          (fn? success-fn) success-fn
-                          (nil? success-fn) common-success-fn
-                          :else #(dispatch [success-fn %]))
-        error-handler (or error-fn common-error-fn)]
-    {:format :json
-     :response-format :json
-     :keywords? true
+(defn success-handler [success-fn]
+  (cond
+    (fn? success-fn) success-fn
+    (nil? success-fn) #(c/log "API response: " %)
+    :else #(dispatch [success-fn %])))
+
+(defn raw-request [params [success-fn error-fn] & {:keys [mapper-fn], :or {mapper-fn identity}}]
+  (let [error-handler (or error-fn common-error-fn)]
+    {:format :raw
      :params params
-     :handler success-handler
+     :handler (comp (success-handler success-fn) mapper-fn)
      :error-handler error-handler}))
 
-;; Default handlers to use with cljs-ajax to put the response back into a
-;; core.async channel
+(defn json-request [params fns & keyargs]
+  (assoc (raw-request params fns keyargs)
+    :format :json
+    :response-format :json
+    :keywords? true))
 
-(defn async-handlers
-  ([c]
-   (async-handlers c identity))
-  ([c success-mapper-fn]
-   {:handler (fn [response]
-               (put! c {:status :ok
-                        :data (success-mapper-fn response)}))
-    :error-handler (fn [{:keys [status status-text]}]
-                     (put! c {:status :error
-                              :code status
-                              :message status-text}))}))
-
-(defn parse-points-csv [csv]
-  (let [lines (string/split-lines csv)]
-    (->> lines
-         (filter #(not= \# (first %)))
-         (map #(mapv js/parseFloat (string/split % #","))))))
-
-(defn fetch-points []
-  (let [c (chan)]
-    (GET "/data/data.csv" (async-handlers c parse-points-csv))
-    c))
-
-(defn parse-geojson [s]
-  (.parse js/JSON s))
-
-(defn fetch-geojson []
-  (let [c (chan)]
-    (GET "/data/poly.geojson" (async-handlers c parse-geojson))
-    c))
+(defn fetch-geojson [& fns]
+  (GET "/data/poly.geojson" (raw-request {} fns :mapper-fn #(.parse js/JSON %))))
 
 
 ;; The threshold parameter for isochrones should be given in seconds
@@ -83,14 +53,12 @@
 
 (def traffic-constant 0.66)
 
-(defn fetch-isochrone [node-id threshold & [algorithm]]
-  (let [c (chan)]
-    (GET "/routing/isochrone" (assoc (async-handlers c parse-geojson)
-                                     :format :raw
-                                     :params {:node-id node-id
-                                              :threshold (* threshold traffic-constant)
-                                              :algorithm (some-> algorithm name)}))
-    c))
+(defn fetch-isochrone [node-id threshold algorithm & handler-fns]
+    (GET "/routing/isochrone" (raw-request {:node-id node-id
+                                             :threshold (* threshold traffic-constant)
+                                             :algorithm (some-> algorithm name)}
+                                          handler-fns
+                                          :mapper-fn #(.parse js/JSON %))))
 
 (defn parse-node-info [node-data]
   (when-not (empty? node-data)
@@ -100,28 +68,19 @@
       {:node-id node-id
        :point point})))
 
-(defn fetch-nearest-node [lat lon]
-  (let [c (chan)]
-    (GET "/routing/nearest-node" (assoc (async-handlers c parse-node-info)
-                                        :format :raw
-                                        :params {:lat lat
-                                                 :lon lon}))
-    c))
+(defn fetch-nearest-node [lat lon & fns]
+  (let [params {:lat lat :lon lon}]
+    (GET "/routing/nearest-node" (raw-request params fns :mapper-fn parse-node-info))))
 
-(defn fetch-facilities []
-  (let [c (chan)]
-    (GET "/facilities" (assoc (async-handlers c identity)
-                              :format :json))
-    c))
+(defn fetch-facilities [& fns]
+  (GET "/facilities" (raw-request {} fns)))
 
-(defn fetch-facilities-with-isochrones [threshold algorithm simplify]
-  (let [c (chan)]
-    (GET "/facilities/with-isochrones" (assoc (async-handlers c identity)
-                                              :format :json
-                                              :params {:threshold threshold
-                                                       :algorithm algorithm
-                                                       :simplify simplify}))
-    c))
+(defn fetch-facilities-with-isochrones [threshold algorithm simplify & fns]
+  (let [params {:threshold threshold
+                :algorithm algorithm
+                :simplify simplify}]
+    (GET "/facilities/with-isochrones" (raw-request params fns))))
+
 
 ;; Debugging utility functions
 
@@ -133,10 +92,3 @@
      (if (> (count s) max-length)
        (str (subs s 0 (- max-length 3)) "...")
        s))))
-
-(defn async-get-and-print [c]
-  (go
-    (let [msg (<! c)]
-      (condp = (:status msg)
-        :ok (println (str "Data received OK: " (truncate (:data msg))))
-        :error (println (str "Error receiving data (" (:code msg) "): " (:message msg)))))))
