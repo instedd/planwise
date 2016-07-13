@@ -27,6 +27,7 @@
             [planwise.component.facilities :refer [facilities-service]]
             [planwise.component.routing :refer [routing-service]]
             [planwise.component.projects :refer [projects-service]]
+            [planwise.component.users :refer [users-store]]
             [planwise.endpoint.home :refer [home-endpoint]]
             [planwise.endpoint.auth :refer [auth-endpoint]]
             [planwise.endpoint.facilities :refer [facilities-endpoint]]
@@ -105,6 +106,7 @@
          :facilities          (facilities-service)
          :projects            (projects-service)
          :routing             (routing-service)
+         :users-store         (users-store)
          :auth-endpoint       (endpoint-component auth-endpoint)
          :home-endpoint       (endpoint-component home-endpoint)
          :facilities-endpoint (endpoint-component facilities-endpoint)
@@ -123,6 +125,7 @@
           :facilities          [:db]
           :projects            [:db]
           :routing             [:db]
+          :users-store         [:db]
           :auth-endpoint       [:auth]
           :home-endpoint       [:auth]
           :facilities-endpoint [:facilities]
