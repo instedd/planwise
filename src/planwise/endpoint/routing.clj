@@ -19,7 +19,7 @@
       :invalid)))
 
 (defn routing-endpoint [{service :routing}]
-  (context "/routing" []
+  (context "/api/routing" []
     (GET "/" [] "routing endpoint")
 
     (GET "/nearest-node" [lat lon]
