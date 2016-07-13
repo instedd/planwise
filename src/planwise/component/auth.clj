@@ -10,7 +10,7 @@
 
 (timbre/refer-timbre)
 
-(defrecord AuthService [manager openid-identifier realm jwe-secret jwe-options]
+(defrecord AuthService [manager guisso-url realm jwe-secret jwe-options]
   component/Lifecycle
   (start [component]
     (if-not (:manager component)
@@ -25,13 +25,19 @@
   (map->AuthService config))
 
 
+(defn- openid-identifier
+  "Constructs the OpenID identifier endpoint from the base Guisso URL"
+  [guisso-url]
+  (let [guisso-url (if (.endsWith guisso-url "/") guisso-url (str guisso-url "/"))]
+    (str guisso-url "openid")))
+
 (defn redirect
   "Setup the OpenID associations and return a Ring response to redirect the user
   to the OpenID login page"
   [service request return-location]
   (let [manager         (:manager service)
         realm           (or (:realm service) (absolute-url "/" request))
-        identifier      (:openid-identifier service)
+        identifier      (openid-identifier (:guisso-url service))
         session         (:session request)
         return-url      (absolute-url return-location request)
         auth-request    (guisso/auth-request manager identifier return-url realm)

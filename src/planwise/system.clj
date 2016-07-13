@@ -62,9 +62,9 @@
 (def jwe-secret (nonce/random-bytes 32))
 
 (def base-config
-  {:auth {:openid-identifier "https://login.instedd.org/openid"
-          :jwe-secret        jwe-secret
-          :jwe-options       jwe-options}
+  {:auth {:guisso-url  "https://login.instedd.org/"
+          :jwe-secret  jwe-secret
+          :jwe-options jwe-options}
    :api {:middleware   [[wrap-authorization :auth-backend]
                         [wrap-authentication :auth-backend]
                         [wrap-json-params]
