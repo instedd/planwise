@@ -1,15 +1,18 @@
 (ns planwise.endpoint.home-test
   (:require [planwise.endpoint.home :as home]
             [buddy.core.nonce :as nonce]
+            [buddy.auth.middleware :refer [wrap-authorization]]
+            [buddy.auth.backends :as backends]
             [clojure.test :refer :all]
             [kerodon.core :refer :all]
             [kerodon.test :refer :all]))
 
-(defn mock-auth-service []
+(def mocked-auth-service
   {:jwe-secret (nonce/random-bytes 32)})
 
 (def handler
-  (home/home-endpoint {:auth (mock-auth-service)}))
+  (-> (home/home-endpoint {:auth mocked-auth-service})
+      (wrap-authorization (backends/session))))
 
 (def home-paths ["/"
                  "/playground"
@@ -21,9 +24,9 @@
 (deftest home-endpoint-checks-login
   (doseq [path home-paths]
     (testing (str "path " path " throws 401")
-      (is (thrown? clojure.lang.ExceptionInfo
-                   (-> (session handler)
-                       (visit path)))))))
+      (-> (session handler)
+          (visit path)
+          (has (status? 401))))))
 
 (deftest root-page-test
   (doseq [path home-paths]
