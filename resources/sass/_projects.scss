@@ -29,6 +29,34 @@ $project-head-height: 100px;
   justify-content: center;
 }
 
+.projects-list {
+  list-style: none;
+  padding: 0;
+
+  .project-card {
+    overflow: auto;
+    color: $black;
+    background: $white;
+    margin: 20px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+
+    .project-card-content {
+      padding: 15px;
+      display: inline-block;
+    }
+
+    .project-goal {
+      font-weight: bold;
+    }
+
+    .map-preview {
+      float: right;
+      height: 144px;
+    }
+  }
+}
+
 article.project-view {
   .project-header {
     background: $gray1;

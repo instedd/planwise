@@ -1,6 +1,6 @@
 (ns planwise.client.projects.views
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [planwise.client.mapping :refer [default-base-tile-layer]]
+            [planwise.client.mapping :refer [default-base-tile-layer static-image]]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
             [reagent.core :as r]
@@ -63,14 +63,20 @@
           #(dispatch [:projects/cancel-new-project])}
          "Cancel"]]])))
 
+(defn project-card [{:keys [id goal] :as project}]
+  [:a {::href (routes/project-demographics project)}
+    [:div.project-card
+      [:div.project-card-content
+        [:span.project-goal goal]]
+      [:img.map-preview {:src (static-image)}]]])
+
 (defn projects-list [projects]
   (if (empty? projects)
     [no-projects-view]
-    [:ul
-      (for [{:keys [id goal] :as project} projects]
-        [:li {:key id}
-          [:a {::href (routes/project-demographics project)}
-            goal]])]))
+    [:ul.projects-list
+      (for [project projects]
+        [:li {:key (:id project)}
+          [project-card project]])]))
 
 (defn list-view []
   (let [view-state (subscribe [:projects/view-state])
