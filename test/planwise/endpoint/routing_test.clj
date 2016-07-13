@@ -31,23 +31,23 @@
 (deftest nearest-node-test
   (testing "with missing parameters"
     (-> (session handler)
-        (visit "/routing/nearest-node")
+        (visit "/api/routing/nearest-node")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/routing/nearest-node?lat=10")
+        (visit "/api/routing/nearest-node?lat=10")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/routing/nearest-node?lon=10")
+        (visit "/api/routing/nearest-node?lon=10")
         (has (status? 400))))
 
   (testing "with non-numeric parameters"
     (-> (session handler)
-        (visit "/routing/nearest-node?lat=abc&lon=abc")
+        (visit "/api/routing/nearest-node?lat=abc&lon=abc")
         (has (status? 400))))
 
   (testing "with both parameters"
     (let [body (-> (session handler)
-                   (visit "/routing/nearest-node?lat=10&lon=10")
+                   (visit "/api/routing/nearest-node?lat=10&lon=10")
                    (has (status? 200))
                    (:response)
                    (:body))]
@@ -56,29 +56,29 @@
 (deftest isochrone-test
   (testing "with missing parameters"
     (-> (session handler)
-        (visit "/routing/isochrone")
+        (visit "/api/routing/isochrone")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/routing/isochrone?node-id=123")
+        (visit "/api/routing/isochrone?node-id=123")
         (has (status? 400))))
 
   (testing "with invalid parameters"
     (-> (session handler)
-        (visit "/routing/isochrone?node-id=123&threshold=600&algorithm=foo")
+        (visit "/api/routing/isochrone?node-id=123&threshold=600&algorithm=foo")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/routing/isochrone?node-id=123&threshold=abc&algorithm=buffer")
+        (visit "/api/routing/isochrone?node-id=123&threshold=abc&algorithm=buffer")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/routing/isochrone?node-id=abc&threshold=600&algorithm=buffer")
+        (visit "/api/routing/isochrone?node-id=abc&threshold=600&algorithm=buffer")
         (has (status? 400))))
 
   (testing "with valid parameters"
     (-> (session handler)
-        (visit "/routing/isochrone?node-id=123&threshold=600")
+        (visit "/api/routing/isochrone?node-id=123&threshold=600")
         (has (status? 200))
         (has (text? "isochrone from 123 with 600.0")))
     (-> (session handler)
-        (visit "/routing/isochrone?node-id=123&threshold=600&algorithm=buffer")
+        (visit "/api/routing/isochrone?node-id=123&threshold=600&algorithm=buffer")
         (has (status? 200))
         (has (text? "isochrone from 123 with 600.0 using :buffer")))))
