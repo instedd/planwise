@@ -18,7 +18,7 @@
     [{:facility_id 1 :threshold 900 :method "alpha-shape" :the_geom (sample-polygon)}]]])
 
 (def new-facilities
-  [{:id 3 :name "New facility" :lat 4 :lon 10}])
+  [{:id 3 :name "New facility" :lat 4 :lon 10 :type "hospital"}])
 
 (defn system []
   (into

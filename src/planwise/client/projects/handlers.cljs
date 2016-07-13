@@ -1,10 +1,8 @@
 (ns planwise.client.projects.handlers
   (:require [re-frame.core :refer [register-handler path dispatch]]
             [accountant.core :as accountant]
-            [planwise.client.common :refer [debounced async-handle]]
             [planwise.client.routes :as routes]
             [planwise.client.projects.api :as api]))
-
 
 (def in-projects (path [:projects]))
 (def in-current-project (path [:current-project]))
@@ -13,21 +11,35 @@
  :projects/begin-new-project
  in-projects
  (fn [db [_]]
-   (assoc db :creating? true)))
+   (assoc db :view-state :create-dialog)))
 
 (register-handler
  :projects/cancel-new-project
  in-projects
  (fn [db [_]]
-   (assoc db :creating? false)))
+   (assoc db :view-state :view)))
+
+(register-handler
+ :projects/load-project
+ in-projects
+ (fn [db [_ project-id]]
+   (api/load-project project-id :projects/project-loaded)
+   (assoc db :view-state :loading
+             :current nil)))
 
 (register-handler
  :projects/create-project
  in-projects
  (fn [db [_ project-data]]
-   (async-handle (api/create-project project-data)
-                 #(dispatch [:projects/project-created %]))
-   (assoc db :creating? false)))
+   (api/create-project project-data :projects/project-created)
+   (assoc db :view-state :creating)))
+
+(register-handler
+ :projects/project-loaded
+ in-projects
+  (fn [db [_ project-data]]
+    (assoc db :view-state :view
+              :current project-data)))
 
 (register-handler
  :projects/project-created
@@ -37,7 +49,8 @@
      (when (nil? project-id)
        (throw "Invalid project data"))
      (accountant/navigate! (routes/project-demographics {:id project-id}))
-     (assoc-in db [:cache project-id] project-data))))
+     (assoc db :view-state :view
+               :current project-data))))
 
 (register-handler
  :projects/toggle-filter

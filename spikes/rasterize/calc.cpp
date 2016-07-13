@@ -28,7 +28,7 @@ GDALDataset* createRasterFrom(GDALDataset* referenceRaster, const char* outFilen
   GDALDriver* hDriver = (GDALDriver*)GDALGetDriverByName("GTiff");
   int xPixelsSize = referenceRaster->GetRasterXSize();
   int yPixelsSize = referenceRaster->GetRasterYSize();
-  GDALDataType eOutputType = GDT_Float64;
+  GDALDataType eOutputType = GDT_Float32;
   GDALDataset* hDstDS = hDriver->Create(outFilename, xPixelsSize, yPixelsSize,
             bandCount, eOutputType, papszCreateOptions);
   if (hDstDS == NULL)

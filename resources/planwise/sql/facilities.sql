@@ -1,7 +1,7 @@
 -- :name insert-facility! :! :n
 INSERT INTO facilities
-    (id, name, lat, lon, the_geom)
-    VALUES (:id, :name, :lat, :lon, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
+    (id, name, lat, lon, type, the_geom)
+    VALUES (:id, :name, :lat, :lon, :type, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
 
 -- :name delete-facilities! :!
 DELETE FROM facilities;

@@ -1,14 +1,13 @@
 (ns planwise.client.projects.api
   (:require [ajax.core :refer [GET POST]]
-            [cljs.core.async :as async :refer [chan put! <!]]
-            [planwise.client.api :refer [async-handlers]]))
+            [planwise.client.api :refer [json-request]]))
 
+(defn load-project [id & extras]
+  (GET
+    (str "/api/projects/" id)
+    (json-request {:id id} extras)))
 
-(defn create-project [params]
-  (let [c (chan)]
-    (POST "/projects/" (assoc (async-handlers c identity)
-                              :format :json
-                              :response-format :json
-                              :keywords? true
-                              :params params))
-    c))
+(defn create-project [params & extras]
+  (POST
+    "/api/projects/"
+    (json-request params extras)))
