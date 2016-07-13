@@ -13,6 +13,11 @@
    (reaction (get-in @db [:projects :current]))))
 
 (register-sub
+ :projects/list
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :list]))))
+
+(register-sub
  :projects/facilities
  (fn [db [_ data]]
    (let [facility-data (reaction (get-in @db [:current-project :facilities]))]

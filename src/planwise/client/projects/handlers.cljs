@@ -28,18 +28,32 @@
              :current nil)))
 
 (register-handler
- :projects/create-project
- in-projects
- (fn [db [_ project-data]]
-   (api/create-project project-data :projects/project-created)
-   (assoc db :view-state :creating)))
-
-(register-handler
  :projects/project-loaded
  in-projects
   (fn [db [_ project-data]]
     (assoc db :view-state :view
               :current project-data)))
+
+(register-handler
+ :projects/load-projects
+ in-projects
+ (fn [db [_ project-id]]
+   (api/load-projects :projects/projects-loaded)
+   (assoc db :view-state :loading-list)))
+
+(register-handler
+ :projects/projects-loaded
+ in-projects
+  (fn [db [_ projects]]
+    (assoc db :view-state :list
+              :list projects)))
+
+(register-handler
+ :projects/create-project
+ in-projects
+ (fn [db [_ project-data]]
+   (api/create-project project-data :projects/project-created)
+   (assoc db :view-state :creating)))
 
 (register-handler
  :projects/project-created
@@ -50,6 +64,7 @@
        (throw "Invalid project data"))
      (accountant/navigate! (routes/project-demographics {:id project-id}))
      (assoc db :view-state :view
+               :list (cons project-data (:list db))
                :current project-data))))
 
 (register-handler

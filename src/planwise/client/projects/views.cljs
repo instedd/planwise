@@ -6,20 +6,25 @@
             [reagent.core :as r]
             [leaflet.core :refer [map-widget]]))
 
-(defn search-box []
+(defn new-project-button []
+  [:button.primary
+   {:on-click
+    #(dispatch [:projects/begin-new-project])}
+   "New Project"])
+
+(defn search-box [show-new]
   [:div.search-box
    [:div "0 Projects"]
-   [:input {:type "search"}]])
+   [:input {:type "search"}]
+   (if show-new
+    [new-project-button])])
 
 (defn no-projects-view []
   [:div.empty-list
    [:img {:src "/images/empty-projects.png"}]
    [:p "You have no projects yet"]
    [:div
-    [:button.primary
-     {:on-click
-      #(dispatch [:projects/begin-new-project])}
-     "New Project"]]])
+    [new-project-button]]])
 
 (defn new-project-dialog []
   (let [new-project-goal (r/atom "")
@@ -58,12 +63,24 @@
           #(dispatch [:projects/cancel-new-project])}
          "Cancel"]]])))
 
+(defn projects-list [projects]
+  (if (empty? projects)
+    [no-projects-view]
+    [:ul
+      (for [{:keys [id goal] :as project} projects]
+        [:li {:key id}
+          [:a {::href (routes/project-demographics project)}
+            goal]])]))
+
 (defn list-view []
-  (let [view-state (subscribe [:projects/view-state])]
+  (let [view-state (subscribe [:projects/view-state])
+        projects (subscribe [:projects/list])]
     (fn []
       [:article.project-list
-       [search-box]
-       [no-projects-view]
+       [search-box (seq @projects)]
+       (if (= @view-state :loading)
+         [:div "Loading"]
+         [projects-list @projects])
        (when (or (= @view-state :creating) (= @view-state :create-dialog))
          [common/modal-dialog {:on-backdrop-click
                                #(dispatch [:projects/cancel-new-project])}
