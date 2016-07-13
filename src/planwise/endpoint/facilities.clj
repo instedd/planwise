@@ -4,7 +4,7 @@
             [ring.util.response :refer [response]]))
 
 (defn facilities-endpoint [{service :facilities}]
-  (context "/facilities" []
+  (context "/api/facilities" []
     (GET "/" [] (let [facilities (facilities/list-facilities service)]
                   (response facilities)))
 

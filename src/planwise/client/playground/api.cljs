@@ -13,9 +13,9 @@
 (def traffic-constant 0.66)
 
 (defn fetch-isochrone [node-id threshold algorithm & handler-fns]
-    (GET "/routing/isochrone" (raw-request {:node-id node-id
-                                             :threshold (* threshold traffic-constant)
-                                             :algorithm (some-> algorithm name)}
+    (GET "/api/routing/isochrone" (raw-request {:node-id node-id
+                                                :threshold (* threshold traffic-constant)
+                                                :algorithm (some-> algorithm name)}
                                           handler-fns
                                           :mapper-fn #(.parse js/JSON %))))
 
@@ -29,13 +29,13 @@
 
 (defn fetch-nearest-node [lat lon & fns]
   (let [params {:lat lat :lon lon}]
-    (GET "/routing/nearest-node" (raw-request params fns :mapper-fn parse-node-info))))
+    (GET "/api/routing/nearest-node" (raw-request params fns :mapper-fn parse-node-info))))
 
 (defn fetch-facilities [& fns]
-  (GET "/facilities" (raw-request {} fns)))
+  (GET "/api/facilities" (raw-request {} fns)))
 
 (defn fetch-facilities-with-isochrones [threshold algorithm simplify & fns]
   (let [params {:threshold threshold
                 :algorithm algorithm
                 :simplify simplify}]
-    (GET "/facilities/with-isochrones" (raw-request params fns))))
+    (GET "/api/facilities/with-isochrones" (raw-request params fns))))
