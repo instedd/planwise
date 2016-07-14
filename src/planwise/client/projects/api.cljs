@@ -11,3 +11,8 @@
   (POST
     "/api/projects/"
     (json-request params extras)))
+
+(defn fetch-facilities [params & extras]
+  (GET
+      "/api/facilities/"
+      (json-request params extras)))

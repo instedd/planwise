@@ -60,5 +60,16 @@
          current-filter (get-in db path)
          toggled-filter (if (contains? current-filter filter-value)
                           (disj current-filter filter-value)
-                          (conj current-filter filter-value))]
+                          (conj current-filter filter-value))
+         updated-db-filters (get-in (assoc-in db path toggled-filter) [:facilities :filters])
+         updated-filters (into {} (for [[k v] updated-db-filters] [k (seq v)]))]
+     (api/fetch-facilities updated-filters :projects/facilities-loaded)
      (assoc-in db path toggled-filter))))
+
+(register-handler
+ :projects/facilities-loaded
+ in-current-project
+ (fn [db [_ facilities]]
+   (let [count-path [:facilities :count]
+         new-count (:count facilities)]
+     (assoc-in db count-path new-count))))

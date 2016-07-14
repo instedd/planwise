@@ -5,8 +5,8 @@
 
 (defn facilities-endpoint [{service :facilities}]
   (context "/api/facilities" []
-    (GET "/" [] (let [facilities (facilities/list-facilities service)]
-                  (response facilities)))
+    (GET "/" {{types :type} :params} (let [facilities (facilities/list-facilities-with-types service (vals types))]
+                  (response {:count (count facilities) :facilities facilities})))
 
     (GET "/with-isochrones" [threshold algorithm simplify]
       (let [facilities (facilities/list-with-isochrones service

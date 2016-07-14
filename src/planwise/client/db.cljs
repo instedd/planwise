@@ -11,8 +11,8 @@
    :filter-definitions
    {:facility-type ["Dispensary"
                     "Health Center"
-                    "District Hospital"
-                    "Country Referral Hospital"]
+                    "Hospital"
+                    "General Hospital"]
 
     :facility-ownership ["MOH"
                          "Faith Based Organization"
@@ -37,8 +37,8 @@
                  :filters {:type #{}
                            :ownership #{}
                            :services #{}}
-                 :count 16
-                 :total 125}}
+                 :count 0
+                 :total 4944}}
 
    ;; Playground related data
    :playground {:map-view initial-position-and-zoom
