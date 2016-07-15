@@ -42,6 +42,9 @@
                  :count 16
                  :total 125}}
 
+   ;; Regions (id to region data)
+   :regions {}
+
    ;; Playground related data
    :playground {:map-view initial-position-and-zoom
                 :loading? false

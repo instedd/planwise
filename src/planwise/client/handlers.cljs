@@ -2,6 +2,7 @@
   (:require [planwise.client.db :as db]
             [planwise.client.playground.handlers :as playground]
             [planwise.client.projects.handlers :as projects]
+            [planwise.client.regions.handlers :as regions]
             [re-frame.core :refer [dispatch register-handler]]))
 
 ;; Event handlers
