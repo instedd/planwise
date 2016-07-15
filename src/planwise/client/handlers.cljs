@@ -21,6 +21,10 @@
       (dispatch [:projects/load-project id]))
     db))
 
+(defmethod on-navigate :home [db _ _]
+  (dispatch [:projects/load-projects])
+  db)
+
 (defmethod on-navigate :default [db _ _]
   db)
 
