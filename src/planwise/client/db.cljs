@@ -42,8 +42,8 @@
                  :count 16
                  :total 125}}
 
-   ;; Regions (id to region data)
-   :regions {}
+   ;; Regions
+   :regions {} ;; Id to {:id :name :admin_level & :geojson}
 
    ;; Playground related data
    :playground {:map-view initial-position-and-zoom

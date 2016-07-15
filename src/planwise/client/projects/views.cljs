@@ -1,5 +1,6 @@
 (ns planwise.client.projects.views
   (:require [re-frame.core :refer [subscribe dispatch]]
+            [re-com.core :as rc]
             [planwise.client.mapping :refer [default-base-tile-layer static-image]]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
@@ -29,42 +30,61 @@
    [:div
     [new-project-button]]])
 
+
 (defn new-project-dialog []
-  (let [new-project-goal (r/atom "")
-        view-state (subscribe [:projects/view-state])]
+  (let [view-state (subscribe [:projects/view-state])
+        regions (subscribe [:regions/list])
+        map-preview-zoom (r/atom 5)
+        map-preview-position (r/atom [-0.0236 37.9062])
+        new-project-goal (r/atom "")
+        new-project-region-id (r/atom (:id (first @regions)))]
     (fn []
-      [:div.dialog
-       [:div.title
-        [:h1 "New Project"]
-        [:button.close {:on-click
-                        #(dispatch [:projects/cancel-new-project])}
-         "X"]]
-       [:div.form-control
-        [:label "Goal"]
-        [:input {:type "text"
-                 :value @new-project-goal
-                 :placeholder "Describe your project's goal"
-                 :on-change #(reset! new-project-goal (-> % .-target .-value str))}]]
-       [:div.form-control
-        [:label "Location"]
-        [:input {:type "search" :placeholder "Enter your project's location"}]]
-       [map-widget {:width 400
-                    :height 300
-                    :position [0 0]
-                    :zoom 1
-                    :controls []}
-        default-base-tile-layer]
-       [:div.actions
-        [:button.primary
-         {:disabled (= @view-state :creating)
-          :on-click #(dispatch [:projects/create-project {:goal @new-project-goal}])}
-         (if (= @view-state :creating)
-           "Creating..."
-           "Create")]
-        [:button.cancel
-         {:on-click
-          #(dispatch [:projects/cancel-new-project])}
-         "Cancel"]]])))
+      (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])]
+        [:div.dialog.new-project
+         [:div.title
+          [:h1 "New Project"]
+          [:button.close {:on-click
+                          #(dispatch [:projects/cancel-new-project])}
+           "X"]]
+         [:div.form-control
+          [:label "Goal"]
+          [:input {:type "text"
+                   :value @new-project-goal
+                   :placeholder "Describe your project's goal"
+                   :on-change #(reset! new-project-goal (-> % .-target .-value str))}]]
+         [:div.form-control
+          [:label "Location"]
+          [rc/single-dropdown
+            :choices @regions
+            :label-fn :name
+            :filter-box? true
+            :on-change #(do (dispatch [:regions/load-regions-with-geo [%]]) (reset! new-project-region-id %))
+            :model new-project-region-id]
+          [map-widget { :position @map-preview-position
+                        :zoom @map-preview-zoom
+                        :on-position-changed #(reset! map-preview-position %)
+                        :on-zoom-changed #(reset! map-preview-zoom %)
+                        :width 400
+                        :height 300
+                        :controls []}
+           default-base-tile-layer
+           (if @selected-region-geojson
+             [:geojson-layer {:data @selected-region-geojson
+                              :fit-bounds true
+                              :color "#f00"
+                              :opacity 0.2
+                              :weight 2}])]]
+         [:div.actions
+          [:button.primary
+           {:disabled (= @view-state :creating)
+            :on-click #(dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}])}
+           (if (= @view-state :creating)
+             "Creating..."
+             "Create")]
+          [:button.cancel
+           {:on-click
+            #(dispatch [:projects/cancel-new-project])}
+           "Cancel"]]]))))
 
 (defn project-card [{:keys [id goal region_id] :as project}]
   (let [region-geo (subscribe [:regions/geojson region_id])]

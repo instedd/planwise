@@ -1,6 +1,6 @@
 -- :name insert-project! :<!
-INSERT INTO projects (goal)
-    VALUES (:goal)
+INSERT INTO projects (goal, region_id)
+    VALUES (:goal, :region_id)
     RETURNING id;
 
 -- :name select-projects :?

@@ -7,10 +7,30 @@
 (def in-regions (path [:regions]))
 
 (register-handler
+ :regions/load-regions
+ in-regions
+ (fn [db [_]]
+   (api/load-regions :regions/regions-loaded)
+   db))
+
+(register-handler
+ :regions/regions-loaded
+ in-regions
+  (fn [db [_ regions-data]]
+    (reduce
+      (fn [db {id :id :as region}]
+        ; Do not overwrite regions with geojson already loaded
+        (if-not (get-in db [id :geojson])
+          (assoc db id region)
+          db))
+      db regions-data)))
+
+(register-handler
  :regions/load-regions-with-geo
  in-regions
  (fn [db [_ region-ids]]
-   (api/load-regions-with-geo region-ids :regions/regions-with-geo-loaded)
+   (let [missing-region-ids (remove #(get-in db [% :geojson]) region-ids)]
+     (api/load-regions-with-geo missing-region-ids :regions/regions-with-geo-loaded))
    db))
 
 (register-handler
