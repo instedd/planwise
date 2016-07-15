@@ -119,6 +119,7 @@
                                   [kerodon "0.7.0"]
                                   [fixtures-component "0.4.1"
                                    :exclusions [org.clojure/java.jdbc]]
+                                  [ring/ring-mock "0.3.0"]
 
                                   ; Helpers
                                   [hawk "0.2.10"]
