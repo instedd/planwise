@@ -27,11 +27,13 @@
             [planwise.component.facilities :refer [facilities-service]]
             [planwise.component.routing :refer [routing-service]]
             [planwise.component.projects :refer [projects-service]]
+            [planwise.component.regions :refer [regions-service]]
             [planwise.component.users :refer [users-store]]
             [planwise.endpoint.home :refer [home-endpoint]]
             [planwise.endpoint.auth :refer [auth-endpoint]]
             [planwise.endpoint.facilities :refer [facilities-endpoint]]
             [planwise.endpoint.projects :refer [projects-endpoint]]
+            [planwise.endpoint.regions :refer [regions-endpoint]]
             [planwise.endpoint.routing :refer [routing-endpoint]]
             [planwise.endpoint.monitor :refer [monitor-endpoint]]))
 
@@ -105,12 +107,14 @@
          :auth                (auth-service (:auth config))
          :facilities          (facilities-service)
          :projects            (projects-service)
+         :regions             (regions-service)
          :routing             (routing-service)
          :users-store         (users-store)
          :auth-endpoint       (endpoint-component auth-endpoint)
          :home-endpoint       (endpoint-component home-endpoint)
          :facilities-endpoint (endpoint-component facilities-endpoint)
          :projects-endpoint   (endpoint-component projects-endpoint)
+         :regions-endpoint    (endpoint-component regions-endpoint)
          :routing-endpoint    (endpoint-component routing-endpoint)
          :monitor-endpoint    (endpoint-component monitor-endpoint))
         (component/system-using
@@ -119,6 +123,7 @@
           :webapp              [:app :api]
           :api                 [:monitor-endpoint
                                 :facilities-endpoint
+                                :regions-endpoint
                                 :projects-endpoint
                                 :routing-endpoint]
           :app                 [:home-endpoint
@@ -127,6 +132,7 @@
           ; Components
           :facilities          [:db]
           :projects            [:db]
+          :regions             [:db]
           :routing             [:db]
           :users-store         [:db]
           :auth                [:users-store]
@@ -135,5 +141,6 @@
           :auth-endpoint       [:auth]
           :home-endpoint       [:auth]
           :facilities-endpoint [:facilities]
+          :regions-endpoint    [:regions]
           :projects-endpoint   [:projects]
           :routing-endpoint    [:routing]}))))
