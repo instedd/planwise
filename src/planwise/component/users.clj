@@ -54,3 +54,7 @@
       (do
         (error "Update last login for non-existent user for ID " user-id)
         false))))
+
+(defn find-valid-token
+  [service scope email]
+  :token)

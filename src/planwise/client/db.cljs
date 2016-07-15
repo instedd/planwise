@@ -42,6 +42,20 @@
                  :count 16
                  :total 125}}
 
+   ;; Datasets
+   :datasets
+   {:initialised? false
+    :facility-count nil
+                                        ; Count of available facilities
+    :resourcemap {
+                  :authorised?  nil
+                                        ; Whether the user has authorised for
+                                        ; Resourcemap access
+                  :collections  nil
+                                        ; Resourcemap collections
+                  }
+    }
+
    ;; Playground related data
    :playground {:map-view initial-position-and-zoom
                 :loading? false

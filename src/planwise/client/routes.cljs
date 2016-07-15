@@ -18,3 +18,5 @@
   (dispatch [:navigate {:page :projects, :id id, :section :transport}]))
 (defroute project-scenarios "/projects/:id/scenarios" [id]
   (dispatch [:navigate {:page :projects, :id id, :section :scenarios}]))
+(defroute datasets "/datasets" []
+  (dispatch [:navigate {:page :datasets}]))

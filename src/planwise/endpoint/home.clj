@@ -49,6 +49,7 @@
     (routes
      (GET "/" [] loading-page)
      (GET "/playground" [] loading-page)
+     (GET "/datasets" [] loading-page)
      (context "/projects/:id" []
        (GET "/" [] loading-page)
        (GET "/facilities" [] loading-page)

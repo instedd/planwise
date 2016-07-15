@@ -149,3 +149,12 @@
                           :client-secret (:guisso-client-secret service)
                           :refresh-token refresh-token})
       (guisso-response->token-info)))
+
+(defn get-email
+  [user-ident]
+  (:user user-ident))
+
+(defn token-user-scope
+  [{:keys [users] :as service} scope user-ident]
+  (let [email (get-email user-ident)]
+    (users/find-valid-token users scope email)))

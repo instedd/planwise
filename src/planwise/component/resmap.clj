@@ -3,11 +3,13 @@
             [taoensso.timbre :as timbre]
             [clojure.string :as str]
             [cheshire.core :as json]
-            [clj-http.client :as http]))
+            [clj-http.client :as http]
+            [planwise.component.auth :as auth])
+  (:import [java.net URL]))
 
 (timbre/refer-timbre)
 
-(defrecord ResmapClient [url])
+(defrecord ResmapClient [url auth])
 
 (defn resmap-client
   [config]
@@ -24,6 +26,12 @@
                     (.substring base-url 0 (dec (.length base-url)))
                     base-url)]
      (str base-url path))))
+
+(defn auth-scope
+  [service]
+  (let [url (URL. (:url service))
+        port (.getPort url)]
+    (str "app=" (.getHost url) (when (> port 0) (str ":" port)))))
 
 (defn- auth-headers
   [token]
@@ -44,3 +52,9 @@
          (warn "Failure to retrive Resourcemap collections:"
                (get-in response [:headers "status"]))
          [])))))
+
+(defn authorised?
+  [{:keys [auth] :as service} user-ident]
+  (let [scope (auth-scope service)
+        token (auth/token-user-scope auth scope user-ident)]
+    (not (nil? token))))

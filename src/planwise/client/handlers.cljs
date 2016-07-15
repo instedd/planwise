@@ -2,6 +2,7 @@
   (:require [planwise.client.db :as db]
             [planwise.client.playground.handlers :as playground]
             [planwise.client.projects.handlers :as projects]
+            [planwise.client.datasets.handlers]
             [re-frame.core :refer [dispatch register-handler]]))
 
 ;; Event handlers
@@ -10,7 +11,7 @@
 (register-handler
  :initialise-db
  (fn [_ _]
-   (playground/fetch-facilities-with-isochrones :immediate (:playground db/initial-db))
+   ;; (playground/fetch-facilities-with-isochrones :immediate (:playground db/initial-db))
    db/initial-db))
 
 (defmulti on-navigate (fn [db page params] page))
@@ -23,6 +24,10 @@
 
 (defmethod on-navigate :home [db _ _]
   (dispatch [:projects/load-projects])
+  db)
+
+(defmethod on-navigate :datasets [db _ _]
+  (dispatch [:datasets/initialise!])
   db)
 
 (defmethod on-navigate :default [db _ _]
