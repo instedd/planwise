@@ -51,8 +51,13 @@
  :projects/projects-loaded
  in-projects
   (fn [db [_ projects]]
-    (assoc db :view-state :list
-              :list projects)))
+    (let [region-ids (->> projects
+                        (map :region_id)
+                        (remove nil?)
+                        (set))]
+      (dispatch [:regions/load-regions-with-geo region-ids])
+      (assoc db :view-state :list
+                :list projects))))
 
 (register-handler
  :projects/create-project

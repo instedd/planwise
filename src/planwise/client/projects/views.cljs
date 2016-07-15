@@ -3,6 +3,7 @@
             [planwise.client.mapping :refer [default-base-tile-layer static-image]]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
+            [clojure.string :as str]
             [reagent.core :as r]
             [leaflet.core :refer [map-widget]]))
 
@@ -65,12 +66,15 @@
           #(dispatch [:projects/cancel-new-project])}
          "Cancel"]]])))
 
-(defn project-card [{:keys [id goal] :as project}]
-  [:a {::href (routes/project-demographics project)}
-    [:div.project-card
-      [:div.project-card-content
-        [:span.project-goal goal]]
-      [:img.map-preview {:src (static-image)}]]])
+(defn project-card [{:keys [id goal region_id] :as project}]
+  (let [region-geo (subscribe [:regions/geojson region_id])]
+    (fn []
+      [:a {::href (routes/project-demographics project)}
+        [:div.project-card
+          [:div.project-card-content
+            [:span.project-goal goal]]
+          (if-not (str/blank? @region-geo)
+            [:img.map-preview {:src (static-image @region-geo)}])]])))
 
 (defn projects-list [projects]
   [:ul.projects-list
