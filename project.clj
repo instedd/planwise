@@ -22,6 +22,8 @@
                  [org.openid4java/openid4java "1.0.0"
                   :exclusions [commons-logging
                                org.apache.httpcomponents/httpclient]]
+                 [oauthentic "1.0.1"
+                  :exclusions [org.apache.httpcomponents/httpclient]]
 
                  ; Configuration
                  [environ "1.0.3"]

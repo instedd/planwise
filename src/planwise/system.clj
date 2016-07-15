@@ -16,11 +16,11 @@
             [compojure.response :as compojure]
             [ring.util.response :as response]
 
-            [buddy.auth :refer [authenticated? throw-unauthorized]]
-            [buddy.auth.backends.session :refer [session-backend]]
-            [buddy.auth.backends.token :refer [jwe-backend]]
+            [buddy.auth :refer [authenticated?]]
+            [buddy.auth.backends :as backends]
             [buddy.auth.middleware :refer [wrap-authentication wrap-authorization]]
             [buddy.core.nonce :as nonce]
+            [clojure.set :refer [rename-keys]]
 
             [planwise.component.compound-handler :refer [compound-handler-component]]
             [planwise.component.auth :refer [auth-service]]
@@ -63,30 +63,27 @@
 (def jwe-secret (nonce/random-bytes 32))
 
 (def base-config
-  {:auth {:guisso-url  "https://login.instedd.org/"
-          :jwe-secret  jwe-secret
+  {:auth {:jwe-secret  jwe-secret
           :jwe-options jwe-options}
    :api {:middleware   [[wrap-authorization :auth-backend]
                         [wrap-authentication :auth-backend]
                         [wrap-json-params]
                         [wrap-json-response]
                         [wrap-defaults :api-defaults]]
-         :auth-backend (jwe-backend {:secret jwe-secret
-                                     :options jwe-options
-                                     :unauthorized-handler api-unauthorized-handler})
          :api-defaults (meta-merge api-defaults {})}
+   :api-auth-backend {:unauthorized-handler api-unauthorized-handler}
    :app {:middleware   [[wrap-not-found :not-found]
                         [wrap-webjars]
                         [wrap-authorization :auth-backend]
                         [wrap-authentication :auth-backend]
                         [wrap-defaults :app-defaults]]
          :not-found    (io/resource "planwise/errors/404.html")
-         :auth-backend (session-backend {:unauthorized-handler app-unauthorized-handler})
          :app-defaults (meta-merge site-defaults
                                    {:static {:resources "planwise/public"}
                                     :session {:store (cookie-store)
                                               :cookie-attrs {:max-age (* 24 3600)}
                                               :cookie-name "planwise-session"}})}
+   :app-auth-backend {:unauthorized-handler app-unauthorized-handler}
 
    :webapp {:middleware [[wrap-route-aliases :aliases]]
             :aliases    {}
@@ -94,9 +91,32 @@
             ; Vector order matters, api handler is evaluated first
             :handlers   [:api :app]}})
 
+(defn jwe-backend
+  "Construct a Buddy JWE auth backend from the configuration map"
+  [config]
+  (let [config (-> config
+                   (rename-keys {:jwe-options :options
+                                 :jwe-secret :secret})
+                   (select-keys [:secret
+                                 :options
+                                 :unauthorized-handler
+                                 :token-name
+                                 :on-error]))]
+    (backends/jwe config)))
+
+(defn session-backend
+  "Construct a Buddy session auth backend from the configuration map"
+  [config]
+  (let [config (select-keys config [:unauthorized-handler])]
+    (backends/session config)))
+
 (defn new-system [config]
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
+         :api-auth-backend    (jwe-backend (meta-merge (:auth config)
+                                                       (:api-auth-backend config)))
+         :app-auth-backend    (session-backend (meta-merge (:auth config)
+                                                           (:app-auth-backend config)))
          :app                 (handler-component (:app config))
          :api                 (handler-component (:api config))
          :webapp              (compound-handler-component (:webapp config))
@@ -114,8 +134,11 @@
          :routing-endpoint    (endpoint-component routing-endpoint)
          :monitor-endpoint    (endpoint-component monitor-endpoint))
         (component/system-using
+         {:api                 {:auth-backend :api-auth-backend}
+          :app                 {:auth-backend :app-auth-backend}
+          :http                {:app :webapp}})
+        (component/system-using
          {; Server and handlers
-          :http                {:app :webapp}
           :webapp              [:app :api]
           :api                 [:monitor-endpoint
                                 :facilities-endpoint
