@@ -4,7 +4,9 @@
             [ring.util.request :refer [request-url]]
             [ring.util.response :as resp]
             [clj-time.core :as time]
+            [clojure.string :as str]
             [buddy.sign.jwt :as jwt]
+            [oauthentic.core :as oauth]
             [planwise.util.ring :refer [absolute-url]]
             [planwise.component.users :as users]
             [planwise.auth.guisso :as guisso]))
@@ -41,12 +43,21 @@
   [config]
   (map->AuthService config))
 
+(defn guisso-url
+  ([service]
+   (guisso-url service nil))
+  ([service path]
+   (let [path (if (str/starts-with? path "/") path (str "/" path))
+         base-url (:guisso-url service)
+         base-url (if (str/ends-with? base-url "/")
+                    (.substring base-url 0 (dec (.length base-url)))
+                    base-url)]
+     (str base-url path))))
 
 (defn- openid-identifier
   "Constructs the OpenID identifier endpoint from the base Guisso URL"
-  [guisso-url]
-  (let [guisso-url (if (.endsWith guisso-url "/") guisso-url (str guisso-url "/"))]
-    (str guisso-url "openid")))
+  [service]
+  (guisso-url service "/openid"))
 
 (defn openid-redirect
   "Setup the OpenID associations and return a Ring response to redirect the user
@@ -54,7 +65,7 @@
   [service request return-location]
   (let [manager         (:manager service)
         realm           (or (:realm service) (absolute-url "/" request))
-        identifier      (openid-identifier (:guisso-url service))
+        identifier      (openid-identifier service)
         session         (:session request)
         return-url      (absolute-url return-location request)
         auth-request    (guisso/auth-request manager identifier return-url realm)
@@ -107,3 +118,34 @@
         claims  {:user user-email
                  :exp (time/plus (time/now) (time/seconds 3600))}]
     (jwt/encrypt claims secret options)))
+
+(defn oauth2-authorization-url
+  [service scope return-url]
+  (let [url (guisso-url service "/oauth2/authorize")
+        options {:client-id (:guisso-client-id service)
+                 :redirect-uri return-url
+                 :scope scope}]
+    (oauth/build-authorization-url url options)))
+
+(defn- guisso-response->token-info
+  [guisso-resp]
+  {:expires (time/plus (time/now) (time/seconds (:expires_in guisso-resp)))
+   :token (:access-token guisso-resp)
+   :refresh-token (:refresh-token guisso-resp)})
+
+(defn oauth2-fetch-token
+  [service auth-code return-url]
+  (-> (oauth/fetch-token (guisso-url service "/oauth2/token")
+                         {:client-id (:guisso-client-id service)
+                          :client-secret (:guisso-client-secret service)
+                          :redirect-uri return-url
+                          :code auth-code})
+      (guisso-response->token-info)))
+
+(defn oauth2-refresh-token
+  [service refresh-token]
+  (-> (oauth/fetch-token (guisso-url service "/oauth2/token")
+                         {:client-id (:guisso-client-id service)
+                          :client-secret (:guisso-client-secret service)
+                          :refresh-token refresh-token})
+      (guisso-response->token-info)))

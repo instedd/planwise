@@ -13,8 +13,9 @@
             [ring.middleware.json :refer [wrap-json-response wrap-json-params]]
             [ring.middleware.webjars :refer [wrap-webjars]]
             [ring.middleware.session.cookie :refer [cookie-store]]
-            [compojure.response :as compojure]
+            [ring.util.request :refer [request-url]]
             [ring.util.response :as response]
+            [compojure.response :as compojure]
 
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.backends :as backends]
@@ -28,6 +29,8 @@
             [planwise.component.routing :refer [routing-service]]
             [planwise.component.projects :refer [projects-service]]
             [planwise.component.users :refer [users-store]]
+            [planwise.component.resmap :refer [resmap-client]]
+
             [planwise.endpoint.home :refer [home-endpoint]]
             [planwise.endpoint.auth :refer [auth-endpoint]]
             [planwise.endpoint.facilities :refer [facilities-endpoint]]
@@ -36,6 +39,9 @@
             [planwise.endpoint.monitor :refer [monitor-endpoint]]))
 
 (timbre/refer-timbre)
+
+
+;; TODO: move these to auth endpoint/component?
 
 (defn api-unauthorized-handler
   [request metadata]
@@ -55,7 +61,7 @@
           (response/content-type "text/html")
           (response/status 403)))
     :else
-    (let [current-url (:uri request)]
+    (let [current-url (request-url request)]
       (response/redirect (format "/login?next=%s" current-url)))))
 
 
@@ -117,26 +123,32 @@
                                                        (:api-auth-backend config)))
          :app-auth-backend    (session-backend (meta-merge (:auth config)
                                                            (:app-auth-backend config)))
+
          :app                 (handler-component (:app config))
          :api                 (handler-component (:api config))
          :webapp              (compound-handler-component (:webapp config))
          :http                (jetty-server (:http config))
          :db                  (hikaricp (:db config))
+
          :auth                (auth-service (:auth config))
          :facilities          (facilities-service)
          :projects            (projects-service)
          :routing             (routing-service)
          :users-store         (users-store)
+         :resmap              (resmap-client (:resmap config))
+
          :auth-endpoint       (endpoint-component auth-endpoint)
          :home-endpoint       (endpoint-component home-endpoint)
          :facilities-endpoint (endpoint-component facilities-endpoint)
          :projects-endpoint   (endpoint-component projects-endpoint)
          :routing-endpoint    (endpoint-component routing-endpoint)
          :monitor-endpoint    (endpoint-component monitor-endpoint))
+
         (component/system-using
          {:api                 {:auth-backend :api-auth-backend}
           :app                 {:auth-backend :app-auth-backend}
           :http                {:app :webapp}})
+
         (component/system-using
          {; Server and handlers
           :webapp              [:app :api]
