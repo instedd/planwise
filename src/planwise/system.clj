@@ -9,6 +9,7 @@
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [meta-merge.core :refer [meta-merge]]
             [ring.component.jetty :refer [jetty-server]]
+            [ring.middleware.resource :refer [wrap-resource]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults site-defaults]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-params]]
             [ring.middleware.webjars :refer [wrap-webjars]]
@@ -79,11 +80,13 @@
          :api-defaults (meta-merge api-defaults {})}
    :app {:middleware   [[wrap-not-found :not-found]
                         [wrap-webjars]
+                        [wrap-resource :jar-resources]
                         [wrap-authorization :auth-backend]
                         [wrap-authentication :auth-backend]
                         [wrap-defaults :app-defaults]]
          :not-found    (io/resource "planwise/errors/404.html")
          :auth-backend (session-backend {:unauthorized-handler app-unauthorized-handler})
+         :jar-resources "public/assets"
          :app-defaults (meta-merge site-defaults
                                    {:static {:resources "planwise/public"}
                                     :session {:store (cookie-store)
