@@ -14,7 +14,7 @@
        (response regions)))
    (GET "/:ids{[0-9\\,]+}/with-geo" [ids]
      (let [ids-array (map #(Integer/parseInt %) (str/split ids #","))
-           regions (regions/list-regions-with-geo service ids-array)]
+           regions (regions/list-regions-with-geo service ids-array 0.1)]
        (response regions)))))
 
 (defn regions-endpoint [{service :regions}]
