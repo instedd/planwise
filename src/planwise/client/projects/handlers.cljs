@@ -69,7 +69,22 @@
 (register-handler
  :projects/facilities-loaded
  in-current-project
- (fn [db [_ facilities]]
+ (fn [db [_ response]]
    (let [count-path [:facilities :count]
-         new-count (:count facilities)]
-     (assoc-in db count-path new-count))))
+         facilities-path [:facilities :facilities]
+         new-count (:count response)]
+     (-> db
+         (assoc-in count-path new-count)
+         (assoc-in facilities-path (:facilities response))))))
+
+(register-handler
+ :projects/update-position
+ in-current-project
+ (fn [db [_ new-position]]
+   (assoc-in db [:map-view :position] new-position)))
+
+(register-handler
+ :projects/update-zoom
+ in-current-project
+ (fn [db [_ new-zoom]]
+   (assoc-in db [:map-view :zoom] new-zoom)))

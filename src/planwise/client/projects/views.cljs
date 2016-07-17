@@ -148,20 +148,35 @@
            [:h3 "Transport filters"])])
 
 (defn project-tab [project-id selected-tab]
-  (cond
-    (#{:demographics
-       :facilities
-       :transport}
-     selected-tab)
-    [:div
-     [sidebar-section selected-tab]
-     [:div.map-container
-      [map-widget {:position [0 0]
-                   :zoom 2}
-       default-base-tile-layer]]]
-    (= :scenarios selected-tab)
-    [:div
-     [:h1 "Scenarios"]]))
+  (let [facilities (subscribe [:projects/facilities :facilities])
+        map-view (subscribe [:projects/facilities :map-view])]
+    (fn []
+      (let [position (:position @map-view)
+            zoom (:zoom @map-view)
+            points (map (fn [fac] [(fac :lat) (fac :lon)]) @facilities)]
+        (cond
+          (#{:demographics
+             :facilities
+             :transport}
+           selected-tab)
+          [:div
+           [sidebar-section selected-tab]
+           [:div.map-container
+            [map-widget {:position position
+                         :zoom zoom
+                         :on-position-changed
+                         #(dispatch [:projects/update-position %])
+                         :on-zoom-changed
+                         #(dispatch [:projects/update-zoom %])}
+             default-base-tile-layer
+             [:point-layer {:points points
+                            :radius 3
+                            :color "#f00"
+                            :opacity 0.3
+                            :fillOpacity 0.3}]]]]
+          (= :scenarios selected-tab)
+          [:div
+           [:h1 "Scenarios"]])))))
 
 (defn project-view []
   (let [page-params (subscribe [:page-params])
