@@ -40,5 +40,5 @@
       (case data
         :filters (:filters @facility-data)
         :filter-stats (select-keys @facility-data [:count :total])
-        :facilities (:facilities @facility-data)
+        :facilities (:list @facility-data)
         :map-view @map-view)))))

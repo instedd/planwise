@@ -41,7 +41,7 @@
                            :services #{}}
                  :count 0
                  :total 4944
-                 :facilities []} ;; TODO the path [:facilities :facilities] is confusing
+                 :list []}
     :map-view initial-position-and-zoom}
 
    ;; Playground related data

@@ -83,8 +83,7 @@
                           (disj current-filter filter-value)
                           (conj current-filter filter-value))
          new-db (assoc-in db path toggled-filter)
-         updated-db-filters (get-in new-db [:facilities :filters])
-         updated-filters (into {} (for [[k v] updated-db-filters] [k (apply vector v)]))]
+         updated-filters (get-in new-db [:facilities :filters])]
      (api/fetch-facilities updated-filters :projects/facilities-loaded)
      new-db)))
 
@@ -92,12 +91,9 @@
  :projects/facilities-loaded
  in-current-project
  (fn [db [_ response]]
-   (let [count-path [:facilities :count]
-         facilities-path [:facilities :facilities]
-         new-count (:count response)]
-     (-> db
-         (assoc-in count-path new-count)
-         (assoc-in facilities-path (:facilities response))))))
+   (-> db
+       (assoc-in [:facilities :count] (:count response))
+       (assoc-in [:facilities :list] (:facilities response)))))
 
 (register-handler
  :projects/update-position

@@ -7,7 +7,7 @@
   (list-facilities [this]
     "List the facilities currently available")
 
-  (list-facilities-with-types [this types]
+  (list-facilities-from-types [this types]
     "List the facilities that have the corresponding types")
 
   (list-with-isochrones [this threshold algorithm simplify]
@@ -26,8 +26,8 @@
   planwise.component.facilities.FacilitiesService
   (list-facilities [service]
     (service/list-facilities service))
-  (list-facilities-with-types [service types]
-    (service/list-facilities-with-types service types))
+  (list-facilities-from-types [service types]
+    (service/list-facilities-from-types service types))
   (list-with-isochrones [service threshold algorithm simplify]
     (service/list-with-isochrones service threshold algorithm simplify))
   (isochrone-all-facilities [service threshold]

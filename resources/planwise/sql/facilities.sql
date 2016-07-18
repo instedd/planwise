@@ -12,9 +12,9 @@ SELECT
 FROM facilities
 ORDER BY name;
 
--- :name facilities-with-types :? :*
+-- :name facilities-from-types :? :*
 SELECT
-id, name, lat, lon
+id, name, type, lat, lon
 FROM facilities
 WHERE type IN (:v*:types)
 ORDER BY name;

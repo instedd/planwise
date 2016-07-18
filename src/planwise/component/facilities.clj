@@ -41,10 +41,10 @@
 (defn list-facilities [service]
   (select-facilities (get-db service)))
 
-(defn list-facilities-with-types [service types]
+(defn list-facilities-from-types [service types]
   (if (nil? types)
     []
-    (facilities-with-types (get-db service) {:types (map lower-case types)})))
+    (facilities-from-types (get-db service) {:types (map lower-case types)})))
 
 (defn list-with-isochrones
   ([service threshold]
