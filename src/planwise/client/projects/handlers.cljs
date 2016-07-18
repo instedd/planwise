@@ -91,8 +91,9 @@
                            (disj current-filter filter-value)
                            (conj current-filter filter-value))
           new-db (assoc-in db path toggled-filter)
-          updated-filters (get-in new-db [:facilities :filters])]
-      (api/fetch-facilities updated-filters :projects/facilities-loaded)
+          updated-filters (get-in new-db [:facilities :filters])
+          project-region-id (get-in db [:project-data :region_id])]
+      (api/fetch-facilities (assoc updated-filters :region project-region-id) :projects/facilities-loaded)
       new-db)))
 
 (register-handler

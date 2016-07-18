@@ -18,7 +18,7 @@
     (json-request params handlers)))
 
 (defn fetch-facilities [filters & handlers]
-  (let [processed-filters (into {} (for [[k v] filters] [k (apply vector v)]))]
-  (GET
-      "/api/facilities/"
-      (json-request processed-filters handlers))))
+  (let [processed-filters (into {} (for [[k v] filters] [k (if (set? v) (apply vector v) v)]))] ; TODO: Make the set->vector conversion generic and move it into an interceptor
+    (GET
+       "/api/facilities/"
+       (json-request processed-filters handlers))))
