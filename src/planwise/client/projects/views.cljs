@@ -67,6 +67,7 @@
                         :zoom @map-preview-zoom
                         :on-position-changed #(reset! map-preview-position %)
                         :on-zoom-changed #(reset! map-preview-zoom %)
+                        :min-zoom 3
                         :width 400
                         :height 300
                         :controls []}
@@ -200,7 +201,8 @@
            [:h3 "Transport filters"])])
 
 (defn project-tab [current-project selected-tab]
-  (let [bbox (subscribe [:regions/bbox (:region_id current-project)])]
+  (let [bbox (subscribe [:regions/bbox (:region_id current-project)])
+        admin-level (subscribe [:regions/admin-level (:region_id current-project)])]
     (fn []
       (cond
         (#{:demographics
@@ -212,7 +214,8 @@
          [:div.map-container
           [map-widget {:position (bbox-center @bbox)
                        :max-bounds @bbox
-                       :zoom 7}
+                       :min-zoom 6
+                       :zoom (+ 8 @admin-level)}
            default-base-tile-layer]]]
         (= :scenarios selected-tab)
         [:div

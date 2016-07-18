@@ -16,3 +16,8 @@
  :regions/bbox
  (fn [db [_ region-id]]
    (reaction (get-in @db [:regions region-id :bbox]))))
+
+(register-sub
+ :regions/admin-level
+ (fn [db [_ region-id]]
+   (reaction (get-in @db [:regions region-id :admin-level]))))
