@@ -40,15 +40,18 @@
         new-project-region-id (r/atom (:id (first @regions)))]
     (fn []
       (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])]
-        [:div.dialog.new-project
+        [:form.dialog.new-project {:on-submit (fn []
+                                                (dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}])
+                                                (.preventDefault js/event))}
          [:div.title
           [:h1 "New Project"]
           [:button.close {:on-click
                           #(dispatch [:projects/cancel-new-project])}
-           "X"]]
+           "\u2716"]]
          [:div.form-control
           [:label "Goal"]
           [:input {:type "text"
+                   :required true
                    :value @new-project-goal
                    :placeholder "Describe your project's goal"
                    :on-change #(reset! new-project-goal (-> % .-target .-value str))}]]
@@ -76,8 +79,8 @@
                               :weight 2}])]]
          [:div.actions
           [:button.primary
-           {:disabled (= @view-state :creating)
-            :on-click #(dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}])}
+           {:type "submit"
+            :disabled (= @view-state :creating)}
            (if (= @view-state :creating)
              "Creating..."
              "Create")]
