@@ -67,7 +67,6 @@
                         :zoom @map-preview-zoom
                         :on-position-changed #(reset! map-preview-position %)
                         :on-zoom-changed #(reset! map-preview-zoom %)
-                        :min-zoom 3
                         :width 400
                         :height 300
                         :controls []}
@@ -200,44 +199,55 @@
            :transport
            [:h3 "Transport filters"])])
 
-(defn project-tab [current-project selected-tab]
-  (let [bbox (subscribe [:regions/bbox (:region_id current-project)])
-        admin-level (subscribe [:regions/admin-level (:region_id current-project)])
-        geojson (subscribe [:regions/geojson (:region_id current-project)])]
+(defn project-tab [project-id selected-tab]
+  (let [facilities (subscribe [:projects/facilities :facilities])
+        map-position (subscribe [:projects/map-view :position])
+        map-zoom (subscribe [:projects/map-view :zoom])
+        map-bbox (subscribe [:projects/map-view :bbox])
+        map-geojson (subscribe [:projects/map-geojson])]
     (fn []
-      (cond
-        (#{:demographics
-           :facilities
-           :transport}
-         selected-tab)
-        [:div
-         [sidebar-section selected-tab]
-         [:div.map-container
-          [map-widget {:position (bbox-center @bbox)
-                       :max-bounds @bbox
-                       :min-zoom 6
-                       :zoom (+ 8 @admin-level)}
-           default-base-tile-layer
-           (if @geojson
-             [:geojson-layer {:data @geojson
-                              :fit-bounds true
-                              :color "#0ff"
-                              :fillOpacity 0.1
-                              :weight 0}])]]]
-        (= :scenarios selected-tab)
-        [:div
-         [:h1 "Scenarios"]]))))
+      (let [points (map (fn [fac] [(fac :lat) (fac :lon)]) @facilities)]
+        (cond
+          (#{:demographics
+             :facilities
+             :transport}
+           selected-tab)
+          [:div
+           [sidebar-section selected-tab]
+           [:div.map-container
+            [map-widget {:position @map-position
+                         :zoom @map-zoom
+                         :max-bounds @map-bbox
+                         :min-zoom 5
+                         :on-position-changed
+                         #(dispatch [:projects/update-position %])
+                         :on-zoom-changed
+                         #(dispatch [:projects/update-zoom %])}
+             default-base-tile-layer
+             [:point-layer {:points points
+                            :radius 3
+                            :color "#f00"
+                            :opacity 0.3
+                            :fillOpacity 0.3}]
+             (if @map-geojson
+               [:geojson-layer {:data @map-geojson
+                                :color "#0ff"
+                                :fillOpacity 0.1
+                                :weight 0}])]]]
+          (= :scenarios selected-tab)
+          [:div
+           [:h1 "Scenarios"]])))))
 
 (defn project-view []
   (let [page-params (subscribe [:page-params])
-        current-project (subscribe [:projects/current])]
+        current-project (subscribe [:projects/current-data])]
     (fn []
       (let [project-id (:id @page-params)
             selected-tab (:section @page-params)
             project-goal (:goal @current-project)]
         [:article.project-view
          [header-section project-id project-goal selected-tab]
-         [project-tab @current-project selected-tab]]))))
+         [project-tab project-id selected-tab]]))))
 
 (defn project-page []
   (let [view-state (subscribe [:projects/view-state])]

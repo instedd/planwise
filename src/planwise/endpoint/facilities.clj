@@ -7,8 +7,8 @@
 
 (defn- endpoint-routes [service]
   (routes
-   (GET "/" [] (let [facilities (facilities/list-facilities service)]
-                 (response facilities)))
+   (GET "/" [type :as req] (let [facilities (facilities/list-facilities-from-types service (vals type))]
+                                      (response {:count (count facilities) :facilities facilities})))
 
    (GET "/with-isochrones" [threshold algorithm simplify]
      (let [facilities (facilities/list-with-isochrones service
