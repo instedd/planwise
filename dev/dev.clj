@@ -71,6 +71,10 @@
 (defn db []
   (:spec (:db system)))
 
+(defn restart []
+  (stop)
+  (start))
+
 (gen/set-ns-prefix 'planwise)
 
 (reloaded.repl/set-init! new-system)

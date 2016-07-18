@@ -3,6 +3,7 @@
             [planwise.client.playground.handlers :as playground]
             [planwise.client.projects.handlers :as projects]
             [planwise.client.datasets.handlers]
+            [re-frame.utils :as c]
             [re-frame.core :refer [dispatch register-handler]]))
 
 ;; Event handlers
@@ -40,3 +41,11 @@
                  :current-page page
                  :page-params params)]
      (on-navigate new-db page params))))
+
+(register-handler
+ :message-posted
+ (fn [db [_ message]]
+   (case message
+     "authenticated" (dispatch [:datasets/reload-info])
+     (c/warn "Invalid message received " message))
+   db))

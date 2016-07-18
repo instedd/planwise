@@ -135,6 +135,7 @@
 
 (defn oauth2-fetch-token
   [service auth-code return-url]
+  (info "Fetching OAuth2 token")
   (-> (oauth/fetch-token (guisso-url service "/oauth2/token")
                          {:client-id (:guisso-client-id service)
                           :client-secret (:guisso-client-secret service)
@@ -144,6 +145,7 @@
 
 (defn oauth2-refresh-token
   [service refresh-token]
+  (info "Refreshing OAuth2 token")
   (-> (oauth/fetch-token (guisso-url service "/oauth2/token")
                          {:client-id (:guisso-client-id service)
                           :client-secret (:guisso-client-secret service)
@@ -154,7 +156,26 @@
   [user-ident]
   (:user user-ident))
 
-(defn token-user-scope
-  [{:keys [users] :as service} scope user-ident]
+(defn expired?
+  [{expires :expires :as token}]
+  (time/before? expires (time/now)))
+
+(defn save-auth-token!
+  [{:keys [users-store] :as service} scope user-ident token]
   (let [email (get-email user-ident)]
-    (users/find-valid-token users scope email)))
+    (info "Saving OAuth2 token for user" email "on scope" scope)
+    (users/save-token-for-scope! users-store scope email token)
+    token))
+
+(defn find-auth-token
+  [{:keys [users-store] :as service} scope user-ident]
+  (let [email (get-email user-ident)
+        _     (info "Looking for token for" email "on scope" scope)
+        token (users/find-latest-token-for-scope users-store scope email)]
+    (if (and token (expired? token))
+      (do (info "Found token but it expired, refreshing token")
+          (let [new-token (oauth2-refresh-token service (:refresh-token token))]
+            (when new-token
+              (save-auth-token! service scope user-ident new-token))))
+      token)))
+

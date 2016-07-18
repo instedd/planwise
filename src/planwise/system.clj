@@ -37,7 +37,8 @@
             [planwise.endpoint.projects :refer [projects-endpoint]]
             [planwise.endpoint.routing :refer [routing-endpoint]]
             [planwise.endpoint.monitor :refer [monitor-endpoint]]
-            [planwise.endpoint.datasets :refer [datasets-endpoint]]))
+            [planwise.endpoint.datasets :refer [datasets-endpoint]]
+            [planwise.endpoint.resmap-auth :refer [resmap-auth-endpoint]]))
 
 (timbre/refer-timbre)
 
@@ -144,7 +145,8 @@
          :projects-endpoint   (endpoint-component projects-endpoint)
          :routing-endpoint    (endpoint-component routing-endpoint)
          :monitor-endpoint    (endpoint-component monitor-endpoint)
-         :datasets-endpoint   (endpoint-component datasets-endpoint))
+         :datasets-endpoint   (endpoint-component datasets-endpoint)
+         :resmap-auth-endpoint (endpoint-component resmap-auth-endpoint))
 
         (component/system-using
          {:api                 {:auth-backend :api-auth-backend}
@@ -160,7 +162,8 @@
                                 :routing-endpoint
                                 :datasets-endpoint]
           :app                 [:home-endpoint
-                                :auth-endpoint]
+                                :auth-endpoint
+                                :resmap-auth-endpoint]
 
           ; Components
           :facilities          [:db]
@@ -177,4 +180,6 @@
           :projects-endpoint   [:projects]
           :routing-endpoint    [:routing]
           :datasets-endpoint   [:facilities
-                                :resmap]}))))
+                                :resmap]
+          :resmap-auth-endpoint [:auth
+                                 :resmap]}))))

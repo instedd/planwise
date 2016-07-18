@@ -56,5 +56,5 @@
 (defn authorised?
   [{:keys [auth] :as service} user-ident]
   (let [scope (auth-scope service)
-        token (auth/token-user-scope auth scope user-ident)]
+        token (auth/find-auth-token auth scope user-ident)]
     (not (nil? token))))
