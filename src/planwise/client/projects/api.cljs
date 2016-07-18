@@ -16,3 +16,9 @@
   (POST
     "/api/projects/"
     (json-request params handlers)))
+
+(defn fetch-facilities [filters & handlers]
+  (let [processed-filters (into {} (for [[k v] filters] [k (apply vector v)]))]
+  (GET
+      "/api/facilities/"
+      (json-request processed-filters handlers))))

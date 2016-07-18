@@ -12,6 +12,13 @@ SELECT
 FROM facilities
 ORDER BY name;
 
+-- :name facilities-from-types :? :*
+SELECT
+id, name, type, lat, lon
+FROM facilities
+WHERE type IN (:v*:types)
+ORDER BY name;
+
 -- :name facilities-with-isochrones :?
 SELECT
   fp.facility_id, f.name, f.lat, f.lon, ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone
