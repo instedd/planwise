@@ -98,7 +98,7 @@ Migration files are located in `resources/migrations`, and follow the `NUM-name.
 
 Beside the migrations for controlling the schema, the DB can be populated through the following scripts, configured to run on Kenya:
 * `import-osm` will download and process via `osm2pgrouting` OpenStreetMap data
-* `import-sites` will download ResourceMap facilities data and import them (requires a `lein uberjar` to have been created in `$JAR_PATH`)
+* `import-sites` will download ResourceMap facilities data and import them
 * `preprocess-isochrones` can be ran any number of times with different parameters to calculate the isochrones for the facilities; for instance, `preprocess-isochrones 300 buffer 60 180 15` will calculate the isochrones using the buffer method (with a 300m threshold) for driving distances from 1 to 3 hours, at 15 min intervals.
 
 ### Testing
