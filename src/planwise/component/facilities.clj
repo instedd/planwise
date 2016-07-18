@@ -38,13 +38,13 @@
 (defn destroy-facilities! [service]
   (delete-facilities! (get-db service)))
 
-(defn list-facilities [service]
-  (select-facilities (get-db service)))
-
-(defn list-facilities-from-types [service types]
-  (if (nil? types)
-    []
-    (facilities-from-types (get-db service) {:types (map lower-case types)})))
+(defn list-facilities
+  ([service]
+   (select-facilities (get-db service)))
+  ([service criteria]
+   (let [{:keys [types region]} criteria]
+     (if (empty? types) []
+       (facilities-by-criteria (get-db service) {:types (map lower-case types), :region region})))))
 
 (defn list-with-isochrones
   ([service threshold]
@@ -57,4 +57,3 @@
 
 (defn get-isochrone-for-all-facilities [service threshold]
   (isochrone-for-facilities (get-db service) {:threshold threshold}))
-
