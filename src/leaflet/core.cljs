@@ -81,7 +81,10 @@
         attrs (dissoc props :data)
         layer (.geoJson js/L nil #js {:clickable false
                                       :style (constantly (clj->js attrs))})]
-    (when data (.addData layer data))
+    (when data
+      (if (string? data)
+        (.addData layer (js/JSON.parse data))
+        (.addData layer data)))
     layer))
 
 (defmethod leaflet-layer :tile-layer [[_ props & children]]
