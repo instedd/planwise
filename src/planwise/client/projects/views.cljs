@@ -199,21 +199,24 @@
            :transport
            [:h3 "Transport filters"])])
 
-(defn project-tab [project-id selected-tab]
-  (cond
-    (#{:demographics
-       :facilities
-       :transport}
-     selected-tab)
-    [:div
-     [sidebar-section selected-tab]
-     [:div.map-container
-      [map-widget {:position [0 0]
-                   :zoom 2}
-       default-base-tile-layer]]]
-    (= :scenarios selected-tab)
-    [:div
-     [:h1 "Scenarios"]]))
+(defn project-tab [current-project selected-tab]
+  (let [bbox (subscribe [:regions/bbox (:region_id current-project)])]
+    (fn []
+      (cond
+        (#{:demographics
+           :facilities
+           :transport}
+         selected-tab)
+        [:div
+         [sidebar-section selected-tab]
+         [:div.map-container
+          [map-widget {:position (bbox-center @bbox)
+                       :max-bounds @bbox
+                       :zoom 7}
+           default-base-tile-layer]]]
+        (= :scenarios selected-tab)
+        [:div
+         [:h1 "Scenarios"]]))))
 
 (defn project-view []
   (let [page-params (subscribe [:page-params])
@@ -224,7 +227,7 @@
             project-goal (:goal @current-project)]
         [:article.project-view
          [header-section project-id project-goal selected-tab]
-         [project-tab project-id selected-tab]]))))
+         [project-tab @current-project selected-tab]]))))
 
 (defn project-page []
   (let [view-state (subscribe [:projects/view-state])]
