@@ -1,7 +1,22 @@
 (ns planwise.client.db)
 
 (def initial-position-and-zoom {:position [-1.29 36.83]
-                                :zoom 9})
+                                :zoom 7})
+
+(def empty-project-viewmodel
+  {:facilities {;; Filters and stats for facilities
+                :filters {:type #{}
+                          :ownership #{}
+                          :services #{}}
+                :count 0
+                :total 4944
+                :list []}
+   :map-view {} ;; {:keys position zoom}
+   :project-data {}}) ;; {:keys id goal region_id}
+
+(defn project-viewmodel [project-data]
+  (assoc empty-project-viewmodel
+    :project-data project-data))
 
 (def initial-db
   {;; Navigation
@@ -11,8 +26,8 @@
    :filter-definitions
    {:facility-type ["Dispensary"
                     "Health Center"
-                    "District Hospital"
-                    "Country Referral Hospital"]
+                    "Hospital"
+                    "General Hospital"]
 
     :facility-ownership ["MOH"
                          "Faith Based Organization"
@@ -29,21 +44,12 @@
    ;; Projects
    :projects
    {:view-state :loading ; [:create-dialog :creating :loading :view]
-    :current nil
     :list nil
-    :search-string ""}
-
-   ;; Project currently viewing/editing
-   :current-project
-   {:facilities {;; Filters and stats for facilities
-                 :filters {:type #{}
-                           :ownership #{}
-                           :services #{}}
-                 :count 16
-                 :total 125}}
+    :search-string ""
+    :current empty-project-viewmodel}
 
    ;; Regions
-   :regions {} ;; Id to {:id :name :admin_level & :geojson}
+   :regions {} ;; id => {:keys id name admin_level & geojson}
 
    ;; Playground related data
    :playground {:map-view initial-position-and-zoom

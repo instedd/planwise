@@ -77,7 +77,7 @@
          :auth-backend (jwe-backend {:secret jwe-secret
                                      :options jwe-options
                                      :unauthorized-handler api-unauthorized-handler})
-         :api-defaults (meta-merge api-defaults {})}
+         :api-defaults (meta-merge api-defaults {:params {:nested true}})}
    :app {:middleware   [[wrap-not-found :not-found]
                         [wrap-webjars]
                         [wrap-resource :jar-resources]
