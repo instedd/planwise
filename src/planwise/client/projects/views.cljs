@@ -232,6 +232,7 @@
              (if @map-geojson
                [:geojson-layer {:data @map-geojson
                                 :color "#0ff"
+                                :fit-bounds true
                                 :fillOpacity 0.1
                                 :weight 0}])]]]
           (= :scenarios selected-tab)
