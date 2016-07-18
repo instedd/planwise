@@ -8,6 +8,12 @@
 (def in-current-project (path [:current-project]))
 
 (register-handler
+ :projects/search
+ in-projects
+ (fn [db [_ value]]
+   (assoc db :search-string value)))
+
+(register-handler
  :projects/begin-new-project
  in-projects
  (fn [db [_]]
@@ -28,18 +34,32 @@
              :current nil)))
 
 (register-handler
- :projects/create-project
- in-projects
- (fn [db [_ project-data]]
-   (api/create-project project-data :projects/project-created)
-   (assoc db :view-state :creating)))
-
-(register-handler
  :projects/project-loaded
  in-projects
   (fn [db [_ project-data]]
     (assoc db :view-state :view
               :current project-data)))
+
+(register-handler
+ :projects/load-projects
+ in-projects
+ (fn [db [_ project-id]]
+   (api/load-projects :projects/projects-loaded)
+   (assoc db :view-state :loading-list)))
+
+(register-handler
+ :projects/projects-loaded
+ in-projects
+  (fn [db [_ projects]]
+    (assoc db :view-state :list
+              :list projects)))
+
+(register-handler
+ :projects/create-project
+ in-projects
+ (fn [db [_ project-data]]
+   (api/create-project project-data :projects/project-created)
+   (assoc db :view-state :creating)))
 
 (register-handler
  :projects/project-created
@@ -50,6 +70,7 @@
        (throw "Invalid project data"))
      (accountant/navigate! (routes/project-demographics {:id project-id}))
      (assoc db :view-state :view
+               :list (cons project-data (:list db))
                :current project-data))))
 
 (register-handler
@@ -61,10 +82,11 @@
          toggled-filter (if (contains? current-filter filter-value)
                           (disj current-filter filter-value)
                           (conj current-filter filter-value))
-         updated-db-filters (get-in (assoc-in db path toggled-filter) [:facilities :filters])
-         updated-filters (into {} (for [[k v] updated-db-filters] [k (seq v)]))]
+         new-db (assoc-in db path toggled-filter)
+         updated-db-filters (get-in new-db [:facilities :filters])
+         updated-filters (into {} (for [[k v] updated-db-filters] [k (apply vector v)]))]
      (api/fetch-facilities updated-filters :projects/facilities-loaded)
-     (assoc-in db path toggled-filter))))
+     new-db)))
 
 (register-handler
  :projects/facilities-loaded

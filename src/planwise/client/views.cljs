@@ -10,6 +10,9 @@
   [{:item #{:home :projects} :href (routes/home) :title "Projects"}
    {:item :playground :href (routes/playground) :title "Playground"}])
 
+(def current-user-email
+  (atom (.-value (.getElementById js/document "__identity"))))
+
 (defn nav-bar []
   (let [current-page (subscribe [:current-page])]
     (fn []
@@ -17,7 +20,9 @@
         [:header
          [:a.logo {:href (routes/home)}
           [:h1 "PlanWise"]]
-         [:nav [common/ul-menu nav-items active]]]))))
+         [:nav [common/ul-menu nav-items active]]
+         [:div.user-info
+          @current-user-email]]))))
 
 (defmulti content-pane identity)
 

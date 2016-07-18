@@ -1,25 +1,32 @@
 (ns planwise.client.projects.views
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [planwise.client.mapping :refer [default-base-tile-layer]]
+            [planwise.client.mapping :refer [default-base-tile-layer static-image]]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
             [reagent.core :as r]
             [leaflet.core :refer [map-widget]]))
 
-(defn search-box []
+(defn new-project-button []
+  [:button.primary
+   {:on-click
+    #(dispatch [:projects/begin-new-project])}
+   "New Project"])
+
+(defn search-box [projects-count show-new]
   [:div.search-box
-   [:div "0 Projects"]
-   [:input {:type "search"}]])
+   [:div (str projects-count " projects")]
+   [:input
+    {:type "search"
+     :on-change #(dispatch [:projects/search (-> % .-target .-value str)])}]
+   (if show-new
+    [new-project-button])])
 
 (defn no-projects-view []
   [:div.empty-list
    [:img {:src "/images/empty-projects.png"}]
    [:p "You have no projects yet"]
    [:div
-    [:button.primary
-     {:on-click
-      #(dispatch [:projects/begin-new-project])}
-     "New Project"]]])
+    [new-project-button]]])
 
 (defn new-project-dialog []
   (let [new-project-goal (r/atom "")
@@ -58,12 +65,30 @@
           #(dispatch [:projects/cancel-new-project])}
          "Cancel"]]])))
 
+(defn project-card [{:keys [id goal] :as project}]
+  [:a {::href (routes/project-demographics project)}
+    [:div.project-card
+      [:div.project-card-content
+        [:span.project-goal goal]]
+      [:img.map-preview {:src (static-image)}]]])
+
+(defn projects-list [projects]
+  [:ul.projects-list
+    (for [project projects]
+      [:li {:key (:id project)}
+        [project-card project]])])
+
 (defn list-view []
-  (let [view-state (subscribe [:projects/view-state])]
+  (let [view-state (subscribe [:projects/view-state])
+        projects (subscribe [:projects/list])
+        filtered-projects (subscribe [:projects/filtered-list])]
     (fn []
       [:article.project-list
-       [search-box]
-       [no-projects-view]
+       [search-box (count @filtered-projects) (seq @projects)]
+       (cond
+         (= @view-state :loading) [:div "Loading"]
+         (empty? @projects) [no-projects-view]
+         :else [projects-list @filtered-projects])
        (when (or (= @view-state :creating) (= @view-state :create-dialog))
          [common/modal-dialog {:on-backdrop-click
                                #(dispatch [:projects/cancel-new-project])}

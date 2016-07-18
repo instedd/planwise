@@ -16,7 +16,18 @@
                                 (assoc-in req [:headers "X-CSRF-Token"] @csrf-token)
                                 req))}))
 
-(swap! default-interceptors (partial cons csrf-token-interceptor))
+;; Add interceptor to send JWT encrypted token authentication with all requests
+
+(def jwe-token
+  (atom (.-value (.getElementById js/document "__jwe-token"))))
+
+(def jwe-token-interceptor
+  (to-interceptor {:name "JWE Token Interceptor"
+                   :request (fn [req]
+                              (let [auth-value (str "Token " @jwe-token)]
+                                (assoc-in req [:headers "Authorization"] auth-value)))}))
+
+(swap! default-interceptors into [csrf-token-interceptor jwe-token-interceptor])
 
 
 ;; Common request definitions to use with ajax requests

@@ -1,6 +1,8 @@
 (ns planwise.endpoint.routing-test
   (:require [planwise.endpoint.routing :as routing]
             [ring.middleware.params :refer [wrap-params]]
+            [buddy.auth.middleware :refer [wrap-authorization]]
+            [buddy.auth.backends :as backends]
             [clojure.data.json :as json]
             [clojure.test :refer :all]
             [kerodon.core :refer :all]
@@ -17,6 +19,7 @@
 
 (def handler
   (-> (routing/routing-endpoint {:routing mocked-routing-service})
+      (wrap-authorization (backends/jwe))
       (wrap-params)))
 
 (deftest coerce-algorithm-test
@@ -28,26 +31,34 @@
   (is (= :buffer      (routing/coerce-algorithm "Buffer")))
   (is (= :invalid     (routing/coerce-algorithm "foobar"))))
 
+(defn auth-visit [state uri & rest]
+  (apply visit state uri :identity {:user "foo@example.com"} rest))
+
+(deftest routing-requires-auth
+  (-> (session handler)
+      (visit "/api/routing/nearest")
+      (has (status? 401))))
+
 (deftest nearest-node-test
   (testing "with missing parameters"
     (-> (session handler)
-        (visit "/api/routing/nearest-node")
+        (auth-visit "/api/routing/nearest-node")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/api/routing/nearest-node?lat=10")
+        (auth-visit "/api/routing/nearest-node?lat=10")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/api/routing/nearest-node?lon=10")
+        (auth-visit "/api/routing/nearest-node?lon=10")
         (has (status? 400))))
 
   (testing "with non-numeric parameters"
     (-> (session handler)
-        (visit "/api/routing/nearest-node?lat=abc&lon=abc")
+        (auth-visit "/api/routing/nearest-node?lat=abc&lon=abc")
         (has (status? 400))))
 
   (testing "with both parameters"
     (let [body (-> (session handler)
-                   (visit "/api/routing/nearest-node?lat=10&lon=10")
+                   (auth-visit "/api/routing/nearest-node?lat=10&lon=10")
                    (has (status? 200))
                    (:response)
                    (:body))]
@@ -56,29 +67,29 @@
 (deftest isochrone-test
   (testing "with missing parameters"
     (-> (session handler)
-        (visit "/api/routing/isochrone")
+        (auth-visit "/api/routing/isochrone")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/api/routing/isochrone?node-id=123")
+        (auth-visit "/api/routing/isochrone?node-id=123")
         (has (status? 400))))
 
   (testing "with invalid parameters"
     (-> (session handler)
-        (visit "/api/routing/isochrone?node-id=123&threshold=600&algorithm=foo")
+        (auth-visit "/api/routing/isochrone?node-id=123&threshold=600&algorithm=foo")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/api/routing/isochrone?node-id=123&threshold=abc&algorithm=buffer")
+        (auth-visit "/api/routing/isochrone?node-id=123&threshold=abc&algorithm=buffer")
         (has (status? 400)))
     (-> (session handler)
-        (visit "/api/routing/isochrone?node-id=abc&threshold=600&algorithm=buffer")
+        (auth-visit "/api/routing/isochrone?node-id=abc&threshold=600&algorithm=buffer")
         (has (status? 400))))
 
   (testing "with valid parameters"
     (-> (session handler)
-        (visit "/api/routing/isochrone?node-id=123&threshold=600")
+        (auth-visit "/api/routing/isochrone?node-id=123&threshold=600")
         (has (status? 200))
         (has (text? "isochrone from 123 with 600.0")))
     (-> (session handler)
-        (visit "/api/routing/isochrone?node-id=123&threshold=600&algorithm=buffer")
+        (auth-visit "/api/routing/isochrone?node-id=123&threshold=600&algorithm=buffer")
         (has (status? 200))
         (has (text? "isochrone from 123 with 600.0 using :buffer")))))

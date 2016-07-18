@@ -9,8 +9,9 @@
 
 (hugsql/def-db-fns "planwise/sql/facilities.sql")
 
-(defn get-db [component]
+(defn get-db
   "Retrieve the database connection for a service"
+  [component]
   (get-in component [:db :spec]))
 
 
@@ -19,8 +20,9 @@
 
 (defrecord FacilitiesService [db])
 
-(defn facilities-service []
+(defn facilities-service
   "Construct a Facilities Service component"
+  []
   (map->FacilitiesService {}))
 
 

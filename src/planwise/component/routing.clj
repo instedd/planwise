@@ -17,8 +17,9 @@
 
 (defrecord RoutingService [db])
 
-(defn routing-service []
+(defn routing-service
   "Constructs a Routing service component"
+  []
   (map->RoutingService {}))
 
 

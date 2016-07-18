@@ -2,17 +2,22 @@
   (:require [ajax.core :refer [GET POST]]
             [planwise.client.api :refer [json-request]]))
 
-(defn load-project [id & extras]
+(defn load-project [id & handlers]
   (GET
     (str "/api/projects/" id)
-    (json-request {:id id} extras)))
+    (json-request {:id id} handlers)))
 
-(defn create-project [params & extras]
+(defn load-projects [& handlers]
+  (GET
+    "/api/projects/"
+    (json-request {} handlers)))
+
+(defn create-project [params & handlers]
   (POST
     "/api/projects/"
-    (json-request params extras)))
+    (json-request params handlers)))
 
-(defn fetch-facilities [params & extras]
+(defn fetch-facilities [params & handlers]
   (GET
       "/api/facilities/"
-      (json-request params extras)))
+      (json-request params handlers)))
