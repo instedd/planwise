@@ -1,7 +1,7 @@
 (ns planwise.client.projects.views
   (:require [re-frame.core :refer [subscribe dispatch]]
             [re-com.core :as rc]
-            [planwise.client.mapping :refer [default-base-tile-layer static-image]]
+            [planwise.client.mapping :refer [default-base-tile-layer static-image bbox-center]]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
             [clojure.string :as str]
@@ -34,10 +34,10 @@
 (defn new-project-dialog []
   (let [view-state (subscribe [:projects/view-state])
         regions (subscribe [:regions/list])
-        map-preview-zoom (r/atom 5)
-        map-preview-position (r/atom [-0.0236 37.9062])
         new-project-goal (r/atom "")
-        new-project-region-id (r/atom (:id (first @regions)))]
+        new-project-region-id (r/atom (:id (first @regions)))
+        map-preview-zoom (r/atom 5)
+        map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
     (fn []
       (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])]
         [:form.dialog.new-project {:on-submit (fn []

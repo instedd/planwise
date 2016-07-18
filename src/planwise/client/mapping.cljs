@@ -20,3 +20,6 @@
     mapbox-mapid
     (js/encodeURIComponent geojson)
     mapbox-access-token))
+
+(defn bbox-center [[[s w] [n e]]]
+  [(/ (+ s n) 2.0) (/ (+ e w) 2.0)])
