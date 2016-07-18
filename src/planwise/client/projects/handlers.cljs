@@ -37,6 +37,7 @@
  :projects/project-loaded
  in-projects
   (fn [db [_ project-data]]
+    (dispatch [:regions/load-regions-with-geo [(:region_id project-data)]])
     (assoc db :view-state :view
               :current project-data)))
 

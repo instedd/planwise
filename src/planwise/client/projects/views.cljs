@@ -202,7 +202,8 @@
 
 (defn project-tab [current-project selected-tab]
   (let [bbox (subscribe [:regions/bbox (:region_id current-project)])
-        admin-level (subscribe [:regions/admin-level (:region_id current-project)])]
+        admin-level (subscribe [:regions/admin-level (:region_id current-project)])
+        geojson (subscribe [:regions/geojson (:region_id current-project)])]
     (fn []
       (cond
         (#{:demographics
@@ -216,7 +217,13 @@
                        :max-bounds @bbox
                        :min-zoom 6
                        :zoom (+ 8 @admin-level)}
-           default-base-tile-layer]]]
+           default-base-tile-layer
+           (if @geojson
+             [:geojson-layer {:data @geojson
+                              :fit-bounds true
+                              :color "#0ff"
+                              :fillOpacity 0.1
+                              :weight 0}])]]]
         (= :scenarios selected-tab)
         [:div
          [:h1 "Scenarios"]]))))
