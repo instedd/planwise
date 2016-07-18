@@ -1,7 +1,8 @@
 (ns planwise.component.facilities
   (:require [com.stuartsierra.component :as component]
             [clojure.java.jdbc :as jdbc]
-            [hugsql.core :as hugsql]))
+            [hugsql.core :as hugsql]
+            [clojure.string :refer [join lower-case]]))
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -39,6 +40,11 @@
 
 (defn list-facilities [service]
   (select-facilities (get-db service)))
+
+(defn list-facilities-from-types [service types]
+  (if (nil? types)
+    []
+    (facilities-from-types (get-db service) {:types (map lower-case types)})))
 
 (defn list-with-isochrones
   ([service threshold]

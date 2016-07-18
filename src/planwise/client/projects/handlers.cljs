@@ -81,5 +81,28 @@
          current-filter (get-in db path)
          toggled-filter (if (contains? current-filter filter-value)
                           (disj current-filter filter-value)
-                          (conj current-filter filter-value))]
-     (assoc-in db path toggled-filter))))
+                          (conj current-filter filter-value))
+         new-db (assoc-in db path toggled-filter)
+         updated-filters (get-in new-db [:facilities :filters])]
+     (api/fetch-facilities updated-filters :projects/facilities-loaded)
+     new-db)))
+
+(register-handler
+ :projects/facilities-loaded
+ in-current-project
+ (fn [db [_ response]]
+   (-> db
+       (assoc-in [:facilities :count] (:count response))
+       (assoc-in [:facilities :list] (:facilities response)))))
+
+(register-handler
+ :projects/update-position
+ in-current-project
+ (fn [db [_ new-position]]
+   (assoc-in db [:map-view :position] new-position)))
+
+(register-handler
+ :projects/update-zoom
+ in-current-project
+ (fn [db [_ new-zoom]]
+   (assoc-in db [:map-view :zoom] new-zoom)))

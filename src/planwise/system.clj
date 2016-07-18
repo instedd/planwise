@@ -78,7 +78,7 @@
                         [wrap-json-params]
                         [wrap-json-response]
                         [wrap-defaults :api-defaults]]
-         :api-defaults (meta-merge api-defaults {})}
+         :api-defaults (meta-merge api-defaults {:params {:nested true}})}
    :api-auth-backend {:unauthorized-handler api-unauthorized-handler}
    :app {:middleware   [[wrap-not-found :not-found]
                         [wrap-webjars]
