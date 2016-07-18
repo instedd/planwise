@@ -27,5 +27,6 @@
  (fn [db [_ datasets-info]]
    (-> db
        (assoc-in [:resourcemap :authorised?] (:authorised? datasets-info))
+       (assoc-in [:resourcemap :collections] (:collections datasets-info))
        (assoc :initialised? true
               :facility-count (:facility-count datasets-info)))))

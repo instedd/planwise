@@ -12,9 +12,12 @@
    (GET "/info" request
      (let [user (:identity request)
            facility-count (facilities/count-facilities facilities)
-           authorised? (resmap/authorised? resmap user)]
+           authorised? (resmap/authorised? resmap user)
+           collections (when authorised?
+                         (resmap/list-user-collections resmap user))]
        (response {:authorised? authorised?
-                  :facility-count facility-count})))))
+                  :facility-count facility-count
+                  :collections collections})))))
 
 (defn datasets-endpoint
   [services]
