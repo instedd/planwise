@@ -158,7 +158,7 @@
 
 (defn expired?
   [{expires :expires :as token}]
-  (time/before? expires (time/now)))
+  (time/before? expires (time/plus (time/now) (time/seconds 10))))
 
 (defn save-auth-token!
   [{:keys [users-store] :as service} scope user-ident token]

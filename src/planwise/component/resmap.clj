@@ -60,6 +60,20 @@
                (get-in response [:headers "status"]))
          [])))))
 
+(defn get-collection-fields
+  [service token coll-id]
+  (let [url (resmap-url service (str "/api/collections/" coll-id "/fields.json"))
+        response (http/get url {:headers (auth-headers token)
+                                :throw-exceptions false})]
+    (if (= 200 (:status response))
+      (->> (json/parse-string (:body response) true)
+           (mapcat (fn [layer] (:fields layer)))
+           (map (fn [field] (select-keys field [:id :name :kind :config]))))
+      (do
+        (warn "Failure retrieving fields for Resourcemap collection" coll-id
+              (get-in response [:headers "status"]))
+        []))))
+
 (defn list-user-collections
   [service user-ident]
   (let [scope (auth-scope service)
@@ -68,8 +82,18 @@
     (info "Retrieving Resourcemap collections for user" (auth/get-email user-ident))
     (list-collections service token)))
 
+(defn list-collection-fields
+  [service user-ident coll-id]
+  (let [scope (auth-scope service)
+        auth (:auth service)
+        token (auth/find-auth-token auth scope user-ident)]
+    (info "Retrieving Resourcemap fields information for collection"
+          coll-id "for user" (auth/get-email user-ident))
+    (get-collection-fields service token coll-id)))
+
 (defn authorised?
   [{:keys [auth] :as service} user-ident]
   (let [scope (auth-scope service)
         token (auth/find-auth-token auth scope user-ident)]
     (not (nil? token))))
+

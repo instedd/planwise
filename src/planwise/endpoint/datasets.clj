@@ -17,7 +17,11 @@
                          (resmap/list-user-collections resmap user))]
        (response {:authorised? authorised?
                   :facility-count facility-count
-                  :collections collections})))))
+                  :collections collections})))
+   (GET "/collection-info/:coll-id" [coll-id :as request]
+     (let [user (:identity request)
+           fields (resmap/list-collection-fields resmap user coll-id)]
+       (response {:fields fields})))))
 
 (defn datasets-endpoint
   [services]
