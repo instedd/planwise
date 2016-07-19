@@ -1,5 +1,5 @@
 (ns planwise.client.datasets.api
-  (:require [ajax.core :refer [GET]]
+  (:require [ajax.core :refer [GET POST]]
             [planwise.client.api :refer [json-request]]))
 
 
@@ -12,3 +12,10 @@
   [coll-id & handlers]
   (GET (str "/api/datasets/collection-info/" coll-id)
       (json-request {} handlers)))
+
+(defn import-collection!
+  [coll-id type-field & handlers]
+  (POST "/api/datasets/import"
+      (json-request {:coll-id coll-id
+                     :type-field type-field}
+                    handlers)))

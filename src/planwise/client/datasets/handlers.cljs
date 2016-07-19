@@ -63,5 +63,14 @@
  :datasets/start-import!
  in-datasets
  (fn [db [_]]
-   (println "Import collection")
+   (let [coll-id (get-in db [:selected :collection :id])
+         type-field (get-in db [:selected :type-field])]
+     (api/import-collection! coll-id type-field :datasets/import-complete))
+   db))
+
+(register-handler
+ :datasets/import-complete
+ in-datasets
+ (fn [db [_]]
+   (c/log "Import complete")
    db))

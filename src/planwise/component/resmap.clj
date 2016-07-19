@@ -68,7 +68,7 @@
     (if (= 200 (:status response))
       (->> (json/parse-string (:body response) true)
            (mapcat (fn [layer] (:fields layer)))
-           (map (fn [field] (select-keys field [:id :name :kind :config]))))
+           (map (fn [field] (select-keys field [:id :name :code :kind :config]))))
       (do
         (warn "Failure retrieving fields for Resourcemap collection" coll-id
               (get-in response [:headers "status"]))
@@ -97,3 +97,22 @@
         token (auth/find-auth-token auth scope user-ident)]
     (not (nil? token))))
 
+(defn fetch-collection-data
+  [service token coll-id params]
+  (let [url (resmap-url service (str "/api/collections/" coll-id ".json"))
+        response (http/get url {:headers (auth-headers token)
+                                :throw-exceptions false
+                                :query-params params})]
+    (if (= 200 (:status response))
+      (json/parse-string (:body response) true)
+      (do
+        (warn "Failure retrieving Resourcemap collection data from" coll-id
+              (get-in response [:headers "status"]))
+        nil))))
+
+(defn get-collection-sites
+  [service user-ident coll-id params]
+  (let [scope (auth-scope service)
+        auth (:auth service)
+        token (auth/find-auth-token auth scope user-ident)]
+    (fetch-collection-data service token coll-id params)))
