@@ -4,6 +4,7 @@
             [planwise.client.mapping :refer [default-base-tile-layer static-image bbox-center]]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
+            [planwise.client.db :as db]
             [clojure.string :as str]
             [reagent.core :as r]
             [leaflet.core :refer [map-widget]]))
@@ -150,6 +151,21 @@
     [:div.progress-bar
      [:div.progress-filled {:style {:width percent-width}}]]))
 
+(defn transport-filters []
+  (let [transport-time (subscribe [:projects/transport-time])]
+    (fn []
+      [:div.sidebar-filters
+       [:div.filter-info
+        [:p "Indicate here the acceptable travel times to facilities. We will use that to calculate who already has access to the services that you are analyzing."]
+
+        [:fieldset
+         [:legend "By car"]
+         [rc/single-dropdown
+           :choices (:time db/transport-definitions)
+           :label-fn :name
+           :on-change #(dispatch [:projects/set-transport-time %])
+           :model transport-time]]]])))
+
 (defn facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])
         facility-ownerships (subscribe [:filter-definition :facility-ownership])
@@ -161,7 +177,7 @@
             filter-total (:total @filter-stats)
             toggle-cons-fn (fn [field]
                              #(dispatch [:projects/toggle-filter :facilities field %]))]
-        [:div.facility-filters
+        [:div.sidebar-filters
          [:div.filter-info
           [:p "Select the facilities that are satisfying the demand you are analyzing"]
           [:p
@@ -197,10 +213,11 @@
            :facilities
            [facility-filters]
            :transport
-           [:h3 "Transport filters"])])
+           [transport-filters])])
 
 (defn project-tab [project-id selected-tab]
   (let [facilities (subscribe [:projects/facilities :facilities])
+        isochrones (subscribe [:projects/facilities :isochrones])
         map-position (subscribe [:projects/map-view :position])
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])
@@ -234,7 +251,12 @@
                                 :color "#0ff"
                                 :fit-bounds true
                                 :fillOpacity 0.1
-                                :weight 0}])]]]
+                                :weight 0}])
+             (if (and (seq @isochrones) (= :transport selected-tab))
+               [:geojson-layer {:data @isochrones
+                                :color "#f80"
+                                :fillOpacity 0.3
+                                :weight 2}])]]]
           (= :scenarios selected-tab)
           [:div
            [:h1 "Scenarios"]])))))

@@ -40,8 +40,14 @@
      (reaction
       (case data
         :filters (:filters @facility-data)
+        :isochrones (:isochrones @facility-data)
         :filter-stats (select-keys @facility-data [:count :total])
         :facilities (:list @facility-data))))))
+
+(register-sub
+ :projects/transport-time
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :current :transport :time]))))
 
 (register-sub
  :projects/map-view
