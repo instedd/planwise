@@ -35,10 +35,10 @@ begin
     agg_cost double precision
   );
 
-  -- Process only facilities with 'hospital' in their name
-  facility_count := (select count(*) from facilities where name ilike '%hospital%');
+  -- Process all facilities
+  facility_count := (select count(*) from facilities);
   facility_index := 1;
-  for f_row in select * from facilities f where name ilike '%hospital%' loop
+  for f_row in select * from facilities f loop
     RAISE NOTICE 'Processing facility % (%/%)', f_row.id, facility_index, facility_count;
 
     insert into edges_agg_cost (
