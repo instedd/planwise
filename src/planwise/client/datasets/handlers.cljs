@@ -6,13 +6,18 @@
 
 (def in-datasets (path [:datasets]))
 
+(defn initialised?
+  [db]
+  (let [state (:state db)]
+    (not (or (nil? state) (= :initialising state)))))
+
 (register-handler
  :datasets/initialise!
  in-datasets
  (fn [db [_]]
-   (when-not (:initialised? db)
-     (api/load-datasets-info :datasets/info-loaded))
-   db))
+   (when-not (initialised? db)
+     (api/load-datasets-info :datasets/info-loaded)
+     (assoc db :state :initialising))))
 
 (register-handler
  :datasets/reload-info
@@ -29,7 +34,7 @@
    (-> db
        (assoc-in [:resourcemap :authorised?] (:authorised? datasets-info))
        (assoc-in [:resourcemap :collections] (:collections datasets-info))
-       (assoc :initialised? true
+       (assoc :state :ready
               :facility-count (:facility-count datasets-info)))))
 
 (register-handler
@@ -65,12 +70,12 @@
  (fn [db [_]]
    (let [coll-id (get-in db [:selected :collection :id])
          type-field (get-in db [:selected :type-field])]
-     (api/import-collection! coll-id type-field :datasets/import-complete))
-   db))
+     (api/import-collection! coll-id type-field :datasets/import-complete)
+     (assoc db :state :importing))))
 
 (register-handler
  :datasets/import-complete
  in-datasets
  (fn [db [_]]
-   (c/log "Import complete")
-   db))
+   (dispatch [:datasets/reload-info])
+   (assoc db :state :ready)))

@@ -3,9 +3,9 @@
   (:require [re-frame.core :refer [register-sub subscribe]]))
 
 (register-sub
- :datasets/initialised?
+ :datasets/state
  (fn [db [_]]
-   (reaction (get-in @db [:datasets :initialised?]))))
+   (reaction (get-in @db [:datasets :state]))))
 
 (register-sub
  :datasets/facility-count
