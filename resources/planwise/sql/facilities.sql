@@ -1,7 +1,7 @@
 -- :name insert-facility! :! :n
 INSERT INTO facilities
-    (id, name, lat, lon, type, the_geom)
-    VALUES (:id, :name, :lat, :lon, :type, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
+    (id, name, lat, lon, type_id, the_geom)
+    VALUES (:id, :name, :lat, :lon, :type_id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
 
 -- :name delete-facilities! :!
 DELETE FROM facilities;
@@ -14,10 +14,15 @@ ORDER BY name;
 
 -- :name facilities-from-types :? :*
 SELECT
-id, name, type, lat, lon
-FROM facilities
-WHERE type IN (:v*:types)
-ORDER BY name;
+f.id as id, f.name as name, t.name as type, lat, lon
+FROM facilities f
+INNER JOIN facility_types t ON t.id = f.type_id
+WHERE t.name IN (:v*:types)
+ORDER BY f.name;
+
+-- :name select-types :?
+SELECT name
+FROM facility_types;
 
 -- :name facilities-with-isochrones :?
 SELECT

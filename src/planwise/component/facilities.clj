@@ -58,3 +58,5 @@
 (defn get-isochrone-for-all-facilities [service threshold]
   (isochrone-for-facilities (get-db service) {:threshold threshold}))
 
+(defn list-types [service]
+  (select-types (get-db service)))

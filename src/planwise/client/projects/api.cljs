@@ -22,3 +22,6 @@
   (GET
       "/api/facilities/"
       (json-request processed-filters handlers))))
+
+(defn fetch-facility-types [& handlers]
+  (GET "/api/facilities/types" (json-request {} handlers)))

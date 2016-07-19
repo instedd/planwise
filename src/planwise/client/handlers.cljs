@@ -11,6 +11,7 @@
  :initialise-db
  (fn [_ _]
    (playground/fetch-facilities-with-isochrones :immediate (:playground db/initial-db))
+   (projects/fetch-facility-types)
    db/initial-db))
 
 (defmulti on-navigate (fn [db page params] page))
