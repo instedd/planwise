@@ -6,6 +6,10 @@
             [planwise.boundary.facilities :as facilities]
             [planwise.component.resmap :as resmap]))
 
+(defn- usable-field?
+  [field]
+  (#{"select_one" "hierarchy"} (:kind field)))
+
 (defn- datasets-routes
   [{:keys [facilities resmap]}]
   (routes
@@ -20,8 +24,11 @@
                   :collections collections})))
    (GET "/collection-info/:coll-id" [coll-id :as request]
      (let [user (:identity request)
-           fields (resmap/list-collection-fields resmap user coll-id)]
-       (response {:fields fields})))))
+           fields (resmap/list-collection-fields resmap user coll-id)
+           usable-fields (filter usable-field? fields)
+           valid? (not (empty? usable-fields))]
+       (response {:fields usable-fields
+                  :valid? valid?})))))
 
 (defn datasets-endpoint
   [services]

@@ -7,3 +7,8 @@
   [& handlers]
   (GET "/api/datasets/info"
       (json-request {} handlers)))
+
+(defn load-collection-info
+  [coll-id & handlers]
+  (GET (str "/api/datasets/collection-info/" coll-id)
+      (json-request {} handlers)))

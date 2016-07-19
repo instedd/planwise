@@ -1,5 +1,6 @@
 (ns planwise.client.datasets.views
-  (:require [re-frame.core :refer [subscribe dispatch]]))
+  (:require [re-frame.core :refer [subscribe dispatch]]
+            [re-com.core :as rc]))
 
 (defn open-auth-popup []
   (.open js/window
@@ -26,7 +27,7 @@
               [collection-item coll]]))]))))
 
 (defn selected-collection-options
-  [{:keys [collection valid? fields] :as selected}]
+  [{:keys [collection valid? fields type-field] :as selected}]
   [:div
    [:h4 (:name collection)]
    (if (nil? fields)
@@ -36,10 +37,20 @@
         [:p
          "Collection can be imported as facilities. "
          "Please choose the field to use as the facility type below."]
+        [:div
+         [:label "Field to import as facility type"]
+         [rc/single-dropdown
+          :choices fields
+          :label-fn :name
+          :on-change #(dispatch [:datasets/select-type-field %])
+          :model type-field]]
         [:p
          "Important: facilities will be updated from the selected collection. "
          "Facilities not present in the Resourcemap collection will be eliminated."]
-        [:button "Import collection"]]
+        [:button
+         {:on-click #(dispatch [:datasets/start-import!])
+          :disabled (not (and valid? (some? type-field)))}
+         "Import collection"]]
        [:p
         "Collection cannot be imported into facilities."]))])
 

@@ -36,6 +36,32 @@
  :datasets/select-collection
  in-datasets
  (fn [db [_ coll]]
-   (c/log "Selecting" coll)
+   (if-not (= (:id coll) (get-in db [:selected :collection :id]))
+     (do
+       (api/load-collection-info (:id coll) :datasets/collection-info-loaded)
+       (-> db
+           (assoc-in [:selected :collection] coll)
+           (assoc-in [:selected :type-field] nil)
+           (assoc-in [:selected :fields] nil)))
+     (db))))
+
+(register-handler
+ :datasets/collection-info-loaded
+ in-datasets
+ (fn [db [_ collection-info]]
    (-> db
-       (assoc-in [:selected :collection] coll))))
+       (assoc-in [:selected :fields] (:fields collection-info))
+       (assoc-in [:selected :valid?] (:valid? collection-info)))))
+
+(register-handler
+ :datasets/select-type-field
+ in-datasets
+ (fn [db [_ field]]
+   (assoc-in db [:selected :type-field] field)))
+
+(register-handler
+ :datasets/start-import!
+ in-datasets
+ (fn [db [_]]
+   (println "Import collection")
+   db))
