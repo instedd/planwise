@@ -18,7 +18,7 @@
 
 (defmethod on-navigate :projects [db page {id :id}]
   (let [id (js/parseInt id)]
-    (when (not= id (get-in db [:projects :current :id]))
+    (when (not= id (get-in db [:projects :current :project-data :id]))
       (dispatch [:projects/load-project id]))
     db))
 
