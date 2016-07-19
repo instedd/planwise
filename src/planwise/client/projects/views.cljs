@@ -91,7 +91,7 @@
 
 (defn project-card [{:keys [id goal region_id] :as project}]
   (let [region-geo (subscribe [:regions/geojson region_id])]
-    (fn []
+    (fn [{:keys [id goal region_id] :as project}]
       [:a {::href (routes/project-demographics project)}
         [:div.project-card
           [:div.project-card-content
@@ -205,7 +205,7 @@
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])
         map-geojson (subscribe [:projects/map-geojson])]
-    (fn []
+    (fn [project-id selected-tab]
       (let [points (map (fn [fac] [(fac :lat) (fac :lon)]) @facilities)]
         (cond
           (#{:demographics
