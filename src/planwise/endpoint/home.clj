@@ -19,6 +19,7 @@
    [:title "PlanWise"]
    (include-css "/assets/normalize.css/normalize.css")
    (include-css "/assets/leaflet/leaflet.css")
+   (include-css "/css/re-com.css")
    (include-css "/css/site.css")])
 
 (defn identity-field [request]

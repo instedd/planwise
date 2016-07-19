@@ -2,10 +2,12 @@
   (:require [re-frame.core :refer [register-handler path dispatch]]
             [accountant.core :as accountant]
             [planwise.client.routes :as routes]
-            [planwise.client.projects.api :as api]))
+            [planwise.client.projects.api :as api]
+            [planwise.client.db :as db]))
+
 
 (def in-projects (path [:projects]))
-(def in-current-project (path [:current-project]))
+(def in-current-project (path [:projects :current]))
 
 (register-handler
  :projects/search
@@ -31,14 +33,15 @@
  (fn [db [_ project-id]]
    (api/load-project project-id :projects/project-loaded)
    (assoc db :view-state :loading
-             :current nil)))
+             :current db/empty-project-viewmodel)))
 
 (register-handler
  :projects/project-loaded
  in-projects
   (fn [db [_ project-data]]
+    (dispatch [:regions/load-regions-with-geo [(:region_id project-data)]])
     (assoc db :view-state :view
-              :current project-data)))
+              :current (db/project-viewmodel project-data))))
 
 (register-handler
  :projects/load-projects
@@ -51,8 +54,13 @@
  :projects/projects-loaded
  in-projects
   (fn [db [_ projects]]
-    (assoc db :view-state :list
-              :list projects)))
+    (let [region-ids (->> projects
+                        (map :region_id)
+                        (remove nil?)
+                        (set))]
+      (dispatch [:regions/load-regions-with-geo region-ids])
+      (assoc db :view-state :list
+                :list projects))))
 
 (register-handler
  :projects/create-project
@@ -71,7 +79,7 @@
      (accountant/navigate! (routes/project-demographics {:id project-id}))
      (assoc db :view-state :view
                :list (cons project-data (:list db))
-               :current project-data))))
+               :current (db/project-viewmodel project-data)))))
 
 (register-handler
  :projects/toggle-filter

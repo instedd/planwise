@@ -1,8 +1,10 @@
 (ns planwise.client.projects.views
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [planwise.client.mapping :refer [default-base-tile-layer static-image]]
+            [re-com.core :as rc]
+            [planwise.client.mapping :refer [default-base-tile-layer static-image bbox-center]]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
+            [clojure.string :as str]
             [reagent.core :as r]
             [leaflet.core :refer [map-widget]]))
 
@@ -28,49 +30,74 @@
    [:div
     [new-project-button]]])
 
-(defn new-project-dialog []
-  (let [new-project-goal (r/atom "")
-        view-state (subscribe [:projects/view-state])]
-    (fn []
-      [:div.dialog
-       [:div.title
-        [:h1 "New Project"]
-        [:button.close {:on-click
-                        #(dispatch [:projects/cancel-new-project])}
-         "X"]]
-       [:div.form-control
-        [:label "Goal"]
-        [:input {:type "text"
-                 :value @new-project-goal
-                 :placeholder "Describe your project's goal"
-                 :on-change #(reset! new-project-goal (-> % .-target .-value str))}]]
-       [:div.form-control
-        [:label "Location"]
-        [:input {:type "search" :placeholder "Enter your project's location"}]]
-       [map-widget {:width 400
-                    :height 300
-                    :position [0 0]
-                    :zoom 1
-                    :controls []}
-        default-base-tile-layer]
-       [:div.actions
-        [:button.primary
-         {:disabled (= @view-state :creating)
-          :on-click #(dispatch [:projects/create-project {:goal @new-project-goal}])}
-         (if (= @view-state :creating)
-           "Creating..."
-           "Create")]
-        [:button.cancel
-         {:on-click
-          #(dispatch [:projects/cancel-new-project])}
-         "Cancel"]]])))
 
-(defn project-card [{:keys [id goal] :as project}]
-  [:a {::href (routes/project-demographics project)}
-    [:div.project-card
-      [:div.project-card-content
-        [:span.project-goal goal]]
-      [:img.map-preview {:src (static-image)}]]])
+(defn new-project-dialog []
+  (let [view-state (subscribe [:projects/view-state])
+        regions (subscribe [:regions/list])
+        new-project-goal (r/atom "")
+        new-project-region-id (r/atom (:id (first @regions)))
+        map-preview-zoom (r/atom 5)
+        map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
+    (fn []
+      (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])]
+        [:form.dialog.new-project {:on-submit (fn []
+                                                (dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}])
+                                                (.preventDefault js/event))}
+         [:div.title
+          [:h1 "New Project"]
+          [:button.close {:on-click
+                          #(dispatch [:projects/cancel-new-project])}
+           "\u2716"]]
+         [:div.form-control
+          [:label "Goal"]
+          [:input {:type "text"
+                   :required true
+                   :value @new-project-goal
+                   :placeholder "Describe your project's goal"
+                   :on-change #(reset! new-project-goal (-> % .-target .-value str))}]]
+         [:div.form-control
+          [:label "Location"]
+          [rc/single-dropdown
+            :choices @regions
+            :label-fn :name
+            :filter-box? true
+            :on-change #(do (dispatch [:regions/load-regions-with-geo [%]]) (reset! new-project-region-id %))
+            :model new-project-region-id]
+          [map-widget { :position @map-preview-position
+                        :zoom @map-preview-zoom
+                        :on-position-changed #(reset! map-preview-position %)
+                        :on-zoom-changed #(reset! map-preview-zoom %)
+                        :width 400
+                        :height 300
+                        :controls []}
+           default-base-tile-layer
+           (if @selected-region-geojson
+             [:geojson-layer {:data @selected-region-geojson
+                              :fit-bounds true
+                              :color "#f00"
+                              :opacity 0.2
+                              :weight 2}])]]
+         [:div.actions
+          [:button.primary
+           {:type "submit"
+            :disabled (= @view-state :creating)}
+           (if (= @view-state :creating)
+             "Creating..."
+             "Create")]
+          [:button.cancel
+           {:on-click
+            #(dispatch [:projects/cancel-new-project])}
+           "Cancel"]]]))))
+
+(defn project-card [{:keys [id goal region_id] :as project}]
+  (let [region-geo (subscribe [:regions/geojson region_id])]
+    (fn []
+      [:a {::href (routes/project-demographics project)}
+        [:div.project-card
+          [:div.project-card-content
+            [:span.project-goal goal]]
+          (if-not (str/blank? @region-geo)
+            [:img.map-preview {:src (static-image @region-geo)}])]])))
 
 (defn projects-list [projects]
   [:ul.projects-list
@@ -174,11 +201,12 @@
 
 (defn project-tab [project-id selected-tab]
   (let [facilities (subscribe [:projects/facilities :facilities])
-        map-view (subscribe [:projects/facilities :map-view])]
+        map-position (subscribe [:projects/map-view :position])
+        map-zoom (subscribe [:projects/map-view :zoom])
+        map-bbox (subscribe [:projects/map-view :bbox])
+        map-geojson (subscribe [:projects/map-geojson])]
     (fn []
-      (let [position (:position @map-view)
-            zoom (:zoom @map-view)
-            points (map (fn [fac] [(fac :lat) (fac :lon)]) @facilities)]
+      (let [points (map (fn [fac] [(fac :lat) (fac :lon)]) @facilities)]
         (cond
           (#{:demographics
              :facilities
@@ -187,8 +215,10 @@
           [:div
            [sidebar-section selected-tab]
            [:div.map-container
-            [map-widget {:position position
-                         :zoom zoom
+            [map-widget {:position @map-position
+                         :zoom @map-zoom
+                         :max-bounds @map-bbox
+                         :min-zoom 5
                          :on-position-changed
                          #(dispatch [:projects/update-position %])
                          :on-zoom-changed
@@ -198,14 +228,20 @@
                             :radius 3
                             :color "#f00"
                             :opacity 0.3
-                            :fillOpacity 0.3}]]]]
+                            :fillOpacity 0.3}]
+             (if @map-geojson
+               [:geojson-layer {:data @map-geojson
+                                :color "#0ff"
+                                :fit-bounds true
+                                :fillOpacity 0.1
+                                :weight 0}])]]]
           (= :scenarios selected-tab)
           [:div
            [:h1 "Scenarios"]])))))
 
 (defn project-view []
   (let [page-params (subscribe [:page-params])
-        current-project (subscribe [:projects/current])]
+        current-project (subscribe [:projects/current-data])]
     (fn []
       (let [project-id (:id @page-params)
             selected-tab (:section @page-params)

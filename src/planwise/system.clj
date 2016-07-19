@@ -9,6 +9,7 @@
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [meta-merge.core :refer [meta-merge]]
             [ring.component.jetty :refer [jetty-server]]
+            [ring.middleware.resource :refer [wrap-resource]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults site-defaults]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-params]]
             [ring.middleware.webjars :refer [wrap-webjars]]
@@ -28,6 +29,7 @@
             [planwise.component.facilities :refer [facilities-service]]
             [planwise.component.routing :refer [routing-service]]
             [planwise.component.projects :refer [projects-service]]
+            [planwise.component.regions :refer [regions-service]]
             [planwise.component.users :refer [users-store]]
             [planwise.component.resmap :refer [resmap-client]]
 
@@ -35,6 +37,7 @@
             [planwise.endpoint.auth :refer [auth-endpoint]]
             [planwise.endpoint.facilities :refer [facilities-endpoint]]
             [planwise.endpoint.projects :refer [projects-endpoint]]
+            [planwise.endpoint.regions :refer [regions-endpoint]]
             [planwise.endpoint.routing :refer [routing-endpoint]]
             [planwise.endpoint.monitor :refer [monitor-endpoint]]
             [planwise.endpoint.datasets :refer [datasets-endpoint]]
@@ -82,10 +85,12 @@
    :api-auth-backend {:unauthorized-handler api-unauthorized-handler}
    :app {:middleware   [[wrap-not-found :not-found]
                         [wrap-webjars]
+                        [wrap-resource :jar-resources]
                         [wrap-authorization :auth-backend]
                         [wrap-authentication :auth-backend]
                         [wrap-defaults :app-defaults]]
          :not-found    (io/resource "planwise/errors/404.html")
+         :jar-resources "public/assets"
          :app-defaults (meta-merge site-defaults
                                    {:static {:resources "planwise/public"}
                                     :session {:store (cookie-store)
@@ -135,6 +140,7 @@
          :auth                (auth-service (:auth config))
          :facilities          (facilities-service)
          :projects            (projects-service)
+         :regions             (regions-service)
          :routing             (routing-service)
          :users-store         (users-store)
          :resmap              (resmap-client (:resmap config))
@@ -143,6 +149,7 @@
          :home-endpoint       (endpoint-component home-endpoint)
          :facilities-endpoint (endpoint-component facilities-endpoint)
          :projects-endpoint   (endpoint-component projects-endpoint)
+         :regions-endpoint    (endpoint-component regions-endpoint)
          :routing-endpoint    (endpoint-component routing-endpoint)
          :monitor-endpoint    (endpoint-component monitor-endpoint)
          :datasets-endpoint   (endpoint-component datasets-endpoint)
@@ -158,6 +165,7 @@
           :webapp              [:app :api]
           :api                 [:monitor-endpoint
                                 :facilities-endpoint
+                                :regions-endpoint
                                 :projects-endpoint
                                 :routing-endpoint
                                 :datasets-endpoint]
@@ -168,6 +176,7 @@
           ; Components
           :facilities          [:db]
           :projects            [:db]
+          :regions             [:db]
           :routing             [:db]
           :users-store         [:db]
           :auth                [:users-store]
@@ -177,6 +186,7 @@
           :auth-endpoint       [:auth]
           :home-endpoint       [:auth]
           :facilities-endpoint [:facilities]
+          :regions-endpoint    [:regions]
           :projects-endpoint   [:projects]
           :routing-endpoint    [:routing]
           :datasets-endpoint   [:facilities

@@ -3,6 +3,7 @@
             [planwise.client.playground.handlers :as playground]
             [planwise.client.projects.handlers :as projects]
             [planwise.client.datasets.handlers]
+            [planwise.client.regions.handlers :as regions]
             [re-frame.utils :as c]
             [re-frame.core :refer [dispatch register-handler]]))
 
@@ -12,7 +13,7 @@
 (register-handler
  :initialise-db
  (fn [_ _]
-   ;; (playground/fetch-facilities-with-isochrones :immediate (:playground db/initial-db))
+   (dispatch [:regions/load-regions])
    db/initial-db))
 
 (defmulti on-navigate (fn [db page params] page))
@@ -29,6 +30,10 @@
 
 (defmethod on-navigate :datasets [db _ _]
   (dispatch [:datasets/initialise!])
+  db)
+
+(defmethod on-navigate :playground [db _ _]
+  (playground/fetch-facilities-with-isochrones :immediate (:playground db))
   db)
 
 (defmethod on-navigate :default [db _ _]
