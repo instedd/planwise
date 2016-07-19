@@ -99,10 +99,10 @@
 (register-handler
  :projects/facilities-loaded
  in-current-project
-  (fn [db [_ response]]
-    (-> db
-        (assoc-in [:facilities :count] (:count response))
-        (assoc-in [:facilities :list] (:facilities response)))))
+ (fn [db [_ response]]
+   (-> db
+       (assoc-in [:facilities :count] (:count response))
+       (assoc-in [:facilities :list] (:facilities response)))))
 
 (register-handler
  :projects/update-position
