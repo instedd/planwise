@@ -97,6 +97,12 @@
       new-db)))
 
 (register-handler
+ :projects/set-transport-time
+ in-current-project
+  (fn [db [_ time]]
+    (assoc-in db [:transport :time] time)))
+
+(register-handler
  :projects/facilities-loaded
  in-current-project
  (fn [db [_ response]]
