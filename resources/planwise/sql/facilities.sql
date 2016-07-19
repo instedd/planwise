@@ -12,11 +12,14 @@ SELECT
 FROM facilities
 ORDER BY name;
 
--- :name facilities-from-types :? :*
+-- :name facilities-by-criteria :? :*
 SELECT
 id, name, type, lat, lon
 FROM facilities
 WHERE type IN (:v*:types)
+/*~ (if (:region params) */
+  AND ST_Contains((SELECT the_geom FROM regions WHERE id = :region LIMIT 1), facilities.the_geom)
+/*~ ) ~*/
 ORDER BY name;
 
 -- :name facilities-with-isochrones :?
