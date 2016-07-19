@@ -217,6 +217,7 @@
 
 (defn project-tab [project-id selected-tab]
   (let [facilities (subscribe [:projects/facilities :facilities])
+        isochrones (subscribe [:projects/facilities :isochrones])
         map-position (subscribe [:projects/map-view :position])
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])
@@ -250,7 +251,12 @@
                                 :color "#0ff"
                                 :fit-bounds true
                                 :fillOpacity 0.1
-                                :weight 0}])]]]
+                                :weight 0}])
+             (if (and (seq @isochrones) (= :transport selected-tab))
+               [:geojson-layer {:data @isochrones
+                                :color "#f80"
+                                :fillOpacity 0.3
+                                :weight 2}])]]]
           (= :scenarios selected-tab)
           [:div
            [:h1 "Scenarios"]])))))

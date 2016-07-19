@@ -5,14 +5,14 @@
 
 (def transport-definitions
    {:time (concat
-           [{:id 30 :name "30 minutes"}
-            {:id 45 :name "45 minutes"}
-            {:id 60 :name "1 hour"}]
+           [{:id (* 60 30) :name "30 minutes"}
+            {:id (* 60 45) :name "45 minutes"}
+            {:id (* 60 60) :name "1 hour"}]
            (map
             (fn [total-mins]
               (let [hours (quot total-mins 60)
                     mins (rem total-mins 60)]
-                {:id total-mins, :name (str hours (if (> mins 0) (str ":" mins)) " hours")}))
+                {:id (* 60 total-mins), :name (str hours (if (> mins 0) (str ":" mins)) " hours")}))
             (range 75 181 15)))})
 
 (def empty-project-viewmodel
@@ -22,8 +22,9 @@
                           :services #{}}
                 :count 0
                 :total 4944
-                :list []}
-   :transport {:time (:id (first (:time transport-definitions)))}
+                :list []
+                :isochrones nil} ;; geojson string
+   :transport {:time nil}
    :map-view {} ;; {:keys position zoom}
    :project-data {}}) ;; {:keys id goal region_id}
 
