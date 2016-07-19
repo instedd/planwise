@@ -7,11 +7,10 @@
   (count-facilities [this]
     "Return the number of all the facilities available")
 
-  (list-facilities [this]
-    "List the facilities currently available")
-
-  (list-facilities-from-types [this types]
-    "List the facilities that have the corresponding types")
+  (list-facilities
+    [this]
+    [this criteria]
+    "List the facilities that match the supplied criteria (:types and :region)")
 
   (list-with-isochrones [this threshold algorithm simplify]
     "List the facilities with their corresponding catchment areas for the given
@@ -29,10 +28,11 @@
   planwise.component.facilities.FacilitiesService
   (count-facilities [service]
     (count (service/list-facilities service)))
-  (list-facilities [service]
-    (service/list-facilities service))
-  (list-facilities-from-types [service types]
-    (service/list-facilities-from-types service types))
+  (list-facilities
+    ([service]
+     (service/list-facilities service))
+    ([service criteria]
+     (service/list-facilities service criteria)))
   (list-with-isochrones [service threshold algorithm simplify]
     (service/list-with-isochrones service threshold algorithm simplify))
   (isochrone-all-facilities [service threshold]
