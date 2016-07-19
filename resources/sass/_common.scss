@@ -133,7 +133,22 @@ a:hover {
 
 .form-control {
   label {
+    font-weight: bold;
     display: inline-block;
     width: 100px;
+  }
+  &> input {
+    width: 100%;
+    margin: 5px 0 10px 0;
+    height: 1.5em;
+  }
+  .rc-dropdown {
+    width: 100%;
+    margin: 5px 0 10px 0;
+    .chosen-search {
+      &> input {
+        width: 92%;
+      }
+    }
   }
 }

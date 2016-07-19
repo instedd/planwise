@@ -81,7 +81,10 @@
         attrs (dissoc props :data)
         layer (.geoJson js/L nil #js {:clickable false
                                       :style (constantly (clj->js attrs))})]
-    (when data (.addData layer data))
+    (when data
+      (if (string? data)
+        (.addData layer (js/JSON.parse data))
+        (.addData layer data)))
     layer))
 
 (defmethod leaflet-layer :tile-layer [[_ props & children]]
@@ -129,6 +132,16 @@
     (reagent/set-state this {:position position :zoom zoom})
     (.setView leaflet (clj->js position) zoom)))
 
+(defn leaflet-update-options [this]
+  (let [state (reagent/state this)
+        props (reagent/props this)
+        max-bounds (:max-bounds props)
+        leaflet (:map state)]
+    (when (not= max-bounds (:max-bounds state))
+      (reagent/set-state this {:max-bounds max-bounds})
+      (let [[[s w] [n e]] max-bounds
+            lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
+        (.setMaxBounds leaflet lat-lng-bounds)))))
 
 (defn leaflet-create-control [type]
   (condp = type
@@ -188,14 +201,17 @@
         (on-click lat lon shiftKey)))))
 
 (defn leaflet-did-mount [this]
-  (let [leaflet (.map js/L (reagent/dom-node this)
+  (let [props (reagent/props this)
+        leaflet (.map js/L (reagent/dom-node this)
                       #js {:zoomControl false
-                           :attributionControl false})
-        props (reagent/props this)]
+                           :attributionControl false
+                           :minZoom (:min-zoom props)})]
+
     (reagent/set-state this {:map leaflet})
 
     (leaflet-update-controls this)
     (leaflet-update-layers this)
+    (leaflet-update-options this)
     (leaflet-update-viewport this)
 
     (.on leaflet "moveend" (leaflet-moveend-handler this))
@@ -211,6 +227,7 @@
         leaflet (:map state)]
 
     (leaflet-update-layers this)
+    (leaflet-update-options this)
     (leaflet-update-viewport this)))
 
 (defn size-style [width height]

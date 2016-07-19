@@ -159,6 +159,7 @@ article.project-view {
     background: $gray3;
     display: block;
     height: 12px;
+    transition: width 1s;
   }
 }
 
@@ -193,5 +194,11 @@ article.project-view {
         margin-right: 5px;
       }
     }
+  }
+}
+
+.new-project {
+  .leaflet-container {
+    margin: 10px -15px;
   }
 }

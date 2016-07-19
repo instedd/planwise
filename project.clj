@@ -44,6 +44,7 @@
                  [reagent-forms "0.5.23"]
                  [reagent-utils "0.1.8"]
                  [re-frame "0.7.0"]
+                 [re-com "0.8.3"]
                  [cljs-ajax "0.5.4"
                   :exclusions [commons-codec]]
                  [secretary "1.2.3"]

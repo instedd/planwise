@@ -17,8 +17,8 @@
        (response project)
        (not-found {:error "Project not found"})))
 
-   (POST "/" [goal]
-     (response (projects/create-project service {:goal goal})))))
+   (POST "/" [goal region_id]
+     (response (projects/create-project service {:goal goal, :region_id region_id})))))
 
 (defn projects-endpoint [{service :projects}]
   (context "/api/projects" []
