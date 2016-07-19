@@ -1,6 +1,6 @@
 (ns planwise.client.db)
 
-(def initial-position-and-zoom {:position [-1.29 36.83]
+(def initial-position-and-zoom {:position [-0.0236 37.9062]
                                 :zoom 7})
 
 (def empty-project-viewmodel
