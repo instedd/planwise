@@ -123,7 +123,7 @@
  in-playground
  (fn [db [_ facilities-data]]
    (let [facilities (mapv (fn [fac]
-                            (let [facility_id (fac "facility_id")
+                            (let [facility_id (fac "id")
                                   name (fac "name")
                                   lat (fac "lat")
                                   lon (fac "lon")

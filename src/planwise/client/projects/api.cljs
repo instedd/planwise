@@ -2,6 +2,14 @@
   (:require [ajax.core :refer [GET POST]]
             [planwise.client.api :refer [json-request]]))
 
+(defn- process-filters [filters]
+  ; TODO: Make the set->vector conversion generic and move it into an interceptor
+  (let [processed-filters (into {} (for [[k v] filters] [k (if (set? v) (apply vector v) v)]))]
+    (if (seq (:type filters))
+      processed-filters
+      (assoc processed-filters :type [""]))))
+
+
 (defn load-project [id & handlers]
   (GET
     (str "/api/projects/" id)
@@ -18,7 +26,11 @@
     (json-request params handlers)))
 
 (defn fetch-facilities [filters & handlers]
-  (let [processed-filters (into {} (for [[k v] filters] [k (if (set? v) (apply vector v) v)]))] ; TODO: Make the set->vector conversion generic and move it into an interceptor
-    (GET
-       "/api/facilities/"
-       (json-request processed-filters handlers))))
+  (GET
+     "/api/facilities/"
+     (json-request (process-filters filters) handlers)))
+
+(defn fetch-facilities-with-isochrones [filters isochrone-options & handlers]
+  (GET
+    "/api/facilities/with-isochrones"
+    (json-request (merge isochrone-options (process-filters filters)) handlers)))

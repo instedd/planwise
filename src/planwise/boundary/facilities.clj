@@ -9,7 +9,10 @@
     [this criteria]
     "List the facilities that match the supplied criteria (:types and :region)")
 
-  (list-with-isochrones [this threshold algorithm simplify]
+  (list-with-isochrones
+    [this]
+    [this isochrone-options]
+    [this isochrone-options facilities-criteria]
     "List the facilities with their corresponding catchment areas for the given
     threshold (in seconds) calculated using algorithm and simplified according
     to the given parameter.")
@@ -28,7 +31,12 @@
      (service/list-facilities service))
     ([service criteria]
      (service/list-facilities service criteria)))
-  (list-with-isochrones [service threshold algorithm simplify]
-    (service/list-with-isochrones service threshold algorithm simplify))
+  (list-with-isochrones
+    ([service]
+     (service/list-with-isochrones service))
+    ([service isochrone-options]
+     (service/list-with-isochrones service isochrone-options))
+    ([service isochrone-options facilities-criteria]
+     (service/list-with-isochrones service isochrone-options facilities-criteria)))
   (isochrone-all-facilities [service threshold]
     (service/get-isochrone-for-all-facilities service threshold)))

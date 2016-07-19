@@ -82,9 +82,11 @@
         layer (.geoJson js/L nil #js {:clickable false
                                       :style (constantly (clj->js attrs))})]
     (when data
-      (if (string? data)
-        (.addData layer (js/JSON.parse data))
-        (.addData layer data)))
+      (let [js-data (cond
+                      (string? data) (js/JSON.parse data)
+                      (vector? data) (clj->js (mapv #(if (string? %) (js/JSON.parse %) %) data))
+                      :else data)]
+        (.addData layer js-data)))
     layer))
 
 (defmethod leaflet-layer :tile-layer [[_ props & children]]
