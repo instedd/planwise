@@ -9,15 +9,43 @@
 
 (defn collection-item
   [{:keys [id name count]}]
-  [:li (str name " (" count " facilities)")])
+  [:span (str name " (" count " facilities)")])
 
 (defn collections-list
   [collections]
-  [:ul
-   (for [coll collections] [collection-item coll])])
+  (let [selected (subscribe [:datasets/selected])]
+    (fn [collections]
+      (let [selected-coll (:collection @selected)]
+        [:ul
+         (for [coll collections]
+           (let [coll-id (:id coll)
+                 selected? (= coll selected-coll)]
+             [:li {:key coll-id
+                   :class (when selected? "selected")
+                   :on-click #(dispatch [:datasets/select-collection coll])}
+              [collection-item coll]]))]))))
+
+(defn selected-collection-options
+  [{:keys [collection valid? fields] :as selected}]
+  [:div
+   [:h4 (:name collection)]
+   (if (nil? fields)
+     [:p "Loading field information..."]
+     (if valid?
+       [:div
+        [:p
+         "Collection can be imported as facilities. "
+         "Please choose the field to use as the facility type below."]
+        [:p
+         "Important: facilities will be updated from the selected collection. "
+         "Facilities not present in the Resourcemap collection will be eliminated."]
+        [:button "Import collection"]]
+       [:p
+        "Collection cannot be imported into facilities."]))])
 
 (defn datasets-view []
   (let [resourcemap (subscribe [:datasets/resourcemap])
+        selected (subscribe [:datasets/selected])
         facility-count (subscribe [:datasets/facility-count])]
     (fn []
       [:article.datasets
@@ -29,7 +57,10 @@
           [:button
            {:on-click #(dispatch [:datasets/reload-info])}
            "Refresh collections"]
-          [collections-list (:collections @resourcemap)]]
+          [:p "Select a collection to import facilities from:"]
+          [collections-list (:collections @resourcemap)]
+          (when (:collection @selected)
+            [selected-collection-options @selected])]
          [:div
           [:h3 "Not authorised to access Resourcemap collections"]
           [:button
@@ -42,4 +73,4 @@
       [:article
        (if @initialised?
          [datasets-view]
-         [:p "Initialising..."])])))
+         [:p "Loading..."])])))

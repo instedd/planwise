@@ -1,0 +1,12 @@
+@import 'common';
+
+article.datasets {
+  ul {
+    li {
+      cursor: pointer;
+    }
+    li.selected {
+      font-weight: bold;
+    }
+  }
+}

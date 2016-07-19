@@ -16,3 +16,8 @@
  :datasets/resourcemap
  (fn [db [_]]
    (reaction (get-in @db [:datasets :resourcemap]))))
+
+(register-sub
+ :datasets/selected
+ (fn [db [_]]
+   (reaction (get-in @db [:datasets :selected]))))
