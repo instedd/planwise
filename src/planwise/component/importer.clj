@@ -8,16 +8,33 @@
 
 (timbre/refer-timbre)
 
+;; Field definition from resmap service
+;; {:id "15890", :name "Type", :code "type", :kind "select_one", :config {:options [{:id 1, :code "hospital", :label "Hospital"} {:id 2, :code "health center", :label "Health Center"} {:id 3, :code "dispensary", :label "Dispensary"}], :next_id 4}}
+
+(defn import-types
+  [facilities type-field]
+  (info "Importing facility types from Resourcemap field" (:id type-field))
+  (facilities/destroy-types! facilities)
+  (let [options (get-in type-field [:config :options])
+        types (map (fn [{label :label}] {:name label}) options)
+        codes (map :code options)
+        inserted-types (facilities/insert-types! facilities types)
+        inserted-type-ids (map :id inserted-types)
+        new-options (zipmap codes inserted-type-ids)]
+    (info "Done importing" (count new-options) "facility types")
+    {:code (:code type-field)
+     :options new-options}))
+
 (defn sites-with-location [sites]
   (filter #(and (:lat %) (:long %)) sites))
 
 (defn facility-type-ctor [type-field]
   (let [field-name (:code type-field)
+        options (:options type-field)
         type-path [:properties (keyword field-name)]]
     (fn [site]
       (let [f_type (get-in site type-path)]
-        ;; FIXME: perform mapping to the facilities_types table
-        f_type))))
+        (get options f_type)))))
 
 (defn site->facility-ctor [type-field]
   (let [facility-type (facility-type-ctor type-field)]
@@ -25,7 +42,7 @@
       (-> site
           (select-keys [:id :name :lat :long])
           (rename-keys {:long :lon})
-          (assoc :type (facility-type site))))))
+          (assoc :type_id (facility-type site))))))
 
 (defn sites->facilities [sites type-field]
   (->> sites
@@ -36,15 +53,16 @@
   [resmap facilities user coll-id type-field]
   (info "Destroying existing facilities")
   (facilities/destroy-facilities! facilities)
-  (loop [page 1]
-    (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
-          sites (:sites data)]
-      (when (seq sites)
-        (info "Processing page" page "of collection" coll-id)
-        (let [new-facilities (sites->facilities sites type-field)]
-          (info "Inserting" (count new-facilities) "facilities")
-          (facilities/insert-facilities! facilities new-facilities))
-        (recur (inc page)))))
+  (let [type-field (import-types facilities type-field)]
+    (loop [page 1]
+      (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
+            sites (:sites data)]
+        (when (seq sites)
+          (info "Processing page" page "of collection" coll-id)
+          (let [new-facilities (sites->facilities sites type-field)]
+            (info "Inserting" (count new-facilities) "facilities")
+            (facilities/insert-facilities! facilities new-facilities))
+          (recur (inc page))))))
   (info "Done importing facilities from collection" coll-id))
 
 (defn service-loop
@@ -70,7 +88,7 @@
                 (try
                   (import-collection resmap facilities ident coll-id type-field)
                   (catch Exception e
-                    (error "Error running import job" e))
+                    (error e "Error running import job"))
                   (finally
                     (swap! status (constantly :ready)))))
 

@@ -47,7 +47,7 @@ WHERE threshold = :threshold
 AND method = 'alpha-shape';
 
 -- :name select-types :?
-SELECT name
+SELECT id, name
 FROM facility_types;
 
 -- :name delete-types! :!

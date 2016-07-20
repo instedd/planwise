@@ -18,7 +18,7 @@
 
    (GET "/types" req
      (let [types (facilities/list-types service)]
-       (response (flatten (map vals types)))))
+       (response (flatten (map :name types)))))
 
    (GET "/with-isochrones" [threshold algorithm simplify type region]
      (let [criteria (facilities-criteria type region)
