@@ -49,7 +49,7 @@
        (sites-with-location)
        (map (site->facility-ctor type-field))))
 
-(defn import-collection
+(defn do-import-collection
   [resmap facilities user coll-id type-field]
   (info "Destroying existing facilities")
   (facilities/destroy-facilities! facilities)
@@ -86,11 +86,11 @@
                     type-field (:type-field params)]
                 (swap! status (constantly :importing))
                 (try
-                  (import-collection resmap facilities ident coll-id type-field)
+                  (do-import-collection resmap facilities ident coll-id type-field)
+                  (swap! status (constantly [:ready :success]))
                   (catch Exception e
-                    (error e "Error running import job"))
-                  (finally
-                    (swap! status (constantly :ready)))))
+                    (error e "Error running import job")
+                    (swap! status (constantly [:ready :failed])))))
 
               true
               (warn "Unknown message received" msg))
@@ -101,6 +101,7 @@
 (defrecord Importer [status control-channel resmap facilities]
   component/Lifecycle
   (start [component]
+    (info "Starting Importer component")
     (if-not (:status component)
       (let [c (chan)]
         (-> component
@@ -109,6 +110,7 @@
             (service-loop)))
       component))
   (stop [component]
+    (info "Stopping Importer component")
     (when-let [c (:control-channel component)]
       (put! c :quit))
     (dissoc component :status :control-channel)))
@@ -121,9 +123,17 @@
 
 (defn status
   [service]
-  (let [status @(:status service)]
-    (if (coll? status) (first status) status)))
+  @(:status service))
 
 (defn send-msg
   [service msg]
   (put! (:control-channel service) msg))
+
+(defn import-collection
+  [service user coll-id type-field]
+  ;; TODO: this shouldn't be here, but otherwise this function returns before
+  ;; the job is processed and the status is still :ready
+  (swap! (:status service) (constantly :importing))
+  (send-msg service [:import! {:user user
+                               :coll-id coll-id
+                               :type-field type-field}]))

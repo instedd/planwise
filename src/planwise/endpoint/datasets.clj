@@ -6,7 +6,7 @@
             [ring.util.response :refer [response]]
             [clojure.set :refer [rename-keys]]
             [planwise.boundary.facilities :as facilities]
-            [planwise.component.facilities :as facilities-component]
+            [planwise.component.importer :as importer]
             [planwise.component.resmap :as resmap]))
 
 (timbre/refer-timbre)
@@ -15,45 +15,6 @@
   [field]
   (#{"select_one"} (:kind field)))
 
-(defn sites-with-location [sites]
-  (filter #(and (:lat %) (:long %)) sites))
-
-(defn facility-type-ctor [type-field]
-  (let [field-name (:code type-field)
-        type-path [:properties (keyword field-name)]]
-    (fn [site]
-      (let [f_type (get-in site type-path)]
-        ;; FIXME: perform mapping to the facilities_types table
-        f_type))))
-
-(defn site->facility-ctor [type-field]
-  (let [facility-type (facility-type-ctor type-field)]
-    (fn [site]
-      (-> site
-          (select-keys [:id :name :lat :long])
-          (rename-keys {:long :lon})
-          (assoc :type (facility-type site))))))
-
-(defn sites->facilities [sites type-field]
-  (->> sites
-       (sites-with-location)
-       (map (site->facility-ctor type-field))))
-
-(defn import-collection
-  [resmap facilities user coll-id type-field]
-  (info "Destroying existing facilities")
-  (facilities-component/destroy-facilities! facilities)
-  (loop [page 1]
-    (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
-          sites (:sites data)]
-      (when (seq sites)
-        (info "Processing page" page "of collection" coll-id)
-        (let [new-facilities (sites->facilities sites type-field)]
-          (info "Inserting" (count new-facilities) "facilities")
-          (facilities-component/insert-facilities! facilities new-facilities))
-        (recur (inc page)))))
-  (info "Done importing facilities from collection" coll-id))
-
 (defn- datasets-routes
   [{:keys [facilities resmap importer]}]
   (routes
@@ -61,9 +22,11 @@
      (let [user (:identity request)
            facility-count (facilities/count-facilities facilities)
            authorised? (resmap/authorised? resmap user)
+           importer-status (importer/status importer)
            collections (when authorised?
                          (resmap/list-user-collections resmap user))]
        (response {:authorised? authorised?
+                  :status importer-status
                   :facility-count facility-count
                   :collections collections})))
 
@@ -83,10 +46,8 @@
                               (when (= (:id field) type-field)
                                 field))
                             fields)]
-
-       (import-collection resmap facilities user coll-id type-field)
-
-       (response {:status :ok})))))
+       (importer/import-collection importer user coll-id type-field)
+       (response {:status (importer/status importer)})))))
 
 (defn datasets-endpoint
   [service]

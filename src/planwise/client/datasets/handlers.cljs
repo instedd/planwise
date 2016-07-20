@@ -11,6 +11,14 @@
   (let [state (:state db)]
     (not (or (nil? state) (= :initialising state)))))
 
+(defn status->state
+  [status]
+  (let [status (if (coll? status) (first status) status)]
+    (case status
+      "importing" :importing
+      "ready" :ready
+      :ready)))
+
 (register-handler
  :datasets/initialise!
  in-datasets
@@ -34,7 +42,7 @@
    (-> db
        (assoc-in [:resourcemap :authorised?] (:authorised? datasets-info))
        (assoc-in [:resourcemap :collections] (:collections datasets-info))
-       (assoc :state :ready
+       (assoc :state (status->state (:status datasets-info))
               :facility-count (:facility-count datasets-info)))))
 
 (register-handler
@@ -70,12 +78,22 @@
  (fn [db [_]]
    (let [coll-id (get-in db [:selected :collection :id])
          type-field (get-in db [:selected :type-field])]
-     (api/import-collection! coll-id type-field :datasets/import-complete)
+     (c/log "Started collection import")
+     (api/import-collection! coll-id type-field :datasets/import-running)
      (assoc db :state :importing))))
 
 (register-handler
- :datasets/import-complete
+ :datasets/import-running
  in-datasets
- (fn [db [_]]
-   (dispatch [:datasets/reload-info])
-   (assoc db :state :ready)))
+ (fn [db [_ info]]
+   (let [state (status->state (:status info))]
+     (if (= :importing state)
+       (do
+         (c/log "Still importing...")
+         (.setTimeout js/window
+                      #(api/load-datasets-info :datasets/import-running)
+                      2000))
+       (do
+         (c/log "Import finished")
+         (dispatch [:datasets/reload-info])))
+     (assoc db :state state))))
