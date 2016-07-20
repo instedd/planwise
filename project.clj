@@ -39,6 +39,7 @@
                  ; Rendering and data handling
                  [hiccup "1.0.5"]
                  [cheshire "5.6.3"]
+                 [clj-time "0.12.0"]
 
                  ; Client infrastructure
                  [reagent "0.5.1"
