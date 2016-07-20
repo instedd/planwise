@@ -17,10 +17,12 @@
 
 (defmulti on-navigate (fn [db page params] page))
 
-(defmethod on-navigate :projects [db page {id :id}]
+(defmethod on-navigate :projects [db page {id :id, section :section, :as page-params}]
   (let [id (js/parseInt id)]
-    (when (not= id (get-in db [:projects :current :id]))
+    (when (not= id (get-in db [:projects :current :project-data :id]))
       (dispatch [:projects/load-project id]))
+    (if (= :transport section)
+      (dispatch [:projects/load-isochrones]))
     db))
 
 (defmethod on-navigate :home [db _ _]

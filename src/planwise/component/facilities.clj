@@ -14,6 +14,11 @@
   [component]
   (get-in component [:db :spec]))
 
+(defn facilities-criteria [{types :types, :as criteria}]
+  (criteria-snip
+    (if (nil? types)
+      criteria
+      (assoc criteria :types (map lower-case types)))))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -38,22 +43,25 @@
 (defn destroy-facilities! [service]
   (delete-facilities! (get-db service)))
 
-(defn list-facilities [service]
-  (select-facilities (get-db service)))
-
-(defn list-facilities-from-types [service types]
-  (if (nil? types)
-    []
-    (facilities-from-types (get-db service) {:types (map lower-case types)})))
+(defn list-facilities
+  ([service]
+   (select-facilities (get-db service)))
+  ([service criteria]
+   (facilities-by-criteria
+     (get-db service)
+     {:criteria (facilities-criteria criteria)})))
 
 (defn list-with-isochrones
-  ([service threshold]
-   (list-with-isochrones service threshold "alpha-shape" 0.0))
-  ([service threshold method simplify]
+  ([service]
+   (list-with-isochrones service {} {}))
+  ([service isochrone-options]
+   (list-with-isochrones service isochrone-options {}))
+  ([service {:keys [threshold algorithm simplify]} criteria]
    (facilities-with-isochrones (get-db service)
-                               {:threshold threshold,
-                                :method method,
-                                :simplify simplify})))
+      {:threshold (or threshold 900)
+       :algorithm (or algorithm "alpha-shape")
+       :simplify (or simplify 0.0)
+       :criteria (facilities-criteria criteria)})))
 
 (defn get-isochrone-for-all-facilities [service threshold]
   (isochrone-for-facilities (get-db service) {:threshold threshold}))

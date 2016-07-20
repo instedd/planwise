@@ -4,13 +4,15 @@
 (defprotocol Facilities
   "API for reading facilities and related information."
 
-  (list-facilities [this]
-    "List the facilities currently available")
+  (list-facilities
+    [this]
+    [this criteria]
+    "List the facilities that match the supplied criteria (:types and :region)")
 
-  (list-facilities-from-types [this types]
-    "List the facilities that have the corresponding types")
-
-  (list-with-isochrones [this threshold algorithm simplify]
+  (list-with-isochrones
+    [this]
+    [this isochrone-options]
+    [this isochrone-options facilities-criteria]
     "List the facilities with their corresponding catchment areas for the given
     threshold (in seconds) calculated using algorithm and simplified according
     to the given parameter.")
@@ -27,12 +29,18 @@
 
 (extend-protocol Facilities
   planwise.component.facilities.FacilitiesService
-  (list-facilities [service]
-    (service/list-facilities service))
-  (list-facilities-from-types [service types]
-    (service/list-facilities-from-types service types))
-  (list-with-isochrones [service threshold algorithm simplify]
-    (service/list-with-isochrones service threshold algorithm simplify))
+  (list-facilities
+    ([service]
+     (service/list-facilities service))
+    ([service criteria]
+     (service/list-facilities service criteria)))
+  (list-with-isochrones
+    ([service]
+     (service/list-with-isochrones service))
+    ([service isochrone-options]
+     (service/list-with-isochrones service isochrone-options))
+    ([service isochrone-options facilities-criteria]
+     (service/list-with-isochrones service isochrone-options facilities-criteria)))
   (isochrone-all-facilities [service threshold]
     (service/get-isochrone-for-all-facilities service threshold))
   (list-types [service]

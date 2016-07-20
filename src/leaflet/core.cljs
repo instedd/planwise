@@ -78,13 +78,15 @@
 
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]
   (let [data (:data props)
-        attrs (dissoc props :data)
+        attrs (dissoc props :data :fit-bounds)
         layer (.geoJson js/L nil #js {:clickable false
                                       :style (constantly (clj->js attrs))})]
     (when data
-      (if (string? data)
-        (.addData layer (js/JSON.parse data))
-        (.addData layer data)))
+      (let [js-data (cond
+                      (string? data) (js/JSON.parse data)
+                      (vector? data) (clj->js (mapv #(if (string? %) (js/JSON.parse %) %) data))
+                      :else data)]
+        (.addData layer js-data)))
     layer))
 
 (defmethod leaflet-layer :tile-layer [[_ props & children]]
@@ -99,6 +101,22 @@
     (.addLayer leaflet new-layer)
     new-layer))
 
+(defn leaflet-moveend-handler [this]
+  (fn [e]
+    (let [state (reagent/state this)
+          props (reagent/props this)
+          leaflet (:map state)
+          center (.getCenter leaflet)
+          new-pos [(.-lat center) (.-lng center)]
+          new-zoom (.getZoom leaflet)
+          current-pos (:position state)
+          current-zoom (:zoom state)
+          on-position-changed (:on-position-changed props)
+          on-zoom-changed (:on-zoom-changed props)]
+      (when (and on-position-changed (not= new-pos current-pos))
+        (on-position-changed new-pos))
+      (when (and on-zoom-changed (not= new-zoom current-zoom))
+        (on-zoom-changed new-zoom)))))
 
 (defn leaflet-update-layers [this]
   (let [state (reagent/state this)
@@ -120,6 +138,21 @@
                                                 new-children
                                                 remove-layer-fn
                                                 create-layer-fn)]
+
+      ;; check if the children marked as fit-bounds have changed
+      ;; if so, update the leaflet map viewport
+      (let [old-children-to-fit (filter #(get-in % [1 :fit-bounds]) old-children)
+            new-children-to-fit (filter #(get-in % [1 :fit-bounds]) new-children)
+            children-to-fit-changed (not= old-children-to-fit new-children-to-fit)
+            any-children-to-fit (seq new-children-to-fit)
+            layers-to-fit (vals (select-keys (zipmap new-children new-layers) new-children-to-fit))]
+        (if (and children-to-fit-changed any-children-to-fit)
+          (let [feature-group-to-fit (reduce #(.addLayer %1 %2) (.featureGroup js/L) layers-to-fit)
+                bounds (.getBounds feature-group-to-fit)]
+            (.fitBounds leaflet bounds)
+            (leaflet-moveend-handler this))))
+
+      ;; update component state
       (reagent/set-state this {:layers new-layers
                                :current-children new-children}))))
 
@@ -172,23 +205,6 @@
                                                   create-control-fn)]
       (reagent/set-state this {:current-controls new-control-defs
                                :controls new-controls}))))
-
-(defn leaflet-moveend-handler [this]
-  (fn [e]
-    (let [state (reagent/state this)
-          props (reagent/props this)
-          leaflet (:map state)
-          center (.getCenter leaflet)
-          new-pos [(.-lat center) (.-lng center)]
-          new-zoom (.getZoom leaflet)
-          current-pos (:position state)
-          current-zoom (:zoom state)
-          on-position-changed (:on-position-changed props)
-          on-zoom-changed (:on-zoom-changed props)]
-      (when (and on-position-changed (not= new-pos current-pos))
-        (on-position-changed new-pos))
-      (when (and on-zoom-changed (not= new-zoom current-zoom))
-        (on-zoom-changed new-zoom)))))
 
 (defn leaflet-click-handler [this]
   (fn [e]

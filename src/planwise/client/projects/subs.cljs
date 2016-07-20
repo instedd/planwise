@@ -40,8 +40,14 @@
      (reaction
       (case data
         :filters (:filters @facility-data)
+        :isochrones (:isochrones @facility-data)
         :filter-stats (select-keys @facility-data [:count :total])
         :facilities (:list @facility-data))))))
+
+(register-sub
+ :projects/transport-time
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :current :transport :time]))))
 
 (register-sub
  :projects/map-view
@@ -57,7 +63,7 @@
                      (:position db/initial-position-and-zoom))
          :zoom (or
                  (:zoom @map-view)
-                 (+ 5 (:admin_level @current-region))
+                 (+ 4 (:admin_level @current-region))
                  (:zoom db/initial-position-and-zoom))
          :bbox (:bbox @current-region))))))
 
