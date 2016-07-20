@@ -55,7 +55,7 @@
   (info "Done importing facilities from collection" coll-id))
 
 (defn- datasets-routes
-  [{:keys [facilities resmap]}]
+  [{:keys [facilities resmap importer]}]
   (routes
    (GET "/info" request
      (let [user (:identity request)
@@ -89,6 +89,6 @@
        (response {:status :ok})))))
 
 (defn datasets-endpoint
-  [services]
+  [service]
   (context "/api/datasets" []
-    (restrict (datasets-routes services) {:handler authenticated?})))
+    (restrict (datasets-routes service) {:handler authenticated?})))

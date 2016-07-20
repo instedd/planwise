@@ -32,6 +32,7 @@
             [planwise.component.regions :refer [regions-service]]
             [planwise.component.users :refer [users-store]]
             [planwise.component.resmap :refer [resmap-client]]
+            [planwise.component.importer :refer [importer]]
 
             [planwise.endpoint.home :refer [home-endpoint]]
             [planwise.endpoint.auth :refer [auth-endpoint]]
@@ -144,6 +145,7 @@
          :routing             (routing-service)
          :users-store         (users-store)
          :resmap              (resmap-client (:resmap config))
+         :importer            (importer)
 
          :auth-endpoint       (endpoint-component auth-endpoint)
          :home-endpoint       (endpoint-component home-endpoint)
@@ -181,6 +183,8 @@
           :users-store         [:db]
           :auth                [:users-store]
           :resmap              [:auth]
+          :importer            [:resmap
+                                :facilities]
 
           ; Endpoints
           :auth-endpoint       [:auth]
@@ -190,6 +194,7 @@
           :projects-endpoint   [:projects]
           :routing-endpoint    [:routing]
           :datasets-endpoint   [:facilities
-                                :resmap]
+                                :resmap
+                                :importer]
           :resmap-auth-endpoint [:auth
                                  :resmap]}))))
