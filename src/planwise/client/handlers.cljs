@@ -2,7 +2,9 @@
   (:require [planwise.client.db :as db]
             [planwise.client.playground.handlers :as playground]
             [planwise.client.projects.handlers :as projects]
+            [planwise.client.datasets.handlers]
             [planwise.client.regions.handlers :as regions]
+            [re-frame.utils :as c]
             [re-frame.core :refer [dispatch register-handler]]))
 
 ;; Event handlers
@@ -29,6 +31,10 @@
   (dispatch [:projects/load-projects])
   db)
 
+(defmethod on-navigate :datasets [db _ _]
+  (dispatch [:datasets/initialise!])
+  db)
+
 (defmethod on-navigate :playground [db _ _]
   (playground/fetch-facilities-with-isochrones :immediate (:playground db))
   db)
@@ -43,3 +49,11 @@
                  :current-page page
                  :page-params params)]
      (on-navigate new-db page params))))
+
+(register-handler
+ :message-posted
+ (fn [db [_ message]]
+   (case message
+     "authenticated" (dispatch [:datasets/reload-info])
+     (c/warn "Invalid message received " message))
+   db))

@@ -22,6 +22,8 @@
                  [org.openid4java/openid4java "1.0.0"
                   :exclusions [commons-logging
                                org.apache.httpcomponents/httpclient]]
+                 [oauthentic "1.0.1"
+                  :exclusions [org.apache.httpcomponents/httpclient]]
 
                  ; Configuration
                  [environ "1.0.3"]
@@ -118,6 +120,7 @@
                                   [kerodon "0.7.0"]
                                   [fixtures-component "0.4.1"
                                    :exclusions [org.clojure/java.jdbc]]
+                                  [ring/ring-mock "0.3.0"]
 
                                   ; Helpers
                                   [hawk "0.2.10"]

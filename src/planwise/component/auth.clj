@@ -4,14 +4,32 @@
             [ring.util.request :refer [request-url]]
             [ring.util.response :as resp]
             [clj-time.core :as time]
+            [clojure.string :as str]
             [buddy.sign.jwt :as jwt]
+            [oauthentic.core :as oauth]
             [planwise.util.ring :refer [absolute-url]]
             [planwise.component.users :as users]
             [planwise.auth.guisso :as guisso]))
 
 (timbre/refer-timbre)
 
-(defrecord AuthService [manager guisso-url realm jwe-secret jwe-options users-store]
+(defrecord AuthService [;; Guisso configuration
+                        guisso-url
+                        guisso-client-id
+                        guisso-client-secret
+
+                        ;; OpenID realm
+                        realm
+
+                        ;; Secret and options for generating JWT tokens
+                        jwe-secret
+                        jwe-options
+
+                        ;; Runtime state: OpenID consumer manager
+                        manager
+
+                        ;; Component dependencies
+                        users-store]
   component/Lifecycle
   (start [component]
     (if-not (:manager component)
@@ -25,20 +43,29 @@
   [config]
   (map->AuthService config))
 
+(defn guisso-url
+  ([service]
+   (guisso-url service nil))
+  ([service path]
+   (let [path (if (str/starts-with? path "/") path (str "/" path))
+         base-url (:guisso-url service)
+         base-url (if (str/ends-with? base-url "/")
+                    (.substring base-url 0 (dec (.length base-url)))
+                    base-url)]
+     (str base-url path))))
 
 (defn- openid-identifier
   "Constructs the OpenID identifier endpoint from the base Guisso URL"
-  [guisso-url]
-  (let [guisso-url (if (.endsWith guisso-url "/") guisso-url (str guisso-url "/"))]
-    (str guisso-url "openid")))
+  [service]
+  (guisso-url service "/openid"))
 
-(defn redirect
+(defn openid-redirect
   "Setup the OpenID associations and return a Ring response to redirect the user
   to the OpenID login page"
   [service request return-location]
   (let [manager         (:manager service)
         realm           (or (:realm service) (absolute-url "/" request))
-        identifier      (openid-identifier (:guisso-url service))
+        identifier      (openid-identifier service)
         session         (:session request)
         return-url      (absolute-url return-location request)
         auth-request    (guisso/auth-request manager identifier return-url realm)
@@ -47,7 +74,7 @@
     (assoc (resp/redirect destination-url)
            :session (merge session {:openid-state auth-state}))))
 
-(defn validate
+(defn openid-validate
   "Validates that the request contains a positive OpenID assertion and the
   authenticated user information"
   [service request]
@@ -84,9 +111,71 @@
   (assoc response :session nil))
 
 (defn create-jwe-token
+  "Create a JWE token for the client to authenticate for API calls"
   [service user-email]
   (let [secret  (:jwe-secret service)
         options (:jwe-options service)
         claims  {:user user-email
                  :exp (time/plus (time/now) (time/seconds 3600))}]
     (jwt/encrypt claims secret options)))
+
+(defn oauth2-authorization-url
+  [service scope return-url]
+  (let [url (guisso-url service "/oauth2/authorize")
+        options {:client-id (:guisso-client-id service)
+                 :redirect-uri return-url
+                 :scope scope}]
+    (oauth/build-authorization-url url options)))
+
+(defn- guisso-response->token-info
+  [guisso-resp]
+  {:expires (time/plus (time/now) (time/seconds (:expires_in guisso-resp)))
+   :token (:access-token guisso-resp)
+   :refresh-token (:refresh-token guisso-resp)})
+
+(defn oauth2-fetch-token
+  [service auth-code return-url]
+  (info "Fetching OAuth2 token")
+  (-> (oauth/fetch-token (guisso-url service "/oauth2/token")
+                         {:client-id (:guisso-client-id service)
+                          :client-secret (:guisso-client-secret service)
+                          :redirect-uri return-url
+                          :code auth-code})
+      (guisso-response->token-info)))
+
+(defn oauth2-refresh-token
+  [service refresh-token]
+  (info "Refreshing OAuth2 token")
+  (-> (oauth/fetch-token (guisso-url service "/oauth2/token")
+                         {:client-id (:guisso-client-id service)
+                          :client-secret (:guisso-client-secret service)
+                          :refresh-token refresh-token})
+      (guisso-response->token-info)))
+
+(defn get-email
+  [user-ident]
+  (:user user-ident))
+
+(defn expired?
+  [{expires :expires :as token}]
+  (time/before? expires (time/plus (time/now) (time/seconds 10))))
+
+(defn save-auth-token!
+  [{:keys [users-store] :as service} scope user-ident token]
+  (let [email (get-email user-ident)]
+    (info "Saving OAuth2 token for user" email "on scope" scope)
+    (users/save-token-for-scope! users-store scope email token)
+    token))
+
+(defn find-auth-token
+  [{:keys [users-store] :as service} scope user-ident]
+  (let [email (get-email user-ident)
+        _     (info "Looking for token for" email "on scope" scope)
+        token (users/find-latest-token-for-scope users-store scope email)]
+    (if (and token (expired? token))
+      (do (info "Found token but it expired, refreshing token")
+          (let [new-token (oauth2-refresh-token service (:refresh-token token))]
+            (when new-token
+              (save-auth-token! service scope user-ident new-token))))
+      token)))
+

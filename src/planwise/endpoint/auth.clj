@@ -45,10 +45,10 @@
 
    (GET "/login" req
      (let [next-url (-> req :params :next)]
-       (auth/redirect service req (str "/openidcallback?next=" next-url))))
+       (auth/openid-redirect service req (str "/openidcallback?next=" next-url))))
 
    (GET "/openidcallback" req
-     (if-let [identity (auth/validate service req)]
+     (if-let [identity (auth/openid-validate service req)]
        (as-> (redirect (next-url req)) $
            (auth/login service $ req identity))
        (-> (response failure-page)
