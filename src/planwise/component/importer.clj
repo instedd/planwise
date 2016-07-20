@@ -1,7 +1,10 @@
 (ns planwise.component.importer
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
-            [clojure.core.async :refer [chan put! <! >! go go-loop]]))
+            [clojure.set :refer [rename-keys]]
+            [clojure.core.async :refer [chan put! <! >! go go-loop]]
+            [planwise.component.resmap :as resmap]
+            [planwise.component.facilities :as facilities]))
 
 (timbre/refer-timbre)
 
@@ -32,7 +35,7 @@
 (defn import-collection
   [resmap facilities user coll-id type-field]
   (info "Destroying existing facilities")
-  (facilities-component/destroy-facilities! facilities)
+  (facilities/destroy-facilities! facilities)
   (loop [page 1]
     (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
           sites (:sites data)]
@@ -40,7 +43,7 @@
         (info "Processing page" page "of collection" coll-id)
         (let [new-facilities (sites->facilities sites type-field)]
           (info "Inserting" (count new-facilities) "facilities")
-          (facilities-component/insert-facilities! facilities new-facilities))
+          (facilities/insert-facilities! facilities new-facilities))
         (recur (inc page)))))
   (info "Done importing facilities from collection" coll-id))
 
@@ -64,9 +67,15 @@
                     coll-id (:coll-id params)
                     type-field (:type-field params)]
                 (swap! status (constantly :importing))
-                (import-collection resmap facilities ident coll-id type-field)
-                (swap! status (constantly :importing))
-                ))
+                (try
+                  (import-collection resmap facilities ident coll-id type-field)
+                  (catch Exception e
+                    (error "Error running import job" e))
+                  (finally
+                    (swap! status (constantly :ready)))))
+
+              true
+              (warn "Unknown message received" msg))
             (recur))
           (info "Finishing importer service")))))
   service)
