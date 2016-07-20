@@ -3,11 +3,13 @@
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
             [planwise.client.playground.views :as playground]
-            [planwise.client.projects.views :as projects]))
+            [planwise.client.projects.views :as projects]
+            [planwise.client.datasets.views :as datasets]))
 
 
 (def nav-items
   [{:item #{:home :projects} :href (routes/home) :title "Projects"}
+   {:item :datasets :href (routes/datasets) :title "Datasets"}
    {:item :playground :href (routes/playground) :title "Playground"}])
 
 (def current-user-email
@@ -34,6 +36,9 @@
 
 (defmethod content-pane :playground []
   [playground/playground-page])
+
+(defmethod content-pane :datasets []
+  [datasets/datasets-page])
 
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]
