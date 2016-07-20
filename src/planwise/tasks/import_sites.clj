@@ -32,16 +32,16 @@
 (defn facility-type [site]
   (let [f_type (get-in site [:properties :f_type])]
     (case f_type
-      1 "hospital"
-      2 "general hospital"
-      3 "health center"
-      "dispensary")))
+      1 1   ;; "hospital"
+      2 2   ;; "general hospital"
+      3 3   ;; "health center"
+      4 ))) ;; "dispensary")))
 
 (defn site->facility [site]
   (-> site
       (select-keys [:id :name :lat :long])
       (rename-keys {:long :lon})
-      (assoc :type (facility-type site))))
+      (assoc :type_id (facility-type site))))
 
 (defn sites->facilities [sites]
   (->> sites

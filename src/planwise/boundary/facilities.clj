@@ -22,7 +22,10 @@
 
   (isochrone-all-facilities [this threshold]
     "Retrieve the catchment area for all facilities available for the given
-    threshold."))
+    threshold.")
+
+  (list-types [this]
+    "Lists all the facility types."))
 
 
 ;; Reference implementation
@@ -44,4 +47,6 @@
     ([service isochrone-options facilities-criteria]
      (service/list-with-isochrones service isochrone-options facilities-criteria)))
   (isochrone-all-facilities [service threshold]
-    (service/get-isochrone-for-all-facilities service threshold)))
+    (service/get-isochrone-for-all-facilities service threshold))
+  (list-types [service]
+    (service/list-types service)))

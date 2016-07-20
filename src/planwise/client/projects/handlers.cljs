@@ -3,11 +3,25 @@
             [accountant.core :as accountant]
             [planwise.client.routes :as routes]
             [planwise.client.projects.api :as api]
+            [clojure.string :refer [split capitalize join]]
             [planwise.client.db :as db]))
-
 
 (def in-projects (path [:projects]))
 (def in-current-project (path [:projects :current]))
+(def in-filter-definitions (path [:filter-definitions]))
+
+(defn fetch-facility-types []
+  (api/fetch-facility-types :projects/facility-types-received))
+
+(register-handler
+ :projects/facility-types-received
+ in-filter-definitions
+ (fn [db [_ types]]
+   (let [types-labels (->> types
+              (map #(split % #" "))
+              (map #(map capitalize %))
+              (map #(join " " %)))]
+     (assoc db :facility-type types-labels))))
 
 (register-handler
  :projects/search

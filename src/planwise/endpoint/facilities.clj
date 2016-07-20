@@ -11,11 +11,14 @@
 
 (defn- endpoint-routes [service]
   (routes
-
    (GET "/" [type region]
       (let [facilities (facilities/list-facilities service (facilities-criteria type region))]
         (response {:count (count facilities)
                    :facilities facilities})))
+
+   (GET "/types" req
+     (let [types (facilities/list-types service)]
+       (response (flatten (map vals types)))))
 
    (GET "/with-isochrones" [threshold algorithm simplify type region]
      (let [criteria (facilities-criteria type region)

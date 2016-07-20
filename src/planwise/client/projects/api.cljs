@@ -34,3 +34,6 @@
   (GET
     "/api/facilities/with-isochrones"
     (json-request (merge isochrone-options (process-filters filters)) handlers)))
+
+(defn fetch-facility-types [& handlers]
+  (GET "/api/facilities/types" (json-request {} handlers)))

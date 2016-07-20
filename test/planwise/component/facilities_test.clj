@@ -12,13 +12,13 @@
 
 (def fixture-data
   [[:facilities
-    [{:id 1 :name "Facility A" :lat -3   :lon 42 :the_geom (make-point -3 42)}
-     {:id 2 :name "Facility B" :lat -3.5 :lon 42 :the_geom (make-point -3.5 42)}]]
+    [{:id 1 :name "Facility A" :type_id 1 :lat -3   :lon 42 :the_geom (make-point -3 42)}
+     {:id 2 :name "Facility B" :type_id 1 :lat -3.5 :lon 42 :the_geom (make-point -3.5 42)}]]
    [:facilities_polygons
     [{:facility_id 1 :threshold 900 :method "alpha-shape" :the_geom (sample-polygon)}]]])
 
 (def new-facilities
-  [{:id 3 :name "New facility" :lat 4 :lon 10 :type "hospital"}])
+  [{:id 3 :name "New facility" :type_id 1 :lat 4 :lon 10 :type "hospital"}])
 
 (defn system []
   (into
