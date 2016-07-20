@@ -46,6 +46,10 @@
      (if (empty? types) []
        (facilities-by-criteria (get-db service) {:types (map lower-case types), :region region})))))
 
+(defn count-facilities-in-region
+  [service {region :region}]
+  (count-facilities-in-region* (get-db service) {:region region}))
+
 (defn list-with-isochrones
   ([service threshold]
    (list-with-isochrones service threshold "alpha-shape" 0.0))
