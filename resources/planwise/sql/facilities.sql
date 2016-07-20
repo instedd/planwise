@@ -29,10 +29,6 @@ INNER JOIN facility_types ON facility_types.id = facilities.type_id
 WHERE 1=1
 :snip:criteria ;
 
--- :name select-types :?
-SELECT name
-FROM facility_types;
-
 -- :name facilities-with-isochrones :?
 SELECT
   facilities.id AS id, facilities.name AS name, facilities.lat AS lat, facilities.lon AS lon,
@@ -49,3 +45,15 @@ SELECT
 FROM facilities_polygons
 WHERE threshold = :threshold
 AND method = 'alpha-shape';
+
+-- :name select-types :?
+SELECT name
+FROM facility_types;
+
+-- :name delete-types! :!
+DELETE FROM facility_types;
+
+-- :name insert-type! :<! :1
+INSERT INTO facility_types (name)
+VALUES (:name)
+RETURNING id;
