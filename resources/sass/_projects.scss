@@ -46,6 +46,21 @@ $project-head-height: 100px;
     .project-card-content {
       padding: 15px;
       display: inline-block;
+
+      .project-stats {
+        .stat {
+          margin-top: 10px;
+
+          .stat-title {
+            font-size: 10px;
+          }
+
+          .stat-value {
+            font-size: 20px;
+          }
+        }
+      }
+
     }
 
     .project-goal {

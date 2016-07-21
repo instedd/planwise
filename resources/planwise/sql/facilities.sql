@@ -33,6 +33,14 @@ WHERE 1=1
 SELECT name
 FROM facility_types;
 
+-- :name count-facilities-in-region* :? :1
+SELECT
+  COUNT(*)
+FROM facilities
+WHERE ST_Contains(
+  (SELECT the_geom FROM regions WHERE id = :region LIMIT 1),
+  facilities.the_geom);
+
 -- :name facilities-with-isochrones :?
 SELECT
   facilities.id AS id, facilities.name AS name, facilities.lat AS lat, facilities.lon AS lon,
