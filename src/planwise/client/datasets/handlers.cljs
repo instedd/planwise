@@ -23,9 +23,10 @@
  :datasets/initialise!
  in-datasets
  (fn [db [_]]
-   (when-not (initialised? db)
+   (if-not (initialised? db)
      (api/load-datasets-info :datasets/info-loaded)
-     (assoc db :state :initialising))))
+     (assoc db :state :initialising))
+   db))
 
 (register-handler
  :datasets/reload-info
@@ -91,9 +92,10 @@
        (do
          (c/log "Still importing...")
          (.setTimeout js/window
-                      #(api/load-datasets-info :datasets/import-running)
+                      #(api/importer-status :datasets/import-running)
                       2000))
        (do
          (c/log "Import finished")
+         (dispatch [:projects/fetch-facility-types])
          (dispatch [:datasets/reload-info])))
      (assoc db :state state))))

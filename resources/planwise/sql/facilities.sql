@@ -66,3 +66,6 @@ DELETE FROM facility_types;
 INSERT INTO facility_types (name)
 VALUES (:name)
 RETURNING id;
+
+-- :name calculate-facility-isochrones! :!
+SELECT process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer);

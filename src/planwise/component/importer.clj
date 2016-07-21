@@ -49,21 +49,35 @@
        (sites-with-location)
        (map (site->facility-ctor type-field))))
 
+(defn do-import-sites
+  [resmap facilities user coll-id type-field]
+  (loop [page 1
+         ids []]
+    (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
+          sites (:sites data)]
+      (if (seq sites)
+        (do (info "Processing page" page "of collection" coll-id)
+            (let [new-facilities (sites->facilities sites type-field)]
+              (info "Inserting" (count new-facilities) "facilities")
+              (facilities/insert-facilities! facilities new-facilities)
+              (recur (inc page) (into ids (map :id new-facilities)))))
+        ids))))
+
+(defn preprocess-isochrones
+  [facilities ids]
+  (info "Preprocessing isochrones for" (count ids) "facilities")
+  (doseq [facility-id ids]
+    (info "Preprocessing facility" facility-id)
+    (facilities/preprocess-isochrones facilities facility-id)))
+
 (defn do-import-collection
   [resmap facilities user coll-id type-field]
   (info "Destroying existing facilities")
   (facilities/destroy-facilities! facilities)
-  (let [type-field (import-types facilities type-field)]
-    (loop [page 1]
-      (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
-            sites (:sites data)]
-        (when (seq sites)
-          (info "Processing page" page "of collection" coll-id)
-          (let [new-facilities (sites->facilities sites type-field)]
-            (info "Inserting" (count new-facilities) "facilities")
-            (facilities/insert-facilities! facilities new-facilities))
-          (recur (inc page))))))
-  (info "Done importing facilities from collection" coll-id))
+  (let [type-field (import-types facilities type-field)
+        ids (do-import-sites resmap facilities user coll-id type-field)]
+    (preprocess-isochrones facilities ids)
+    (info "Done importing facilities from collection" coll-id)))
 
 (defn service-loop
   [{:keys [resmap facilities] :as service}]

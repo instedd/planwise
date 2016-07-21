@@ -19,3 +19,8 @@
       (json-request {:coll-id coll-id
                      :type-field type-field}
                     handlers)))
+
+(defn importer-status
+  [& handlers]
+  (GET "/api/datasets/status"
+      (json-request {} handlers)))

@@ -10,8 +10,11 @@
 (def in-current-project (path [:projects :current]))
 (def in-filter-definitions (path [:filter-definitions]))
 
-(defn fetch-facility-types []
-  (api/fetch-facility-types :projects/facility-types-received))
+(register-handler
+ :projects/fetch-facility-types
+ (fn [db [_]]
+   (api/fetch-facility-types :projects/facility-types-received)
+   db))
 
 (register-handler
  :projects/facility-types-received
