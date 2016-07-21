@@ -90,6 +90,11 @@
             #(dispatch [:projects/cancel-new-project])}
            "Cancel"]]]))))
 
+(defn project-stat [title stat]
+  [:div.stat
+   [:div.stat-title title]
+   [:div.stat-value stat]])
+
 (defn project-card [{:keys [id goal region_id facilities_count] :as project}]
   (let [region-geo (subscribe [:regions/geojson region_id])]
     (fn [{:keys [id goal region_id] :as project}]
@@ -101,11 +106,6 @@
             (project-stat "TARGET FACILITIES" facilities_count)]]
           (if-not (str/blank? @region-geo)
             [:img.map-preview {:src (static-image @region-geo)}])]])))
-
-(defn project-stat [title stat]
-  [:div.stat
-   [:div.stat-title title]
-   [:div.stat-value stat]])
 
 (defn projects-list [projects]
   [:ul.projects-list
@@ -140,7 +140,7 @@
      {:item :transport
       :href (routes/project-transport route-params)
       :title "Transport Means"}
-     {:item :scenarios
+     #_{:item :scenarios
       :href (routes/project-scenarios route-params)
       :title "Scenarios"}]))
 
@@ -199,14 +199,14 @@
             :value (:type @filters)
             :toggle-fn (toggle-cons-fn :type)})]
 
-         [:fieldset
+         #_[:fieldset
           [:legend "Ownership"]
           (common/filter-checkboxes
            {:options @facility-ownerships
             :value (:ownership @filters)
             :toggle-fn (toggle-cons-fn :ownership)})]
 
-         [:fieldset
+         #_[:fieldset
           [:legend "Services"]
           (common/filter-checkboxes
            {:options @facility-services

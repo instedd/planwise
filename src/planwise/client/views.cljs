@@ -10,7 +10,7 @@
 (def nav-items
   [{:item #{:home :projects} :href (routes/home) :title "Projects"}
    {:item :datasets :href (routes/datasets) :title "Datasets"}
-   {:item :playground :href (routes/playground) :title "Playground"}])
+   #_{:item :playground :href (routes/playground) :title "Playground"}])
 
 (def current-user-email
   (atom (.-value (.getElementById js/document "__identity"))))
