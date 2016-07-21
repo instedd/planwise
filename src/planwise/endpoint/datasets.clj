@@ -30,6 +30,10 @@
                   :facility-count facility-count
                   :collections collections})))
 
+   (GET "/status" request
+     (let [importer-status (importer/status importer)]
+       (response {:status importer-status})))
+
    (GET "/collection-info/:coll-id" [coll-id :as request]
      (let [user (:identity request)
            fields (resmap/list-collection-fields resmap user coll-id)

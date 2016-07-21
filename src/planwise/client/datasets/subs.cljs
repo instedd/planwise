@@ -21,3 +21,8 @@
  :datasets/selected
  (fn [db [_]]
    (reaction (get-in @db [:datasets :selected]))))
+
+(register-sub
+ :datasets/raw-status
+ (fn [db [_]]
+   (reaction (get-in @db [:datasets :raw-status]))))

@@ -49,21 +49,38 @@
        (sites-with-location)
        (map (site->facility-ctor type-field))))
 
+(defn do-import-sites
+  [{:keys [resmap facilities] :as service} user coll-id type-field]
+  (loop [page 1
+         ids []]
+    (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
+          sites (:sites data)]
+      (if (seq sites)
+        (do (info "Processing page" page "of collection" coll-id)
+            (let [new-facilities (sites->facilities sites type-field)]
+              (info "Inserting" (count new-facilities) "facilities")
+              (facilities/insert-facilities! facilities new-facilities)
+              (recur (inc page) (into ids (map :id new-facilities)))))
+        ids))))
+
+(defn preprocess-isochrones
+  [{:keys [facilities status] :as service} ids]
+  (let [total-facilities (count ids)]
+    (info "Preprocessing isochrones for" total-facilities "facilities")
+    (doseq [[idx facility-id] (map-indexed vector ids)]
+      (let [progress (str (inc idx) "/" total-facilities)]
+        (info "Preprocessing facility" facility-id progress)
+        (swap! status (constantly [:importing :processing progress])))
+      (facilities/preprocess-isochrones facilities facility-id))))
+
 (defn do-import-collection
-  [resmap facilities user coll-id type-field]
+  [{:keys [resmap facilities] :as service} user coll-id type-field]
   (info "Destroying existing facilities")
   (facilities/destroy-facilities! facilities)
-  (let [type-field (import-types facilities type-field)]
-    (loop [page 1]
-      (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
-            sites (:sites data)]
-        (when (seq sites)
-          (info "Processing page" page "of collection" coll-id)
-          (let [new-facilities (sites->facilities sites type-field)]
-            (info "Inserting" (count new-facilities) "facilities")
-            (facilities/insert-facilities! facilities new-facilities))
-          (recur (inc page))))))
-  (info "Done importing facilities from collection" coll-id))
+  (let [type-field (import-types facilities type-field)
+        ids (do-import-sites service user coll-id type-field)]
+    (preprocess-isochrones service ids)
+    (info "Done importing facilities from collection" coll-id)))
 
 (defn service-loop
   [{:keys [resmap facilities] :as service}]
@@ -73,7 +90,7 @@
     (go-loop []
       (let [msg (<! c)]
         (info "Received message" msg)
-        (if-not (= msg :quit)
+        (if-not (= (first msg) :quit)
           (do
             (cond
               (= (first msg) :set-status)
@@ -84,9 +101,9 @@
                     ident (:user params)
                     coll-id (:coll-id params)
                     type-field (:type-field params)]
-                (swap! status (constantly :importing))
+                (swap! status (constantly [:importing "Importing collection"]))
                 (try
-                  (do-import-collection resmap facilities ident coll-id type-field)
+                  (do-import-collection service ident coll-id type-field)
                   (swap! status (constantly [:ready :success]))
                   (catch Exception e
                     (error e "Error running import job")
@@ -112,7 +129,7 @@
   (stop [component]
     (info "Stopping Importer component")
     (when-let [c (:control-channel component)]
-      (put! c :quit))
+      (put! c [:quit]))
     (dissoc component :status :control-channel)))
 
 (defn importer
@@ -133,7 +150,7 @@
   [service user coll-id type-field]
   ;; TODO: this shouldn't be here, but otherwise this function returns before
   ;; the job is processed and the status is still :ready
-  (swap! (:status service) (constantly :importing))
+  (swap! (:status service) (constantly [:importing "Starting..."]))
   (send-msg service [:import! {:user user
                                :coll-id coll-id
                                :type-field type-field}]))

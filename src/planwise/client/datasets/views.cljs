@@ -71,12 +71,17 @@
   (let [resourcemap (subscribe [:datasets/resourcemap])
         selected (subscribe [:datasets/selected])
         facility-count (subscribe [:datasets/facility-count])
-        state (subscribe [:datasets/state])]
+        state (subscribe [:datasets/state])
+        raw-status (subscribe [:datasets/raw-status])]
     (fn []
       (let [importing? (importing? @state)]
         [:article.datasets
          [:h2 "Facilities"]
          [:p "There are currently " @facility-count " facilities in the system."]
+         (when importing?
+           (let [[_ step progress] @raw-status
+                 step (or step "Importing collection")]
+             [:h3 "Import status: " (str step " " progress)]))
          (if (:authorised? @resourcemap)
            [:div
             [:h3 "Available Resourcemap collections"]
