@@ -1,5 +1,6 @@
 (ns planwise.component.projects
-  (:require [clojure.java.jdbc :as jdbc]
+  (:require [planwise.component.facilities :as facilities]
+            [clojure.java.jdbc :as jdbc]
             [com.stuartsierra.component :as component]
             [hugsql.core :as hugsql]))
 
@@ -34,5 +35,7 @@
 
 (defn create-project [service project]
   (let [db (get-db service)
-        id (-> (insert-project! db project) (first) (:id))]
-    (assoc project :id id)))
+        facilities_count (facilities/count-facilities-in-region service {:region (:region_id project)})
+        project-ready (assoc project :facilities_count (:count facilities_count))
+        id (-> (insert-project! db project-ready) (first) (:id))]
+    (assoc project-ready :id id)))

@@ -90,15 +90,22 @@
             #(dispatch [:projects/cancel-new-project])}
            "Cancel"]]]))))
 
-(defn project-card [{:keys [id goal region_id] :as project}]
+(defn project-card [{:keys [id goal region_id facilities_count] :as project}]
   (let [region-geo (subscribe [:regions/geojson region_id])]
     (fn [{:keys [id goal region_id] :as project}]
       [:a {::href (routes/project-demographics project)}
         [:div.project-card
           [:div.project-card-content
-            [:span.project-goal goal]]
+           [:span.project-goal goal]
+           [:div.project-stats
+            (project-stat "TARGET FACILITIES" facilities_count)]]
           (if-not (str/blank? @region-geo)
             [:img.map-preview {:src (static-image @region-geo)}])]])))
+
+(defn project-stat [title stat]
+  [:div.stat
+   [:div.stat-title title]
+   [:div.stat-value stat]])
 
 (defn projects-list [projects]
   [:ul.projects-list
