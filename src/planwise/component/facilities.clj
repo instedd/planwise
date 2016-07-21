@@ -14,11 +14,9 @@
   [component]
   (get-in component [:db :spec]))
 
-(defn facilities-criteria [{types :types, :as criteria}]
+(defn facilities-criteria [criteria]
   (criteria-snip
-    (if (nil? types)
-      criteria
-      (assoc criteria :types (map lower-case types)))))
+   criteria))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition

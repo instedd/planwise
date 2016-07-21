@@ -35,6 +35,7 @@ SELECT
   ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone
 FROM facilities_polygons fp
   INNER JOIN facilities ON fp.facility_id = facilities.id
+  INNER JOIN facility_types ON facilities.type_id = facility_types.id
 WHERE fp.threshold = :threshold
   AND fp.method = :algorithm
   :snip:criteria ;
