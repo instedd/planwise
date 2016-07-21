@@ -5,20 +5,27 @@
             [buddy.auth :refer [authenticated?]]
             [ring.util.response :refer [response]]))
 
+(defn facilities-criteria [type region]
+  {:region (if region (Integer. region) nil)
+   :types (if type (vals type) nil)})
+
 (defn- endpoint-routes [service]
   (routes
-
    (GET "/" [type region]
-      (let [criteria {:types (vals type), :region (if region (Integer. region) nil)}
-            facilities (facilities/list-facilities service criteria)]
+      (let [facilities (facilities/list-facilities service (facilities-criteria type region))]
         (response {:count (count facilities)
                    :facilities facilities})))
 
-   (GET "/with-isochrones" [threshold algorithm simplify]
-     (let [facilities (facilities/list-with-isochrones service
-                                                       (Integer. threshold)
-                                                       algorithm
-                                                       (Float. simplify))]
+   (GET "/types" req
+     (let [types (facilities/list-types service)]
+       (response (flatten (map vals types)))))
+
+   (GET "/with-isochrones" [threshold algorithm simplify type region]
+     (let [criteria (facilities-criteria type region)
+           isochrone {:threshold (Integer. threshold)
+                      :algorithm algorithm
+                      :simplify (if simplify (Float. simplify) nil)}
+           facilities (facilities/list-with-isochrones service isochrone criteria)]
        (response facilities)))
 
    (GET "/isochrone" [threshold]

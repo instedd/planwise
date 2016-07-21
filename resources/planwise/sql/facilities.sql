@@ -1,7 +1,7 @@
 -- :name insert-facility! :! :n
 INSERT INTO facilities
-    (id, name, lat, lon, type, the_geom)
-    VALUES (:id, :name, :lat, :lon, :type, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
+    (id, name, lat, lon, type_id, the_geom)
+    VALUES (:id, :name, :lat, :lon, :type_id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
 
 -- :name delete-facilities! :!
 DELETE FROM facilities;
@@ -12,15 +12,26 @@ SELECT
 FROM facilities
 ORDER BY name;
 
--- :name facilities-by-criteria :? :*
-SELECT
-  id, name, type, lat, lon
-FROM facilities
-WHERE type IN (:v*:types)
+-- :snip criteria-snip
+/*~ (if (:types params) */
+  AND facility_types.name IN (:v*:types)
+/*~ ) ~*/
 /*~ (if (:region params) */
+  AND facilities.the_geom @ (SELECT the_geom FROM regions WHERE id = :region LIMIT 1)
   AND ST_Contains((SELECT the_geom FROM regions WHERE id = :region LIMIT 1), facilities.the_geom)
 /*~ ) ~*/
-ORDER BY name;
+
+-- :name facilities-by-criteria :? :*
+SELECT
+facilities.id as id, facilities.name as name, facility_types.name as type, lat, lon
+FROM facilities
+INNER JOIN facility_types ON facility_types.id = facilities.type_id
+WHERE 1=1
+:snip:criteria ;
+
+-- :name select-types :?
+SELECT name
+FROM facility_types;
 
 -- :name count-facilities-in-region* :? :1
 SELECT
@@ -32,12 +43,13 @@ WHERE ST_Contains(
 
 -- :name facilities-with-isochrones :?
 SELECT
-  fp.facility_id, f.name, f.lat, f.lon, ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone
+  facilities.id AS id, facilities.name AS name, facilities.lat AS lat, facilities.lon AS lon,
+  ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone
 FROM facilities_polygons fp
-INNER JOIN facilities f
-ON fp.facility_id = f.id
+  INNER JOIN facilities ON fp.facility_id = facilities.id
 WHERE fp.threshold = :threshold
-AND fp.method = :method;
+  AND fp.method = :algorithm
+  :snip:criteria ;
 
 -- :name isochrone-for-facilities :? :1
 SELECT

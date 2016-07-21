@@ -10,6 +10,7 @@ ADD scripts/mapconfig.xml /app/scripts/mapconfig.xml
 ADD scripts/import-sites /app/scripts/import-sites
 ADD scripts/migrate /app/scripts/migrate
 ADD scripts/preprocess-isochrones /app/scripts/preprocess-isochrones
+ADD scripts/load-regions /app/scripts/load-regions
 
 # Add uberjar with app
 ADD ./target/uberjar/planwise-0.1.0-SNAPSHOT-standalone.jar /app/lib/

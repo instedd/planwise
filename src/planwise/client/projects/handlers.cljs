@@ -3,11 +3,25 @@
             [accountant.core :as accountant]
             [planwise.client.routes :as routes]
             [planwise.client.projects.api :as api]
+            [clojure.string :refer [split capitalize join]]
             [planwise.client.db :as db]))
-
 
 (def in-projects (path [:projects]))
 (def in-current-project (path [:projects :current]))
+(def in-filter-definitions (path [:filter-definitions]))
+
+(defn fetch-facility-types []
+  (api/fetch-facility-types :projects/facility-types-received))
+
+(register-handler
+ :projects/facility-types-received
+ in-filter-definitions
+ (fn [db [_ types]]
+   (let [types-labels (->> types
+              (map #(split % #" "))
+              (map #(map capitalize %))
+              (map #(join " " %)))]
+     (assoc db :facility-type types-labels))))
 
 (register-handler
  :projects/search
@@ -81,6 +95,11 @@
                :list (cons project-data (:list db))
                :current (db/project-viewmodel project-data)))))
 
+(defn- facilities-criteria [current-project-db]
+  (let [filters (get-in current-project-db [:facilities :filters])
+        project-region-id (get-in current-project-db [:project-data :region_id])]
+    (assoc filters :region project-region-id)))
+
 (register-handler
  :projects/toggle-filter
  in-current-project
@@ -90,11 +109,37 @@
           toggled-filter (if (contains? current-filter filter-value)
                            (disj current-filter filter-value)
                            (conj current-filter filter-value))
-          new-db (assoc-in db path toggled-filter)
-          updated-filters (get-in new-db [:facilities :filters])
-          project-region-id (get-in db [:project-data :region_id])]
-      (api/fetch-facilities (assoc updated-filters :region project-region-id) :projects/facilities-loaded)
+          new-db (-> db
+                  (assoc-in path toggled-filter)
+                  (assoc-in [:facilities :isochrones] nil))
+          criteria (facilities-criteria new-db)]
+      (api/fetch-facilities criteria :projects/facilities-loaded)
       new-db)))
+
+(register-handler
+ :projects/load-isochrones
+ in-current-project
+ (fn [db [_ force?]]
+   (when (or force? (nil? (get-in db [:facilities :isochrones])))
+     (if-let [time (get-in db [:transport :time])]
+       (api/fetch-facilities-with-isochrones (facilities-criteria db) {:threshold time} :projects/isochrones-loaded)))
+   db))
+
+(register-handler
+ :projects/set-transport-time
+ in-current-project
+  (fn [db [_ time]]
+    (dispatch [:projects/load-isochrones :force])
+    (assoc-in db [:transport :time] time)))
+
+(register-handler
+ :projects/isochrones-loaded
+ in-current-project
+ (fn [db [_ response]]
+   (assoc-in db [:facilities :isochrones] (->> response
+                                            (map :isochrone)
+                                            (set)
+                                            (filterv some?)))))
 
 (register-handler
  :projects/facilities-loaded

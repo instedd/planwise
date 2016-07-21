@@ -2,6 +2,7 @@
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
+            [clj-time.jdbc]
             [hugsql.core :as hugsql]))
 
 (timbre/refer-timbre)
@@ -54,3 +55,19 @@
       (do
         (error "Update last login for non-existent user for ID " user-id)
         false))))
+
+(defn find-latest-token-for-scope
+  [service scope email]
+  (let [token (find-latest-user-token (get-db service) {:email email :scope scope})]
+    (when token
+      {:expires (:expires token)
+       :refresh-token (:refresh_token token)
+       :token (:token token)})))
+
+(defn save-token-for-scope!
+  [service scope email token]
+  (save-user-token! (get-db service) {:email email
+                                      :scope scope
+                                      :token (:token token)
+                                      :refresh-token (:refresh-token token)
+                                      :expires (:expires token)}))

@@ -18,6 +18,13 @@
   (reagent/render [views/planwise-app]
                   (.getElementById js/document "app")))
 
+(defn install-message-handler! []
+  (.addEventListener js/window
+                     "message"
+                     (fn [e]
+                       (let [message (.-data e)]
+                         (dispatch [:message-posted message])))))
+
 (defn- ^:export main []
   (dispatch-sync [:initialise-db])
   (accountant/configure-navigation!
@@ -28,4 +35,5 @@
      (fn [path]
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
+  (install-message-handler!)
   (mount-root))

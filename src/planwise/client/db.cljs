@@ -3,6 +3,18 @@
 (def initial-position-and-zoom {:position [-0.0236 37.9062]
                                 :zoom 7})
 
+(def transport-definitions
+   {:time (concat
+           [{:id (* 60 30) :name "30 minutes"}
+            {:id (* 60 45) :name "45 minutes"}
+            {:id (* 60 60) :name "1 hour"}]
+           (map
+            (fn [total-mins]
+              (let [hours (quot total-mins 60)
+                    mins (rem total-mins 60)]
+                {:id (* 60 total-mins), :name (str hours (if (> mins 0) (str ":" mins)) " hours")}))
+            (range 75 181 15)))})
+
 (def empty-project-viewmodel
   {:facilities {;; Filters and stats for facilities
                 :filters {:type #{}
@@ -10,7 +22,9 @@
                           :services #{}}
                 :count 0
                 :total 4944
-                :list []}
+                :list []
+                :isochrones nil} ;; geojson string
+   :transport {:time nil}
    :map-view {} ;; {:keys position zoom}
    :project-data {}}) ;; {:keys id goal region_id facilities_count}
 
@@ -18,6 +32,17 @@
   (-> empty-project-viewmodel
       (assoc :project-data project-data)
       (assoc-in [:facilities :total] (:facilities_count project-data))))
+
+(def empty-datasets-selected
+  {:collection nil
+                                        ; The ID of the currently selected collection
+   :valid?     false
+                                        ; If the collection if valid for import
+   :fields     nil
+                                        ; Fields available for mapping to facility type
+   :type-field nil
+                                        ; Field selected for mapping facility type
+   })
 
 (def initial-db
   {;; Navigation
@@ -51,6 +76,22 @@
 
    ;; Regions
    :regions {} ;; id => {:keys id name admin_level & geojson}
+
+   ;; Datasets
+   :datasets
+   {:state nil
+                                        ; :initialising/nil :ready :importing
+    :facility-count nil
+                                        ; Count of available facilities
+    :resourcemap {
+                  :authorised?  nil
+                                        ; Whether the user has authorised for
+                                        ; Resourcemap access
+                  :collections  nil
+                                        ; Resourcemap collections
+                  }
+    :selected empty-datasets-selected
+    }
 
    ;; Playground related data
    :playground {:map-view initial-position-and-zoom

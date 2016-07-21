@@ -15,6 +15,7 @@
             [dev.tasks :refer :all]
             [dev.sass :as sass]
             [dev.auto :as auto]
+            [ring.mock.request :as mock]
             [planwise.config :as config]
             [planwise.system :as system]))
 
@@ -22,8 +23,13 @@
 (timbre/merge-config! {:ns-blacklist ["com.zaxxer.hikari.*"]})
 (timbre/set-level! :info)
 
+;; Fix JWE secret in development to facilitate debugging
+(def jwe-secret
+  "12345678901234567890123456789012")
+
 (def dev-config
   {:app {:middleware [wrap-stacktrace]}
+   :auth {:jwe-secret jwe-secret}
    :figwheel
    {:css-dirs ["resources/planwise/public/css"
                "target/sass-repl"]
@@ -64,6 +70,10 @@
 
 (defn db []
   (:spec (:db system)))
+
+(defn restart []
+  (stop)
+  (start))
 
 (gen/set-ns-prefix 'planwise)
 

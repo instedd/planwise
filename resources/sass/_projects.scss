@@ -178,7 +178,7 @@ article.project-view {
   }
 }
 
-.facility-filters {
+.sidebar-filters {
   background-color: $gray1;
 
   .filter-info {
@@ -208,6 +208,10 @@ article.project-view {
       input[type=checkbox] {
         margin-right: 5px;
       }
+    }
+
+    .rc-dropdown {
+      width: 100%;
     }
   }
 }
