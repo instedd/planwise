@@ -14,11 +14,9 @@
   [component]
   (get-in component [:db :spec]))
 
-(defn facilities-criteria [{types :types, :as criteria}]
+(defn facilities-criteria [criteria]
   (criteria-snip
-    (if (nil? types)
-      criteria
-      (assoc criteria :types (map lower-case types)))))
+   criteria))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -72,3 +70,16 @@
 
 (defn list-types [service]
   (select-types (get-db service)))
+
+(defn destroy-types!
+  [service]
+  (delete-types! (get-db service)))
+
+(defn insert-types!
+  [service types]
+  (jdbc/with-db-transaction [tx (get-db service)]
+    (-> (map (fn [type]
+               (let [type-id (insert-type! tx type)]
+                 (merge type type-id)))
+             types)
+        (vec))))

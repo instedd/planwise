@@ -29,10 +29,6 @@ INNER JOIN facility_types ON facility_types.id = facilities.type_id
 WHERE 1=1
 :snip:criteria ;
 
--- :name select-types :?
-SELECT name
-FROM facility_types;
-
 -- :name count-facilities-in-region* :? :1
 SELECT
   COUNT(*)
@@ -47,6 +43,7 @@ SELECT
   ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone
 FROM facilities_polygons fp
   INNER JOIN facilities ON fp.facility_id = facilities.id
+  INNER JOIN facility_types ON facilities.type_id = facility_types.id
 WHERE fp.threshold = :threshold
   AND fp.method = :algorithm
   :snip:criteria ;
@@ -57,3 +54,15 @@ SELECT
 FROM facilities_polygons
 WHERE threshold = :threshold
 AND method = 'alpha-shape';
+
+-- :name select-types :?
+SELECT id, name
+FROM facility_types;
+
+-- :name delete-types! :!
+DELETE FROM facility_types;
+
+-- :name insert-type! :<! :1
+INSERT INTO facility_types (name)
+VALUES (:name)
+RETURNING id;

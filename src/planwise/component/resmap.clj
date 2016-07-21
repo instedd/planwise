@@ -56,7 +56,7 @@
        (->> (json/parse-string (:body response) true)
             (map map-collection))
        (do
-         (warn "Failure to retrive Resourcemap collections:"
+         (warn "Failure to retrieve Resourcemap collections:"
                (get-in response [:headers "status"]))
          [])))))
 
