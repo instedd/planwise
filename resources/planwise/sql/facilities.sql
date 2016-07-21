@@ -14,7 +14,7 @@ ORDER BY name;
 
 -- :snip criteria-snip
 /*~ (if (:types params) */
-  AND facility_types.name IN (:v*:types)
+  AND facilities.type_id IN (:v*:types)
 /*~ ) ~*/
 /*~ (if (:region params) */
   AND facilities.the_geom @ (SELECT the_geom FROM regions WHERE id = :region LIMIT 1)

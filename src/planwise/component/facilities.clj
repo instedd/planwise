@@ -15,8 +15,7 @@
   (get-in component [:db :spec]))
 
 (defn facilities-criteria [criteria]
-  (criteria-snip
-   criteria))
+  (criteria-snip criteria))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition

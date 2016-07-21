@@ -20,11 +20,7 @@
  :projects/facility-types-received
  in-filter-definitions
  (fn [db [_ types]]
-   (let [types-labels (->> types
-              (map #(split % #" "))
-              (map #(map capitalize %))
-              (map #(join " " %)))]
-     (assoc db :facility-type types-labels))))
+   (assoc db :facility-type types)))
 
 (register-handler
  :projects/search
