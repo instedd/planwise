@@ -14,7 +14,6 @@ begin
     agg_cost double precision
   );
 
-  -- Process all facilities
   facility_node := (SELECT closest_node(the_geom) FROM facilities WHERE id = f_id);
   insert into edges_agg_cost (
     select e.edge, e.agg_cost

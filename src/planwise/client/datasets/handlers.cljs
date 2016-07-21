@@ -44,6 +44,7 @@
        (assoc-in [:resourcemap :authorised?] (:authorised? datasets-info))
        (assoc-in [:resourcemap :collections] (:collections datasets-info))
        (assoc :state (status->state (:status datasets-info))
+              :raw-status (:status datasets-info)
               :facility-count (:facility-count datasets-info)))))
 
 (register-handler
@@ -90,12 +91,13 @@
    (let [state (status->state (:status info))]
      (if (= :importing state)
        (do
-         (c/log "Still importing...")
          (.setTimeout js/window
                       #(api/importer-status :datasets/import-running)
-                      2000))
+                      3000))
        (do
          (c/log "Import finished")
          (dispatch [:projects/fetch-facility-types])
          (dispatch [:datasets/reload-info])))
-     (assoc db :state state))))
+     (assoc db
+            :state state
+            :raw-status (:status info)))))

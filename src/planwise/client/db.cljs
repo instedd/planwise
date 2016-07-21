@@ -81,6 +81,7 @@
    :datasets
    {:state nil
                                         ; :initialising/nil :ready :importing
+    :raw-status nil
     :facility-count nil
                                         ; Count of available facilities
     :resourcemap {
