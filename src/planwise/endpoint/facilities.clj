@@ -7,18 +7,21 @@
 
 (defn facilities-criteria [type region]
   {:region (if region (Integer. region) nil)
-   :types (if type (vals type) nil)})
+   :types (if type (map #(Integer. %) (vals type)) nil)})
 
 (defn- endpoint-routes [service]
   (routes
    (GET "/" [type region]
-      (let [facilities (facilities/list-facilities service (facilities-criteria type region))]
-        (response {:count (count facilities)
-                   :facilities facilities})))
+     (let [facilities (facilities/list-facilities service (facilities-criteria type region))]
+       (response {:count (count facilities)
+                  :facilities facilities})))
 
    (GET "/types" req
      (let [types (facilities/list-types service)]
-       (response (flatten (map :name types)))))
+       (response (map (fn [type]
+                        {:value (:id type)
+                         :label (:name type)})
+                      types))))
 
    (GET "/with-isochrones" [threshold algorithm simplify type region]
      (let [criteria (facilities-criteria type region)

@@ -50,10 +50,10 @@
 
    ;; Filter definitions - eventually this should be requested to the server
    :filter-definitions
-   {:facility-type ["Dispensary"
-                    "Health Center"
-                    "Hospital"
-                    "General Hospital"]
+   {:facility-type [{:value 1 :label "Dispensary"}
+                    {:value 2 :label "Health Center"}
+                    {:value 3 :label "Hospital"}
+                    {:value 4 :label "General Hospital"}]
 
     :facility-ownership ["MOH"
                          "Faith Based Organization"
