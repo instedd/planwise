@@ -45,7 +45,26 @@ L.Path.include({
       'viewreset': this.projectLatlngs,
       'moveend': this._updatePath
     }, this);
-  }
+  },
+
+  onRemove: function (map) {
+		(this._pathGroup || map)._pathRoot.removeChild(this._container);
+
+		this.fire('remove');
+    this._pathGroup = null;
+		this._map = null;
+
+		if (L.Browser.vml) {
+			this._container = null;
+			this._stroke = null;
+			this._fill = null;
+		}
+
+		map.off({
+			'viewreset': this.projectLatlngs,
+			'moveend': this._updatePath
+		}, this);
+	},
 });
 
 // L.PathGroup creates an SVG <g> element at the map pathRoot, so all
@@ -109,7 +128,6 @@ L.PathGroup = L.Class.extend({
 
   _updateStyle: function() {
     var style = this.options;
-    console.log(style);
     if (style.opacity) {
       this._pathRoot.setAttribute('opacity', style.opacity);
     } else {
@@ -123,7 +141,6 @@ L.PathGroup = L.Class.extend({
 L.GeoJSON.Group = L.GeoJSON.extend({
 
   initialize: function (geojson, options) {
-    console.log(options);
     var self = this;
     this._pathGroup = L.pathGroup(options.pathGroup);
 
