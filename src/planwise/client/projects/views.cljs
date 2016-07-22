@@ -241,7 +241,6 @@
            [:div.map-container
             [map-widget {:position @map-position
                          :zoom @map-zoom
-                         :max-bounds @map-bbox
                          :min-zoom 5
                          :on-position-changed
                          #(dispatch [:projects/update-position %])
