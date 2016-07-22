@@ -58,7 +58,7 @@
            (assoc-in [:selected :collection] coll)
            (assoc-in [:selected :type-field] nil)
            (assoc-in [:selected :fields] nil)))
-     (db))))
+     db)))
 
 (register-handler
  :datasets/collection-info-loaded
@@ -82,7 +82,9 @@
          type-field (get-in db [:selected :type-field])]
      (c/log "Started collection import")
      (api/import-collection! coll-id type-field :datasets/import-running)
-     (assoc db :state :importing))))
+     (assoc db
+            :state :importing
+            :raw-status [:importing :starting]))))
 
 (register-handler
  :datasets/import-running

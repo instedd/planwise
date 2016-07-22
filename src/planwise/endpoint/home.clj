@@ -8,8 +8,10 @@
 
 (def mount-target
   [:div#app
-   [:h3 "Loading Application"]
-   [:p "Please wait..."]])
+   [:div#loading
+    [:h3 "Loading Application"]
+    [:p "Please wait..."]
+    [:img {:src "/images/logo-transparent.png"}]]])
 
 (defn head []
   [:head

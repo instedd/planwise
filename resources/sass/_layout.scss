@@ -43,7 +43,7 @@ header {
 
 
   .logo {
-    flex-grow: 1;
+    flex-grow: 0;
     background-image: url('/images/logo.png');
     background-repeat: no-repeat;
     background-position: center left;
@@ -66,8 +66,9 @@ header {
   }
 
   nav {
-    margin-top: 26px;
+    margin-top: 20px;
     flex-grow: 2;
+    text-align: center;
     ul {
       margin: 0;
       padding: 0;
@@ -78,8 +79,8 @@ header {
       margin: 0;
       list-style: none;
       display: inline-block;
-      margin-right: 20px;
-      padding-bottom: 10px;
+      margin-right: 40px;
+      padding-bottom: 16px;
       box-sizing: border-box;
       border: none;
       border-bottom: 3px solid transparent;
@@ -88,15 +89,19 @@ header {
       &.active:hover {
         border: none;
         border-bottom: 3px solid $green;
+        a {
+          color: $green;
+        }
       }
 
       &:hover {
-        border-bottom: 3px dotted $green;
+        border-bottom: 3px solid fade-out($green, 0.5);
+        transition: border 0.3s;
       }
 
       a,
       a:hover {
-        padding: 10px;
+        padding: 0px;
         text-decoration: none;
       }
     }
@@ -106,5 +111,28 @@ header {
     flex-grow: 0;
     margin-top: 20px;
     margin-right: 10px;
+  }
+}
+
+#loading {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-flow: column nowrap;
+
+  h3 {
+    font-size: 28px;
+    margin: 0;
+  }
+  p {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    color: $gray-text;
+    font-size: 24px;
   }
 }

@@ -18,6 +18,9 @@
                                            :selected selected)])
                     items)])
 
+(defn loading-placeholder []
+  [:div.loading
+   [:h3 "Loading..."]])
 
 
 ;; Modal dialog
@@ -33,6 +36,11 @@
                                             (on-backdrop-click)))}]
            children)]))
 
+(defn close-button [props]
+  [:button.mini.close props "\u2716"])
+
+(defn refresh-button [props]
+  [:button.mini.refresh props "\u21bb"])
 
 ;; Filter checkboxes
 
