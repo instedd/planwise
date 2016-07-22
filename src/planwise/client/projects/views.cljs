@@ -1,7 +1,11 @@
 (ns planwise.client.projects.views
   (:require [re-frame.core :refer [subscribe dispatch]]
             [re-com.core :as rc]
-            [planwise.client.mapping :refer [default-base-tile-layer static-image bbox-center]]
+            [planwise.client.mapping :refer [default-base-tile-layer
+                                             gray-base-tile-layer
+                                             static-image
+                                             bbox-center]]
+            [planwise.client.styles :as styles]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
             [planwise.client.db :as db]
@@ -20,6 +24,7 @@
    [:div (str projects-count " projects")]
    [:input
     {:type "search"
+     :placeholder "Search projects..."
      :on-change #(dispatch [:projects/search (-> % .-target .-value str)])}]
    (if show-new
     [new-project-button])])
@@ -46,9 +51,7 @@
                                                 (.preventDefault js/event))}
          [:div.title
           [:h1 "New Project"]
-          [:button.close {:on-click
-                          #(dispatch [:projects/cancel-new-project])}
-           "\u2716"]]
+          [common/close-button {:on-click #(dispatch [:projects/cancel-new-project])}]]
          [:div.form-control
           [:label "Goal"]
           [:input {:type "text"
@@ -68,16 +71,17 @@
                         :zoom @map-preview-zoom
                         :on-position-changed #(reset! map-preview-position %)
                         :on-zoom-changed #(reset! map-preview-zoom %)
-                        :width 400
+                        :width 500
                         :height 300
                         :controls []}
            default-base-tile-layer
            (if @selected-region-geojson
              [:geojson-layer {:data @selected-region-geojson
                               :fit-bounds true
-                              :color "#f00"
-                              :opacity 0.2
-                              :weight 2}])]]
+                              :color styles/orange
+                              :opacity 0.7
+                              :fillOpacity 0.3
+                              :weight 4}])]]
          [:div.actions
           [:button.primary
            {:type "submit"
@@ -163,15 +167,17 @@
     (fn []
       [:div.sidebar-filters
        [:div.filter-info
-        [:p "Indicate here the acceptable travel times to facilities. We will use that to calculate who already has access to the services that you are analyzing."]
+        [:p "Indicate here the acceptable travel times to facilities. We will
+        use that to calculate who already has access to the services that you
+        are analyzing."]]
 
-        [:fieldset
-         [:legend "By car"]
-         [rc/single-dropdown
-           :choices (:time db/transport-definitions)
-           :label-fn :name
-           :on-change #(dispatch [:projects/set-transport-time %])
-           :model transport-time]]]])))
+       [:fieldset
+        [:legend "By car"]
+        [rc/single-dropdown
+         :choices (:time db/transport-definitions)
+         :label-fn :name
+         :on-change #(dispatch [:projects/set-transport-time %])
+         :model transport-time]]])))
 
 (defn facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])
@@ -186,7 +192,7 @@
                              #(dispatch [:projects/toggle-filter :facilities field %]))]
         [:div.sidebar-filters
          [:div.filter-info
-          [:p "Select the facilities that are satisfying the demand you are analyzing"]
+          [:p "Select the facilities that are satisfying the demand you are analyzing."]
           [:p
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
@@ -213,10 +219,15 @@
             :value (:services @filters)
             :toggle-fn (toggle-cons-fn :services)})]]))))
 
+(defn demographics-filters []
+  [:div.sidebar-filters
+   [:div.filter-info
+    [:p "Filter here the population you are analyzing."]]])
+
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab
            :demographics
-           [:h3 "Demographics filters"]
+           [demographics-filters]
            :facilities
            [facility-filters]
            :transport
@@ -246,24 +257,25 @@
                          #(dispatch [:projects/update-position %])
                          :on-zoom-changed
                          #(dispatch [:projects/update-zoom %])}
-             default-base-tile-layer
+             gray-base-tile-layer
              [:point-layer {:points points
-                            :radius 3
-                            :color "#f00"
-                            :opacity 0.3
-                            :fillOpacity 0.3}]
+                            :radius 4
+                            :color styles/black
+                            :opacity 0.8
+                            :weight 1
+                            :fillOpacity 0.4}]
              (if @map-geojson
                [:geojson-layer {:data @map-geojson
-                                :color "#0ff"
+                                :color styles/green
                                 :fit-bounds true
                                 :fillOpacity 0.1
                                 :weight 0}])
              (if (and (seq @isochrones) (= :transport selected-tab))
                [:geojson-layer {:data @isochrones
-                                :color "#f80"
                                 :fillOpacity 1
                                 :weight 2
-                                :group {:opacity 0.5}}])]]]
+                                :color styles/orange
+                                :group {:opacity 0.4}}])]]]
           (= :scenarios selected-tab)
           [:div
            [:h1 "Scenarios"]])))))

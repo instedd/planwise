@@ -28,7 +28,7 @@ h3 {
 
 a {
   text-decoration: none;
-  color: #09f;
+  color: $orange-text;
 }
 
 a:hover {
@@ -38,11 +38,6 @@ a:hover {
 .actions {
   display: flex;
   flex-wrap: nowrap;
-
-  button {
-    font-size: 80%;
-    line-height: 1.5;
-  }
 }
 
 .left {
@@ -101,33 +96,30 @@ a:hover {
 .dialog {
   padding: 15px;
   background: $white;
-  max-width: 400px;
+  max-width: 500px;
   display: block;
-  box-shadow: 5px 5px 10px rgba(0,0,0,0.3);
+  box-shadow: 0px 0px 7px rgba(0,0,0,0.3);
 
   .title {
     background: $gray1;
     margin: -15px -15px 10px -15px;
-    padding: 10px;
+    padding: 15px;
 
     h1 {
       display: inline-block;
       margin: 0;
-      font-size: 16px;
+      font-size: 18px;
     }
 
     button.close {
       float: right;
-      border: none;
-      background: transparent;
-      font-size: 15px;
     }
   }
 
   .actions {
     background: $white;
-    margin: 10px -15px -15px -15px;
-    padding: 10px;
+    margin: -10px -15px -15px -15px;
+    padding: 15px;
   }
 }
 
@@ -140,7 +132,10 @@ a:hover {
   &> input {
     width: 100%;
     margin: 5px 0 10px 0;
-    height: 1.5em;
+    box-sizing: border-box;
+    padding: 10px 7px;
+    border-radius: 2px;
+    border: 1px solid $gray2;
   }
   .rc-dropdown {
     width: 100%;
@@ -150,5 +145,96 @@ a:hover {
         width: 92%;
       }
     }
+  }
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  color: $white;
+  border-radius: 1px;
+  border: 1px solid transparent;
+  margin: 0;
+  background-color: $button-color;
+  border-bottom-color: $button-color-shadow;
+  border-right-color: $button-color-shadow;
+  position: relative;
+
+  &[disabled] {
+    background-color: lighten(desaturate($button-color, 10%), 20%);
+    border-bottom-color: transparent;
+    border-right-color: transparent;
+  }
+
+  & + button {
+    margin-left: 15px;
+  }
+
+  &:active {
+    border-bottom-color: transparent;
+    border-right-color: transparent;
+    border-top-color: $button-color-shadow;
+    border-left-color: $button-color-shadow;
+    top: -1px;
+    left: -1px;
+  }
+
+  &.primary {
+    background-color: $green;
+    border-bottom-color: $green-shadow;
+    border-right-color: $green-shadow;
+    &[disabled] {
+      background-color: lighten(desaturate($button-color, 10%), 20%);
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+    }
+
+    &:active {
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+      border-top-color: $green-shadow;
+      border-left-color: $green-shadow;
+    }
+  }
+
+  &.cancel {
+    background-color: transparent;
+    color: $gray-text;
+    border:none;
+    padding: 10px;
+  }
+
+  &.mini {
+    background-color: $white;
+    font-size: 15px;
+    padding: 2px 5px;
+    color: $gray-text;
+    border: 1px solid transparent;
+    border-bottom: 1px solid darken($white, 20%);
+    border-right: 1px solid darken($white, 20%);
+    border-radius: 2px;
+    box-sizing: border-box;
+    position: relative;
+
+    &:active {
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+      border-top-color: darken($white, 20%);
+      border-left-color: darken($white, 20%);
+      top: -1px;
+      left: -1px;
+    }
+  }
+}
+
+.loading {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  h3 {
+    font-size: 18px;
+    margin-top: 30px;
   }
 }

@@ -1,34 +1,46 @@
 @import 'defs';
 
-$project-head-height: 100px;
+$project-head-height: 110px;
+$project-sidebar-width: 300px;
 
 .search-box {
-  padding: 10px;
+  padding: 15px 10px;
   display: flex;
   flex-direction: row;
   background-color: $gray1;
+  height: 42px;
   box-shadow: 0 3px 2px rgba(0, 0, 0, 0.3);
 
   > div {
     border-right: 1px solid $gray2;
     margin-right: 10px;
     padding-right: 10px;
-    width: 5em;
     text-align: right;
+    padding: 10px 15px 5px 10px;
   }
 
   input[type=search] {
     display: block;
     flex-grow: 10;
+    padding: 5px;
+    border: none;
+    background: transparent;
   }
 }
 
 .empty-list {
-  min-height: 500px;
+  min-height: 600px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
+  p {
+    font-size: 20px;
+    color: $gray3;
+    font-weight: bold;
+    margin: 30px 0;
+  }
 }
 
 .projects-list {
@@ -65,6 +77,7 @@ $project-head-height: 100px;
 
     .project-goal {
       font-weight: bold;
+      font-size: 16px;
     }
 
     .map-preview {
@@ -88,15 +101,16 @@ article.project-view {
       margin: 0;
     }
     ul {
-      margin-top: 2px;
+      margin-top: 8px;
+      margin-left: 10px;
       padding: 5px;
       li {
         display: inline-block;
-        margin-right: 10px;
+        margin-right: 30px;
         box-sizing: border-box;
         border: none;
         border-bottom: 3px solid transparent;
-        padding-bottom: 8px;
+        padding-bottom: 12px;
 
         &.active,
         &.active:hover {
@@ -104,12 +118,12 @@ article.project-view {
         }
 
         &:hover {
-          border-bottom: 3px dotted $green;
+          border-bottom: 3px solid fade-out($green, 0.5);
+          transition: border 0.3s;
         }
 
         a,
         a:hover {
-          padding: 10px;
           text-decoration: none;
           color: $gray3;
           font-size: 14px;
@@ -137,7 +151,7 @@ article.project-view {
     top: $project-head-height;
     bottom: 0;
     right: 0;
-    left: 250px;
+    left: $project-sidebar-width;
 
     > div {
       position: absolute;
@@ -152,10 +166,12 @@ article.project-view {
     position: absolute;
     top: $project-head-height;
     left: 0;
-    width: 250px;
+    width: $project-sidebar-width;
     bottom: 0;
     overflow: auto;
     background-color: $gray1;
+    box-shadow: 0 0 3px rgba(0,0,0,0.4);
+    z-index: 1;
 
     h3 {
       font-size: 16px;
@@ -183,15 +199,16 @@ article.project-view {
 
   .filter-info {
     background-color: $gray2;
-    padding: 10px;
+    padding: 20px 15px 10px 15px;
     p {
       margin: 0 0 10px 0;
       color: $gray3;
-      line-height: 1;
+      font-size: 16px;
+      line-height: 1.2;
     }
   }
   fieldset {
-    padding: 35px 10px 10px;
+    padding: 45px 10px 10px 12px;
     border: none;
     border-top: 1px solid $gray2;
     position: relative;
@@ -200,7 +217,7 @@ article.project-view {
       font-size: 14px;
       font-weight: bold;
       position: absolute;
-      top: 5px;
+      top: 15px;
       left: 10px;
     }
 

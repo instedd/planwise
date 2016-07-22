@@ -1,12 +1,96 @@
-@import 'common';
+@import 'defs';
 
 article.datasets {
-  ul {
-    li {
-      cursor: pointer;
+  .dataset-header {
+    position: relative;
+    z-index: 2;
+    padding: 10px 15px;
+    background-color: $gray1;
+    box-shadow: 0 2px 2px rgba(0,0,0,0.2);
+    height: 90px;
+    h2 {
+      font-size: 20px;
+      font-weight: normal;
     }
-    li.selected {
+    h3 {
+      font-weight: normal;
+    }
+  }
+
+  .resmap {
+    overflow: auto;
+    position: absolute;
+    top: 110px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 15px;
+    z-index: 1;
+
+    p {
+      font-size: 16px;
+      max-width: 40em;
+    }
+
+    .disabled {
+      opacity: 0.5;
+    }
+  }
+
+  ul.collections {
+    list-style: none;
+    margin-left: 0;
+    padding: 0;
+    background-color: $gray1;
+
+    > li {
+      margin-left: 0;
+      border-bottom: 1px solid $gray2;
+      padding: 5px 10px;
+      &.selected {
+        background-color: $white;
+      }
+      &:hover {
+        background-color: lighten($gray1, 5%);
+      }
+    }
+
+    h1 {
+      font-size: 16px;
       font-weight: bold;
+      margin: 0;
+    }
+    p {
+      font-size: 14px;
+      color: $gray-text;
+      margin: 0;
+    }
+    p.count {
+      color: $gray3;
+      font-size: 90%;
+    }
+
+    li .loading {
+      justify-content: flex-start;
+      h3 {
+        font-size: 16px;
+        font-weight: normal;
+        margin: 0;
+      }
+    }
+
+    .import-settings {
+      p.warning {
+        margin: 10px 0;
+        background-color: lighten($orange, 0%);
+        padding: 5px 15px;
+        border-radius: 3px;
+        color: $white;
+        font-size: 110%;
+      }
+      .actions {
+        margin-bottom: 5px;
+      }
     }
   }
 

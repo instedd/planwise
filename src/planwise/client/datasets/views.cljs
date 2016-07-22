@@ -1,6 +1,8 @@
 (ns planwise.client.datasets.views
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [re-com.core :as rc]))
+            [clojure.string :refer [capitalize]]
+            [re-com.core :as rc]
+            [planwise.client.common :as common]))
 
 (defn initialised?
   [state]
@@ -16,9 +18,54 @@
          "PlanwiseAuth"
          "chrome=yes,centerscreen=yes,width=600,height=400"))
 
+(defn import-warning []
+  [:p.warning
+   [:b "Current facilities will be replaced"]
+   " by the imported sites. This is a time consuming process and "
+   [:b "can take several hours to complete"]
+   ", depending on the number of imported facilities."])
+
+(defn selected-collection-options
+  []
+  (let [selected (subscribe [:datasets/selected])
+        state (subscribe [:datasets/state])]
+    (fn []
+      (let [valid? (:valid? @selected)
+            fields (:fields @selected)
+            type-field (:type-field @selected)
+            importing? (importing? @state)
+            can-import? (and (not importing?) valid? (some? type-field))]
+        [:div.import-settings
+         (if (nil? fields)
+           [common/loading-placeholder]
+           (if valid?
+             [:div
+              [:div
+               [:label "Use field as facility type "]
+               [rc/single-dropdown
+                :choices fields
+                :disabled? importing?
+                :label-fn :name
+                :on-change #(dispatch [:datasets/select-type-field %])
+                :model type-field]]
+              [import-warning]
+              [:div.actions
+               [:button.primary
+                {:on-click #(dispatch [:datasets/start-import!])
+                 :disabled (not can-import?)}
+                (if importing? "Importing..." "Import collection")]]]
+             [:p
+              "Collection cannot be imported into facilities."]))]))))
+
 (defn collection-item
-  [{:keys [id name count]}]
-  [:span (str name " (" count " facilities)")])
+  [{:keys [id name description selected? count on-click]}]
+  [:li {:class (when selected? "selected")
+        :on-click on-click}
+   [:h1 name]
+   [:p.description description]
+   [:p.count (str count " sites")]
+   (when selected?
+     [selected-collection-options])])
 
 (defn collections-list
   [collections]
@@ -27,83 +74,67 @@
     (fn [collections]
       (let [selected-coll (:collection @selected)
             importing? (importing? @state)]
-        [:ul
+        [:ul.collections
          (for [coll collections]
            (let [coll-id (:id coll)
-                 selected? (= coll selected-coll)]
-             [:li {:key coll-id
-                   :class (when selected? "selected")
-                   :on-click (when-not importing?
-                               #(dispatch [:datasets/select-collection coll]))}
-              [collection-item coll]]))]))))
+                 selected? (and (not importing?) (= coll selected-coll))]
+             [collection-item (assoc coll
+                                     :selected? selected?
+                                     :key coll-id
+                                     :on-click (when-not importing?
+                                                 #(dispatch [:datasets/select-collection coll])))]))]))))
 
-(defn selected-collection-options
-  [{:keys [collection valid? fields type-field] :as selected} importing?]
-  (let [can-import? (and (not importing?) valid? (some? type-field))]
-    [:div
-     [:h4 (:name collection)]
-     (if (nil? fields)
-       [:p "Loading field information..."]
-       (if valid?
-         [:div
-          [:p
-           "Collection can be imported as facilities. "
-           "Please choose the field to use as the facility type below."]
-          [:div
-           [:label "Field to import as facility type"]
-           [rc/single-dropdown
-            :choices fields
-            :disabled? importing?
-            :label-fn :name
-            :on-change #(dispatch [:datasets/select-type-field %])
-            :model type-field]]
-          [:p
-           "Important: facilities will be updated from the selected collection. "
-           "Facilities not present in the Resourcemap collection will be eliminated."]
-          [:button
-           {:on-click #(dispatch [:datasets/start-import!])
-            :disabled (not can-import?)}
-           (if importing? "Importing..." "Import collection")]]
-         [:p
-          "Collection cannot be imported into facilities."]))]))
-
-(defn datasets-view []
-  (let [resourcemap (subscribe [:datasets/resourcemap])
-        selected (subscribe [:datasets/selected])
-        facility-count (subscribe [:datasets/facility-count])
+(defn facilities-summary []
+  (let [facility-count (subscribe [:datasets/facility-count])
         state (subscribe [:datasets/state])
         raw-status (subscribe [:datasets/raw-status])]
     (fn []
       (let [importing? (importing? @state)]
-        [:article.datasets
+        [:div.dataset-header
          [:h2 "Facilities"]
-         [:p "There are currently " @facility-count " facilities in the system."]
-         (when importing?
+         (if-not importing?
+           [:p "There are " [:b @facility-count] " facilities in the system."]
            (let [[_ step progress] @raw-status
                  step (or step "Importing collection")]
-             [:h3 "Import status: " (str step " " progress)]))
-         (if (:authorised? @resourcemap)
-           [:div
-            [:h3 "Available Resourcemap collections"]
-            (when-not importing?
-              [:button
-               {:on-click #(dispatch [:datasets/reload-info])}
-              "Refresh collections"])
-            [:p "Select a collection to import facilities from:"]
-            [collections-list (:collections @resourcemap)]
-            (when (:collection @selected)
-              [selected-collection-options @selected importing?])]
-           [:div
-            [:h3 "Not authorised to access Resourcemap collections"]
-            [:button
-             {:on-click #(open-auth-popup)}
-             "Authorise"]])]))))
+             [:h3 "Import in progress: " [:b (str (capitalize step) " " progress)]]))]))))
+
+(defn resmap-collections []
+  (let [resourcemap (subscribe [:datasets/resourcemap])
+        state (subscribe [:datasets/state])]
+    (fn []
+      (let [importing? (importing? @state)]
+        [:div {:class (when importing? "disabled")}
+         [:h3 "Available Resourcemap collections "
+          (when-not importing?
+            [common/refresh-button {:on-click #(dispatch [:datasets/reload-info])}])]
+         [collections-list (:collections @resourcemap)]]))))
+
+(defn resmap-authorise []
+  [:div
+   [:h3 "PlanWise needs authorisation to access your Resourcemap collections."]
+   [:button.primary
+    {:on-click #(open-auth-popup)}
+    "Authorise"]])
+
+(defn datasets-view []
+  (let [resourcemap (subscribe [:datasets/resourcemap])]
+    (fn []
+      [:div
+       [facilities-summary]
+       [:div.resmap
+        [:p "You can import facilities from a "
+         [:a {:href "http://resourcemap.instedd.org"} "Resourcemap"]
+         " collection. The collection to import needs to have the required fields "
+         "(facility type, etc.) to be usable. Also only sites with a location will be imported."]
+        (if (:authorised? @resourcemap)
+          [resmap-collections]
+          [resmap-authorise])]])))
 
 (defn datasets-page []
   (let [state (subscribe [:datasets/state])]
     (fn []
       (let [initialised? (initialised? @state)]
-        [:article
+        [:article.datasets
          (if initialised?
            [datasets-view]
-           [:p "Loading..."])]))))
+           [common/loading-placeholder])]))))

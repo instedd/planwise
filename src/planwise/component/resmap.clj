@@ -43,6 +43,7 @@
   [resmap-collection]
   {:id (:id resmap-collection)
    :name (:name resmap-collection)
+   :description (:description resmap-collection)
    :count (:count resmap-collection)})
 
 (defn list-collections
