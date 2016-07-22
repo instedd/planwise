@@ -42,6 +42,7 @@
       (identity-field request)
       (jwe-token-field auth request)
       (include-js "/assets/leaflet/leaflet.js")
+      (include-js "/js/leaflet.geojsongroups.js")
       (include-js "/js/main.js")
       [:script "planwise.client.core.main();"]])))
 

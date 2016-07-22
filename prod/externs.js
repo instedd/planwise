@@ -769,7 +769,9 @@ var L = {
   "circleMarker": function () {},
   "GeoJSON": function () {},
   "geoJson": {
-    "addData": function () {}
+    "addTo": function() {},
+    "addData": function() {},
+    "group": function() {}
   },
   "DomEvent": {
     "addListener": function () {},
