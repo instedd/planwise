@@ -79,8 +79,10 @@
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]
   (let [data (:data props)
         attrs (dissoc props :data :fit-bounds)
-        layer (.geoJson js/L nil #js {:clickable false
-                                      :style (constantly (clj->js attrs))})]
+        groupAttrs (:group props)
+        layer (.group js/L.geoJson nil #js {:clickable false
+                                            :pathGroup (clj->js groupAttrs)
+                                            :style (constantly (clj->js attrs))})]
     (when data
       (let [js-data (cond
                       (string? data) (js/JSON.parse data)

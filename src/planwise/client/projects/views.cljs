@@ -262,8 +262,9 @@
              (if (and (seq @isochrones) (= :transport selected-tab))
                [:geojson-layer {:data @isochrones
                                 :color "#f80"
-                                :fillOpacity 0.3
-                                :weight 2}])]]]
+                                :fillOpacity 1
+                                :weight 2
+                                :group {:opacity 0.5}}])]]]
           (= :scenarios selected-tab)
           [:div
            [:h1 "Scenarios"]])))))
