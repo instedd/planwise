@@ -76,7 +76,7 @@
 
 (defn update-projects
   [{:keys [projects status] :as service}]
-  (into "Updating projects stats")
+  (info "Updating projects stats")
   (swap! status (constantly [:importing :updating]))
   (let [list (projects/list-projects projects)]
     (doseq [project list]
