@@ -35,7 +35,20 @@
 
 (defn create-project [service project]
   (let [db (get-db service)
-        facilities-count (facilities/count-facilities-in-region service {:region (:region-id project)})
-        project-ready (assoc project :facilities-count (:count facilities-count))
-        id (-> (insert-project! db project-ready) (first) (:id))]
-    (assoc project-ready :id id)))
+        facilities-count (facilities/count-facilities-in-region service (:region-id project))
+        project-ready (assoc project :facilities-count facilities-count)
+        project-id (-> (insert-project! db project-ready)
+                       (:id))]
+    (assoc project-ready :id project-id)))
+
+(defn update-project-stats
+  [service project]
+  (jdbc/with-db-transaction [tx (get-db service)]
+    (when-let [project (if (map? project)
+                         project
+                         (select-project tx {:id project}))]
+      (let [project-id (:id project)
+            region-id (:region_id project)
+            facilities-count (facilities/count-facilities-in-region service region-id)]
+        (update-project* tx {:project-id project-id
+                             :facilities-count facilities-count})))))

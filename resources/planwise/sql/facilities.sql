@@ -34,7 +34,7 @@ SELECT
   COUNT(*)
 FROM facilities
 WHERE ST_Contains(
-  (SELECT the_geom FROM regions WHERE id = :region LIMIT 1),
+  (SELECT the_geom FROM regions WHERE id = :region-id LIMIT 1),
   facilities.the_geom);
 
 -- :name facilities-with-isochrones :?

@@ -184,7 +184,8 @@
           :auth                [:users-store]
           :resmap              [:auth]
           :importer            [:resmap
-                                :facilities]
+                                :facilities
+                                :projects]
 
           ; Endpoints
           :auth-endpoint       [:auth]
