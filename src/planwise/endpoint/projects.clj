@@ -4,7 +4,8 @@
             [clojure.data.json :as json]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
-            [planwise.boundary.projects :as projects]))
+            [planwise.boundary.projects :as projects]
+            [clojure.string :as str]))
 
 (defn- endpoint-routes [service]
   (routes
@@ -18,7 +19,9 @@
        (not-found {:error "Project not found"})))
 
    (POST "/" [goal region_id]
-     (response (projects/create-project service {:goal goal, :region_id region_id})))))
+     (let [goal (str/trim goal)
+           region-id (Integer. region_id)]
+       (response (projects/create-project service {:goal goal, :region-id region-id}))))))
 
 (defn projects-endpoint [{service :projects}]
   (context "/api/projects" []

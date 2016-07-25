@@ -35,7 +35,7 @@
 
 (defn create-project [service project]
   (let [db (get-db service)
-        facilities_count (facilities/count-facilities-in-region service {:region (:region_id project)})
-        project-ready (assoc project :facilities_count (:count facilities_count))
+        facilities-count (facilities/count-facilities-in-region service {:region (:region-id project)})
+        project-ready (assoc project :facilities-count (:count facilities-count))
         id (-> (insert-project! db project-ready) (first) (:id))]
     (assoc project-ready :id id)))
