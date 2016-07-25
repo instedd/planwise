@@ -93,10 +93,10 @@
         [:div.dataset-header
          [:h2 "Facilities"]
          (if-not importing?
-           [:p "There are " [:b @facility-count] " facilities in the system."]
+           [:p "There are " [:b (common/pluralize @facility-count "facility" "facilities")] " in the system."]
            (let [[_ step progress] @raw-status
                  step (or step "Importing collection")]
-             [:h3 "Import in progress: " [:b (str (capitalize step) " " progress)]]))]))))
+             [:h3 "Import in progress: " [:b (str (capitalize (name step)) " " progress)]]))]))))
 
 (defn resmap-collections []
   (let [resourcemap (subscribe [:datasets/resourcemap])

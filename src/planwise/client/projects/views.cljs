@@ -21,7 +21,7 @@
 
 (defn search-box [projects-count show-new]
   [:div.search-box
-   [:div (str projects-count " projects")]
+   [:div (common/pluralize projects-count "project")]
    [:input
     {:type "search"
      :placeholder "Search projects..."

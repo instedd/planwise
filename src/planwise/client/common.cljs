@@ -88,3 +88,12 @@
      (condp = (:status result)
        :ok (success-fn (:data result))
        :error (.error js/console (str "Error " (:code result) " performing AJAX request: " (:message result)))))))
+
+;; Utility functions
+
+(defn pluralize
+  ([count singular]
+   (pluralize count singular (str singular "s")))
+  ([count singular plural]
+   (let [noun (if (= 1 count) singular plural)]
+     (str count " " noun))))
