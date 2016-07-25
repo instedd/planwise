@@ -1,5 +1,6 @@
 (ns planwise.client.views
   (:require [re-frame.core :refer [subscribe dispatch]]
+            [planwise.client.config :as config]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
             [planwise.client.playground.views :as playground]
@@ -13,7 +14,7 @@
    #_{:item :playground :href (routes/playground) :title "Playground"}])
 
 (def current-user-email
-  (atom (.-value (.getElementById js/document "__identity"))))
+  (atom config/user-email))
 
 (defn nav-bar []
   (let [current-page (subscribe [:current-page])]

@@ -2,6 +2,7 @@
   (:require [re-frame.core :refer [subscribe dispatch]]
             [clojure.string :refer [capitalize]]
             [re-com.core :as rc]
+            [planwise.client.config :as config]
             [planwise.client.common :as common]))
 
 (defn initialised?
@@ -123,7 +124,7 @@
        [facilities-summary]
        [:div.resmap
         [:p "You can import facilities from a "
-         [:a {:href "http://resourcemap.instedd.org"} "Resourcemap"]
+         [:a {:href config/resourcemap-url :target "resmap"} "Resourcemap"]
          " collection. The collection to import needs to have the required fields "
          "(facility type, etc.) to be usable. Also only sites with a location will be imported."]
         (if (:authorised? @resourcemap)
