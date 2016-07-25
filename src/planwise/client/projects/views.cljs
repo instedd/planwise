@@ -20,14 +20,17 @@
    "New Project"])
 
 (defn search-box [projects-count show-new]
-  [:div.search-box
-   [:div (common/pluralize projects-count "project")]
-   [:input
-    {:type "search"
-     :placeholder "Search projects..."
-     :on-change #(dispatch [:projects/search (-> % .-target .-value str)])}]
-   (if show-new
-    [new-project-button])])
+  (let [search-string (subscribe [:projects/search-string])]
+    (fn [projects-count show-new]
+      [:div.search-box
+       [:div (common/pluralize projects-count "project")]
+       [:input
+        {:type "search"
+         :placeholder "Search projects..."
+         :value @search-string
+         :on-change #(dispatch [:projects/search (-> % .-target .-value str)])}]
+       (if show-new
+         [new-project-button])])))
 
 (defn no-projects-view []
   [:div.empty-list
