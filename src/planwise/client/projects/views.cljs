@@ -158,13 +158,6 @@
     [common/ul-menu (project-tab-items project-id) selected-tab]
     #_[:a "Download Project"]]])
 
-(defn progress-bar [value]
-  (let [percent-width (-> value
-                          (* 100)
-                          (str "%"))]
-    [:div.progress-bar
-     [:div.progress-filled {:style {:width percent-width}}]]))
-
 (defn transport-filters []
   (let [transport-time (subscribe [:projects/transport-time])]
     (fn []
@@ -199,7 +192,7 @@
           [:p
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
-           [progress-bar (/ filter-count filter-total)]]]
+           [common/progress-bar filter-count filter-total]]]
 
          [:fieldset
           [:legend "Type"]

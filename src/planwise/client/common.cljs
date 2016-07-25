@@ -67,6 +67,18 @@
                                               :toggle-fn callback-fn)]))
                  options)))
 
+;; Progress bar
+
+(defn progress-bar
+  ([value]
+   (let [percent (* 100 (min 1 (max 0 value)))]
+     [:div.progress-bar
+      [:div.progress-filled {:style {:width (str percent "%")}}]]))
+  ([numerator denominator]
+   (let [quotient (if (zero? denominator) 0 (/ numerator denominator))]
+     (progress-bar quotient))))
+
+
 ;; Debounce functions
 
 (defn debounced [f timeout]
