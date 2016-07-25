@@ -37,10 +37,10 @@
            children)]))
 
 (defn close-button [props]
-  [:button.mini.close props "\u2716"])
+  [:button.mini.close (assoc props :type "button") "\u2716"])
 
 (defn refresh-button [props]
-  [:button.mini.refresh props "\u21bb"])
+  [:button.mini.refresh (assoc props :type "button") "\u21bb"])
 
 ;; Filter checkboxes
 

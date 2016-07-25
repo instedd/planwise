@@ -48,20 +48,27 @@
         map-preview-zoom (r/atom 5)
         map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
     (fn []
-      (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])]
-        [:form.dialog.new-project {:on-submit (fn []
+      (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])
+            cancel-fn #(dispatch [:projects/cancel-new-project])
+            key-handler-fn #(case (.-which %)
+                              27 (cancel-fn)
+                              nil)]
+        [:form.dialog.new-project {:on-key-down key-handler-fn
+                                   :on-submit (fn []
                                                 (dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}])
                                                 (.preventDefault js/event))}
          [:div.title
           [:h1 "New Project"]
-          [common/close-button {:on-click #(dispatch [:projects/cancel-new-project])}]]
+          [common/close-button {:on-click cancel-fn}]]
          [:div.form-control
           [:label "Goal"]
           [:input {:type "text"
                    :required true
+                   :autoFocus true
                    :value @new-project-goal
                    :placeholder "Describe your project's goal"
-                   :on-change #(reset! new-project-goal (-> % .-target .-value str))}]]
+                   :on-key-down key-handler-fn
+                   :on-change #(reset! new-project-goal (-> % .-target .-value str str/triml))}]]
          [:div.form-control
           [:label "Location"]
           [rc/single-dropdown
@@ -93,8 +100,8 @@
              "Creating..."
              "Create")]
           [:button.cancel
-           {:on-click
-            #(dispatch [:projects/cancel-new-project])}
+           {:type "button"
+            :on-click cancel-fn}
            "Cancel"]]]))))
 
 (defn project-stat [title stat]
