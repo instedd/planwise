@@ -4,6 +4,7 @@
             [clojure.set :refer [rename-keys]]
             [clojure.core.async :refer [chan put! <! >! go go-loop]]
             [planwise.component.resmap :as resmap]
+            [planwise.component.projects :as projects]
             [planwise.component.facilities :as facilities]))
 
 (timbre/refer-timbre)
@@ -73,17 +74,26 @@
         (swap! status (constantly [:importing :processing progress])))
       (facilities/preprocess-isochrones facilities facility-id))))
 
+(defn update-projects
+  [{:keys [projects status] :as service}]
+  (into "Updating projects stats")
+  (swap! status (constantly [:importing :updating]))
+  (let [list (projects/list-projects projects)]
+    (doseq [project list]
+      (projects/update-project-stats projects project))))
+
 (defn do-import-collection
   [{:keys [resmap facilities] :as service} user coll-id type-field]
   (info "Destroying existing facilities")
   (facilities/destroy-facilities! facilities)
   (let [type-field (import-types facilities type-field)
         ids (do-import-sites service user coll-id type-field)]
+    (update-projects service)
     (preprocess-isochrones service ids)
     (info "Done importing facilities from collection" coll-id)))
 
 (defn service-loop
-  [{:keys [resmap facilities] :as service}]
+  [service]
   (info "Starting importer service")
   (let [c (:control-channel service)
         status (:status service)]
@@ -115,7 +125,7 @@
           (info "Finishing importer service")))))
   service)
 
-(defrecord Importer [status control-channel resmap facilities]
+(defrecord Importer [status control-channel resmap facilities projects]
   component/Lifecycle
   (start [component]
     (info "Starting Importer component")
