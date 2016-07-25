@@ -2,7 +2,8 @@
   (:require [ajax.core :refer [GET to-interceptor default-interceptors]]
             [re-frame.utils :as c]
             [re-frame.core :refer [dispatch]]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [planwise.client.config :as config]))
 
 ;; Set default interceptor for adding CSRF token to all non-GET requests
 
@@ -19,7 +20,7 @@
 ;; Add interceptor to send JWT encrypted token authentication with all requests
 
 (def jwe-token
-  (atom (.-value (.getElementById js/document "__jwe-token"))))
+  (atom config/jwe-token))
 
 (def jwe-token-interceptor
   (to-interceptor {:name "JWE Token Interceptor"

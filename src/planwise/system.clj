@@ -189,7 +189,8 @@
 
           ; Endpoints
           :auth-endpoint       [:auth]
-          :home-endpoint       [:auth]
+          :home-endpoint       [:auth
+                                :resmap]
           :facilities-endpoint [:facilities]
           :regions-endpoint    [:regions]
           :projects-endpoint   [:projects]

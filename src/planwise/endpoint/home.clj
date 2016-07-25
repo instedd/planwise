@@ -3,6 +3,7 @@
             [ring.util.anti-forgery :refer [anti-forgery-field]]
             [buddy.auth :refer [authenticated? throw-unauthorized]]
             [planwise.component.auth :refer [create-jwe-token]]
+            [cheshire.core :as json]
             [hiccup.form :refer [hidden-field]]
             [hiccup.page :refer [include-js include-css html5]]))
 
@@ -24,16 +25,18 @@
    (include-css "/css/re-com.css")
    (include-css "/css/site.css")])
 
-(defn identity-field [request]
-  (let [email (-> request :identity :user)]
-    (hidden-field "__identity" email)))
+(defn client-config
+  [{:keys [auth resmap request]}]
+  (let [resmap-url (:url resmap)
+        email (-> request :identity :user)
+        token (create-jwe-token auth email)
+        config {:resourcemap-url resmap-url
+                :identity email
+                :jwe-token token}]
+    [:script (str "var _CONFIG=" (json/generate-string config) ";")]))
 
-(defn jwe-token-field [auth request]
-  (let [email (-> request :identity :user)
-        token (create-jwe-token auth email)]
-    (hidden-field "__jwe-token" token)))
-
-(defn loading-page [auth request]
+(defn loading-page
+  [{:keys [auth] :as endpoint} request]
   (if-not (authenticated? request)
     (throw-unauthorized)
     (html5
@@ -41,15 +44,14 @@
      [:body
       mount-target
       (anti-forgery-field)
-      (identity-field request)
-      (jwe-token-field auth request)
+      (client-config (assoc endpoint :request request))
       (include-js "/assets/leaflet/leaflet.js")
       (include-js "/js/leaflet.geojsongroups.js")
       (include-js "/js/main.js")
       [:script "planwise.client.core.main();"]])))
 
-(defn home-endpoint [{:keys [auth]}]
-  (let [loading-page (partial loading-page auth)]
+(defn home-endpoint [endpoint]
+  (let [loading-page (partial loading-page endpoint)]
     (routes
      (GET "/" [] loading-page)
      (GET "/playground" [] loading-page)
