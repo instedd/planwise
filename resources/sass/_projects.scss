@@ -2,14 +2,20 @@
 
 $project-head-height: 110px;
 $project-sidebar-width: 300px;
+$search-box-height: 42px;
 
 .search-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
   padding: 15px 10px;
   display: flex;
   flex-direction: row;
   background-color: $gray1;
-  height: 42px;
+  height: $search-box-height;
   box-shadow: 0 3px 2px rgba(0, 0, 0, 0.3);
+  z-index: 4;
 
   > div {
     border-right: 1px solid $gray2;
@@ -17,6 +23,7 @@ $project-sidebar-width: 300px;
     padding-right: 10px;
     text-align: right;
     padding: 10px 15px 5px 10px;
+    width: 5em;
   }
 
   input[type=search] {
@@ -25,6 +32,7 @@ $project-sidebar-width: 300px;
     padding: 5px;
     border: none;
     background: transparent;
+    margin-right: 10px;
   }
 }
 
@@ -46,6 +54,13 @@ $project-sidebar-width: 300px;
 .projects-list {
   list-style: none;
   padding: 0;
+  position: absolute;
+  top: $search-box-height + 18px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  overflow: auto;
 
   .project-card {
     overflow: auto;
