@@ -7,7 +7,8 @@
   (let [processed-filters (into {} (for [[k v] filters] [k (if (set? v) (apply vector v) v)]))]
     (if (seq (:type filters))
       processed-filters
-      (assoc processed-filters :type [""]))))
+      ;; bogus facility type ID to reject all facilities
+      (assoc processed-filters :type ["0"]))))
 
 
 (defn load-project [id & handlers]
