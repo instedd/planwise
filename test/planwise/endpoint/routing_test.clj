@@ -8,7 +8,8 @@
             [kerodon.core :refer :all]
             [kerodon.test :refer :all]))
 
-(def mocked-routing-service
+(defn mock-routing-service
+  []
   (reify planwise.boundary.routing.Routing
     (nearest-node [service lat lon]
       {:id 123 :point "a point"})
@@ -18,7 +19,7 @@
         (str "isochrone from " node-id " with " distance)))))
 
 (def handler
-  (-> (routing/routing-endpoint {:routing mocked-routing-service})
+  (-> (routing/routing-endpoint {:routing (mock-routing-service)})
       (wrap-authorization (backends/jwe))
       (wrap-params)))
 
