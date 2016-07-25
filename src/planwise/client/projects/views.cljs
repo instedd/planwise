@@ -55,7 +55,7 @@
                               nil)]
         [:form.dialog.new-project {:on-key-down key-handler-fn
                                    :on-submit (fn []
-                                                (dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}])
+                                                (dispatch [:projects/create-project {:goal @new-project-goal, :region-id @new-project-region-id}])
                                                 (.preventDefault js/event))}
          [:div.title
           [:h1 "New Project"]
@@ -109,15 +109,22 @@
    [:div.stat-title title]
    [:div.stat-value stat]])
 
-(defn project-card [{:keys [id goal region_id facilities_count] :as project}]
-  (let [region-geo (subscribe [:regions/geojson region_id])]
-    (fn [{:keys [id goal region_id] :as project}]
+
+(defn project-stats
+  [{:keys [facilities-total facilities-targeted]}]
+  [:div.project-stats
+   (project-stat "Target Facilities"
+                 (str (or facilities-targeted 0) " / " (or facilities-total 0)))])
+
+(defn project-card [{:keys [id goal region-id region-name stats] :as project}]
+  (let [region-geo (subscribe [:regions/geojson region-id])]
+    (fn [{:keys [id goal region-id region-name stats] :as project}]
       [:a {::href (routes/project-demographics project)}
         [:div.project-card
           [:div.project-card-content
-           [:span.project-goal goal]
-           [:div.project-stats
-            (project-stat "TARGET FACILITIES" facilities_count)]]
+           [:h1 goal]
+           [:h2 (str "at " region-name)]
+           [project-stats stats]]
           (if-not (str/blank? @region-geo)
             [:img.map-preview {:src (static-image @region-geo)}])]])))
 

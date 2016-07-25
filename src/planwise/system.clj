@@ -177,7 +177,8 @@
 
           ; Components
           :facilities          [:db]
-          :projects            [:db]
+          :projects            [:db
+                                :facilities]
           :regions             [:db]
           :routing             [:db]
           :users-store         [:db]

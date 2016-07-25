@@ -53,7 +53,7 @@
  :projects/map-view
  (fn [db [_ field]]
    (let [map-view (reaction (get-in @db [:projects :current :map-view]))
-         current-region-id (reaction (get-in @db [:projects :current :project-data :region_id]))
+         current-region-id (reaction (get-in @db [:projects :current :project-data :region-id]))
          current-region (reaction (get-in @db [:regions @current-region-id]))]
      (reaction
        (case field
@@ -70,5 +70,5 @@
 (register-sub
  :projects/map-geojson
  (fn [db [_]]
-   (let [current-region-id (reaction (get-in @db [:projects :current :project-data :region_id]))]
+   (let [current-region-id (reaction (get-in @db [:projects :current :project-data :region-id]))]
      (reaction (get-in @db [:regions @current-region-id :geojson])))))

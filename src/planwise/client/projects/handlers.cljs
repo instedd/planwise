@@ -52,7 +52,7 @@
  :projects/project-loaded
  in-projects
   (fn [db [_ project-data]]
-    (dispatch [:regions/load-regions-with-geo [(:region_id project-data)]])
+    (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
     (assoc db :view-state :view
               :current (db/project-viewmodel project-data))))
 
@@ -68,7 +68,7 @@
  in-projects
   (fn [db [_ projects]]
     (let [region-ids (->> projects
-                        (map :region_id)
+                        (map :region-id)
                         (remove nil?)
                         (set))]
       (dispatch [:regions/load-regions-with-geo region-ids])
@@ -96,7 +96,7 @@
 
 (defn- facilities-criteria [current-project-db]
   (let [filters (get-in current-project-db [:facilities :filters])
-        project-region-id (get-in current-project-db [:project-data :region_id])]
+        project-region-id (get-in current-project-db [:project-data :region-id])]
     (assoc filters :region project-region-id)))
 
 (register-handler

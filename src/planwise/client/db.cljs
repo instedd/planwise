@@ -26,12 +26,14 @@
                 :isochrones nil} ;; geojson string
    :transport {:time nil}
    :map-view {} ;; {:keys position zoom}
-   :project-data {}}) ;; {:keys id goal region_id facilities_count}
+   :project-data {}}) ;; {:keys id goal region-id stats filters}
 
-(defn project-viewmodel [project-data]
+(defn project-viewmodel
+  [{:keys [stats] :as project-data}]
   (-> empty-project-viewmodel
       (assoc :project-data project-data)
-      (assoc-in [:facilities :total] (:facilities_count project-data))))
+      (assoc-in [:facilities :total] (:facilities-total stats))
+      (assoc-in [:facilities :count] (:facilities-targeted stats))))
 
 (def empty-datasets-selected
   {:collection nil

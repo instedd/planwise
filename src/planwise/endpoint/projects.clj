@@ -18,9 +18,9 @@
        (response project)
        (not-found {:error "Project not found"})))
 
-   (POST "/" [goal region_id]
+   (POST "/" [goal region-id]
      (let [goal (str/trim goal)
-           region-id (Integer. region_id)]
+           region-id (Integer. region-id)]
        (response (projects/create-project service {:goal goal, :region-id region-id}))))))
 
 (defn projects-endpoint [{service :projects}]
