@@ -21,10 +21,16 @@
 
 (defmethod on-navigate :projects [db page {id :id, section :section, :as page-params}]
   (let [id (js/parseInt id)]
-    (when (not= id (get-in db [:projects :current :project-data :id]))
-      (dispatch [:projects/load-project id]))
-    (if (= :transport section)
-      (dispatch [:projects/load-isochrones]))
+    (if (not= id (get-in db [:projects :current :project-data :id]))
+      (dispatch [:projects/load-project id])
+      ;; FIXME: this should happen along with the load project or (better yet)
+      ;; after the load is completed
+      (case section
+        :facilities
+        (dispatch [:projects/load-facilities])
+        :transport
+        (dispatch [:projects/load-isochrones])
+        nil))
     db))
 
 (defmethod on-navigate :home [db _ _]

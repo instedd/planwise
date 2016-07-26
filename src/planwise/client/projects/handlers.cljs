@@ -10,6 +10,9 @@
 (def in-current-project (path [:projects :current]))
 (def in-filter-definitions (path [:filter-definitions]))
 
+;; ---------------------------------------------------------------------------
+;; Facility types handlers
+
 (register-handler
  :projects/fetch-facility-types
  (fn [db [_]]
@@ -22,11 +25,39 @@
  (fn [db [_ types]]
    (assoc db :facility-type types)))
 
+;; ---------------------------------------------------------------------------
+;; Project listing
+
+(register-handler
+ :projects/load-projects
+ in-projects
+ (fn [db [_ project-id]]
+   (api/load-projects :projects/projects-loaded)
+   (assoc db :view-state :loading)))
+
+(register-handler
+ :projects/projects-loaded
+ in-projects
+ (fn [db [_ projects]]
+   (let [region-ids (->> projects
+                         (map :region-id)
+                         (remove nil?)
+                         (set))]
+     (dispatch [:regions/load-regions-with-geo region-ids])
+     (assoc db
+            :view-state :list
+            :list projects))))
+
+;; Project searching
+
 (register-handler
  :projects/search
  in-projects
  (fn [db [_ value]]
    (assoc db :search-string value)))
+
+;; ---------------------------------------------------------------------------
+;; Project creation
 
 (register-handler
  :projects/begin-new-project
@@ -39,41 +70,6 @@
  in-projects
  (fn [db [_]]
    (assoc db :view-state :view)))
-
-(register-handler
- :projects/load-project
- in-projects
- (fn [db [_ project-id]]
-   (api/load-project project-id :projects/project-loaded)
-   (assoc db :view-state :loading
-             :current db/empty-project-viewmodel)))
-
-(register-handler
- :projects/project-loaded
- in-projects
-  (fn [db [_ project-data]]
-    (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
-    (assoc db :view-state :view
-              :current (db/project-viewmodel project-data))))
-
-(register-handler
- :projects/load-projects
- in-projects
- (fn [db [_ project-id]]
-   (api/load-projects :projects/projects-loaded)
-   (assoc db :view-state :loading-list)))
-
-(register-handler
- :projects/projects-loaded
- in-projects
-  (fn [db [_ projects]]
-    (let [region-ids (->> projects
-                        (map :region-id)
-                        (remove nil?)
-                        (set))]
-      (dispatch [:regions/load-regions-with-geo region-ids])
-      (assoc db :view-state :list
-                :list projects))))
 
 (register-handler
  :projects/create-project
@@ -90,9 +86,36 @@
      (when (nil? project-id)
        (throw "Invalid project data"))
      (accountant/navigate! (routes/project-demographics {:id project-id}))
-     (assoc db :view-state :view
-               :list (cons project-data (:list db))
-               :current (db/project-viewmodel project-data)))))
+     (assoc db
+            :view-state :view
+            :list (cons project-data (:list db))
+            :current (db/project-viewmodel project-data)))))
+
+;; ---------------------------------------------------------------------------
+;; Loading a project
+
+(register-handler
+ :projects/load-project
+ in-projects
+ (fn [db [_ project-id]]
+   (api/load-project project-id :projects/project-loaded :projects/not-found)
+   (assoc db :view-state :loading
+             :current db/empty-project-viewmodel)))
+
+(register-handler
+ :projects/not-found
+ in-projects
+ (fn [db [_]]
+   (accountant/navigate! (routes/home))
+   db))
+
+(register-handler
+ :projects/project-loaded
+ in-projects
+  (fn [db [_ project-data]]
+    (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
+    (assoc db :view-state :view
+              :current (db/project-viewmodel project-data))))
 
 (defn- facilities-criteria [current-project-db]
   (let [filters (get-in current-project-db [:facilities :filters])
@@ -100,23 +123,20 @@
     (assoc filters :region project-region-id)))
 
 (register-handler
- :projects/toggle-filter
+ :projects/load-facilities
  in-current-project
-  (fn [db [_ filter-group filter-key filter-value]]
-    (let [path [filter-group :filters filter-key]
-          current-filter (get-in db path)
-          toggled-filter (if (contains? current-filter filter-value)
-                           (disj current-filter filter-value)
-                           (conj current-filter filter-value))
-          new-db (-> db
-                     (assoc-in path (set toggled-filter))
-                     (assoc-in [:facilities :isochrones] nil))
-          criteria (facilities-criteria new-db)
-          filters (db/project-filters new-db)
-          project-id (get-in db [:project-data :id])]
-      (api/update-project-filters project-id filters)
-      (api/fetch-facilities criteria :projects/facilities-loaded)
-      new-db)))
+ (fn [db [_ force?]]
+   (when (or force? (nil? (get-in db [:facilities :list])))
+     (api/fetch-facilities (facilities-criteria db) :projects/facilities-loaded))
+   db))
+
+(register-handler
+ :projects/facilities-loaded
+ in-current-project
+ (fn [db [_ response]]
+   (-> db
+       (assoc-in [:facilities :count] (:count response))
+       (assoc-in [:facilities :list] (:facilities response)))))
 
 (register-handler
  :projects/load-isochrones
@@ -126,6 +146,36 @@
      (if-let [time (get-in db [:transport :time])]
        (api/fetch-facilities-with-isochrones (facilities-criteria db) {:threshold time} :projects/isochrones-loaded)))
    db))
+
+(register-handler
+ :projects/isochrones-loaded
+ in-current-project
+ (fn [db [_ response]]
+   (assoc-in db [:facilities :isochrones] (->> response
+                                               (map :isochrone)
+                                               (set)
+                                               (filterv some?)))))
+
+;; ---------------------------------------------------------------------------
+;; Project filter updating
+
+(register-handler
+ :projects/toggle-filter
+ in-current-project
+ (fn [db [_ filter-group filter-key filter-value]]
+   (let [path [filter-group :filters filter-key]
+         current-filter (get-in db path)
+         toggled-filter (if (contains? current-filter filter-value)
+                          (disj current-filter filter-value)
+                          (conj current-filter filter-value))
+         new-db (-> db
+                    (assoc-in path (set toggled-filter))
+                    (assoc-in [:facilities :isochrones] nil))
+         filters (db/project-filters new-db)
+         project-id (get-in db [:project-data :id])]
+     (api/update-project-filters project-id filters)
+     (dispatch [:projects/load-facilities :force])
+     new-db)))
 
 (register-handler
  :projects/set-transport-time
@@ -138,22 +188,8 @@
       (dispatch [:projects/load-isochrones :force])
       new-db)))
 
-(register-handler
- :projects/isochrones-loaded
- in-current-project
- (fn [db [_ response]]
-   (assoc-in db [:facilities :isochrones] (->> response
-                                            (map :isochrone)
-                                            (set)
-                                            (filterv some?)))))
-
-(register-handler
- :projects/facilities-loaded
- in-current-project
- (fn [db [_ response]]
-   (-> db
-       (assoc-in [:facilities :count] (:count response))
-       (assoc-in [:facilities :list] (:facilities response)))))
+;; ---------------------------------------------------------------------------
+;; Project map view handlers
 
 (register-handler
  :projects/update-position
