@@ -1,5 +1,5 @@
 (ns planwise.client.projects.api
-  (:require [ajax.core :refer [GET POST]]
+  (:require [ajax.core :refer [GET POST PUT]]
             [planwise.client.api :refer [json-request]]))
 
 (defn- process-filters [filters]
@@ -38,3 +38,8 @@
 
 (defn fetch-facility-types [& handlers]
   (GET "/api/facilities/types" (json-request {} handlers)))
+
+(defn update-project-filters [project-id filters & handlers]
+  (PUT
+    (str "/api/projects/" project-id)
+    (json-request {:id project-id :filters filters} handlers)))

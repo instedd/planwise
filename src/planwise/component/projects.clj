@@ -89,3 +89,18 @@
             stats (compute-project-stats service project)]
         (update-project* tx {:project-id project-id
                              :stats (pr-str stats)})))))
+
+(defn update-project
+  [service project]
+  (jdbc/with-db-transaction [tx (get-db service)]
+    (let [project-id (:id project)
+          goal       (:goal project)
+          filters    (:filters project)
+          stats      (:stats project)
+          params     {:project-id project-id
+                      :goal       goal
+                      :filters    (some-> filters pr-str)
+                      :stats      (some-> stats pr-str)}
+          result     (update-project* tx params)]
+      (when (= 1 result)
+        (load-project tx project-id)))))

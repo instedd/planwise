@@ -109,9 +109,12 @@
                            (disj current-filter filter-value)
                            (conj current-filter filter-value))
           new-db (-> db
-                  (assoc-in path toggled-filter)
-                  (assoc-in [:facilities :isochrones] nil))
-          criteria (facilities-criteria new-db)]
+                     (assoc-in path (set toggled-filter))
+                     (assoc-in [:facilities :isochrones] nil))
+          criteria (facilities-criteria new-db)
+          filters (db/project-filters new-db)
+          project-id (get-in db [:project-data :id])]
+      (api/update-project-filters project-id filters)
       (api/fetch-facilities criteria :projects/facilities-loaded)
       new-db)))
 
@@ -128,8 +131,12 @@
  :projects/set-transport-time
  in-current-project
   (fn [db [_ time]]
-    (dispatch [:projects/load-isochrones :force])
-    (assoc-in db [:transport :time] time)))
+    (let [new-db (assoc-in db [:transport :time] time)
+          filters (db/project-filters new-db)
+          project-id (get-in db [:project-data :id])]
+      (api/update-project-filters project-id filters)
+      (dispatch [:projects/load-isochrones :force])
+      new-db)))
 
 (register-handler
  :projects/isochrones-loaded

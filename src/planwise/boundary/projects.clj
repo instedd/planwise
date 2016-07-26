@@ -12,7 +12,11 @@
     "Returns all projects in the database.")
 
   (get-project [this id]
-    "Return project with the given ID."))
+    "Return project with the given ID.")
+
+  (update-project [this project]
+    "Updates a project's attributes. Returns the updated project on success and
+    nil on failure."))
 
 ;; Reference implementation
 
@@ -23,4 +27,6 @@
   (list-projects [service]
     (service/list-projects service))
   (get-project [service id]
-    (service/get-project service id)))
+    (service/get-project service id))
+  (update-project [service project]
+    (service/update-project service project)))

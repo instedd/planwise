@@ -29,11 +29,21 @@
    :project-data {}}) ;; {:keys id goal region-id stats filters}
 
 (defn project-viewmodel
-  [{:keys [stats] :as project-data}]
-  (-> empty-project-viewmodel
-      (assoc :project-data project-data)
-      (assoc-in [:facilities :total] (:facilities-total stats))
-      (assoc-in [:facilities :count] (:facilities-targeted stats))))
+  [{:keys [filters stats] :as project-data}]
+  (let [facilities-filters (:facilities filters)
+        facilities-filters (zipmap (keys facilities-filters)
+                                   (map set (vals facilities-filters)))]
+    (-> empty-project-viewmodel
+       (assoc :project-data project-data)
+       (assoc-in [:facilities :filters] facilities-filters)
+       (assoc-in [:transport] (:transport filters))
+       (assoc-in [:facilities :total] (:facilities-total stats))
+       (assoc-in [:facilities :count] (:facilities-targeted stats)))))
+
+(defn project-filters
+  [viewmodel]
+  {:facilities (get-in viewmodel [:facilities :filters])
+   :transport (:transport viewmodel)})
 
 (def empty-datasets-selected
   {:collection nil

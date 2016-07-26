@@ -1,10 +1,11 @@
 (ns planwise.endpoint.projects
   (:require [compojure.core :refer :all]
-            [ring.util.response :refer [content-type response not-found]]
+            [ring.util.response :refer [content-type response status not-found]]
             [clojure.data.json :as json]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.boundary.projects :as projects]
+            [clojure.walk :refer [keywordize-keys]]
             [clojure.string :as str]))
 
 (defn- endpoint-routes [service]
@@ -17,6 +18,14 @@
      (if-let [project (projects/get-project service (Integer/parseInt id))]
        (response project)
        (not-found {:error "Project not found"})))
+
+   (PUT "/:id" [id filters]
+     (let [id (Integer/parseInt id)
+           filters (keywordize-keys filters)]
+       (if (projects/update-project service {:id id :filters filters})
+         (response {:status "ok"})
+         (-> (response {:status "failure"})
+             (status 400)))))
 
    (POST "/" [goal region-id]
      (let [goal (str/trim goal)

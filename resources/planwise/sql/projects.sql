@@ -17,6 +17,11 @@ FROM projects
 WHERE id = :id;
 
 -- :name update-project* :! :n
-UPDATE projects
-SET stats = :stats
+/* :require [clojure.string :as string] */
+UPDATE projects SET
+/*~
+(string/join ","
+  (for [field [:goal :stats :filters] :when (some? (field params))]
+    (str (name field) " = :" (name field))))
+~*/
 WHERE projects.id = :project-id
