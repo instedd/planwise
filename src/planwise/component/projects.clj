@@ -54,8 +54,8 @@
        (map db->project)))
 
 (defn get-project [service id]
-  (-> (select-project (get-db service) {:id id})
-      db->project))
+  (some-> (select-project (get-db service) {:id id})
+          db->project))
 
 (defn compute-project-stats
   [{:keys [facilities]} project]
