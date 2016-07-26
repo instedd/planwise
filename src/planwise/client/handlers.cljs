@@ -53,7 +53,17 @@
 (register-handler
  :message-posted
  (fn [db [_ message]]
-   (case message
-     "authenticated" (dispatch [:datasets/reload-info])
-     (c/warn "Invalid message received " message))
+   (cond
+     (= message "authenticated")
+     (dispatch [:datasets/reload-info])
+
+     (#{"react-devtools-content-script"
+        "react-devtools-bridge"}
+      (aget message "source"))
+     nil   ; ignore React dev tools messages
+
+     true
+     (do
+       (println message)
+       (c/warn "Invalid message received " message)))
    db))
