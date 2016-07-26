@@ -20,7 +20,8 @@
     threshold (in seconds) calculated using algorithm and simplified according
     to the given parameter.")
 
-  (isochrone-all-facilities [this threshold]
+  (isochrone-all-facilities
+    [this threshold]
     "Retrieve the catchment area for all facilities available for the given
     threshold.")
 
@@ -33,7 +34,7 @@
 (extend-protocol Facilities
   planwise.component.facilities.FacilitiesService
   (count-facilities [service]
-    (count (service/list-facilities service)))
+    (service/count-facilities service))
   (list-facilities
     ([service]
      (service/list-facilities service))

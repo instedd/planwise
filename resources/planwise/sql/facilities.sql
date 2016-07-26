@@ -29,13 +29,12 @@ INNER JOIN facility_types ON facility_types.id = facilities.type_id
 WHERE 1=1
 :snip:criteria ;
 
--- :name count-facilities-in-region* :? :1
+-- :name count-facilities-by-criteria :? :1
 SELECT
   COUNT(*)
 FROM facilities
-WHERE ST_Contains(
-  (SELECT the_geom FROM regions WHERE id = :region-id LIMIT 1),
-  facilities.the_geom);
+WHERE 1=1
+:snip:criteria ;
 
 -- :name facilities-with-isochrones :?
 SELECT

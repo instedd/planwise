@@ -48,11 +48,18 @@
      (get-db service)
      {:criteria (facilities-criteria criteria)})))
 
+(defn count-facilities
+  ([service]
+   (count-facilities service {}))
+  ([service criteria]
+   (let [db (get-db service)
+         criteria (facilities-criteria criteria)
+         result (count-facilities-by-criteria db {:criteria criteria})]
+     (:count result))))
+
 (defn count-facilities-in-region
   [service region-id]
-  (let [params {:region-id region-id}
-        result (count-facilities-in-region* (get-db service) params)]
-    (:count result)))
+  (count-facilities service {:region region-id}))
 
 (defn list-with-isochrones
   ([service]
