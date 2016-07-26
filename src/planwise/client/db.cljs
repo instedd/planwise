@@ -22,7 +22,7 @@
                           :services #{}}
                 :count 0
                 :total 4944
-                :list []
+                :list nil
                 :isochrones nil} ;; geojson string
    :transport {:time nil}
    :map-view {} ;; {:keys position zoom}

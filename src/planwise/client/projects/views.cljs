@@ -142,7 +142,7 @@
       [:article.project-list
        [search-box (count @filtered-projects) (seq @projects)]
        (cond
-         (= @view-state :loading) [:div "Loading"]
+         (nil? @projects) [common/loading-placeholder]
          (empty? @projects) [no-projects-view]
          :else [projects-list @filtered-projects])
        (when (or (= @view-state :creating) (= @view-state :create-dialog))
@@ -305,5 +305,6 @@
   (let [view-state (subscribe [:projects/view-state])]
     (fn []
       (if (= @view-state :loading)
-        [:div "Loading"]
+        [:article
+         [common/loading-placeholder]]
         [project-view]))))
