@@ -46,4 +46,6 @@
     (fn []
       [:div
        [nav-bar]
-       [content-pane @current-page]])))
+       [content-pane @current-page]
+       [:footer
+        [:span.version (str "Version: "config/app-version)]]])))

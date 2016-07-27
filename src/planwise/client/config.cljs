@@ -14,3 +14,6 @@
 
 (def demo-tile-url
   (aget global-config "demo-tile-url"))
+
+(def app-version
+  (aget global-config "app-version"))
