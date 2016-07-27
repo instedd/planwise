@@ -26,13 +26,15 @@
    (include-css "/css/site.css")])
 
 (defn client-config
-  [{:keys [auth resmap request]}]
+  [{:keys [auth resmap request maps]}]
   (let [resmap-url (:url resmap)
+        demo-tile-url (:demo-tile-url maps)
         email (-> request :identity :user)
         token (create-jwe-token auth email)
         config {:resourcemap-url resmap-url
                 :identity email
-                :jwe-token token}]
+                :jwe-token token
+                :demo-tile-url demo-tile-url}]
     [:script (str "var _CONFIG=" (json/generate-string config) ";")]))
 
 (defn loading-page

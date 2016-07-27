@@ -8,6 +8,7 @@
             [planwise.client.styles :as styles]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
+            [planwise.client.config :as config]
             [planwise.client.db :as db]
             [clojure.string :as str]
             [reagent.core :as r]
@@ -260,35 +261,47 @@
           [:div
            [sidebar-section selected-tab]
            [:div.map-container
-            (vec (filter some?
-                         [map-widget
-                          {:position @map-position
-                           :zoom @map-zoom
-                           :min-zoom 5
-                           :on-position-changed
-                           #(dispatch [:projects/update-position %])
-                           :on-zoom-changed
-                           #(dispatch [:projects/update-zoom %])}
-                          gray-base-tile-layer
-                          (when (#{:facilities :transport} selected-tab)
-                            [:point-layer {:points points
-                                           :radius 4
-                                           :color styles/black
-                                           :opacity 0.8
-                                           :weight 1
-                                           :fillOpacity 0.4}])
-                          (if @map-geojson
-                            [:geojson-layer {:data @map-geojson
-                                             :color styles/green
-                                             :fit-bounds true
-                                             :fillOpacity 0.1
-                                             :weight 0}])
-                          (when (and (seq @isochrones) (= :transport selected-tab))
-                            [:geojson-layer {:data @isochrones
-                                             :fillOpacity 1
-                                             :weight 2
-                                             :color styles/orange
-                                             :group {:opacity 0.4}}])]))]]
+            (->> [map-widget
+                  {:position @map-position
+                   :zoom @map-zoom
+                   :min-zoom 5
+                   :on-position-changed
+                   #(dispatch [:projects/update-position %])
+                   :on-zoom-changed
+                   #(dispatch [:projects/update-zoom %])}
+
+                  ;; Base tile layer
+                  gray-base-tile-layer
+                  ;; Markers with filtered facilities
+                  (when (#{:facilities :transport} selected-tab)
+                    [:point-layer {:points points
+                                   :radius 4
+                                   :color styles/black
+                                   :opacity 0.8
+                                   :weight 1
+                                   :fillOpacity 0.4}])
+                  ;; Demographics tile layer
+                  (when (= :demographics selected-tab)
+                    [:tile-layer {:url config/demo-tile-url
+                                  :opacity 0.3}])
+                  ;; Boundaries of working region
+                  (if @map-geojson
+                    [:geojson-layer {:data @map-geojson
+                                     :color styles/green
+                                     :fit-bounds true
+                                     :fillOpacity 0.1
+                                     :weight 0}])
+                  ;; Isochrone for selected transport
+                  (when (and (seq @isochrones) (= :transport selected-tab))
+                    [:geojson-layer {:data @isochrones
+                                     :fillOpacity 1
+                                     :weight 2
+                                     :color styles/orange
+                                     :group {:opacity 0.4}}])]
+
+                 ;; Filter out nils so leaflet/map-widget doesn't get confused
+                 (filter some?)
+                 vec)]]
           (= :scenarios selected-tab)
           [:div
            [:h1 "Scenarios"]])))))
