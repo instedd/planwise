@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mapcache mode="combined_mirror">
+
+  <!-- Store data on container's disk -->
+  <cache name="disk" type="disk">
+    <base>/tmp</base>
+    <symlink_blank/>
+  </cache>
+
+  <!-- Retrieve data from local mapserver instance via WMS-->
+  <source name="kenyasource" type="wms">
+    <http>
+      <url>http://mapserver/mapserv</url>
+    </http>
+    <getmap>
+      <params>
+        <map>/etc/mapserver/kenya.map</map>
+        <layers>KenyaPopulation</layers>
+        <format>image/png</format>
+      </params>
+    </getmap>
+  </source>
+
+  <!-- Define kenya tileset to be consumed via gmaps endpoint -->
+  <tileset name="kenya">
+    <source>kenyasource</source>
+    <cache>disk</cache>
+    <grid>GoogleMapsCompatible</grid> <!-- EPSG:3857 -->
+    <format>PNG</format>
+    <metatile>5 5</metatile>
+    <metabuffer>10</metabuffer>
+    <expires>31536000</expires><!-- Expire in 1 year -->
+  </tileset>
+
+  <!-- Return PNG by default -->
+  <default_format>PNG</default_format>
+
+  <!-- Expose both gmaps and tms interfaces; leaflet should use gmaps -->
+  <service type="gmaps" enabled="true"/>
+  <service type="tms" enabled="true"/>
+
+  <errors>report</errors>
+  <lock_dir>/tmp</lock_dir>
+
+</mapcache>

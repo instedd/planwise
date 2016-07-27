@@ -1,0 +1,5 @@
+FROM camptocamp/mapcache:latest
+
+# Add mapcache.xml in current dir is automatically added by ONBUILD instruction
+
+EXPOSE 80

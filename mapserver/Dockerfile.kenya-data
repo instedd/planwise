@@ -1,0 +1,8 @@
+FROM alpine:3.4
+
+# Download Kenya tiled data
+# This image should be used as a linked container via volumes-from from a mapserver container
+ADD https://s3.amazonaws.com/planwise/data/KEN_popmap15_v2b_overviews.tif /data/KEN_popmap15_v2b.tif
+RUN chmod a+r /data/KEN_popmap15_v2b.tif
+
+VOLUME /data
