@@ -28,10 +28,13 @@
 (defn install-ticker! []
   (let [time (atom 0)
         interval 1000]
-    (.setInterval
-      js/window
-      #(dispatch [:tick (swap! time + interval)])
-      interval)))
+    (letfn [(timeout-fn [] (.setTimeout
+                            js/window
+                            #(do
+                              (dispatch [:tick (swap! time + interval)])
+                              (timeout-fn))
+                            interval))]
+      (timeout-fn))))
 
 (defn- ^:export main []
   (dispatch-sync [:initialise-db])
