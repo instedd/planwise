@@ -21,10 +21,7 @@
 
 (defmethod on-navigate :projects [db page {id :id, section :section, :as page-params}]
   (let [id (js/parseInt id)]
-    (when (not= id (get-in db [:projects :current :project-data :id]))
-      (dispatch [:projects/load-project id]))
-    (if (= :transport section)
-      (dispatch [:projects/load-isochrones]))
+    (dispatch [:projects/navigate-project id section])
     db))
 
 (defmethod on-navigate :home [db _ _]
@@ -53,9 +50,19 @@
 (register-handler
  :message-posted
  (fn [db [_ message]]
-   (case message
-     "authenticated" (dispatch [:datasets/reload-info])
-     (c/warn "Invalid message received " message))
+   (cond
+     (= message "authenticated")
+     (dispatch [:datasets/reload-info])
+
+     (#{"react-devtools-content-script"
+        "react-devtools-bridge"}
+      (aget message "source"))
+     nil   ; ignore React dev tools messages
+
+     true
+     (do
+       (println message)
+       (c/warn "Invalid message received " message)))
    db))
 
 (register-handler

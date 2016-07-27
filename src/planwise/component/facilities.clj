@@ -48,11 +48,14 @@
      (get-db service)
      {:criteria (facilities-criteria criteria)})))
 
-(defn count-facilities-in-region
-  [service region-id]
-  (let [params {:region-id region-id}
-        result (count-facilities-in-region* (get-db service) params)]
-    (:count result)))
+(defn count-facilities
+  ([service]
+   (count-facilities service {}))
+  ([service criteria]
+   (let [db (get-db service)
+         criteria (facilities-criteria criteria)
+         result (count-facilities-by-criteria db {:criteria criteria})]
+     (:count result))))
 
 (defn list-with-isochrones
   ([service]
@@ -63,7 +66,7 @@
    (facilities-with-isochrones (get-db service)
       {:threshold (or threshold 900)
        :algorithm (or algorithm "alpha-shape")
-       :simplify (or simplify 0.0)
+       :simplify (or simplify 0.001)
        :criteria (facilities-criteria criteria)})))
 
 (defn get-isochrone-for-all-facilities [service threshold]

@@ -56,7 +56,7 @@
                               nil)]
         [:form.dialog.new-project {:on-key-down key-handler-fn
                                    :on-submit (common/prevent-default
-                                                #(dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}]))}
+                                                #(dispatch [:projects/create-project {:goal @new-project-goal, :region-id @new-project-region-id}]))}
          [:div.title
           [:h1 "New Project"]
           [common/close-button {:on-click cancel-fn}]]
@@ -109,15 +109,22 @@
    [:div.stat-title title]
    [:div.stat-value stat]])
 
-(defn project-card [{:keys [id goal region_id facilities_count] :as project}]
-  (let [region-geo (subscribe [:regions/geojson region_id])]
-    (fn [{:keys [id goal region_id] :as project}]
+
+(defn project-stats
+  [{:keys [facilities-total facilities-targeted]}]
+  [:div.project-stats
+   (project-stat "Target Facilities"
+                 (str (or facilities-targeted 0) " / " (or facilities-total 0)))])
+
+(defn project-card [{:keys [id goal region-id region-name stats] :as project}]
+  (let [region-geo (subscribe [:regions/geojson region-id])]
+    (fn [{:keys [id goal region-id region-name stats] :as project}]
       [:a {::href (routes/project-demographics project)}
         [:div.project-card
           [:div.project-card-content
-           [:span.project-goal goal]
-           [:div.project-stats
-            (project-stat "TARGET FACILITIES" facilities_count)]]
+           [:h1 goal]
+           [:h2 (str "at " region-name)]
+           [project-stats stats]]
           (if-not (str/blank? @region-geo)
             [:img.map-preview {:src (static-image @region-geo)}])]])))
 
@@ -135,7 +142,7 @@
       [:article.project-list
        [search-box (count @filtered-projects) (seq @projects)]
        (cond
-         (= @view-state :loading) [:div "Loading"]
+         (nil? @projects) [common/loading-placeholder]
          (empty? @projects) [no-projects-view]
          :else [projects-list @filtered-projects])
        (when (or (= @view-state :creating) (= @view-state :create-dialog))
@@ -256,39 +263,47 @@
           [:div
            [sidebar-section selected-tab]
            [:div.map-container
-            [map-widget {:position @map-position
-                         :zoom @map-zoom
-                         :min-zoom 5
-                         :on-position-changed
-                         #(dispatch [:projects/update-position %])
-                         :on-zoom-changed
-                         #(dispatch [:projects/update-zoom %])}
-             ; Base tile layer
-             gray-base-tile-layer
-             ; Markers with filtered facilities
-             [:point-layer {:points points
-                            :radius 4
-                            :color styles/black
-                            :opacity 0.8
-                            :weight 1
-                            :fillOpacity 0.4}]
-             ; Demographics tile layer
-             [:tile-layer {:url config/demo-tile-url
-                           :opacity 0.3}]
-             ; Boundaries of working region
-             (if @map-geojson
-               [:geojson-layer {:data @map-geojson
-                                :color styles/green
-                                :fit-bounds true
-                                :fillOpacity 0.1
-                                :weight 0}])
-             ; Isochrone for selected transport
-             (if (and (seq @isochrones) (= :transport selected-tab))
-               [:geojson-layer {:data @isochrones
-                                :fillOpacity 1
-                                :weight 2
-                                :color styles/orange
-                                :group {:opacity 0.4}}])]]]
+            (->> [map-widget
+                  {:position @map-position
+                   :zoom @map-zoom
+                   :min-zoom 5
+                   :on-position-changed
+                   #(dispatch [:projects/update-position %])
+                   :on-zoom-changed
+                   #(dispatch [:projects/update-zoom %])}
+
+                  ;; Base tile layer
+                  gray-base-tile-layer
+                  ;; Markers with filtered facilities
+                  (when (#{:facilities :transport} selected-tab)
+                    [:point-layer {:points points
+                                   :radius 4
+                                   :color styles/black
+                                   :opacity 0.8
+                                   :weight 1
+                                   :fillOpacity 0.4}])
+                  ;; Demographics tile layer
+                  (when (= :demographics selected-tab)
+                    [:tile-layer {:url config/demo-tile-url
+                                  :opacity 0.3}])
+                  ;; Boundaries of working region
+                  (if @map-geojson
+                    [:geojson-layer {:data @map-geojson
+                                     :color styles/green
+                                     :fit-bounds true
+                                     :fillOpacity 0.1
+                                     :weight 0}])
+                  ;; Isochrone for selected transport
+                  (when (and (seq @isochrones) (= :transport selected-tab))
+                    [:geojson-layer {:data @isochrones
+                                     :fillOpacity 1
+                                     :weight 2
+                                     :color styles/orange
+                                     :group {:opacity 0.4}}])]
+
+                 ;; Filter out nils so leaflet/map-widget doesn't get confused
+                 (filter some?)
+                 vec)]]
           (= :scenarios selected-tab)
           [:div
            [:h1 "Scenarios"]])))))
@@ -308,5 +323,6 @@
   (let [view-state (subscribe [:projects/view-state])]
     (fn []
       (if (= @view-state :loading)
-        [:div "Loading"]
+        [:article
+         [common/loading-placeholder]]
         [project-view]))))

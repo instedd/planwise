@@ -33,20 +33,27 @@
 
 ;; Common request definitions to use with ajax requests
 
-(defn common-error-fn [{:keys [status status-text]}]
+(defn default-error-handler [{:keys [status status-text]}]
   (c/error (str "Error " status " performing AJAX request: " status-text)))
 
-(defn success-handler [success-fn]
+(defn default-success-handler [data]
+  (c/log "API response: " data))
+
+(defn wrap-handler [callback default]
   (cond
-    (fn? success-fn) success-fn
-    (nil? success-fn) #(c/log "API response: " %)
-    :else #(dispatch [success-fn %])))
+    (fn? callback) callback
+    (nil? callback) default
+    (keyword? callback) #(dispatch [callback %])
+    :else (do
+            (c/error "Invalid handler " callback)
+            default)))
 
 (defn raw-request [params [success-fn error-fn] & {:keys [mapper-fn], :or {mapper-fn identity}}]
-  (let [error-handler (or error-fn common-error-fn)]
+  (let [success-handler (wrap-handler success-fn default-success-handler)
+        error-handler (wrap-handler error-fn default-error-handler)]
     {:format :raw
      :params params
-     :handler (comp (success-handler success-fn) mapper-fn)
+     :handler (comp success-handler mapper-fn)
      :error-handler error-handler}))
 
 (defn json-request [params fns & keyargs]

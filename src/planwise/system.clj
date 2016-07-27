@@ -179,7 +179,8 @@
 
           ; Components
           :facilities          [:db]
-          :projects            [:db]
+          :projects            [:db
+                                :facilities]
           :regions             [:db]
           :routing             [:db]
           :users-store         [:db]
@@ -196,7 +197,8 @@
                                 :maps]
           :facilities-endpoint [:facilities]
           :regions-endpoint    [:regions]
-          :projects-endpoint   [:projects]
+          :projects-endpoint   [:projects
+                                :facilities]
           :routing-endpoint    [:routing]
           :datasets-endpoint   [:facilities
                                 :resmap

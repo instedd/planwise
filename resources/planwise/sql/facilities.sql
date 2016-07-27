@@ -13,9 +13,11 @@ FROM facilities
 ORDER BY name;
 
 -- :snip criteria-snip
-/*~ (if (:types params) */
+/*~ (if (:types params) (if (empty? (:types params)) */
+  AND 1=0
+/*~*/
   AND facilities.type_id IN (:v*:types)
-/*~ ) ~*/
+/*~ )) ~*/
 /*~ (if (:region params) */
   AND facilities.the_geom @ (SELECT the_geom FROM regions WHERE id = :region LIMIT 1)
   AND ST_Contains((SELECT the_geom FROM regions WHERE id = :region LIMIT 1), facilities.the_geom)
@@ -29,13 +31,12 @@ INNER JOIN facility_types ON facility_types.id = facilities.type_id
 WHERE 1=1
 :snip:criteria ;
 
--- :name count-facilities-in-region* :? :1
+-- :name count-facilities-by-criteria :? :1
 SELECT
   COUNT(*)
 FROM facilities
-WHERE ST_Contains(
-  (SELECT the_geom FROM regions WHERE id = :region-id LIMIT 1),
-  facilities.the_geom);
+WHERE 1=1
+:snip:criteria ;
 
 -- :name facilities-with-isochrones :?
 SELECT

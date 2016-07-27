@@ -14,6 +14,10 @@
   (get-project [this id]
     "Return project with the given ID.")
 
+  (update-project [this project]
+    "Updates a project's attributes. Returns the updated project on success and
+    nil on failure.")
+
   (delete-project [this id]
     "Deletes a project with the given ID. Returns true iff there was a row
     affected."))
@@ -28,5 +32,7 @@
     (service/list-projects service))
   (get-project [service id]
     (service/get-project service id))
+  (update-project [service project]
+    (service/update-project service project))
   (delete-project [service id]
     (service/delete-project service id)))

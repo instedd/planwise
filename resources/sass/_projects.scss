@@ -80,6 +80,7 @@ $search-box-height: 42px;
 
           .stat-title {
             font-size: 10px;
+            text-transform: uppercase;
           }
 
           .stat-value {
@@ -90,9 +91,15 @@ $search-box-height: 42px;
 
     }
 
-    .project-goal {
+    h1 {
       font-weight: bold;
       font-size: 16px;
+      margin: 0;
+    }
+    h2 {
+      font-weight: normal;
+      font-size: 14px;
+      margin: 0;
     }
 
     .map-preview {

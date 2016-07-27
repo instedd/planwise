@@ -21,17 +21,52 @@
                           :ownership #{}
                           :services #{}}
                 :count 0
-                :total 4944
-                :list []
+                :total 0
+                :list nil
                 :isochrones nil} ;; geojson string
    :transport {:time nil}
    :map-view {} ;; {:keys position zoom}
-   :project-data {}}) ;; {:keys id goal region_id facilities_count}
+   :project-data {}}) ;; {:keys id goal region-id stats filters}
 
-(defn project-viewmodel [project-data]
-  (-> empty-project-viewmodel
-      (assoc :project-data project-data)
-      (assoc-in [:facilities :total] (:facilities_count project-data))))
+(defn update-viewmodel-associations
+  [viewmodel {:keys [facilities isochrones]}]
+  (cond
+    facilities
+    (assoc-in viewmodel [:facilities :list] facilities)
+
+    isochrones
+    (let [facilities (map #(dissoc % :isochrone) isochrones)
+          isochrones (->> isochrones
+                          (map :isochrone)
+                          (filterv some?))]
+      (-> viewmodel
+          (assoc-in [:facilities :list] facilities)
+          (assoc-in [:facilities :isochrones] isochrones)))
+
+    :else
+    viewmodel))
+
+(defn update-project-viewmodel
+  [viewmodel {:keys [filters stats] :as project-data}]
+  (let [facilities-filters (:facilities filters)
+        facilities-filters (zipmap (keys facilities-filters)
+                                   (map set (vals facilities-filters)))]
+    (-> viewmodel
+        (assoc :project-data project-data)
+        (assoc-in [:facilities :filters] facilities-filters)
+        (assoc-in [:transport] (:transport filters))
+        (assoc-in [:facilities :total] (:facilities-total stats))
+        (assoc-in [:facilities :count] (:facilities-targeted stats))
+        (update-viewmodel-associations project-data))))
+
+(defn new-project-viewmodel
+  [project-data]
+  (update-project-viewmodel empty-project-viewmodel project-data))
+
+(defn project-filters
+  [viewmodel]
+  {:facilities (get-in viewmodel [:facilities :filters])
+   :transport (:transport viewmodel)})
 
 (def empty-datasets-selected
   {:collection nil
