@@ -12,7 +12,11 @@
     "Returns all projects in the database.")
 
   (get-project [this id]
-    "Return project with the given ID."))
+    "Return project with the given ID.")
+
+  (delete-project [this id]
+    "Deletes a project with the given ID. Returns true iff there was a row
+    affected."))
 
 ;; Reference implementation
 
@@ -23,4 +27,6 @@
   (list-projects [service]
     (service/list-projects service))
   (get-project [service id]
-    (service/get-project service id)))
+    (service/get-project service id))
+  (delete-project [service id]
+    (service/delete-project service id)))
