@@ -165,7 +165,7 @@
     [common/ul-menu (project-tab-items project-id) selected-tab]
     [:div
       [:a
-        {:href "#" :on-click (common/with-confirm #(dispatch [:projects/delete project-id]) "Are you sure you want to delete this project?")}
+        {:href "#" :on-click (common/with-confirm #(dispatch [:projects/delete-project project-id]) "Are you sure you want to delete this project?")}
         "Delete project"]]]])
 
 (defn transport-filters []
