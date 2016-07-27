@@ -25,6 +25,14 @@
                        (let [message (.-data e)]
                          (dispatch [:message-posted message])))))
 
+(defn install-ticker! []
+  (let [time (atom 0)
+        interval 1000]
+    (.setInterval
+      js/window
+      #(dispatch [:tick (swap! time + interval)])
+      interval)))
+
 (defn- ^:export main []
   (dispatch-sync [:initialise-db])
   (accountant/configure-navigation!
@@ -36,4 +44,5 @@
        (secretary/locate-route path))})
   (accountant/dispatch-current!)
   (install-message-handler!)
+  (install-ticker!)
   (mount-root))
