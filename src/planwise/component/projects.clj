@@ -60,7 +60,7 @@
 (defn- facilities-criteria
   [project]
   {:region (:region-id project)
-   :types (get-in project [:filters :facilities :type])})
+   :types (or (get-in project [:filters :facilities :type]) [])})
 
 (defn compute-project-stats
   [{:keys [facilities]} project]
