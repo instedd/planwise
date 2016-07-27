@@ -16,6 +16,11 @@ Make sure to add the following entry to your `profiles.clj` so your local instan
 :demo-tile-url "http://docker.local:5002/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png"
 ```
 
+To query the mapserver directly, instead of the mapcache server, change it to:
+```clojure
+:demo-tile-url "http://docker.local:5002/mapserv?map=/etc/mapserver/kenya.map&mode=tile&layers=KenyaPopulation&tile={x}+{y}+{z}"
+```
+
 ### Data container
 
 To run on docker cloud, there is a third data container `kenya-data`, which simply exposes a data volume with the population data TIFF file with already generated overviews, and is linked from the mapserver container.
