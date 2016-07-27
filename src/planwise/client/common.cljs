@@ -92,6 +92,18 @@
                     (apply partial (cons f args))
                     timeout))))))
 
+;; Event handlers
+
+(defn prevent-default [f]
+  (fn [_]
+    (.preventDefault js/event)
+    (f)))
+
+(defn with-confirm [f confirm-msg]
+  (prevent-default
+    #(when (.confirm js/window confirm-msg)
+       (f))))
+
 ;; Handler for API asyncs
 
 (defn async-handle [c success-fn]

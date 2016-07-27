@@ -52,3 +52,6 @@
             facilities-count (facilities/count-facilities-in-region service region-id)]
         (update-project* tx {:project-id project-id
                              :facilities-count facilities-count})))))
+
+(defn delete-project [service id]
+  (pos? (delete-project* (get-db service) {:id id})))

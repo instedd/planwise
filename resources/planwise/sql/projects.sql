@@ -16,4 +16,8 @@ WHERE id = :id;
 -- :name update-project* :! :n
 UPDATE projects
 SET facilities_count = :facilities-count
-WHERE projects.id = :project-id
+WHERE projects.id = :project-id;
+
+-- :name delete-project* :! :n
+DELETE FROM projects
+WHERE projects.id = :id;
