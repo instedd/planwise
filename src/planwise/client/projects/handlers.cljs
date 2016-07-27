@@ -85,7 +85,7 @@
    (let [project-id (:id project-data)]
      (when (nil? project-id)
        (throw "Invalid project data"))
-     (accountant/navigate! (routes/project-demographics {:id project-id}))
+     (accountant/navigate! (routes/project-facilities {:id project-id}))
      (assoc db
             :view-state :view
             :list (cons project-data (:list db))

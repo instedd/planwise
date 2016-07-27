@@ -119,7 +119,7 @@
 (defn project-card [{:keys [id goal region-id region-name stats] :as project}]
   (let [region-geo (subscribe [:regions/geojson region-id])]
     (fn [{:keys [id goal region-id region-name stats] :as project}]
-      [:a {::href (routes/project-demographics project)}
+      [:a {::href (routes/project-facilities project)}
         [:div.project-card
           [:div.project-card-content
            [:h1 goal]
@@ -152,9 +152,9 @@
 
 (defn project-tab-items [project-id]
   (let [route-params {:id project-id}]
-    [{:item :demographics
-      :href (routes/project-demographics route-params)
-      :title "Demographics"}
+    [#_{:item :demographics
+        :href (routes/project-demographics route-params)
+        :title "Demographics"}
      {:item :facilities
       :href (routes/project-facilities route-params)
       :title "Facilities"}
@@ -283,9 +283,8 @@
                                    :weight 1
                                    :fillOpacity 0.4}])
                   ;; Demographics tile layer
-                  (when (= :demographics selected-tab)
-                    [:tile-layer {:url config/demo-tile-url
-                                  :opacity 0.3}])
+                  [:tile-layer {:url config/demo-tile-url
+                                :opacity 0.3}]
                   ;; Boundaries of working region
                   (if @map-geojson
                     [:geojson-layer {:data @map-geojson
@@ -298,7 +297,7 @@
                     [:geojson-layer {:data @isochrones
                                      :fillOpacity 1
                                      :weight 2
-                                     :color styles/orange
+                                     :color styles/green
                                      :group {:opacity 0.4}}])]
 
                  ;; Filter out nils so leaflet/map-widget doesn't get confused
