@@ -55,9 +55,8 @@
                               27 (cancel-fn)
                               nil)]
         [:form.dialog.new-project {:on-key-down key-handler-fn
-                                   :on-submit (fn []
-                                                (dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}])
-                                                (.preventDefault js/event))}
+                                   :on-submit (common/prevent-default
+                                                #(dispatch [:projects/create-project {:goal @new-project-goal, :region_id @new-project-region-id}]))}
          [:div.title
           [:h1 "New Project"]
           [common/close-button {:on-click cancel-fn}]]
