@@ -19,3 +19,23 @@ web:
     POSTGRES_DB: routing
     POSTGRES_HOST: db
     PORT: 80
+
+mapcache:
+  image: instedd/planwise-mapserver:kenya-mapcache
+  links:
+    - mapserver
+  ports:
+    - "5002:80"
+
+mapserver:
+  image: instedd/planwise-mapserver:kenya-mapserver
+  links:
+    - mapserver-data
+  ports:
+    - "5001:80"
+  volumes_from:
+    - mapserver-data
+
+mapserver-data:
+  image: instedd/planwise-mapserver:kenya-data
+  command: /bin/true
