@@ -17,6 +17,7 @@
             [ring.util.request :refer [request-url]]
             [ring.util.response :as response]
             [compojure.response :as compojure]
+            [clojure.string :as str]
 
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.backends :as backends]
@@ -104,7 +105,12 @@
             :aliases    {}
 
             ; Vector order matters, api handler is evaluated first
-            :handlers   [:api :app]}})
+            :handlers   [:api :app]}
+   :version (if-let [version-io (io/resource "planwise/version")]
+              (-> version-io
+                (slurp)
+                (str/trim-newline)
+                (str/trim)))})
 
 (defn jwe-backend
   "Construct a Buddy JWE auth backend from the configuration map"
@@ -128,6 +134,8 @@
 (defn new-system [config]
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
+         :globals             {:app-version (:version config)}
+
          :api-auth-backend    (jwe-backend (meta-merge (:auth config)
                                                        (:api-auth-backend config)))
          :app-auth-backend    (session-backend (meta-merge (:auth config)
@@ -193,7 +201,8 @@
           :auth-endpoint       [:auth]
           :home-endpoint       [:auth
                                 :resmap
-                                :maps]
+                                :maps
+                                :globals]
           :facilities-endpoint [:facilities]
           :regions-endpoint    [:regions]
           :projects-endpoint   [:projects]
