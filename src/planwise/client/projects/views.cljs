@@ -8,6 +8,7 @@
             [planwise.client.styles :as styles]
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
+            [planwise.client.config :as config]
             [planwise.client.db :as db]
             [clojure.string :as str]
             [reagent.core :as r]
@@ -260,19 +261,26 @@
                          #(dispatch [:projects/update-position %])
                          :on-zoom-changed
                          #(dispatch [:projects/update-zoom %])}
+             ; Base tile layer
              gray-base-tile-layer
+             ; Markers with filtered facilities
              [:point-layer {:points points
                             :radius 4
                             :color styles/black
                             :opacity 0.8
                             :weight 1
                             :fillOpacity 0.4}]
+             ; Demographics tile layer
+             [:tile-layer {:url config/demo-tile-url
+                           :opacity 0.3}]
+             ; Boundaries of working region
              (if @map-geojson
                [:geojson-layer {:data @map-geojson
                                 :color styles/green
                                 :fit-bounds true
                                 :fillOpacity 0.1
                                 :weight 0}])
+             ; Isochrone for selected transport
              (if (and (seq @isochrones) (= :transport selected-tab))
                [:geojson-layer {:data @isochrones
                                 :fillOpacity 1
