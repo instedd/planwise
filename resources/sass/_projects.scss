@@ -153,10 +153,13 @@ article.project-view {
       }
       li {
       }
-      > a {
-        flex: 1;
+      > div {
         text-align: right;
         font-size: 14px;
+        margin-top: 13px;
+        > a {
+          margin-right: 10px;
+        }
       }
     }
   }

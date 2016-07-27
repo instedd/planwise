@@ -163,7 +163,10 @@
    [:h2 project-goal]
    [:nav
     [common/ul-menu (project-tab-items project-id) selected-tab]
-    #_[:a "Download Project"]]])
+    [:div
+      [:a
+        {:href "#" :on-click (common/with-confirm #(dispatch [:projects/delete project-id]) "Are you sure you want to delete this project?")}
+        "Delete project"]]]])
 
 (defn transport-filters []
   (let [transport-time (subscribe [:projects/transport-time])]
