@@ -55,9 +55,8 @@
                               27 (cancel-fn)
                               nil)]
         [:form.dialog.new-project {:on-key-down key-handler-fn
-                                   :on-submit (fn []
-                                                (dispatch [:projects/create-project {:goal @new-project-goal, :region-id @new-project-region-id}])
-                                                (.preventDefault js/event))}
+                                   :on-submit (common/prevent-default
+                                                #(dispatch [:projects/create-project {:goal @new-project-goal, :region-id @new-project-region-id}]))}
          [:div.title
           [:h1 "New Project"]
           [common/close-button {:on-click cancel-fn}]]
@@ -163,15 +162,18 @@
       :href (routes/project-transport route-params)
       :title "Transport Means"}
      #_{:item :scenarios
-      :href (routes/project-scenarios route-params)
-      :title "Scenarios"}]))
+        :href (routes/project-scenarios route-params)
+        :title "Scenarios"}]))
 
 (defn header-section [project-id project-goal selected-tab]
   [:div.project-header
    [:h2 project-goal]
    [:nav
     [common/ul-menu (project-tab-items project-id) selected-tab]
-    #_[:a "Download Project"]]])
+    [:div
+      [:a
+        {:href "#" :on-click (common/with-confirm #(dispatch [:projects/delete-project project-id]) "Are you sure you want to delete this project?")}
+        "Delete project"]]]])
 
 (defn transport-filters []
   (let [transport-time (subscribe [:projects/transport-time])]
@@ -217,18 +219,18 @@
             :toggle-fn (toggle-cons-fn :type)})]
 
          #_[:fieldset
-          [:legend "Ownership"]
-          (common/filter-checkboxes
-           {:options @facility-ownerships
-            :value (:ownership @filters)
-            :toggle-fn (toggle-cons-fn :ownership)})]
+            [:legend "Ownership"]
+            (common/filter-checkboxes
+             {:options @facility-ownerships
+              :value (:ownership @filters)
+              :toggle-fn (toggle-cons-fn :ownership)})]
 
          #_[:fieldset
-          [:legend "Services"]
-          (common/filter-checkboxes
-           {:options @facility-services
-            :value (:services @filters)
-            :toggle-fn (toggle-cons-fn :services)})]]))))
+            [:legend "Services"]
+            (common/filter-checkboxes
+             {:options @facility-services
+              :value (:services @filters)
+              :toggle-fn (toggle-cons-fn :services)})]]))))
 
 (defn demographics-filters []
   [:div.sidebar-filters

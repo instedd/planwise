@@ -64,3 +64,10 @@
        (println message)
        (c/warn "Invalid message received " message)))
    db))
+
+(register-handler
+ :tick
+ (fn [db [_ time]]
+   (when (= 0 (mod time 3000))
+     (dispatch [:datasets/update-import-status]))
+   db))

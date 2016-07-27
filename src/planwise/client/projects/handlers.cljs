@@ -139,6 +139,14 @@
     (assoc db :view-state :view
               :current (db/new-project-viewmodel project-data))))
 
+(register-handler
+ :projects/delete-project
+ in-projects
+ (fn [db [_ id]]
+   (api/delete-project id)
+   (accountant/navigate! (routes/home))
+   (update db :list (partial filterv #(not= (:id %) id)))))
+
 (defn- facilities-criteria [current-project-db]
   (let [filters (get-in current-project-db [:facilities :filters])
         project-region-id (get-in current-project-db [:project-data :region-id])]

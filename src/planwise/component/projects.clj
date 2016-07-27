@@ -115,3 +115,6 @@
                                    :stats (pr-str stats)})
               (assoc project :stats stats))
             project))))))
+
+(defn delete-project [service id]
+  (pos? (delete-project* (get-db service) {:id id})))

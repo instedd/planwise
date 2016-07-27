@@ -24,4 +24,8 @@ UPDATE projects SET
   (for [field [:goal :stats :filters] :when (some? (field params))]
     (str (name field) " = :" (name field))))
 ~*/
-WHERE projects.id = :project-id
+WHERE projects.id = :project-id;
+
+-- :name delete-project* :! :n
+DELETE FROM projects
+WHERE projects.id = :id;

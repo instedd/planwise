@@ -48,7 +48,12 @@
    (POST "/" [goal region-id]
      (let [goal (str/trim goal)
            region-id (Integer. region-id)]
-       (response (projects/create-project service {:goal goal, :region-id region-id}))))))
+       (response (projects/create-project service {:goal goal, :region-id region-id}))))
+
+   (DELETE "/:id" [id]
+     (if-let [project (projects/delete-project service (Integer/parseInt id))]
+       (response {:deleted id})
+       (not-found {:error "Project not found"})))))
 
 (defn projects-endpoint [endpoint]
   (context "/api/projects" []

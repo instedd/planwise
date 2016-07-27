@@ -1,5 +1,5 @@
 (ns planwise.client.projects.api
-  (:require [ajax.core :refer [GET POST PUT]]
+  (:require [ajax.core :refer [GET POST PUT DELETE]]
             [planwise.client.api :refer [json-request]]))
 
 (defn- process-filters [filters]
@@ -25,6 +25,11 @@
   (POST
     "/api/projects/"
     (json-request params handlers)))
+
+(defn delete-project [id & handlers]
+  (DELETE
+    (str "/api/projects/" id)
+    (json-request {:id id} handlers)))
 
 (defn fetch-facilities [filters & handlers]
   (GET
