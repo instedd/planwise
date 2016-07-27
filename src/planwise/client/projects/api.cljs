@@ -7,14 +7,14 @@
   (let [processed-filters (into {} (for [[k v] filters] [k (if (set? v) (apply vector v) v)]))]
     (if (seq (:type filters))
       processed-filters
-      ;; bogus facility type ID to reject all facilities
-      (assoc processed-filters :type ["0"]))))
+      (assoc processed-filters :type ""))))
 
 
-(defn load-project [id & handlers]
-  (GET
-    (str "/api/projects/" id)
-    (json-request {:id id} handlers)))
+(defn load-project [id with-data & handlers]
+  (let [url (str "/api/projects/" id)
+        params {:id id
+                :with (some-> with-data name)}]
+    (GET url (json-request params handlers))))
 
 (defn load-projects [& handlers]
   (GET
@@ -39,7 +39,9 @@
 (defn fetch-facility-types [& handlers]
   (GET "/api/facilities/types" (json-request {} handlers)))
 
-(defn update-project-filters [project-id filters & handlers]
-  (PUT
-    (str "/api/projects/" project-id)
-    (json-request {:id project-id :filters filters} handlers)))
+(defn update-project [project-id filters with-data & handlers]
+  (let [url (str "/api/projects/" project-id)
+        params {:id project-id
+                :filters filters
+                :with (some-> with-data name)}]
+    (PUT url (json-request params handlers))))

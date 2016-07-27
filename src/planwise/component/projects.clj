@@ -57,11 +57,18 @@
   (some-> (select-project (get-db service) {:id id})
           db->project))
 
+(defn- facilities-criteria
+  [project]
+  {:region (:region-id project)
+   :types (get-in project [:filters :facilities :type])})
+
 (defn compute-project-stats
   [{:keys [facilities]} project]
   (let [region-id (:region-id project)
-        facilities-total (facilities/count-facilities-in-region facilities region-id)]
-    {:facilities-targeted 0
+        facilities-total (facilities/count-facilities facilities {:region region-id})
+        criteria (facilities-criteria project)
+        facilities-targeted (facilities/count-facilities facilities criteria)]
+    {:facilities-targeted facilities-targeted
      :facilities-total facilities-total}))
 
 (defn create-project [service project]
@@ -96,11 +103,15 @@
     (let [project-id (:id project)
           goal       (:goal project)
           filters    (:filters project)
-          stats      (:stats project)
           params     {:project-id project-id
                       :goal       goal
-                      :filters    (some-> filters pr-str)
-                      :stats      (some-> stats pr-str)}
+                      :filters    (some-> filters pr-str)}
           result     (update-project* tx params)]
       (when (= 1 result)
-        (load-project tx project-id)))))
+        (let [project (load-project tx project-id)]
+          (if filters
+            (let [stats (compute-project-stats service project)]
+              (update-project* tx {:project-id project-id
+                                   :stats (pr-str stats)})
+              (assoc project :stats stats))
+            project))))))

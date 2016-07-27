@@ -194,7 +194,8 @@
                                 :resmap]
           :facilities-endpoint [:facilities]
           :regions-endpoint    [:regions]
-          :projects-endpoint   [:projects]
+          :projects-endpoint   [:projects
+                                :facilities]
           :routing-endpoint    [:routing]
           :datasets-endpoint   [:facilities
                                 :resmap

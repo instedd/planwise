@@ -89,16 +89,38 @@
      (assoc db
             :view-state :view
             :list (cons project-data (:list db))
-            :current (db/project-viewmodel project-data)))))
+            :current (db/new-project-viewmodel project-data)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Loading a project
 
+(defn section->with
+  [section]
+  (case section
+    :demographics nil
+    :facilities :facilities
+    :transport :isochrones))
+
+(register-handler
+ :projects/navigate-project
+ in-projects
+ (fn [db [_ project-id section]]
+   (if (not= project-id (get-in db [:current :project-data :id]))
+     (dispatch [:projects/load-project project-id (section->with section)])
+     (case section
+       :facilities
+       (dispatch [:projects/load-facilities])
+       :transport
+       (dispatch [:projects/load-isochrones])
+       nil))
+   db))
+
 (register-handler
  :projects/load-project
  in-projects
- (fn [db [_ project-id]]
-   (api/load-project project-id :projects/project-loaded :projects/not-found)
+ (fn [db [_ project-id with-data]]
+   (api/load-project project-id with-data
+                     :projects/project-loaded :projects/not-found)
    (assoc db :view-state :loading
              :current db/empty-project-viewmodel)))
 
@@ -115,7 +137,7 @@
   (fn [db [_ project-data]]
     (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
     (assoc db :view-state :view
-              :current (db/project-viewmodel project-data))))
+              :current (db/new-project-viewmodel project-data))))
 
 (defn- facilities-criteria [current-project-db]
   (let [filters (get-in current-project-db [:facilities :filters])
@@ -173,8 +195,8 @@
                     (assoc-in [:facilities :isochrones] nil))
          filters (db/project-filters new-db)
          project-id (get-in db [:project-data :id])]
-     (api/update-project-filters project-id filters)
-     (dispatch [:projects/load-facilities :force])
+     (api/update-project project-id filters :facilities
+                         :projects/project-updated)
      new-db)))
 
 (register-handler
@@ -184,9 +206,15 @@
     (let [new-db (assoc-in db [:transport :time] time)
           filters (db/project-filters new-db)
           project-id (get-in db [:project-data :id])]
-      (api/update-project-filters project-id filters)
-      (dispatch [:projects/load-isochrones :force])
+      (api/update-project project-id filters :isochrones
+                          :projects/project-updated)
       new-db)))
+
+(register-handler
+ :projects/project-updated
+ in-current-project
+ (fn [db [_ project]]
+   (db/update-project-viewmodel db project)))
 
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers

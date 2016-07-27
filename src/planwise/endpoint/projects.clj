@@ -5,25 +5,43 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.boundary.projects :as projects]
+            [planwise.boundary.facilities :as facilities]
             [clojure.walk :refer [keywordize-keys]]
             [clojure.string :as str]))
 
-(defn- endpoint-routes [service]
+(defn- assoc-extra-data
+  [with project facilities]
+  (let [criteria {:region (:region-id project)
+                  :types (get-in project [:filters :facilities :type])}]
+    (case with
+      :facilities
+      (let [project-facilities (facilities/list-facilities facilities criteria)]
+        (assoc project :facilities project-facilities))
+      :isochrones
+      (let [time (get-in project [:filters :transport :time])
+            options {:threshold time}
+            isochrones (when time
+                         (facilities/list-with-isochrones facilities options criteria))]
+        (assoc project :isochrones isochrones))
+      project)))
+
+(defn- endpoint-routes
+  [{service :projects facilities :facilities}]
   (routes
    (GET "/" []
      (let [projects (projects/list-projects service)]
        (response projects)))
 
-   (GET "/:id" [id]
+   (GET "/:id" [id with]
      (if-let [project (projects/get-project service (Integer/parseInt id))]
-       (response project)
+       (response (assoc-extra-data (keyword with) project facilities))
        (not-found {:error "Project not found"})))
 
-   (PUT "/:id" [id filters]
+   (PUT "/:id" [id filters with]
      (let [id (Integer/parseInt id)
            filters (keywordize-keys filters)]
-       (if (projects/update-project service {:id id :filters filters})
-         (response {:status "ok"})
+       (if-let [project (projects/update-project service {:id id :filters filters})]
+         (response (assoc-extra-data (keyword with) project facilities))
          (-> (response {:status "failure"})
              (status 400)))))
 
@@ -32,6 +50,6 @@
            region-id (Integer. region-id)]
        (response (projects/create-project service {:goal goal, :region-id region-id}))))))
 
-(defn projects-endpoint [{service :projects}]
+(defn projects-endpoint [endpoint]
   (context "/api/projects" []
-    (restrict (endpoint-routes service) {:handler authenticated?})))
+    (restrict (endpoint-routes endpoint) {:handler authenticated?})))
