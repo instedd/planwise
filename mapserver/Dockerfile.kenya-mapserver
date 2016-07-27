@@ -1,0 +1,11 @@
+FROM camptocamp/mapserver:latest
+
+# Add mapserver mapfile for Kenya that relies on KEN_popmap15_v2b.tif
+ADD kenya.map /etc/mapserver/kenya.map
+
+# Disable fast cgi and enable regular cgi
+RUN rm /etc/apache2/mods-enabled/fcgid.load
+RUN ln -ns /etc/apache2/mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
+ADD mapserver.conf /etc/apache2/conf-enabled/mapserver.conf
+
+EXPOSE 80

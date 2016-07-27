@@ -1,0 +1,156 @@
+MAP
+  # Defaults
+  NAME "Kenya"
+  STATUS ON
+
+  CONFIG "PROJ_LIB" "/usr/share/proj/"
+
+  # Debugging
+  #CONFIG "MS_ERRORFILE" "/var/log/mapserver.log"
+  #CONFIG "CPL_DEBUG" "ON"
+  #CONFIG "PROJ_DEBUG" "ON"
+  #DEBUG 5
+
+  # Do not crash if there is missing data
+  CONFIG "ON_MISSING_DATA" "IGNORE"
+
+  # Hardcoded dimensions of the KEN_popmap15_v2b.tif raster, used for exporting images
+  #SIZE 9601 12179
+  #EXTENT 33.9126084 -4.6780661 41.9131217 5.4706946 # minx, miny, maxx, maxy
+
+  # Define projection used by leaflet
+  PROJECTION
+    "proj=longlat"
+    "ellps=WGS84"
+    "datum=WGS84"
+    "no_defs"
+    ""
+  END
+
+  # WMS requests performed by mapcache
+  WEB
+    METADATA
+      WMS_TITLE "Kenya"
+      WMS_ENABLE_REQUEST "*"
+      WMS_FORMAT "image/png"
+      WMS_SRS "EPSG:3857"
+      WMS_ONLINERESOURCE "/mapserv?map=/etc/mapserver/kenya.map&"
+    END
+  END
+
+  IMAGETYPE PNG
+
+  # The OUTPUTFORMAT object it's only used to set TRANSPARENT ON, this settings makes
+  # the NODATA value pixels transparent. The rest of the options are the default ones
+  # (http://mapserver.org/ar/mapfile/outputformat.html)
+  OUTPUTFORMAT
+    NAME "png"
+    DRIVER AGG/PNG
+    MIMETYPE "image/png"
+    IMAGEMODE RGBA
+    EXTENSION "png"
+    FORMATOPTION "GAMMA=0.75"
+    TRANSPARENT ON
+  END
+
+  LAYER
+    NAME "KenyaPopulation"
+    DATA "/data/KEN_popmap15_v2b.tif"
+    TYPE RASTER
+
+    METADATA
+      WMS_TITLE "KenyaPopulation"
+      WMS_SRS "EPSG:3857"
+    END
+
+    PROJECTION
+      "proj=longlat"
+      "ellps=WGS84"
+      "datum=WGS84"
+      "no_defs"
+      ""
+    END
+
+    # Comment out DATA and uncomment here to use TILE INDEX
+    # TILEINDEX "KEN_popmap15_v2b.shp"
+    # TILEITEM "LOCATION"
+
+    # The STATUS option allows 3 different values ON|OFF|DEFAULT. DEFAULT is the only
+    # one that leave it always visible
+    STATUS DEFAULT
+
+    # Hardcoded dimensions of the KEN_popmap15_v2b.tif raster.
+    #EXTENT 33.9126084 -4.6780661 41.9131217 5.4706946 # minx, miny, maxx, maxy
+
+    # FastCGI support disabled
+    # PROCESSING "CLOSE_CONNECTION=DEFER"
+
+    # Scale experimenting
+    #PROCESSING "SCALE=0,10"
+    #PROCESSING "SCALE_BUCKETS=256"
+
+    # Opacity is handled directly by leaflet, hence is left out here
+    # OPACITY 50
+
+    # The NODATA value of the raster is negative, therefore after the scaling it's mapped to 0.
+    # This class will catch the NODATA values and the pixels that have less than 0.03 habitants because
+    # the that's the range of each unit (8/255).
+    CLASS
+      NAME "nodata"
+      EXPRESSION ([pixel] < 1)
+      STYLE
+        OPACITY 0
+        COLOR 0 0 0
+      END
+    END
+
+    CLASS
+      NAME "lt5"
+      EXPRESSION ([pixel] < 5)
+      STYLE
+        COLOR 255 200 0
+      END
+    END
+
+    CLASS
+      NAME "lt20"
+      EXPRESSION ([pixel] < 20)
+      STYLE
+        COLOR 255 150 0
+      END
+    END
+
+    CLASS
+      NAME "lt50"
+      EXPRESSION ([pixel] < 50)
+      STYLE
+        COLOR 255 100 0
+      END
+    END
+
+    CLASS
+      NAME "lt100"
+      EXPRESSION ([pixel] < 100)
+      STYLE
+        COLOR 255 50 0
+      END
+    END
+
+    CLASS
+      NAME "lt150"
+      EXPRESSION ([pixel] < 150)
+      STYLE
+        COLOR 255 20 0
+      END
+    END
+
+    CLASS
+      NAME "geq150"
+      EXPRESSION ([pixel] >= 150)
+      STYLE
+        COLOR 255 0 0
+      END
+    END
+
+  END # LAYER
+END # MAP
