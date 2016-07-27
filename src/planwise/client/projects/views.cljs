@@ -156,8 +156,8 @@
       :href (routes/project-transport route-params)
       :title "Transport Means"}
      #_{:item :scenarios
-      :href (routes/project-scenarios route-params)
-      :title "Scenarios"}]))
+        :href (routes/project-scenarios route-params)
+        :title "Scenarios"}]))
 
 (defn header-section [project-id project-goal selected-tab]
   [:div.project-header
@@ -210,18 +210,18 @@
             :toggle-fn (toggle-cons-fn :type)})]
 
          #_[:fieldset
-          [:legend "Ownership"]
-          (common/filter-checkboxes
-           {:options @facility-ownerships
-            :value (:ownership @filters)
-            :toggle-fn (toggle-cons-fn :ownership)})]
+            [:legend "Ownership"]
+            (common/filter-checkboxes
+             {:options @facility-ownerships
+              :value (:ownership @filters)
+              :toggle-fn (toggle-cons-fn :ownership)})]
 
          #_[:fieldset
-          [:legend "Services"]
-          (common/filter-checkboxes
-           {:options @facility-services
-            :value (:services @filters)
-            :toggle-fn (toggle-cons-fn :services)})]]))))
+            [:legend "Services"]
+            (common/filter-checkboxes
+             {:options @facility-services
+              :value (:services @filters)
+              :toggle-fn (toggle-cons-fn :services)})]]))))
 
 (defn demographics-filters []
   [:div.sidebar-filters
