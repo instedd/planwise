@@ -95,8 +95,8 @@
 ;; Event handlers
 
 (defn prevent-default [f]
-  (fn [_]
-    (.preventDefault js/event)
+  (fn [evt]
+    (.preventDefault evt)
     (f)))
 
 (defn with-confirm [f confirm-msg]
