@@ -5,6 +5,7 @@
   :dependencies [; Base infrastructure
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.8.51"]
+                 [org.clojure/core.async "0.2.385"]
                  [com.stuartsierra/component "0.3.1"]
                  [duct "0.6.1"]
 

@@ -2,7 +2,7 @@
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
             [clojure.set :refer [rename-keys]]
-            [clojure.core.async :refer [chan put! <! >! go go-loop]]
+            [clojure.core.async :refer [chan put! poll! offer! <! >! go go-loop]]
             [planwise.component.resmap :as resmap]
             [planwise.component.projects :as projects]
             [planwise.component.facilities :as facilities]))
@@ -11,6 +11,28 @@
 
 ;; Field definition from resmap service
 ;; {:id "15890", :name "Type", :code "type", :kind "select_one", :config {:options [{:id 1, :code "hospital", :label "Hospital"} {:id 2, :code "health center", :label "Health Center"} {:id 3, :code "dispensary", :label "Dispensary"}], :next_id 4}}
+
+(defn import-cancelled?
+  [{:keys [control-channel status]}]
+  (if (and (seq? @status) (= (first @status) :cancelling))
+    true
+    (when-let [msg (poll! control-channel)]
+      (cond
+        (= :cancel (first msg))
+        (do
+          (info "Cancelling import process upon request")
+          (swap! status (constantly :cancelling))
+          true)
+
+        (= :quit (first msg))
+        (do
+          (info "Cancelling import process (service is quitting)")
+          (swap! status (constantly :cancelling))
+          (offer! control-channel msg)
+          true)
+
+        true
+        (warn "Ignored message while importing: " msg)))))
 
 (defn import-types
   [facilities type-field]
@@ -54,6 +76,8 @@
   [{:keys [resmap facilities] :as service} user coll-id type-field]
   (loop [page 1
          ids []]
+    (when (import-cancelled? service)
+      (throw (RuntimeException. "Import cancelled while importing sites")))
     (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
           sites (:sites data)]
       (if (seq sites)
@@ -69,6 +93,8 @@
   (let [total-facilities (count ids)]
     (info "Preprocessing isochrones for" total-facilities "facilities")
     (doseq [[idx facility-id] (map-indexed vector ids)]
+      (when (import-cancelled? service)
+        (throw (RuntimeException. "Import cancelled while processing isochrones")))
       (let [progress (str (inc idx) "/" total-facilities)]
         (info "Preprocessing facility" facility-id progress)
         (swap! status (constantly [:importing :processing progress])))
@@ -86,11 +112,14 @@
   [{:keys [resmap facilities] :as service} user coll-id type-field]
   (info "Destroying existing facilities")
   (facilities/destroy-facilities! facilities)
-  (let [type-field (import-types facilities type-field)
-        ids (do-import-sites service user coll-id type-field)]
-    (update-projects service)
-    (preprocess-isochrones service ids)
-    (info "Done importing facilities from collection" coll-id)))
+  (try
+    (let [type-field (import-types facilities type-field)
+          ids (do-import-sites service user coll-id type-field)]
+      (preprocess-isochrones service ids)
+      (info "Done importing facilities from collection" coll-id))
+
+    (finally
+      (update-projects service))))
 
 (defn service-loop
   [service]
@@ -164,3 +193,7 @@
   (send-msg service [:import! {:user user
                                :coll-id coll-id
                                :type-field type-field}]))
+
+(defn cancel-import!
+  [service]
+  (send-msg service [:cancel]))
