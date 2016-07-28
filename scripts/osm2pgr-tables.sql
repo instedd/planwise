@@ -53,8 +53,6 @@ CREATE TABLE ways (
 );
 
 
-ALTER TABLE ways OWNER TO ggiraldez;
-
 --
 -- Name: ways_gid_seq; Type: SEQUENCE; Schema: public; Owner: ggiraldez
 --
@@ -66,8 +64,6 @@ CREATE SEQUENCE ways_gid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE ways_gid_seq OWNER TO ggiraldez;
 
 --
 -- Name: ways_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ggiraldez
@@ -93,8 +89,6 @@ CREATE TABLE ways_vertices_pgr (
 );
 
 
-ALTER TABLE ways_vertices_pgr OWNER TO ggiraldez;
-
 --
 -- Name: ways_vertices_pgr_id_seq; Type: SEQUENCE; Schema: public; Owner: ggiraldez
 --
@@ -106,8 +100,6 @@ CREATE SEQUENCE ways_vertices_pgr_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE ways_vertices_pgr_id_seq OWNER TO ggiraldez;
 
 --
 -- Name: ways_vertices_pgr_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ggiraldez
