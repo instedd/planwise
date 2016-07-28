@@ -5,6 +5,8 @@ COUNTRY=${1:-kenya}
 LEVELS=${2:-2,4}
 echo "Importing $COUNTRY at levels $LEVELS"
 
+export PGPASSWORD=$POSTGRES_PASSWORD;
+
 mkdir -p data
 
 if [[ ! -e data/$COUNTRY ]]; then
