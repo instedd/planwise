@@ -84,7 +84,16 @@
      (api/import-collection! coll-id type-field :datasets/import-status-received)
      (assoc db
             :state :importing
+            :cancel-requested false
             :raw-status [:importing :starting]))))
+
+(register-handler
+ :datasets/cancel-import!
+ in-datasets
+ (fn [db [_]]
+   (c/log "Cancelling collection import")
+   (api/cancel-import!)
+   (assoc db :cancel-requested true)))
 
 (register-handler
  :datasets/import-status-received
@@ -105,6 +114,6 @@
  in-datasets
  (fn [db [_]]
    (let [state (:state db)]
-     (when (= :importing state)
+     (when-not (= :ready state)
        (api/importer-status :datasets/import-status-received)))
    db))

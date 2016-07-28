@@ -198,6 +198,24 @@ button {
     }
   }
 
+  &.danger {
+    background-color: $orange;
+    border-bottom-color: $orange-shadow;
+    border-right-color: $orange-shadow;
+    &[disabled] {
+      background-color: lighten(desaturate($button-color, 10%), 20%);
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+    }
+
+    &:active {
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+      border-top-color: $orange-shadow;
+      border-left-color: $orange-shadow;
+    }
+  }
+
   &.cancel {
     background-color: transparent;
     color: $gray-text;

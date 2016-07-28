@@ -51,7 +51,12 @@
                                 field))
                             fields)]
        (importer/import-collection importer user coll-id type-field)
-       (response {:status (importer/status importer)})))))
+       (response {:status (importer/status importer)})))
+
+   (POST "/cancel" request
+     (info "Cancelling import process by user request")
+     (importer/cancel-import! importer)
+     (response {:status :ok}))))
 
 (defn datasets-endpoint
   [service]

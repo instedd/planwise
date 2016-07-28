@@ -24,3 +24,8 @@
   [& handlers]
   (GET "/api/datasets/status"
       (json-request {} handlers)))
+
+(defn cancel-import!
+  [& handlers]
+  (POST "/api/datasets/cancel"
+      (json-request {} handlers)))

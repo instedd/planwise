@@ -88,16 +88,27 @@
 (defn facilities-summary []
   (let [facility-count (subscribe [:datasets/facility-count])
         state (subscribe [:datasets/state])
+        cancel-requested (subscribe [:datasets/cancel-requested])
         raw-status (subscribe [:datasets/raw-status])]
     (fn []
-      (let [importing? (importing? @state)]
+      (let [importing? (importing? @state)
+            cancelling? @cancel-requested]
         [:div.dataset-header
          [:h2 "Facilities"]
          (if-not importing?
            [:p "There are " [:b (common/pluralize @facility-count "facility" "facilities")] " in the system."]
            (let [[_ step progress] @raw-status
                  step (or step "Importing collection")]
-             [:h3 "Import in progress: " [:b (str (capitalize (name step)) " " progress)]]))]))))
+             [:div
+              [:h3
+               "Import in progress: "
+               [:b (str (capitalize (name step)) " " progress)]]
+              [:div.bottom-right
+               [:button.danger
+                {:type :button
+                 :on-click #(dispatch [:datasets/cancel-import!])
+                 :disabled cancelling?}
+                (if cancelling? "Cancelling..." "Cancel")]]]))]))))
 
 (defn resmap-collections []
   (let [resourcemap (subscribe [:datasets/resourcemap])

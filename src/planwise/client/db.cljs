@@ -116,6 +116,7 @@
    :datasets
    {:state nil
                                         ; :initialising/nil :ready :importing
+    :cancel-requested false
     :raw-status nil
     :facility-count nil
                                         ; Count of available facilities
