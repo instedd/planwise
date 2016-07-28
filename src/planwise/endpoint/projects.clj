@@ -12,7 +12,7 @@
 (defn- assoc-extra-data
   [with project facilities]
   (let [criteria {:region (:region-id project)
-                  :types (get-in project [:filters :facilities :type])}]
+                  :types (or (get-in project [:filters :facilities :type]) [])}]
     (case with
       :facilities
       (let [project-facilities (facilities/list-facilities facilities criteria)]
