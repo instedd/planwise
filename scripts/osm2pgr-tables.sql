@@ -19,6 +19,8 @@ SET default_tablespace = '';
 
 SET default_with_oids = false;
 
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pgrouting;
 --
 -- Name: ways; Type: TABLE; Schema: public; Owner: ggiraldez
 --
