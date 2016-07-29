@@ -17,6 +17,7 @@
                  [ring/ring-json "0.4.0"]
                  [ring-jetty-component "0.3.1"]
                  [ring-webjars "0.1.1"]
+                 [amalloy/ring-gzip-middleware "0.1.3"]
 
                  ; Security
                  [buddy "1.0.0"]

@@ -12,6 +12,7 @@
             [ring.middleware.resource :refer [wrap-resource]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults site-defaults]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-params]]
+            [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.middleware.webjars :refer [wrap-webjars]]
             [ring.middleware.session.cookie :refer [cookie-store]]
             [ring.util.request :refer [request-url]]
@@ -83,7 +84,8 @@
                         [wrap-authentication :auth-backend]
                         [wrap-json-params]
                         [wrap-json-response]
-                        [wrap-defaults :api-defaults]]
+                        [wrap-defaults :api-defaults]
+                        [wrap-gzip]]
          :api-defaults (meta-merge api-defaults {:params {:nested true}})}
    :api-auth-backend {:unauthorized-handler api-unauthorized-handler}
    :app {:middleware   [[wrap-not-found :not-found]
@@ -91,7 +93,8 @@
                         [wrap-resource :jar-resources]
                         [wrap-authorization :auth-backend]
                         [wrap-authentication :auth-backend]
-                        [wrap-defaults :app-defaults]]
+                        [wrap-defaults :app-defaults]
+                        [wrap-gzip]]
          :not-found    (io/resource "planwise/errors/404.html")
          :jar-resources "public/assets"
          :app-defaults (meta-merge site-defaults
