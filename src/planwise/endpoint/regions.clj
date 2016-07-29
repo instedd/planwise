@@ -9,12 +9,19 @@
 
 (defn- endpoint-routes [service]
   (routes
+
    (GET "/" []
      (let [regions (regions/list-regions service)]
        (response regions)))
+
+   (GET "/:ids{[0-9\\,]+}/with-preview" [ids]
+     (let [ids-array (map #(Integer/parseInt %) (str/split ids #","))
+           regions (regions/list-regions-with-preview service ids-array)]
+       (response regions)))
+
    (GET "/:ids{[0-9\\,]+}/with-geo" [ids]
      (let [ids-array (map #(Integer/parseInt %) (str/split ids #","))
-           regions (regions/list-regions-with-geo service ids-array 0.02)]
+           regions (regions/list-regions-with-geo service ids-array 0.0)]
        (response regions)))))
 
 (defn regions-endpoint [{service :regions}]

@@ -63,7 +63,7 @@
                      (:position db/initial-position-and-zoom))
          :zoom (or
                  (:zoom @map-view)
-                 (+ 4 (:admin_level @current-region))
+                 (+ 4 (:admin-level @current-region))
                  (:zoom db/initial-position-and-zoom))
          :bbox (:bbox @current-region))))))
 

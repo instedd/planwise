@@ -75,9 +75,9 @@
                                         ; If the collection if valid for import
    :fields     nil
                                         ; Fields available for mapping to facility type
-   :type-field nil
+   :type-field nil})
                                         ; Field selected for mapping facility type
-   })
+
 
 (def initial-db
   {;; Navigation
@@ -110,7 +110,7 @@
     :current empty-project-viewmodel}
 
    ;; Regions
-   :regions {} ;; id => {:keys id name admin_level & geojson}
+   :regions {} ;; id => {:keys id name admin-level & geojson}
 
    ;; Datasets
    :datasets
@@ -124,11 +124,11 @@
                   :authorised?  nil
                                         ; Whether the user has authorised for
                                         ; Resourcemap access
-                  :collections  nil
+                  :collections  nil}
                                         ; Resourcemap collections
-                  }
-    :selected empty-datasets-selected
-    }
+
+    :selected empty-datasets-selected}
+
 
    ;; Playground related data
    :playground {:map-view initial-position-and-zoom

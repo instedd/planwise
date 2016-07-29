@@ -14,30 +14,26 @@
    db))
 
 (register-handler
- :regions/regions-loaded
+ :regions/load-regions-with-preview
  in-regions
-  (fn [db [_ regions-data]]
-    (reduce
-      (fn [db {id :id :as region}]
-        ; Do not overwrite regions with geojson already loaded
-        (if-not (get-in db [id :geojson])
-          (assoc db id region)
-          db))
-      db regions-data)))
+ (fn [db [_ region-ids]]
+   (let [missing-region-ids (remove #(get-in db [% :preview-geojson]) region-ids)]
+     (api/load-regions-with-preview missing-region-ids :regions/regions-loaded))
+   db))
 
 (register-handler
  :regions/load-regions-with-geo
  in-regions
  (fn [db [_ region-ids]]
    (let [missing-region-ids (remove #(get-in db [% :geojson]) region-ids)]
-     (api/load-regions-with-geo missing-region-ids :regions/regions-with-geo-loaded))
+     (api/load-regions-with-geo missing-region-ids :regions/regions-loaded))
    db))
 
 (register-handler
- :regions/regions-with-geo-loaded
+ :regions/regions-loaded
  in-regions
   (fn [db [_ regions-data]]
     (reduce
       (fn [db {id :id :as region}]
-        (assoc db id region))
+        (update db id #(merge % region)))
       db regions-data)))

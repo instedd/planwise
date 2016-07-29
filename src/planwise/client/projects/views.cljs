@@ -46,6 +46,7 @@
         regions (subscribe [:regions/list])
         new-project-goal (r/atom "")
         new-project-region-id (r/atom (:id (first @regions)))
+        _ (dispatch [:regions/load-regions-with-geo [@new-project-region-id]])
         map-preview-zoom (r/atom 5)
         map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
     (fn []
@@ -117,7 +118,7 @@
                  (str (or facilities-targeted 0) " / " (or facilities-total 0)))])
 
 (defn project-card [{:keys [id goal region-id region-name stats] :as project}]
-  (let [region-geo (subscribe [:regions/geojson region-id])]
+  (let [region-geo (subscribe [:regions/preview-geojson region-id])]
     (fn [{:keys [id goal region-id region-name stats] :as project}]
       [:a {::href (routes/project-facilities project)}
         [:div.project-card

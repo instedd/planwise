@@ -3,13 +3,19 @@
             [clojure.string :as str]
             [planwise.client.api :refer [json-request]]))
 
+(defn load-regions [& handlers]
+  (GET
+    "/api/regions/"
+    (json-request {} handlers)))
+
+(defn load-regions-with-preview [ids & handlers]
+  (if-not (empty? ids)
+    (GET
+      (str "/api/regions/" (str/join "," ids) "/with-preview")
+      (json-request {} handlers))))
+
 (defn load-regions-with-geo [ids & handlers]
   (if-not (empty? ids)
     (GET
       (str "/api/regions/" (str/join "," ids) "/with-geo")
       (json-request {} handlers))))
-
-(defn load-regions [& handlers]
-  (GET
-    "/api/regions/"
-    (json-request {} handlers)))

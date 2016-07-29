@@ -5,7 +5,12 @@
 (register-sub
  :regions/list
  (fn [db [_]]
-   (reaction (sort-by (juxt :admin_level :name) (vals (:regions @db))))))
+   (reaction (sort-by (juxt :admin-level :name) (vals (:regions @db))))))
+
+(register-sub
+ :regions/preview-geojson
+ (fn [db [_ region-id]]
+   (reaction (get-in @db [:regions region-id :preview-geojson]))))
 
 (register-sub
  :regions/geojson
