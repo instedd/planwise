@@ -110,7 +110,7 @@
     :current empty-project-viewmodel}
 
    ;; Regions
-   :regions {} ;; id => {:keys id name admin_level & geojson}
+   :regions {} ;; id => {:keys id name admin-level & geojson}
 
    ;; Datasets
    :datasets
