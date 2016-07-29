@@ -75,9 +75,9 @@
                                         ; If the collection if valid for import
    :fields     nil
                                         ; Fields available for mapping to facility type
-   :type-field nil
+   :type-field nil})
                                         ; Field selected for mapping facility type
-   })
+
 
 (def initial-db
   {;; Navigation
@@ -124,11 +124,11 @@
                   :authorised?  nil
                                         ; Whether the user has authorised for
                                         ; Resourcemap access
-                  :collections  nil
+                  :collections  nil}
                                         ; Resourcemap collections
-                  }
-    :selected empty-datasets-selected
-    }
+
+    :selected empty-datasets-selected}
+
 
    ;; Playground related data
    :playground {:map-view initial-position-and-zoom
