@@ -255,58 +255,54 @@
         map-bbox (subscribe [:projects/map-view :bbox])
         map-geojson (subscribe [:projects/map-geojson])]
     (fn [project-id selected-tab]
-      (let [points (map (fn [fac] [(fac :lat) (fac :lon)]) @facilities)]
-        (cond
-          (#{:demographics
-             :facilities
-             :transport}
-           selected-tab)
-          [:div
-           [sidebar-section selected-tab]
-           [:div.map-container
-            (->> [map-widget
-                  {:position @map-position
-                   :zoom @map-zoom
-                   :min-zoom 5
-                   :on-position-changed
-                   #(dispatch [:projects/update-position %])
-                   :on-zoom-changed
-                   #(dispatch [:projects/update-zoom %])}
+      (cond
+        (#{:demographics
+           :facilities
+           :transport}
+         selected-tab)
+        [:div
+         [sidebar-section selected-tab]
+         [:div.map-container
+          (->> [map-widget
+                {:position @map-position
+                 :zoom @map-zoom
+                 :min-zoom 5
+                 :on-position-changed
+                 #(dispatch [:projects/update-position %])
+                 :on-zoom-changed
+                 #(dispatch [:projects/update-zoom %])}
 
-                  ;; Base tile layer
-                  gray-base-tile-layer
-                  ;; Markers with filtered facilities
-                  (when (#{:facilities :transport} selected-tab)
-                    [:point-layer {:points points
-                                   :radius 4
-                                   :color styles/black
-                                   :opacity 0.8
-                                   :weight 1
-                                   :fillOpacity 0.4}])
-                  ;; Demographics tile layer
-                  [:tile-layer {:url config/demo-tile-url
-                                :opacity 0.3}]
-                  ;; Boundaries of working region
-                  (if @map-geojson
-                    [:geojson-layer {:data @map-geojson
-                                     :color styles/green
-                                     :fit-bounds true
-                                     :fillOpacity 0.1
-                                     :weight 0}])
-                  ;; Isochrone for selected transport
-                  (when (and (seq @isochrones) (= :transport selected-tab))
-                    [:geojson-layer {:data @isochrones
-                                     :fillOpacity 1
-                                     :weight 2
-                                     :color styles/green
-                                     :group {:opacity 0.4}}])]
+                ;; Base tile layer
+                gray-base-tile-layer
+                ;; Markers with filtered facilities
+                (when (#{:facilities :transport} selected-tab)
+                  [:marker-layer {:points @facilities
+                                  :icon-fn (constantly "circle-marker")
+                                  :popup-fn #(str (:name %) "<br/>" (:type %))}])
+                ;; Demographics tile layer
+                [:tile-layer {:url config/demo-tile-url
+                              :opacity 0.3}]
+                ;; Boundaries of working region
+                (if @map-geojson
+                  [:geojson-layer {:data @map-geojson
+                                   :color styles/green
+                                   :fit-bounds true
+                                   :fillOpacity 0.1
+                                   :weight 0}])
+                ;; Isochrone for selected transport
+                (when (and (seq @isochrones) (= :transport selected-tab))
+                  [:geojson-layer {:data @isochrones
+                                   :fillOpacity 1
+                                   :weight 2
+                                   :color styles/green
+                                   :group {:opacity 0.4}}])]
 
-                 ;; Filter out nils so leaflet/map-widget doesn't get confused
-                 (filter some?)
-                 vec)]]
-          (= :scenarios selected-tab)
-          [:div
-           [:h1 "Scenarios"]])))))
+               ;; Filter out nils so leaflet/map-widget doesn't get confused
+               (filter some?)
+               vec)]]
+        (= :scenarios selected-tab)
+        [:div
+         [:h1 "Scenarios"]]))))
 
 (defn project-view []
   (let [page-params (subscribe [:page-params])
