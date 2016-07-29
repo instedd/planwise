@@ -1,5 +1,6 @@
 (ns planwise.endpoint.routing-test
   (:require [planwise.endpoint.routing :as routing]
+            [planwise.boundary.routing]
             [ring.middleware.params :refer [wrap-params]]
             [buddy.auth.middleware :refer [wrap-authorization]]
             [buddy.auth.backends :as backends]
