@@ -46,6 +46,7 @@
         regions (subscribe [:regions/list])
         new-project-goal (r/atom "")
         new-project-region-id (r/atom (:id (first @regions)))
+        _ (dispatch [:regions/load-regions-with-geo [@new-project-region-id]])
         map-preview-zoom (r/atom 5)
         map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
     (fn []
