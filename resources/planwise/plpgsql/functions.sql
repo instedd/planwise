@@ -22,7 +22,7 @@ returns void as $$
 declare
   from_cost integer;
   to_cost integer;
-  f_row facilities%rowtype;
+  f_row record;
   facility_count integer;
   facility_index integer;
 begin

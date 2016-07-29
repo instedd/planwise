@@ -32,11 +32,12 @@
   (if-let [cmd (first args)]
     (let [system (new-system config)
           system (component/start system)]
+      (println "Loading SQL functions into database")
+      (load-sql-functions system)
+      (println "Running migrations")
       (case cmd
         "migrate" (migrate (:ragtime system))
         "rollback" (if-let [target (second args)]
                      (rollback (:ragtime system) target)
-                     (rollback (:ragtime system))))
-      (println "Loading SQL functions into database")
-      (load-sql-functions system))
+                     (rollback (:ragtime system)))))
     (println "Run DB command with either migrate or rollback")))
