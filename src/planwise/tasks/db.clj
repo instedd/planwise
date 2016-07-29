@@ -1,6 +1,7 @@
 (ns planwise.tasks.db
   (:require [clojure.java.io :as io]
             [clojure.java.jdbc :as jdbc]
+            [resauce.core :as resauce]
             [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
             [duct.component.ragtime :refer [ragtime migrate rollback]]
@@ -9,6 +10,7 @@
             [planwise.config :as config])
   (:gen-class))
 
+(timbre/refer-timbre)
 
 (def config
   (meta-merge config/defaults
@@ -23,9 +25,13 @@
 
 (defn load-sql-functions
   [system]
-  (let [sql-source (-> (io/resource "planwise/plpgsql/functions.sql")
-                       slurp)]
-    (jdbc/execute! (:spec (:db system)) sql-source)))
+  (doseq [source (resauce/resource-dir "planwise/plpgsql")]
+    (try
+      (let [sql-source (slurp source)]
+        (jdbc/execute! (:spec (:db system)) sql-source))
+      (catch java.sql.SQLException e
+        (fatal "Error loading SQL functions from " (str source))
+        (throw e)))))
 
 (defn -main [& args]
   (timbre/set-level! :warn)
