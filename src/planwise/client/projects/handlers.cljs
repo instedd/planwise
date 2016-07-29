@@ -43,7 +43,7 @@
                          (map :region-id)
                          (remove nil?)
                          (set))]
-     (dispatch [:regions/load-regions-with-geo region-ids])
+     (dispatch [:regions/load-regions-with-preview region-ids])
      (assoc db
             :view-state :list
             :list projects))))
