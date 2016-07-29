@@ -11,8 +11,8 @@
 (defrecord MigrationRunner [db ragtime]
   component/Lifecycle
   (start [component]
-    (migrate (:ragtime component))
     (load-sql-functions component)
+    (migrate (:ragtime component))
     component)
   (stop [component]
     component))
