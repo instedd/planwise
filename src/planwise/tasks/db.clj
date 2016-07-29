@@ -1,5 +1,6 @@
 (ns planwise.tasks.db
   (:require [clojure.java.io :as io]
+            [clojure.java.jdbc :as jdbc]
             [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
             [duct.component.ragtime :refer [ragtime migrate rollback]]
@@ -15,10 +16,17 @@
 
 (defn new-system [config]
   (-> (component/system-map
-       :db (hikaricp (:db config))
+       :db         (hikaricp (:db config))
        :ragtime    (ragtime {:resource-path "migrations"}))
       (component/system-using
-        {:ragtime    [:db]})))
+        {:ragtime  [:db]})))
+
+(defn load-sql-functions
+  [system]
+  (let [sql-source (-> (io/resource "planwise/plpgsql/functions.sql")
+                       slurp)]
+    (println "Loading SQL functions into database")
+    (jdbc/execute! (:spec (:db system)) sql-source)))
 
 (defn -main [& args]
   (timbre/set-level! :warn)
@@ -29,5 +37,6 @@
         "migrate" (migrate (:ragtime system))
         "rollback" (if-let [target (second args)]
                      (rollback (:ragtime system) target)
-                     (rollback (:ragtime system)))))
+                     (rollback (:ragtime system))))
+      (load-sql-functions system))
     (println "Run DB command with either migrate or rollback")))

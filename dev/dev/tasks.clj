@@ -4,7 +4,8 @@
             [eftest.runner :as eftest]
             [duct.component.figwheel :as figwheel]
             [dev.sass :as sass]
-            [reloaded.repl :refer [system]]))
+            [reloaded.repl :refer [system]]
+            [planwise.tasks.db :refer [load-sql-functions]]))
 
 (defn setup []
   (gen/locals))
@@ -27,3 +28,6 @@
 (defn rebuild-css []
   (sass/rebuild (:sass system))
   (figwheel/refresh-css (:figwheel system)))
+
+(defn load-sql []
+  (load-sql-functions system))
