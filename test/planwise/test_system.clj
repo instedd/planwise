@@ -1,5 +1,6 @@
 (ns planwise.test-system
   (:require [com.stuartsierra.component :as component]
+            [planwise.tasks.db :refer [load-sql-functions]]
             [duct.component.ragtime :refer [ragtime migrate rollback]]
             [fixtures.adapters.jdbc :refer [jdbc-adapter]]
             [fixtures.component :refer [fixtures]]
@@ -11,6 +12,7 @@
   component/Lifecycle
   (start [component]
     (migrate (:ragtime component))
+    (load-sql-functions component)
     component)
   (stop [component]
     component))

@@ -25,7 +25,6 @@
   [system]
   (let [sql-source (-> (io/resource "planwise/plpgsql/functions.sql")
                        slurp)]
-    (println "Loading SQL functions into database")
     (jdbc/execute! (:spec (:db system)) sql-source)))
 
 (defn -main [& args]
@@ -38,5 +37,6 @@
         "rollback" (if-let [target (second args)]
                      (rollback (:ragtime system) target)
                      (rollback (:ragtime system))))
+      (println "Loading SQL functions into database")
       (load-sql-functions system))
     (println "Run DB command with either migrate or rollback")))
