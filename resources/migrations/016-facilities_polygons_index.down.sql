@@ -1,0 +1,1 @@
+DROP INDEX facilities_polygons_facility_method_threshold;
