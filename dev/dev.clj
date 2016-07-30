@@ -8,7 +8,7 @@
             [com.stuartsierra.component :as component]
             [duct.generate :as gen]
             [meta-merge.core :refer [meta-merge]]
-            [reloaded.repl :refer [system init start stop go reset]]
+            [reloaded.repl :refer [system init start stop go reset reset-all]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace]]
             [duct.component.figwheel :as figwheel]
             [duct.component.ragtime :refer [ragtime migrate rollback]]
@@ -33,6 +33,7 @@
    :figwheel
    {:css-dirs ["resources/planwise/public/css"
                "target/sass-repl"]
+    :reload-clj-files false
     :builds   [{:source-paths ["src" "dev"]
                 :build-options
                 {:optimizations :none
