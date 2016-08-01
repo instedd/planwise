@@ -1,0 +1,17 @@
+#! /bin/bash
+
+echo "Rasterizing regions"
+mkdir -p data/rasters/$COUNTRY/
+REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions;')"
+
+for id in $REGION_IDS; do
+  echo " Rasterizing ${id}"
+  TARGET=data/rasters/${id}-mask.tif
+  if [[ ! -e $TARGET ]]; then
+    gdal_rasterize -q -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+      -ot byte -a_nodata 0 -burn 255 \
+      -sql "SELECT the_geom FROM regions WHERE id = ${id};" \
+      -tr 0.0008333 0.0008333 \
+      PG:dbname=routing $TARGET
+  fi;
+done;
