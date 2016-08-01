@@ -1,0 +1,27 @@
+#! /bin/bash
+
+echo "Precalculating population count per region"
+REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions WHERE total_population IS NULL;')"
+POPULATION_FILE="data/KEN_popmap15_v2b.tif"
+
+mkdir -p data/populations
+
+for id in $REGION_IDS; do
+  TARGET=data/populations/${id}-pop.tif
+  if [[ ! -e $TARGET ]]; then
+    echo " Warping population for ${id}"
+    gdalwarp -q \
+      -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+      -crop_to_cutline \
+      -cutline PG:dbname=routing \
+      -csql "SELECT the_geom FROM regions WHERE id = ${id};" \
+      $POPULATION_FILE $TARGET
+  fi;
+
+  echo " Counting population for ${id}"
+  POPULATION_COUNT=$(cpp/count-population $TARGET)
+
+  echo " Updating population for ${id}"
+  psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A \
+    -c "UPDATE regions SET total_population = ${POPULATION_COUNT} WHERE id = ${id}";
+done;

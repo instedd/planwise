@@ -19,11 +19,15 @@ void closeRaster(GDALDataset* rasterDataSet) {
   GDALClose(rasterDataSet);
 };
 
-int main() {
+int main(int argc, char *argv[]) {
   GDALAllRegister();
 
-  GDALDataset* dataset = openRaster("../mapserver/data/KEN_popmap15_v2b.tif");
+  if (argc < 1) {
+    std::cout << "Usage: count-population RASTERFILE";
+    exit(1);
+  }
 
+  GDALDataset* dataset = openRaster(argv[1]);
   GDALRasterBand* band = dataset->GetRasterBand(1);
 
   CPLAssert(band->GetRasterDataType() == GDT_Float32);
@@ -64,5 +68,5 @@ int main() {
     }
   }
 
-  std::cout << std::fixed << acum << std::endl;
+  std::cout << std::fixed << acum;
 }
