@@ -7,7 +7,11 @@
                                              bbox-center]]
             [planwise.client.styles :as styles]
             [planwise.client.routes :as routes]
-            [planwise.client.common :as common]
+            [planwise.client.utils :as utils]
+            [planwise.client.components.common :as common]
+            [planwise.client.components.nav :as nav]
+            [planwise.client.components.progress-bar :as progress-bar]
+            [planwise.client.components.filters :as filters]
             [planwise.client.config :as config]
             [planwise.client.projects.db :as db]
             [clojure.string :as str]
@@ -24,7 +28,7 @@
   (let [search-string (subscribe [:projects/search-string])]
     (fn [projects-count show-new]
       [:div.search-box
-       [:div (common/pluralize projects-count "project")]
+       [:div (utils/pluralize projects-count "project")]
        [:input
         {:type "search"
          :placeholder "Search projects..."
@@ -56,7 +60,7 @@
                               27 (cancel-fn)
                               nil)]
         [:form.dialog.new-project {:on-key-down key-handler-fn
-                                   :on-submit (common/prevent-default
+                                   :on-submit (utils/prevent-default
                                                 #(dispatch [:projects/create-project {:goal @new-project-goal, :region-id @new-project-region-id}]))}
          [:div.title
           [:h1 "New Project"]
@@ -170,10 +174,10 @@
   [:div.project-header
    [:h2 project-goal]
    [:nav
-    [common/ul-menu (project-tab-items project-id) selected-tab]
+    [nav/ul-menu (project-tab-items project-id) selected-tab]
     [:div
       [:a
-        {:href "#" :on-click (common/with-confirm #(dispatch [:projects/delete-project project-id]) "Are you sure you want to delete this project?")}
+        {:href "#" :on-click (utils/with-confirm #(dispatch [:projects/delete-project project-id]) "Are you sure you want to delete this project?")}
         "Delete project"]]]])
 
 (defn transport-filters []
@@ -210,25 +214,25 @@
           [:p
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
-           [common/progress-bar filter-count filter-total]]]
+           [progress-bar/progress-bar filter-count filter-total]]]
 
          [:fieldset
           [:legend "Type"]
-          (common/filter-checkboxes
+          (filters/filter-checkboxes
            {:options @facility-types
             :value (:type @filters)
             :toggle-fn (toggle-cons-fn :type)})]
 
          #_[:fieldset
             [:legend "Ownership"]
-            (common/filter-checkboxes
+            (filters/filter-checkboxes
              {:options @facility-ownerships
               :value (:ownership @filters)
               :toggle-fn (toggle-cons-fn :ownership)})]
 
          #_[:fieldset
             [:legend "Services"]
-            (common/filter-checkboxes
+            (filters/filter-checkboxes
              {:options @facility-services
               :value (:services @filters)
               :toggle-fn (toggle-cons-fn :services)})]]))))

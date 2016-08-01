@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [subscribe dispatch]]
             [planwise.client.config :as config]
             [planwise.client.routes :as routes]
-            [planwise.client.common :as common]
+            [planwise.client.components.nav :as nav]
             [planwise.client.playground.views :as playground]
             [planwise.client.projects.views :as projects]
             [planwise.client.datasets.views :as datasets]))
@@ -23,7 +23,7 @@
         [:header
          [:a.logo {:href (routes/home)}
           [:h1 "PlanWise"]]
-         [:nav [common/ul-menu nav-items active]]
+         [:nav [nav/ul-menu nav-items active]]
          [:div.user-info
           @current-user-email]]))))
 

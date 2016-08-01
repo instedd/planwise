@@ -2,7 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [planwise.client.playground.db :as db]
             [planwise.client.playground.api :as api]
-            [planwise.client.common :refer [debounced async-handle]]
+            [planwise.client.utils :refer [debounced]]
             [re-frame.core :refer [dispatch register-handler path]]))
 
 (defn fetch-isochrone* [node-id threshold & [algorithm]]
