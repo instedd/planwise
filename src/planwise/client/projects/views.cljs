@@ -9,7 +9,7 @@
             [planwise.client.routes :as routes]
             [planwise.client.common :as common]
             [planwise.client.config :as config]
-            [planwise.client.db :as db]
+            [planwise.client.projects.db :as db]
             [clojure.string :as str]
             [reagent.core :as r]
             [leaflet.core :refer [map-widget]]))

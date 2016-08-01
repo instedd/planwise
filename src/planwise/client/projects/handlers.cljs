@@ -4,7 +4,7 @@
             [planwise.client.routes :as routes]
             [planwise.client.projects.api :as api]
             [clojure.string :refer [split capitalize join]]
-            [planwise.client.db :as db]))
+            [planwise.client.projects.db :as db]))
 
 (def in-projects (path [:projects]))
 (def in-current-project (path [:projects :current]))
@@ -89,7 +89,7 @@
      (assoc db
             :view-state :view
             :list (cons project-data (:list db))
-            :current (db/new-project-viewmodel project-data)))))
+            :current (db/new-viewmodel project-data)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Loading a project
@@ -122,7 +122,7 @@
    (api/load-project project-id with-data
                      :projects/project-loaded :projects/not-found)
    (assoc db :view-state :loading
-             :current db/empty-project-viewmodel)))
+             :current db/empty-viewmodel)))
 
 (register-handler
  :projects/not-found
@@ -137,7 +137,7 @@
   (fn [db [_ project-data]]
     (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
     (assoc db :view-state :view
-              :current (db/new-project-viewmodel project-data))))
+              :current (db/new-viewmodel project-data))))
 
 (register-handler
  :projects/delete-project
@@ -222,7 +222,7 @@
  :projects/project-updated
  in-current-project
  (fn [db [_ project]]
-   (db/update-project-viewmodel db project)))
+   (db/update-viewmodel db project)))
 
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers
