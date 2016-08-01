@@ -96,7 +96,7 @@
          [:div.actions
           [:button.primary
            {:type "submit"
-            :disabled (= @view-state :creating)}
+            :disabled (or (= @view-state :creating) (str/blank? @new-project-goal))}
            (if (= @view-state :creating)
              "Creating..."
              "Create")]
