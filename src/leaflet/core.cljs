@@ -46,9 +46,17 @@
           new-objects)))))
 
 
-(defn create-marker [[lat lon]]
-  (let [latLng (.latLng js/L lat lon)]
-    (.marker js/L latLng #js {:clickable false})))
+(defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn], :or {lat-fn :lat lon-fn :lon}}]
+  (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
+        icon   (if icon-fn
+                 (.divIcon js/L #js {:className (icon-fn point)})
+                 (js/L.Icon.Default.))
+        marker (.marker js/L latLng #js {:clickable true
+                                         :keyboard false
+                                         :icon icon})]
+    (if popup-fn
+      (.bindPopup marker (popup-fn point))
+      marker)))
 
 (defn create-point [[lat lon] attrs]
   (let [latLng (.latLng js/L lat lon)]
@@ -65,8 +73,9 @@
 
 (defmethod leaflet-layer :marker-layer [[_ props & children]]
   (let [layer (.layerGroup js/L)
-        points (:points props)]
-    (doseq [point points] (.addLayer layer (create-marker point)))
+        points (:points props)
+        attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn])]
+    (doseq [point points] (.addLayer layer (create-marker point attrs)))
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]

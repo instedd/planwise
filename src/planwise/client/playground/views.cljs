@@ -59,7 +59,9 @@
                             :weight 3
                             :fillOpacity 0.2
                             :opacity 0.5}]
-           [:marker-layer {:points points}]]]
+           [:marker-layer {:points points
+                           :lat-fn first
+                           :lon-fn last}]]]
          [:div.footer
           [coords-and-info {:lat (first position)
                             :lon (second position)
