@@ -1,145 +1,22 @@
 (ns planwise.client.projects.views
   (:require [re-frame.core :refer [subscribe dispatch]]
             [re-com.core :as rc]
-            [planwise.client.mapping :refer [default-base-tile-layer
-                                             gray-base-tile-layer
-                                             static-image
-                                             bbox-center]]
-            [planwise.client.styles :as styles]
-            [planwise.client.routes :as routes]
-            [planwise.client.utils :as utils]
-            [planwise.client.components.common :as common]
-            [planwise.client.components.nav :as nav]
-            [planwise.client.components.progress-bar :as progress-bar]
-            [planwise.client.components.filters :as filters]
-            [planwise.client.config :as config]
-            [planwise.client.projects.db :as db]
             [clojure.string :as str]
-            [reagent.core :as r]
-            [leaflet.core :refer [map-widget]]))
+            [leaflet.core :refer [map-widget]]
+            [planwise.client.mapping :refer [gray-base-tile-layer]]
+            [planwise.client.config :as config]
+            [planwise.client.styles :as styles]
+            [planwise.client.components.common :as common]
+            [planwise.client.projects.components.new-project
+             :refer [new-project-dialog]]
+            [planwise.client.projects.components.listing
+             :refer [search-box no-projects-view projects-list]]
+            [planwise.client.projects.components.header
+             :refer [header-section]]
+            [planwise.client.projects.components.sidebar
+             :refer [sidebar-section]]))
 
-(defn new-project-button []
-  [:button.primary
-   {:on-click
-    #(dispatch [:projects/begin-new-project])}
-   "New Project"])
-
-(defn search-box [projects-count show-new]
-  (let [search-string (subscribe [:projects/search-string])]
-    (fn [projects-count show-new]
-      [:div.search-box
-       [:div (utils/pluralize projects-count "project")]
-       [:input
-        {:type "search"
-         :placeholder "Search projects..."
-         :value @search-string
-         :on-change #(dispatch [:projects/search (-> % .-target .-value str)])}]
-       (if show-new
-         [new-project-button])])))
-
-(defn no-projects-view []
-  [:div.empty-list
-   [:img {:src "/images/empty-projects.png"}]
-   [:p "You have no projects yet"]
-   [:div
-    [new-project-button]]])
-
-
-(defn new-project-dialog []
-  (let [view-state (subscribe [:projects/view-state])
-        regions (subscribe [:regions/list])
-        new-project-goal (r/atom "")
-        new-project-region-id (r/atom (:id (first @regions)))
-        _ (dispatch [:regions/load-regions-with-geo [@new-project-region-id]])
-        map-preview-zoom (r/atom 5)
-        map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
-    (fn []
-      (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])
-            cancel-fn #(dispatch [:projects/cancel-new-project])
-            key-handler-fn #(case (.-which %)
-                              27 (cancel-fn)
-                              nil)]
-        [:form.dialog.new-project {:on-key-down key-handler-fn
-                                   :on-submit (utils/prevent-default
-                                                #(dispatch [:projects/create-project {:goal @new-project-goal, :region-id @new-project-region-id}]))}
-         [:div.title
-          [:h1 "New Project"]
-          [common/close-button {:on-click cancel-fn}]]
-         [:div.form-control
-          [:label "Goal"]
-          [:input {:type "text"
-                   :required true
-                   :autoFocus true
-                   :value @new-project-goal
-                   :placeholder "Describe your project's goal"
-                   :on-key-down key-handler-fn
-                   :on-change #(reset! new-project-goal (-> % .-target .-value str str/triml))}]]
-         [:div.form-control
-          [:label "Location"]
-          [rc/single-dropdown
-            :choices @regions
-            :label-fn :name
-            :filter-box? true
-            :on-change #(do (dispatch [:regions/load-regions-with-geo [%]]) (reset! new-project-region-id %))
-            :model new-project-region-id]
-          [map-widget { :position @map-preview-position
-                        :zoom @map-preview-zoom
-                        :on-position-changed #(reset! map-preview-position %)
-                        :on-zoom-changed #(reset! map-preview-zoom %)
-                        :width 500
-                        :height 300
-                        :controls []}
-           default-base-tile-layer
-           (if @selected-region-geojson
-             [:geojson-layer {:data @selected-region-geojson
-                              :fit-bounds true
-                              :color styles/orange
-                              :opacity 0.7
-                              :fillOpacity 0.3
-                              :weight 4}])]]
-         [:div.actions
-          [:button.primary
-           {:type "submit"
-            :disabled (or (= @view-state :creating) (str/blank? @new-project-goal))}
-           (if (= @view-state :creating)
-             "Creating..."
-             "Create")]
-          [:button.cancel
-           {:type "button"
-            :on-click cancel-fn}
-           "Cancel"]]]))))
-
-(defn project-stat [title stat]
-  [:div.stat
-   [:div.stat-title title]
-   [:div.stat-value stat]])
-
-
-(defn project-stats
-  [{:keys [facilities-total facilities-targeted]}]
-  [:div.project-stats
-   (project-stat "Target Facilities"
-                 (str (or facilities-targeted 0) " / " (or facilities-total 0)))])
-
-(defn project-card [{:keys [id goal region-id region-name stats] :as project}]
-  (let [region-geo (subscribe [:regions/preview-geojson region-id])]
-    (fn [{:keys [id goal region-id region-name stats] :as project}]
-      [:a {::href (routes/project-facilities project)}
-        [:div.project-card
-          [:div.project-card-content
-           [:h1 goal]
-           [:h2 (str "at " region-name)]
-           [project-stats stats]]
-          (if-not (str/blank? @region-geo)
-            [:img.map-preview {:src (static-image @region-geo)}])]])))
-
-(defn projects-list [projects]
-  [:ul.projects-list
-    (for [project projects]
-      [:li {:key (:id project)}
-        [project-card project]])])
-
-(defn list-view []
+(defn project-list-page []
   (let [view-state (subscribe [:projects/view-state])
         projects (subscribe [:projects/list])
         filtered-projects (subscribe [:projects/filtered-list])]
@@ -155,103 +32,7 @@
                                #(dispatch [:projects/cancel-new-project])}
           [new-project-dialog]])])))
 
-(defn project-tab-items [project-id]
-  (let [route-params {:id project-id}]
-    [#_{:item :demographics
-        :href (routes/project-demographics route-params)
-        :title "Demographics"}
-     {:item :facilities
-      :href (routes/project-facilities route-params)
-      :title "Facilities"}
-     {:item :transport
-      :href (routes/project-transport route-params)
-      :title "Transport Means"}
-     #_{:item :scenarios
-        :href (routes/project-scenarios route-params)
-        :title "Scenarios"}]))
-
-(defn header-section [project-id project-goal selected-tab]
-  [:div.project-header
-   [:h2 project-goal]
-   [:nav
-    [nav/ul-menu (project-tab-items project-id) selected-tab]
-    [:div
-      [:a
-        {:href "#" :on-click (utils/with-confirm #(dispatch [:projects/delete-project project-id]) "Are you sure you want to delete this project?")}
-        "Delete project"]]]])
-
-(defn transport-filters []
-  (let [transport-time (subscribe [:projects/transport-time])]
-    (fn []
-      [:div.sidebar-filters
-       [:div.filter-info
-        [:p "Indicate here the acceptable travel times to facilities. We will
-        use that to calculate who already has access to the services that you
-        are analyzing."]]
-
-       [:fieldset
-        [:legend "By car"]
-        [rc/single-dropdown
-         :choices (:time db/transport-definitions)
-         :label-fn :name
-         :on-change #(dispatch [:projects/set-transport-time %])
-         :model transport-time]]])))
-
-(defn facility-filters []
-  (let [facility-types (subscribe [:filter-definition :facility-type])
-        facility-ownerships (subscribe [:filter-definition :facility-ownership])
-        facility-services (subscribe [:filter-definition :facility-service])
-        filters (subscribe [:projects/facilities :filters])
-        filter-stats (subscribe [:projects/facilities :filter-stats])]
-    (fn []
-      (let [filter-count (:count @filter-stats)
-            filter-total (:total @filter-stats)
-            toggle-cons-fn (fn [field]
-                             #(dispatch [:projects/toggle-filter :facilities field %]))]
-        [:div.sidebar-filters
-         [:div.filter-info
-          [:p "Select the facilities that are satisfying the demand you are analyzing."]
-          [:p
-           [:div.small "Target / Total Facilities"]
-           [:div (str filter-count " / " filter-total)]
-           [progress-bar/progress-bar filter-count filter-total]]]
-
-         [:fieldset
-          [:legend "Type"]
-          (filters/filter-checkboxes
-           {:options @facility-types
-            :value (:type @filters)
-            :toggle-fn (toggle-cons-fn :type)})]
-
-         #_[:fieldset
-            [:legend "Ownership"]
-            (filters/filter-checkboxes
-             {:options @facility-ownerships
-              :value (:ownership @filters)
-              :toggle-fn (toggle-cons-fn :ownership)})]
-
-         #_[:fieldset
-            [:legend "Services"]
-            (filters/filter-checkboxes
-             {:options @facility-services
-              :value (:services @filters)
-              :toggle-fn (toggle-cons-fn :services)})]]))))
-
-(defn demographics-filters []
-  [:div.sidebar-filters
-   [:div.filter-info
-    [:p "Filter here the population you are analyzing."]]])
-
-(defn sidebar-section [selected-tab]
-  [:aside (condp = selected-tab
-           :demographics
-           [demographics-filters]
-           :facilities
-           [facility-filters]
-           :transport
-           [transport-filters])])
-
-(defn project-tab [project-id selected-tab]
+(defn- project-tab [project-id selected-tab]
   (let [facilities (subscribe [:projects/facilities :facilities])
         isochrones (subscribe [:projects/facilities :isochrones])
         map-position (subscribe [:projects/map-view :position])
@@ -308,7 +89,7 @@
         [:div
          [:h1 "Scenarios"]]))))
 
-(defn project-view []
+(defn- project-view []
   (let [page-params (subscribe [:page-params])
         current-project (subscribe [:projects/current-data])]
     (fn []

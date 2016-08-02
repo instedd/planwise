@@ -30,7 +30,7 @@
 (defmulti content-pane identity)
 
 (defmethod content-pane :home []
-  [projects/list-view])
+  [projects/project-list-page])
 
 (defmethod content-pane :projects []
   [projects/project-page])
