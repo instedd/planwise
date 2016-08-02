@@ -13,11 +13,11 @@ ADD scripts/preprocess-isochrones /app/scripts/preprocess-isochrones
 ADD scripts/load-regions /app/scripts/load-regions
 
 # Add uberjar with app
-ADD ./target/uberjar/planwise-0.1.0-SNAPSHOT-standalone.jar /app/lib/
-ENV JAR_PATH /app/lib/planwise-0.1.0-SNAPSHOT-standalone.jar
+ADD ./target/uberjar/planwise-0.4.0-standalone.jar /app/lib/
+ENV JAR_PATH /app/lib/planwise-0.4.0-standalone.jar
 
 # Exposed port
 ENV PORT 80
 EXPOSE $PORT
 
-CMD ["java", "-jar", "/app/lib/planwise-0.1.0-SNAPSHOT-standalone.jar"]
+CMD ["java", "-jar", "/app/lib/planwise-0.4.0-standalone.jar"]
