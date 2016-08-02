@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Added
+- Facilities on the map have an associated popup showing the facility's name and
+  type.
+
 ## [0.4.0] - 2016-08-02
 ### The "Good Enough" Release
 
