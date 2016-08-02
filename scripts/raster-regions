@@ -1,12 +1,17 @@
 #! /bin/bash
 
+# Creates a byte-sized raster file data/regions/REGIONID-mask.tif,
+# with a mask of each region, ie a value of 255 for the region
+
+set -euo pipefail
+
 echo "Rasterizing regions"
-mkdir -p data/rasters/$COUNTRY/
+mkdir -p data/regions/
 REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions;')"
 
 for id in $REGION_IDS; do
   echo " Rasterizing ${id}"
-  TARGET=data/rasters/${id}-mask.tif
+  TARGET=data/regions/${id}-mask.tif
   if [[ ! -e $TARGET ]]; then
     gdal_rasterize -q -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -ot byte -a_nodata 0 -burn 255 \

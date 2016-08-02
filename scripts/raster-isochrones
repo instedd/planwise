@@ -1,0 +1,50 @@
+#! /bin/bash
+set -euo pipefail
+
+# Creates byte-sized raster files data/isochrones/REGIONID/FACILITY_POLYGON_ID.tif,
+# with a 255 value for each facility polygon, intersected with the specified REGION,
+# with the same size and extent as the REGION raster
+
+function query {
+  psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c "$1";
+}
+
+echo "Rasterizing isochrones per region"
+mkdir -p data/isochrones/
+REGION_IDS="$(query 'SELECT id FROM regions ORDER BY id;')"
+
+for regionid in $REGION_IDS; do
+  echo " Region ${regionid}"
+  mkdir -p data/isochrones/${regionid}
+
+  REGION_FILE=data/regions/${regionid}-mask.tif
+  if [[ ! -e $REGION_FILE ]]; then
+    echo " ERROR: Region raster mask ${REGION_FILE} not found";
+    exit 1;
+  fi;
+
+  QUERY="WITH region AS (SELECT regions.the_geom AS region_geom FROM regions WHERE regions.id = ${regionid})
+  SELECT facilities_polygons.id
+  FROM facilities INNER JOIN facilities_polygons
+  ON facilities.id = facilities_polygons.facility_id
+  WHERE ST_Intersects(facilities_polygons.the_geom, (SELECT region.region_geom FROM region))
+  ORDER BY facilities_polygons.id;"
+
+  FACILITY_POLYGON_IDS="$(query "$QUERY")"
+
+  for id in $FACILITY_POLYGON_IDS; do
+    echo "  Checking polygon ${id}"
+    TARGET=data/isochrones/${regionid}/${id}.tif
+
+    if [[ ! -e $TARGET ]]; then
+      echo "  Rasterising facility polygon ${id}"
+      gdalwarp -q \
+        -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+        -cutline PG:dbname=routing \
+        -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${id};" \
+        $REGION_FILE $TARGET
+    fi;
+
+  done;
+
+done;

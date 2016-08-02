@@ -1,5 +1,8 @@
 #! /bin/bash
 
+# Creates a raster file data/populations/REGIONID-pop.tif with the population values
+# of each REGIONID in the regions table
+
 echo "Precalculating population count per region"
 REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions WHERE total_population IS NULL;')"
 POPULATION_FILE="data/KEN_popmap15_v2b.tif"
