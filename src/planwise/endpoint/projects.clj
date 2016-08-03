@@ -33,12 +33,12 @@
        (response projects)))
 
    (GET "/:id" [id with]
-     (if-let [project (projects/get-project service (Integer/parseInt id))]
+     (if-let [project (projects/get-project service (Integer. id))]
        (response (assoc-extra-data (keyword with) project facilities))
        (not-found {:error "Project not found"})))
 
    (PUT "/:id" [id filters with]
-     (let [id (Integer/parseInt id)
+     (let [id (Integer. id)
            filters (keywordize-keys filters)]
        (if-let [project (projects/update-project service {:id id :filters filters})]
          (response (assoc-extra-data (keyword with) project facilities))
@@ -51,7 +51,7 @@
        (response (projects/create-project service {:goal goal, :region-id region-id}))))
 
    (DELETE "/:id" [id]
-     (if-let [project (projects/delete-project service (Integer/parseInt id))]
+     (if-let [project (projects/delete-project service (Integer. id))]
        (response {:deleted id})
        (not-found {:error "Project not found"})))))
 

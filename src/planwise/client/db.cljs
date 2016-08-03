@@ -3,35 +3,20 @@
             [planwise.client.projects.db :as projects]
             [planwise.client.playground.db :as playground]))
 
-(def sample-filters
-  {:facility-type [{:value 1 :label "Dispensary"}
-                   {:value 2 :label "Health Center"}
-                   {:value 3 :label "Hospital"}
-                   {:value 4 :label "General Hospital"}]
-
-   :facility-ownership ["MOH"
-                        "Faith Based Organization"
-                        "NGO"
-                        "Private"]
-
-   :facility-service ["Audiology"
-                      "Cardiac Services Unit"
-                      "Diabetes and Endocrinology"
-                      "Haematology"
-                      "BEmONC"
-                      "CEmONC"]})
-
 (def initial-db
-  {;; Navigation
+  {;; Navigation (current page)
    :current-page        :home
+   ;; Map of navigation params (ie. :page, :id, :section, etc)
+   :page-params         {}
 
    ;; Filter definitions - these are replaced by requests to the server
-   :filter-definitions  sample-filters
+   ;; {:filter-name [{:id 123 :label "One, two, three"}]}
+   :filter-definitions  {}
 
    ;; Projects
    :projects            projects/initial-db
 
-   ;; Regions id => {:keys id name admin-level & geojson}
+   ;; Regions id => {:keys [id name admin-level & [geojson preview-geojson]]}
    :regions             {}
 
    ;; Datasets
