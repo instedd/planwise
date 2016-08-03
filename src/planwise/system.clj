@@ -84,8 +84,7 @@
                         [wrap-authentication :auth-backend]
                         [wrap-json-params]
                         [wrap-json-response]
-                        [wrap-defaults :api-defaults]
-                        [wrap-gzip]]
+                        [wrap-defaults :api-defaults]]
          :api-defaults (meta-merge api-defaults {:params {:nested true}})}
    :api-auth-backend {:unauthorized-handler api-unauthorized-handler}
    :app {:middleware   [[wrap-not-found :not-found]
@@ -93,8 +92,7 @@
                         [wrap-resource :jar-resources]
                         [wrap-authorization :auth-backend]
                         [wrap-authentication :auth-backend]
-                        [wrap-defaults :app-defaults]
-                        [wrap-gzip]]
+                        [wrap-defaults :app-defaults]]
          :not-found    (io/resource "planwise/errors/404.html")
          :jar-resources "public/assets"
          :app-defaults (meta-merge site-defaults
@@ -104,7 +102,8 @@
                                               :cookie-name "planwise-session"}})}
    :app-auth-backend {:unauthorized-handler app-unauthorized-handler}
 
-   :webapp {:middleware [[wrap-route-aliases :aliases]]
+   :webapp {:middleware [[wrap-gzip]
+                         [wrap-route-aliases :aliases]]
             :aliases    {}
 
             ; Vector order matters, api handler is evaluated first
