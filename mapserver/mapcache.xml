@@ -21,7 +21,7 @@
     </getmap>
   </source>
 
-  <!-- Define kenya tileset to be consumed via gmaps endpoint -->
+  <!-- Define kenya population tileset to be consumed via gmaps endpoint -->
   <tileset name="kenya">
     <source>kenyasource</source>
     <cache>disk</cache>
@@ -29,15 +29,32 @@
     <format>PNG</format>
     <metatile>5 5</metatile>
     <metabuffer>10</metabuffer>
-    <expires>31536000</expires><!-- Expire in 1 year -->
+    <expire>31536000</expire><!-- Expire in 1 year -->
+  </tileset>
+
+  <!-- Define dynamic demand dataset to be consumed via WMS endpoint -->
+  <tileset name="kenyademand">
+    <source>kenyasource</source>
+    <cache>disk</cache>
+    <grid>GoogleMapsCompatible</grid> <!-- EPSG:3857 -->
+    <format>PNG</format>
+    <metatile>5 5</metatile>
+    <metabuffer>10</metabuffer>
+    <expire>3600</expire><!-- Expire in 1 hour -->
+    <auto_expire>3600</auto_expire><!-- Expire in 1 hour -->
+    <dimensions>
+      <dimension type="regex" name="DATAFILE" default="KEN_popmap15_v2b">^[A-Za-z0-9_]+$</dimension>
+    </dimensions>
   </tileset>
 
   <!-- Return PNG by default -->
   <default_format>PNG</default_format>
 
-  <!-- Expose both gmaps and tms interfaces; leaflet should use gmaps -->
+  <!-- Expose both gmaps and tms interfaces for regular leaflet maps,
+       and wms for leaflet with support for dimensions -->
   <service type="gmaps" enabled="true"/>
   <service type="tms" enabled="true"/>
+  <service type="wms" enabled="true"/>
 
   <errors>report</errors>
   <lock_dir>/tmp</lock_dir>

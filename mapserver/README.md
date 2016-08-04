@@ -13,13 +13,22 @@ This will start a mapserver container and a mapcache container, mapped to ports 
 
 Make sure to add the following entry to your `profiles.clj` so your local instance loads tiles from your docker containers and not from the cloud:
 ```clojure
-:demo-tile-url "http://docker.local:5002/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png"
+:demo-tile-url "http://localhost:5002/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png"
 ```
 
-To query the mapserver directly, instead of the mapcache server, change it to:
+To query mapserver directly, instead of the mapcache server, change it to:
 ```clojure
-:demo-tile-url "http://docker.local:5002/mapserv?map=/etc/mapserver/kenya.map&mode=tile&layers=KenyaPopulation&tile={x}+{y}+{z}"
+:demo-tile-url "http://localhost:5001/mapserv?map=/etc/mapserver/kenya.map&mode=tile&layers=KenyaPopulation&tile={x}+{y}+{z}"
 ```
+
+To query mapserver at the WMS service, manually set the following in the `tile-layer` properties:
+```clojure
+:url "http://localhost:5001/mapserv?map=/etc/mapserver/kenya.map"
+:wms true
+:layers "KenyaPopulation"
+:format "image/png"
+```
+
 
 ### Data container
 
