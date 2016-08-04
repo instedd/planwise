@@ -1,6 +1,6 @@
 (ns planwise.util.ring
   (:require [ring.util.request :refer [request-url]]
-            [planwise.auth.ident :as ident])
+            [planwise.model.ident :as ident])
   (:import [java.net URL MalformedURLException]))
 
 (defn- url? [^String s]

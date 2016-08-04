@@ -4,7 +4,7 @@
             [clojure.string :as str]
             [cheshire.core :as json]
             [clj-http.client :as http]
-            [planwise.auth.ident :as ident]
+            [planwise.model.ident :as ident]
             [planwise.component.auth :as auth])
   (:import [java.net URL]))
 
