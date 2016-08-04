@@ -3,7 +3,8 @@
             [clojure.string :refer [capitalize]]
             [re-com.core :as rc]
             [planwise.client.config :as config]
-            [planwise.client.common :as common]))
+            [planwise.client.components.common :as common]
+            [planwise.client.utils :as utils]))
 
 (defn initialised?
   [state]
@@ -96,7 +97,7 @@
         [:div.dataset-header
          [:h2 "Facilities"]
          (if-not importing?
-           [:p "There are " [:b (common/pluralize @facility-count "facility" "facilities")] " in the system."]
+           [:p "There are " [:b (utils/pluralize @facility-count "facility" "facilities")] " in the system."]
            (let [[_ step progress] @raw-status
                  step (or step "Importing collection")]
              [:div

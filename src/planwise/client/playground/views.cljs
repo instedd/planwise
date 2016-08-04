@@ -1,8 +1,8 @@
 (ns planwise.client.playground.views
   (:require [leaflet.core :refer [map-widget]]
             [planwise.client.mapping :refer [default-base-tile-layer]]
-            [planwise.client.slider :refer [threshold-slider decimal-slider]]
-            [planwise.client.hud :refer [coords-and-info]]
+            [planwise.client.components.slider :refer [threshold-slider decimal-slider]]
+            [planwise.client.components.hud :refer [coords-and-info]]
             [re-frame.core :refer [subscribe dispatch]]))
 
 (defn playground-page []
