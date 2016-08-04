@@ -4,8 +4,11 @@
 
 (def Ident
   "User identity as found in the session cookie and JWE tokens"
-  {:user-id    s/Int
-   :user-email s/Str})
+  {:user-id              s/Int
+   :user-email           s/Str
+
+   ;; JWE tokens might include expiration information
+   (s/optional-key :exp) s/Int})
 
 ;; User identity related functions
 ;; The user identity is the user information carried around in the session
