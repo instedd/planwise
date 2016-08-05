@@ -44,7 +44,7 @@ void closeRaster(GDALDataset* rasterDataSet) {
   GDALClose(rasterDataSet);
 };
 
-long calculateDemand(std::string targetFilename, std::string demoFilename, float capacity, std::vector<std::string> facilities) {
+long calculateDemand(std::string targetFilename, std::string demoFilename, std::vector<std::string> facilities, std::vector<float> capacities) {
   GDALDataset* demoDataset = openRaster(demoFilename);
   GDALRasterBand* demoBand = demoDataset->GetRasterBand(1);
   CPLAssert(demoBand->GetRasterDataType() == GDT_Float32);
@@ -78,11 +78,11 @@ long calculateDemand(std::string targetFilename, std::string demoFilename, float
 
   float nodata = targetBand->GetNoDataValue();
 
-  for (std::vector<std::string>::iterator it = facilities.begin(); it != facilities.end(); ++it) {
+  for (int iFacility = 0; iFacility < facilities.size(); iFacility++) {
 #ifdef DEBUG
-    std::cerr << "Processing facility " << (*it) << std::endl;
+    std::cerr << "Processing facility " << facilities[iFacility] << std::endl;
 #endif
-    GDALDataset* facilityDataset = openRaster(*it);
+    GDALDataset* facilityDataset = openRaster(facilities[iFacility]);
     GDALRasterBand* facilityBand = facilityDataset->GetRasterBand(1);
     BYTE facilityNodata = facilityBand->GetNoDataValue();
 
@@ -120,10 +120,9 @@ long calculateDemand(std::string targetFilename, std::string demoFilename, float
       }
     }
 
-    // TODO: Unhardcode capacity
     // TODO: The actual capacity considered should be proportional to the
     // area of the isochrone that lands on this region
-    // float capacity = 5000.0;
+    float capacity = capacities[iFacility];
 
     // Each pixel under the isochrone will be multiplied by the proportion of
     // the unsatisfied demand that is satisfied by this facility.
@@ -208,15 +207,22 @@ int main(int argc, char *argv[]) {
   GDALAllRegister();
 
   if (argc < 5) {
-    std::cerr << "Usage: " << argv[0] << " TARGET.tif POPULATION.tif DEFAULTCAPACITY FACILITYMASK1.tif ... FACILITYMASKN.tif";
+    std::cerr << "Usage: " << argv[0] << " TARGET.tif POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
+      << std::endl << std::endl
+      << "Example:" << std::endl
+      << " " << argv[0] << "out.tif data/populations/REGIONID-pop.tif \\" << std::endl
+      << " data/isochrones/REGIONID/POLYGONID1.tif 500 \\" << std::endl
+      << " data/isochrones/REGIONID/POLYGONID2.tif 800" << std::endl;
     exit(1);
   }
 
   std::vector<std::string> facilities;
-  for (int i = 4; i < argc; i++) {
+  std::vector<float> capacities;
+  for (int i = 3; i < argc; i++) {
     facilities.push_back(argv[i]);
+    capacities.push_back(atof(argv[++i]));
   }
 
-  long unsatisifiedDemand = calculateDemand(argv[1], argv[2], atof(argv[3]), facilities);
+  long unsatisifiedDemand = calculateDemand(argv[1], argv[2], facilities, capacities);
   std::cout << unsatisifiedDemand << std::endl;;
 }
