@@ -29,7 +29,7 @@ begin
   facility_index := 1;
   for f_row in select * from facilities f loop
     RAISE NOTICE 'Processing facility % (%/%)', f_row.id, facility_index, facility_count;
-    select process_facility_isochrones(f_row.id, method, threshold_start, threshold_finish, threshold_jump);
+    perform process_facility_isochrones(f_row.id, method, threshold_start, threshold_finish, threshold_jump);
     facility_index := facility_index + 1;
   end loop;
 
@@ -58,7 +58,7 @@ $$ language plpgsql;
 
 -- generates the isochrone polygons for all thresholds for a single facility
 CREATE OR REPLACE FUNCTION process_facility_isochrones(f_id bigint, _method varchar, threshold_start integer, threshold_finish integer, threshold_jump integer)
-returns void as $$
+returns text as $$
 declare
   from_cost integer;
   to_cost integer;
@@ -75,8 +75,8 @@ begin
   facility_geom := (select the_geom from facilities where id = f_id);
   closest_node_geom := (select the_geom from ways_vertices_pgr where id = facility_node);
   IF ST_Distance(ST_GeogFromWKB(facility_geom), ST_GeogFromWKB(closest_node_geom)) > 1000 THEN
-    RAISE NOTICE 'Facility % wont be processed because its too far from the road network.', f_id;
-    RETURN;
+    RAISE NOTICE 'error: Facility % not processed, its too far from the road network.', f_id;
+    RETURN 'error: Facility ' || f_id || ' not processed, its too far from the road network.';
   END IF;
 
   insert into edges_agg_cost (
@@ -121,7 +121,7 @@ begin
         RAISE NOTICE 'Failed to calculate alpha shape for facility %', f_id;
       END;
     ELSE
-      RAISE EXCEPTION 'Method % unknown', _method USING HINT = 'Please use buffer or alpha-shape';
+      RETURN 'error: Method' || _method || ' unknown. Please use buffer or alpha-shape';
     END IF;
 
     from_cost      := to_cost;
@@ -133,6 +133,8 @@ begin
   -- Cannot drop the temp table when running the alpha shape algorithm because
   -- pgr holds a reference to it
   -- drop table edges_agg_cost;
+
+  RETURN 'ok';
 
 end;
 $$ language plpgsql;
