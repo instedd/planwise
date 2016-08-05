@@ -206,10 +206,12 @@
                                 :resmap
                                 :maps
                                 :globals]
-          :facilities-endpoint [:facilities]
+          :facilities-endpoint [:facilities
+                                :maps]
           :regions-endpoint    [:regions]
           :projects-endpoint   [:projects
-                                :facilities]
+                                :facilities
+                                :maps]
           :routing-endpoint    [:routing]
           :datasets-endpoint   [:facilities
                                 :resmap

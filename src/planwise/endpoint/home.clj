@@ -29,7 +29,7 @@
 (defn client-config
   [{:keys [auth resmap request maps globals]}]
   (let [resmap-url (:url resmap)
-        demo-tile-url (:demo-tile-url maps)
+        mapserver-url (:mapserver-url maps)
         ident (util/request-ident request)
         email (util/request-user-email request)
         token (create-jwe-token auth ident)
@@ -37,7 +37,7 @@
         config {:resourcemap-url resmap-url
                 :identity email
                 :jwe-token token
-                :demo-tile-url demo-tile-url
+                :mapserver-url mapserver-url
                 :app-version app-version}]
     [:script (str "var _CONFIG=" (json/generate-string config) ";")]))
 

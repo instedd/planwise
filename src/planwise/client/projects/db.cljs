@@ -29,9 +29,11 @@
                   :total      0
                   :list       nil
                   :isochrones nil} ;; geojson string
-   :transport    {:time       nil}
-   :map-view     {} ;; {:keys position zoom}
-   :project-data {}}) ;; {:keys id goal region-id stats filters}
+   :transport      {:time       nil}
+   :map-view       {} ;; {:keys position zoom}
+   :demand-map-key nil ;; string
+   :unsatisfied-count nil ;; number
+   :project-data   {}}) ;; {:keys id goal region-id stats filters}
 
 
 (def initial-db
@@ -68,6 +70,8 @@
                                    (map set (vals facilities-filters)))]
     (-> viewmodel
         (assoc :project-data project-data)
+        (assoc :demand-map-key (:map-key project-data))
+        (assoc :unsatisfied-count (:unsatisfied-count project-data))
         (assoc-in [:facilities :filters] facilities-filters)
         (assoc-in [:transport] (:transport filters))
         (assoc-in [:facilities :total] (:facilities-total stats))
