@@ -17,7 +17,7 @@ for regionid in $REGION_IDS; do
   echo " Region ${regionid}"
   mkdir -p data/isochrones/${regionid}
 
-  REGION_FILE=data/regions/${regionid}-mask.tif
+  REGION_FILE=data/regions/${regionid}.tif
   if [[ ! -e $REGION_FILE ]]; then
     echo " ERROR: Region raster mask ${REGION_FILE} not found";
     exit 1;

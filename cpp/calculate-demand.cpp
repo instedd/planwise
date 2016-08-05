@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Usage: " << argv[0] << " TARGET.tif POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
       << std::endl << std::endl
       << "Example:" << std::endl
-      << " " << argv[0] << "out.tif data/populations/REGIONID-pop.tif \\" << std::endl
+      << " " << argv[0] << "out.tif data/populations/REGIONID.tif \\" << std::endl
       << " data/isochrones/REGIONID/POLYGONID1.tif 500 \\" << std::endl
       << " data/isochrones/REGIONID/POLYGONID2.tif 800" << std::endl;
     exit(1);

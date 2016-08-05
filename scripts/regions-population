@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# Creates a raster file data/populations/REGIONID-pop.tif with the population values
+# Creates a raster file data/populations/REGIONID.tif with the population values
 # of each REGIONID in the regions table
 
 echo "Precalculating population count per region"
@@ -10,7 +10,7 @@ POPULATION_FILE="data/KEN_popmap15_v2b.tif"
 mkdir -p data/populations
 
 for id in $REGION_IDS; do
-  TARGET=data/populations/${id}-pop.tif
+  TARGET=data/populations/${id}.tif
   if [[ ! -e $TARGET ]]; then
     echo " Warping population for ${id}"
     gdalwarp -q \
