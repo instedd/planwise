@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mapcache mode="combined_mirror">
+<mapcache mode="split_mirror">
 
   <!-- Store data on container's disk -->
   <cache name="disk" type="disk">
@@ -21,7 +21,7 @@
     </getmap>
   </source>
 
-  <!-- Define kenya population tileset to be consumed via gmaps endpoint -->
+  <!-- Define dynamic demand dataset to be consumed via WMS endpoint -->
   <tileset name="kenya">
     <source>kenyasource</source>
     <cache>disk</cache>
@@ -29,21 +29,9 @@
     <format>PNG</format>
     <metatile>5 5</metatile>
     <metabuffer>10</metabuffer>
-    <expire>31536000</expire><!-- Expire in 1 year -->
-  </tileset>
-
-  <!-- Define dynamic demand dataset to be consumed via WMS endpoint -->
-  <tileset name="kenyademand">
-    <source>kenyasource</source>
-    <cache>disk</cache>
-    <grid>GoogleMapsCompatible</grid> <!-- EPSG:3857 -->
-    <format>PNG</format>
-    <metatile>5 5</metatile>
-    <metabuffer>10</metabuffer>
-    <expire>3600</expire><!-- Expire in 1 hour -->
-    <auto_expire>3600</auto_expire><!-- Expire in 1 hour -->
+    <expire>86400</expire><!-- Expire in 1 day -->
     <dimensions>
-      <dimension type="regex" name="DATAFILE" default="KEN_popmap15_v2b">^[A-Za-z0-9_]+$</dimension>
+      <dimension type="regex" name="DATAFILE" default="KEN_popmap15_v2b">^[A-Za-z0-9_/]*$</dimension>
     </dimensions>
   </tileset>
 

@@ -55,7 +55,7 @@ MAP
 
   LAYER
     VALIDATION
-      "DATAFILE" "^[A-Za-z0-9_]+$"
+      "DATAFILE" "^[A-Za-z0-9_/]+$"
       "default_DATAFILE" "KEN_popmap15_v2b"
     END
 
