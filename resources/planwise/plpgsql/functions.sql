@@ -26,63 +26,14 @@ declare
   facility_count integer;
   facility_index integer;
 begin
-  create temporary table if not exists edges_agg_cost (
-    gid integer not null,
-    agg_cost double precision
-  );
 
   -- Process all facilities
   facility_count := (select count(*) from facilities);
   facility_index := 1;
   for f_row in select * from facilities f loop
     RAISE NOTICE 'Processing facility % (%/%)', f_row.id, facility_index, facility_count;
-
-    insert into edges_agg_cost (
-      select e.edge, e.agg_cost
-      from pgr_drivingdistance(
-        'select gid as id, source, target, cost_s as cost from ways',
-        closest_node(f_row.the_geom),
-        threshold_finish * 60,
-        false) e
-    );
-    RAISE NOTICE '... with % reachable edges', (SELECT COUNT(*) FROM edges_agg_cost);
-
-    from_cost := 0;
-    to_cost   := threshold_start * 60;
-    while to_cost <= threshold_finish * 60 loop
-
-      IF method = 'buffer' THEN
-        insert into facilities_polygons (
-          select f_row.id, to_cost, method, st_union(buffers.the_geom)
-          from (
-            select wb.the_geom
-            from edges_agg_cost eac
-            join ways_buffers wb on wb.ways_gid = eac.gid
-            where agg_cost >= from_cost and agg_cost < to_cost
-            union
-            select the_geom
-            from facilities_polygons
-            where facility_id = f_row.id and threshold = (to_cost-threshold_jump * 60)
-          ) as buffers
-        );
-      ELSIF method = 'alpha-shape' THEN
-        BEGIN
-          insert into facilities_polygons (
-                 select f_row.id, to_cost, method, st_buffer(st_setsrid(pgr_pointsaspolygon('select id::integer, lon::float as x, lat::float as y from ways_nodes where gid in (select gid from edges_agg_cost where agg_cost < ' || to_cost || ')'),4326), 0.004));
-        EXCEPTION WHEN OTHERS THEN
-          RAISE NOTICE 'Failed to calculate alpha shape for facility %', f_row.id;
-        END;
-      ELSE
-        RAISE EXCEPTION 'Method % unknown', method USING HINT = 'Please use buffer or alpha-shape';
-      END IF;
-
-      from_cost      := to_cost;
-      to_cost        := to_cost + threshold_jump * 60;
-    end loop;
-
+    process_facility_isochrones(f_row.id, method, threshold_start, threshold_finish, threshold_jump )
     facility_index := facility_index + 1;
-
-    delete from edges_agg_cost;
   end loop;
 
   -- Cannot drop the temp table when running the alpha shape algorithm because
