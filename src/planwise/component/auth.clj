@@ -8,10 +8,13 @@
             [buddy.sign.jwt :as jwt]
             [oauthentic.core :as oauth]
             [planwise.util.ring :refer [absolute-url]]
+            [planwise.auth.ident :as ident]
             [planwise.component.users :as users]
             [planwise.auth.guisso :as guisso]))
 
 (timbre/refer-timbre)
+
+;; Service definition
 
 (defrecord AuthService [;; Guisso configuration
                         guisso-url
@@ -100,7 +103,7 @@
         users-store (:users-store service)
         user        (users/find-or-create-user-by-email users-store user-email)
         session     (-> (:session request)
-                        (assoc :identity {:user user-email}))]
+                        (assoc :identity (ident/user->ident user)))]
     (info (str "User " user-email " (id=" (:id user) ") authenticated successfully"))
     (users/update-user-last-login! users-store (:id user))
     (assoc response :session session)))
@@ -112,11 +115,10 @@
 
 (defn create-jwe-token
   "Create a JWE token for the client to authenticate for API calls"
-  [service user-email]
+  [service user-ident]
   (let [secret  (:jwe-secret service)
         options (:jwe-options service)
-        claims  {:user user-email
-                 :exp (time/plus (time/now) (time/seconds 3600))}]
+        claims  (assoc user-ident :exp (time/plus (time/now) (time/seconds 3600)))]
     (jwt/encrypt claims secret options)))
 
 (defn oauth2-authorization-url
@@ -152,27 +154,23 @@
                           :refresh-token refresh-token})
       (guisso-response->token-info)))
 
-(defn get-email
-  [user-ident]
-  (:user user-ident))
-
-(defn expired?
+(defn token-expired?
   [{expires :expires :as token}]
   (time/before? expires (time/plus (time/now) (time/seconds 10))))
 
 (defn save-auth-token!
   [{:keys [users-store] :as service} scope user-ident token]
-  (let [email (get-email user-ident)]
+  (let [email (ident/user-email user-ident)]
     (info "Saving OAuth2 token for user" email "on scope" scope)
     (users/save-token-for-scope! users-store scope email token)
     token))
 
 (defn find-auth-token
   [{:keys [users-store] :as service} scope user-ident]
-  (let [email (get-email user-ident)
+  (let [email (ident/user-email user-ident)
         _     (info "Looking for token for" email "on scope" scope)
         token (users/find-latest-token-for-scope users-store scope email)]
-    (if (and token (expired? token))
+    (if (and token (token-expired? token))
       (do (info "Found token but it expired, refreshing token")
           (let [new-token (oauth2-refresh-token service (:refresh-token token))]
             (when new-token

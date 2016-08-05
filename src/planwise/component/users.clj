@@ -2,6 +2,7 @@
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
+            [clojure.set :as set]
             [clj-time.jdbc]
             [hugsql.core :as hugsql]))
 
@@ -40,7 +41,7 @@
   (jdbc/with-db-transaction [tx (get-db service)]
     (let [user (select-user-by-email tx {:email email})]
       (if-not user
-        (let [user-id (-> (create-user! tx {:email email, :full_name nil})
+        (let [user-id (-> (create-user! tx {:email email, :full-name nil})
                           (first)
                           (:id))]
           (select-user tx {:id user-id}))
@@ -60,9 +61,7 @@
   [service scope email]
   (let [token (find-latest-user-token (get-db service) {:email email :scope scope})]
     (when token
-      {:expires (:expires token)
-       :refresh-token (:refresh_token token)
-       :token (:token token)})))
+      (select-keys token [:expires :refresh-token :token]))))
 
 (defn save-token-for-scope!
   [service scope email token]

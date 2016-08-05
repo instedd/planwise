@@ -8,8 +8,8 @@
     "Creates a project given a map of its attributes. Returns a map with the
     database generated id.")
 
-  (list-projects [this]
-    "Returns all projects in the database.")
+  (list-projects-for-user [this user-id]
+    "Returns projects accessible by the user.")
 
   (get-project [this id]
     "Return project with the given ID.")
@@ -28,11 +28,21 @@
   planwise.component.projects.ProjectsService
   (create-project [service project]
     (service/create-project service project))
-  (list-projects [service]
-    (service/list-projects service))
+  (list-projects-for-user [service user-id]
+    (service/list-projects-for-user service user-id))
   (get-project [service id]
     (service/get-project service id))
   (update-project [service project]
     (service/update-project service project))
   (delete-project [service id]
     (service/delete-project service id)))
+
+;; Additional utility functions
+
+(defn accessible-by?
+  [project user-id]
+  (service/accessible-by? project user-id))
+
+(defn owned-by?
+  [project user-id]
+  (service/owned-by? project user-id))
