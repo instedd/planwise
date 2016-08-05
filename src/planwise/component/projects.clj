@@ -21,8 +21,6 @@
   de application"
   [record]
   (-> record
-      (set/rename-keys {:region_id :region-id
-                        :region_name :region-name})
       (update :stats edn/read-string)
       (update :filters edn/read-string)))
 
@@ -49,8 +47,13 @@
 ;; ----------------------------------------------------------------------
 ;; Service functions
 
-(defn list-projects [service]
+(defn list-projects
+  [service]
   (->> (select-projects (get-db service))
+       (map db->project)))
+
+(defn list-projects-for-user [service user-id]
+  (->> (select-projects-for-user (get-db service) {:user-id user-id})
        (map db->project)))
 
 (defn get-project [service id]
@@ -118,3 +121,13 @@
 
 (defn delete-project [service id]
   (pos? (delete-project* (get-db service) {:id id})))
+
+
+(defn owned-by?
+  [project user-id]
+  (= user-id (:owner-id project)))
+
+(defn accessible-by?
+  [project user-id]
+  (or (owned-by? project user-id)))
+
