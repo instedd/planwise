@@ -65,6 +65,7 @@ declare
   facility_node integer;
   closest_node_geom geometry(point, 4326);
   facility_geom geometry(point, 4326);
+  buffer_length integer;
 begin
   create temporary table if not exists edges_agg_cost (
     gid integer not null,
@@ -90,6 +91,7 @@ begin
 
   from_cost := 0;
   to_cost   := threshold_start * 60;
+  buffer_length := 300;
   while to_cost <= threshold_finish * 60 loop
 
     DELETE FROM facilities_polygons fp
@@ -110,13 +112,13 @@ begin
           from facilities_polygons
           where facility_id = f_id and threshold = (to_cost-threshold_jump * 60)
           union
-          select ST_Buffer(ST_GeogFromWKB(ST_MakeLine(facility_geom, closest_node_geom)), 300)::geometry
+          select ST_Buffer(ST_GeogFromWKB(ST_MakeLine(facility_geom, closest_node_geom)), buffer_length)::geometry
         ) as buffers
       );
     ELSIF _method = 'alpha-shape' THEN
       BEGIN
         insert into facilities_polygons (
-        select f_id, to_cost, _method, st_buffer(st_geogfromwkb(st_setsrid(pgr_pointsaspolygon('(select id::integer, lon::float as x, lat::float as y from ways_nodes where gid in (select gid from edges_agg_cost where agg_cost < ' || to_cost || ')) union (select id::integer, lon::float as x, lat::float as y from facilities f where f.id = ' || f_id || ')'), 4326)), 300)::geometry);
+        select f_id, to_cost, _method, st_buffer(st_geogfromwkb(st_setsrid(pgr_pointsaspolygon('(select id::integer, lon::float as x, lat::float as y from ways_nodes where gid in (select gid from edges_agg_cost where agg_cost < ' || to_cost || ')) union (select id::integer, lon::float as x, lat::float as y from facilities f where f.id = ' || f_id || ')'), 4326)), buffer_length)::geometry);
       EXCEPTION WHEN OTHERS THEN
         RAISE NOTICE 'Failed to calculate alpha shape for facility %', f_id;
       END;
