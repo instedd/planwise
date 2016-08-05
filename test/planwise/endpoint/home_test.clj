@@ -5,7 +5,10 @@
             [buddy.auth.backends :as backends]
             [clojure.test :refer :all]
             [kerodon.core :refer :all]
-            [kerodon.test :refer :all]))
+            [kerodon.test :refer :all]
+            [schema.test]))
+
+(use-fixtures :once schema.test/validate-schemas)
 
 (def mocked-auth-service
   {:jwe-secret (nonce/random-bytes 32)})
@@ -16,6 +19,7 @@
 
 (def home-paths ["/"
                  "/playground"
+                 "/datasets"
                  "/projects/1"
                  "/projects/1/facilities"
                  "/projects/1/transport"
@@ -32,6 +36,6 @@
   (doseq [path home-paths]
     (testing (str "path " path " exists and renders CLJS application")
       (-> (session handler)
-          (visit path :identity {:user "foo@example.com"})
+          (visit path :identity {:user-id 1 :user-email "foo@example.com"})
           (has (status? 200))
           (has (some-text? "Loading Application"))))))

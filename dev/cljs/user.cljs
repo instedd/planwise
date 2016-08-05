@@ -1,7 +1,11 @@
 (ns cljs.user
   (:require [figwheel.client :as figwheel]
             [devtools.core :as devtools]
+            [schema.core :as s]
             [planwise.client.core :as client]))
+
+;; Enable Schema validations client-side
+(s/set-fn-validation! true)
 
 (js/console.info "Starting in development mode")
 

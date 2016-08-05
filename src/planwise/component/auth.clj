@@ -8,7 +8,7 @@
             [buddy.sign.jwt :as jwt]
             [oauthentic.core :as oauth]
             [planwise.util.ring :refer [absolute-url]]
-            [planwise.auth.ident :as ident]
+            [planwise.model.ident :as ident]
             [planwise.component.users :as users]
             [planwise.auth.guisso :as guisso]))
 
