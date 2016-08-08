@@ -102,6 +102,10 @@ Beside the migrations for controlling the schema, the DB can be populated throug
 * `load-regions` will import a geojson from Mapzen to load regions (Kenya by default)
 * `preprocess-isochrones` can be ran any number of times with different parameters to calculate the isochrones for the facilities; for instance, `preprocess-isochrones 300 buffer 60 180 15` will calculate the isochrones using the buffer method (with a 300m threshold) for driving distances from 1 to 3 hours, at 15 min intervals.
 
+### Mapserver
+
+Start mapserver and mapcache containers for development by running `docker-compose up` in the `mapserver` folder, after downloading file `KEN_popmap15_v2b.tif` from [worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group), and placing it in the `data` folder. Refer to the README in that folder for more information.
+
 ### Testing
 
 Running the tests require a separate scratch database. No setup is necessary
