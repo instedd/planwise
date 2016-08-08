@@ -1,5 +1,6 @@
 (ns planwise.component.facilities
   (:require [com.stuartsierra.component :as component]
+            [planwise.component.runner :refer [run-external]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.string :refer [join lower-case]]))
@@ -17,10 +18,13 @@
 (defn facilities-criteria [criteria]
   (criteria-snip criteria))
 
+(defn raster-facility-isochrones! [{runner :runner} facility-id]
+  (run-external runner :scripts "raster-isochrones" (str facility-id)))
+
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defrecord FacilitiesService [db])
+(defrecord FacilitiesService [db runner])
 
 (defn facilities-service
   "Construct a Facilities Service component"
@@ -99,4 +103,6 @@
                                    :end 180
                                    :step 15})
     first
-    :process_facility_isochrones))
+    :process_facility_isochrones)
+  ; TODO: Return :process_facility_isochrones
+  (raster-facility-isochrones! service facility-id))

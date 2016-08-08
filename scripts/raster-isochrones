@@ -13,14 +13,21 @@ echo "Rasterizing isochrones per region"
 mkdir -p data/isochrones/
 REGION_IDS="$(query 'SELECT id FROM regions ORDER BY id;')"
 
+if [ $# -lt 1 ]; then
+  FACILITY_CONDITION=""
+else
+  echo "Filtering by facility $1"
+  FACILITY_CONDITION="AND facilities_polygons.facility_id = '$1'"
+fi;
+
 for regionid in $REGION_IDS; do
   echo "Region ${regionid}"
 
   QUERY="WITH region AS (SELECT regions.the_geom AS region_geom FROM regions WHERE regions.id = ${regionid})
   SELECT facilities_polygons.id
-  FROM facilities INNER JOIN facilities_polygons
-  ON facilities.id = facilities_polygons.facility_id
+  FROM facilities_polygons
   WHERE ST_Intersects(facilities_polygons.the_geom, (SELECT region.region_geom FROM region))
+        ${FACILITY_CONDITION}
   ORDER BY facilities_polygons.id;"
 
   FACILITY_POLYGON_IDS="$(query "$QUERY")"

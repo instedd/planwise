@@ -6,9 +6,10 @@
   {:http   {:port                3000}
    :auth   {:guisso-url          "https://login.instedd.org"}
    :resmap {:url                 "http://resourcemap.instedd.org"}
+   :paths  {:bin                 "bin/"
+            :scripts             "scripts/"
+            :data                "data/"}
    :maps   {:mapserver-url       "http://planwise-maps-stg.instedd.org/mapcache?"
-            :data-path           "/data/"
-            :bin-path            "/app/bin/"
             :facilities-capacity 100000}})
 
 (def environ
@@ -20,7 +21,8 @@
             :guisso-client-id     (env :guisso-client-id)
             :guisso-client-secret (env :guisso-client-secret)}
    :resmap {:url                  (env :resourcemap-url)}
+   :paths  {:bin                  (env :bin-path)
+            :scripts              (env :scripts-path)
+            :data                 (env :data-path)}
    :maps   {:mapserver-url        (env :mapserver-url)
-            :data-path            (env :maps-data-path)
-            :bin-path             (env :maps-bin-path)
             :facilities-capacity  (some-> env :maps-facilities-capacity Integer.)}})

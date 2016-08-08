@@ -1,32 +1,30 @@
 (ns planwise.component.maps
   (:require [com.stuartsierra.component :as component]
+            [planwise.component.runner :refer [run-external]]
             [clojure.string :as str]
             [digest :as digest]
-            [taoensso.timbre :as timbre]
-            [clojure.java.shell :refer [sh]]))
+            [taoensso.timbre :as timbre]))
 
 (timbre/refer-timbre)
 
 (defn mapserver-url
-  [service]
-  (:mapserver-url service))
+  [{config :config}]
+  (:mapserver-url config))
 
 (defn- demand-map-key
   [region-id polygon-ids]
   (digest/sha-256
     (str/join "_" (cons region-id polygon-ids))))
 
-(defn- default-capacity
-  [service]
-  (:facilities-capacity service))
+; CONFIG NO ESTA LLEGANDO A MAP
 
-(defn- bin-path
-  [service & args]
-  (apply str (:bin-path service) args))
+(defn- default-capacity
+  [{config :config}]
+  (:facilities-capacity config))
 
 (defn- data-path
-  [service & args]
-  (apply str (:data-path service) args))
+  [{config :config} & args]
+  (apply str (:data config) args))
 
 (defn- demands-path
   [service & args]
@@ -49,24 +47,20 @@
                             #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
                             #(str (or (:capacity %) (default-capacity service)))))
                     (flatten)
-                    (concat [(bin-path service "calculate-demand")
-                             (demands-path service map-key ".tif")
+                    (concat [(demands-path service map-key ".tif")
                              (populations-path service region-id ".tif")])
                     (vec))
-        _        (info "Invoking " (str/join " " args))
-        response (apply sh args)]
-    (case (:exit response)
-      0 { :map-key map-key,
-          :unsatisfied-count (-> response
-                               (:out)
-                               (str/trim)
-                               (Integer.))}
-      (throw (RuntimeException. (str "Error calculating demand map:\n" (:err response)))))))
+        response          (apply run-external (:runner service) :bin "calculate-demand" args)
+        unsatisfied-count (-> response
+                            (str/trim-newline)
+                            (str/trim)
+                            (Integer.))]
+      {:map-key map-key,
+       :unsatisfied-count unsatisfied-count}))
 
-
-(defrecord MapsService [config])
+(defrecord MapsService [config runner])
 
 (defn maps-service
-  "Construct a Maps Service component"
+  "Construct a Maps Service component from config"
   [config]
-  (map->MapsService config))
+  (map->MapsService {:config config}))
