@@ -57,6 +57,7 @@ end;
 $$ language plpgsql;
 
 -- generates the isochrone polygons for all thresholds for a single facility
+DROP FUNCTION IF EXISTS process_facility_isochrones(bigint, varchar, integer, integer, integer);
 CREATE OR REPLACE FUNCTION process_facility_isochrones(f_id bigint, _method varchar, threshold_start integer, threshold_finish integer, threshold_jump integer)
 returns text as $$
 declare
@@ -69,7 +70,8 @@ declare
 begin
   create temporary table if not exists edges_agg_cost (
     gid integer not null,
-    agg_cost double precision
+    agg_cost double precision,
+    node integer not null
   );
 
   facility_node := (SELECT closest_node(the_geom) FROM facilities WHERE id = f_id);
@@ -81,12 +83,25 @@ begin
   END IF;
 
   insert into edges_agg_cost (
-    select e.edge, e.agg_cost
+    select e.edge, e.agg_cost, e.node
     from pgr_drivingdistance(
       'select gid as id, source, target, cost_s as cost from ways',
       facility_node,
       threshold_finish * 60,
       false) e
+  );
+
+  -- This snippet adds edges that may be left out but should be included.
+  -- Since pgr_drivingDistance uses the Dijkstra's algorithm and its corresponding
+  -- spanning tree, if there are edges between two reachable nodes that do not
+  -- belong to the shortest path to either of them then that edge won't be included
+  -- but it should if traversing it doesn't exceeds the maximum threshold.
+  insert into edges_agg_cost (
+    select w.gid, least(e_source.agg_cost, e_target.agg_cost) + w.cost as agg_cost, w.target
+    from ways w
+    join edges_agg_cost e_source on e_source.node = w.source
+    join edges_agg_cost e_target on e_target.node = w.target
+    where w.cost + least(e_source.agg_cost, e_target.agg_cost) < threshold_finish * 60
   );
 
   from_cost := 0;
