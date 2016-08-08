@@ -7,6 +7,7 @@
                  [org.clojure/clojurescript "1.8.51"]
                  [org.clojure/core.async "0.2.385"]
                  [com.stuartsierra/component "0.3.1"]
+                 [prismatic/schema "1.1.3"]
                  [duct "0.6.1"]
 
                  ; Web server and routing

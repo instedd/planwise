@@ -1,4 +1,4 @@
-(ns planwise.client.hud
+(ns planwise.client.components.hud
   (:require [reagent.core :as reagent]
             [goog.string :as gstring]
             [goog.string.format]))

@@ -5,6 +5,7 @@
             [hiccup.page :refer [html5]]
             [clojure.string :as string]
             [buddy.auth :refer [throw-unauthorized authenticated?]]
+            [planwise.util.ring :as util]
             [planwise.component.auth :as auth]))
 
 (def logout-page
@@ -30,16 +31,17 @@
    (GET "/identity" req
      (if-not (authenticated? req)
        (throw-unauthorized)
-       (let [id (-> req :identity :user)]
+       (let [ident (util/request-ident req)]
         (html5
          [:body
-          [:p (str "Current identity: " id)]
+          [:p (str "Current identity: " (util/request-user-email req)
+                   " id=" (util/request-user-id req))]
           [:p
            "API Token:"
            [:br]
            [:code {:style {:white-space "normal"
                            :word-wrap "break-word"}}
-            (auth/create-jwe-token service id)]]
+            (auth/create-jwe-token service ident)]]
           [:p
            [:a {:href "/logout"} "Logout"]]]))))
 

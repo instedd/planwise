@@ -1,16 +1,16 @@
 -- :name select-user :? :1
-SELECT id, email, full_name, last_login
+SELECT id, email, full_name AS "full-name", last_login AS "last-login"
 FROM users
 WHERE id = :id;
 
 -- :name select-user-by-email :? :1
-SELECT id, email, full_name, last_login
+SELECT id, email, full_name AS "full-name", last_login AS "last-login"
 FROM users
 WHERE email = :email;
 
 -- :name create-user! :<!
 INSERT INTO users (email, full_name, created_at)
-       VALUES(:email, :full_name, 'now')
+       VALUES (:email, :full-name, 'now')
        RETURNING id;
 
 -- :name update-last-login! :! :n
@@ -25,7 +25,13 @@ INSERT INTO tokens (user_id, scope, token, refresh_token, expires)
        RETURNING id;
 
 -- :name find-latest-user-token :? :1
-SELECT t.id, t.user_id, t.scope, t.token, t.refresh_token, t.expires
+SELECT
+  t.id,
+  t.user_id AS "user-id",
+  t.scope,
+  t.token,
+  t.refresh_token AS "refresh-token",
+  t.expires
 FROM tokens t
 INNER JOIN users u ON u.id = t.user_id
 WHERE u.email = :email AND t.scope = :scope

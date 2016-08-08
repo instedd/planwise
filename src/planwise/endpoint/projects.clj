@@ -4,6 +4,7 @@
             [clojure.data.json :as json]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
+            [planwise.util.ring :as util]
             [planwise.boundary.projects :as projects]
             [planwise.boundary.facilities :as facilities]
             [clojure.walk :refer [keywordize-keys]]
@@ -28,32 +29,47 @@
 (defn- endpoint-routes
   [{service :projects facilities :facilities}]
   (routes
-   (GET "/" []
-     (let [projects (projects/list-projects service)]
+   (GET "/" request
+     (let [user-id (util/request-user-id request)
+           projects (projects/list-projects-for-user service user-id)]
        (response projects)))
 
-   (GET "/:id" [id with]
-     (if-let [project (projects/get-project service (Integer/parseInt id))]
-       (response (assoc-extra-data (keyword with) project facilities))
-       (not-found {:error "Project not found"})))
-
-   (PUT "/:id" [id filters with]
-     (let [id (Integer/parseInt id)
-           filters (keywordize-keys filters)]
-       (if-let [project (projects/update-project service {:id id :filters filters})]
+   (GET "/:id" [id with :as request]
+     (let [user-id (util/request-user-id request)
+           project (projects/get-project service (Integer. id))]
+       (if (projects/accessible-by? project user-id)
          (response (assoc-extra-data (keyword with) project facilities))
-         (-> (response {:status "failure"})
-             (status 400)))))
+         (not-found {:error "Project not found"}))))
 
-   (POST "/" [goal region-id]
+   (PUT "/:id" [id filters with :as request]
+     (let [id (Integer. id)
+           filters (keywordize-keys filters)
+           user-id (util/request-user-id request)
+           project (projects/get-project service id)]
+       (if (projects/owned-by? project user-id)
+         (if-let [project (projects/update-project service {:id id :filters filters})]
+           (response (assoc-extra-data (keyword with) project facilities))
+           (-> (response {:status "failure"})
+               (status 400)))
+         (not-found {:error "Project not found"}))))
+
+   (POST "/" [goal region-id :as request]
      (let [goal (str/trim goal)
-           region-id (Integer. region-id)]
-       (response (projects/create-project service {:goal goal, :region-id region-id}))))
+           region-id (Integer. region-id)
+           user-id (util/request-user-id request)
+           project-templ {:goal goal
+                          :region-id region-id
+                          :owner-id user-id}]
+       (response (projects/create-project service project-templ))))
 
-   (DELETE "/:id" [id]
-     (if-let [project (projects/delete-project service (Integer/parseInt id))]
-       (response {:deleted id})
-       (not-found {:error "Project not found"})))))
+   (DELETE "/:id" [id :as request]
+     (let [id (Integer. id)
+           user-id (util/request-user-id request)
+           project (projects/get-project service id)]
+       (if (and (projects/owned-by? project user-id)
+                (projects/delete-project service id))
+         (response {:deleted id})
+         (not-found {:error "Project not found"}))))))
 
 (defn projects-endpoint [endpoint]
   (context "/api/projects" []

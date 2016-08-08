@@ -91,9 +91,12 @@
 
 (defn preprocess-isochrones
   [service facility-id]
-  (calculate-facility-isochrones! (get-db service)
+  (->
+    (calculate-facility-isochrones! (get-db service)
                                   {:id facility-id
                                    :method "alpha-shape"
                                    :start 30
                                    :end 180
-                                   :step 15}))
+                                   :step 15})
+    first
+    :process_facility_isochrones))

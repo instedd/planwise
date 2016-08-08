@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [register-handler path dispatch]]
             [re-frame.utils :as c]
             [planwise.client.datasets.api :as api]
-            [planwise.client.db :as db]))
+            [planwise.client.datasets.db :as db]))
 
 (def in-datasets (path [:datasets]))
 

@@ -6,6 +6,7 @@
             [clojure.java.io :as io]
             [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
+            [schema.core :as s]
             [duct.generate :as gen]
             [meta-merge.core :refer [meta-merge]]
             [reloaded.repl :refer [system init start stop go reset reset-all]]
@@ -75,3 +76,6 @@
 (gen/set-ns-prefix 'planwise)
 
 (reloaded.repl/set-init! new-system)
+
+;; Activate Schema validation for *all* functions
+(s/set-fn-validation! true)

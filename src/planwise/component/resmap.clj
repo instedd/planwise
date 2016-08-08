@@ -4,6 +4,7 @@
             [clojure.string :as str]
             [cheshire.core :as json]
             [clj-http.client :as http]
+            [planwise.model.ident :as ident]
             [planwise.component.auth :as auth])
   (:import [java.net URL]))
 
@@ -80,7 +81,7 @@
   (let [scope (auth-scope service)
         auth (:auth service)
         token (auth/find-auth-token auth scope user-ident)]
-    (info "Retrieving Resourcemap collections for user" (auth/get-email user-ident))
+    (info "Retrieving Resourcemap collections for user" (ident/user-email user-ident))
     (list-collections service token)))
 
 (defn list-collection-fields
@@ -89,7 +90,7 @@
         auth (:auth service)
         token (auth/find-auth-token auth scope user-ident)]
     (info "Retrieving Resourcemap fields information for collection"
-          coll-id "for user" (auth/get-email user-ident))
+          coll-id "for user" (ident/user-email user-ident))
     (get-collection-fields service token coll-id)))
 
 (defn authorised?

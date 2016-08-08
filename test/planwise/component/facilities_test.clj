@@ -36,7 +36,7 @@
   (with-system (system)
     (let [service (:facilities system)
           facilities (facilities/list-with-isochrones service {:threshold 900})]
-      (is (= 1 (count facilities)))
+      (is (= 2 (count facilities)))
       (is (= #{:id :name :lat :lon :isochrone} (-> facilities first keys set))))))
 
 (deftest insert-facility

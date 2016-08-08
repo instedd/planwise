@@ -1,4 +1,4 @@
-(ns planwise.client.slider
+(ns planwise.client.components.slider
   (:require [reagent.core :as reagent]
             [goog.string :as gstring]
             [goog.string.format]))

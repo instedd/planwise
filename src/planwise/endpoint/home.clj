@@ -1,11 +1,12 @@
 (ns planwise.endpoint.home
   (:require [compojure.core :refer :all]
             [ring.util.anti-forgery :refer [anti-forgery-field]]
-            [buddy.auth :refer [authenticated? throw-unauthorized]]
-            [planwise.component.auth :refer [create-jwe-token]]
             [cheshire.core :as json]
             [hiccup.form :refer [hidden-field]]
-            [hiccup.page :refer [include-js include-css html5]]))
+            [hiccup.page :refer [include-js include-css html5]]
+            [buddy.auth :refer [authenticated? throw-unauthorized]]
+            [planwise.util.ring :as util]
+            [planwise.component.auth :refer [create-jwe-token]]))
 
 (def mount-target
   [:div#app
@@ -29,8 +30,9 @@
   [{:keys [auth resmap request maps globals]}]
   (let [resmap-url (:url resmap)
         demo-tile-url (:demo-tile-url maps)
-        email (-> request :identity :user)
-        token (create-jwe-token auth email)
+        ident (util/request-ident request)
+        email (util/request-user-email request)
+        token (create-jwe-token auth ident)
         app-version (or (:app-version globals) "unspecified")
         config {:resourcemap-url resmap-url
                 :identity email

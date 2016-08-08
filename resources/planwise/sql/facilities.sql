@@ -43,11 +43,9 @@ SELECT
   facilities.id AS id, facilities.name AS name, facilities.lat AS lat, facilities.lon AS lon,
   ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone
 FROM facilities_polygons fp
-  INNER JOIN facilities ON fp.facility_id = facilities.id
+  RIGHT OUTER JOIN facilities ON fp.facility_id = facilities.id AND fp.threshold = :threshold AND fp.method = :algorithm
   INNER JOIN facility_types ON facilities.type_id = facility_types.id
-WHERE fp.threshold = :threshold
-  AND fp.method = :algorithm
-  :snip:criteria ;
+WHERE 1=1 :snip:criteria ;
 
 -- :name isochrone-for-facilities :? :1
 SELECT
@@ -68,5 +66,5 @@ INSERT INTO facility_types (name)
 VALUES (:name)
 RETURNING id;
 
--- :name calculate-facility-isochrones! :!
+-- :name calculate-facility-isochrones! :<!
 SELECT process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer);

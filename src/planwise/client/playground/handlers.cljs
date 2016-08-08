@@ -1,9 +1,8 @@
 (ns planwise.client.playground.handlers
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [planwise.client.db :as db]
-            [planwise.client.playground.db :refer [isochrone-params]]
+  (:require [planwise.client.playground.db :as db]
             [planwise.client.playground.api :as api]
-            [planwise.client.common :refer [debounced async-handle]]
+            [planwise.client.utils :refer [debounced]]
             [re-frame.core :refer [dispatch register-handler path]]))
 
 (defn fetch-isochrone* [node-id threshold & [algorithm]]
@@ -80,7 +79,7 @@
    (let [new-db (assoc db :threshold new-threshold)
          node-id (:node-id db)]
      (fetch-isochrone node-id new-threshold :alpha-shape)
-     (fetch-facilities-with-isochrones (isochrone-params new-db))
+     (fetch-facilities-with-isochrones (db/isochrone-params new-db))
      new-db)))
 
 (register-handler
@@ -88,7 +87,7 @@
  in-playground
  (fn [db [_ new-algorithm]]
    (let [new-db (assoc db :algorithm new-algorithm)]
-     (fetch-facilities-with-isochrones (isochrone-params new-db))
+     (fetch-facilities-with-isochrones (db/isochrone-params new-db))
      new-db)))
 
 (register-handler
@@ -96,7 +95,7 @@
  in-playground
  (fn [db [_ new-simplify]]
    (let [new-db (assoc db :simplify new-simplify)]
-     (fetch-facilities-with-isochrones (isochrone-params new-db))
+     (fetch-facilities-with-isochrones (db/isochrone-params new-db))
      new-db)))
 
 (register-handler

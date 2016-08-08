@@ -2,11 +2,13 @@
   (:require [compojure.core :refer :all]
             [ring.util.response :refer [response]]
             [buddy.auth :refer [authenticated?]]
-            [buddy.auth.accessrules :refer [restrict]]))
+            [buddy.auth.accessrules :refer [restrict]]
+            [planwise.util.ring :as util]))
 
 (defn whoami-handler [request]
-  (let [id (-> request :identity :user)]
-    (response {:email id})))
+  (let [email (util/request-user-email request)
+        user-id (util/request-user-id request)]
+    (response {:id user-id :email email})))
 
 (defn monitor-endpoint [system]
   (context "/api" []

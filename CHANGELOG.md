@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Facilities on the map have an associated popup showing the facility's name and
   type.
+- Projects are now owned by users and each user has access to their own projects
+  only.
+
+### Fixed
+- Improved new project validation (#96)
+- Stop facilities from disappearing when changing transport time (#103)
 
 ## [0.4.0] - 2016-08-02
 ### The "Good Enough" Release

@@ -2,7 +2,7 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub subscribe]]
             [goog.string :as gstring]
-            [planwise.client.db :as db]
+            [planwise.client.projects.db :as db]
             [planwise.client.mapping :as mapping]))
 
 (register-sub
