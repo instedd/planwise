@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <math.h>
 #include <stdio.h>
@@ -11,6 +12,14 @@
 typedef unsigned char BYTE;
 
 #define DEBUG 1
+
+const char* DEMAND_METADATA_KEY = "UNSATISFIED_DEMAND";
+const char* APP_METADATA_DOMAIN = "PLANWISE";
+
+bool fileExists (const std::string& name) {
+  std::ifstream f(name.c_str());
+  return f.good();
+}
 
 GDALDataset* openRaster(std::string filename) {
   GDALDataset* poDataset = (GDALDataset*) GDALOpen(filename.c_str(), GA_ReadOnly);
@@ -44,7 +53,18 @@ void closeRaster(GDALDataset* rasterDataSet) {
   GDALClose(rasterDataSet);
 };
 
-long calculateDemand(std::string targetFilename, std::string demoFilename, std::vector<std::string> facilities, std::vector<float> capacities) {
+long readUnsatisfiedDemand(std::string targetFilename) {
+  GDALDataset* targetDataset = openRaster(targetFilename);
+  const char* metadataValue = targetDataset->GetMetadataItem(DEMAND_METADATA_KEY, APP_METADATA_DOMAIN);
+  if (metadataValue == NULL) {
+    std::cerr << "No unsatisfied demand metadata found on " << APP_METADATA_DOMAIN << ":" << DEMAND_METADATA_KEY << std::endl;
+    exit(1);
+  }
+  closeRaster(targetDataset);
+  return atol(metadataValue);
+}
+
+long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFilename, std::vector<std::string> facilities, std::vector<float> capacities) {
   GDALDataset* demoDataset = openRaster(demoFilename);
   GDALRasterBand* demoBand = demoDataset->GetRasterBand(1);
   CPLAssert(demoBand->GetRasterDataType() == GDT_Float32);
@@ -198,31 +218,45 @@ long calculateDemand(std::string targetFilename, std::string demoFilename, std::
     }
   }
 
+  // Save calculated unsatisifiedDemand as metadata in the dataset file
+  CPLErr err = targetDataset->SetMetadataItem(DEMAND_METADATA_KEY, std::to_string((long)totalUnsatisfied).c_str(), APP_METADATA_DOMAIN);
+
   closeRaster(targetDataset);
 
   return totalUnsatisfied;
 }
 
 int main(int argc, char *argv[]) {
-  GDALAllRegister();
-
   if (argc < 5) {
     std::cerr << "Usage: " << argv[0] << " TARGET.tif POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
       << std::endl << std::endl
       << "Example:" << std::endl
       << " " << argv[0] << "out.tif data/populations/REGIONID.tif \\" << std::endl
       << " data/isochrones/REGIONID/POLYGONID1.tif 500 \\" << std::endl
-      << " data/isochrones/REGIONID/POLYGONID2.tif 800" << std::endl;
+      << " data/isochrones/REGIONID/POLYGONID2.tif 800" << std::endl << std::endl
+      << "Resulting total unsatisfied demand is returned via STDOUT." << std::endl
+      << "Note that if the TARGET file exists, it will not be recalculated, though the pre calculated unsatisfied demand will be returned." << std::endl;
     exit(1);
   }
 
-  std::vector<std::string> facilities;
-  std::vector<float> capacities;
-  for (int i = 3; i < argc; i++) {
-    facilities.push_back(argv[i]);
-    capacities.push_back(atof(argv[++i]));
+  GDALAllRegister();
+  long unsatisifiedDemand = 0;
+
+  if (fileExists(argv[1])) {
+#ifdef DEBUG
+    std::cerr << "File " << argv[1] << " already exists." << std::endl;
+#endif
+    unsatisifiedDemand = readUnsatisfiedDemand(argv[1]);
+  } else {
+    std::vector<std::string> facilities;
+    std::vector<float> capacities;
+    for (int i = 3; i < argc; i++) {
+      facilities.push_back(argv[i]);
+      capacities.push_back(atof(argv[++i]));
+    }
+
+    unsatisifiedDemand = calculateUnsatisfiedDemand(argv[1], argv[2], facilities, capacities);
   }
 
-  long unsatisifiedDemand = calculateDemand(argv[1], argv[2], facilities, capacities);
   std::cout << unsatisifiedDemand << std::endl;;
 }
