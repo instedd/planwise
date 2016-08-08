@@ -12,7 +12,9 @@ git describe --always > resources/planwise/version
 lein uberjar
 make -C cpp
 
+TAG=${1/\//_}
+
 docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS} ${DOCKER_REGISTRY}
 docker build -t planwise .
-docker tag planwise ${DOCKER_REPOSITORY}:$1
-docker push ${DOCKER_REPOSITORY}:$1
+docker tag planwise ${DOCKER_REPOSITORY}:$TAG
+docker push ${DOCKER_REPOSITORY}:$TAG
