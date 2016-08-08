@@ -1,6 +1,7 @@
 (ns planwise.component.maps
   (:require [com.stuartsierra.component :as component]
             [clojure.string :as str]
+            [digest :as digest]
             [taoensso.timbre :as timbre]
             [clojure.java.shell :refer [sh]]))
 
@@ -12,7 +13,8 @@
 
 (defn- demand-map-key
   [region-id polygon-ids]
-  (str/join "_" (cons region-id polygon-ids)))
+  (digest/sha-256
+    (str/join "_" (cons region-id polygon-ids))))
 
 (defn- default-capacity
   [service]

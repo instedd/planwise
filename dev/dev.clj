@@ -32,7 +32,7 @@
   {:app {:middleware [wrap-stacktrace]}
    :auth {:jwe-secret jwe-secret}
    :maps {:mapserver-url "http://localhost:5002/mapcache?"
-          :facilities-capacity 1000000
+          :facilities-capacity 2000000
           :bin-path    "cpp/"
           :data-path   "data/"}
    :figwheel
