@@ -1,0 +1,32 @@
+#! /bin/bash
+set -euo pipefail
+
+# Creates a byte-sized raster file data/isochrones/REGIONID/FACILITY_POLYGON_ID.tif,
+# with a 255 value for each facility polygon, intersected with the specified REGION,
+# with the same size and extent as the REGION raster
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 REGION_ID FACILITY_POLYGON_ID"
+	exit 1
+fi
+
+REGION_ID=$1
+FACILITY_POLYGON_ID=$2
+REGION_FILE=data/regions/${REGION_ID}.tif
+
+if [[ ! -e $REGION_FILE ]]; then
+  echo "ERROR: Region raster mask ${REGION_FILE} not found";
+  exit 1;
+fi;
+
+mkdir -p data/isochrones/${REGION_ID}
+
+TARGET=data/isochrones/${REGION_ID}/${FACILITY_POLYGON_ID}.tif
+
+if [[ ! -e $TARGET ]]; then
+  gdalwarp -q \
+    -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+    -cutline PG:dbname=routing \
+    -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
+    $REGION_FILE $TARGET
+fi;

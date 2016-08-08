@@ -14,14 +14,7 @@ mkdir -p data/isochrones/
 REGION_IDS="$(query 'SELECT id FROM regions ORDER BY id;')"
 
 for regionid in $REGION_IDS; do
-  echo " Region ${regionid}"
-  mkdir -p data/isochrones/${regionid}
-
-  REGION_FILE=data/regions/${regionid}.tif
-  if [[ ! -e $REGION_FILE ]]; then
-    echo " ERROR: Region raster mask ${REGION_FILE} not found";
-    exit 1;
-  fi;
+  echo "Region ${regionid}"
 
   QUERY="WITH region AS (SELECT regions.the_geom AS region_geom FROM regions WHERE regions.id = ${regionid})
   SELECT facilities_polygons.id
@@ -33,18 +26,8 @@ for regionid in $REGION_IDS; do
   FACILITY_POLYGON_IDS="$(query "$QUERY")"
 
   for id in $FACILITY_POLYGON_IDS; do
-    echo "  Checking polygon ${id}"
-    TARGET=data/isochrones/${regionid}/${id}.tif
-
-    if [[ ! -e $TARGET ]]; then
-      echo "  Rasterising facility polygon ${id}"
-      gdalwarp -q \
-        -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
-        -cutline PG:dbname=routing \
-        -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${id};" \
-        $REGION_FILE $TARGET
-    fi;
-
+    echo "Processing polygon ${id}"
+    $(dirname "${BASH_SOURCE}")/raster-isochrone ${regionid} ${id}
   done;
 
 done;
