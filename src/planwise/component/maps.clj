@@ -6,21 +6,37 @@
 
 (timbre/refer-timbre)
 
-;; TODO: Load from config
-(def bin-path "cpp/")
-(def data-path "data/")
-(def demands-path "data/demands/")
-(def populations-path "data/populations/")
-(def isochrones-path "data/isochrones/")
-(def default-capacity 200000)
+(defn mapserver-url
+  [service]
+  (:mapserver-url service))
 
 (defn- demand-map-key
   [region-id polygon-ids]
   (str/join "_" (cons region-id polygon-ids)))
 
-(defn mapserver-url
+(defn- default-capacity
   [service]
-  (:mapserver-url service))
+  (:facilities-capacity service))
+
+(defn- bin-path
+  [service & args]
+  (apply str (:bin-path service) args))
+
+(defn- data-path
+  [service & args]
+  (apply str (:data-path service) args))
+
+(defn- demands-path
+  [service & args]
+  (apply data-path service (cons "demands/" args)))
+
+(defn- populations-path
+  [service & args]
+  (apply data-path service (cons "populations/" args)))
+
+(defn- isochrones-path
+  [service & args]
+  (apply data-path service (cons "isochrones/" args)))
 
 (defn demand-map
   [service region-id facilities]
@@ -28,12 +44,12 @@
         map-key  (demand-map-key region-id (map :polygon-id polygons))
         args     (->> polygons
                     (map (juxt
-                            #(str isochrones-path region-id "/" (:polygon-id %) ".tif")
-                            #(str (or (:capacity %) default-capacity))))
+                            #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
+                            #(str (or (:capacity %) (default-capacity service)))))
                     (flatten)
-                    (concat [(str bin-path "calculate-demand")
-                             (str demands-path map-key ".tif")
-                             (str populations-path region-id ".tif")])
+                    (concat [(bin-path service "calculate-demand")
+                             (demands-path service map-key ".tif")
+                             (populations-path service region-id ".tif")])
                     (vec))
         _        (info "Invoking " (str/join " " args))
         response (apply sh args)]

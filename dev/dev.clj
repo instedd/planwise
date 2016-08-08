@@ -31,7 +31,10 @@
 (def dev-config
   {:app {:middleware [wrap-stacktrace]}
    :auth {:jwe-secret jwe-secret}
-   :maps {:mapserver-url "http://localhost:5002/mapcache?"}
+   :maps {:mapserver-url "http://localhost:5002/mapcache?"
+          :facilities-capacity 1000000
+          :bin-path    "cpp/"
+          :data-path   "data/"}
    :figwheel
    {:css-dirs ["resources/planwise/public/css"
                "target/sass-repl"]
