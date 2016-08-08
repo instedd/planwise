@@ -1,9 +1,9 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <math.h>
 #include <stdio.h>
-#include <tuple>
 
 #include "gdal_priv.h"
 #include "cpl_conv.h"
@@ -16,9 +16,16 @@ typedef unsigned char BYTE;
 const char* DEMAND_METADATA_KEY = "UNSATISFIED_DEMAND";
 const char* APP_METADATA_DOMAIN = "PLANWISE";
 
+// See http://stackoverflow.com/a/13636164/12791
+template <typename T> std::string numberToString (T number) {
+  std::ostringstream stringStream;
+  stringStream << number;
+  return stringStream.str();
+}
+
 bool fileExists (const std::string& name) {
-  std::ifstream f(name.c_str());
-  return f.good();
+  std::ifstream fileStream(name.c_str());
+  return fileStream.good();
 }
 
 GDALDataset* openRaster(std::string filename) {
@@ -41,8 +48,8 @@ GDALDataset* copyRaster(GDALDataset* sourceRaster, std::string filename, int blo
 
   char **papszOptions = NULL;
   papszOptions = CSLSetNameValue(papszOptions, "TILED", "YES");
-  papszOptions = CSLSetNameValue(papszOptions, "BLOCKXSIZE", std::to_string(blockXSize).c_str());
-  papszOptions = CSLSetNameValue(papszOptions, "BLOCKYSIZE", std::to_string(blockYSize).c_str());
+  papszOptions = CSLSetNameValue(papszOptions, "BLOCKXSIZE", numberToString(blockXSize).c_str());
+  papszOptions = CSLSetNameValue(papszOptions, "BLOCKYSIZE", numberToString(blockYSize).c_str());
 
   GDALDataset* dataset = poDriver->CreateCopy(filename.c_str(), sourceRaster, FALSE, papszOptions, NULL, NULL);
   dataset->FlushCache();
@@ -219,7 +226,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
   }
 
   // Save calculated unsatisifiedDemand as metadata in the dataset file
-  CPLErr err = targetDataset->SetMetadataItem(DEMAND_METADATA_KEY, std::to_string((long)totalUnsatisfied).c_str(), APP_METADATA_DOMAIN);
+  CPLErr err = targetDataset->SetMetadataItem(DEMAND_METADATA_KEY, numberToString((long)totalUnsatisfied).c_str(), APP_METADATA_DOMAIN);
 
   closeRaster(targetDataset);
 

@@ -22,4 +22,5 @@
    :resmap {:url                  (env :resourcemap-url)}
    :maps   {:mapserver-url        (env :mapserver-url)
             :data-path            (env :maps-data-path)
+            :bin-path             (env :maps-bin-path)
             :facilities-capacity  (some-> env :maps-facilities-capacity Integer.)}})
