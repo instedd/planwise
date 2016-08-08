@@ -57,6 +57,7 @@ end;
 $$ language plpgsql;
 
 -- generates the isochrone polygons for all thresholds for a single facility
+DROP FUNCTION IF EXISTS process_facility_isochrones(bigint, varchar, integer, integer, integer);
 CREATE OR REPLACE FUNCTION process_facility_isochrones(f_id bigint, _method varchar, threshold_start integer, threshold_finish integer, threshold_jump integer)
 returns text as $$
 declare
