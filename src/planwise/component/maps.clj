@@ -36,6 +36,12 @@
   [service & args]
   (apply data-path service (cons "isochrones/" args)))
 
+(defn- capacity-for
+  [service {:keys [population population-in-region]}]
+  (let [capacity (default-capacity service)
+        factor   (if population-in-region (/ population-in-region population) 1)]
+    (int (* factor capacity))))
+
 (defn demand-map
   [service region-id facilities]
   (let [polygons (filter :polygon-id facilities)
@@ -43,7 +49,7 @@
         args     (->> polygons
                     (map (juxt
                             #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
-                            #(str (or (:capacity %) (default-capacity service)))))
+                            #(str (capacity-for service %))))
                     (flatten)
                     (concat [(demands-path service map-key ".tif")
                              (populations-path service region-id ".tif")])

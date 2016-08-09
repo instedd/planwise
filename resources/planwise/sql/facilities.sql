@@ -41,10 +41,17 @@ WHERE 1=1
 -- :name facilities-with-isochrones :?
 SELECT
   facilities.id AS id, facilities.name AS name, facilities.lat AS lat, facilities.lon AS lon,
-  fp.id AS "polygon-id", ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone
-FROM facilities_polygons fp
-  RIGHT OUTER JOIN facilities ON fp.facility_id = facilities.id AND fp.threshold = :threshold AND fp.method = :algorithm
+  fp.id AS "polygon-id", ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone,
+  fp.population AS "population", fp.area AS "area"
+  /*~ (if (:region params) */
+  , fpr.population AS "population-in-region", fpr.area AS "area-in-region"
+  /*~ ) ~*/
+FROM facilities
   INNER JOIN facility_types ON facilities.type_id = facility_types.id
+  LEFT OUTER JOIN facilities_polygons fp ON fp.facility_id = facilities.id AND fp.threshold = :threshold AND fp.method = :algorithm
+  /*~ (if (:region params) */
+  LEFT OUTER JOIN facilities_polygons_regions fpr ON fpr.region_id = :region AND fpr.facility_polygon_id = fp.id
+  /*~ ) ~*/
 WHERE 1=1 :snip:criteria ;
 
 -- :name isochrone-for-facilities :? :1

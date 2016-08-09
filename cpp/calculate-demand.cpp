@@ -147,8 +147,6 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
       }
     }
 
-    // TODO: The actual capacity considered should be proportional to the
-    // area of the isochrone that lands on this region
     float capacity = capacities[iFacility];
 
     // Each pixel under the isochrone will be multiplied by the proportion of

@@ -67,8 +67,9 @@
    (facilities-with-isochrones (get-db service)
       {:threshold (or threshold 900)
        :algorithm (or algorithm "alpha-shape")
-       :simplify (or simplify 0.001)
-       :criteria (facilities-criteria criteria)})))
+       :simplify  (or simplify 0.001)
+       :region    (:region criteria)
+       :criteria  (facilities-criteria criteria)})))
 
 (defn get-isochrone-for-all-facilities [service threshold]
   (isochrone-for-facilities (get-db service) {:threshold threshold}))
