@@ -68,3 +68,27 @@ RETURNING id;
 
 -- :name calculate-facility-isochrones! :<!
 SELECT process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer);
+
+-- :name select-facilities-polygons-regions-for-facility :?
+SELECT fpr.facility_polygon_id AS "facility-polygon-id",
+       fpr.region_id AS "region-id",
+       fpr.area AS "area"
+FROM facilities_polygons_regions AS fpr INNER JOIN facilities_polygons AS fp
+  ON fpr.facility_polygon_id = fp.id
+WHERE fp.facility_id = :facility-id;
+
+-- :name set-facility-polygon-region-population! :!
+UPDATE facilities_polygons_regions
+SET population = :population
+WHERE facility_polygon_id = :facility-polygon-id
+  AND region_id = :region-id;
+
+-- :name select-facilities-polygons-for-facility :?
+SELECT fp.id AS "facility-polygon-id"
+FROM facilities_polygons AS fp
+WHERE fp.facility_id = :facility-id;
+
+-- :name set-facility-polygon-population! :!
+UPDATE facilities_polygons
+SET population = :population
+WHERE id = :facility-polygon-id;

@@ -5,6 +5,10 @@ set -euo pipefail
 # with a 255 value for each facility polygon, intersected with the specified REGION,
 # with the same size and extent as the REGION raster
 
+# To be invoked to setup all isochrones or for a specific facility
+# Note that this should not be necessary on a freshly imported facilities dataset,
+# as the import process already invokes raster-isochrone for each isochrone
+
 function query {
   psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c "$1";
 }
@@ -12,6 +16,7 @@ function query {
 echo "Rasterizing isochrones per region"
 mkdir -p data/isochrones/
 REGION_IDS="$(query 'SELECT id FROM regions ORDER BY id;')"
+SCRIPTS_DIR=$(dirname "${BASH_SOURCE}")
 
 if [ $# -lt 1 ]; then
   FACILITY_CONDITION=""
@@ -34,7 +39,8 @@ for regionid in $REGION_IDS; do
 
   for id in $FACILITY_POLYGON_IDS; do
     echo "Processing polygon ${id}"
-    $(dirname "${BASH_SOURCE}")/raster-isochrone ${regionid} ${id}
+    POPULATION=$(${SCRIPTS_DIR}/raster-isochrone ${regionid} ${id})
+    query "UPDATE facilities_polygons_regions SET population = ${POPULATION} WHERE facility_polygon_id = ${id} AND region_id = ${regionid};"
   done;
 
 done;

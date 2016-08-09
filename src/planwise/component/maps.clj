@@ -16,8 +16,6 @@
   (digest/sha-256
     (str/join "_" (cons region-id polygon-ids))))
 
-; CONFIG NO ESTA LLEGANDO A MAP
-
 (defn- default-capacity
   [{config :config}]
   (:facilities-capacity config))

@@ -14,6 +14,7 @@ ADD scripts/load-regions /app/scripts/load-regions
 ADD scripts/raster-regions /app/scripts/raster-regions
 ADD scripts/raster-isochrones /app/scripts/raster-isochrones
 ADD scripts/regions-population /app/scripts/regions-population
+ADD scripts/isochrone-population /app/scripts/isochrone-population
 ENV SCRIPTS_PATH /app/scripts/
 
 # Add project compiled binaries
@@ -29,7 +30,8 @@ ENV JAR_PATH /app/lib/planwise-0.5.0-SNAPSHOT-standalone.jar
 ENV PORT 80
 EXPOSE $PORT
 
-# Data folder
+# Data and tmp folders
 ENV DATA_PATH /data/
+ENV TMP_PATH /tmp/
 
 CMD ["java", "-jar", "/app/lib/planwise-0.5.0-SNAPSHOT-standalone.jar"]

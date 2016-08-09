@@ -1,0 +1,32 @@
+#! /bin/bash
+set -euo pipefail
+
+# Returns the population under an isochrone
+
+# Used in facilities.clj
+
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 FACILITY_POLYGON_ID"
+	exit 1
+fi
+
+DATA_PATH=${DATA_PATH:-data}
+BIN_PATH=${BIN_PATH:-cpp}
+TMP_PATH=${TMP_PATH:-/tmp}
+FACILITY_POLYGON_ID=$1
+
+POPULATION_FILE=${DATA_PATH}/KEN_popmap15_v2b.tif
+if [[ ! -e $POPULATION_FILE ]]; then
+  echo "ERROR: Region population raster ${POPULATION_FILE} not found";
+  exit 1;
+fi;
+
+VRT_TARGET=${TMP_PATH}/${FACILITY_POLYGON_ID}.vrt
+gdalwarp -q \
+  -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+  -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+  -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
+  $POPULATION_FILE $VRT_TARGET
+
+echo $(${BIN_PATH}/count-population ${VRT_TARGET})
+rm ${VRT_TARGET}

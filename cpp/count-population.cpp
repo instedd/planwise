@@ -68,5 +68,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << std::fixed << acum;
+  std::cout << ((long)acum) << std::endl;
 }

@@ -13,7 +13,7 @@
 (defn run-external
   [service kind name & args]
   (let [sh-args  (cons (path-for service kind name) args)
-        _        (info "Invoking " (str/join " " sh-args))
+        _        (info "Invoking" (str/join " " sh-args))
         response (apply sh sh-args)]
     (case (:exit response)
       0 (:out response)

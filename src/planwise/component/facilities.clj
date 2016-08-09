@@ -3,7 +3,7 @@
             [planwise.component.runner :refer [run-external]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
-            [clojure.string :refer [join lower-case]]))
+            [clojure.string :refer [trim trim-newline join lower-case]]))
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -17,9 +17,6 @@
 
 (defn facilities-criteria [criteria]
   (criteria-snip criteria))
-
-(defn raster-facility-isochrones! [{runner :runner} facility-id]
-  (run-external runner :scripts "raster-isochrones" (str facility-id)))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -92,17 +89,39 @@
              types)
         (vec))))
 
+(defn raster-isochrones! [service facility-id]
+  (let [facilities-polygons-regions (select-facilities-polygons-regions-for-facility (get-db service) {:facility-id facility-id})]
+    (doseq [{:keys [facility-polygon-id region-id] :as fpr} facilities-polygons-regions]
+      (let [population (-> service
+                          (:runner)
+                          (run-external :scripts "raster-isochrone" (str region-id) (str facility-polygon-id))
+                          (trim-newline)
+                          (trim)
+                          (Integer.))]
+        (set-facility-polygon-region-population!
+          (get-db service)
+          (assoc fpr :population population))))))
+
+(defn calculate-isochrones-population! [service facility-id]
+  (let [facilities-polygons (select-facilities-polygons-for-facility (get-db service) {:facility-id facility-id})]
+    (doseq [{facility-polygon-id :facility-polygon-id, :as fp} facilities-polygons]
+      (let [population (-> service
+                          (:runner)
+                          (run-external :scripts "isochrone-population" (str facility-polygon-id))
+                          (trim-newline)
+                          (trim)
+                          (Integer.))]
+        (set-facility-polygon-population!
+          (get-db service)
+          (assoc fp :population population))))))
 
 (defn preprocess-isochrones
   [service facility-id]
-  (->
-    (calculate-facility-isochrones! (get-db service)
+  (calculate-facility-isochrones! (get-db service)
                                   {:id facility-id
                                    :method "alpha-shape"
                                    :start 30
                                    :end 180
                                    :step 15})
-    first
-    :process_facility_isochrones)
-  ; TODO: Return :process_facility_isochrones
-  (raster-facility-isochrones! service facility-id))
+  (calculate-isochrones-population! service facility-id)
+  (raster-isochrones! service facility-id))
