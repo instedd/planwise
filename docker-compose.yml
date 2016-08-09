@@ -6,13 +6,14 @@ db:
     POSTGRES_DB: routing
 
 web:
-  build: .
+  image: instedd/planwise:latest
   ports:
-    - "80:8080"
+    - "8080:80"
   links:
     - db
   command: /bin/sh -c "/app/scripts/migrate && java -jar $JAR_PATH"
   environment:
+    JAR_PATH: /app/lib/planwise-0.5.0-SNAPSHOT-standalone.jar
     DATABASE_URL: "jdbc:postgresql://db/routing?user=planwise&password=planwise"
     POSTGRES_PASSWORD: planwise
     POSTGRES_USER: planwise
