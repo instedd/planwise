@@ -10,7 +10,7 @@ fi
 
 git describe --always > resources/planwise/version
 lein uberjar
-make -C cpp
+make -C cpp release
 
 TAG=${1/\//_}
 

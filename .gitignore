@@ -19,3 +19,4 @@ dev/local.clj
 .idea
 resources/planwise/public/data/
 /mapserver/data/*
+/cpp/*.dSYM

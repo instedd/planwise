@@ -1,9 +1,9 @@
 #include <iostream>
-#include <fstream>
 #include <sstream>
 #include <string>
 #include <math.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include "gdal_priv.h"
 #include "cpl_conv.h"
@@ -24,8 +24,8 @@ template <typename T> std::string numberToString (T number) {
 }
 
 bool fileExists (const std::string& name) {
-  std::ifstream fileStream(name.c_str());
-  return fileStream.good();
+  struct stat buf;
+  return (stat(name.c_str(), &buf) == 0);
 }
 
 GDALDataset* openRaster(std::string filename) {
@@ -151,7 +151,8 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
 
     // Each pixel under the isochrone will be multiplied by the proportion of
     // the unsatisfied demand that is satisfied by this facility.
-    float factor = 1 - (capacity / unsatisfiedCount);
+    float factor = 1;
+    if (unsatisfiedCount != 0) factor -= (capacity / unsatisfiedCount);
     if (factor < 0) factor = 0;
 
 #ifdef DEBUG
@@ -224,15 +225,17 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
   }
 
   // Save calculated unsatisifiedDemand as metadata in the dataset file
-  CPLErr err = targetDataset->SetMetadataItem(DEMAND_METADATA_KEY, numberToString((long)totalUnsatisfied).c_str(), APP_METADATA_DOMAIN);
+  targetDataset->SetMetadataItem(DEMAND_METADATA_KEY, numberToString((long)totalUnsatisfied).c_str(), APP_METADATA_DOMAIN);
 
+  CPLFree(buffer);
+  CPLFree(facilityBuffer);
   closeRaster(targetDataset);
 
   return totalUnsatisfied;
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 5) {
+  if (argc < 5 || (argc % 2) == 0) {
     std::cerr << "Usage: " << argv[0] << " TARGET.tif POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
       << std::endl << std::endl
       << "Example:" << std::endl
