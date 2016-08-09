@@ -105,7 +105,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
 
   float nodata = targetBand->GetNoDataValue();
 
-  for (int iFacility = 0; iFacility < facilities.size(); iFacility++) {
+  for (int iFacility = 0; iFacility < (int)facilities.size(); iFacility++) {
 #ifdef DEBUG
     std::cerr << "Processing facility " << facilities[iFacility] << std::endl;
 #endif

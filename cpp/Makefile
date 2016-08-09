@@ -12,3 +12,7 @@ release:
 clean:
 	rm count-population
 	rm calculate-demand
+
+debian:
+	docker build -t instedd/planwise-cpp-builder:local .
+	docker run --rm -v "`pwd`:/app/" 0360aa208e49 make -C /app release
