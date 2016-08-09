@@ -12,9 +12,9 @@
   (:mapserver-url config))
 
 (defn- demand-map-key
-  [region-id polygon-ids]
+  [region-id polygons-with-capacities]
   (digest/sha-256
-    (str/join "_" (cons region-id polygon-ids))))
+    (str/join "_" (cons region-id polygons-with-capacities))))
 
 (defn- default-capacity
   [{config :config}]
@@ -45,16 +45,19 @@
 (defn demand-map
   [service region-id facilities]
   (let [polygons (filter :polygon-id facilities)
-        map-key  (demand-map-key region-id (map :polygon-id polygons))
-        args     (->> polygons
-                    (map (juxt
-                            #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
-                            #(str (capacity-for service %))))
-                    (flatten)
-                    (concat [(demands-path service map-key ".tif")
-                             (populations-path service region-id ".tif")])
-                    (vec))
-        response          (apply run-external (:runner service) :bin "calculate-demand" args)
+        polygons-with-capacities (->> polygons
+                                    (map (juxt
+                                          #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
+                                          #(str (capacity-for service %))))
+                                    (flatten))
+        map-key  (demand-map-key region-id polygons-with-capacities)
+        response (apply run-external
+                    (:runner service)
+                    :bin
+                    "calculate-demand"
+                    (demands-path service map-key ".tif")
+                    (populations-path service region-id ".tif")
+                    (vec polygons-with-capacities))
         unsatisfied-count (-> response
                             (str/trim-newline)
                             (str/trim)
