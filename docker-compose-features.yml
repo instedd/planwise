@@ -1,0 +1,35 @@
+version: '2.0'
+
+services:
+  # selenium without debug
+  # selenium:
+  #   image: selenium/standalone-firefox
+  #   ports:
+  #     - 4444:4444
+
+  # selenium with debug
+  # vnc://127.0.0.1:5900 (password: secret) it can be opened from safari
+  selenium:
+    build:
+      context: .
+      dockerfile: Dockerfile-firefox-debug
+    ports:
+      - 4444:4444
+      - 5900:5900
+
+  ruby:
+    image: ruby:2.2
+    depends_on:
+      - selenium
+    volumes:
+      - .:/app
+      - bundle:/usr/local/bundle
+
+volumes:
+  bundle:
+
+# $ docker-compose -f docker-compose-features.yml up
+# (optionally connect to vnc)
+# $ docker-compose -f docker-compose-features.yml run --rm ruby bash
+# root@ruby $ cd /app/features
+# root@ruby $ rspec

@@ -1,0 +1,5 @@
+# https://github.com/SeleniumHQ/docker-selenium/pull/249
+FROM selenium/standalone-firefox-debug
+USER root
+COPY Dockerfile-firefox-debug_entry_point.sh /opt/bin/entry_point.sh
+RUN chmod +x /opt/bin/entry_point.sh

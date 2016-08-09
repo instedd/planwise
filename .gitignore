@@ -22,4 +22,4 @@ resources/planwise/public/data/
 /mapserver/data/*
 /cpp/*.dSYM
 /cpp/*.o
-
+/features/tmp/*
