@@ -68,12 +68,11 @@
                 ;; Demographics tile layer
                 (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
                       population-map (mapping/region-map project-region-id)]
-                  [:tile-layer {:url config/mapserver-url
-                                :transparent true
-                                :wms true
-                                :layers mapping/layer-name
-                                :DATAFILE (or demand-map population-map)
-                                :opacity 0.3}])
+                  [:wms-tile-layer {:url config/mapserver-url
+                                    :transparent true
+                                    :layers mapping/layer-name
+                                    :DATAFILE (or demand-map population-map)
+                                    :opacity 0.3}])
                 ;; Boundaries of working region
                 (if @map-geojson
                   [:geojson-layer {:data @map-geojson

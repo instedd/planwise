@@ -102,10 +102,14 @@
 
 (defmethod leaflet-layer :tile-layer [[_ props & children]]
   (let [url   (:url props)
-        wms?  (:wms props)
-        attrs (dissoc props :url :wms)
-        constructor (if wms? js/L.tileLayer.wms js/L.tileLayer)
-        layer       (constructor url (clj->js attrs))]
+        attrs (dissoc props :url)
+        layer (.tileLayer js/L url (clj->js attrs))]
+    layer))
+
+(defmethod leaflet-layer :wms-tile-layer [[_ props & children]]
+  (let [url   (:url props)
+        attrs (dissoc props :url)
+        layer (js/L.tileLayer.wms url (clj->js attrs))]
     layer))
 
 (defn leaflet-replace-layer [leaflet old-layer new-layer-def]
