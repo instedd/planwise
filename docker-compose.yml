@@ -36,3 +36,6 @@ services:
   mapserver-data:
     image: instedd/planwise-mapserver:kenya-data
     command: /bin/true
+
+volumes:
+  db:

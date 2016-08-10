@@ -13,3 +13,5 @@ services:
     depends_on:
       - db
     command: /bin/sh -c "cd /app && scripts/migrate && scripts/load-regions"
+volumes:
+  db:

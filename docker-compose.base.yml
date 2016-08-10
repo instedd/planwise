@@ -21,3 +21,5 @@ services:
       POSTGRES_PASSWORD: planwise
       POSTGRES_USER: planwise
       POSTGRES_DB: routing
+    volumes:
+      - db:/var/lib/postgresql/data
