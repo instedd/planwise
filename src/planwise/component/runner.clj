@@ -8,16 +8,23 @@
 
 (defn- path-for
   [service kind name]
-  (apply str (kind service) name))
+  (if-let [folder (kind service)]
+    (apply str (kind service) name)
+    (throw (ex-info (str "Path for " kind " not found") {:kind kind}))))
 
 (defn run-external
-  [service kind name & args]
+  [service kind timeout name & args]
   (let [sh-args  (cons (path-for service kind name) args)
         _        (info "Invoking" (str/join " " sh-args))
-        response (apply sh sh-args)]
+        response (if timeout
+                   (deref (future (apply sh sh-args)) timeout {:exit :timeout, :err :timeout})
+                   (apply sh sh-args))]
     (case (:exit response)
       0 (:out response)
-      (throw (RuntimeException. (str "Error running `" (str/join " " sh-args) "`:\n" (:err response)))))))
+      (throw
+        (ex-info
+          (str "Error running external " kind ": " (:err response))
+          {:args args, :code (:exit response), :err (:err response)})))))
 
 (defrecord RunnerService [config])
 

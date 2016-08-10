@@ -3,7 +3,10 @@
             [planwise.component.runner :refer [run-external]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
+            [taoensso.timbre :as timbre]
             [clojure.string :refer [trim trim-newline join lower-case]]))
+
+(timbre/refer-timbre)
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -93,28 +96,36 @@
 (defn raster-isochrones! [service facility-id]
   (let [facilities-polygons-regions (select-facilities-polygons-regions-for-facility (get-db service) {:facility-id facility-id})]
     (doseq [{:keys [facility-polygon-id region-id] :as fpr} facilities-polygons-regions]
-      (let [population (-> service
-                          (:runner)
-                          (run-external :scripts "raster-isochrone" (str region-id) (str facility-polygon-id))
-                          (trim-newline)
-                          (trim)
-                          (Integer.))]
-        (set-facility-polygon-region-population!
-          (get-db service)
-          (assoc fpr :population population))))))
+      (try
+        (let [population (-> service
+                            (:runner)
+                            (run-external :scripts 60000 "raster-isochrone" (str region-id) (str facility-polygon-id))
+                            (trim-newline)
+                            (trim)
+                            (Integer.))]
+          (set-facility-polygon-region-population!
+            (get-db service)
+            (assoc fpr :population population)))
+        (catch Exception e
+          (error e "Error on raster-isochrones for facility" facility-id "polygon" facility-polygon-id "region" region-id)
+          nil)))))
 
 (defn calculate-isochrones-population! [service facility-id]
   (let [facilities-polygons (select-facilities-polygons-for-facility (get-db service) {:facility-id facility-id})]
     (doseq [{facility-polygon-id :facility-polygon-id, :as fp} facilities-polygons]
-      (let [population (-> service
-                          (:runner)
-                          (run-external :scripts "isochrone-population" (str facility-polygon-id))
-                          (trim-newline)
-                          (trim)
-                          (Integer.))]
-        (set-facility-polygon-population!
-          (get-db service)
-          (assoc fp :population population))))))
+      (try
+        (let [population (-> service
+                            (:runner)
+                            (run-external :scripts 60000 "isochrone-population" (str facility-polygon-id))
+                            (trim-newline)
+                            (trim)
+                            (Integer.))]
+          (set-facility-polygon-population!
+            (get-db service)
+            (assoc fp :population population)))
+        (catch Exception e
+          (error e "Error on calculate-isochrones-population for facility" facility-id "polygon" facility-polygon-id)
+          nil)))))
 
 (defn preprocess-isochrones
   [service facility-id]
