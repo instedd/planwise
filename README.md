@@ -6,47 +6,125 @@ improvement of existing ones to maximize their impact in the community.
 
 ## Developing
 
+Instructions for setting up a development environment, focused on OSX.
+
 ### Setup
 
 You need to have [Leiningen](http://leiningen.org) and the
-[SASS compiler](https://github.com/sass/sassc) installed. In Mac OS X using
+[SASS compiler](https://github.com/sass/sassc) installed. In Mac OSX using
 Homebrew, just run:
 
 ```sh
-brew install leiningen sassc
+$ brew install leiningen sassc
 ```
 
 When you first clone this repository, run:
 
 ```sh
-lein setup
+$ lein setup
 ```
 
 This will create files for local configuration, and prep your system
 for the project.
 
-Next create a development database:
+### Environment
 
+The following environment variables are used by the project scripts, and it is
+suggested to set them before starting development:
+```
+export RASTER_ISOCHRONES=false
+export CALCULATE_DEMAND=false
+export DATABASE_URL="jdbc:postgresql://localhost/routing?user=USERNAME"
+export POSTGRES_PASSWORD=""
+export POSTGRES_USER=USERNAME
+export POSTGRES_DB=routing
+export POSTGRES_HOST=localhost
+```
+
+Additionally, the project requires [GUISSO](https://github.com/instedd/guisso)
+information (identifier and secret) to establish the OAuth flow with resourcemap.
+Register your development host in GUISSO, and set the env vars:
+```
+export GUISSO_CLIENT_ID=YOURID
+export GUISSO_CLIENT_SECRET=YOURSECRET
+```
+
+Instead of controlling them via env vars, you can set these values in the
+local `profiles.clj`:
+```clojure
+{:profiles/dev  {:env {:guisso-url "https://login.instedd.org/"
+                       :guisso-client-id "YOURID"
+                       :guisso-client-secret "YOURSECRET"}}}
+```
+
+### GDAL
+
+Certain processing scripts rely on GDAL binaries for processing, with PostgreSQL support. Install it with:
+```bash
+$ brew install gdal --with-postgresql
+```
+
+### Database
+
+The database engine is PostgreSQL, using PostGIS and pgRouting. Install them via:
+```bash
+$ brew install postgresql postgis pgrouting
+```
+
+Tested versions at the time of this writing are:
+
+* PostgreSQL: 9.5.2
+* PostGIS: 2.2.2
+* pgRouting: 2.2.1
+
+Database schema is managed through migrations via [ragtime](https://github.com/duct-framework/duct-ragtime-component). Lein tasks `lein migrate` and `lein rollback` can be issued for managing the DB schema, or `(migrate (:ragtime system))` from the repl.
+
+Migration files are located in `resources/migrations`, and follow the `NUM-name.(up|down).sql` naming convention, where `NUM` is a 3-digit incremental ID. Additionally, SQL functions located in `resources/planwise/plpgsql` are regenerated on every `lein migrate`, or can be manually loaded from the REPL by running `(load-sql)`.
+
+To proceed with the setup of your development environment, after installing PostgreSQL and the required extensions, create a database:
 ```bash
 $ createdb routing
 ```
 
-And configure the connection URL in your `profiles.clj`:
-
+Configure the connection URL in your `profiles.clj`:
 ```clojure
 ;; Local profile overrides
 {:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"}}}
 ```
 
-See `doc/Database-Setup.md` for further database configuration.
+And run the migrations:
+```bash
+$ lein migrate
+```
 
+As a one-time task, to seed your database with routing information from OSM and regions, run the following two scripts:
+```bash
+$ scripts/import-osm osx/osm2pgrouting
+$ scripts/load-regions
+```
 
-### Environment
+The first script will download the OSM dump and import it via osm2pgrouting. Note that the binary in the `osx` folder of the repository was compiled for OSX, and was generated from [a fork](https://github.com/ggiraldez/osm2pgrouting) of the project. It can be rebuilt by running:
+```bash
+$ git clone https://github.com/ggiraldez/osm2pgrouting
+$ cd osm2pgRouting
+$ git checkout develop
+$ cmake -H. -Bbuild
+$ cd build
+$ make
+```
+
+The second script will download regions from a Mapzen data dump extracted from OSM, load them into the DB, and optionally preprocess them.
+
+### Mapserver
+
+Start mapserver and mapcache containers for development by running `docker-compose up` in the `mapserver` folder, after downloading file `KEN_popmap15_v2b.tif` from [worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group), and placing it in the `data` folder. Refer to the README in that folder for more information.
+
+### REPL
 
 To begin developing, start with a REPL.
 
 ```sh
-lein repl
+$ lein repl
 ```
 
 Then load the development environment.
@@ -63,7 +141,8 @@ dev=> (go)
 :started
 ```
 
-By default this creates a web server at <http://localhost:3000>.
+By default this creates a web server at <http://localhost:3000>. Note that
+these 3 commands are ran when invoking `scripts/dev`.
 
 When you make changes to your source files, use `reset` to reload any
 modified files and reset the server. Changes to CSS or ClojureScript
@@ -90,22 +169,6 @@ nil
 cljs.user=>
 ```
 
-### Database
-
-Database schema is managed through migrations via [ragtime](https://github.com/duct-framework/duct-ragtime-component). Lein tasks `lein migrate` and `lein rollback` can be issued for managing the DB schema.
-
-Migration files are located in `resources/migrations`, and follow the `NUM-name.(up|down).sql` naming convention, where `NUM` is a 3-digit incremental ID.
-
-Beside the migrations for controlling the schema, the DB can be populated through the following scripts, configured to run on Kenya:
-* `import-osm` will download and process via `osm2pgrouting` OpenStreetMap data
-* `import-sites` will download ResourceMap facilities data and import them
-* `load-regions` will import a geojson from Mapzen to load regions (Kenya by default)
-* `preprocess-isochrones` can be ran any number of times with different parameters to calculate the isochrones for the facilities; for instance, `preprocess-isochrones 300 buffer 60 180 15` will calculate the isochrones using the buffer method (with a 300m threshold) for driving distances from 1 to 3 hours, at 15 min intervals.
-
-### Mapserver
-
-Start mapserver and mapcache containers for development by running `docker-compose up` in the `mapserver` folder, after downloading file `KEN_popmap15_v2b.tif` from [worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group), and placing it in the `data` folder. Refer to the README in that folder for more information.
-
 ### Testing
 
 Running the tests require a separate scratch database. No setup is necessary
@@ -124,7 +187,6 @@ your `profiles.clj`:
 {:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"
                        :test-database-url "jdbc:postgresql://localhost/routing-test"}}}
 ```
-
 
 Testing is fastest through the REPL, as you avoid environment startup
 time.
@@ -167,7 +229,17 @@ nil
 
 Sample files for docker cloud and docker compose are provided in the root folder, which make use of the project's [Docker image](https://hub.docker.com/r/instedd/planwise/).
 
-After setting up the stack, DB data can be provisioned by running the 3 scripts described in the _Database_ section of this document.
+After setting up the stack, DB data can be provisioned by running the scripts described in the _Database_ section of this document.
+
+## Running with docker
+
+There is a set of docker-compose files for locally running the application; one
+of them used for a first-time setup of the database, and other for regularly
+running the application.
+
+1- Create `.docker-env` file with GUISSO_CLIENT_SECRET and GUISSO_CLIENT_ID env vars, after registering your app in [GUISSO](https://github.com/instedd/guisso)
+2- Run `docker-compose -f docker-compose.setup.yml up` to set up the environment
+3- After `planwise_setup_1` exits successfully, run `docker-compose up` to start the app in port 3000
 
 ## Legal
 
