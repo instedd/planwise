@@ -9,4 +9,5 @@ osm2pgrouting -f /tmp/kenya.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d 
 echo "Populating ways_nodes table"
 psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
 SELECT populate_ways_nodes();
+SELECT apply_traffic_factor(1.5);
 SQL_SCRIPT
