@@ -1,41 +1,41 @@
-db:
-  image: starefossen/pgrouting:9.4-2.1-2.1
-  environment:
-    POSTGRES_PASSWORD: planwise
-    POSTGRES_USER: planwise
-    POSTGRES_DB: routing
+version: '2'
 
-web:
-  build: .
-  ports:
-    - "80:8080"
-  links:
-    - db
-  command: /bin/sh -c "/app/scripts/migrate && java -jar $JAR_PATH"
-  environment:
-    DATABASE_URL: "jdbc:postgresql://db/routing?user=planwise&password=planwise"
-    POSTGRES_PASSWORD: planwise
-    POSTGRES_USER: planwise
-    POSTGRES_DB: routing
-    POSTGRES_HOST: db
-    PORT: 80
+services:
+  db:
+    extends:
+      file: docker-compose.base.yml
+      service: db
 
-mapcache:
-  image: instedd/planwise-mapserver:kenya-mapcache
-  links:
-    - mapserver
-  ports:
-    - "5002:80"
+  web:
+    extends:
+      file: docker-compose.base.yml
+      service: app
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
 
-mapserver:
-  image: instedd/planwise-mapserver:kenya-mapserver
-  links:
-    - mapserver-data
-  ports:
-    - "5001:80"
-  volumes_from:
-    - mapserver-data
+  migrate:
+    extends:
+      file: docker-compose.base.yml
+      service: app
+    depends_on:
+      - db
+    command: /app/scripts/migrate
 
-mapserver-data:
-  image: instedd/planwise-mapserver:kenya-data
-  command: /bin/true
+  mapcache:
+    image: instedd/planwise-mapserver:kenya-mapcache
+    pid: host
+
+  mapserver:
+    image: instedd/planwise-mapserver:kenya-mapserver
+    pid: host
+    volumes_from:
+      - mapserver-data
+
+  mapserver-data:
+    image: instedd/planwise-mapserver:kenya-data
+    command: /bin/true
+
+volumes:
+  db:

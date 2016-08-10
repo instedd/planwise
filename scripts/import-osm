@@ -3,10 +3,11 @@ set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
 echo "Downloading Kenya OSM data and importing via osm2pgrouting"
-curl -XGET https://s3.amazonaws.com/planwise/data/kenya-20160627.osm.gz | gunzip > kenya.osm
-osm2pgrouting -f kenya.osm -c ./mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
+curl -XGET https://s3.amazonaws.com/planwise/data/kenya-20160627.osm.gz | gunzip > /tmp/kenya.osm
+osm2pgrouting -f /tmp/kenya.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
 
 echo "Populating ways_nodes table"
 psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
 SELECT populate_ways_nodes();
+SELECT apply_traffic_factor(1.5);
 SQL_SCRIPT
