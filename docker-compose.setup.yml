@@ -12,6 +12,7 @@ services:
       service: app
     depends_on:
       - db
-    command: /bin/sh -c "cd /app && scripts/migrate && scripts/load-regions"
+    command: /bin/sh -c "sleep 5 && cd /app && scripts/migrate && scripts/import-osm && scripts/load-regions"
+
 volumes:
   db:
