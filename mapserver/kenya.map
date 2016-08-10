@@ -54,8 +54,13 @@ MAP
   END
 
   LAYER
+    VALIDATION
+      "DATAFILE" "^[A-Za-z0-9_/]+$"
+      "default_DATAFILE" "KEN_popmap15_v2b"
+    END
+
     NAME "KenyaPopulation"
-    DATA "/data/KEN_popmap15_v2b.tif"
+    DATA '/data/%DATAFILE%.tif'
     TYPE RASTER
 
     METADATA

@@ -3,7 +3,7 @@
             [re-com.core :as rc]
             [clojure.string :as str]
             [leaflet.core :refer [map-widget]]
-            [planwise.client.mapping :refer [gray-base-tile-layer]]
+            [planwise.client.mapping :as mapping]
             [planwise.client.config :as config]
             [planwise.client.styles :as styles]
             [planwise.client.components.common :as common]
@@ -32,14 +32,15 @@
                                #(dispatch [:projects/cancel-new-project])}
           [new-project-dialog]])])))
 
-(defn- project-tab [project-id selected-tab]
+(defn- project-tab [project-id project-region-id selected-tab]
   (let [facilities (subscribe [:projects/facilities :facilities])
         isochrones (subscribe [:projects/facilities :isochrones])
         map-position (subscribe [:projects/map-view :position])
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])
+        demand-map-key (subscribe [:projects/demand-map-key])
         map-geojson (subscribe [:projects/map-geojson])]
-    (fn [project-id selected-tab]
+    (fn [project-id project-region-id selected-tab]
       (cond
         (#{:demographics
            :facilities
@@ -58,15 +59,20 @@
                  #(dispatch [:projects/update-zoom %])}
 
                 ;; Base tile layer
-                gray-base-tile-layer
+                mapping/gray-base-tile-layer
                 ;; Markers with filtered facilities
                 (when (#{:facilities :transport} selected-tab)
                   [:marker-layer {:points @facilities
                                   :icon-fn (constantly "circle-marker")
                                   :popup-fn #(str (:name %) "<br/>" (:type %))}])
                 ;; Demographics tile layer
-                [:tile-layer {:url config/demo-tile-url
-                              :opacity 0.3}]
+                (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
+                      population-map (mapping/region-map project-region-id)]
+                  [:wms-tile-layer {:url config/mapserver-url
+                                    :transparent true
+                                    :layers mapping/layer-name
+                                    :DATAFILE (or demand-map population-map)
+                                    :opacity 0.3}])
                 ;; Boundaries of working region
                 (if @map-geojson
                   [:geojson-layer {:data @map-geojson
@@ -95,10 +101,11 @@
     (fn []
       (let [project-id (:id @page-params)
             selected-tab (:section @page-params)
-            project-goal (:goal @current-project)]
+            project-goal (:goal @current-project)
+            project-region-id (:region-id @current-project)]
         [:article.project-view
          [header-section project-id project-goal selected-tab]
-         [project-tab project-id selected-tab]]))))
+         [project-tab project-id project-region-id selected-tab]]))))
 
 (defn project-page []
   (let [view-state (subscribe [:projects/view-state])]

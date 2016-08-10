@@ -1,5 +1,6 @@
 (ns planwise.endpoint.home-test
   (:require [planwise.endpoint.home :as home]
+            [planwise.component.maps :as maps]
             [buddy.core.nonce :as nonce]
             [buddy.auth.middleware :refer [wrap-authorization]]
             [buddy.auth.backends :as backends]
@@ -14,7 +15,7 @@
   {:jwe-secret (nonce/random-bytes 32)})
 
 (def handler
-  (-> (home/home-endpoint {:auth mocked-auth-service})
+  (-> (home/home-endpoint {:auth mocked-auth-service, :maps (maps/maps-service {})})
       (wrap-authorization (backends/session))))
 
 (def home-paths ["/"

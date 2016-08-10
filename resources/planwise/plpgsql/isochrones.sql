@@ -67,6 +67,7 @@ declare
   closest_node_geom geometry(point, 4326);
   facility_geom geometry(point, 4326);
   buffer_length integer;
+  polygon_id integer;
 begin
   create temporary table if not exists edges_agg_cost (
     gid integer not null,
@@ -107,6 +108,7 @@ begin
   from_cost := 0;
   to_cost   := threshold_start * 60;
   buffer_length := 300;
+
   while to_cost <= threshold_finish * 60 loop
 
     DELETE FROM facilities_polygons fp
@@ -129,17 +131,28 @@ begin
           union
           select ST_Buffer(ST_GeogFromWKB(ST_MakeLine(facility_geom, closest_node_geom)), buffer_length)::geometry
         ) as buffers
-      );
+      ) returning id INTO polygon_id;
     ELSIF _method = 'alpha-shape' THEN
       BEGIN
         insert into facilities_polygons (
-        select f_id, to_cost, _method, st_buffer(st_geogfromwkb(st_setsrid(pgr_pointsaspolygon('(select id::integer, lon::float as x, lat::float as y from ways_nodes where gid in (select gid from edges_agg_cost where agg_cost < ' || to_cost || ')) union (select id::integer, lon::float as x, lat::float as y from facilities f where f.id = ' || f_id || ')'), 4326)), buffer_length)::geometry);
+        select f_id, to_cost, _method, st_buffer(st_geogfromwkb(st_setsrid(pgr_pointsaspolygon('(select id::integer, lon::float as x, lat::float as y from ways_nodes where gid in (select gid from edges_agg_cost where agg_cost < ' || to_cost || ')) union (select id::integer, lon::float as x, lat::float as y from facilities f where f.id = ' || f_id || ')'), 4326)), buffer_length)::geometry)
+        returning id INTO polygon_id;
       EXCEPTION WHEN OTHERS THEN
         RAISE NOTICE 'Failed to calculate alpha shape for facility %', f_id;
       END;
     ELSE
       RETURN 'error: Method' || _method || ' unknown. Please use buffer or alpha-shape';
     END IF;
+
+    -- Precalculate area
+    UPDATE facilities_polygons SET area = ST_Area(the_geom) WHERE id = polygon_id;
+
+    -- Populate facilities_polygons_regions with the intersection between the inserted polygon and regions
+    INSERT INTO facilities_polygons_regions(facility_polygon_id, region_id, area)
+    SELECT fp.id, r.id, ST_Area(ST_Intersection(fp.the_geom, r.the_geom))
+    FROM regions AS r INNER JOIN facilities_polygons AS fp
+      ON ST_Intersects(fp.the_geom, r.the_geom)
+    WHERE fp.id = polygon_id;
 
     from_cost      := to_cost;
     to_cost        := to_cost + threshold_jump * 60;

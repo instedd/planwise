@@ -50,6 +50,11 @@
    (reaction (get-in @db [:projects :current :transport :time]))))
 
 (register-sub
+ :projects/demand-map-key
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :current :demand-map-key]))))
+
+(register-sub
  :projects/map-view
  (fn [db [_ field]]
    (let [map-view (reaction (get-in @db [:projects :current :map-view]))

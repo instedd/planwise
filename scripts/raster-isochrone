@@ -1,0 +1,60 @@
+#! /bin/bash
+set -euo pipefail
+
+# Creates a byte-sized raster file data/isochrones/REGIONID/FACILITY_POLYGON_ID.tif,
+# with a 255 value for each facility polygon, intersected with the specified REGION,
+# with the same size and extent as the REGION raster
+
+# Prints the total population for the rendered region
+
+# This script is invoked from the facilities service
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 REGION_ID FACILITY_POLYGON_ID"
+	exit 1
+fi
+
+DATA_PATH=${DATA_PATH:-data}
+BIN_PATH=${BIN_PATH:-cpp}
+REGION_ID=$1
+FACILITY_POLYGON_ID=$2
+
+# Create facility-polygon-region mask tif
+
+REGION_FILE=${DATA_PATH}/regions/${REGION_ID}.tif
+if [[ ! -e $REGION_FILE ]]; then
+  echo "ERROR: Region raster mask ${REGION_FILE} not found";
+  exit 1;
+fi;
+
+mkdir -p ${DATA_PATH}/isochrones/${REGION_ID}
+TARGET=${DATA_PATH}/isochrones/${REGION_ID}/${FACILITY_POLYGON_ID}.tif
+
+if [[ ! -e $TARGET ]]; then
+  gdalwarp -q \
+    -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+    -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+    -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
+    $REGION_FILE $TARGET
+fi;
+
+
+# Create facility-polygon-region population vrt to count population
+
+POPULATION_FILE=${DATA_PATH}/populations/${REGION_ID}.tif
+if [[ ! -e $POPULATION_FILE ]]; then
+  echo "ERROR: Region population raster ${POPULATION_FILE} not found";
+  exit 1;
+fi;
+
+VRT_TARGET=${DATA_PATH}/isochrones/${REGION_ID}/${FACILITY_POLYGON_ID}.vrt
+
+gdalwarp -q \
+  -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+  -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+  -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
+  -crop_to_cutline \
+  $POPULATION_FILE $VRT_TARGET
+
+echo $(${BIN_PATH}/count-population ${VRT_TARGET})
+rm ${VRT_TARGET}

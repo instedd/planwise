@@ -35,10 +35,11 @@ psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
 SQL_SCRIPT
 done;
 
-echo " Calculating geometry previews"
+echo
+echo "Calculating geometry previews"
 psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
-
   SELECT calculate_regions_previews();
-
 SQL_SCRIPT
-done;
+
+$(dirname "${BASH_SOURCE}")/raster-regions
+$(dirname "${BASH_SOURCE}")/regions-population

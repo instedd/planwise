@@ -181,10 +181,14 @@
  :projects/isochrones-loaded
  in-current-project
  (fn [db [_ response]]
-   (assoc-in db [:facilities :isochrones] (->> response
-                                               (map :isochrone)
-                                               (set)
-                                               (filterv some?)))))
+   (-> db
+     (assoc :demand-map-key (:map-key response))
+     (assoc :unsatisfied-count (:unsatisfied-count response))
+     (assoc-in [:facilities :isochrones] (->> response
+                                           :facilities
+                                           (map :isochrone)
+                                           (set)
+                                           (filterv some?))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project filter updating

@@ -12,8 +12,11 @@ pom.xml.asc
 /.dir-locals.el
 /profiles.clj
 dev/local.clj
+/cpp/count-population
+/cpp/calculate-demand
 
 *.pyc
 .idea
 resources/planwise/public/data/
 /mapserver/data/*
+/cpp/*.dSYM

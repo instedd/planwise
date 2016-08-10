@@ -12,8 +12,8 @@
 (def user-email
   (aget global-config "identity"))
 
-(def demo-tile-url
-  (aget global-config "demo-tile-url"))
+(def mapserver-url
+  (aget global-config "mapserver-url"))
 
 (def app-version
   (aget global-config "app-version"))

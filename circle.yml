@@ -10,6 +10,7 @@ dependencies:
     - sudo add-apt-repository -y ppa:georepublic/pgrouting
     - sudo apt-get update
     - sudo apt-get -y install postgresql-9.5-pgrouting
+    - sudo apt-get -y install libgdal1-dev
   cache_directories:
     - "~/sassc"
     - "~/libsass"
@@ -29,18 +30,12 @@ deployment:
     branch:
       - master
       - stable
-      - docker
+      - experiment/rasterize
     owner: instedd
     commands:
-      - git describe --always > resources/planwise/version
-      - lein uberjar
-      - docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS} ${DOCKER_REGISTRY}
-      - docker/push . planwise ${DOCKER_REPOSITORY}:${CIRCLE_BRANCH/#master/latest}
+      - ./deploy.sh ${CIRCLE_BRANCH/#master/latest}
   docker-tag:
     tag: /[0-9]+(\.[0-9]+)*(-pre\d+)?/
     owner: instedd
     commands:
-      - git describe --always > resources/planwise/version
-      - lein uberjar
-      - docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS} ${DOCKER_REGISTRY}
-      - docker/push . planwise ${DOCKER_REPOSITORY}:${CIRCLE_TAG}
+      - ./deploy.sh ${CIRCLE_TAG}

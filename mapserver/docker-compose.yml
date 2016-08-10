@@ -10,7 +10,7 @@ mapcache:
 mapserver:
   image: instedd/planwise-mapserver:kenya-mapserver
   volumes:
-    - "./data:/data:ro"
+    - "../data:/data:ro"
     - "./mapserver.conf:/etc/apache2/conf-enabled/mapserver.conf:ro"
     - "./kenya.map:/etc/mapserver/kenya.map:ro"
   ports:

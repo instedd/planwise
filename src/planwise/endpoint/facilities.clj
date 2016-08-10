@@ -1,5 +1,6 @@
 (ns planwise.endpoint.facilities
   (:require [planwise.boundary.facilities :as facilities]
+            [planwise.boundary.maps :as maps]
             [compojure.core :refer :all]
             [buddy.auth.accessrules :refer [restrict]]
             [buddy.auth :refer [authenticated?]]
@@ -9,7 +10,7 @@
   {:region (if region (Integer. region) nil)
    :types (if type (map #(Integer. %) (vals type)) nil)})
 
-(defn- endpoint-routes [service]
+(defn- endpoint-routes [service maps-service]
   (routes
    (GET "/" [type region]
      (let [facilities (facilities/list-facilities service (facilities-criteria type region))]
@@ -28,14 +29,16 @@
            isochrone {:threshold (Integer. threshold)
                       :algorithm algorithm
                       :simplify (if simplify (Float. simplify) nil)}
-           facilities (facilities/list-with-isochrones service isochrone criteria)]
-       (response facilities)))
+           facilities (facilities/list-with-isochrones service isochrone criteria)
+           demand     (maps/demand-map maps-service region facilities)]
+       (response
+         (assoc demand :facilities facilities))))
 
    (GET "/isochrone" [threshold]
      (let [threshold (Integer. (or threshold 5400))
            isochrone (facilities/isochrone-all-facilities service threshold)]
        (response isochrone)))))
 
-(defn facilities-endpoint [{service :facilities}]
+(defn facilities-endpoint [{service :facilities, maps :maps}]
   (context "/api/facilities" []
-    (restrict (endpoint-routes service) {:handler authenticated?})))
+    (restrict (endpoint-routes service maps) {:handler authenticated?})))

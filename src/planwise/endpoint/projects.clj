@@ -2,6 +2,7 @@
   (:require [compojure.core :refer :all]
             [ring.util.response :refer [content-type response status not-found]]
             [clojure.data.json :as json]
+            [planwise.boundary.maps :as maps]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.util.ring :as util]
@@ -11,7 +12,7 @@
             [clojure.string :as str]))
 
 (defn- assoc-extra-data
-  [with project facilities]
+  [with project {:keys [facilities maps]}]
   (let [criteria {:region (:region-id project)
                   :types (or (get-in project [:filters :facilities :type]) [])}]
     (case with
@@ -19,15 +20,19 @@
       (let [project-facilities (facilities/list-facilities facilities criteria)]
         (assoc project :facilities project-facilities))
       :isochrones
-      (let [time (get-in project [:filters :transport :time])
-            options {:threshold time}
+      (let [time       (get-in project [:filters :transport :time])
+            options    {:threshold time}
             isochrones (when time
-                         (facilities/list-with-isochrones facilities options criteria))]
-        (assoc project :isochrones isochrones))
+                         (facilities/list-with-isochrones facilities options criteria))
+            demand     (when isochrones
+                         (maps/demand-map maps (:region-id project) isochrones))]
+        (-> project
+          (assoc :isochrones isochrones)
+          (merge demand)))
       project)))
 
 (defn- endpoint-routes
-  [{service :projects facilities :facilities}]
+  [{service :projects facilities :facilities, :as services}]
   (routes
    (GET "/" request
      (let [user-id (util/request-user-id request)
@@ -38,7 +43,7 @@
      (let [user-id (util/request-user-id request)
            project (projects/get-project service (Integer. id))]
        (if (projects/accessible-by? project user-id)
-         (response (assoc-extra-data (keyword with) project facilities))
+         (response (assoc-extra-data (keyword with) project services))
          (not-found {:error "Project not found"}))))
 
    (PUT "/:id" [id filters with :as request]
@@ -48,7 +53,7 @@
            project (projects/get-project service id)]
        (if (projects/owned-by? project user-id)
          (if-let [project (projects/update-project service {:id id :filters filters})]
-           (response (assoc-extra-data (keyword with) project facilities))
+           (response (assoc-extra-data (keyword with) project services))
            (-> (response {:status "failure"})
                (status 400)))
          (not-found {:error "Project not found"}))))

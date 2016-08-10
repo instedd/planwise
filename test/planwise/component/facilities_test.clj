@@ -23,7 +23,7 @@
 (defn system []
   (into
    (test-system {:fixtures {:data fixture-data}})
-   {:facilities (component/using (facilities/facilities-service) [:db])}))
+   {:facilities (component/using (facilities/facilities-service {}) [:db])}))
 
 (deftest list-facilities
   (with-system (system)
@@ -37,7 +37,7 @@
     (let [service (:facilities system)
           facilities (facilities/list-with-isochrones service {:threshold 900})]
       (is (= 2 (count facilities)))
-      (is (= #{:id :name :lat :lon :isochrone} (-> facilities first keys set))))))
+      (is (= #{:id :name :lat :lon :isochrone :polygon-id :area :population} (-> facilities first keys set))))))
 
 (deftest insert-facility
   (with-system (system)

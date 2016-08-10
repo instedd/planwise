@@ -1,6 +1,7 @@
 (ns planwise.endpoint.home
   (:require [compojure.core :refer :all]
             [ring.util.anti-forgery :refer [anti-forgery-field]]
+            [planwise.boundary.maps :as maps]
             [cheshire.core :as json]
             [hiccup.form :refer [hidden-field]]
             [hiccup.page :refer [include-js include-css html5]]
@@ -29,7 +30,7 @@
 (defn client-config
   [{:keys [auth resmap request maps globals]}]
   (let [resmap-url (:url resmap)
-        demo-tile-url (:demo-tile-url maps)
+        mapserver-url (maps/mapserver-url maps)
         ident (util/request-ident request)
         email (util/request-user-email request)
         token (create-jwe-token auth ident)
@@ -37,7 +38,7 @@
         config {:resourcemap-url resmap-url
                 :identity email
                 :jwe-token token
-                :demo-tile-url demo-tile-url
+                :mapserver-url mapserver-url
                 :app-version app-version}]
     [:script (str "var _CONFIG=" (json/generate-string config) ";")]))
 

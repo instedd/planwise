@@ -70,7 +70,10 @@
                   :exclusions [postgresql
                                ch.qos.logback/logback-classic
                                ch.qos.logback/logback-core]]
-                 [com.layerware/hugsql "0.4.7"]]
+                 [com.layerware/hugsql "0.4.7"]
+
+                 ; Misc
+                 [digest "1.4.4"]]
 
   :plugins [[lein-environ "1.0.3"]
             [lein-cljsbuild "1.1.2"]

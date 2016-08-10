@@ -36,6 +36,7 @@
             [planwise.component.resmap :refer [resmap-client]]
             [planwise.component.importer :refer [importer]]
             [planwise.component.maps :refer [maps-service]]
+            [planwise.component.runner :refer [runner-service]]
 
             [planwise.endpoint.home :refer [home-endpoint]]
             [planwise.endpoint.auth :refer [auth-endpoint]]
@@ -150,14 +151,16 @@
          :db                  (hikaricp (:db config))
 
          :auth                (auth-service (:auth config))
-         :facilities          (facilities-service)
+         :facilities          (facilities-service (:facilities config))
          :projects            (projects-service)
          :regions             (regions-service)
          :routing             (routing-service)
          :users-store         (users-store)
          :resmap              (resmap-client (:resmap config))
          :importer            (importer)
-         :maps                (maps-service (:maps config))
+         :runner              (runner-service (:paths config))
+         :maps                (maps-service (meta-merge (:maps config)
+                                                        (:paths config)))
 
          :auth-endpoint       (endpoint-component auth-endpoint)
          :home-endpoint       (endpoint-component home-endpoint)
@@ -188,7 +191,9 @@
                                 :resmap-auth-endpoint]
 
           ; Components
-          :facilities          [:db]
+          :maps                [:runner]
+          :facilities          [:db
+                                :runner]
           :projects            [:db
                                 :facilities]
           :regions             [:db]
@@ -206,10 +211,12 @@
                                 :resmap
                                 :maps
                                 :globals]
-          :facilities-endpoint [:facilities]
+          :facilities-endpoint [:facilities
+                                :maps]
           :regions-endpoint    [:regions]
           :projects-endpoint   [:projects
-                                :facilities]
+                                :facilities
+                                :maps]
           :routing-endpoint    [:routing]
           :datasets-endpoint   [:facilities
                                 :resmap

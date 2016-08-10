@@ -38,4 +38,4 @@
   (let [params {:threshold threshold
                 :algorithm algorithm
                 :simplify simplify}]
-    (GET "/api/facilities/with-isochrones" (raw-request params fns))))
+    (GET "/api/facilities/with-isochrones" (raw-request params fns :mapper-fn :facilities))))
