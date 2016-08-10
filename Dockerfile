@@ -5,16 +5,7 @@ RUN apt-get update && apt-get -y install postgresql-client libboost-program-opti
 ADD docker/osm2pgrouting /usr/local/bin/osm2pgrouting
 
 # Add scripts
-ADD scripts/import-osm /app/scripts/import-osm
-ADD scripts/mapconfig.xml /app/scripts/mapconfig.xml
-ADD scripts/import-sites /app/scripts/import-sites
-ADD scripts/migrate /app/scripts/migrate
-ADD scripts/preprocess-isochrones /app/scripts/preprocess-isochrones
-ADD scripts/load-regions /app/scripts/load-regions
-ADD scripts/raster-regions /app/scripts/raster-regions
-ADD scripts/raster-isochrones /app/scripts/raster-isochrones
-ADD scripts/regions-population /app/scripts/regions-population
-ADD scripts/isochrone-population /app/scripts/isochrone-population
+ADD scripts/* /app/scripts/
 ENV SCRIPTS_PATH /app/scripts/
 
 # Add project compiled binaries
