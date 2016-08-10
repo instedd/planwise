@@ -151,7 +151,7 @@
          :db                  (hikaricp (:db config))
 
          :auth                (auth-service (:auth config))
-         :facilities          (facilities-service)
+         :facilities          (facilities-service (:facilities config))
          :projects            (projects-service)
          :regions             (regions-service)
          :routing             (routing-service)

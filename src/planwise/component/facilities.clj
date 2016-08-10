@@ -21,12 +21,12 @@
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defrecord FacilitiesService [db runner])
+(defrecord FacilitiesService [config db runner])
 
 (defn facilities-service
   "Construct a Facilities Service component"
-  []
-  (map->FacilitiesService {}))
+  [config]
+  (map->FacilitiesService {:config config}))
 
 
 ;; ----------------------------------------------------------------------
@@ -124,5 +124,6 @@
                                    :start 30
                                    :end 180
                                    :step 15})
-  (calculate-isochrones-population! service facility-id)
-  (raster-isochrones! service facility-id))
+  (when (get-in service [:config :raster-isochrones])
+    (calculate-isochrones-population! service facility-id)
+    (raster-isochrones! service facility-id)))

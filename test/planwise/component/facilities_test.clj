@@ -23,7 +23,7 @@
 (defn system []
   (into
    (test-system {:fixtures {:data fixture-data}})
-   {:facilities (component/using (facilities/facilities-service) [:db])}))
+   {:facilities (component/using (facilities/facilities-service {}) [:db])}))
 
 (deftest list-facilities
   (with-system (system)
