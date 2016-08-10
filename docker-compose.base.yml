@@ -13,6 +13,8 @@ services:
       POSTGRES_DB: routing
       POSTGRES_HOST: db
       PORT: 3000
+      CALCULATE_DEMAND: false
+      RASTER_ISOCHRONES: false
     env_file: ".docker-env"
 
   db:
