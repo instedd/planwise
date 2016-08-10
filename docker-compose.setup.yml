@@ -1,0 +1,15 @@
+version: '2'
+
+services:
+  db:
+    extends:
+      file: docker-compose.base.yml
+      service: db
+
+  setup:
+    extends:
+      file: docker-compose.base.yml
+      service: app
+    depends_on:
+      - db
+    command: /bin/sh -c "cd /app && scripts/migrate && scripts/load-regions"

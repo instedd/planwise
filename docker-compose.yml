@@ -2,33 +2,26 @@ version: '2'
 
 services:
   db:
-    image: starefossen/pgrouting:9.4-2.1-2.1
-    environment:
-      POSTGRES_PASSWORD: planwise
-      POSTGRES_USER: planwise
-      POSTGRES_DB: routing
+    extends:
+      file: docker-compose.base.yml
+      service: db
 
   web:
-    image: instedd/planwise:latest
-    links:
-      - startup
+    extends:
+      file: docker-compose.base.yml
+      service: app
+    depends_on:
+      - db
     ports:
-      - "8080:8080"
-    environment: &env
-      DEMO_TILE_URL: "http://mapcache/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png"
-      JAR_PATH: /app/lib/planwise-0.5.0-SNAPSHOT-standalone.jar
-      DATABASE_URL: "jdbc:postgresql://db/routing?user=planwise&password=planwise"
-      POSTGRES_PASSWORD: planwise
-      POSTGRES_USER: planwise
-      POSTGRES_DB: routing
-      POSTGRES_HOST: db
-      PORT: 8080
+      - "3000:3000"
 
-  startup:
-    image: instedd/planwise:latest
-    command: /bin/sh -c "cd /app/scripts && ./import-osm && cd /app && ./scripts/migrate && ./scripts/load-regions"
-    environment:
-      <<: *env
+  migrate:
+    extends:
+      file: docker-compose.base.yml
+      service: app
+    depends_on:
+      - db
+    command: /app/scripts/migrate
 
   mapcache:
     image: instedd/planwise-mapserver:kenya-mapcache
