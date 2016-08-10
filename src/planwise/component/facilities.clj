@@ -1,6 +1,7 @@
 (ns planwise.component.facilities
   (:require [com.stuartsierra.component :as component]
             [planwise.component.runner :refer [run-external]]
+            [planwise.util.str :refer [trim-to-int]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [taoensso.timbre :as timbre]
@@ -97,12 +98,8 @@
   (let [facilities-polygons-regions (select-facilities-polygons-regions-for-facility (get-db service) {:facility-id facility-id})]
     (doseq [{:keys [facility-polygon-id region-id] :as fpr} facilities-polygons-regions]
       (try
-        (let [population (-> service
-                            (:runner)
-                            (run-external :scripts 60000 "raster-isochrone" (str region-id) (str facility-polygon-id))
-                            (trim-newline)
-                            (trim)
-                            (Integer.))]
+        (let [population (-> (run-external (:runner service) :scripts 60000 "raster-isochrone" (str region-id) (str facility-polygon-id))
+                             (trim-to-int))]
           (set-facility-polygon-region-population!
             (get-db service)
             (assoc fpr :population population)))
@@ -114,12 +111,8 @@
   (let [facilities-polygons (select-facilities-polygons-for-facility (get-db service) {:facility-id facility-id})]
     (doseq [{facility-polygon-id :facility-polygon-id, :as fp} facilities-polygons]
       (try
-        (let [population (-> service
-                            (:runner)
-                            (run-external :scripts 60000 "isochrone-population" (str facility-polygon-id))
-                            (trim-newline)
-                            (trim)
-                            (Integer.))]
+        (let [population (-> (run-external (:runner service) :scripts 60000 "isochrone-population" (str facility-polygon-id))
+                             (trim-to-int))]
           (set-facility-polygon-population!
             (get-db service)
             (assoc fp :population population)))

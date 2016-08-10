@@ -2,6 +2,7 @@
   (:require [com.stuartsierra.component :as component]
             [planwise.component.runner :refer [run-external]]
             [clojure.string :as str]
+            [planwise.util.str :refer [trim-to-int]]
             [digest :as digest]
             [taoensso.timbre :as timbre]))
 
@@ -48,8 +49,7 @@
 
 (defn demand-map
   [service region-id facilities]
-  (if-not (calculate-demand? service)
-    {}
+  (when (calculate-demand? service)
     (try
       (let [polygons (filter :polygon-id facilities)
             polygons-with-capacities (->> polygons
@@ -66,10 +66,7 @@
                         (demands-path service map-key ".tif")
                         (populations-path service region-id ".tif")
                         (vec polygons-with-capacities))
-            unsatisfied-count (-> response
-                                (str/trim-newline)
-                                (str/trim)
-                                (Integer.))]
+            unsatisfied-count (trim-to-int response)]
           {:map-key map-key,
            :unsatisfied-count unsatisfied-count})
       (catch Exception e
