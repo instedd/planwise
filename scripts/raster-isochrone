@@ -54,6 +54,7 @@ gdalwarp -q \
   -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
   -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
   -crop_to_cutline \
+  -of VRT \
   $POPULATION_FILE $VRT_TARGET
 
 echo $(${BIN_PATH}/count-population ${VRT_TARGET})
