@@ -39,8 +39,7 @@
           [:p
            "API Token:"
            [:br]
-           [:code {:style {:white-space "normal"
-                           :word-wrap "break-word"}}
+           [:code {:style "white-space: normal; word-wrap: break-word;"}
             (auth/create-jwe-token service ident)]]
           [:p
            [:a {:href "/logout"} "Logout"]]]))))
