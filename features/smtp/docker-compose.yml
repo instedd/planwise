@@ -1,0 +1,14 @@
+version: '2.0'
+
+services:
+  smtp:
+    image: djfarrelly/maildev
+    command: "bin/maildev --web 1080 --smtp 25"
+    ports:
+      - "1080:1080"
+
+networks:
+  default:
+    external:
+      name: planwise
+

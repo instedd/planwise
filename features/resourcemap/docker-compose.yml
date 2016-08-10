@@ -1,0 +1,54 @@
+version: '2.0'
+
+services:
+  resmapdb:
+    image: mysql:5.6
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    volumes:
+      - resmapdb:/var/lib/mysql
+
+  elasticsearch:
+    image: elasticsearch:1.7
+    command: elasticsearch -Des.network.host=0.0.0.0
+    volumes:
+      - elastic:/usr/share/elasticsearch/data
+
+  redis:
+    image: redis
+
+  web: &rails
+    image: instedd/resourcemap:local
+    environment:
+      ELASTICSEARCH_URL: 'elasticsearch:9200'
+      REDIS_URL: 'redis://redis:6379'
+      DATABASE_URL: 'mysql2://root@resmapdb/resourcemap'
+      SECRET_KEY_BASE: secret
+    depends_on:
+      - resmapdb
+      - elasticsearch
+      - redis
+    ports:
+      - "5080:5080"
+    volumes:
+      - ./nginx-app.conf:/etc/nginx/sites-enabled/app.conf
+
+  # resque:
+  #   <<: *rails
+  #   command: rake resque:work TERM_CHILD=1 FORK_PER_JOB=false
+  #   ports: []
+
+  # resque_scheduler:
+  #   <<: *rails
+  #   command: rake resque:scheduler
+  #   ports: []
+
+networks:
+  default:
+    external:
+      name: planwise
+
+volumes:
+  resmapdb:
+  elastic:
+  redis:
