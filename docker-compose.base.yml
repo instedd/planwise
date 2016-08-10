@@ -2,7 +2,7 @@ version: '2'
 
 services:
   app:
-    image: instedd/planwise:local
+    image: instedd/planwise:latest
     environment:
       DEMO_TILE_URL: "http://mapcache/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png"
       DATA_PATH: /app/data
