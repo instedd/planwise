@@ -1,7 +1,13 @@
 FROM java:8u91-jre
 
 # Install package dependencies and add precompiled binary
-RUN apt-get update && apt-get -y install postgresql-client libboost-program-options-dev libpq-dev gdal-bin && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN for i in {1..5}; do \
+       (apt-get update \
+        && apt-get -y install postgresql-client libboost-program-options-dev libpq-dev gdal-bin \
+        && break) \
+       || (sleep 5; false); done \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 ADD docker/osm2pgrouting /usr/local/bin/osm2pgrouting
 
 # Add scripts
