@@ -1,24 +1,24 @@
 version: '2.0'
 
 services:
-  db:
+  guissodb:
     image: mysql:5.6
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
     volumes:
-      - db:/var/lib/mysql
+      - guissodb:/var/lib/mysql
 
-  web:
+  guissoweb:
     image: instedd/guisso
     environment:
-      DATABASE_URL: 'mysql2://root@db/guisso'
+      DATABASE_URL: 'mysql2://root@guissodb/guisso'
       RAILS_CONFIG__action_mailer__smtp_settings__address: smtp
       RAILS_CONFIG__action_mailer__smtp_settings__port: 25
       RAILS_CONFIG__action_mailer__smtp_settings__authentication: plain
       RAILS_CONFIG__action_mailer__smtp_settings__openssl_verify_mode: none
 
     depends_on:
-      - db
+      - guissodb
     ports:
       - "4080:4080"
     volumes:
@@ -30,4 +30,4 @@ networks:
       name: planwise
 
 volumes:
-  db:
+  guissodb:

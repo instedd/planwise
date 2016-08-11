@@ -1,0 +1,24 @@
+version: '2.0'
+
+services:
+  # selenium without debug
+  # selenium:
+  #   image: selenium/standalone-firefox
+  #   ports:
+  #     - 4444:4444
+
+  # selenium with debug
+  # vnc://127.0.0.1:5900 (password: secret) it can be opened from safari or screen sharing app
+  selenium:
+    build:
+      context: .
+      dockerfile: Dockerfile-firefox-debug
+    ports:
+      - 4444:4444
+      - 5900:5900
+
+networks:
+  default:
+    external:
+      name: planwise
+

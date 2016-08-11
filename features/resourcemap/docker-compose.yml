@@ -17,13 +17,17 @@ services:
   redis:
     image: redis
 
-  web: &rails
+  resmapweb: &rails
     image: instedd/resourcemap:local
     environment:
       ELASTICSEARCH_URL: 'elasticsearch:9200'
       REDIS_URL: 'redis://redis:6379'
       DATABASE_URL: 'mysql2://root@resmapdb/resourcemap'
       SECRET_KEY_BASE: secret
+      GUISSO_ENABLED: 'true'
+      GUISSO_URL: http://guissoweb:4080
+    env_file:
+      - ./guisso.env
     depends_on:
       - resmapdb
       - elasticsearch
@@ -32,16 +36,17 @@ services:
       - "5080:5080"
     volumes:
       - ./nginx-app.conf:/etc/nginx/sites-enabled/app.conf
+      - ./google_maps.key:/app/config/google_maps.key
 
-  # resque:
-  #   <<: *rails
-  #   command: rake resque:work TERM_CHILD=1 FORK_PER_JOB=false
-  #   ports: []
+  resque:
+    <<: *rails
+    command: rake resque:work TERM_CHILD=1 FORK_PER_JOB=false
+    ports: []
 
-  # resque_scheduler:
-  #   <<: *rails
-  #   command: rake resque:scheduler
-  #   ports: []
+  resque_scheduler:
+    <<: *rails
+    command: rake resque:scheduler
+    ports: []
 
 networks:
   default:

@@ -1,0 +1,16 @@
+version: '2.0'
+
+services:
+  ruby:
+    image: ruby:2.2
+    volumes:
+      - .:/features
+      - bundle:/usr/local/bundle
+
+networks:
+  default:
+    external:
+      name: planwise
+
+volumes:
+  bundle:
