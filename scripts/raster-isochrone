@@ -9,6 +9,14 @@ set -euo pipefail
 
 # This script is invoked from the facilities service
 
+function query {
+    psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c "$1";
+}
+
+function calculate_extent {
+    psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -v region_id=$1 -v facility_polygon_id=$2 -q -A -t -f scripts/calculate_aligned_extent.sql
+}
+
 if [ $# -lt 2 ]; then
   echo "Usage: $0 REGION_ID FACILITY_POLYGON_ID"
 	exit 1
@@ -30,14 +38,17 @@ fi;
 mkdir -p ${DATA_PATH}/isochrones/${REGION_ID}
 TARGET=${DATA_PATH}/isochrones/${REGION_ID}/${FACILITY_POLYGON_ID}.tif
 
+extent=$(calculate_extent $REGION_ID $FACILITY_POLYGON_ID)
+IFS="|" read target_minx target_miny target_maxx target_maxy <<< $extent
+
 if [[ ! -e $TARGET ]]; then
   gdalwarp -q \
+    -te $target_minx $target_miny $target_maxx $target_maxy \
     -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
     -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
     -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
     $REGION_FILE $TARGET
 fi;
-
 
 # Create facility-polygon-region population vrt to count population
 
