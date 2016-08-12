@@ -8,9 +8,8 @@
 (timbre/refer-timbre)
 
 (def Task
-  {:task-id s/Int
-   :work-fn (s/pred fn?)
-   :work-data s/Any})
+  {:task-id s/Any
+   :task-fn (s/pred fn?)})
 
 (defprotocol TaskDispatcher
   (next-task [this]
@@ -43,10 +42,10 @@
   nil)
 
 (defn dispatch-task
-  [{:keys [task-id work-fn work-data]}]
+  [{:keys [task-id task-fn]}]
   (go
     (try
-      (let [result (work-fn work-data)]
+      (let [result (task-fn)]
         {:task-id task-id
          :status :ok
          :data result})
@@ -147,6 +146,9 @@
                (let [new-state (process-worker-msg state channel-msg msg)]
                  (when (some? new-state)
                    (recur new-state))))))
+
+         (catch Exception e
+           (warn "Exception in Taskmaster" e))
 
          (finally
            (close! control-channel))))

@@ -20,12 +20,9 @@
 
 (defn queue-task
   ([task-fn]
-   (queue-task (fn [_] (task-fn)) nil))
-  ([task-fn task-data]
    (let [task-id (swap! next-task-id inc)
          task {:task-id task-id
-               :work-fn task-fn
-               :work-data task-data}]
+               :task-fn task-fn}]
      (swap! tasks #(vec (cons task %)))
      task-id)))
 
