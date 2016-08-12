@@ -25,18 +25,19 @@ services:
       DATABASE_URL: 'mysql2://root@resmapdb/resourcemap'
       SECRET_KEY_BASE: secret
       GUISSO_ENABLED: 'true'
-      GUISSO_URL: http://guissoweb:4080
+      GUISSO_URL: http://guisso-local.instedd.org
     env_file:
       - ./guisso.env
     depends_on:
       - resmapdb
       - elasticsearch
       - redis
-    ports:
-      - "5080:5080"
     volumes:
-      - ./nginx-app.conf:/etc/nginx/sites-enabled/app.conf
       - ./google_maps.key:/app/config/google_maps.key
+    networks:
+      default:
+        aliases:
+          - resmap-local.instedd.org
 
   resque:
     <<: *rails

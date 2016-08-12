@@ -1,0 +1,23 @@
+version: '2.0'
+
+# When adding to /etc/hosts
+#
+# 127.0.0.1       guisso-local.instedd.org
+# 127.0.0.1       resmap-local.instedd.org
+# 127.0.0.1       planwise-local.instedd.org
+# 127.0.0.1       smtp-local.instedd.org
+#
+# this container will allow the user to access using those url from the host directly.
+# otherwise those url works only from inside the network (selenium vnc for example).
+services:
+  proxy:
+    image: haproxy
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    ports:
+      - "80:80"
+
+networks:
+  default:
+    external:
+      name: planwise

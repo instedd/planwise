@@ -1,7 +1,7 @@
 #!/bin/sh
 ${0%/*}/build-guisso-env.sh
 docker-compose -f "${0%/*}/docker-compose.yml" up -d resmapdb
-sleep 10
+sleep 15
 # setup database
 docker-compose -f "${0%/*}/docker-compose.yml" run --rm resmapweb rake db:setup
 # disable telemetry

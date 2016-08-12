@@ -16,13 +16,12 @@ services:
       RAILS_CONFIG__action_mailer__smtp_settings__port: 25
       RAILS_CONFIG__action_mailer__smtp_settings__authentication: plain
       RAILS_CONFIG__action_mailer__smtp_settings__openssl_verify_mode: none
-
+    networks:
+      default:
+        aliases:
+          - guisso-local.instedd.org
     depends_on:
       - guissodb
-    ports:
-      - "4080:4080"
-    volumes:
-      - ./nginx-app.conf:/etc/nginx/sites-enabled/app.conf
 
 networks:
   default:

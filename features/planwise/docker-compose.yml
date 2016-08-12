@@ -21,16 +21,19 @@ services:
       POSTGRES_USER: planwise
       POSTGRES_DB: routing
       POSTGRES_HOST: planwisedb
-      PORT: 6080
+      PORT: 80
       CALCULATE_DEMAND: 'false'
       RASTER_ISOCHRONES: 'false'
-      GUISSO_URL: http://guissoweb:4080
+      GUISSO_URL: http://guisso-local.instedd.org
+      RESMAP_URL: http://resmap-local.instedd.org
     env_file:
       - ./guisso.env
     depends_on:
       - planwisedb
-    ports:
-      - "6080:6080"
+    networks:
+      default:
+        aliases:
+          - planwise-local.instedd.org
 
   mapcache:
     image: instedd/planwise-mapserver:kenya-mapcache
