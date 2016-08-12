@@ -1,9 +1,9 @@
 #! /bin/bash
+set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
 
 # Creates a byte-sized raster file data/regions/REGIONID.tif,
 # with a mask of each region, ie a value of 255 for the region
-
-set -euo pipefail
 
 echo "Rasterizing regions"
 mkdir -p data/regions/

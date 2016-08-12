@@ -1,4 +1,6 @@
 #! /bin/bash
+set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
 
 # Creates a raster file data/populations/REGIONID.tif with the population values
 # of each REGIONID in the regions table
