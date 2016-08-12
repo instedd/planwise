@@ -1,17 +1,16 @@
 describe String do
-  it "should open google" do
-    visit '/'
-    click_link 'Gmail'
-    screenshot_and_save_page
-  end
-
   it "should go to guisso" do
-    visit 'http://guissoweb:4080'
+    visit 'http://guisso-local.instedd.org'
     screenshot_and_save_page
   end
 
   it "should go to resmap" do
-    visit 'http://resmapweb:5080'
+    visit 'http://resmap-local.instedd.org'
+    screenshot_and_save_page
+  end
+
+  it "should go to planwise" do
+    visit '/'
     screenshot_and_save_page
   end
 end

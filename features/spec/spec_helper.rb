@@ -22,7 +22,7 @@ require 'selenium-webdriver'
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
 
-  Capybara.app_host = "http://google.com"
+  Capybara.app_host = "http://planwise-local.instedd.org"
   Capybara.run_server = false
   Capybara.register_driver :remote_browser do |app|
     Capybara::Selenium::Driver.new(
