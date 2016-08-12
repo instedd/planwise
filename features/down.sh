@@ -1,4 +1,5 @@
 docker-compose -f "${0%/*}/docker-compose.yml" down -v
+${0%/*}/planwise/down.sh
 ${0%/*}/resourcemap/down.sh
 ${0%/*}/guisso/down.sh
 ${0%/*}/selenium/down.sh
