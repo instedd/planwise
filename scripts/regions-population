@@ -22,7 +22,7 @@ for id in $REGION_IDS; do
     gdalwarp -q \
       -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -crop_to_cutline \
-      -cutline PG:dbname=routing \
+      -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
       -csql "SELECT the_geom FROM regions WHERE id = ${id};" \
       $POPULATION_FILE $TARGET
   fi;

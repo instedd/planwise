@@ -19,6 +19,6 @@ for id in $REGION_IDS; do
       -ot byte -a_nodata 0 -burn 255 \
       -sql "SELECT the_geom FROM regions WHERE id = ${id};" \
       -tr 0.0008333 0.0008333 \
-      PG:dbname=routing $TARGET
+      PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" $TARGET
   fi;
 done;
