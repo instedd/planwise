@@ -8,4 +8,6 @@ RUN rm /etc/apache2/mods-enabled/fcgid.load
 RUN ln -ns /etc/apache2/mods-available/cgi.load /etc/apache2/mods-enabled/cgi.load
 ADD mapserver.conf /etc/apache2/conf-enabled/mapserver.conf
 
+VOLUME /data
+
 EXPOSE 80
