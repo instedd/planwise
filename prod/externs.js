@@ -676,7 +676,9 @@ var L = {
           "disable": function () {},
       },
   },
-  "TileLayer": function () {},
+  "TileLayer": {
+    "WMS": function() {},
+  },
   "tileLayer": {
     "bringToFront": function () {},
     "bringToBack": function () {},
@@ -684,6 +686,7 @@ var L = {
     "setZIndex": function () {},
     "redraw": function () {},
     "setUrl": function () {},
+    "wms": function() {},
   },
   "ImageOverlay": function () {},
   "imageOverlay": function () {},
