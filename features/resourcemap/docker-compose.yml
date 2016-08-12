@@ -18,7 +18,7 @@ services:
     image: redis
 
   resmapweb: &rails
-    image: instedd/resourcemap:local
+    image: instedd/resourcemap:wip
     environment:
       ELASTICSEARCH_URL: 'elasticsearch:9200'
       REDIS_URL: 'redis://redis:6379'
