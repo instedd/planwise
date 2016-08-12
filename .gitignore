@@ -23,3 +23,4 @@ resources/planwise/public/data/
 /cpp/*.dSYM
 /cpp/*.o
 /features/tmp/*
+/features/resourcemap/guisso.env-e
