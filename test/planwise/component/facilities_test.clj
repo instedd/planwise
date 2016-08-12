@@ -15,7 +15,7 @@
     [{:id 1 :name "Facility A" :type_id 1 :lat -3   :lon 42 :the_geom (make-point -3 42)}
      {:id 2 :name "Facility B" :type_id 1 :lat -3.5 :lon 42 :the_geom (make-point -3.5 42)}]]
    [:facilities_polygons
-    [{:facility_id 1 :threshold 900 :method "alpha-shape" :the_geom (sample-polygon)}]]])
+    [{:id 1 :facility_id 1 :threshold 900 :method "alpha-shape" :the_geom (sample-polygon)}]]])
 
 (def new-facilities
   [{:id 3 :name "New facility" :type_id 1 :lat 4 :lon 10 :type "hospital"}])
@@ -50,3 +50,23 @@
     (let [service (:facilities system)]
       (facilities/destroy-facilities! service)
       (is (= 0 (count (facilities/list-facilities service)))))))
+
+(deftest list-isochrones-in-bbox
+  (with-system (system)
+    (let [service (:facilities system)
+          facilities (facilities/isochrones-in-bbox service {:threshold 900} {:bbox [0.0 0.0 2.0 2.0]})]
+      (is (= 1 (count facilities)))
+      (let [[facility] facilities]
+        (is (= 1 (:id facility)))
+        (is (= 1 (:polygon-id facility)))
+        (is (:isochrone facility))))))
+
+(deftest list-isochrones-in-bbox-excluding-ids
+  (with-system (system)
+    (let [service (:facilities system)
+          facilities (facilities/isochrones-in-bbox service {:threshold 900} {:bbox [0.0 0.0 2.0 2.0], :excluding [1]})]
+      (is (= 1 (count facilities)))
+      (let [[facility] facilities]
+        (is (= 1 (:id facility)))
+        (is (= 1 (:polygon-id facility)))
+        (is (nil? (:isochrone facility)))))))

@@ -54,6 +54,25 @@ FROM facilities
   /*~ ) ~*/
 WHERE 1=1 :snip:criteria ;
 
+-- :name isochrones-in-bbox* :?
+SELECT
+  facilities.id AS "id",
+  fp.id AS "polygon-id",
+  /*~ (if (empty? (:excluding params)) */
+  ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS "isochrone"
+  /*~*/
+  CASE facilities.id IN (:v*:excluding)
+    WHEN FALSE THEN ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify))
+    ELSE NULL
+  END AS "isochrone"
+  /*~ ) ~*/
+FROM facilities
+  INNER JOIN facility_types ON facilities.type_id = facility_types.id
+  LEFT OUTER JOIN facilities_polygons fp ON fp.facility_id = facilities.id AND fp.threshold = :threshold AND fp.method = :algorithm
+WHERE
+  ST_Intersects(fp.the_geom, ST_MakeEnvelope(:v*:bbox, 4326))
+  :snip:criteria ;
+
 -- :name isochrone-for-facilities :? :1
 SELECT
   ST_AsGeoJSON(ST_Union(the_geom))

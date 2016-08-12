@@ -21,7 +21,8 @@
         (assoc project :facilities project-facilities))
       :isochrones
       (let [time       (get-in project [:filters :transport :time])
-            options    {:threshold time}
+            simplify   (get-in project [:filters :simplify])
+            options    {:threshold time, :simplify simplify}
             isochrones (when time
                          (facilities/list-with-isochrones facilities options criteria))
             demand     (when isochrones

@@ -20,6 +20,13 @@
     threshold (in seconds) calculated using algorithm and simplified according
     to the given parameter.")
 
+  (isochrones-in-bbox
+    [this isochrone-options facilities-criteria]
+    "Returns the isochrones present in the :bbox specified in the criteria param,
+     returning only isochrone, id and polygon-id. An :excluding parameter can be
+     also provided; for such facilities the isochrones will not be returned,
+     yet their id will still be returned.")
+
   (isochrone-all-facilities
     [this threshold]
     "Retrieve the catchment area for all facilities available for the given
@@ -49,5 +56,7 @@
      (service/list-with-isochrones service isochrone-options facilities-criteria)))
   (isochrone-all-facilities [service threshold]
     (service/get-isochrone-for-all-facilities service threshold))
+  (isochrones-in-bbox [service isochrone-options facilities-criteria]
+    (service/isochrones-in-bbox service isochrone-options facilities-criteria))
   (list-types [service]
     (service/list-types service)))
