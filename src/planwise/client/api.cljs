@@ -57,7 +57,7 @@
      :error-handler error-handler}))
 
 (defn json-request [params fns & keyargs]
-  (assoc (raw-request params fns keyargs)
+  (assoc (apply raw-request params fns keyargs)
     :format :json
     :response-format :json
     :keywords? true))
