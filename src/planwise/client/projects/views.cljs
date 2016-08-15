@@ -34,7 +34,7 @@
 
 (defn- project-tab [project-id project-region-id selected-tab]
   (let [facilities (subscribe [:projects/facilities :facilities])
-        isochrones (subscribe [:projects/facilities :isochrones])
+        isochrones (subscribe [:projects/isochrones])
         map-position (subscribe [:projects/map-view :position])
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])

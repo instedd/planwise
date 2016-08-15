@@ -4,7 +4,8 @@
             [planwise.client.routes :as routes]
             [planwise.client.projects.api :as api]
             [clojure.string :refer [split capitalize join]]
-            [planwise.client.projects.db :as db]))
+            [planwise.client.projects.db :as db]
+            [re-frame.utils :as c]))
 
 (def in-projects (path [:projects]))
 (def in-current-project (path [:projects :current]))
@@ -168,27 +169,30 @@
        (assoc-in [:facilities :count] (:count response))
        (assoc-in [:facilities :list] (:facilities response)))))
 
+; REFACTOR: The simplify constant is duplicated in fn db/project-filters
 (register-handler
  :projects/load-isochrones
  in-current-project
  (fn [db [_ force?]]
-   (when (or force? (nil? (get-in db [:facilities :isochrones])))
-     (if-let [time (get-in db [:transport :time])]
-       (api/fetch-facilities-with-isochrones (facilities-criteria db) {:threshold time} :projects/isochrones-loaded)))
+   (if-let [time (get-in db [:transport :time])]
+     (when (or force? (nil? (get-in db [:facilities :isochrones time 0.4])))
+       (api/fetch-facilities-with-isochrones (facilities-criteria db) {:threshold time, :simplify 0.4} :projects/isochrones-loaded)))
    db))
 
+; REFACTOR: Most of this logic is duplicated in db/update-viewmodel
 (register-handler
  :projects/isochrones-loaded
  in-current-project
- (fn [db [_ response]]
-   (-> db
-     (assoc :demand-map-key (:map-key response))
-     (assoc :unsatisfied-count (:unsatisfied-count response))
-     (assoc-in [:facilities :isochrones] (->> response
-                                           :facilities
-                                           (map :isochrone)
-                                           (set)
-                                           (filterv some?))))))
+ (fn [db [_ {:keys [map-key unsatisfied-count facilities threshold simplify], :as response}]]
+   (let [isochrones  (->> facilities
+                       (filter #(some? (:isochrone %)))
+                       (map (juxt :id :isochrone))
+                       (flatten)
+                       (apply hash-map))]
+     (-> db
+       (assoc :demand-map-key map-key)
+       (assoc :unsatisfied-count unsatisfied-count)
+       (update-in [:facilities :isochrones threshold simplify] #(merge % isochrones))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project filter updating

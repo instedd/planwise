@@ -1,6 +1,7 @@
 (ns planwise.client.projects.api
   (:require [ajax.core :refer [GET POST PUT DELETE]]
-            [planwise.client.api :refer [json-request]]))
+            [planwise.client.api :refer [json-request]]
+            [re-frame.utils :as c]))
 
 (defn- process-filters [filters]
   ; TODO: Make the set->vector conversion generic and move it into an interceptor
@@ -39,7 +40,10 @@
 (defn fetch-facilities-with-isochrones [filters isochrone-options & handlers]
   (GET
     "/api/facilities/with-isochrones"
-    (json-request (merge isochrone-options (process-filters filters)) handlers)))
+    (json-request
+      (merge isochrone-options (process-filters filters))
+      handlers
+      :mapper-fn (partial merge isochrone-options))))
 
 (defn fetch-facility-types [& handlers]
   (GET "/api/facilities/types" (json-request {} handlers)))
@@ -49,4 +53,8 @@
         params {:id project-id
                 :filters filters
                 :with (some-> with-data name)}]
-    (PUT url (json-request params handlers))))
+    (PUT url
+      (json-request
+        params
+        handlers
+        :mapper-fn (partial merge (dissoc filters :facilities))))))
