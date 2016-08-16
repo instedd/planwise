@@ -14,7 +14,22 @@ function query {
 }
 
 function calculate_extent {
-    psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -v region_id=$1 -v facility_polygon_id=$2 -q -A -t -f scripts/calculate_aligned_extent.sql
+    region_id=$1
+    facility_polygon_id=$2
+    resolution=$3
+    block_size=$4
+    query="select calculate_aligned_extent(${facility_polygon_id}, ${region_id}, ${resolution}, ${block_size});"
+    psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -A -t -c "$query"
+}
+
+function pixel_size {
+    raster_name=$1
+    gdalinfo $raster_name | grep "Pixel Size" | sed -E 's/.*\(([^,]*).*/\1/g'
+}
+
+function block_size {
+    raster_name=$1
+    gdalinfo $raster_name | grep "Block=" | sed -E 's/.*Block=([^x]*).*/\1/g'
 }
 
 if [ $# -lt 2 ]; then
@@ -38,7 +53,10 @@ fi;
 mkdir -p ${DATA_PATH}/isochrones/${REGION_ID}
 TARGET=${DATA_PATH}/isochrones/${REGION_ID}/${FACILITY_POLYGON_ID}.tif
 
-extent=$(calculate_extent $REGION_ID $FACILITY_POLYGON_ID)
+resolution=$(pixel_size $REGION_FILE)
+block_size=$(block_size $REGION_FILE)
+
+extent=$(calculate_extent $REGION_ID $FACILITY_POLYGON_ID $resolution $block_size)
 IFS="|" read target_minx target_miny target_maxx target_maxy <<< $extent
 
 if [[ ! -e $TARGET ]]; then
