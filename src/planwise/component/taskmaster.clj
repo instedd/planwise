@@ -50,6 +50,7 @@
          :status :ok
          :data result})
       (catch Exception e
+        (warn e "Error executing task")
         {:task-id task-id
          :status :error
          :error e}))))
@@ -148,7 +149,7 @@
                    (recur new-state))))))
 
          (catch Exception e
-           (warn "Exception in Taskmaster" e))
+           (fatal e "Exception in Taskmaster"))
 
          (finally
            (close! control-channel))))
