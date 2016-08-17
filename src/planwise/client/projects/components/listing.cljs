@@ -49,7 +49,7 @@
 (defn project-card [{:keys [id goal region-id region-name stats region-population] :as project}]
   (let [region-geo (subscribe [:regions/preview-geojson region-id])]
     (fn [{:keys [id goal region-id region-name stats] :as project}]
-      [:a {::href (routes/project-facilities project)}
+      [:a {::href (routes/project-demographics project)}
         [:div.project-card
           [:div.project-card-content
            [:h1 goal]
