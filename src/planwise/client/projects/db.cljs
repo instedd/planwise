@@ -1,5 +1,6 @@
 (ns planwise.client.projects.db
-  (:require [re-frame.utils :as c]))
+  (:require [re-frame.utils :as c]
+            [planwise.client.mapping :as maps]))
 
 ;; Default data structures
 
@@ -29,7 +30,7 @@
                   :count      0
                   :total      0
                   :list       nil  ;; array
-                  :isochrones {}}  ;; threshold => simplify => id => geojson
+                  :isochrones {}}  ;; threshold => level => id => geojson
    :transport      {:time       nil}
    :map-view       {} ;; {:keys position zoom}
    :demand-map-key nil ;; string
@@ -47,24 +48,10 @@
 ;; Project data manipulation functions
 
 (defn- update-viewmodel-associations
-  [viewmodel {:keys [facilities isochrones filters]}]
+  [viewmodel {:keys [facilities]}]
   (cond
     facilities
     (assoc-in viewmodel [:facilities :list] facilities)
-
-    isochrones
-    (let [facilities (map #(dissoc % :isochrone) isochrones)
-          isochrones (->> isochrones
-                        (filter #(some? (:isochrone %)))
-                        (map (juxt :id :isochrone))
-                        (flatten)
-                        (apply hash-map))
-          threshold  (:time (:transport filters))
-          simplify   (:simplify filters)]
-      (-> viewmodel
-          (assoc-in  [:facilities :list] facilities)
-          (update-in [:facilities :isochrones threshold simplify] #(merge % isochrones))))
-
     :else
     viewmodel))
 
@@ -87,9 +74,14 @@
   [project-data]
   (update-viewmodel empty-viewmodel project-data))
 
-; REFACTOR: The simplify constant is duplicated in handler :projects/load-isochrones
+; REFACTOR: project-filters is used in update-project, while facilities-criteria in fetch-* methods; unify them
 (defn project-filters
   [viewmodel]
   {:facilities (get-in viewmodel [:facilities :filters])
-   :transport (:transport viewmodel)
-   :simplify 0.4})
+   :transport (:transport viewmodel)})
+
+(defn facilities-criteria
+ [viewmodel]
+ (let [filters (get-in viewmodel [:facilities :filters])
+       project-region-id (get-in viewmodel [:project-data :region-id])]
+   (assoc filters :region project-region-id)))

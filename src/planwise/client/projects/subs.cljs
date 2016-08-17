@@ -44,12 +44,10 @@
         :filter-stats (select-keys @facility-data [:count :total])
         :facilities (:list @facility-data))))))
 
-; REFACTOR: Simplify constant is duplicated here as well
 (register-sub
- :projects/isochrones
- (fn [db [_ data]]
-   (let [transport-time (subscribe [:projects/transport-time])]
-     (reaction (vec (vals (get-in @db [:projects :current :facilities :isochrones @transport-time 0.4])))))))
+ :projects/facilities-criteria
+ (fn [db [_]]
+   (reaction (db/facilities-criteria (get-in @db [:projects :current])))))
 
 (register-sub
  :projects/transport-time

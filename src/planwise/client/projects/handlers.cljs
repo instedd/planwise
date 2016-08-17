@@ -5,6 +5,7 @@
             [planwise.client.projects.api :as api]
             [clojure.string :refer [split capitalize join]]
             [planwise.client.projects.db :as db]
+            [planwise.client.mapping :as maps]
             [re-frame.utils :as c]))
 
 (def in-projects (path [:projects]))
@@ -100,7 +101,7 @@
   (case section
     :demographics nil
     :facilities :facilities
-    :transport :isochrones))
+    :transport :facilities-with-demand))
 
 (register-handler
  :projects/navigate-project
@@ -109,10 +110,7 @@
    (if (not= project-id (get-in db [:current :project-data :id]))
      (dispatch [:projects/load-project project-id (section->with section)])
      (case section
-       :facilities
-       (dispatch [:projects/load-facilities])
-       :transport
-       (dispatch [:projects/load-isochrones])
+       (:facilities :transport) (dispatch [:projects/load-facilities])
        nil))
    db))
 
@@ -148,17 +146,12 @@
    (accountant/navigate! (routes/home))
    (update db :list (partial filterv #(not= (:id %) id)))))
 
-(defn- facilities-criteria [current-project-db]
-  (let [filters (get-in current-project-db [:facilities :filters])
-        project-region-id (get-in current-project-db [:project-data :region-id])]
-    (assoc filters :region project-region-id)))
-
 (register-handler
  :projects/load-facilities
  in-current-project
  (fn [db [_ force?]]
    (when (or force? (nil? (get-in db [:facilities :list])))
-     (api/fetch-facilities (facilities-criteria db) :projects/facilities-loaded))
+     (api/fetch-facilities (db/facilities-criteria db) :projects/facilities-loaded))
    db))
 
 (register-handler
@@ -169,30 +162,20 @@
        (assoc-in [:facilities :count] (:count response))
        (assoc-in [:facilities :list] (:facilities response)))))
 
-; REFACTOR: The simplify constant is duplicated in fn db/project-filters
-(register-handler
- :projects/load-isochrones
- in-current-project
- (fn [db [_ force?]]
-   (if-let [time (get-in db [:transport :time])]
-     (when (or force? (nil? (get-in db [:facilities :isochrones time 0.4])))
-       (api/fetch-facilities-with-isochrones (facilities-criteria db) {:threshold time, :simplify 0.4} :projects/isochrones-loaded)))
-   db))
-
-; REFACTOR: Most of this logic is duplicated in db/update-viewmodel
 (register-handler
  :projects/isochrones-loaded
  in-current-project
  (fn [db [_ {:keys [map-key unsatisfied-count facilities threshold simplify], :as response}]]
-   (let [isochrones  (->> facilities
+   (let [level (maps/simplify->geojson-level simplify)
+         isochrones  (->> facilities
                        (filter #(some? (:isochrone %)))
-                       (map (juxt :id :isochrone))
+                       (map (juxt :id #(js/JSON.parse (:isochrone %))))
                        (flatten)
                        (apply hash-map))]
      (-> db
        (assoc :demand-map-key map-key)
        (assoc :unsatisfied-count unsatisfied-count)
-       (update-in [:facilities :isochrones threshold simplify] #(merge % isochrones))))))
+       (update-in [:facilities :isochrones threshold level] #(merge % isochrones))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project filter updating
@@ -222,7 +205,7 @@
     (let [new-db (assoc-in db [:transport :time] time)
           filters (db/project-filters new-db)
           project-id (get-in db [:project-data :id])]
-      (api/update-project project-id filters :isochrones
+      (api/update-project project-id filters :facilities-with-demand
                           :projects/project-updated)
       new-db)))
 

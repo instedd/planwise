@@ -45,6 +45,14 @@
       handlers
       :mapper-fn (partial merge isochrone-options))))
 
+(defn fetch-isochrones-in-bbox [filters isochrone-options & handlers]
+  (GET
+    "/api/facilities/bbox-isochrones"
+    (json-request
+      (merge isochrone-options (process-filters filters))
+      handlers
+      :mapper-fn (partial merge isochrone-options))))
+
 (defn fetch-facility-types [& handlers]
   (GET "/api/facilities/types" (json-request {} handlers)))
 
