@@ -146,14 +146,15 @@
 ;; ----------------------------------------------------------------------------
 ;; Service definition
 
-(defrecord Importer [job taskmaster resmap facilities projects]
+(defrecord Importer [job taskmaster concurrent-workers resmap facilities projects]
   component/Lifecycle
   (start [component]
     (info "Starting Importer component")
     (if-not (:taskmaster component)
       (let [job (atom nil)
+            concurrent-workers (or (:concurrent-workers component) 1)
             component (assoc component :job job)
-            taskmaster (taskmaster/run-taskmaster component)]
+            taskmaster (taskmaster/run-taskmaster component concurrent-workers)]
         (assoc component :taskmaster taskmaster))
       component))
   (stop [component]

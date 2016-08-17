@@ -125,7 +125,7 @@
   ([dispatcher scale]
    (let [control-channel (chan)]
      (go
-       (info "Taskmaster started")
+       (info (str "Taskmaster started (concurrency " scale ")"))
        (try
          (loop [state {:dispatcher dispatcher
                        :scale scale

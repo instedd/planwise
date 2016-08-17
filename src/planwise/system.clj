@@ -166,7 +166,7 @@
          :routing             (routing-service)
          :users-store         (users-store)
          :resmap              (resmap-client (:resmap config))
-         :importer            (importer)
+         :importer            (importer (:importer config))
          :runner              (runner-service (:paths config))
          :maps                (maps-service (meta-merge (:maps config)
                                                         (:paths config)))
