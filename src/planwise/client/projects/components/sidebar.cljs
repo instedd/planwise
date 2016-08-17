@@ -3,7 +3,8 @@
             [re-com.core :as rc]
             [planwise.client.components.progress-bar :as progress-bar]
             [planwise.client.components.filters :as filters]
-            [planwise.client.projects.db :as db]))
+            [planwise.client.projects.db :as db]
+            [planwise.client.utils :as utils]))
 
 
 (defn- demographic-stat [title value]
@@ -14,17 +15,20 @@
 (defn- demographics-filters []
   (let [current-project (subscribe [:projects/current-data]) ]
     (fn []
-      [:div.sidebar-filters
-      [:div.filter-info
-       ;; [:p "Filter here the population you are analyzing."]
-       [:div.demographic-stats
-        ;; (demographic-stat "Area" (str 1000 " km2"))
-        ;; (demographic-stat "Density" (str 4850 "/km2"))
-        (demographic-stat "Total population" (.toLocaleString (:region-population @current-project) "en"))
-       ]
-       [:span.small
-        "Information source: "
-        [:a {:href "http://www.worldpop.org.uk/"} "WorldPop"]]]])))
+      (let [population (:region-population @current-project)
+            area (:region-area-km2 @current-project)
+            density (/ population area)]
+        [:div.sidebar-filters
+        [:div.filter-info
+         ;; [:p "Filter here the population you are analyzing."]
+         [:div.demographic-stats
+          (demographic-stat "Area" [:span (utils/format (int area)) " km" [:sup 2]])
+          (demographic-stat "Density" [:span (utils/format density) " /km" [:sup 2]])
+          (demographic-stat "Total population" (utils/format population))
+          ]
+         [:span.small
+          "Population information source: "
+          [:a {:href "http://www.worldpop.org.uk/"} "WorldPop"]]]]))))
 
 (defn- facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])

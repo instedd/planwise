@@ -21,7 +21,7 @@ WHERE projects.owner_id = :user-id
 ORDER BY projects.id ASC;
 
 -- :name select-project :? :1
-SELECT projects.id, projects.goal, projects.region_id AS "region-id", projects.stats, projects.filters, projects.owner_id AS "owner-id", regions.total_population AS "region-population"
+SELECT projects.id, projects.goal, projects.region_id AS "region-id", projects.stats, projects.filters, projects.owner_id AS "owner-id", regions.total_population AS "region-population", ST_Area(regions.the_geom::geography) / 1000000 as "region-area-km2"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
 WHERE projects.id = :id;

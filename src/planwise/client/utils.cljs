@@ -2,6 +2,11 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as async :refer [chan >! <! put!]]))
 
+;; Display
+
+(defn format [number]
+  (.toLocaleString number "en"))
+
 ;; Debounce functions
 
 (defn debounced [f timeout]
