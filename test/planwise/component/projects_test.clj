@@ -8,7 +8,7 @@
   (:import [org.postgis PGgeometry]))
 
 (defn sample-polygon []
-  (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))")))
+  (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((1 1, 1 2, 2 2, 2 1, 1 1)))")))
 
 (def fixture-data
   [[:users
