@@ -125,7 +125,7 @@
                                   ; Testing libraries
                                   [eftest "0.1.1"]
                                   [kerodon "0.7.0"]
-                                  [fixtures-component "0.4.1"
+                                  [fixtures-component "0.4.2"
                                    :exclusions [org.clojure/java.jdbc]]
                                   [ring/ring-mock "0.3.0"]
 
