@@ -3,4 +3,8 @@ if [[ -e .env ]]; then
   source .env
 fi;
 
-(echo "(dev)"; echo "(go)"; cat <&0) | lein repl
+if $(which -s rlwrap); then
+  (echo "(dev)"; echo "(go)"; cat <&0) | rlwrap -r -m '\\"' -b "(){}[],^%3@\\\";:'" lein repl;
+else
+  (echo "(dev)"; echo "(go)"; cat <&0) | lein repl;
+fi;
