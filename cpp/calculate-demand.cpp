@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <cassert>
 #include <stdio.h>
 #include <sys/stat.h>
 
@@ -77,7 +78,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
   // generate target dataset based on demoDataset
   GDALDataset* demoDataset = openRaster(demoFilename);
   GDALRasterBand* demoBand = demoDataset->GetRasterBand(1);
-  CPLAssert(demoBand->GetRasterDataType() == GDT_Float32);
+  assert(demoBand->GetRasterDataType() == GDT_Float32);
   int xBlockSize, yBlockSize;
   demoBand->GetBlockSize(&xBlockSize, &yBlockSize);
   GDALDataset* targetDataset = copyRaster(demoDataset, targetFilename, xBlockSize, yBlockSize);
@@ -116,31 +117,41 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     GDALDataset* facilityDataset = openRaster(facilities[iFacility]);
     GDALRasterBand* facilityBand = facilityDataset->GetRasterBand(1);
     BYTE facilityNodata = facilityBand->GetNoDataValue();
-    CPLAssert(facilityBand->GetRasterDataType() == GDT_Byte);
+    assert(facilityBand->GetRasterDataType() == GDT_Byte);
 
     // set blocks offsets
     double targetProjection[6], facilityProjection[6];
     targetDataset->GetGeoTransform(targetProjection);
     facilityDataset->GetGeoTransform(facilityProjection);
 
+    double intPart, epsilon = 0.01;
     double facilityMaxY = facilityProjection[3];
-    double demoMaxY = facilityProjection[3];
-    // double facilityYRes = facilityProjection[5];
+    double demoMaxY = targetProjection[3];
+    double facilityYRes = facilityProjection[5];
     double demoYRes = targetProjection[5];
-    // TODO: assert that both res are equal
-    int blocksRowOffset = std::abs(round( (facilityMaxY-demoMaxY)/(128 * demoYRes) ));
+    assert(std::abs(facilityYRes - demoYRes) < epsilon);
+    assert(facilityMaxY <= demoMaxY);
+    double blocksRow = (demoMaxY - facilityMaxY)/(128 * demoYRes);
+    assert(modf(blocksRow, &intPart) < epsilon);
+    int blocksRowOffset = round(blocksRow);
 
     double facilityMinX = facilityProjection[0];
-    double demoMinX = facilityProjection[0];
-    // double facilityXRes = facilityProjection[1];
+    double demoMinX = targetProjection[0];
+    double facilityXRes = facilityProjection[1];
     double demoXRes = targetProjection[1];
-    // TODO: assert that both res are equal
-    int blocksColOffset = std::abs(round( (facilityMinX-demoMinX)/(128 * demoXRes) ));
+    assert(std::abs(facilityXRes - demoXRes) < epsilon);
+    assert(demoMinX <= facilityMinX);
+    double blocksCol = (facilityMinX - demoMinX)/(128 * demoXRes);
+    assert(modf(blocksCol, &intPart) < epsilon);
+    int blocksColOffset = round(blocksCol);
 
     int facilityXSize = facilityDataset->GetRasterXSize();
     int facilityYSize = facilityDataset->GetRasterYSize();
     int facilityNXBlocks = (facilityXSize + xBlockSize - 1)/xBlockSize;
     int facilityNYBlocks = (facilityYSize + yBlockSize - 1)/yBlockSize;
+
+    assert(facilityXSize <= (targetXSize - (xBlockSize * blocksColOffset)));
+    assert(facilityYSize <= (targetYSize - (yBlockSize * blocksRowOffset)));
 
     // First pass: we count the still unsatisfied population under the isochrone
     float unsatisfiedCount = 0.0f;
