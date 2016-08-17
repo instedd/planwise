@@ -77,7 +77,9 @@ $search-box-height: 42px;
 
       .project-stats {
         .stat {
+          float: left;
           margin-top: 10px;
+          margin-right: 45px;
 
           .stat-title {
             font-size: 10px;
