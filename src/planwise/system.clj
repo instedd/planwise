@@ -80,15 +80,14 @@
 
 (def session-config
   {:cookies true
-   :session {:flash true
-             :store (cookie-store)
+   :session {:store (cookie-store)
              :cookie-attrs {:max-age (* 24 3600)}
              :cookie-name "planwise-session"}})
 
 (def base-config
   {:auth {:jwe-secret  jwe-secret
           :jwe-options jwe-options}
-   :api {:middleware   [[wrap-authorization :auth-backend]
+   :api {:middleware   [[wrap-authorization :jwe-auth-backend]
                         [wrap-authentication :session-auth-backend :jwe-auth-backend]
                         [wrap-json-params]
                         [wrap-json-response]
@@ -107,7 +106,8 @@
          :jar-resources "public/assets"
          :app-defaults (meta-merge site-defaults
                                    session-config
-                                   {:static {:resources "planwise/public"}})}
+                                   {:session {:flash true}
+                                    :static {:resources "planwise/public"}})}
    :app-auth-backend {:unauthorized-handler app-unauthorized-handler}
 
    :webapp {:middleware [[wrap-gzip]
