@@ -42,7 +42,7 @@
   ([x]
    (format-percentage x 0))
   ([x decimals]
-   (let [x (min x (max 1 x))
+   (let [x (min 1 (max 0 x))
          percentage (* 100 x)
          format-string (str "%." decimals "f%%")]
      (gstring/format format-string percentage))))

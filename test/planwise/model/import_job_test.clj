@@ -8,15 +8,9 @@
   (is (= [] (sut/push-task [] nil)))
   (is (= [:foo] (sut/push-task [] :foo)))
   (is (= [:foo] (sut/push-task [:foo] :foo)))
-  (is (= [:foo nil] (sut/push-task [:foo] nil)))
+  (is (= [:foo] (sut/push-task [:foo] nil)))
   (is (= [:foo :bar] (sut/push-task [:foo] :bar)))
   (is (= [:foo :bar :foo] (sut/push-task [:foo :bar] :foo))))
-
-(deftest peek-task-test
-  (is (nil? (sut/peek-task nil)))
-  (is (nil? (sut/peek-task [])))
-  (is (nil? (sut/peek-task [nil])))
-  (is (= :foo (sut/peek-task [:foo]))))
 
 (deftest remove-task-test
   (is (= [] (sut/remove-task [] nil)))
@@ -138,7 +132,7 @@
             (is (= (reduce-job job [:next [:success [:process-facilities [1]] nil] :next])
                    [:processing-facilities [:process-facilities [2]] nil]))
             (is (= (reduce-job job [:next :next [:success [:process-facilities [1]] nil]])
-                   [:processing-facilities [:process-facilities [2]] nil]))
+                   [:processing-facilities nil nil]))
             (is (= (reduce-job job [:next :next
                                     [:success [:process-facilities [1]] nil]
                                     [:success [:process-facilities [2]] nil]])

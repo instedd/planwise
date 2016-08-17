@@ -33,13 +33,9 @@
 
 (defn push-task
   [tasks task]
-  (if-not (= task (peek tasks))
+  (if (and (some? task) (not= task (peek tasks)))
     (conj tasks task)
     tasks))
-
-(defn peek-task
-  [tasks]
-  (peek tasks))
 
 (defn remove-task
   [tasks task]
@@ -63,15 +59,23 @@
 
 (defn clear-dispatch
   [job & _]
-  (update job :tasks push-task nil))
+  (assoc job :next-task nil))
+
+(defn dispatch-task
+  [job task]
+  (-> job
+      (update :tasks push-task task)
+      (assoc :next-task task)))
 
 (defn complete-task
   [job [_ task _] & _]
-  (update job :tasks remove-task task))
+  (-> job
+      (update :tasks remove-task task)
+      (clear-dispatch)))
 
 (defn dispatch-import-types
   [job & _]
-  (update job :tasks push-task :import-types))
+  (dispatch-task job :import-types))
 
 (defn import-types-succeeded
   [job event & _]
@@ -89,14 +93,15 @@
 (defn dispatch-import-sites
   [job & _]
   (let [page (:page job)]
-    (update job :tasks push-task [:import-sites page])))
+    (dispatch-task job [:import-sites page])))
 
 (defn import-sites-succeeded
   [job event & _]
   (let [page (:page job)
         facility-ids (:facility-ids job)
         facility-count (count facility-ids)
-        [_ _ [_ page-ids total-pages]] event]
+        [_ _ [_ page-ids total-pages]] event
+        total-pages (or total-pages (:page-count job))]
     (-> (complete-task job event)
         (assoc :page (inc page)
                :page-count total-pages
@@ -117,12 +122,12 @@
     (if (nil? next-facility)
       (clear-dispatch job)
       (-> job
-          (update :tasks push-task [:process-facilities [next-facility]])
+          (dispatch-task [:process-facilities [next-facility]])
           (update :facility-ids rest)))))
 
 (defn dispatch-update-projects
   [job & _]
-  (update job :tasks push-task :update-projects))
+  (dispatch-task job :update-projects))
 
 (defn update-projects-succeeded
   [job event & _]
@@ -197,6 +202,7 @@
    :facility-count 0
    :facility-ids   []
    :tasks          []
+   :next-task      nil
    :result         nil
    :last-event     nil})
 
@@ -279,7 +285,7 @@
 
 (defn job-peek-next-task
   [job]
-  (peek-task (get-in job [:value :tasks])))
+  (get-in job [:value :next-task]))
 
 (defn job-result
   [job]
