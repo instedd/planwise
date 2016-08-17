@@ -1,4 +1,5 @@
 (ns planwise.client.projects.components.sidebar
+  (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [re-com.core :as rc]
             [planwise.client.components.progress-bar :as progress-bar]
@@ -14,21 +15,21 @@
 
 (defn- demographics-filters []
   (let [current-project (subscribe [:projects/current-data]) ]
-    (fn []
-      (let [population (:region-population @current-project)
-            area (:region-area-km2 @current-project)
-            density (/ population area)]
+    (let [population (reaction (:region-population @current-project))
+          area (reaction (:region-area-km2 @current-project))
+          density (reaction (/ @population @area))]
+      (fn []
         [:div.sidebar-filters
-        [:div.filter-info
-         ;; [:p "Filter here the population you are analyzing."]
-         [:div.demographic-stats
-          (demographic-stat "Area" [:span (utils/format (int area)) " km" [:sup 2]])
-          (demographic-stat "Density" [:span (utils/format density) " /km" [:sup 2]])
-          (demographic-stat "Total population" (utils/format population))
-          ]
-         [:span.small
-          "Population information source: "
-          [:a {:href "http://www.worldpop.org.uk/"} "WorldPop"]]]]))))
+         [:div.filter-info
+          ;; [:p "Filter here the population you are analyzing."]
+          [:div.demographic-stats
+           (demographic-stat "Area" [:span (utils/format (int @area)) " km" [:sup 2]])
+           (demographic-stat "Density" [:span (utils/format @density) " /km" [:sup 2]])
+           (demographic-stat "Total population" (utils/format @population))
+           ]
+          [:span.small
+           "Population information source: "
+           [:a {:href "http://www.worldpop.org.uk/"} "WorldPop"]]]]))))
 
 (defn- facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])
