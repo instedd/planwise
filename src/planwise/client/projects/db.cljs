@@ -33,7 +33,7 @@
    :map-view       {} ;; {:keys position zoom}
    :demand-map-key nil ;; string
    :unsatisfied-count nil ;; number
-   :project-data   {}}) ;; {:keys id goal region-id stats filters}
+   :project-data   {}}) ;; {:keys id goal region-id stats filters region-population region-area-km2}
 
 
 (def initial-db
