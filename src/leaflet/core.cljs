@@ -32,9 +32,13 @@
            new-objects []
            new-decls new-decls]
 
-      (let [old-decl (first old-decls)
-            new-decl (first new-decls)]
-        (if (or old-decl new-decl)
+      (if (and (empty? old-decls) (empty? new-decls))
+        ;; done iterating over the declarations
+        new-objects
+
+        ;; replace declaration
+        (let [old-decl (first old-decls)
+              new-decl (first new-decls)]
           (let [old-object (first old-objects)
                 new-object (replace-object old-object old-decl new-decl)]
 
@@ -42,11 +46,7 @@
             (recur (rest old-objects)
                    (rest old-decls)
                    (conj new-objects new-object)
-                   (rest new-decls)))
-
-          ;; done iterating over the declarations
-          new-objects)))))
-
+                   (rest new-decls))))))))
 
 (defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn], :or {lat-fn :lat lon-fn :lon}}]
   (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
