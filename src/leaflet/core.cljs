@@ -72,6 +72,19 @@
 (defn layer-type [layer-def]
   (first layer-def))
 
+(defn js-data [data]
+  (cond
+    (string? data) (js/JSON.parse data)
+    (vector? data) (clj->js (mapv #(if (string? %) (js/JSON.parse %) %) data))
+    :else data))
+
+(defn geojson-layer [props]
+  (let [attrs (dissoc props :data :fit-bounds)
+        group-attrs (:group props)]
+    (.group js/L.geoJson nil #js {:clickable false
+                                  :pathGroup (clj->js group-attrs)
+                                  :style (constantly (clj->js attrs))})))
+
 (defmulti leaflet-layer layer-type)
 
 (defmethod leaflet-layer :default [layer-def]
@@ -92,19 +105,21 @@
     layer))
 
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]
-  (let [data (:data props)
-        attrs (dissoc props :data :fit-bounds)
-        groupAttrs (:group props)
-        layer (.group js/L.geoJson nil #js {:clickable false
-                                            :pathGroup (clj->js groupAttrs)
-                                            :style (constantly (clj->js attrs))})]
+  (let [data  (:data props)
+        layer (geojson-layer props)]
     (when data
-      (let [js-data (cond
-                      (string? data) (js/JSON.parse data)
-                      (vector? data) (clj->js (mapv #(if (string? %) (js/JSON.parse %) %) data))
-                      :else data)]
-        (.addData layer js-data)))
+      (.addData layer (js-data data)))
     layer))
+
+(defmethod leaflet-layer :geojson-bbox-layer [[_ props & children]]
+  (let [attrs (dissoc props :data :fit-bounds)
+        geojson-layer (geojson-layer attrs)
+        bbox-loader   (.bboxLoader js/L (clj->js (assoc attrs :layer geojson-layer)))]
+    (when-let [data (:data props)]
+      (doseq [{:keys [facility-id level isochrone]} data]
+        (let [layer (.asLayers geojson-layer (js/JSON.parse isochrone))]
+          (.addFeature bbox-loader level facility-id layer))))
+    bbox-loader))
 
 (defmethod leaflet-layer :tile-layer [[_ props & children]]
   (let [url   (:url props)
