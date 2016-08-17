@@ -50,6 +50,10 @@
                   next-task (sut/job-peek-next-task job)
                   result (sut/job-result job)]
               [state next-task result]))]
+
+    ;;
+    ;; Import facility types stage
+    ;;
     (let [initial (sut/import-job)]
       ;; initial task dispatched
       (is (= (reduce-job initial [:next])         [:importing-types :import-types nil]))
@@ -82,29 +86,64 @@
 
       ;; facility types imported successfully
       (is (= (reduce-job initial [:next [:success :import-types :new-types]])
-             [:request-sites nil nil])))
-
-    (let [initial (reduce fsm/fsm-event (sut/import-job) [:next [:success :import-types :new-types]])]
-      ;; first page of sites is requested
-      (is (= (reduce-job initial [:next])
-             [:importing-sites [:import-sites 1] nil]))
-      ;; single page of sites successfully imported
-      (is (= (reduce-job initial [:next [:success [:import-sites 1] [nil [1 2 3] 1]]])
-             [:processing-facilities nil nil]))
-      ;; page of sites successfully imported (continue)
-      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3] 5]]])
              [:request-sites nil nil]))
-      ;; page report mismatch
-      (is (= (reduce-job initial [:next [:success [:import-sites 2] [nil [1 2 3] 4]]])
-             [:error [:import-sites 1] :unexpected-event]))
-      ;; sites page is incremented
-      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3] 3]] :next])
-             [:importing-sites [:import-sites 2] nil]))
-      ;; second page of sites is imported
-      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3] 1]]
-                                  :next [:success [:import-sites 2] [nil []]]])
-             [:processing-facilities nil nil]))
 
-      ;; TODO: write tests for the rest of the flow
-      )
+      ;;
+      ;; Import sites stage
+      ;;
+      (let [job (reduce fsm/fsm-event initial [:next [:success :import-types :new-types]])]
+        ;; first page of sites is requested
+        (is (= (reduce-job job [:next])
+               [:importing-sites [:import-sites 1] nil]))
+        ;; single page of sites successfully imported
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [nil [1 2 3] 1]]])
+               [:update-projects nil nil]))
+        ;; page of sites successfully imported (continue)
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 5]]])
+               [:request-sites nil nil]))
+        ;; page report mismatch
+        (is (= (reduce-job job [:next [:success [:import-sites 2] [nil [1 2 3] 4]]])
+               [:error [:import-sites 1] :unexpected-event]))
+        ;; sites page is incremented
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 3]] :next])
+               [:importing-sites [:import-sites 2] nil]))
+        ;; second page of sites is imported
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 1]]
+                                    :next [:success [:import-sites 2] [nil []]]])
+               [:update-projects nil nil]))
+
+        ;;
+        ;; Update projects stage (facilities 1,2 to process)
+        ;;
+        (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil [1 2] 1]]])]
+          (is (= (reduce-job job [:next])
+                 [:updating-projects :update-projects nil]))
+          (is (= (reduce-job job [:next [:success :update-projects nil]])
+                 [:processing-facilities nil nil]))
+
+          ;;
+          ;; Process facilities stage (facilities 1,2 to process)
+          ;;
+          (let [job (reduce fsm/fsm-event job [:next [:success :update-projects nil]])]
+            (is (= (reduce-job job [:next])
+                   [:processing-facilities [:process-facilities [1]] nil]))
+            (is (= (reduce-job job [:next :next])
+                   [:processing-facilities [:process-facilities [2]] nil]))
+            (is (= (reduce-job job [:next :next :next])
+                   [:processing-facilities nil nil]))
+
+
+            (is (= (reduce-job job [:next [:success [:process-facilities [1]] nil]])
+                   [:processing-facilities nil nil]))
+            (is (= (reduce-job job [:next [:success [:process-facilities [1]] nil] :next])
+                   [:processing-facilities [:process-facilities [2]] nil]))
+            (is (= (reduce-job job [:next :next [:success [:process-facilities [1]] nil]])
+                   [:processing-facilities [:process-facilities [2]] nil]))
+            (is (= (reduce-job job [:next :next
+                                    [:success [:process-facilities [1]] nil]
+                                    [:success [:process-facilities [2]] nil]])
+                   [:done nil :success]))))))
+
+    ;; TODO: test error conditions in all stages
+    ;; TODO: test cancellation in all stages
     ))

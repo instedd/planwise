@@ -120,19 +120,13 @@
           (update :tasks push-task [:process-facilities [next-facility]])
           (update :facility-ids rest)))))
 
-(defn complete-processing
-  [job event & _]
-  ;; TODO: save the processing result in the job
-  (complete-task job event))
-
 (defn dispatch-update-projects
   [job & _]
   (update job :tasks push-task :update-projects))
 
 (defn update-projects-succeeded
   [job event & _]
-  (-> (complete-task job event)
-      (assoc :result :success)))
+  (complete-task job event))
 
 (defn update-projects-failed
   [job event & _]
@@ -141,6 +135,15 @@
         (assoc :result :update-projects-failed
                :error-info error))))
 
+(defn complete-processing
+  [job event & _]
+  ;; TODO: save the processing result in the job
+  (complete-task job event))
+
+(defn last-complete-processing
+  [job event & _]
+  (-> (complete-processing job event)
+      (assoc :result :success)))
 
 ;; FSM guards
 
@@ -220,20 +223,11 @@
     [[_ [:success [:import-sites _] [:continue _ _]]]]
                                      -> {:action import-sites-succeeded} :request-sites
     [[_ [:success [:import-sites _] _]]]
-                                     -> {:action import-sites-succeeded} :processing-facilities
+                                     -> {:action import-sites-succeeded} :update-projects
     [[_ [:failure [:import-sites _] _]]]
                                      -> {:action import-sites-failed} :clean-up
     [[_ :next]]                      -> {:action clear-dispatch} :importing-sites
     [[_ :cancel]]                    -> {:action cancel-import} :cancelling
-    [[_ _]]                          -> {:action unexpected-event} :error]
-
-   [:processing-facilities
-    [[_ :next]]                      -> {:action dispatch-process-facilities} :processing-facilities
-    [[(_ :guard no-pending-tasks?) :cancel]]
-                                     -> {:action cancel-import} :clean-up
-    [[_ :cancel]]                    -> {:action cancel-import} :cancelling
-    [_ :guard done-processing?]      -> {:action complete-processing} :update-projects
-    [[_ (_ :guard process-report?)]]       -> {:action complete-processing} :processing-facilities
     [[_ _]]                          -> {:action unexpected-event} :error]
 
    [:update-projects
@@ -245,9 +239,18 @@
     [[_ :next]]                      -> {:action clear-dispatch} :updating-projects
     [[_ :cancel]]                    -> {:action cancel-import} :clean-up-wait
     [[_ [:success :update-projects _]]]
-                                     -> {:action update-projects-succeeded} :done
+                                     -> {:action update-projects-succeeded} :processing-facilities
     [[_ [:failure :update-projects _]]]
                                      -> {:action update-projects-failed} :error
+    [[_ _]]                          -> {:action unexpected-event} :error]
+
+   [:processing-facilities
+    [[_ :next]]                      -> {:action dispatch-process-facilities} :processing-facilities
+    [[(_ :guard no-pending-tasks?) :cancel]]
+                                     -> {:action cancel-import} :error
+    [[_ :cancel]]                    -> {:action cancel-import} :cancelling
+    [_ :guard done-processing?]      -> {:action last-complete-processing} :done
+    [[_ (_ :guard process-report?)]] -> {:action complete-processing} :processing-facilities
     [[_ _]]                          -> {:action unexpected-event} :error]
 
    [:cancelling
