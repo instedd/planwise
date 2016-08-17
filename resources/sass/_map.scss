@@ -5,3 +5,7 @@
   background: $black;
   border-radius: 50%;
 }
+
+.leaflet-overlay-pane {
+  mix-blend-mode: multiply;
+}

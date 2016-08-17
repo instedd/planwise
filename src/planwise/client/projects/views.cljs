@@ -66,11 +66,10 @@
                 (when (#{:facilities :transport} selected-tab)
                   [:point-layer {:points @facilities
                                  :popup-fn marker-popup-fn
-                                 :radius 4
-                                 :color styles/black
-                                 :opacity 0.8
-                                 :weight 1
-                                 :fillOpacity 0.4}])
+                                 :radius 5
+                                 :color styles/light-grey
+                                 :stroke false
+                                 :fillOpacity 1}])
                 ;; Demographics tile layer
                 (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
                       population-map (mapping/region-map project-region-id)]
