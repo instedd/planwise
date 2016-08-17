@@ -89,8 +89,18 @@
         [:div.dataset-header
          [:h2 "Facilities"]
          (if-not importing?
-           [:p "There are " [:b (utils/pluralize @facility-count "facility" "facilities")] " in the system."]
-           (let [step (db/server-status->string @server-status)]
+           (let [last-result (db/last-import-result @server-status)]
+             [:div
+              [:p
+               "There are "
+               [:b (utils/pluralize @facility-count "facility" "facilities")]
+               " in the system."]
+              (when (some? last-result)
+                [:div.bottom-right
+                 [:p "Last import: " last-result]])])
+           (let [step (if (= :import-requested @state)
+                        "Starting"
+                        (db/server-status->string @server-status))]
              [:div
               [:h3
                "Import in progress: "

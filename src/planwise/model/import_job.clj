@@ -95,10 +95,13 @@
   [job event & _]
   (let [page (:page job)
         facility-ids (:facility-ids job)
-        [_ _ [_ page-ids]] event]
+        facility-count (count facility-ids)
+        [_ _ [_ page-ids total-pages]] event]
     (-> (complete-task job event)
         (assoc :page (inc page)
-               :facility-ids (into facility-ids page-ids)))))
+               :page-count total-pages
+               :facility-ids (into facility-ids page-ids)
+               :facility-count (+ facility-count (count page-ids))))))
 
 (defn import-sites-failed
   [job event & _]
@@ -183,14 +186,16 @@
 ;; FSM definition
 
 (def default-job-value
-  {:user-ident    nil
-   :collection-id nil
-   :type-field    nil
-   :page          1
-   :facility-ids  []
-   :tasks         []
-   :result        nil
-   :last-event    nil})
+  {:user-ident     nil
+   :collection-id  nil
+   :type-field     nil
+   :page           1
+   :page-count     1
+   :facility-count 0
+   :facility-ids   []
+   :tasks          []
+   :result         nil
+   :last-event     nil})
 
 (fsm/defsm-inc import-job
   [[:start
@@ -212,7 +217,7 @@
 
    [:importing-sites
     [_ :guard page-number-mismatch?] -> {:action unexpected-event} :error
-    [[_ [:success [:import-sites _] [:continue _]]]]
+    [[_ [:success [:import-sites _] [:continue _ _]]]]
                                      -> {:action import-sites-succeeded} :request-sites
     [[_ [:success [:import-sites _] _]]]
                                      -> {:action import-sites-succeeded} :processing-facilities
@@ -294,6 +299,17 @@
   (or (nil? job)
       (:is-terminated? job)))
 
+(defn- import-progress
+  [{:keys [page page-count]}]
+  (when (some-> page-count pos?)
+    (/ (dec page) page-count)))
+
+(defn- process-progress
+  [{:keys [facility-ids facility-count tasks]}]
+  (when (some-> facility-count pos?)
+    (let [pending-ids (+ (count tasks) (count facility-ids))]
+      (- 1 (/ pending-ids facility-count)))))
+
 (defn job-status
   [job]
   (let [state (:state job)]
@@ -312,10 +328,19 @@
          :state state
          :result (job-result job)}
 
+        (:request-sites :importing-sites)
+        {:status :importing
+         :state state
+         :progress (import-progress (:value job))}
+
+        :processing-facilities
+        {:status :importing
+         :state state
+         :progress (process-progress (:value job))}
+
         ;; else
         {:status :importing
          :state state
-                                        ; TODO: calculate job progress
          :progress nil})
 
       true

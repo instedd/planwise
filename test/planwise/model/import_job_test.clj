@@ -89,19 +89,19 @@
       (is (= (reduce-job initial [:next])
              [:importing-sites [:import-sites 1] nil]))
       ;; single page of sites successfully imported
-      (is (= (reduce-job initial [:next [:success [:import-sites 1] [nil [1 2 3]]]])
+      (is (= (reduce-job initial [:next [:success [:import-sites 1] [nil [1 2 3] 1]]])
              [:processing-facilities nil nil]))
       ;; page of sites successfully imported (continue)
-      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3]]]])
+      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3] 5]]])
              [:request-sites nil nil]))
       ;; page report mismatch
-      (is (= (reduce-job initial [:next [:success [:import-sites 2] [nil [1 2 3]]]])
+      (is (= (reduce-job initial [:next [:success [:import-sites 2] [nil [1 2 3] 4]]])
              [:error [:import-sites 1] :unexpected-event]))
       ;; sites page is incremented
-      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3]]] :next])
+      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3] 3]] :next])
              [:importing-sites [:import-sites 2] nil]))
       ;; second page of sites is imported
-      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3]]]
+      (is (= (reduce-job initial [:next [:success [:import-sites 1] [:continue [1 2 3] 1]]
                                   :next [:success [:import-sites 2] [nil []]]])
              [:processing-facilities nil nil]))
 

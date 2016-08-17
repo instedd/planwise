@@ -1,5 +1,6 @@
 (ns planwise.client.datasets.db
-  (:require [schema.core :as s :include-macros true]))
+  (:require [schema.core :as s :include-macros true]
+            [planwise.client.utils :refer [format-percentage]]))
 
 (s/defschema ServerStatus
   {:status                    (s/enum :ready :done :importing :cancelling :unknown)
@@ -78,20 +79,18 @@
 
     :done
     (case (:result server-status)
-      :success "Import successful"
-      :cancelled "Import cancelled"
-      :unexpected-event "Fatal error: unexpected event received"
-      :import-types-failed "Error: failed to import facility types"
-      :import-sites-failed "Error: failed to import sites from Resourcemap"
-      :update-projects-failed "Error: failed to update projects")
+      :success "Import was successful"
+      :cancelled "Import was cancelled"
+      "Import was unsuccessful")
 
     :importing
-    (let [progress (:progress server-status)]
-      ;; TODO: add progress to the returned string
+    (let [progress (:progress server-status)
+          progress (when progress (str " (" (format-percentage progress) ")"))]
       (case (:state server-status)
-        (:start :importing-types) "Importing facility types"
-        (:request-sites :importing-sites) "Importing sites from Resourcemap"
-        (:processing-facilities) "Pre-processing facilities"
+        :start "Starting"
+        :importing-types "Importing facility types"
+        (:request-sites :importing-sites) (str "Importing sites from Resourcemap" progress)
+        (:processing-facilities) (str "Pre-processing facilities" progress)
         (:update-projects :updating-projects) "Updating projects"
         "Importing..."))
 
@@ -100,6 +99,17 @@
 
     :unknown
     "Unknown server status"))
+
+(defn last-import-result
+  [{:keys [status result]}]
+  (when (and (= :done status) (some? result))
+    (case result
+      :success "Success"
+      :cancelled "Cancelled"
+      :unexpected-event "Fatal error: unexpected event received"
+      :import-types-failed "Error: failed to import facility types"
+      :import-sites-failed "Error: failed to import sites from Resourcemap"
+      :update-projects-failed "Error: failed to update projects")))
 
 (defn server-status->state
   [{status :status}]

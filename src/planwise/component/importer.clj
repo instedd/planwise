@@ -82,12 +82,13 @@
   [{:keys [resmap facilities]} user coll-id type-field page]
   (info (str "Requesting page " page " of collection " coll-id " from Resourcemap"))
   (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
-        sites (:sites data)]
+        sites (:sites data)
+        total-pages (:totalPages data)]
     (when (seq sites)
       (let [new-facilities (sites->facilities sites type-field)]
         (info "Inserting" (count new-facilities) "facilities from page" page "of collection" coll-id)
         (facilities/insert-facilities! facilities new-facilities)
-        [:continue (map :id new-facilities)]))))
+        [:continue (map :id new-facilities) total-pages]))))
 
 (defn process-facilities
   [facilities facility-ids]
