@@ -53,8 +53,6 @@
       (anti-forgery-field)
       (client-config (assoc endpoint :request request))
       (include-js "/assets/leaflet/leaflet.js")
-      (include-js "/js/leaflet.geojsongroups.js")
-      (include-js "/js/leaflet.bboxloader.js")
       (include-js "/js/main.js")
       [:script "planwise.client.core.main();"]])))
 
