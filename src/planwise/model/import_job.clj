@@ -289,13 +289,37 @@
   [job]
   (get-in job [:value :type-field]))
 
+(defn job-finished?
+  [job]
+  (or (nil? job)
+      (:is-terminated? job)))
+
 (defn job-status
   [job]
   (let [state (:state job)]
     (cond
-      (nil? state) :ready
-      (keyword? state) state
-      true :unknown)))
+      (nil? state)
+      {:status :ready}
+
+      (keyword? state)
+      (case state
+        (:cancelling :clean-up :clean-up-wait)
+        {:status :cancelling
+         :state state}
+
+        (:error :done)
+        {:status :done
+         :state state
+         :result (job-result job)}
+
+        ;; else
+        {:status :importing
+         :state state
+                                        ; TODO: calculate job progress
+         :progress nil})
+
+      true
+      {:status :unknown})))
 
 (defn create-job
   [user-ident coll-id type-field]
@@ -304,11 +328,6 @@
                          :collection-id coll-id
                          :type-field type-field)]
     (import-job job-value)))
-
-(defn job-finished?
-  [job]
-  (or (nil? job)
-      (:is-terminated? job)))
 
 (defn cancel-job
   [job]

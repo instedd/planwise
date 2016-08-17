@@ -84,19 +84,20 @@
   (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
         sites (:sites data)]
     (when (seq sites)
-      (info "Processing page" page "of collection" coll-id)
       (let [new-facilities (sites->facilities sites type-field)]
-        (info "Inserting" (count new-facilities) "facilities")
+        (info "Inserting" (count new-facilities) "facilities from page" page "of collection" coll-id)
         (facilities/insert-facilities! facilities new-facilities)
         [:continue (map :id new-facilities)]))))
 
 (defn process-facilities
   [facilities facility-ids]
   (doseq [id facility-ids]
+    (info "Processing facility" id)
     (facilities/preprocess-isochrones facilities id)))
 
 (defn update-projects
   [projects]
+  (info "Updating projects after importing facilities")
   (let [list (projects/list-projects projects)]
     (doseq [project list]
       (projects/update-project-stats projects project))))
@@ -168,21 +169,21 @@
         (log-job-status job)
         (if (and (not (import-job/job-finished? job)) task)
           (do
-            (info "Importer/next-task:" task)
+            (debug "Importer: next-task" task)
             {:task-id task
              :task-fn (build-task-fn component job task)})
           (do
-            (info "No more tasks to execute")
+            (debug "No more tasks to execute")
             nil)))
-      (info "Nothing to do")))
+      (debug "Nothing to do")))
 
   (task-completed [component task-id result]
-    (info "Importer/task-completed" task-id result)
+    (debug "Importer: task-completed" task-id result)
     (let [job (swap! (:job component) import-job/report-task-success task-id result)]
       (log-job-status job)))
 
   (task-failed [component task-id error-info]
-    (info "Importer/task-failed" task-id error-info)
+    (warn "Importer: task-failed" task-id error-info)
     (let [job (swap! (:job component) import-job/report-task-failure task-id error-info)]
       (log-job-status job))))
 
@@ -210,7 +211,7 @@
         (let [result (taskmaster/poll-dispatcher (:taskmaster service))]
           (when (= :error (first result))
             (throw (ex-info "Failure starting the import job" {:result result}))))
-        (status service))
+        [:ok (status service)])
       [:error :busy])))
 
 (defn cancel-import!
