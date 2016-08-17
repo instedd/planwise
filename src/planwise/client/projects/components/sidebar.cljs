@@ -6,10 +6,25 @@
             [planwise.client.projects.db :as db]))
 
 
+(defn- demographic-stat [title value]
+  [:div.stat
+   [:div.stat-title title]
+   [:div.stat-value value]])
+
 (defn- demographics-filters []
-  [:div.sidebar-filters
-   [:div.filter-info
-    [:p "Filter here the population you are analyzing."]]])
+  (let [current-project (subscribe [:projects/current-data]) ]
+    (fn []
+      [:div.sidebar-filters
+      [:div.filter-info
+       ;; [:p "Filter here the population you are analyzing."]
+       [:div.demographic-stats
+        ;; (demographic-stat "Area" (str 1000 " km2"))
+        ;; (demographic-stat "Density" (str 4850 "/km2"))
+        (demographic-stat "Total population" (.toLocaleString (:region-population @current-project) "en"))
+       ]
+       [:span.small
+        "Information source: "
+        [:a {:href "http://www.worldpop.org.uk/"} "WorldPop"]]]])))
 
 (defn- facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])

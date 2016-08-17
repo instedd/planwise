@@ -25,6 +25,12 @@
    {:facilities (component/using (facilities/facilities-service {:config {}}) [])
     :projects (component/using (projects/projects-service) [:db :facilities])}))
 
+(deftest region-population-is-retrieved-on-get-project
+  (with-system (system)
+    (let [service (:projects system)
+          project (projects/get-project service 1)]
+      (is (= 1000 (:region-population project))))))
+
 (deftest region-population-is-retrieved-on-list-projects-for-user
   (with-system (system)
     (let [service (:projects system)

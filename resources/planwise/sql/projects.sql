@@ -21,9 +21,10 @@ WHERE projects.owner_id = :user-id
 ORDER BY projects.id ASC;
 
 -- :name select-project :? :1
-SELECT id, goal, region_id AS "region-id", stats, filters, owner_id AS "owner-id"
+SELECT projects.id, projects.goal, projects.region_id AS "region-id", projects.stats, projects.filters, projects.owner_id AS "owner-id", regions.total_population AS "region-population"
 FROM projects
-WHERE id = :id;
+INNER JOIN regions ON projects.region_id = regions.id
+WHERE projects.id = :id;
 
 -- :name update-project* :! :n
 /* :require [clojure.string :as string] */

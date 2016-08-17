@@ -234,6 +234,23 @@ article.project-view {
       font-size: 16px;
       line-height: 1.2;
     }
+
+    .demographic-stats {
+      color: $gray3;
+      .stat {
+        display: inline-block;
+        margin-right: 55px;
+        margin-bottom: 15px;
+
+        .stat-title {
+          text-transform: uppercase;
+          font-size: 10px;
+        }
+        .stat-value {
+          font-size: 16px;
+        }
+      }
+    }
   }
   fieldset {
     padding: 45px 10px 10px 12px;
