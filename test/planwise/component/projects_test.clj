@@ -25,17 +25,13 @@
    {:facilities (component/using (facilities/facilities-service {:config {}}) [])
     :projects (component/using (projects/projects-service) [:db :facilities])}))
 
-(deftest region-population-is-retrieved-on-get-project
+(deftest region-population-and-area-are-retrieved-on-get-project
   (with-system (system)
     (let [service (:projects system)
           project (projects/get-project service 1)]
-      (is (= 1000 (:region-population project))))))
 
-(deftest region-area-is-retrieved-on-get-project
-  (with-system (system)
-    (let [service (:projects system)
-          project (projects/get-project service 1)]
-      (is (< 0 (:region-area-km2 project))))))
+      (is (= 1000 (:region-population project)))
+      (is (pos? (:region-area-km2 project))))))
 
 (deftest region-population-is-retrieved-on-list-projects-for-user
   (with-system (system)
