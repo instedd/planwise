@@ -70,7 +70,7 @@ FROM facilities
   INNER JOIN facility_types ON facilities.type_id = facility_types.id
   LEFT OUTER JOIN facilities_polygons fp ON fp.facility_id = facilities.id AND fp.threshold = :threshold AND fp.method = :algorithm
 WHERE
-  ST_Intersects(fp.the_geom, ST_MakeEnvelope(:v*:bbox, 4326))
+  (fp.the_geom && ST_MakeEnvelope(:v*:bbox, 4326))
   :snip:criteria ;
 
 -- :name isochrone-for-facilities :? :1

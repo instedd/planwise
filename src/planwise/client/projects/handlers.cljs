@@ -169,7 +169,7 @@
    (let [level (maps/simplify->geojson-level simplify)
          isochrones  (->> facilities
                        (filter #(some? (:isochrone %)))
-                       (map (juxt :id #(js/JSON.parse (:isochrone %))))
+                       (map (juxt :id (comp js/JSON.parse :isochrone)))
                        (flatten)
                        (apply hash-map))]
      (-> db

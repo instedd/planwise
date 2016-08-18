@@ -39,8 +39,7 @@
                                   (map :id)
                                   (remove (set bbox-excluding))
                                   (select-keys isochrones-for-level)
-                                  (map (fn [[id isochrone]] {:id id, :isochrone isochrone}))
-                                  (vec))]
+                                  (mapv (fn [[id isochrone]] {:id id, :isochrone isochrone})))]
             (callback (clj->js new-isochrones))))))))
 
 (defn project-list-page []

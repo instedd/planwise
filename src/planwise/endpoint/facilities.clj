@@ -8,15 +8,26 @@
             [ring.util.response :refer [response]]))
 
 (defn- facilities-criteria [{:keys [type region bbox excluding]}]
-  {:region (when region (Integer. region))
-   :types (when type (map #(Integer. %) (if (map? type) (vals type) type)))
-   :bbox (when bbox (map #(Float. %) (string/split bbox #",")))
-   :excluding (when-not (string/blank? excluding) (map #(Integer. %) (string/split excluding #",")))})
+  {:region (some-> region Integer.)
+   :types (when type
+            (map
+              #(Integer. %)
+              (if (map? type)
+                (vals type)
+                type)))
+   :bbox (when bbox
+           (map
+            #(Float. %)
+            (string/split bbox #",")))
+   :excluding (when-not (string/blank? excluding)
+                (map
+                  #(Integer. %)
+                  (string/split excluding #",")))})
 
 (defn- isochrone-criteria [{:keys [threshold algorithm simplify]}]
-  {:threshold (when threshold (Integer. threshold))
+  {:threshold (some-> threshold Integer.)
    :algorithm algorithm
-   :simplify (when simplify (Float. (str simplify)))})
+   :simplify (some-> simplify str Float.)})
 
 (defn- endpoint-routes [service maps-service]
   (routes
