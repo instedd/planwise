@@ -1,7 +1,5 @@
 (ns leaflet.core
-  (:require [leaflet.geojsongroup]
-            [leaflet.bboxloader]
-            [reagent.core :as reagent :refer [atom]]
+  (:require [reagent.core :as reagent :refer [atom]]
             [reagent.debug :as debug]
             [clojure.data :as data]))
 

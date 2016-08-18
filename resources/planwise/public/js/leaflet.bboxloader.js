@@ -1,4 +1,4 @@
-goog.provide("leaflet.bboxloader");
+// goog.provide("leaflet.bboxloader");
 
 var throwFn = function(text) {
   throw new Error(text);
@@ -60,7 +60,10 @@ L.GeoJSON.include({
   }
 });
 
-
+/**
+ * Manages a layer by requesting features for it based on level and bounding box
+ * @constructor
+ */
 L.BBoxLoader = L.Class.extend({
 
   initialize: function(options) {
@@ -222,8 +225,9 @@ L.BBoxLoader = L.Class.extend({
   }
 });
 
+
 L.bboxLoader = function(options) {
   return new L.BBoxLoader(options);
 };
 
-leaflet.bboxloader = L.bboxLoader;
+// leaflet.bboxloader = L.bboxLoader;
