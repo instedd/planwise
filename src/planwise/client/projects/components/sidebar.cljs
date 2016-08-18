@@ -28,8 +28,11 @@
          (demographic-stat "Total population" (utils/format @population))
          ]
         [:span.small
-         "Population information source: "
-         [:a {:href "http://www.worldpop.org.uk/"} "WorldPop"]]]])))
+         "Demographic data source: "
+         [:a {:href "http://www.worldpop.org.uk/" } "WorldPop" ]
+         " (Geodata Institute of the University of Southampton) / "
+         [:a {:href "https://creativecommons.org/licenses/by/4.0/" } "CC BY"]
+         ]]])))
 
 (defn- facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])
