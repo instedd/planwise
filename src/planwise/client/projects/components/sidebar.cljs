@@ -14,25 +14,25 @@
    [:div.stat-value value]])
 
 (defn- demographics-filters []
-  (let [current-project (subscribe [:projects/current-data])
-        population (reaction (:region-population @current-project))
-        area (reaction (:region-area-km2 @current-project))
-        density (reaction (/ @population @area))]
+  (let [current-project (subscribe [:projects/current-data])]
     (fn []
-      [:div.sidebar-filters
-       [:div.filter-info
-        ;; [:p "Filter here the population you are analyzing."]
-        [:div.demographic-stats
-         (demographic-stat "Area" [:span (utils/format (int @area)) " km" [:sup 2]])
-         (demographic-stat "Density" [:span (utils/format @density) " /km" [:sup 2]])
-         (demographic-stat "Total population" (utils/format @population))
-         ]
-        [:span.small
-         "Demographic data source: "
-         [:a {:href "http://www.worldpop.org.uk/" } "WorldPop" ]
-         " (Geodata Institute of the University of Southampton) / "
-         [:a {:href "https://creativecommons.org/licenses/by/4.0/" } "CC BY"]
-         ]]])))
+      (let [population (:region-population @current-project)
+            area (:region-area-km2 @current-project)
+            density (/ population area)]
+        [:div.sidebar-filters
+         [:div.filter-info
+          ;; [:p "Filter here the population you are analyzing."]
+          [:div.demographic-stats
+           (demographic-stat "Area" [:span (utils/format (int area)) " km" [:sup 2]])
+           (demographic-stat "Density" [:span (utils/format density) " /km" [:sup 2]])
+           (demographic-stat "Total population" (utils/format population))
+           ]
+          [:span.small
+           "Demographic data source: "
+           [:a {:href "http://www.worldpop.org.uk/" } "WorldPop" ]
+           " (Geodata Institute of the University of Southampton) / "
+           [:a {:href "https://creativecommons.org/licenses/by/4.0/" } "CC BY"]
+           ]]]))))
 
 (defn- facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])
