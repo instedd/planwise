@@ -46,17 +46,6 @@
 
 ;; FSM value update functions
 
-(defn cancel-import
-  [job & _]
-  (assoc job :result :cancelled))
-
-(defn unexpected-event
-  [job evt state & _]
-  (assoc job
-         :result :unexpected-event
-         :event evt
-         :last-state state))
-
 (defn clear-dispatch
   [job & _]
   (assoc job :next-task nil))
@@ -66,6 +55,18 @@
   (-> job
       (update :tasks push-task task)
       (assoc :next-task task)))
+
+(defn cancel-import
+  [job & _]
+  (-> (assoc job :result :cancelled)
+      (clear-dispatch)))
+
+(defn unexpected-event
+  [job evt state & _]
+  (assoc job
+         :result :unexpected-event
+         :event evt
+         :last-state state))
 
 (defn complete-task
   [job [_ task _] & _]
@@ -254,7 +255,7 @@
     [[_ :next]]                      -> {:action dispatch-process-facilities} :processing-facilities
     [[(_ :guard no-pending-tasks?) :cancel]]
                                      -> {:action cancel-import} :error
-    [[_ :cancel]]                    -> {:action cancel-import} :cancelling
+    [[_ :cancel]]                    -> {:action cancel-import} :clean-up-wait
     [_ :guard done-processing?]      -> {:action last-complete-processing} :done
     [[_ (_ :guard process-report?)]] -> {:action complete-processing} :processing-facilities
     [[_ _]]                          -> {:action unexpected-event} :error]

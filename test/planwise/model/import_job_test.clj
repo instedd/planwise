@@ -58,7 +58,7 @@
       ;; unexpected/invalid event
       (is (= (reduce-job initial [:foo])          [:error nil :unexpected-event]))
       ;; user cancels after the import types task was dispatched
-      (is (= (reduce-job initial [:next :cancel]) [:cancelling :import-types :cancelled]))
+      (is (= (reduce-job initial [:next :cancel]) [:cancelling nil :cancelled]))
 
       ;; user cancels while importing facility types
       (is (= (reduce-job initial [:next
@@ -136,7 +136,15 @@
             (is (= (reduce-job job [:next :next
                                     [:success [:process-facilities [1]] nil]
                                     [:success [:process-facilities [2]] nil]])
-                   [:done nil :success]))))))
+                   [:done nil :success]))
+
+            ;; cancellations during this stage
+            (is (= (reduce-job job [:cancel])
+                   [:error nil :cancelled]))
+            (is (= (reduce-job job [:next :cancel])
+                   [:clean-up-wait nil :cancelled]))
+            (is (= (reduce-job job [:next :cancel [:success [:process-facilities [1]] nil]])
+                   [:error nil :cancelled]))))))
 
     ;; TODO: test error conditions in all stages
     ;; TODO: test cancellation in all stages
