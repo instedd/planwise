@@ -205,7 +205,7 @@
     (let [new-db (assoc-in db [:transport :time] time)
           filters (db/project-filters new-db)
           project-id (get-in db [:project-data :id])]
-      (api/update-project project-id filters :facilities-with-demand
+      (api/update-project project-id filters nil
                           :projects/project-updated)
       new-db)))
 
