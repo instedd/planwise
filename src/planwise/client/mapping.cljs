@@ -26,9 +26,9 @@
                 :accessToken mapbox-access-token}])
 
 (def geojson-levels
-  {1 {:ub 9, :simplify 0.4, :tileSize 2.0}
-   2 {:lb 9, :ub 13, :simplify 0.1, :tileSize 1.0}
-   3 {:lb 13, :simplify 0.0, :tileSize 0.5}})
+  {1 {:ub 8, :simplify 0.1, :tileSize 10.0}
+   2 {:lb 8, :ub 11, :simplify 0.01, :tileSize 2.0}
+   3 {:lb 11, :simplify 0.0, :tileSize 1.0}})
 
 (def geojson-first-level
   (-> geojson-levels keys first))
