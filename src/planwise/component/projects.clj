@@ -74,6 +74,13 @@
     {:facilities-targeted facilities-targeted
      :facilities-total facilities-total}))
 
+(defn- load-project
+  [db project-or-id]
+  (if (map? project-or-id)
+    project-or-id
+    (-> (select-project db {:id project-or-id})
+        db->project)))
+
 (defn create-project [service project]
   (let [db (get-db service)
         stats (compute-project-stats service project)
@@ -81,15 +88,9 @@
         project-id (->> project-with-stats
                         (project->db)
                         (insert-project! db)
-                        (:id))]
-    (assoc project-with-stats :id project-id)))
-
-(defn- load-project
-  [db project-or-id]
-  (if (map? project-or-id)
-    project-or-id
-    (-> (select-project db {:id project-or-id})
-        db->project)))
+                        (:id))
+        project (load-project db project-id)]
+    (assoc project :stats stats)))
 
 (defn update-project-stats
   [service project]
