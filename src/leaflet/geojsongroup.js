@@ -1,3 +1,5 @@
+goog.provide("leaflet.geojsongroup");
+
 // Modify L.Path to check for _pathGroup before _map in all relevant methods
 // Instead of adding/removing itself from a _map, do it from its _pathGroup
 L.Path.include({
@@ -189,3 +191,5 @@ L.geoJson.group = function (geojson, options) {
 L.pathGroup = function(options) {
   return new L.PathGroup(options);
 };
+
+leaflet.geojsongroup = L.geoJson.group;

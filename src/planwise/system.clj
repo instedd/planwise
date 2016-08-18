@@ -11,6 +11,7 @@
             [ring.component.jetty :refer [jetty-server]]
             [ring.middleware.resource :refer [wrap-resource]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults site-defaults]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-params]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.middleware.webjars :refer [wrap-webjars]]
@@ -89,6 +90,7 @@
           :jwe-options jwe-options}
    :api {:middleware   [[wrap-authorization :jwe-auth-backend]
                         [wrap-authentication :session-auth-backend :jwe-auth-backend]
+                        [wrap-keyword-params]
                         [wrap-json-params]
                         [wrap-json-response]
                         [wrap-defaults :api-defaults]]

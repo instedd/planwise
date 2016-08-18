@@ -1,5 +1,6 @@
 (ns planwise.client.mapping
-  (:require [reagent.format :as fmt]))
+  (:require [reagent.format :as fmt]
+            [re-frame.utils :as c]))
 
 (def mapbox-tile-url "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}")
 (def mapbox-mapid "ggiraldez.056e1919")
@@ -23,6 +24,25 @@
                 :maxZoom 18
                 :mapid gray-mapbox-mapid
                 :accessToken mapbox-access-token}])
+
+(def geojson-levels
+  {1 {:ub 8, :simplify 0.1, :tileSize 10.0}
+   2 {:lb 8, :ub 11, :simplify 0.01, :tileSize 2.0}
+   3 {:lb 11, :simplify 0.0, :tileSize 1.0}})
+
+(def geojson-first-level
+  (-> geojson-levels keys first))
+
+(defn geojson-level->simplify
+  [level]
+  (get-in geojson-levels [(js/parseInt level) :simplify]))
+
+(defn simplify->geojson-level
+  [simplify]
+  (->> geojson-levels
+    (filter (fn [[level {s :simplify}]] (= s simplify)))
+    (map first)
+    first))
 
 (defn static-image [geojson]
   (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/256x144.png?access_token=%s"

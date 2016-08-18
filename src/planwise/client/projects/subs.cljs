@@ -45,6 +45,11 @@
         :facilities (:list @facility-data))))))
 
 (register-sub
+ :projects/facilities-criteria
+ (fn [db [_]]
+   (reaction (db/facilities-criteria (get-in @db [:projects :current])))))
+
+(register-sub
  :projects/transport-time
  (fn [db [_]]
    (reaction (get-in @db [:projects :current :transport :time]))))
