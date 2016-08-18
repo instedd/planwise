@@ -9,14 +9,14 @@
 
 (defn- facilities-criteria [{:keys [type region bbox excluding]}]
   {:region (when region (Integer. region))
-   :types (when type (map #(Integer. %) (vals type)))
+   :types (when type (map #(Integer. %) (if (map? type) (vals type) type)))
    :bbox (when bbox (map #(Float. %) (string/split bbox #",")))
    :excluding (when-not (string/blank? excluding) (map #(Integer. %) (string/split excluding #",")))})
 
 (defn- isochrone-criteria [{:keys [threshold algorithm simplify]}]
-  {:threshold (Integer. threshold)
+  {:threshold (when threshold (Integer. threshold))
    :algorithm algorithm
-   :simplify (if simplify (Float. simplify) nil)})
+   :simplify (when simplify (Float. (str simplify)))})
 
 (defn- endpoint-routes [service maps-service]
   (routes
@@ -43,7 +43,7 @@
          (assoc demand
                 :facilities facilities))))
 
-   (GET "/bbox-isochrones" [& params]
+   (ANY "/bbox-isochrones" [& params]
      (let [criteria   (facilities-criteria params)
            isochrone  (isochrone-criteria params)
            facilities (facilities/isochrones-in-bbox service isochrone criteria)]
