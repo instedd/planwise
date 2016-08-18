@@ -9,6 +9,29 @@ set -euo pipefail
 
 # This script is invoked from the facilities service
 
+function query {
+    psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c "$1";
+}
+
+function calculate_extent {
+    region_id=$1
+    facility_polygon_id=$2
+    resolution=$3
+    block_size=$4
+    query="select calculate_aligned_extent(${facility_polygon_id}, ${region_id}, ${resolution}, ${block_size});"
+    psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -A -t -c "$query"
+}
+
+function pixel_size {
+    raster_name=$1
+    gdalinfo $raster_name | grep "Pixel Size" | sed -E 's/.*\(([^,]*).*/\1/g'
+}
+
+function block_size {
+    raster_name=$1
+    gdalinfo $raster_name | grep "Block=" | sed -E 's/.*Block=([^x]*).*/\1/g'
+}
+
 if [ $# -lt 2 ]; then
   echo "Usage: $0 REGION_ID FACILITY_POLYGON_ID"
 	exit 1
@@ -30,14 +53,20 @@ fi;
 mkdir -p ${DATA_PATH}/isochrones/${REGION_ID}
 TARGET=${DATA_PATH}/isochrones/${REGION_ID}/${FACILITY_POLYGON_ID}.tif
 
+resolution=$(pixel_size $REGION_FILE)
+block_size=$(block_size $REGION_FILE)
+
+extent=$(calculate_extent $REGION_ID $FACILITY_POLYGON_ID $resolution $block_size)
+IFS="|" read target_minx target_miny target_maxx target_maxy <<< $extent
+
 if [[ ! -e $TARGET ]]; then
   gdalwarp -q \
+    -te $target_minx $target_miny $target_maxx $target_maxy \
     -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
     -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
     -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
     $REGION_FILE $TARGET
 fi;
-
 
 # Create facility-polygon-region population vrt to count population
 
