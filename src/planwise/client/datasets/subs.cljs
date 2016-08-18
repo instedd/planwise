@@ -8,11 +8,6 @@
    (reaction (get-in @db [:datasets :state]))))
 
 (register-sub
- :datasets/cancel-requested
- (fn [db [_]]
-   (reaction (get-in @db [:datasets :cancel-requested]))))
-
-(register-sub
  :datasets/facility-count
  (fn [db [_]]
    (reaction (get-in @db [:datasets :facility-count]))))
@@ -28,6 +23,6 @@
    (reaction (get-in @db [:datasets :selected]))))
 
 (register-sub
- :datasets/raw-status
+ :datasets/server-status
  (fn [db [_]]
-   (reaction (get-in @db [:datasets :raw-status]))))
+   (reaction (get-in @db [:datasets :server-status]))))

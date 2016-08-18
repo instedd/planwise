@@ -9,10 +9,11 @@
    :paths      {:bin                 "bin/"
                 :scripts             "scripts/"
                 :data                "data/"}
-   :maps       {:mapserver-url       "http://planwise-maps-stg.instedd.org/mapcache?"
+   :maps       {:mapserver-url       "http://localhost:5002/mapcache?"
                 :facilities-capacity 100000
                 :calculate-demand    true}
-   :facilities {:raster-isochrones true}})
+   :facilities {:raster-isochrones   true}
+   :importer   {:concurrent-workers  2}})
 
 (def environ
   {:http       {:port                 (some-> env :port Integer.)}
@@ -29,4 +30,5 @@
    :maps       {:mapserver-url        (env :mapserver-url)
                 :facilities-capacity  (some-> env :maps-facilities-capacity Integer.)
                 :calculate-demand     (some-> env :calculate-demand (Boolean/valueOf))}
-   :facilities {:raster-isochrones    (some-> env :raster-isochrones (Boolean/valueOf))}})
+   :facilities {:raster-isochrones    (some-> env :raster-isochrones (Boolean/valueOf))}
+   :importer   {:concurrent-workers   (some-> env :concurrent-workers Integer.)}})

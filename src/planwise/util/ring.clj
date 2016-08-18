@@ -26,3 +26,11 @@
   [request]
   (-> (request-ident request)
       ident/user-email))
+
+(defn wrap-debug-request
+  "Middleware to print each request to the console"
+  [handler]
+  (fn [request]
+    (println (str "\n\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="))
+    (clojure.pprint/pprint request)
+    (handler request)))

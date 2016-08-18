@@ -1,6 +1,8 @@
 (ns planwise.client.utils
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :as async :refer [chan >! <! put!]]))
+  (:require [cljs.core.async :as async :refer [chan >! <! put!]]
+            [goog.string :as gstring]
+            [goog.string.format]))
 
 ;; Display
 
@@ -40,3 +42,12 @@
   ([count singular plural]
    (let [noun (if (= 1 count) singular plural)]
      (str count " " noun))))
+
+(defn format-percentage
+  ([x]
+   (format-percentage x 0))
+  ([x decimals]
+   (let [x (min 1 (max 0 x))
+         percentage (* 100 x)
+         format-string (str "%." decimals "f%%")]
+     (gstring/format format-string percentage))))

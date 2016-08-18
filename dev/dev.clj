@@ -34,8 +34,7 @@
    :paths {:bin "cpp/"
            :scripts "scripts/"
            :data "data/"}
-   :maps {:mapserver-url "http://localhost:5002/mapcache?"
-          :facilities-capacity 2000000}
+   :maps {:facilities-capacity 2000000}
    :figwheel
    {:css-dirs ["resources/planwise/public/css"
                "target/sass-repl"]
