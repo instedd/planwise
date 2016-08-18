@@ -70,15 +70,7 @@ L.BBoxLoader = L.Class.extend({
     this._idFn = options.idFn || function(x) { return x.id; };
     this._featureFn = options.featureFn || function(x) { return x; };
 
-    this._featuresCurrentLevel = {}; // id -> level
-
-    this._tileCache = {};
-    this._featureCache = {}; // level -> id -> [feature]
-
-    for (levelKey in this._levels) {
-      this._tileCache[levelKey] = {};
-      this._featureCache[levelKey] = {};
-    };
+    this._initCaches();
   },
 
   onAdd: function(map) {
@@ -95,6 +87,14 @@ L.BBoxLoader = L.Class.extend({
 
   onRemove: function(map) {
     map.removeLayer(this._layer);
+    map.off({
+      'viewreset': this._reset,
+      'moveend': this._update
+    }, this);
+    this._map = null;
+    this._initCaches();
+
+    return this;
   },
 
   addFeature: function(level, featureId, newFeatures) {
@@ -125,6 +125,16 @@ L.BBoxLoader = L.Class.extend({
     }
 
     return this;
+  },
+
+  _initCaches: function() {
+    this._featuresCurrentLevel = {}; // id -> level
+    this._tileCache = {}; // key -> bool
+    this._featureCache = {}; // level -> id -> [feature]
+    for (levelKey in this._levels) {
+      this._tileCache[levelKey] = {};
+      this._featureCache[levelKey] = {};
+    };
   },
 
   _update: function() {
