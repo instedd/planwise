@@ -39,7 +39,9 @@
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])
         demand-map-key (subscribe [:projects/demand-map-key])
-        map-geojson (subscribe [:projects/map-geojson])]
+        map-geojson (subscribe [:projects/map-geojson])
+        marker-popup-fn #(str (:name %) "<br/>" (:type %))]
+
     (fn [project-id project-region-id selected-tab]
       (cond
         (#{:demographics
@@ -62,9 +64,12 @@
                 mapping/gray-base-tile-layer
                 ;; Markers with filtered facilities
                 (when (#{:facilities :transport} selected-tab)
-                  [:marker-layer {:points @facilities
-                                  :icon-fn (constantly "circle-marker")
-                                  :popup-fn #(str (:name %) "<br/>" (:type %))}])
+                  [:point-layer {:points @facilities
+                                 :popup-fn marker-popup-fn
+                                 :radius 5
+                                 :color styles/light-grey
+                                 :stroke false
+                                 :fillOpacity 1}])
                 ;; Demographics tile layer
                 (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
                       population-map (mapping/region-map project-region-id)]
