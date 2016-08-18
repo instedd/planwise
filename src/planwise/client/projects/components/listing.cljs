@@ -11,7 +11,7 @@
     #(dispatch [:projects/begin-new-project])}
    "New Project"])
 
-(defn search-box [projects-count show-new]
+(defn search-box [projects-count]
   (let [search-string (subscribe [:projects/search-string])]
     (fn [projects-count show-new]
       [:div.search-box
@@ -21,8 +21,7 @@
          :placeholder "Search projects..."
          :value @search-string
          :on-change #(dispatch [:projects/search (-> % .-target .-value str)])}]
-       (if show-new
-         [new-project-button])])))
+       [new-project-button]])))
 
 (defn no-projects-view []
   [:div.empty-list
@@ -49,7 +48,7 @@
 (defn project-card [{:keys [id goal region-id region-name stats region-population] :as project}]
   (let [region-geo (subscribe [:regions/preview-geojson region-id])]
     (fn [{:keys [id goal region-id region-name stats] :as project}]
-      [:a {::href (routes/project-demographics project)}
+      [:a {:href (routes/project-demographics project)}
         [:div.project-card
           [:div.project-card-content
            [:h1 goal]
@@ -59,7 +58,9 @@
             [:img.map-preview {:src (static-image @region-geo)}])]])))
 
 (defn projects-list [projects]
-  [:ul.projects-list
+  [:div
+   [search-box (count projects)]
+   [:ul.projects-list
     (for [project projects]
       [:li {:key (:id project)}
-        [project-card project]])])
+       [project-card project]])]])

@@ -48,7 +48,6 @@
         filtered-projects (subscribe [:projects/filtered-list])]
     (fn []
       [:article.project-list
-       [search-box (count @filtered-projects) (seq @projects)]
        (cond
          (nil? @projects) [common/loading-placeholder]
          (empty? @projects) [no-projects-view]
