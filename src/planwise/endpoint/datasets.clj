@@ -5,7 +5,9 @@
             [buddy.auth :refer [authenticated?]]
             [ring.util.response :refer [response status]]
             [clojure.set :refer [rename-keys]]
+            [planwise.util.ring :as util]
             [planwise.boundary.facilities :as facilities]
+            [planwise.boundary.datasets :as datasets]
             [planwise.component.importer :as importer]
             [planwise.component.resmap :as resmap]))
 
@@ -16,8 +18,13 @@
   (#{"select_one"} (:kind field)))
 
 (defn- datasets-routes
-  [{:keys [facilities resmap importer]}]
+  [{:keys [datasets facilities resmap importer]}]
   (routes
+   (GET "/" request
+     (let [user-id (util/request-user-id request)
+           sets (datasets/list-datasets-for-user datasets user-id)]
+       (response {:datasets sets})))
+
    (GET "/info" request
      (let [user (:identity request)
            facility-count (facilities/count-facilities facilities)
