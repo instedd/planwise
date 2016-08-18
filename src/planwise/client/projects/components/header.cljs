@@ -6,7 +6,7 @@
 
 (defn project-tab-items [project-id]
   (let [route-params {:id project-id}]
-    [#_{:item :demographics
+    [{:item :demographics
         :href (routes/project-demographics route-params)
         :title "Demographics"}
      {:item :facilities

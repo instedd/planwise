@@ -39,20 +39,22 @@
 
 
 (defn project-stats
-  [{:keys [facilities-total facilities-targeted]}]
+  [{:keys [facilities-total facilities-targeted]} region-population]
   [:div.project-stats
    (project-stat "Target Facilities"
-                 (str (or facilities-targeted 0) " / " (or facilities-total 0)))])
+                 (str (or facilities-targeted 0) " / " (or facilities-total 0)))
+   (project-stat "Region polulation"
+                 (utils/format region-population))])
 
-(defn project-card [{:keys [id goal region-id region-name stats] :as project}]
+(defn project-card [{:keys [id goal region-id region-name stats region-population] :as project}]
   (let [region-geo (subscribe [:regions/preview-geojson region-id])]
     (fn [{:keys [id goal region-id region-name stats] :as project}]
-      [:a {::href (routes/project-facilities project)}
+      [:a {::href (routes/project-demographics project)}
         [:div.project-card
           [:div.project-card-content
            [:h1 goal]
            [:h2 (str "at " region-name)]
-           [project-stats stats]]
+           [project-stats stats region-population]]
           (if-not (str/blank? @region-geo)
             [:img.map-preview {:src (static-image @region-geo)}])]])))
 

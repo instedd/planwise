@@ -77,7 +77,9 @@ $search-box-height: 42px;
 
       .project-stats {
         .stat {
+          float: left;
           margin-top: 10px;
+          margin-right: 45px;
 
           .stat-title {
             font-size: 10px;
@@ -231,6 +233,23 @@ article.project-view {
       color: $gray3;
       font-size: 16px;
       line-height: 1.2;
+    }
+
+    .demographic-stats {
+      color: $gray3;
+      .stat {
+        display: inline-block;
+        margin-right: 35px;
+        margin-bottom: 15px;
+
+        .stat-title {
+          text-transform: uppercase;
+          font-size: 10px;
+        }
+        .stat-value {
+          font-size: 16px;
+        }
+      }
     }
   }
   fieldset {
