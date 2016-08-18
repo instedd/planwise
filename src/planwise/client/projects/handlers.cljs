@@ -87,7 +87,7 @@
    (let [project-id (:id project-data)]
      (when (nil? project-id)
        (throw "Invalid project data"))
-     (accountant/navigate! (routes/project-facilities {:id project-id}))
+     (accountant/navigate! (routes/project-demographics {:id project-id}))
      (assoc db
             :view-state :view
             :list (cons project-data (:list db))
@@ -142,9 +142,17 @@
  :projects/delete-project
  in-projects
  (fn [db [_ id]]
-   (api/delete-project id)
+   (api/delete-project id :projects/project-deleted)
    (accountant/navigate! (routes/home))
-   (update db :list (partial filterv #(not= (:id %) id)))))
+   db))
+
+(register-handler
+ :projects/project-deleted
+ in-projects
+ (fn [db [_ data]]
+   (let [deleted-id (:deleted data)]
+     (dispatch [:projects/load-projects])
+     (update db :list (partial filterv #(not= (:id %) deleted-id))))))
 
 (register-handler
  :projects/load-facilities

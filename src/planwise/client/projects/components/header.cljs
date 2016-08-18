@@ -25,6 +25,8 @@
    [:nav
     [nav/ul-menu (project-tab-items project-id) selected-tab]
     [:div
-     [:a
-      {:href "#" :on-click (utils/with-confirm #(dispatch [:projects/delete-project project-id]) "Are you sure you want to delete this project?")}
-      "Delete project"]]]])
+     [:button.delete
+      {:on-click (utils/with-confirm
+                   #(dispatch [:projects/delete-project project-id])
+                   "Are you sure you want to delete this project?")}
+      "\u2716 Delete project"]]]])
