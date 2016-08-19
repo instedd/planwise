@@ -25,14 +25,12 @@
           [:div.demographic-stats
            (demographic-stat "Area" [:span (utils/format (int area)) " km" [:sup 2]])
            (demographic-stat "Density" [:span (utils/format density) " /km" [:sup 2]])
-           (demographic-stat "Total population" (utils/format population))
-           ]
+           (demographic-stat "Total population" (utils/format population))]
           [:span.small
            "Demographic data source: "
-           [:a {:href "http://www.worldpop.org.uk/" } "WorldPop" ]
+           [:a {:href "http://www.worldpop.org.uk/" :target "attribution"} "WorldPop"]
            " (Geodata Institute of the University of Southampton) / "
-           [:a {:href "https://creativecommons.org/licenses/by/4.0/" } "CC BY"]
-           ]]]))))
+           [:a {:href "https://creativecommons.org/licenses/by/4.0/" :target "attribution"} "CC BY"]]]]))))
 
 (defn- facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])

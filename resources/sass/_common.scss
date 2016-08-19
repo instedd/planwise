@@ -1,6 +1,6 @@
 @import 'defs';
 
-@import 'https://fonts.googleapis.com/css?family=Open+Sans';
+@import 'https://fonts.googleapis.com/css?family=Open+Sans:400,700';
 
 body {
   font-family: 'Open Sans', Verdana, Helvetica, Arial, sans-serif;
@@ -221,6 +221,7 @@ button {
   &.cancel {
     background-color: transparent;
     color: $gray-text;
+    font-weight: normal;
     border:none;
     padding: 10px;
   }

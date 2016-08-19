@@ -77,7 +77,7 @@ $search-box-height: 42px;
 
       .project-stats {
         .stat {
-          color: $gray3;
+          color: $gray4;
           float: left;
           margin-top: 10px;
           margin-right: 45px;
@@ -233,13 +233,13 @@ article.project-view {
     padding: 20px 15px 10px 15px;
     p {
       margin: 0 0 10px 0;
-      color: $gray3;
+      color: $black;
       font-size: 15px;
       line-height: 1.5;
     }
 
     .demographic-stats {
-      color: $gray3;
+      color: $gray4;
       .stat {
         display: inline-block;
         margin-right: 35px;

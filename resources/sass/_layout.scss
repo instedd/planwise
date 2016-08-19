@@ -71,16 +71,18 @@ header {
     margin: ($header-height - 40px) / 2;
 
     h1 {
-      font-size: 22px;
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
       margin: 10px 10px;
-      color: #666;
+      color: $gray3;
     }
   }
 
   a,
   a:hover {
     text-decoration: none;
-    color: #666;
+    color: $gray3;
   }
 
   nav {
