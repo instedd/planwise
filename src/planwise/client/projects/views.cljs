@@ -99,6 +99,14 @@
                                    :fit-bounds true
                                    :fillOpacity 0.1
                                    :weight 0}])
+                ;; Demographics tile layer
+                (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
+                      population-map (mapping/region-map project-region-id)]
+                  [:wms-tile-layer {:url config/mapserver-url
+                                    :transparent true
+                                    :layers mapping/layer-name
+                                    :DATAFILE (or demand-map population-map)
+                                    :opacity 0.5}])
                 ;; Markers with filtered facilities
                 (when (#{:facilities :transport} selected-tab)
                   (for [[type facilities] @facilities-by-type]
@@ -108,14 +116,6 @@
                                    :color (:colour type)
                                    :stroke false
                                    :fillOpacity 1}]))
-                ;; Demographics tile layer
-                (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
-                      population-map (mapping/region-map project-region-id)]
-                  [:wms-tile-layer {:url config/mapserver-url
-                                    :transparent true
-                                    :layers mapping/layer-name
-                                    :DATAFILE (or demand-map population-map)
-                                    :opacity 0.5}])
                 ;; Isochrone for selected transport
                 (when (= :transport selected-tab)
                   [:geojson-bbox-layer { :levels mapping/geojson-levels
