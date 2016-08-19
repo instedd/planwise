@@ -96,9 +96,9 @@
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]
-  (let [layer (.layerGroup js/L)
+  (let [layer  (.withPathGroup js/L.layerGroup)
         points (:points props)
-        attrs (dissoc props :points)]
+        attrs  (dissoc props :points)]
     (doseq [point points] (.addLayer layer (create-point point attrs)))
     layer))
 

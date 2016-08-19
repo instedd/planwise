@@ -141,57 +141,87 @@ L.PathGroup = L.Class.extend({
   }
 });
 
-/**
- * Adds a _pathGroup property to all dependent layers, which is a PathGroup
- * element that renders an SVG <g> element to contain all paths
- * @constructor
- */
-L.GeoJSON.Group = L.GeoJSON.extend({
-
-  initialize: function (geojson, options) {
-    var self = this;
-    this._pathGroup = L.pathGroup(options.pathGroup);
-
-    var newOptions = L.extend({}, options, {
-      onEachFeature: function(geojson, layer) {
-        if (options && options.onEachFeature) {
-          options.onEachFeature(geojson, layer);
-        }
-        layer._pathGroup = self._pathGroup;
-      }
-    });
-
-    L.GeoJSON.prototype.initialize.call(this, geojson, newOptions);
-  },
-
-  onAdd: function (map) {
-    map.addLayer(this._pathGroup);
-    L.GeoJSON.prototype.onAdd.call(this, map);
-  },
-
-  onRemove: function (map) {
-    L.GeoJSON.prototype.onRemove.call(this, map);
-    map.removeLayer(this._pathGroup);
-  },
-
-  setPathGroupStyle: function (style) {
-    this._pathGroup.setStyle(style);
-  },
+// Modify featureGroup to relay bringToFront and bringToBack actions
+// to its _pathGroup, if there is any
+var _featureGroup_base = L.extend({}, L.FeatureGroup.prototype);
+L.FeatureGroup.include({
 
   bringToFront: function() {
-    L.GeoJSON.prototype.bringToFront.call(this);
-    this._pathGroup.bringToFront();
+    _featureGroup_base.bringToFront.call(this);
+    if (this._pathGroup) {
+      this._pathGroup.bringToFront();
+    }
   },
 
   bringToBack: function() {
-    L.GeoJSON.prototype.bringToBack.call(this);
-    this._pathGroup.bringToBack();
+    _featureGroup_base.bringToBack.call(this);
+    if (this._pathGroup) {
+      this._pathGroup.bringToBack();
+    }
   }
+});
 
+// Modify GeoJSON to initialize a pathGroup if requested, since
+// it does not invoke its ancestor (LayerGroup) constructor
+L.GeoJSON.addInitHook(function () {
+  if (this.options.pathGroup) {
+    this._pathGroup = L.pathGroup(this.options.pathGroup);
+  }
+});
+
+// Modify LayerGroup to create a pathGroup if requested, and register
+// all its layers in it, so they are created within the path group
+var _layerGroup_base = L.extend({}, L.LayerGroup.prototype);
+L.LayerGroup.include({
+
+  initialize: function (layers, options) {
+    if (options && options.pathGroup) {
+      this._pathGroup = L.pathGroup(options.pathGroup);
+    }
+    _layerGroup_base.initialize.call(this, layers);
+  },
+
+  onAdd: function (map) {
+    if (this._pathGroup) {
+      map.addLayer(this._pathGroup);
+    }
+    _layerGroup_base.onAdd.call(this, map);
+  },
+
+  onRemove: function (map) {
+    _layerGroup_base.onRemove.call(this, map);
+    if (this._pathGroup) {
+      map.removeLayer(this._pathGroup);
+    }
+  },
+
+  setPathGroupStyle: function (style) {
+    if (this._pathGroup) {
+      this._pathGroup.setStyle(style);
+    }
+  },
+
+  addLayer: function(layer) {
+    if (this._pathGroup) {
+      layer._pathGroup = this._pathGroup;
+    }
+    _layerGroup_base.addLayer.call(this, layer);
+  },
+
+  removeLayer: function(layer) {
+    if (this._pathGroup && layer._pathGroup == this._pathGroup) {
+      layer._pathGroup = null;
+    }
+    _layerGroup_base.removeLayer.call(this, layer);
+  }
 });
 
 L.geoJson.group = function (geojson, options) {
-  return new L.GeoJSON.Group(geojson, options);
+  return new L.GeoJSON(geojson, L.extend({pathGroup: {}}, options));
+};
+
+L.layerGroup.withPathGroup = function (layers, options) {
+  return new L.LayerGroup(layers, L.extend({pathGroup: {}}, options));
 };
 
 L.pathGroup = function(options) {
