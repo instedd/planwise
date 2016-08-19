@@ -115,7 +115,7 @@
                                     :transparent true
                                     :layers mapping/layer-name
                                     :DATAFILE (or demand-map population-map)
-                                    :opacity 0.3}])
+                                    :opacity 0.5}])
                 ;; Isochrone for selected transport
                 (when (= :transport selected-tab)
                   [:geojson-bbox-layer { :levels mapping/geojson-levels
