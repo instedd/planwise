@@ -56,7 +56,8 @@
           (filters/filter-checkboxes
            {:options @facility-types
             :value (:type @filters)
-            :toggle-fn (toggle-cons-fn :type)})]
+            :toggle-fn (toggle-cons-fn :type)
+            :decoration-fn (fn [{colour :colour, :as opt}] [:span.filter-colour {:style {"backgroundColor" colour}}])})]
 
          #_[:fieldset
             [:legend "Ownership"]
