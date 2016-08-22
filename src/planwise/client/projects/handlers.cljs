@@ -12,6 +12,9 @@
 (def in-current-project (path [:projects :current]))
 (def in-filter-definitions (path [:filter-definitions]))
 
+(def request-delay 500)
+(def loading-hint-delay 2500)
+
 ;; ---------------------------------------------------------------------------
 ;; Facility types handlers
 
@@ -224,7 +227,7 @@
 
 (defn set-request-timeout [db]
   (assoc-in db [:map-state :timeout]
-            (js/setTimeout #(dispatch [:projects/trigger-map-request]) 500)))
+            (js/setTimeout #(dispatch [:projects/trigger-map-request]) request-delay)))
 
 (defn cancel-prev-timeout [db]
   (update-in db [:map-state :timeout] js/clearTimeout))
@@ -242,7 +245,7 @@
          request-with (get-in db [:map-state :request-with])]
      (-> db
          (assoc-in [:map-state :request] (api/update-project project-id filters request-with :projects/project-updated))
-         (assoc-in [:map-state :timeout] (js/setTimeout #(dispatch [:projects/show-map-loading-sign]) 2500))
+         (assoc-in [:map-state :timeout] (js/setTimeout #(dispatch [:projects/show-map-loading-hint]) loading-hint-delay))
          (assoc-in [:map-state :current] :loading)))))
 
 (register-handler
