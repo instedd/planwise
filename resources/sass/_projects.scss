@@ -127,11 +127,11 @@ $search-box-height: 42px;
   padding-left: 10px;
   padding-right: 10px;
 
-  background-color: #666666;
+  background-color: $gray3;
   border-radius: 4px;
 
-  font-weight: 500;
-  color: #bababa;
+  font-weight: $semi-bold;
+  color: $gray1;
 }
 
 .loading-wheel {
@@ -161,7 +161,7 @@ $search-box-height: 42px;
 }
 
 .path {
-  stroke: #ff7800;
+  stroke: $orange;
   stroke-width: 6px;
   stroke-dasharray: 30, 70;
   stroke-dashoffset: 0;
