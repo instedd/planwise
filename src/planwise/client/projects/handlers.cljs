@@ -227,8 +227,7 @@
             (js/setTimeout #(dispatch [:projects/trigger-map-request]) 500)))
 
 (defn cancel-prev-timeout [db]
-  (js/clearTimeout (get-in db [:map-state :timeout]))
-  (assoc-in db [:map-state :timeout] nil))
+  (update-in db [:map-state :timeout] js/clearTimeout))
 
 (defn cancel-prev-request [db]
   (ajax.protocols/-abort (get-in db [:map-state :request]))
