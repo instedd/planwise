@@ -233,7 +233,7 @@
   (update-in db [:map-state :timeout] js/clearTimeout))
 
 (defn cancel-prev-request [db]
-  (ajax.protocols/-abort (get-in db [:map-state :request]))
+  (some-> (get-in db [:map-state :request]) ajax.protocols/-abort)
   (assoc-in db [:map-state :request] nil))
 
 (register-handler
