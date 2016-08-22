@@ -8,19 +8,45 @@
    (s/optional-key :result)   s/Any
    (s/optional-key :progress) s/Any})
 
-(s/defschema Datasets
+(s/defschema Dataset
+  "Information pertaining a single dataset"
+  {:id                             s/Int
+   :name                           s/Str
+   :description                    s/Str
+   :collection-id                  s/Int
+   :mappings                       s/Any
+   :facility-count                 s/Int
+   (s/optional-key :state)         (s/enum :ready
+                                           :import-requested
+                                           :importing
+                                           :cancel-requested
+                                           :cancelling)
+   (s/optional-key :server-status) (s/maybe ServerStatus)})
+
+(s/defschema ListState
+  (s/enum nil
+          :loading
+          :loaded
+          :invalid
+          :reloading))
+
+(s/defschema ViewState
+  (s/enum nil
+          :list
+          :create-dialog
+          :creating))
+
+(s/defschema ResourcemapData
+  {:authorised? s/Bool
+   :collections s/Any})
+
+(s/defschema DatasetsViewModel
   "Datasets related portion of the client database"
-  {:state          (s/enum nil
-                           :initialising
-                           :ready
-                           :import-requested
-                           :importing
-                           :cancel-requested
-                           :cancelling)
-   :server-status  (s/maybe ServerStatus)
-   :facility-count (s/maybe s/Int)
-   :resourcemap    {:authorised? (s/maybe s/Bool)
-                    :collections s/Any}
+  {:state          [(s/one ListState "list")
+                    (s/one ViewState "view")]
+   :list           (s/maybe [Dataset])
+   :search-string  s/Str
+   :resourcemap    (s/maybe ResourcemapData)
    :selected       s/Any})
 
 (def empty-datasets-selected
@@ -35,19 +61,18 @@
 
 (def initial-db
   {:state          nil
-                                        ; :initialising/nil :ready :importing
-   :server-status  nil
-                                        ; Importer status as reported by the server
-   :facility-count nil
-                                        ; Count of available facilities
-   :resourcemap    {:authorised?  nil
-                                        ; Whether the user has authorised for
-                                        ; Resourcemap access
-                    :collections  nil}
-                                        ; Resourcemap collections
+   :list           nil                  ; List of available datasets
+   :search-string  ""                   ; Dataset search string
 
-   :selected empty-datasets-selected})
+   :resourcemap    nil
 
+   :selected       empty-datasets-selected})
+
+
+(defn show-dialog?
+  [view-state]
+  (or (= :create-dialog view-state)
+      (= :creating view-state)))
 
 (defn initialised?
   [state]
@@ -118,3 +143,11 @@
     :importing     :importing
     :cancelling    :cancelling
     :unknown       :ready))
+
+(defn resmap-loaded?
+  [resmap]
+  (some? (:authorised? resmap)))
+
+(defn resmap-authorised?
+  [resmap]
+  (:authorised? resmap))

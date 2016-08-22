@@ -150,3 +150,22 @@ header {
     font-size: 24px;
   }
 }
+
+.empty-list {
+  position: absolute;
+  top: 0;
+  bottom: 10%;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  p {
+    font-size: 20px;
+    color: $gray3;
+    font-weight: bold;
+    margin: 30px 0;
+  }
+}

@@ -29,7 +29,7 @@
   db)
 
 (defmethod on-navigate :datasets [db _ _]
-  (dispatch [:datasets/initialise!])
+  (dispatch [:datasets/load-datasets])
   db)
 
 (defmethod on-navigate :playground [db _ _]
@@ -52,7 +52,7 @@
  (fn [db [_ message]]
    (cond
      (= message "authenticated")
-     (dispatch [:datasets/reload-info])
+     (dispatch [:datasets/load-resourcemap-info])
 
      (#{"react-devtools-content-script"
         "react-devtools-bridge"}
@@ -68,6 +68,7 @@
 (register-handler
  :tick
  (fn [db [_ time]]
-   (when (= 0 (mod time 3000))
+   ;; FIXME
+   #_(when (= 0 (mod time 3000))
      (dispatch [:datasets/update-import-status]))
    db))

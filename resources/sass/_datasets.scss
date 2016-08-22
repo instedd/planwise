@@ -103,3 +103,15 @@ article.datasets {
     width: 300px;
   }
 }
+
+.new-dataset {
+  min-width: 400px;
+  p {
+    margin-top: 25px;
+    margin-bottom: 25px;
+  }
+  .loading {
+    padding-top: 75px;
+    padding-bottom: 75px;
+  }
+}

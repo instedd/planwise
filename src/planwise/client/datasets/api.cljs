@@ -3,6 +3,20 @@
             [planwise.client.api :refer [json-request]]))
 
 
+(defn load-datasets
+  [& handlers]
+  (GET "/api/datasets"
+      (json-request {} handlers)))
+
+(defn load-resourcemap-info
+  [& handlers]
+  (GET "/api/datasets/resourcemap-info"
+      (json-request {} handlers)))
+
+
+;; Old functions
+;; TODO: review
+
 (defn load-datasets-info
   [& handlers]
   (GET "/api/datasets/info"

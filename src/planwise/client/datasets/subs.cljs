@@ -1,6 +1,7 @@
 (ns planwise.client.datasets.subs
   (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :refer [register-sub subscribe]]))
+  (:require [re-frame.core :refer [register-sub subscribe]]
+            [goog.string :as gstring]))
 
 (register-sub
  :datasets/state
@@ -8,9 +9,32 @@
    (reaction (get-in @db [:datasets :state]))))
 
 (register-sub
- :datasets/facility-count
+ :datasets/list-state
  (fn [db [_]]
-   (reaction (get-in @db [:datasets :facility-count]))))
+   (reaction (get-in @db [:datasets :state 0]))))
+
+(register-sub
+ :datasets/view-state
+ (fn [db [_]]
+   (reaction (get-in @db [:datasets :state 1]))))
+
+(register-sub
+ :datasets/list
+ (fn [db [_]]
+   (reaction (get-in @db [:datasets :list]))))
+
+(register-sub
+ :datasets/search-string
+ (fn [db [_]]
+   (reaction (get-in @db [:datasets :search-string]))))
+
+(register-sub
+ :datasets/filtered-list
+ (fn [db [_]]
+   (let [search-string (subscribe [:datasets/search-string])
+         list (subscribe [:datasets/list])]
+     (reaction
+      (filterv #(gstring/caseInsensitiveContains (:name %) @search-string) @list)))))
 
 (register-sub
  :datasets/resourcemap
@@ -21,8 +45,3 @@
  :datasets/selected
  (fn [db [_]]
    (reaction (get-in @db [:datasets :selected]))))
-
-(register-sub
- :datasets/server-status
- (fn [db [_]]
-   (reaction (get-in @db [:datasets :server-status]))))

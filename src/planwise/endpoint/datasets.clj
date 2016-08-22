@@ -23,7 +23,7 @@
    (GET "/" request
      (let [user-id (util/request-user-id request)
            sets (datasets/list-datasets-for-user datasets user-id)]
-       (response {:datasets sets})))
+       (response sets)))
 
    (GET "/info" request
      (let [user (:identity request)
@@ -35,6 +35,14 @@
        (response {:authorised? authorised?
                   :status importer-status
                   :facility-count facility-count
+                  :collections collections})))
+
+   (GET "/resourcemap-info" request
+     (let [user-ident (util/request-ident request)
+           authorised? (resmap/authorised? resmap user-ident)
+           collections (when authorised?
+                         (resmap/list-user-collections resmap user-ident))]
+       (response {:authorised? authorised?
                   :collections collections})))
 
    (GET "/status" request

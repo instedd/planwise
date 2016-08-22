@@ -37,21 +37,6 @@ $search-box-height: 42px;
   }
 }
 
-.empty-list {
-  min-height: 600px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  p {
-    font-size: 20px;
-    color: $gray3;
-    font-weight: bold;
-    margin: 30px 0;
-  }
-}
-
 .projects-list {
   list-style: none;
   padding: 0;

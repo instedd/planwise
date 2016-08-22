@@ -13,6 +13,64 @@
       (update :state keyword)
       (update :result keyword)))
 
+;; ----------------------------------------------------------------------------
+;; Dataset listing
+
+(register-handler
+ :datasets/load-datasets
+ in-datasets
+ (fn [db [_]]
+   (let [list-state (get-in db [:state 0])]
+     (if-not (#{:loaded :loading :reloading} list-state)
+       (do
+         (api/load-datasets :datasets/datasets-loaded)
+         (assoc-in db [:state 0] :loading))
+       db))))
+
+(register-handler
+ :datasets/datasets-loaded
+ in-datasets
+ (fn [db [_ datasets]]
+   (-> db
+       (assoc :list datasets)
+       (assoc-in [:state 0] :loaded))))
+
+
+;; ----------------------------------------------------------------------------
+;; New dataset dialog
+
+(register-handler
+ :datasets/begin-new-dataset
+ in-datasets
+ (fn [db [_]]
+   (assoc-in db [:state 1] :create-dialog)))
+
+(register-handler
+ :datasets/cancel-new-dataset
+ in-datasets
+ (fn [db [_]]
+   (assoc-in db [:state 1] :list)))
+
+(register-handler
+ :datasets/load-resourcemap-info
+ in-datasets
+ (fn [db [_]]
+   (api/load-resourcemap-info :datasets/resourcemap-info-loaded)
+   db))
+
+(register-handler
+ :datasets/resourcemap-info-loaded
+ in-datasets
+ (fn [db [_ data]]
+   (-> db
+       (assoc-in [:resourcemap :authorised?] (:authorised? data))
+       (assoc-in [:resourcemap :collections] (:collections data)))))
+
+
+;; ----------------------------------------------------------------------------
+;; Old handlers
+;; TODO: review!
+
 (register-handler
  :datasets/initialise!
  in-datasets
