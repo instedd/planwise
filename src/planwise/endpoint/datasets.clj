@@ -3,7 +3,7 @@
             [taoensso.timbre :as timbre]
             [buddy.auth.accessrules :refer [restrict]]
             [buddy.auth :refer [authenticated?]]
-            [ring.util.response :refer [response]]
+            [ring.util.response :refer [response status]]
             [clojure.set :refer [rename-keys]]
             [planwise.boundary.facilities :as facilities]
             [planwise.component.importer :as importer]
@@ -32,7 +32,7 @@
 
    (GET "/status" request
      (let [importer-status (importer/status importer)]
-       (response {:status importer-status})))
+       (response importer-status)))
 
    (GET "/collection-info/:coll-id" [coll-id :as request]
      (let [user (:identity request)
@@ -49,14 +49,16 @@
            type-field (some (fn [field]
                               (when (= (:id field) type-field)
                                 field))
-                            fields)]
-       (importer/import-collection importer user coll-id type-field)
-       (response {:status (importer/status importer)})))
+                            fields)
+           [result status] (importer/import-collection importer user coll-id type-field)]
+       (if (= :ok result)
+         (response status)
+         (-> (response {:result :error :payload status})
+             (status 400)))))
 
    (POST "/cancel" request
      (info "Cancelling import process by user request")
-     (importer/cancel-import! importer)
-     (response {:status :ok}))))
+     (response (importer/cancel-import! importer)))))
 
 (defn datasets-endpoint
   [service]

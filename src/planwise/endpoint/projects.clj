@@ -19,16 +19,16 @@
       :facilities
       (let [project-facilities (facilities/list-facilities facilities criteria)]
         (assoc project :facilities project-facilities))
-      :isochrones
-      (let [time       (get-in project [:filters :transport :time])
-            options    {:threshold time}
+      :facilities-with-demand
+      (let [project-facilities (facilities/list-facilities facilities criteria)
+            time       (get-in project [:filters :transport :time])
             isochrones (when time
-                         (facilities/list-with-isochrones facilities options criteria))
+                         []) ; TODO: Load isochrones to calculate demand
             demand     (when isochrones
                          (maps/demand-map maps (:region-id project) isochrones))]
         (-> project
-          (assoc :isochrones isochrones)
-          (merge demand)))
+          (merge demand)
+          (assoc :facilities project-facilities)))
       project)))
 
 (defn- endpoint-routes

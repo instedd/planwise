@@ -25,7 +25,9 @@ var L = {
   "bind": function () {},
   "stamp": function () {},
   "setOptions": function () {},
-  "Class": function () {},
+  "Class": {
+    "extend": function() {},
+  },
   "Mixin": {
     "Events": {
       "addEventListener": function () {},
@@ -68,7 +70,9 @@ var L = {
   "Point": function () {},
   "point": function () {},
   "Bounds": function () {},
-  "bounds": function () {},
+  "bounds": {
+    "asLatLngBounds": function() {},
+  },
   "Transformation": function () {},
   "DomUtil": {
     "get": function () {},
@@ -116,7 +120,8 @@ var L = {
     "equals": function() {},
     "toBBoxString": function() {},
     "pad": function() {},
-    "isValid": function() {}
+    "isValid": function() {},
+    "asBounds": function() {},
   },
   "latLngBounds": function () {},
   "Projection": {
@@ -739,7 +744,24 @@ var L = {
    },
   "FeatureGroup": function () {},
   "featureGroup": function () {},
-  "Path": function () {},
+  "Path": {
+    "include": function() {},
+  },
+  "path": {
+    "bringToFront": function() {},
+    "bringToBack": function() {},
+    "onAdd": function() {},
+    "onRemove": function() {},
+  },
+  "PathGroup": function() {},
+  "pathGroup": {
+    "bringToFront": function() {},
+    "bringToBack": function() {},
+    "onAdd": function() {},
+    "onRemove": function() {},
+    "setStyle": function() {},
+    "_updateStyle": function() {},
+  },
   "LineUtil": {
     "simplify": function () {},
     "pointToSegmentDistance": function () {},
@@ -770,11 +792,26 @@ var L = {
   "circle": function () {},
   "CircleMarker": function () {},
   "circleMarker": function () {},
-  "GeoJSON": function () {},
+  "GeoJSON": {
+    "extend": function() {},
+    "include": function() {},
+  },
   "geoJson": {
     "addTo": function() {},
     "addData": function() {},
-    "group": function() {}
+    "group": {
+      "onAdd": function() {},
+      "onRemove": function() {},
+      "setPathGroupStyle": function() {},
+      "bringToBack": function() {},
+      "bringToFront": function() {},
+    }
+  },
+  "BBoxLoader": function() {},
+  "bboxLoader": {
+    "onAdd": function() {},
+    "onRemove": function() {},
+    "addFeature": function() {},
   },
   "DomEvent": {
     "addListener": function () {},

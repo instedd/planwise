@@ -168,10 +168,10 @@
 (defn find-auth-token
   [{:keys [users-store] :as service} scope user-ident]
   (let [email (ident/user-email user-ident)
-        _     (info "Looking for token for" email "on scope" scope)
+        _     (debug "Looking for token for" email "on scope" scope)
         token (users/find-latest-token-for-scope users-store scope email)]
     (if (and token (token-expired? token))
-      (do (info "Found token but it expired, refreshing token")
+      (do (info (str "Token for " email " (" scope ") found but it expired. Refreshing."))
           (let [new-token (oauth2-refresh-token service (:refresh-token token))]
             (when new-token
               (save-auth-token! service scope user-ident new-token))))

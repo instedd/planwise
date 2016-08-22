@@ -13,6 +13,7 @@
   {:id                         s/Int
    :name                       s/Str
    (s/optional-key :type)      s/Str
+   (s/optional-key :type-id)   s/Int
    :lat                        s/Num
    :lon                        s/Num
    (s/optional-key :isochrone) GeoJSON})

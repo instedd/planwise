@@ -77,7 +77,10 @@ $search-box-height: 42px;
 
       .project-stats {
         .stat {
+          color: $gray4;
+          float: left;
           margin-top: 10px;
+          margin-right: 45px;
 
           .stat-title {
             font-size: 10px;
@@ -95,6 +98,7 @@ $search-box-height: 42px;
     h1 {
       font-weight: bold;
       font-size: 16px;
+      color: $black;
       margin: 0;
     }
     h2 {
@@ -178,7 +182,8 @@ article.project-view {
     z-index: 2;
     box-shadow: 0 2px 2px rgba(0,0,0,0.2);
     h2 {
-      padding: 20px 0 20px 15px;
+      color: $black;
+      padding: 25px 0 15px 15px;
       font-size: 20px;
       font-weight: normal;
       margin: 0;
@@ -288,9 +293,26 @@ article.project-view {
     padding: 20px 15px 10px 15px;
     p {
       margin: 0 0 10px 0;
-      color: $gray3;
-      font-size: 16px;
-      line-height: 1.2;
+      color: $black;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .demographic-stats {
+      color: $gray4;
+      .stat {
+        display: inline-block;
+        margin-right: 35px;
+        margin-bottom: 15px;
+
+        .stat-title {
+          text-transform: uppercase;
+          font-size: 10px;
+        }
+        .stat-value {
+          font-size: 16px;
+        }
+      }
     }
   }
   fieldset {

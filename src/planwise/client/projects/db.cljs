@@ -1,4 +1,6 @@
-(ns planwise.client.projects.db)
+(ns planwise.client.projects.db
+  (:require [re-frame.utils :as c]
+            [planwise.client.mapping :as maps]))
 
 ;; Default data structures
 
@@ -27,8 +29,8 @@
                                :services  #{}}
                   :count      0
                   :total      0
-                  :list       nil
-                  :isochrones nil} ;; geojson string
+                  :list       nil  ;; array
+                  :isochrones {}}  ;; threshold => level => id => geojson
    :transport      {:time       nil}
    :map-view       {} ;; {:keys position zoom}
 
@@ -39,7 +41,7 @@
 
    :demand-map-key nil ;; string
    :unsatisfied-count nil ;; number
-   :project-data   {}}) ;; {:keys id goal region-id stats filters}
+   :project-data   {}}) ;; {:keys id goal region-id stats filters region-population region-area-km2}
 
 
 (def initial-db
@@ -52,20 +54,10 @@
 ;; Project data manipulation functions
 
 (defn- update-viewmodel-associations
-  [viewmodel {:keys [facilities isochrones]}]
+  [viewmodel {:keys [facilities]}]
   (cond
     facilities
     (assoc-in viewmodel [:facilities :list] facilities)
-
-    isochrones
-    (let [facilities (map #(dissoc % :isochrone) isochrones)
-          isochrones (->> isochrones
-                          (map :isochrone)
-                          (filterv some?))]
-      (-> viewmodel
-          (assoc-in [:facilities :list] facilities)
-          (assoc-in [:facilities :isochrones] isochrones)))
-
     :else
     viewmodel))
 
@@ -88,7 +80,14 @@
   [project-data]
   (update-viewmodel empty-viewmodel project-data))
 
+; REFACTOR: project-filters is used in update-project, while facilities-criteria in fetch-* methods; unify them
 (defn project-filters
   [viewmodel]
   {:facilities (get-in viewmodel [:facilities :filters])
    :transport (:transport viewmodel)})
+
+(defn facilities-criteria
+ [viewmodel]
+ (let [filters (get-in viewmodel [:facilities :filters])
+       project-region-id (get-in viewmodel [:project-data :region-id])]
+   (assoc filters :region project-region-id)))

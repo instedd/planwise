@@ -6,24 +6,18 @@
 
 (def in-datasets (path [:datasets]))
 
-(defn initialised?
-  [db]
-  (let [state (:state db)]
-    (not (or (nil? state) (= :initialising state)))))
-
-(defn status->state
-  [status]
-  (let [status (if (coll? status) (first status) status)]
-    (case status
-      "importing" :importing
-      "ready" :ready
-      :ready)))
+(defn map-server-status
+  [server-status]
+  (-> server-status
+      (update :status keyword)
+      (update :state keyword)
+      (update :result keyword)))
 
 (register-handler
  :datasets/initialise!
  in-datasets
  (fn [db [_]]
-   (if-not (initialised? db)
+   (if-not (db/initialised? (:state db))
      (api/load-datasets-info :datasets/info-loaded)
      (assoc db :state :initialising))
    db))
@@ -40,12 +34,13 @@
  :datasets/info-loaded
  in-datasets
  (fn [db [_ datasets-info]]
-   (-> db
-       (assoc-in [:resourcemap :authorised?] (:authorised? datasets-info))
-       (assoc-in [:resourcemap :collections] (:collections datasets-info))
-       (assoc :state (status->state (:status datasets-info))
-              :raw-status (:status datasets-info)
-              :facility-count (:facility-count datasets-info)))))
+   (let [server-status (map-server-status (:status datasets-info))]
+     (-> db
+         (assoc-in [:resourcemap :authorised?] (:authorised? datasets-info))
+         (assoc-in [:resourcemap :collections] (:collections datasets-info))
+         (assoc :state (db/server-status->state server-status)
+                :server-status server-status
+                :facility-count (:facility-count datasets-info))))))
 
 (register-handler
  :datasets/select-collection
@@ -81,39 +76,64 @@
    (let [coll-id (get-in db [:selected :collection :id])
          type-field (get-in db [:selected :type-field])]
      (c/log "Started collection import")
-     (api/import-collection! coll-id type-field :datasets/import-status-received)
-     (assoc db
-            :state :importing
-            :cancel-requested false
-            :raw-status [:importing :starting]))))
+     (api/import-collection! coll-id type-field
+                             :datasets/import-status-received :datasets/request-failed)
+     (assoc db :state :import-requested))))
 
 (register-handler
  :datasets/cancel-import!
  in-datasets
  (fn [db [_]]
    (c/log "Cancelling collection import")
-   (api/cancel-import!)
-   (assoc db :cancel-requested true)))
+   (api/cancel-import! :datasets/import-status-received :datasets/request-failed)
+   (assoc db :state :cancel-requested)))
+
+(register-handler
+ :datasets/request-failed
+ in-datasets
+ (fn [db [_ error-info]]
+   (c/log (str "Error performing server request: " error-info))
+   (let [state (:state db)
+         new-state (case state
+                     :import-requested :ready
+                     :cancel-requested :importing
+                     state)]
+     (assoc db :state new-state))))
+
+(defn update-server-status
+  [db status]
+  (let [status (map-server-status status)
+        current-state (:state db)
+        new-state (db/server-status->state status)]
+    ;; refresh critical system information if an import finished executing
+    (when (and (or (db/importing? current-state) (db/cancelling? current-state))
+               (= :ready new-state))
+      (dispatch [:projects/fetch-facility-types])
+      (dispatch [:datasets/reload-info]))
+    (assoc db
+           :state new-state
+           :server-status status)))
 
 (register-handler
  :datasets/import-status-received
  in-datasets
- (fn [db [_ info]]
-   (let [state (status->state (:status info))]
-     (when (= :ready state)
-       (do
-         (c/log "Import finished")
-         (dispatch [:projects/fetch-facility-types])
-         (dispatch [:datasets/reload-info])))
-     (assoc db
-            :state state
-            :raw-status (:status info)))))
+ (fn [db [_ status]]
+   (update-server-status db status)))
+
+(register-handler
+ :datasets/async-status-received
+ in-datasets
+ (fn [db [_ status]]
+   (if-not (db/request-pending? (:state db))
+     (update-server-status db status)
+     db)))
 
 (register-handler
  :datasets/update-import-status
  in-datasets
  (fn [db [_]]
    (let [state (:state db)]
-     (when-not (= :ready state)
-       (api/importer-status :datasets/import-status-received)))
+     (when (and (db/initialised? state)
+                (not (db/request-pending? state)))
+       (api/importer-status :datasets/async-status-received)))
    db))

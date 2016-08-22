@@ -1,28 +1,34 @@
 #! /bin/bash
+set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
+
+BIN_PATH=${BIN_PATH:-cpp}
+DATA_PATH=${DATA_PATH:-data}
 
 # Creates a raster file data/populations/REGIONID.tif with the population values
 # of each REGIONID in the regions table
 
 echo "Precalculating population count per region"
 REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions WHERE total_population IS NULL;')"
-POPULATION_FILE="data/KEN_popmap15_v2b.tif"
+echo " Region ids: ${REGION_IDS}"
+POPULATION_FILE="${DATA_PATH}/KEN_popmap15_v2b.tif"
 
-mkdir -p data/populations
+mkdir -p ${DATA_PATH}/populations
 
 for id in $REGION_IDS; do
-  TARGET=data/populations/${id}.tif
+  TARGET=${DATA_PATH}/populations/${id}.tif
   if [[ ! -e $TARGET ]]; then
     echo " Warping population for ${id}"
     gdalwarp -q \
       -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -crop_to_cutline \
-      -cutline PG:dbname=routing \
+      -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
       -csql "SELECT the_geom FROM regions WHERE id = ${id};" \
       $POPULATION_FILE $TARGET
   fi;
 
   echo " Counting population for ${id}"
-  POPULATION_COUNT=$(cpp/count-population $TARGET)
+  POPULATION_COUNT=$(${BIN_PATH}/count-population ${TARGET})
 
   echo " Updating population for ${id}"
   psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A \

@@ -43,6 +43,7 @@
                  [hiccup "1.0.5"]
                  [cheshire "5.6.3"]
                  [clj-time "0.12.0"]
+                 [reduce-fsm "0.1.4"]
 
                  ; Client infrastructure
                  [reagent "0.5.1"
@@ -125,7 +126,7 @@
                                   ; Testing libraries
                                   [eftest "0.1.1"]
                                   [kerodon "0.7.0"]
-                                  [fixtures-component "0.4.1"
+                                  [fixtures-component "0.4.2"
                                    :exclusions [org.clojure/java.jdbc]]
                                   [ring/ring-mock "0.3.0"]
 

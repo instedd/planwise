@@ -1,11 +1,15 @@
 (ns planwise.client.projects.views
-  (:require [re-frame.core :refer [subscribe dispatch]]
+  (:require-macros [reagent.ratom :refer [reaction]])
+  (:require [re-frame.core :refer [subscribe dispatch dispatch-sync]]
             [re-com.core :as rc]
+            [re-frame.utils :as c]
             [clojure.string :as str]
             [leaflet.core :refer [map-widget]]
             [planwise.client.mapping :as mapping]
             [planwise.client.config :as config]
             [planwise.client.styles :as styles]
+            [planwise.client.projects.api :as api]
+            [planwise.client.projects.db :as db]
             [planwise.client.components.common :as common]
             [planwise.client.projects.components.new-project
              :refer [new-project-dialog]]
@@ -15,6 +19,28 @@
              :refer [header-section]]
             [planwise.client.projects.components.sidebar
              :refer [sidebar-section]]))
+
+(defn geojson-bbox-callback [isochrones filters threshold]
+  (fn [level bounds bbox-excluding callback]
+    (let [level (js/parseInt level)
+          bbox-excluding (map #(js/parseInt %) bbox-excluding)
+          cache-existing (keys (get-in @isochrones [threshold level]))]
+      (api/fetch-isochrones-in-bbox
+        @filters
+        {:threshold threshold,
+         :bbox bounds,
+         :excluding (str/join "," cache-existing)
+         :simplify (mapping/geojson-level->simplify level)}
+        (fn [response]
+          (dispatch-sync [:projects/isochrones-loaded response])
+          (let [isochrones-for-level (get-in @isochrones [threshold level])
+                new-isochrones (->> response
+                                  (:facilities)
+                                  (map :id)
+                                  (remove (set bbox-excluding))
+                                  (select-keys isochrones-for-level)
+                                  (mapv (fn [[id isochrone]] {:id id, :isochrone isochrone})))]
+            (callback (clj->js new-isochrones))))))))
 
 (defn project-list-page []
   (let [view-state (subscribe [:projects/view-state])
@@ -43,13 +69,18 @@
 
 (defn- project-tab [project-id project-region-id selected-tab]
   (let [facilities (subscribe [:projects/facilities :facilities])
-        isochrones (subscribe [:projects/facilities :isochrones])
         map-position (subscribe [:projects/map-view :position])
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])
         demand-map-key (subscribe [:projects/demand-map-key])
         map-geojson (subscribe [:projects/map-geojson])
-        map-state (subscribe [:projects/map-state])]
+        map-state (subscribe [:projects/map-state])
+        marker-popup-fn #(str (:name %) "<br/>" (:type %))
+        isochrones (subscribe [:projects/facilities :isochrones])
+        project-facilities-criteria (subscribe [:projects/facilities-criteria])
+        project-transport-time (subscribe [:projects/transport-time])
+        callback-fn (reaction (geojson-bbox-callback isochrones project-facilities-criteria @project-transport-time))
+        feature-fn #(aget % "isochrone")]
     (fn [project-id project-region-id selected-tab]
       (cond
         (#{:demographics
@@ -75,9 +106,12 @@
                 mapping/gray-base-tile-layer
                 ;; Markers with filtered facilities
                 (when (#{:facilities :transport} selected-tab)
-                  [:marker-layer {:points @facilities
-                                  :icon-fn (constantly "circle-marker")
-                                  :popup-fn #(str (:name %) "<br/>" (:type %))}])
+                  [:point-layer {:points @facilities
+                                 :popup-fn marker-popup-fn
+                                 :radius 5
+                                 :color styles/light-grey
+                                 :stroke false
+                                 :fillOpacity 1}])
                 ;; Demographics tile layer
                 (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
                       population-map (mapping/region-map project-region-id)]
@@ -94,16 +128,15 @@
                                    :fillOpacity 0.1
                                    :weight 0}])
                 ;; Isochrone for selected transport
-                (when (and (seq @isochrones) (= :transport selected-tab))
-                  [:geojson-layer {:data @isochrones
-                                   :fillOpacity 1
-                                   :weight 2
-                                   :color styles/green
-                                   :group {:opacity 0.4}}])]
+                (when (= :transport selected-tab)
+                  [:geojson-bbox-layer { :levels mapping/geojson-levels
+                                         :fillOpacity 1
+                                         :weight 2
+                                         :color styles/green
+                                         :group {:opacity 0.4}
+                                         :featureFn feature-fn
+                                         :callback @callback-fn}])])]]
 
-               ;; Filter out nils so leaflet/map-widget doesn't get confused
-               (filter some?)
-               vec)]]
         (= :scenarios selected-tab)
         [:div
          [:h1 "Scenarios"]]))))

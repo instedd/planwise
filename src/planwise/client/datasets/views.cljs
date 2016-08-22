@@ -4,15 +4,8 @@
             [re-com.core :as rc]
             [planwise.client.config :as config]
             [planwise.client.components.common :as common]
+            [planwise.client.datasets.db :as db]
             [planwise.client.utils :as utils]))
-
-(defn initialised?
-  [state]
-  (and (not= :initialising state) (not (nil? state))))
-
-(defn importing?
-  [state]
-  (= :importing state))
 
 (defn open-auth-popup []
   (.open js/window
@@ -35,7 +28,7 @@
       (let [valid? (:valid? @selected)
             fields (:fields @selected)
             type-field (:type-field @selected)
-            importing? (importing? @state)
+            importing? (db/importing? @state)
             can-import? (and (not importing?) valid? (some? type-field))]
         [:div.import-settings
          (if (nil? fields)
@@ -75,7 +68,7 @@
         state (subscribe [:datasets/state])]
     (fn [collections]
       (let [selected-coll (:collection @selected)
-            importing? (importing? @state)]
+            importing? (db/importing? @state)]
         [:ul.collections
          (for [coll collections]
            (let [coll-id (:id coll)
@@ -89,21 +82,29 @@
 (defn facilities-summary []
   (let [facility-count (subscribe [:datasets/facility-count])
         state (subscribe [:datasets/state])
-        cancel-requested (subscribe [:datasets/cancel-requested])
-        raw-status (subscribe [:datasets/raw-status])]
+        server-status (subscribe [:datasets/server-status])]
     (fn []
-      (let [importing? (importing? @state)
-            cancelling? @cancel-requested]
+      (let [importing? (db/importing? @state)
+            cancelling? (db/cancelling? @state)]
         [:div.dataset-header
          [:h2 "Facilities"]
          (if-not importing?
-           [:p "There are " [:b (utils/pluralize @facility-count "facility" "facilities")] " in the system."]
-           (let [[_ step progress] @raw-status
-                 step (or step "Importing collection")]
+           (let [last-result (db/last-import-result @server-status)]
+             [:div
+              [:p
+               "There are "
+               [:b (utils/pluralize @facility-count "facility" "facilities")]
+               " in the system."]
+              (when (some? last-result)
+                [:div.bottom-right
+                 [:p "Last import: " last-result]])])
+           (let [step (if (= :import-requested @state)
+                        "Starting"
+                        (db/server-status->string @server-status))]
              [:div
               [:h3
                "Import in progress: "
-               [:b (str (capitalize (name step)) " " progress)]]
+               [:b step]]
               [:div.bottom-right
                [:button.danger
                 {:type :button
@@ -115,7 +116,7 @@
   (let [resourcemap (subscribe [:datasets/resourcemap])
         state (subscribe [:datasets/state])]
     (fn []
-      (let [importing? (importing? @state)]
+      (let [importing? (db/importing? @state)]
         [:div {:class (when importing? "disabled")}
          [:h3 "Available Resourcemap collections "
           (when-not importing?
@@ -146,7 +147,7 @@
 (defn datasets-page []
   (let [state (subscribe [:datasets/state])]
     (fn []
-      (let [initialised? (initialised? @state)]
+      (let [initialised? (db/initialised? @state)]
         [:article.datasets
          (if initialised?
            [datasets-view]

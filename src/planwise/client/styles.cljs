@@ -4,3 +4,4 @@
 (def dark-orange "#ac5900")
 (def green "#819f51")
 (def black "#111111")
+(def light-grey "#b7b7b7")

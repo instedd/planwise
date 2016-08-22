@@ -1,22 +1,24 @@
 #! /bin/bash
+set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
 
 # Creates a byte-sized raster file data/regions/REGIONID.tif,
 # with a mask of each region, ie a value of 255 for the region
 
-set -euo pipefail
+DATA_PATH=${DATA_PATH:-data}
 
 echo "Rasterizing regions"
-mkdir -p data/regions/
+mkdir -p ${DATA_PATH}/regions/
 REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions;')"
 
 for id in $REGION_IDS; do
   echo " Rasterizing ${id}"
-  TARGET=data/regions/${id}.tif
+  TARGET=${DATA_PATH}/regions/${id}.tif
   if [[ ! -e $TARGET ]]; then
     gdal_rasterize -q -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -ot byte -a_nodata 0 -burn 255 \
       -sql "SELECT the_geom FROM regions WHERE id = ${id};" \
       -tr 0.0008333 0.0008333 \
-      PG:dbname=routing $TARGET
+      PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" $TARGET
   fi;
 done;

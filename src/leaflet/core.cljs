@@ -30,9 +30,13 @@
            new-objects []
            new-decls new-decls]
 
-      (let [old-decl (first old-decls)
-            new-decl (first new-decls)]
-        (if (or old-decl new-decl)
+      (if (and (empty? old-decls) (empty? new-decls))
+        ;; done iterating over the declarations
+        new-objects
+
+        ;; replace declaration
+        (let [old-decl (first old-decls)
+              new-decl (first new-decls)]
           (let [old-object (first old-objects)
                 new-object (replace-object old-object old-decl new-decl)]
 
@@ -40,11 +44,7 @@
             (recur (rest old-objects)
                    (rest old-decls)
                    (conj new-objects new-object)
-                   (rest new-decls)))
-
-          ;; done iterating over the declarations
-          new-objects)))))
-
+                   (rest new-decls))))))))
 
 (defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn], :or {lat-fn :lat lon-fn :lon}}]
   (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
@@ -58,13 +58,30 @@
       (.bindPopup marker (popup-fn point))
       marker)))
 
-(defn create-point [[lat lon] attrs]
-  (let [latLng (.latLng js/L lat lon)]
-    (.circleMarker js/L latLng (clj->js (merge {:clickable false :radius 5}
-                                               attrs)))))
+(defn create-point [point {:keys [lat-fn lon-fn icon-fn popup-fn], :or {lat-fn :lat lon-fn :lon}, :as props}]
+  (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
+        attrs (dissoc props :lat-fn :lon-fn :popup-fn)
+        clickable (boolean popup-fn)
+        marker (.circleMarker js/L latLng (clj->js (merge {:clickable clickable :radius 5} attrs)))]
+    (if popup-fn
+      (.bindPopup marker (popup-fn point))
+      marker)))
 
 (defn layer-type [layer-def]
   (first layer-def))
+
+(defn js-data [data]
+  (cond
+    (string? data) (js/JSON.parse data)
+    (vector? data) (clj->js (mapv #(if (string? %) (js/JSON.parse %) %) data))
+    :else data))
+
+(defn geojson-layer [props]
+  (let [attrs (dissoc props :data :fit-bounds)
+        group-attrs (:group props)]
+    (.group js/L.geoJson nil #js {:clickable false
+                                  :pathGroup (clj->js group-attrs)
+                                  :style (constantly (clj->js attrs))})))
 
 (defmulti leaflet-layer layer-type)
 
@@ -86,19 +103,21 @@
     layer))
 
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]
-  (let [data (:data props)
-        attrs (dissoc props :data :fit-bounds)
-        groupAttrs (:group props)
-        layer (.group js/L.geoJson nil #js {:clickable false
-                                            :pathGroup (clj->js groupAttrs)
-                                            :style (constantly (clj->js attrs))})]
+  (let [data  (:data props)
+        layer (geojson-layer props)]
     (when data
-      (let [js-data (cond
-                      (string? data) (js/JSON.parse data)
-                      (vector? data) (clj->js (mapv #(if (string? %) (js/JSON.parse %) %) data))
-                      :else data)]
-        (.addData layer js-data)))
+      (.addData layer (js-data data)))
     layer))
+
+(defmethod leaflet-layer :geojson-bbox-layer [[_ props & children]]
+  (let [attrs (dissoc props :data :fit-bounds)
+        geojson-layer (geojson-layer attrs)
+        bbox-loader   (.bboxLoader js/L (clj->js (assoc attrs :layer geojson-layer)))]
+    (when-let [data (:data props)]
+      (doseq [{:keys [facility-id level isochrone]} data]
+        (let [layer (.asLayers geojson-layer (js/JSON.parse isochrone))]
+          (.addFeature bbox-loader level facility-id layer))))
+    bbox-loader))
 
 (defmethod leaflet-layer :tile-layer [[_ props & children]]
   (let [url   (:url props)

@@ -1,7 +1,7 @@
 -- :name insert-facility! :! :n
 INSERT INTO facilities
     (id, name, lat, lon, type_id, the_geom)
-    VALUES (:id, :name, :lat, :lon, :type_id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
+    VALUES (:id, :name, :lat, :lon, :type-id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
 
 -- :name delete-facilities! :!
 DELETE FROM facilities;
@@ -53,6 +53,25 @@ FROM facilities
   LEFT OUTER JOIN facilities_polygons_regions fpr ON fpr.region_id = :region AND fpr.facility_polygon_id = fp.id
   /*~ ) ~*/
 WHERE 1=1 :snip:criteria ;
+
+-- :name isochrones-in-bbox* :?
+SELECT
+  facilities.id AS "id",
+  fp.id AS "polygon-id",
+  /*~ (if (empty? (:excluding params)) */
+  ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS "isochrone"
+  /*~*/
+  CASE facilities.id IN (:v*:excluding)
+    WHEN FALSE THEN ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify))
+    ELSE NULL
+  END AS "isochrone"
+  /*~ ) ~*/
+FROM facilities
+  INNER JOIN facility_types ON facilities.type_id = facility_types.id
+  LEFT OUTER JOIN facilities_polygons fp ON fp.facility_id = facilities.id AND fp.threshold = :threshold AND fp.method = :algorithm
+WHERE
+  (fp.the_geom && ST_MakeEnvelope(:v*:bbox, 4326))
+  :snip:criteria ;
 
 -- :name isochrone-for-facilities :? :1
 SELECT

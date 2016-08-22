@@ -1,3 +1,5 @@
+// goog.provide("leaflet.geojsongroup");
+
 // Modify L.Path to check for _pathGroup before _map in all relevant methods
 // Instead of adding/removing itself from a _map, do it from its _pathGroup
 L.Path.include({
@@ -64,11 +66,14 @@ L.Path.include({
 			'viewreset': this.projectLatlngs,
 			'moveend': this._updatePath
 		}, this);
-	},
+	}
 });
 
-// L.PathGroup creates an SVG <g> element at the map pathRoot, so all
-// paths it contains are included there.
+/**
+ * Creates an SVG <g> element at the map pathRoot, so all
+ * paths it contains are included there.
+ * @constructor
+ */
 L.PathGroup = L.Class.extend({
   includes: [L.Mixin.Events],
 
@@ -136,8 +141,11 @@ L.PathGroup = L.Class.extend({
   }
 });
 
-// Adds a _pathGroup property to all dependent layers, which is a PathGroup
-// element that renders an SVG <g> element to contain all paths
+/**
+ * Adds a _pathGroup property to all dependent layers, which is a PathGroup
+ * element that renders an SVG <g> element to contain all paths
+ * @constructor
+ */
 L.GeoJSON.Group = L.GeoJSON.extend({
 
   initialize: function (geojson, options) {
@@ -189,3 +197,5 @@ L.geoJson.group = function (geojson, options) {
 L.pathGroup = function(options) {
   return new L.PathGroup(options);
 };
+
+// leaflet.geojsongroup = L.geoJson.group;

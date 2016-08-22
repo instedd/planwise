@@ -1,15 +1,36 @@
 (ns planwise.client.projects.components.sidebar
+  (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [re-com.core :as rc]
             [planwise.client.components.progress-bar :as progress-bar]
             [planwise.client.components.filters :as filters]
-            [planwise.client.projects.db :as db]))
+            [planwise.client.projects.db :as db]
+            [planwise.client.utils :as utils]))
 
+
+(defn- demographic-stat [title value]
+  [:div.stat
+   [:div.stat-title title]
+   [:div.stat-value value]])
 
 (defn- demographics-filters []
-  [:div.sidebar-filters
-   [:div.filter-info
-    [:p "Filter here the population you are analyzing."]]])
+  (let [current-project (subscribe [:projects/current-data])]
+    (fn []
+      (let [population (:region-population @current-project)
+            area (:region-area-km2 @current-project)
+            density (/ population area)]
+        [:div.sidebar-filters
+         [:div.filter-info
+          ;; [:p "Filter here the population you are analyzing."]
+          [:div.demographic-stats
+           (demographic-stat "Area" [:span (utils/format (int area)) " km" [:sup 2]])
+           (demographic-stat "Density" [:span (utils/format density) " /km" [:sup 2]])
+           (demographic-stat "Total population" (utils/format population))]
+          [:span.small
+           "Demographic data source: "
+           [:a {:href "http://www.worldpop.org.uk/" :target "attribution"} "WorldPop"]
+           " (Geodata Institute of the University of Southampton) / "
+           [:a {:href "https://creativecommons.org/licenses/by/4.0/" :target "attribution"} "CC BY"]]]]))))
 
 (defn- facility-filters []
   (let [facility-types (subscribe [:filter-definition :facility-type])

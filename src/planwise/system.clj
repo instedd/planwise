@@ -11,6 +11,7 @@
             [ring.component.jetty :refer [jetty-server]]
             [ring.middleware.resource :refer [wrap-resource]]
             [ring.middleware.defaults :refer [wrap-defaults api-defaults site-defaults]]
+            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-params]]
             [ring.middleware.gzip :refer [wrap-gzip]]
             [ring.middleware.webjars :refer [wrap-webjars]]
@@ -78,15 +79,24 @@
 (def jwe-options {:alg :a256kw :enc :a128gcm})
 (def jwe-secret (nonce/random-bytes 32))
 
+(def session-config
+  {:cookies true
+   :session {:store (cookie-store)
+             :cookie-attrs {:max-age (* 24 3600)}
+             :cookie-name "planwise-session"}})
+
 (def base-config
   {:auth {:jwe-secret  jwe-secret
           :jwe-options jwe-options}
-   :api {:middleware   [[wrap-authorization :auth-backend]
-                        [wrap-authentication :auth-backend]
+   :api {:middleware   [[wrap-authorization :jwe-auth-backend]
+                        [wrap-authentication :session-auth-backend :jwe-auth-backend]
+                        [wrap-keyword-params]
                         [wrap-json-params]
                         [wrap-json-response]
                         [wrap-defaults :api-defaults]]
-         :api-defaults (meta-merge api-defaults {:params {:nested true}})}
+         :api-defaults (meta-merge api-defaults
+                                   session-config
+                                   {:params {:nested true}})}
    :api-auth-backend {:unauthorized-handler api-unauthorized-handler}
    :app {:middleware   [[wrap-not-found :not-found]
                         [wrap-webjars]
@@ -97,10 +107,9 @@
          :not-found    (io/resource "planwise/errors/404.html")
          :jar-resources "public/assets"
          :app-defaults (meta-merge site-defaults
-                                   {:static {:resources "planwise/public"}
-                                    :session {:store (cookie-store)
-                                              :cookie-attrs {:max-age (* 24 3600)}
-                                              :cookie-name "planwise-session"}})}
+                                   session-config
+                                   {:session {:flash true}
+                                    :static {:resources "planwise/public"}})}
    :app-auth-backend {:unauthorized-handler app-unauthorized-handler}
 
    :webapp {:middleware [[wrap-gzip]
@@ -139,8 +148,10 @@
     (-> (component/system-map
          :globals             {:app-version (:version config)}
 
-         :api-auth-backend    (jwe-backend (meta-merge (:auth config)
-                                                       (:api-auth-backend config)))
+         :api-jwe-auth-backend    (jwe-backend (meta-merge (:auth config)
+                                                           (:api-auth-backend config)))
+         :api-session-auth-backend    (session-backend (meta-merge (:auth config)
+                                                                   (:api-auth-backend config)))
          :app-auth-backend    (session-backend (meta-merge (:auth config)
                                                            (:app-auth-backend config)))
 
@@ -157,7 +168,7 @@
          :routing             (routing-service)
          :users-store         (users-store)
          :resmap              (resmap-client (:resmap config))
-         :importer            (importer)
+         :importer            (importer (:importer config))
          :runner              (runner-service (:paths config))
          :maps                (maps-service (meta-merge (:maps config)
                                                         (:paths config)))
@@ -173,7 +184,8 @@
          :resmap-auth-endpoint (endpoint-component resmap-auth-endpoint))
 
         (component/system-using
-         {:api                 {:auth-backend :api-auth-backend}
+         {:api                 {:session-auth-backend :api-session-auth-backend
+                                :jwe-auth-backend :api-jwe-auth-backend}
           :app                 {:auth-backend :app-auth-backend}
           :http                {:app :webapp}})
 

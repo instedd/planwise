@@ -1,5 +1,6 @@
 #! /bin/bash
 set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
 
 # Creates byte-sized raster files data/isochrones/REGIONID/FACILITY_POLYGON_ID.tif,
 # with a 255 value for each facility polygon, intersected with the specified REGION,
@@ -9,14 +10,16 @@ set -euo pipefail
 # Note that this should not be necessary on a freshly imported facilities dataset,
 # as the import process already invokes raster-isochrone for each isochrone
 
+DATA_PATH=${DATA_PATH:-data}
+SCRIPTS_DIR=$(dirname "${BASH_SOURCE}")
+
 function query {
   psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c "$1";
 }
 
 echo "Rasterizing isochrones per region"
-mkdir -p data/isochrones/
+mkdir -p ${DATA_PATH}/isochrones/
 REGION_IDS="$(query 'SELECT id FROM regions ORDER BY id;')"
-SCRIPTS_DIR=$(dirname "${BASH_SOURCE}")
 
 if [ $# -lt 1 ]; then
   FACILITY_CONDITION=""

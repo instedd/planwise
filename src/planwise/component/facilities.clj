@@ -19,8 +19,11 @@
   [component]
   (get-in component [:db :spec]))
 
-(defn facilities-criteria [criteria]
-  (criteria-snip criteria))
+(defn- isochrone-params [{:keys [threshold algorithm simplify]}]
+  {:threshold (or threshold 900)
+   :algorithm (or algorithm "alpha-shape")
+   :simplify  (or simplify 0.001)})
+
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -51,29 +54,34 @@
   ([service criteria]
    (facilities-by-criteria
      (get-db service)
-     {:criteria (facilities-criteria criteria)})))
+     {:criteria (criteria-snip criteria)})))
 
 (defn count-facilities
   ([service]
    (count-facilities service {}))
   ([service criteria]
    (let [db (get-db service)
-         criteria (facilities-criteria criteria)
+         criteria (criteria-snip criteria)
          result (count-facilities-by-criteria db {:criteria criteria})]
      (:count result))))
 
 (defn list-with-isochrones
   ([service]
    (list-with-isochrones service {} {}))
-  ([service isochrone-options]
-   (list-with-isochrones service isochrone-options {}))
-  ([service {:keys [threshold algorithm simplify]} criteria]
+  ([service isochrone-opts]
+   (list-with-isochrones service isochrone-opts {}))
+  ([service isochrone-opts criteria]
    (facilities-with-isochrones (get-db service)
-      {:threshold (or threshold 900)
-       :algorithm (or algorithm "alpha-shape")
-       :simplify  (or simplify 0.001)
+     (assoc (isochrone-params isochrone-opts)
        :region    (:region criteria)
-       :criteria  (facilities-criteria criteria)})))
+       :criteria  (criteria-snip criteria)))))
+
+(defn isochrones-in-bbox
+  ([service isochrone-opts criteria]
+   (isochrones-in-bbox* (get-db service)
+     (-> (isochrone-params isochrone-opts)
+        (merge (select-keys criteria [:bbox :excluding]))
+        (assoc :criteria (criteria-snip criteria))))))
 
 (defn get-isochrone-for-all-facilities [service threshold]
   (isochrone-for-facilities (get-db service) {:threshold threshold}))
@@ -122,12 +130,13 @@
 
 (defn preprocess-isochrones
   [service facility-id]
-  (calculate-facility-isochrones! (get-db service)
-                                  {:id facility-id
-                                   :method "alpha-shape"
-                                   :start 30
-                                   :end 180
-                                   :step 15})
+  (let [result (calculate-facility-isochrones! (get-db service)
+                                               {:id facility-id
+                                                :method "alpha-shape"
+                                                :start 30
+                                                :end 180
+                                                :step 15})]
+    (debug (str "Facility " facility-id " isochrone processed with result: " (vec result))))
   (when (get-in service [:config :raster-isochrones])
     (calculate-isochrones-population! service facility-id)
     (raster-isochrones! service facility-id)))
