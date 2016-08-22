@@ -266,7 +266,7 @@
  :projects/project-updated
  in-current-project
  (fn [db [_ project]]
-   (let [prev-state (get-in % [:map-state :current])
+   (let [prev-state (get-in db [:map-state :current])
          new-db (-> db
                     (#(if (= prev-state :loading) (cancel-prev-timeout %) %))
                     (assoc-in [:map-state :current] :loaded))]
