@@ -58,7 +58,7 @@
                                #(dispatch [:projects/cancel-new-project])}
           [new-project-dialog]])])))
 
-(defn loading-wheel []
+(def loading-wheel
   [:svg.circular {:viewBox "25 25 50 50"}
    [:circle.path {:cx 50
                   :cy 50
@@ -89,9 +89,10 @@
          selected-tab)
         [:div
          [sidebar-section selected-tab]
-         [:div.loading-indicator {:style {:display (if (= @map-state :loading-displayed) "block" "none")}}
-          [:div.loading-wheel (loading-wheel)]
-          [:div.loading-legend "Retrieving facilities"]]
+         (when (= @map-state :loading-displayed)
+           [:div.loading-indicator
+            [:div.loading-wheel loading-wheel]
+            [:div.loading-legend "Retrieving facilities"]])
          [:div.map-container
           (->> [map-widget
                 {:position @map-position
