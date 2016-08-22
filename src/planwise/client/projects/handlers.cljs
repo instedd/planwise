@@ -211,13 +211,16 @@
   (set-request-timeout db))
 
 (defn request-pending-to-request-pending [db]
-  (-> db (cancel-prev-timeout) (set-request-timeout)))
+  (-> db cancel-prev-timeout set-request-timeout))
 
 (defn loading-to-request-pending [db]
-  (-> db (cancel-prev-timeout) (cancel-prev-request) (set-request-timeout)))
+  (-> db
+      cancel-prev-timeout
+      cancel-prev-request
+      set-request-timeout))
 
 (defn loading-displayed-to-request-pending [db]
-  (-> db (cancel-prev-request) (set-request-timeout)))
+  (-> db cancel-prev-request set-request-timeout))
 
 (defn set-request-timeout [db]
   (assoc-in db [:map-state :timeout]
