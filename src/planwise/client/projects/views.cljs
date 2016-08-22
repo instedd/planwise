@@ -95,6 +95,7 @@
           (let [map-props   {:position @map-position
                              :zoom @map-zoom
                              :min-zoom 5
+                             :max-population 2435
                              :on-position-changed
                              #(dispatch [:projects/update-position %])
                              :on-zoom-changed

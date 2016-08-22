@@ -1,3 +1,40 @@
 .leaflet-tile-pane > .leaflet-layer {
   mix-blend-mode: multiply;
 }
+
+.legend {
+  background-color: $white;
+  color: $gray-text;
+  padding: 15px 0 10px 20px;
+  text-transform: uppercase;
+  width: 200px;
+
+  .title {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  .color-scale {
+    font-size: 14px;
+
+    div {
+      display: inline-block;
+    }
+
+    .color-bar {
+      background-color: #E3E6DE;
+      height: 15px;
+      width: 60%;
+      margin: 0 10px 0 10px;
+      position: relative;
+      top: 2px;
+
+      :first-child {
+        height: 100%;
+        width: 100%;
+        opacity: 0.3;
+        background: linear-gradient(to right, #FFC800 0%,#FF9600 8%,#FF6400 20%,#FF3200 39%,#FF1400 59%,#FF0000 100%);
+      }
+    }
+  }
+}

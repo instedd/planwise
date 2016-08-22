@@ -216,13 +216,14 @@
             lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
         (.setMaxBounds leaflet lat-lng-bounds)))))
 
-(defn leaflet-create-control [type]
+(defn leaflet-create-control [type props]
   (condp = type
     :zoom (.zoom js/L.control)
     :attribution (.attribution js/L.control #js {:prefix false})
+    :legend (.legend js/L.control #js {:maxPopulation (:max-population props)} )
     (throw (str "Invalid control type " type))))
 
-(def default-controls [:zoom :attribution])
+(def default-controls [:zoom :attribution :legend])
 
 (defn leaflet-update-controls [this]
   (let [state (reagent/state this)
@@ -235,7 +236,7 @@
           destroy-control-fn (fn [old-control]
                                (.removeControl leaflet old-control))
           create-control-fn (fn [new-control-def]
-                              (let [new-control (leaflet-create-control new-control-def)]
+                              (let [new-control (leaflet-create-control new-control-def props)]
                                 (.addControl leaflet new-control)
                                 new-control))
           new-controls (update-objects-from-decls old-controls
