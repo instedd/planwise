@@ -237,9 +237,9 @@ There is a set of docker-compose files for locally running the application; one
 of them used for a first-time setup of the database, and other for regularly
 running the application.
 
-1- Create `.docker-env` file with GUISSO_CLIENT_SECRET and GUISSO_CLIENT_ID env vars, after registering your app in [GUISSO](https://github.com/instedd/guisso)
-2- Run `docker-compose -f docker-compose.setup.yml up` to set up the environment
-3- After `planwise_setup_1` exits successfully, run `docker-compose up` to start the app in port 3000
+1. Create `.docker-env` file with GUISSO_CLIENT_SECRET and GUISSO_CLIENT_ID env vars, after registering your app in [GUISSO](https://github.com/instedd/guisso)
+2. Run `docker-compose -f docker-compose.setup.yml up` to set up the environment
+3. After `planwise_setup_1` exits successfully, run `docker-compose up` to start the app in port 3000
 
 ## Legal
 
