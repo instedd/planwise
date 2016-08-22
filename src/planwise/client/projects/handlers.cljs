@@ -268,7 +268,7 @@
  (fn [db [_ project]]
    (let [prev-state (get-in db [:map-state :current])
          new-db (-> db
-                    (#(if (= prev-state :loading) (cancel-prev-timeout %) %))
+                    (update-in [:map-state :timeout] cancel-prev-timeout)
                     (assoc-in [:map-state :current] :loaded))]
      (db/update-viewmodel new-db project))))
 
