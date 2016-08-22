@@ -207,26 +207,81 @@
                     (assoc-in [:facilities :isochrones] nil))
          filters (db/project-filters new-db)
          project-id (get-in db [:project-data :id])]
-     (api/update-project project-id filters :facilities
-                         :projects/project-updated)
-     new-db)))
+     (transition-map-state new-db :facilities))))
+
+(defn transition-map-state [db request-with]
+  (let [new-db
+        (case (get-in db [:map-state :current])
+          :loaded            (loaded-to-request-pending db)
+          :request-pending   (request-pending-to-request-pending db)
+          :loading           (loading-to-request-pending db)
+          :loading-displayed (loading-displayed-to-request-pending db))]
+    (-> new-db
+        (assoc-in [:map-state :current] :request-pending)
+        (assoc-in [:map-state :request-with] request-with))))
+
+(defn loaded-to-request-pending [db]
+  (set-request-timeout db))
+
+(defn request-pending-to-request-pending [db]
+  (-> db (cancel-prev-timeout) (set-request-timeout)))
+
+(defn loading-to-request-pending [db]
+  (-> db (cancel-prev-timeout) (cancel-prev-request) (set-request-timeout)))
+
+(defn loading-displayed-to-request-pending [db]
+  (-> db (cancel-prev-request) (set-request-timeout)))
+
+(defn set-request-timeout [db]
+  (assoc-in db [:map-state :timeout]
+            (js/setTimeout #(dispatch [:projects/trigger-map-request]) 500)))
+
+(defn cancel-prev-timeout [db]
+  (js/clearTimeout (get-in db [:map-state :timeout]))
+  (assoc-in db [:map-state :timeout] nil))
+
+(defn cancel-prev-request [db]
+  (ajax.protocols/-abort (get-in db [:map-state :request]))
+  (assoc-in db [:map-state :request] nil))
+
+(register-handler
+ :projects/trigger-map-request
+ in-current-project
+ (fn [db _]
+   (let [filters (db/project-filters db)
+         project-id (get-in db [:project-data :id])
+         request-with (get-in db [:map-state :request-with])]
+     (-> db
+         (assoc-in [:map-state :request] (api/update-project project-id filters request-with :projects/project-updated))
+         (assoc-in [:map-state :timeout] (js/setTimeout #(dispatch [:projects/show-map-loading-sign]) 2500))
+         (assoc-in [:map-state :current] :loading)))))
+
+(register-handler
+ :projects/show-map-loading-sign
+ in-current-project
+ (fn [db _]
+   (if (= (get-in db [:map-state :current]) :loading)
+     (assoc-in db [:map-state :current] :loading-displayed)
+     db)))
 
 (register-handler
  :projects/set-transport-time
  in-current-project
   (fn [db [_ time]]
-    (let [new-db (assoc-in db [:transport :time] time)
-          filters (db/project-filters new-db)
-          project-id (get-in db [:project-data :id])]
-      (api/update-project project-id filters :isochrones
-                          :projects/project-updated)
+    (let [new-db (-> db
+                   (assoc-in [:transport :time] time)
+                   (transition-map-state :isochrones))]
       new-db)))
 
 (register-handler
  :projects/project-updated
  in-current-project
  (fn [db [_ project]]
-   (db/update-viewmodel db project)))
+   (let [prev-state (get-in % [:map-state :current])
+         new-db (-> db
+                    (#(if (= prev-state :loading) (cancel-prev-timeout %) %))
+                    (assoc-in [:map-state :current] :loaded))]
+     (db/update-viewmodel new-db project))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers

@@ -110,6 +110,66 @@ $search-box-height: 42px;
   }
 }
 
+.loading-indicator {
+  position: absolute;
+  left: initial;
+  right: 20px;
+  bottom: 25px;
+
+  z-index: 10;
+
+  width: 170px;
+  height: 45px;
+  padding-left: 10px;
+  padding-right: 10px;
+
+  background-color: #666666;
+  border-radius: 4px;
+
+  font-weight: 500;
+  color: #bababa;
+}
+
+.loading-wheel {
+  display: inline-block;
+
+  position: relative;
+  top: 15%;
+
+  margin-right: 12px;
+}
+
+.loading-legend {
+  display: inline-block;
+
+  position: relative;
+  top: -6%;
+
+  font-size: 14px;
+}
+
+.circular {
+  width: 30px;
+  height: 30px;
+
+  animation: rotate 2s linear infinite;
+  transform-origin: center center;
+}
+
+.path {
+  stroke: #ff7800;
+  stroke-width: 6px;
+  stroke-dasharray: 30, 70;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+}
+
+@keyframes rotate{
+  100%{
+    transform: rotate(360deg);
+  }
+}
+
 article.project-view {
   .project-header {
     background: $gray1;

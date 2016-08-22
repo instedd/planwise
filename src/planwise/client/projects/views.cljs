@@ -32,6 +32,15 @@
                                #(dispatch [:projects/cancel-new-project])}
           [new-project-dialog]])])))
 
+(defn loading-wheel []
+  [:svg.circular {:viewBox "25 25 50 50"}
+   [:circle.path {:cx 50
+                  :cy 50
+                  :fill "none"
+                  :r 20
+                  :stroke-miterlimit 10
+                  :stroke-width 2}]])
+
 (defn- project-tab [project-id project-region-id selected-tab]
   (let [facilities (subscribe [:projects/facilities :facilities])
         isochrones (subscribe [:projects/facilities :isochrones])
@@ -39,7 +48,8 @@
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])
         demand-map-key (subscribe [:projects/demand-map-key])
-        map-geojson (subscribe [:projects/map-geojson])]
+        map-geojson (subscribe [:projects/map-geojson])
+        map-state (subscribe [:projects/map-state])]
     (fn [project-id project-region-id selected-tab]
       (cond
         (#{:demographics
@@ -48,6 +58,9 @@
          selected-tab)
         [:div
          [sidebar-section selected-tab]
+         [:div.loading-indicator {:style {:display (if (= @map-state :loading-displayed) "block" "none")}}
+          [:div.loading-wheel (loading-wheel)]
+          [:div.loading-legend "Retrieving facilities"]]
          [:div.map-container
           (->> [map-widget
                 {:position @map-position

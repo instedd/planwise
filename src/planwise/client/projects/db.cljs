@@ -31,6 +31,12 @@
                   :isochrones nil} ;; geojson string
    :transport      {:time       nil}
    :map-view       {} ;; {:keys position zoom}
+
+   :map-state      {:current :loaded ;; [:loaded :request-pending :loading :loading-displayed]
+                    :timeout nil
+                    :request nil
+                    :request-with nil}
+
    :demand-map-key nil ;; string
    :unsatisfied-count nil ;; number
    :project-data   {}}) ;; {:keys id goal region-id stats filters}
