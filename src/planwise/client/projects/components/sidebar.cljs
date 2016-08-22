@@ -5,6 +5,7 @@
             [planwise.client.components.progress-bar :as progress-bar]
             [planwise.client.components.filters :as filters]
             [planwise.client.projects.db :as db]
+            [planwise.client.styles :as styles]
             [planwise.client.utils :as utils]))
 
 
@@ -57,7 +58,11 @@
            {:options @facility-types
             :value (:type @filters)
             :toggle-fn (toggle-cons-fn :type)
-            :decoration-fn (fn [{colour :colour, :as opt}] [:span.filter-colour {:style {"backgroundColor" colour}}])})]
+            :decoration-fn (fn [{colour :colour, :as opt}] [:span.filter-colour {:style {"backgroundColor" colour}}])})
+          [:hr]
+          [:div {:title "These facilities are too far from the closest road and are not being evaluated for coverage."}
+           [:span.filter-colour {:style {"backgroundColor" styles/invalid-facility-type}}]
+           [:label "Not in road network"]]]
 
          #_[:fieldset
             [:legend "Ownership"]

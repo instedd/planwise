@@ -76,9 +76,9 @@
         demand-map-key (subscribe [:projects/demand-map-key])
         map-geojson (subscribe [:projects/map-geojson])
         marker-popup-fn marker-popup
-        marker-style-fn #(when (= "no-road-network" (:processing-status %)) {:stroke true, :color styles/red, :weight 2})
+        marker-style-fn #(when (= "no-road-network" (:processing-status %)) {:fillColor styles/invalid-facility-type})
         isochrones (subscribe [:projects/facilities :isochrones])
-        project-facilities-criteria (subscribe [:projects/facilities-criteria]) 
+        project-facilities-criteria (subscribe [:projects/facilities-criteria])
         project-transport-time (subscribe [:projects/transport-time])
         callback-fn (reaction (geojson-bbox-callback isochrones project-facilities-criteria @project-transport-time))
         feature-fn #(aget % "isochrone")]

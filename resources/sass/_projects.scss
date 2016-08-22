@@ -261,6 +261,10 @@ article.project-view {
     border-top: 1px solid $gray2;
     position: relative;
 
+    hr {
+      color: $gray2;
+    }
+
     legend {
       font-size: 14px;
       font-weight: bold;
