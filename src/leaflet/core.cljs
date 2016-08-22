@@ -157,10 +157,7 @@
 (defn leaflet-update-layers [this]
   (let [state (reagent/state this)
         leaflet (:map state)
-        new-children (->> this
-                       (reagent/children)
-                       (mapcat #(if (seq? %) % [%]))
-                       (vec))]
+        new-children (reagent/children this)]
 
     ;; go through all the layers, old and new, and update the Leaflet objects
     ;; accordingly while updating the map

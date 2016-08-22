@@ -74,6 +74,7 @@
 
     (fn [project-id project-region-id selected-tab]
       (cond
+
         (#{:demographics
            :facilities
            :transport}
@@ -81,50 +82,54 @@
         [:div
          [sidebar-section selected-tab]
          [:div.map-container
-          (->> [map-widget
-                {:position @map-position
-                 :zoom @map-zoom
-                 :min-zoom 5
-                 :on-position-changed
-                 #(dispatch [:projects/update-position %])
-                 :on-zoom-changed
-                 #(dispatch [:projects/update-zoom %])}
+          (let [map-props   {:position @map-position
+                             :zoom @map-zoom
+                             :min-zoom 5
+                             :on-position-changed
+                             #(dispatch [:projects/update-position %])
+                             :on-zoom-changed
+                             #(dispatch [:projects/update-zoom %])}
 
-                ;; Base tile layer
-                mapping/gray-base-tile-layer
-                ;; Boundaries of working region
-                (if @map-geojson
-                  [:geojson-layer {:data @map-geojson
-                                   :color styles/green
-                                   :fit-bounds true
-                                   :fillOpacity 0.1
-                                   :weight 0}])
-                ;; Demographics tile layer
-                (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
-                      population-map (mapping/region-map project-region-id)]
-                  [:wms-tile-layer {:url config/mapserver-url
-                                    :transparent true
-                                    :layers mapping/layer-name
-                                    :DATAFILE (or demand-map population-map)
-                                    :opacity 0.5}])
-                ;; Markers with filtered facilities
-                (when (#{:facilities :transport} selected-tab)
-                  (for [[type facilities] @facilities-by-type]
-                    [:point-layer {:points facilities
-                                   :popup-fn marker-popup-fn
-                                   :radius 4
-                                   :color (:colour type)
-                                   :stroke false
-                                   :fillOpacity 1}]))
-                ;; Isochrone for selected transport
-                (when (= :transport selected-tab)
-                  [:geojson-bbox-layer { :levels mapping/geojson-levels
-                                         :fillOpacity 1
-                                         :weight 2
-                                         :color styles/green
-                                         :group {:opacity 0.4}
-                                         :featureFn feature-fn
-                                         :callback @callback-fn}])])]]
+                layer-region-boundaries  (if @map-geojson
+                                           [:geojson-layer {:data @map-geojson
+                                                            :color styles/green
+                                                            :fit-bounds true
+                                                            :fillOpacity 0.1
+                                                            :weight 0}])
+
+                layer-demographics (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
+                                          population-map (mapping/region-map project-region-id)]
+                                      [:wms-tile-layer {:url config/mapserver-url
+                                                        :transparent true
+                                                        :layers mapping/layer-name
+                                                        :DATAFILE (or demand-map population-map)
+                                                        :opacity 0.5}])
+
+                layers-facilities  (when (#{:facilities :transport} selected-tab)
+                                     (for [[type facilities] @facilities-by-type]
+                                       [:point-layer {:points facilities
+                                                      :popup-fn marker-popup-fn
+                                                      :radius 4
+                                                      :color (:colour type)
+                                                      :stroke false
+                                                      :fillOpacity 1}]))
+                
+                layer-isochrones   (when (= :transport selected-tab)
+                                      [:geojson-bbox-layer { :levels mapping/geojson-levels
+                                                              :fillOpacity 1
+                                                              :weight 2
+                                                              :color styles/green
+                                                              :group {:opacity 0.4}
+                                                              :featureFn feature-fn
+                                                              :callback @callback-fn}])
+
+                map-layers (concat [mapping/gray-base-tile-layer
+                                    layer-region-boundaries
+                                    layer-demographics]
+                                   layers-facilities
+                                   [layer-isochrones])]
+
+            (into [map-widget map-props] (filterv some? map-layers)))]]
 
         (= :scenarios selected-tab)
         [:div
