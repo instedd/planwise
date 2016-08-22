@@ -5,15 +5,13 @@
             [planwise.client.projects.db :as db]
             [planwise.client.mapping :as mapping]))
 
+;; ----------------------------------------------------------------------------
+;; Projects list subscriptions
+
 (register-sub
  :projects/view-state
  (fn [db [_]]
    (reaction (get-in @db [:projects :view-state]))))
-
-(register-sub
- :projects/current-data
- (fn [db [_]]
-   (reaction (get-in @db [:projects :current :project-data]))))
 
 (register-sub
  :projects/search-string
@@ -32,6 +30,15 @@
          list (subscribe [:projects/list])]
      (reaction
        (filterv #(gstring/caseInsensitiveContains (:goal %) @search-string) @list)))))
+
+
+;; ----------------------------------------------------------------------------
+;; Current project subscriptions
+
+(register-sub
+ :projects/current-data
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :current :project-data]))))
 
 (register-sub
  :projects/facilities

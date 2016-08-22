@@ -33,9 +33,12 @@
 (register-handler
  :projects/load-projects
  in-projects
- (fn [db [_ project-id]]
-   (api/load-projects :projects/projects-loaded)
-   (assoc db :view-state :loading)))
+ (fn [db [_]]
+   (if (nil? (:list db))
+     (do
+       (api/load-projects :projects/projects-loaded)
+       (assoc db :view-state :loading))
+     db)))
 
 (register-handler
  :projects/projects-loaded
@@ -71,7 +74,7 @@
  :projects/cancel-new-project
  in-projects
  (fn [db [_]]
-   (assoc db :view-state :view)))
+   (assoc db :view-state :list)))
 
 (register-handler
  :projects/create-project
@@ -137,22 +140,6 @@
     (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
     (assoc db :view-state :view
               :current (db/new-viewmodel project-data))))
-
-(register-handler
- :projects/delete-project
- in-projects
- (fn [db [_ id]]
-   (api/delete-project id :projects/project-deleted)
-   (accountant/navigate! (routes/home))
-   db))
-
-(register-handler
- :projects/project-deleted
- in-projects
- (fn [db [_ data]]
-   (let [deleted-id (:deleted data)]
-     (dispatch [:projects/load-projects])
-     (update db :list (partial filterv #(not= (:id %) deleted-id))))))
 
 (register-handler
  :projects/load-facilities
@@ -221,7 +208,28 @@
  :projects/project-updated
  in-current-project
  (fn [db [_ project]]
+   ;;
+   (api/load-projects :projects/projects-loaded)
    (db/update-viewmodel db project)))
+
+;; ----------------------------------------------------------------------------
+;; Project deletion
+
+(register-handler
+ :projects/delete-project
+ in-projects
+ (fn [db [_ id]]
+   (api/delete-project id :projects/project-deleted)
+   (accountant/navigate! (routes/home))
+   ;; optimistically delete the project from our list
+   (update db :list (partial filterv #(not= (:id %) id)))))
+
+(register-handler
+ :projects/project-deleted
+ in-projects
+ (fn [db [_ data]]
+   (let [deleted-id (:deleted data)]
+     (update db :list (partial filterv #(not= (:id %) deleted-id))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers
