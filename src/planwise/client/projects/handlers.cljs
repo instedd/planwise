@@ -249,7 +249,7 @@
          (assoc-in [:map-state :current] :loading)))))
 
 (register-handler
- :projects/show-map-loading-sign
+ :projects/show-map-loading-hint
  in-current-project
  (fn [db _]
    (if (= (get-in db [:map-state :current]) :loading)
