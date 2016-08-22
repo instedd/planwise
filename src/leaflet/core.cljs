@@ -58,11 +58,15 @@
       (.bindPopup marker (popup-fn point))
       marker)))
 
-(defn create-point [point {:keys [lat-fn lon-fn icon-fn popup-fn], :or {lat-fn :lat lon-fn :lon}, :as props}]
-  (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
-        attrs (dissoc props :lat-fn :lon-fn :popup-fn)
+(defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+  (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
+        attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         clickable (boolean popup-fn)
-        marker (.circleMarker js/L latLng (clj->js (merge {:clickable clickable :radius 5} attrs)))]
+        style     (merge
+                    {:clickable clickable :radius 5}
+                    attrs
+                    (when style-fn (style-fn point)))
+        marker    (.circleMarker js/L latLng (clj->js style))]
     (if popup-fn
       (.bindPopup marker (popup-fn point))
       marker)))

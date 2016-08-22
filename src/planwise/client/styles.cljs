@@ -5,6 +5,7 @@
 (def green "#819f51")
 (def black "#111111")
 (def light-grey "#b7b7b7")
+(def red "#ff0000")
 
 ; See https://bl.ocks.org/mbostock/5577023
 (def facility-types-palette
