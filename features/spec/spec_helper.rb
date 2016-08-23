@@ -18,6 +18,8 @@
 require 'capybara/rspec'
 require 'capybara-screenshot/rspec'
 require 'selenium-webdriver'
+require 'site_prism'
+Dir["#{__dir__}/support/**/*.rb"].each { |f| require f }
 
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
@@ -42,6 +44,8 @@ RSpec.configure do |config|
   config.define_derived_metadata(:file_path => Regexp.new('/spec/')) do |metadata|
     metadata[:type] = :feature
   end
+
+  config.include FeatureSpecHelpers
 
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
