@@ -1,7 +1,7 @@
 mapcache:
   image: instedd/planwise-mapserver:kenya-mapcache
   volumes:
-    - "./mapcache.xml:/etc/mapcache/mapcache.xml:ro"
+    - "./mapcache.xml:/mapcache/mapcache.xml:ro"
   links:
     - mapserver
   ports:
