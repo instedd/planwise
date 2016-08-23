@@ -31,25 +31,44 @@
         :on-click cancel-fn}
        "Cancel"]]]))
 
+(defn collection-card
+  [{:keys [id name description count on-click]}]
+  [:li {:on-click on-click}
+   [:h1 name]
+   [:h2 description]
+   [:p.count (str count " sites")]])
+
+(defn collections-list
+  [collections]
+  [:ul.collections
+   (for [coll collections]
+     (let [coll-id (:id coll)]
+       [collection-card (assoc coll
+                               :key coll-id
+                               :on-click #(dispatch [:datasets/select-collection coll]))]))])
+
 (defn- authorised-dialog
   []
   (let [view-state (subscribe [:datasets/view-state])
         valid? false
-        cancel-fn #(dispatch [:datasets/cancel-new-dataset])]
+        cancel-fn #(dispatch [:datasets/cancel-new-dataset])
+        resmap (subscribe [:datasets/resourcemap])]
     (fn []
-      [:div
-       [:div.actions
-        [:button.primary
-         {:type "submit"
-          :disabled (or (= @view-state :creating)
-                        (not valid?))}
-         (if (= @view-state :creating)
-           "Creating..."
-           "Create")]
-        [:button.cancel
-         {:type "button"
-          :on-click cancel-fn}
-         "Cancel"]]])))
+      (let [collections (:collections @resmap)]
+        [:div
+         [collections-list collections]
+         [:div.actions
+          [:button.primary
+           {:type "submit"
+            :disabled (or (= @view-state :creating)
+                          (not valid?))}
+           (if (= @view-state :creating)
+             "Creating..."
+             "Create")]
+          [:button.cancel
+           {:type "button"
+            :on-click cancel-fn}
+           "Cancel"]]]))))
 
 (defn new-dataset-dialog
   []
@@ -75,4 +94,4 @@
              [unauthorised-dialog])
            (do
              (dispatch [:datasets/load-resourcemap-info])
-             [common/loading-placeholder]))]))))
+             [common/loading-placeholder "Loading Resourcemap collections..."]))]))))
