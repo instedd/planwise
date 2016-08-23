@@ -189,8 +189,7 @@
         (if (and children-to-fit-changed any-children-to-fit)
           (let [feature-group-to-fit (reduce #(.addLayer %1 %2) (.featureGroup js/L) layers-to-fit)
                 bounds (.getBounds feature-group-to-fit)]
-            (.fitBounds leaflet bounds)
-            (leaflet-moveend-handler this))))
+            (.fitBounds leaflet bounds))))
 
       ;; update component state
       (reagent/set-state this {:layers new-layers
@@ -202,8 +201,10 @@
         position (:position props)
         zoom (:zoom props)
         leaflet (:map state)]
-    (reagent/set-state this {:position position :zoom zoom})
-    (.setView leaflet (clj->js position) zoom)))
+    (if (or (not= position (:position state)) (not= zoom (:zoom state)))
+      (do
+        (reagent/set-state this {:position position :zoom zoom})
+        (.setView leaflet (clj->js position) zoom)))))
 
 (defn leaflet-update-options [this]
   (let [state (reagent/state this)
