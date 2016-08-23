@@ -1,5 +1,6 @@
 (ns planwise.client.datasets.components.new-dataset
   (:require [re-frame.core :refer [dispatch subscribe]]
+            [reagent.core :as r]
             [planwise.client.config :as config]
             [planwise.client.components.common :as common]
             [planwise.client.utils :as utils]
@@ -33,30 +34,34 @@
 
 (defn collection-card
   [{:keys [id name description count on-click]}]
-  [:li {:on-click on-click}
+  [:div.collection-card {:on-click on-click}
    [:h1 name]
    [:h2 description]
    [:p.count (str count " sites")]])
 
 (defn collections-list
-  [collections]
+  [collections on-select-collection-fn]
   [:ul.collections
    (for [coll collections]
      (let [coll-id (:id coll)]
-       [collection-card (assoc coll
-                               :key coll-id
-                               :on-click #(dispatch [:datasets/select-collection coll]))]))])
+       [:li
+        {:key coll-id}
+        [collection-card (assoc coll :on-click #(on-select-collection-fn coll))]]))])
 
 (defn- authorised-dialog
   []
   (let [view-state (subscribe [:datasets/view-state])
+        selected (r/atom nil)
         valid? false
         cancel-fn #(dispatch [:datasets/cancel-new-dataset])
         resmap (subscribe [:datasets/resourcemap])]
     (fn []
       (let [collections (:collections @resmap)]
         [:div
-         [collections-list collections]
+         [:div.content
+          (if (nil? @selected)
+            [collections-list collections #(reset! selected %)]
+            [collection-card @selected])]
          [:div.actions
           [:button.primary
            {:type "submit"

@@ -4,8 +4,8 @@
             [buddy.auth.accessrules :refer [restrict]]
             [buddy.auth :refer [authenticated?]]
             [ring.util.response :refer [response status]]
-            [clojure.set :refer [rename-keys]]
             [planwise.util.ring :as util]
+            [clojure.core.reducers :as r]
             [planwise.boundary.facilities :as facilities]
             [planwise.boundary.datasets :as datasets]
             [planwise.component.importer :as importer]
@@ -17,6 +17,17 @@
   [field]
   (#{"select_one"} (:kind field)))
 
+(defn find-usable-collections
+  [resmap user-ident]
+  (let [collections (resmap/list-user-collections resmap user-ident)
+        with-usable-fields (fn [coll]
+                             (let [coll-id (:id coll)
+                                   fields (resmap/list-collection-fields resmap user-ident coll-id)
+                                   usable-fields (filterv usable-field? fields)]
+                               (when (seq usable-fields)
+                                 (assoc coll :fields usable-fields))))]
+    (into [] (r/filter some? (r/map with-usable-fields collections)))))
+
 (defn- datasets-routes
   [{:keys [datasets facilities resmap importer]}]
   (routes
@@ -24,6 +35,16 @@
      (let [user-id (util/request-user-id request)
            sets (datasets/list-datasets-for-user datasets user-id)]
        (response sets)))
+
+   (GET "/resourcemap-info" request
+     (let [user-ident (util/request-ident request)
+           authorised? (resmap/authorised? resmap user-ident)
+           collections (when authorised?
+                         (find-usable-collections resmap user-ident))]
+       (response {:authorised? authorised?
+                  :collections collections})))
+
+   ;; TODO: old endpoints, review!
 
    (GET "/info" request
      (let [user (:identity request)
@@ -35,14 +56,6 @@
        (response {:authorised? authorised?
                   :status importer-status
                   :facility-count facility-count
-                  :collections collections})))
-
-   (GET "/resourcemap-info" request
-     (let [user-ident (util/request-ident request)
-           authorised? (resmap/authorised? resmap user-ident)
-           collections (when authorised?
-                         (resmap/list-user-collections resmap user-ident))]
-       (response {:authorised? authorised?
                   :collections collections})))
 
    (GET "/status" request
