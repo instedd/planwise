@@ -7,5 +7,6 @@
   {:id            s/Int
    :owner-id      s/Int
    :name          s/Str
+   :description   s/Str
    :collection-id s/Int
    :mappings      {(s/optional-key :type) FieldTypeMapping}})

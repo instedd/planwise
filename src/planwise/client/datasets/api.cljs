@@ -13,6 +13,14 @@
   (GET "/api/datasets/resourcemap-info"
       (json-request {} handlers)))
 
+(defn create-dataset!
+  [name description coll-id type-field & handlers]
+  (POST "/api/datasets"
+      (json-request {:name name
+                     :description description
+                     :coll-id coll-id
+                     :type-field type-field}
+                    handlers)))
 
 ;; Old functions
 ;; TODO: review

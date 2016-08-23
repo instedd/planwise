@@ -6,6 +6,7 @@
             [ring.util.response :refer [response status]]
             [planwise.util.ring :as util]
             [clojure.core.reducers :as r]
+            [planwise.model.ident :as ident]
             [planwise.boundary.facilities :as facilities]
             [planwise.boundary.datasets :as datasets]
             [planwise.component.importer :as importer]
@@ -43,6 +44,21 @@
                          (find-usable-collections resmap user-ident))]
        (response {:authorised? authorised?
                   :collections collections})))
+
+   (POST "/" [name description coll-id type-field :as request]
+     (let [user-ident (util/request-ident request)
+           user-email (ident/user-email user-ident)
+           user-id (ident/user-id user-ident)
+           coll-id (Integer. coll-id)
+           type-field (Integer. type-field)
+           dataset-templ {:owner-id user-id
+                          :name name
+                          :description description
+                          :collection-id coll-id
+                          :mappings {:type type-field}}]
+       (info "Creating new dataset of collection" coll-id "for the user" user-email)
+       (let [dataset (datasets/create-dataset! datasets dataset-templ)]
+         (response (select-keys dataset [:id :name :description :facility-count :owner-id])))))
 
    ;; TODO: old endpoints, review!
 

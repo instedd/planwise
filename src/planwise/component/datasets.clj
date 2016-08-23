@@ -1,7 +1,8 @@
 (ns planwise.component.datasets
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
-            [hugsql.core :as hugsql]))
+            [hugsql.core :as hugsql]
+            [clojure.edn :as edn]))
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -10,6 +11,18 @@
 
 (defn get-db [store]
   (get-in store [:db :spec]))
+
+;; Mapper functions
+
+(defn db->dataset
+  [record]
+  (-> record
+      (update :mappings edn/read-string)))
+
+(defn dataset->db
+  [dataset]
+  (-> dataset
+      (update :mappings pr-str)))
 
 
 ;; ----------------------------------------------------------------------
@@ -25,3 +38,13 @@
 (defn list-datasets-for-user
   [store user-id]
   (select-datasets-for-user (get-db store) {:user-id user-id}))
+
+(defn create-dataset!
+  [store dataset]
+  (let [db (get-db store)
+        dataset-id (->> dataset
+                        dataset->db
+                        (insert-dataset! db)
+                        :id)
+        dataset (assoc dataset :id dataset-id)]
+    dataset))

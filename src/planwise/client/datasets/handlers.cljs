@@ -28,6 +28,15 @@
        db))))
 
 (register-handler
+ :datasets/invalidate-datasets
+ in-datasets
+ (fn [db [_]]
+   (let [list-state (get-in db [:state 0])]
+     (if (= :loaded list-state)
+       (assoc-in db [:state 0] :invalid)
+       db))))
+
+(register-handler
  :datasets/datasets-loaded
  in-datasets
  (fn [db [_ datasets]]
@@ -78,7 +87,25 @@
  :datasets/create-dataset
  in-datasets
  (fn [db [_]]
+   (let [collection (get-in db [:new-dataset-data :collection])
+         coll-id (:id collection)
+         name (:name collection)
+         description (:description collection)
+         type-field (get-in db [:new-dataset-data :type-field])]
+     (api/create-dataset! name description coll-id type-field :datasets/dataset-created))
    (assoc-in db [:state 1] :creating)))
+
+(register-handler
+ :datasets/dataset-created
+ in-datasets
+ (fn [db [_ dataset]]
+   (dispatch [:datasets/invalidate-datasets])
+   (let [view-state (get-in db [:state 1])
+         new-db (if (= :creating view-state)
+                  (assoc-in db [:state 1] :list)
+                  db)]
+     ;; optimistic update
+     (update new-db :list #(conj % dataset)))))
 
 
 ;; ----------------------------------------------------------------------------
