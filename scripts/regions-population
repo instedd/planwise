@@ -8,8 +8,8 @@ DATA_PATH=${DATA_PATH:-data}
 # Creates a raster file data/populations/REGIONID.tif with the population values
 # of each REGIONID in the regions table
 
-echo "Precalculating population count per region"
-REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions WHERE total_population IS NULL;')"
+echo "Precalculating population aggregates per region"
+REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions WHERE total_population IS NULL OR max_population IS NULL;')"
 echo " Region ids: ${REGION_IDS}"
 POPULATION_FILE="${DATA_PATH}/KEN_popmap15_v2b.tif"
 
@@ -18,7 +18,7 @@ mkdir -p ${DATA_PATH}/populations
 for id in $REGION_IDS; do
   TARGET=${DATA_PATH}/populations/${id}.tif
 
-  if [[ ! -e $TARGET || -z `gdalinfo $TARGET | grep POPULATION_SUM` ]]; then
+  if [[ ! -e $TARGET || -z `gdalinfo $TARGET | grep -e POPULATION_SUM -e POPULATION_MAX` ]]; then
     TMP_FILE=`mktemp`
 
     echo " Warping population for ${id}"
@@ -44,8 +44,9 @@ for id in $REGION_IDS; do
   fi;
 
   TOTAL_POPULATION=`gdalinfo $TARGET | grep POPULATION_SUM | cut -d = -f2`
+  MAX_POPULATION=`gdalinfo $TARGET | grep POPULATION_MAX | cut -d = -f2`
 
   echo " Updating population for ${id}"
   psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A \
-       -c "UPDATE regions SET total_population = ${TOTAL_POPULATION} WHERE id = ${id}";
+       -c "UPDATE regions SET total_population = ${TOTAL_POPULATION}, max_population = ${MAX_POPULATION} WHERE id = ${id}";
 done;
