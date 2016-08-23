@@ -218,7 +218,7 @@ button {
     }
   }
 
-  &.cancel {
+  &.cancel, &.delete {
     background-color: transparent;
     color: $gray-text;
     font-weight: normal;

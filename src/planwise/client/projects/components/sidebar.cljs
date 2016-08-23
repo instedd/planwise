@@ -19,14 +19,14 @@
     (fn []
       (let [population (:region-population @current-project)
             area (:region-area-km2 @current-project)
-            density (/ population area)]
+            density (if (pos? area) (/ population area) 0)]
         [:div.sidebar-filters
          [:div.filter-info
           ;; [:p "Filter here the population you are analyzing."]
           [:div.demographic-stats
            (demographic-stat "Area" [:span (utils/format (int area)) " km" [:sup 2]])
            (demographic-stat "Density" [:span (utils/format density) " /km" [:sup 2]])
-           (demographic-stat "Total population" (utils/format population))]
+           (demographic-stat "Total population" (utils/format (int population)))]
           [:span.small
            "Demographic data source: "
            [:a {:href "http://www.worldpop.org.uk/" :target "attribution"} "WorldPop"]

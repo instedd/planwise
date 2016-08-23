@@ -7,7 +7,8 @@
 ;; Display
 
 (defn format [number]
-  (.toLocaleString number "en"))
+  (when number
+    (.toLocaleString number "en")))
 
 ;; Debounce functions
 
