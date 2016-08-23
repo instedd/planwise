@@ -6,6 +6,7 @@
             [clojure.string :refer [split capitalize join]]
             [planwise.client.projects.db :as db]
             [planwise.client.mapping :as maps]
+            [planwise.client.styles :as styles]
             [re-frame.utils :as c]))
 
 (def in-projects (path [:projects]))
@@ -25,7 +26,11 @@
  :projects/facility-types-received
  in-filter-definitions
  (fn [db [_ types]]
-   (assoc db :facility-type types)))
+   (let [types-with-colours (map (fn [type colour]
+                                   (assoc type :colour colour))
+                              (sort-by :value types)
+                              (cycle styles/facility-types-palette))]
+     (assoc db :facility-type types-with-colours))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project listing

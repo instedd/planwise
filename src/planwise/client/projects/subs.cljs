@@ -45,6 +45,23 @@
         :facilities (:list @facility-data))))))
 
 (register-sub
+ :projects/facilities-by-type
+ (fn [db [_ data]]
+   (let [facilities (reaction (get-in @db [:projects :current :facilities :list]))
+         types      (subscribe [:filter-definition :facility-type])]
+     (reaction
+       (->> @facilities
+         (group-by :type-id)
+         (map (fn [[type-id fs]]
+                (let [type (->> @types
+                              (filter #(= type-id (:value %)))
+                              (first))]
+                  [type fs])))
+         (sort-by (fn [[type fs]]
+                    (count fs)))
+         (reverse))))))
+
+(register-sub
  :projects/facilities-criteria
  (fn [db [_]]
    (reaction (db/facilities-criteria (get-in @db [:projects :current])))))
