@@ -43,7 +43,9 @@
  :datasets/begin-new-dataset
  in-datasets
  (fn [db [_]]
-   (assoc-in db [:state 1] :create-dialog)))
+   (-> db
+       (assoc-in [:state 1] :create-dialog)
+       (assoc :new-dataset-data nil))))
 
 (register-handler
  :datasets/cancel-new-dataset
@@ -56,7 +58,7 @@
  in-datasets
  (fn [db [_]]
    (api/load-resourcemap-info :datasets/resourcemap-info-loaded)
-   db))
+   (assoc-in db [:resourcemap :authorised?] nil)))
 
 (register-handler
  :datasets/resourcemap-info-loaded
@@ -66,66 +68,22 @@
        (assoc-in [:resourcemap :authorised?] (:authorised? data))
        (assoc-in [:resourcemap :collections] (:collections data)))))
 
+(register-handler
+ :datasets/update-new-dataset
+ in-datasets
+ (fn [db [_ field value]]
+   (assoc-in db [:new-dataset-data field] value)))
+
+(register-handler
+ :datasets/create-dataset
+ in-datasets
+ (fn [db [_]]
+   (assoc-in db [:state 1] :creating)))
+
 
 ;; ----------------------------------------------------------------------------
 ;; Old handlers
 ;; TODO: review!
-
-(register-handler
- :datasets/initialise!
- in-datasets
- (fn [db [_]]
-   (if-not (db/initialised? (:state db))
-     (api/load-datasets-info :datasets/info-loaded)
-     (assoc db :state :initialising))
-   db))
-
-(register-handler
- :datasets/reload-info
- in-datasets
- (fn [db [_]]
-   (c/log "Reloading datasets information")
-   (api/load-datasets-info :datasets/info-loaded)
-   (assoc db :selected db/empty-datasets-selected)))
-
-(register-handler
- :datasets/info-loaded
- in-datasets
- (fn [db [_ datasets-info]]
-   (let [server-status (map-server-status (:status datasets-info))]
-     (-> db
-         (assoc-in [:resourcemap :authorised?] (:authorised? datasets-info))
-         (assoc-in [:resourcemap :collections] (:collections datasets-info))
-         (assoc :state (db/server-status->state server-status)
-                :server-status server-status
-                :facility-count (:facility-count datasets-info))))))
-
-(register-handler
- :datasets/select-collection
- in-datasets
- (fn [db [_ coll]]
-   (if-not (= (:id coll) (get-in db [:selected :collection :id]))
-     (do
-       (api/load-collection-info (:id coll) :datasets/collection-info-loaded)
-       (-> db
-           (assoc-in [:selected :collection] coll)
-           (assoc-in [:selected :type-field] nil)
-           (assoc-in [:selected :fields] nil)))
-     db)))
-
-(register-handler
- :datasets/collection-info-loaded
- in-datasets
- (fn [db [_ collection-info]]
-   (-> db
-       (assoc-in [:selected :fields] (:fields collection-info))
-       (assoc-in [:selected :valid?] (:valid? collection-info)))))
-
-(register-handler
- :datasets/select-type-field
- in-datasets
- (fn [db [_ field]]
-   (assoc-in db [:selected :type-field] field)))
 
 (register-handler
  :datasets/start-import!

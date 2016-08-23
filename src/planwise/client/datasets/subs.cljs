@@ -42,6 +42,6 @@
    (reaction (get-in @db [:datasets :resourcemap]))))
 
 (register-sub
- :datasets/selected
+ :datasets/new-dataset-data
  (fn [db [_]]
-   (reaction (get-in @db [:datasets :selected]))))
+   (reaction (get-in @db [:datasets :new-dataset-data]))))

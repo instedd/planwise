@@ -42,31 +42,22 @@
 
 (s/defschema DatasetsViewModel
   "Datasets related portion of the client database"
-  {:state          [(s/one ListState "list")
-                    (s/one ViewState "view")]
-   :list           (s/maybe [Dataset])
-   :search-string  s/Str
-   :resourcemap    (s/maybe ResourcemapData)
-   :selected       s/Any})
-
-(def empty-datasets-selected
-  {:collection nil
-                                        ; The ID of the currently selected collection
-   :valid?     false
-                                        ; If the collection if valid for import
-   :fields     nil
-                                        ; Fields available for mapping to facility type
-   :type-field nil})
-                                        ; Field selected for mapping facility type
+  {:state            [(s/one ListState "list")
+                      (s/one ViewState "view")]
+   :list             (s/maybe [Dataset])
+   :search-string    s/Str
+   :resourcemap      (s/maybe ResourcemapData)
+   :new-dataset-data (s/maybe {(s/optional-key :collection) s/Any
+                               (s/optional-key :type-field) s/Any})})
 
 (def initial-db
-  {:state          nil
-   :list           nil                  ; List of available datasets
-   :search-string  ""                   ; Dataset search string
+  {:state            nil
+   :list             nil                  ; List of available datasets
+   :search-string    ""                   ; Dataset search string
 
-   :resourcemap    nil
+   :resourcemap      nil
 
-   :selected       empty-datasets-selected})
+   :new-dataset-data nil})
 
 
 (defn show-dialog?
@@ -151,3 +142,8 @@
 (defn resmap-authorised?
   [resmap]
   (:authorised? resmap))
+
+(defn new-dataset-valid?
+  [new-dataset-data]
+  (and (some? (:collection new-dataset-data))
+       (some? (:type-field new-dataset-data))))

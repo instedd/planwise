@@ -1,27 +1,6 @@
 @import 'defs';
 
 article.datasets {
-  .dataset-header {
-    position: relative;
-    z-index: 2;
-    padding: 10px 15px;
-    background-color: $gray1;
-    box-shadow: 0 2px 2px rgba(0,0,0,0.2);
-    height: 90px;
-    h2 {
-      font-size: 20px;
-      font-weight: normal;
-    }
-    h3 {
-      font-weight: normal;
-    }
-    .bottom-right {
-      position: absolute;
-      right: 10px;
-      bottom: 10px;
-    }
-  }
-
   ul.collections {
     list-style: none;
     margin: 0 10px 0 0;
@@ -60,26 +39,26 @@ article.datasets {
       font-size: 90%;
     }
   }
-
-  .rc-dropdown {
-    width: 300px;
-  }
 }
 
 .new-dataset {
-  min-width: 500px;
+  width: 400px;
   p {
-    margin-top: 25px;
-    margin-bottom: 25px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+  p.warning {
+    font-style: italic;
+    color: $gray-text;
   }
   .loading {
-    padding-top: 150px;
-    padding-bottom: 150px;
+    padding-top: 100px;
+    padding-bottom: 100px;
   }
   .content {
     margin: 0 0 10px 0;
     padding: 10px 0 0 0;
-    height: 400px;
+    max-height: 350px;
     overflow: auto;
   }
 }
