@@ -42,6 +42,16 @@
                                   (mapv (fn [[id isochrone]] {:id id, :isochrone isochrone})))]
             (callback (clj->js new-isochrones))))))))
 
+(defn marker-popup [{:keys [name type processing-status], :as marker}]
+  (str
+    "<b>" name "</b>"
+    "<br/>"
+    type
+    (when (= "no-road-network" processing-status)
+      (str
+        "<br/>" "<br/>"
+        "<i>" "This facility is too far from the closest road and it is not being evaluated for coverage." "</i>"))))
+
 (defn project-list-page []
   (let [view-state (subscribe [:projects/view-state])
         projects (subscribe [:projects/list])
@@ -65,7 +75,8 @@
         map-bbox (subscribe [:projects/map-view :bbox])
         demand-map-key (subscribe [:projects/demand-map-key])
         map-geojson (subscribe [:projects/map-geojson])
-        marker-popup-fn #(str (:name %) "<br/>" (:type %))
+        marker-popup-fn marker-popup
+        marker-style-fn #(when (= "no-road-network" (:processing-status %)) {:fillColor styles/invalid-facility-type})
         isochrones (subscribe [:projects/facilities :isochrones])
         project-facilities-criteria (subscribe [:projects/facilities-criteria])
         project-transport-time (subscribe [:projects/transport-time])
@@ -109,11 +120,12 @@
                                      (for [[type facilities] @facilities-by-type]
                                        [:point-layer {:points facilities
                                                       :popup-fn marker-popup-fn
+                                                      :style-fn marker-style-fn
                                                       :radius 4
-                                                      :color (:colour type)
+                                                      :fillColor (:colour type)
                                                       :stroke false
                                                       :fillOpacity 1}]))
-                
+
                 layer-isochrones   (when (= :transport selected-tab)
                                       [:geojson-bbox-layer { :levels mapping/geojson-levels
                                                               :fillOpacity 1
@@ -130,6 +142,7 @@
                                    [layer-isochrones])]
 
             (into [map-widget map-props] (filterv some? map-layers)))]]
+
 
         (= :scenarios selected-tab)
         [:div

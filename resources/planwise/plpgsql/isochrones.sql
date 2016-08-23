@@ -78,9 +78,11 @@ begin
   facility_node := (SELECT closest_node(the_geom) FROM facilities WHERE id = f_id);
   facility_geom := (select the_geom from facilities where id = f_id);
   closest_node_geom := (select the_geom from ways_vertices_pgr where id = facility_node);
+
   IF ST_Distance(ST_GeogFromWKB(facility_geom), ST_GeogFromWKB(closest_node_geom)) > 1000 THEN
-    RAISE NOTICE 'error: Facility % not processed, its too far from the road network.', f_id;
-    RETURN 'error: Facility ' || f_id || ' not processed, its too far from the road network.';
+    UPDATE facilities SET processing_status = 'no-road-network' WHERE id = f_id;
+    RAISE NOTICE 'warning: Facility % not processed, its too far from the road network.', f_id;
+    RETURN 'warning: Facility ' || f_id || ' not processed, its too far from the road network.';
   END IF;
 
   insert into edges_agg_cost (
@@ -157,6 +159,8 @@ begin
     from_cost      := to_cost;
     to_cost        := to_cost + threshold_jump * 60;
   end loop;
+
+  UPDATE facilities SET processing_status = 'ok' WHERE id = f_id;
 
   delete from edges_agg_cost;
 

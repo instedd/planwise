@@ -25,7 +25,9 @@ ORDER BY name;
 
 -- :name facilities-by-criteria :? :*
 SELECT
-facilities.id as id, facilities.name as name, facility_types.name as type, facility_types.id as "type-id", lat, lon
+facilities.id as id, facilities.name as name, facility_types.name as type,
+facility_types.id as "type-id", lat, lon,
+facilities.processing_status AS "processing-status"
 FROM facilities
 INNER JOIN facility_types ON facility_types.id = facilities.type_id
 WHERE 1=1
