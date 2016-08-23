@@ -5,6 +5,9 @@ set -euo pipefail
 
 # Used in facilities.clj
 
+# FIXME: adapt for normalized population rasters if necessary
+
+
 if [ $# -lt 1 ]; then
   echo "Usage: $0 FACILITY_POLYGON_ID"
 	exit 1

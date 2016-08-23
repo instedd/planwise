@@ -220,7 +220,7 @@
   (condp = type
     :zoom (.zoom js/L.control)
     :attribution (.attribution js/L.control #js {:prefix false})
-    :legend (.legend js/L.control #js {:maxPopulation (:max-population props)} )
+    :legend (.legend js/L.control #js {:legendMax (:legend-max props)} )
     (throw (str "Invalid control type " type))))
 
 (def default-controls [:zoom :attribution :legend])

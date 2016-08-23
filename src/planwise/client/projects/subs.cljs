@@ -88,6 +88,7 @@
  (fn [db [_ field]]
    (let [map-view (reaction (get-in @db [:projects :current :map-view]))
          current-region-id (reaction (get-in @db [:projects :current :project-data :region-id]))
+         current-region-max-population (reaction (get-in @db [:projects :current :project-data :region-max-population]))
          current-region (reaction (get-in @db [:regions @current-region-id]))]
      (reaction
        (case field
@@ -99,7 +100,8 @@
                  (:zoom @map-view)
                  (+ 4 (:admin-level @current-region))
                  (:zoom db/initial-position-and-zoom))
-         :bbox (:bbox @current-region))))))
+         :bbox (:bbox @current-region)
+         :legend-max @current-region-max-population)))))
 
 (register-sub
  :projects/map-geojson

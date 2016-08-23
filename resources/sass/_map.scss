@@ -22,7 +22,7 @@
     }
 
     .color-bar {
-      background-color: #E3E6DE;
+      background-color: #DCDFD7;
       height: 15px;
       width: 60%;
       margin: 0 10px 0 10px;
@@ -32,7 +32,9 @@
       :first-child {
         height: 100%;
         width: 100%;
-        opacity: 0.3;
+        opacity: 0.5;
+
+        // this gradient should be kept in sync with mapserver's class definitions.
         background: linear-gradient(to right, #FFC800 0%,#FF9600 8%,#FF6400 20%,#FF3200 39%,#FF1400 59%,#FF0000 100%);
       }
     }
