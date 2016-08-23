@@ -34,6 +34,8 @@ services:
       - redis
     volumes:
       - ./google_maps.key:/app/config/google_maps.key
+      - ./initial_setup/setup.rake:/app/lib/tasks/setup.rake
+      - ./initial_setup/kenya-facilities.csv:/app/lib/tasks/kenya-facilities.csv
     networks:
       default:
         aliases:
