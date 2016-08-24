@@ -39,7 +39,9 @@
                     (map process-svg)
                     (wrap-in-svg))]
     (spit target
-          (with-out-str (xml/emit-element svg)))))
+          (str
+            "<!-- Auto-generated via build-icons lein task -->\n"
+            (with-out-str (xml/emit-element svg))))))
 
 (defn -main [& args]
   (timbre/set-level! :info)
