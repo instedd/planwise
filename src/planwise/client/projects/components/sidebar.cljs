@@ -46,7 +46,7 @@
                              #(dispatch [:projects/toggle-filter :facilities field %]))]
         [:div.sidebar-filters
          [:div.filter-info
-          [:p "Select the facilities that are satisfying the demand you are analyzing."]
+          [:p "Select the types of facility to include in your analysis. We will use those to calculate the existing coverage."]
           [:p
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
@@ -83,7 +83,7 @@
     (fn []
       [:div.sidebar-filters
        [:div.filter-info
-        [:p "Indicate here the acceptable travel times to facilities. We will
+        [:p "Indicate here the acceptable one-way travel time to facilities. We will
         use that to calculate who already has access to the services that you
         are analyzing."]]
 
