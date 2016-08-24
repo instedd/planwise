@@ -19,7 +19,7 @@ for id in $REGION_IDS; do
   TARGET=${DATA_PATH}/populations/${id}.tif
 
   if [[ ! -e $TARGET || -z `gdalinfo $TARGET | grep -e POPULATION_SUM -e POPULATION_MAX` ]]; then
-    TMP_FILE=`mktemp`
+    TMP_FILE=${TARGET}-unscaled
 
     echo " Warping population for ${id}"
     gdalwarp -q \
