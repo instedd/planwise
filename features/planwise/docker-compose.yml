@@ -14,7 +14,7 @@ services:
     image: instedd/planwise:latest
     environment:
       DEMO_TILE_URL: "http://mapcache/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png"
-      DATA_PATH: /app/data
+      DATA_PATH: /data
       JAR_PATH: /app/lib/planwise-0.5.0-SNAPSHOT-standalone.jar
       DATABASE_URL: "jdbc:postgresql://planwisedb/routing?user=planwise&password=planwise"
       POSTGRES_PASSWORD: planwise
@@ -25,11 +25,13 @@ services:
       CALCULATE_DEMAND: 'false'
       RASTER_ISOCHRONES: 'false'
       GUISSO_URL: http://guisso-local.instedd.org
-      RESMAP_URL: http://resmap-local.instedd.org
+      RESOURCEMAP_URL: http://resmap-local.instedd.org
     env_file:
       - ./guisso.env
     depends_on:
       - planwisedb
+    volumes_from:
+      - mapserver-data
     networks:
       default:
         aliases:

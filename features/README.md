@@ -27,6 +27,8 @@
 
 `stop.sh`/`start.sh` will recreate all the containers but preserving state.
 
+`pull.sh` will pull all images that are used for the containers.
+
 ## Run specs
 
 Connect to vnc if you want to view the progress.
