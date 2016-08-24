@@ -293,7 +293,15 @@ article.project-view {
     }
 
     .rc-dropdown {
-      width: 100%;
+      width: 85%;
+    }
+
+    .icon {
+      width: 30px;
+      height: 30px;
+      fill: $gray3;
+      vertical-align: middle;
+      margin: 0 5px;
     }
   }
 }
