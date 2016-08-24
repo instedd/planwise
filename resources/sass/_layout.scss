@@ -62,20 +62,14 @@ header {
 
   .logo {
     flex-grow: 0;
-    background-image: url('/images/logo.png');
-    background-repeat: no-repeat;
-    background-position: center left;
-    padding-left: 45px;
     display: inline-block;
     height: 40px;
+    width: 150px;
     margin: ($header-height - 40px) / 2;
 
-    h1 {
-      font-size: 18px;
-      font-weight: bold;
-      text-transform: uppercase;
-      margin: 10px 10px;
-      color: $gray3;
+    svg.icon {
+      height: 40px;
+      width: 150px;
     }
   }
 
