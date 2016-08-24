@@ -10,7 +10,7 @@
 
 
 (def nav-items
-  [{:item #{:home :projects} :href (routes/home) :title "Projects"}
+  [{:item :home :href (routes/home) :title "Projects"}
    {:item :datasets :href (routes/datasets) :title "Datasets"}])
 
 (def current-user-email
