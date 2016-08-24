@@ -16,6 +16,8 @@ services:
       RAILS_CONFIG__action_mailer__smtp_settings__port: 25
       RAILS_CONFIG__action_mailer__smtp_settings__authentication: plain
       RAILS_CONFIG__action_mailer__smtp_settings__openssl_verify_mode: none
+    volumes:
+      - ./telemetry.yml:/app/config/telemetry.yml
     networks:
       default:
         aliases:
