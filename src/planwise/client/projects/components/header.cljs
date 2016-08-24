@@ -7,14 +7,17 @@
 (defn project-tab-items [project-id]
   (let [route-params {:id project-id}]
     [{:item :demographics
-        :href (routes/project-demographics route-params)
-        :title "Demographics"}
+      :href (routes/project-demographics route-params)
+      :title "Demographics"
+      :icon "demographics"}
      {:item :facilities
       :href (routes/project-facilities route-params)
-      :title "Facilities"}
+      :title "Facilities"
+      :icon "location"}
      {:item :transport
       :href (routes/project-transport route-params)
-      :title "Transport Means"}
+      :title "Transport Means"
+      :icon "transport-means"}
      #_{:item :scenarios
         :href (routes/project-scenarios route-params)
         :title "Scenarios"}]))
