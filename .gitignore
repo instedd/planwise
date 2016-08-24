@@ -13,7 +13,7 @@ pom.xml.asc
 /.dir-locals.el
 /profiles.clj
 dev/local.clj
-/cpp/count-population
+/cpp/aggregate-population
 /cpp/calculate-demand
 
 *.pyc

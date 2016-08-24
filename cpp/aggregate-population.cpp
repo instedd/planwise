@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   GDALAllRegister();
 
   if (argc < 1) {
-    std::cout << "Usage: count-population RASTERFILE";
+    std::cout << "Usage: aggregate-population RASTERFILE";
     exit(1);
   }
 
@@ -42,8 +42,9 @@ int main(int argc, char *argv[]) {
   int nXValid, nYValid, xOffset, yOffset;
 
   float* buffer = (float*) CPLMalloc(sizeof(float)*xBlockSize*yBlockSize);
-  float acum = 0;
   float nodata = band->GetNoDataValue();
+  float max = 0;
+  float sum = 0;
 
   for (int iXBlock = 0; iXBlock < nXBlocks; ++iXBlock) {
     xOffset = iXBlock*xBlockSize;
@@ -61,12 +62,15 @@ int main(int argc, char *argv[]) {
         for (int iX = 0; iX < nXValid; ++iX) {
           int iBuff = xBlockSize*iY+iX;
           if (buffer[iBuff] != nodata) {
-            acum += buffer[iBuff];
+            sum += buffer[iBuff];
+            if (buffer[iBuff] > max) {
+              max = buffer[iBuff];
+            }
           }
         }
       }
     }
   }
 
-  std::cout << ((long)acum) << std::endl;
+  std::cout << ((long)sum) << " " << ceil(max) << std::endl;
 }

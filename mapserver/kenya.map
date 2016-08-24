@@ -109,6 +109,8 @@ MAP
       END
     END
 
+    # IMPORTANT!
+    # Class definitions should be kept in sync with the map's legend stylesheet
     CLASS
       NAME "lt5"
       EXPRESSION ([pixel] < 5)

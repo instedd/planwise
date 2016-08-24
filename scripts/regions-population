@@ -8,8 +8,8 @@ DATA_PATH=${DATA_PATH:-data}
 # Creates a raster file data/populations/REGIONID.tif with the population values
 # of each REGIONID in the regions table
 
-echo "Precalculating population count per region"
-REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions WHERE total_population IS NULL;')"
+echo "Precalculating population aggregates per region"
+REGION_IDS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id FROM regions WHERE total_population IS NULL OR max_population IS NULL;')"
 echo " Region ids: ${REGION_IDS}"
 POPULATION_FILE="${DATA_PATH}/KEN_popmap15_v2b.tif"
 
@@ -17,20 +17,36 @@ mkdir -p ${DATA_PATH}/populations
 
 for id in $REGION_IDS; do
   TARGET=${DATA_PATH}/populations/${id}.tif
-  if [[ ! -e $TARGET ]]; then
+
+  if [[ ! -e $TARGET || -z `gdalinfo $TARGET | grep -e POPULATION_SUM -e POPULATION_MAX` ]]; then
+    TMP_FILE=`mktemp`
+
     echo " Warping population for ${id}"
     gdalwarp -q \
       -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -crop_to_cutline \
       -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
       -csql "SELECT the_geom FROM regions WHERE id = ${id};" \
-      $POPULATION_FILE $TARGET
+      $POPULATION_FILE $TMP_FILE
+
+    echo " Aggregating population for ${id}"
+    IFS=' ' read -a AGGREGATES <<< $(${BIN_PATH}/aggregate-population ${TMP_FILE})
+    POPULATION_SUM=${AGGREGATES[0]}
+    POPULATION_MAX=${AGGREGATES[1]}
+
+    echo " Normalizing raster file scale for ${id}"
+    gdal_translate -ot Byte -scale 0 $POPULATION_MAX 0 255 $TMP_FILE $TARGET
+
+    echo " Storing aggregates metadata for ${id}"
+    gdal_edit.py -mo "POPULATION_SUM=$POPULATION_SUM" -mo "POPULATION_MAX=$POPULATION_MAX" $TARGET
+
+    rm $TMP_FILE
   fi;
 
-  echo " Counting population for ${id}"
-  POPULATION_COUNT=$(${BIN_PATH}/count-population ${TARGET})
+  TOTAL_POPULATION=`gdalinfo $TARGET | grep POPULATION_SUM | cut -d = -f2`
+  MAX_POPULATION=`gdalinfo $TARGET | grep POPULATION_MAX | cut -d = -f2`
 
   echo " Updating population for ${id}"
   psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A \
-    -c "UPDATE regions SET total_population = ${POPULATION_COUNT} WHERE id = ${id}";
+       -c "UPDATE regions SET total_population = ${TOTAL_POPULATION}, max_population = ${MAX_POPULATION} WHERE id = ${id}";
 done;

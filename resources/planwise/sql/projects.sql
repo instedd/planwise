@@ -20,6 +20,7 @@ SELECT
   projects.stats,
   regions.name AS "region-name",
   regions.total_population AS "region-population",
+  regions.max_population AS "region-max-population",
   owner_id AS "owner-id"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
@@ -37,6 +38,7 @@ SELECT
   projects.filters,
   regions.name AS "region-name",
   regions.total_population AS "region-population",
+  regions.max_population AS "region-max-population",
   ST_Area(regions.the_geom::geography) / 1000000 as "region-area-km2",
   projects.owner_id AS "owner-id"
 FROM projects

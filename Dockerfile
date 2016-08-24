@@ -16,7 +16,7 @@ ENV SCRIPTS_PATH /app/scripts/
 
 # Add project compiled binaries
 ADD cpp/calculate-demand /app/bin/calculate-demand
-ADD cpp/count-population /app/bin/count-population
+ADD cpp/aggregate-population /app/bin/aggregate-population
 ENV BIN_PATH /app/bin/
 
 # Add uberjar with app

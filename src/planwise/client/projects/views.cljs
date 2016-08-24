@@ -72,6 +72,7 @@
         map-position (subscribe [:projects/map-view :position])
         map-zoom (subscribe [:projects/map-view :zoom])
         map-bbox (subscribe [:projects/map-view :bbox])
+        map-legend-max (subscribe [:projects/map-view :legend-max])
         demand-map-key (subscribe [:projects/demand-map-key])
         map-geojson (subscribe [:projects/map-geojson])
         marker-popup-fn marker-popup
@@ -95,6 +96,7 @@
           (let [map-props   {:position @map-position
                              :zoom @map-zoom
                              :min-zoom 5
+                             :legend-max @map-legend-max
                              :on-position-changed
                              #(dispatch [:projects/update-position %])
                              :on-zoom-changed

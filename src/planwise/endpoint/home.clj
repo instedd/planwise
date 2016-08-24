@@ -55,6 +55,7 @@
       (include-js "/assets/leaflet/leaflet.js")
       (include-js "/js/leaflet.pathgroup.js")
       (include-js "/js/leaflet.bboxloader.js")
+      (include-js "/js/leaflet.legend.js")
       (include-js "/js/main.js")
       [:script "planwise.client.core.main();"]])))
 
