@@ -1,7 +1,57 @@
 @import 'defs';
 
-$project-head-height: 110px;
+$project-head-height: 116px;
 $project-sidebar-width: 300px;
+$search-box-height: 42px;
+$project-header-left-margin: 15px;
+
+.search-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 15px 10px;
+  display: flex;
+  flex-direction: row;
+  background-color: $gray1;
+  height: $search-box-height;
+  box-shadow: 0 3px 2px rgba(0, 0, 0, 0.3);
+  z-index: 4;
+
+  > div {
+    border-right: 1px solid $gray2;
+    margin-right: 10px;
+    padding-right: 10px;
+    text-align: right;
+    padding: 10px 15px 5px 10px;
+    min-width: 5em;
+    white-space: nowrap;
+  }
+
+  input[type=search] {
+    display: block;
+    flex-grow: 10;
+    padding: 5px;
+    border: none;
+    background: transparent;
+    margin-right: 10px;
+  }
+}
+
+.empty-list {
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  p {
+    font-size: 20px;
+    color: $gray3;
+    font-weight: bold;
+    margin: 30px 0;
+  }
+}
 
 .projects-list {
   list-style: none;
@@ -139,9 +189,13 @@ article.project-view {
     position: relative;
     z-index: 2;
     box-shadow: 0 2px 2px rgba(0,0,0,0.2);
+
+    .sub-link {
+      margin-left: $project-header-left-margin;
+    }
     h2 {
       color: $black;
-      padding: 25px 15px 15px 15px;
+      padding: 25px 0 0 $project-header-left-margin;
       font-size: 20px;
       font-weight: normal;
       margin: 0;
@@ -258,6 +312,12 @@ article.project-view {
 
 .sidebar-filters {
   background-color: $gray1;
+
+  .nav-buttons {
+    color: $orange;
+    width: 50%;
+    margin: 40px auto auto auto;
+  }
 
   .filter-info {
     background-color: $gray2;

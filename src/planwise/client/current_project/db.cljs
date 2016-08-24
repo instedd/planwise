@@ -78,7 +78,13 @@
 
    :dataset            (asdf/new nil)
 
-   :project-data       nil})                      ; see ProjectData above
+   :project-data       nil                      ; see ProjectData above
+   :wizard             {
+                        :set false
+                        :tabs {
+                               :demographics    :unvisited
+                               :facilities      :unvisited
+                               :transport-means :unvisited}}})
 
 
 ;; Project data manipulation functions
