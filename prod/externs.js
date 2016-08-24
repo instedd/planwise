@@ -867,7 +867,8 @@ var L = {
       "setPrefix": function () {},
       "addAttribution": function () {},
       "removeAttribution": function () {}
-    }
+    },
+    "legend": function () {}
   },
   "PosAnimation": function () {}
 };
