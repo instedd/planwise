@@ -39,7 +39,9 @@
 
 (defn datasets-list
   [datasets]
-  [:ul.dataset-list
-   (for [dataset datasets]
-     [:li {:key (:id dataset)}
-      [dataset-card dataset]])])
+  [:div
+   [search-box (count datasets)]
+   [:ul.dataset-list
+    (for [dataset datasets]
+      [:li {:key (:id dataset)}
+       [dataset-card dataset]])]])

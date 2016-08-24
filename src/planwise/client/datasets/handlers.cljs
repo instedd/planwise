@@ -44,6 +44,12 @@
        (assoc :list datasets)
        (assoc-in [:state 0] :loaded))))
 
+(register-handler
+ :datasets/search
+ in-datasets
+ (fn [db [_ value]]
+   (assoc db :search-string value)))
+
 
 ;; ----------------------------------------------------------------------------
 ;; New dataset dialog
@@ -103,9 +109,13 @@
    (let [view-state (get-in db [:state 1])
          new-db (if (= :creating view-state)
                   (assoc-in db [:state 1] :list)
-                  db)]
+                  db)
+         coll-id (:collection-id dataset)]
      ;; optimistic update
-     (update new-db :list #(conj % dataset)))))
+     (-> new-db
+         (update-in [:resourcemap :collections]
+                    (fn [colls] (filter #(not= coll-id (:id %)) colls)))
+         (update :list #(conj % dataset))))))
 
 
 ;; ----------------------------------------------------------------------------

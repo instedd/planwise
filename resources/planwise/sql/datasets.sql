@@ -4,6 +4,7 @@ SELECT
   name,
   description,
   facility_count AS "facility-count",
+  collection_id AS "collection-id",
   owner_id AS "owner-id"
 FROM datasets
 WHERE owner_id = :user-id

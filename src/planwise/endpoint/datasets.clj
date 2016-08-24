@@ -19,8 +19,10 @@
   (#{"select_one"} (:kind field)))
 
 (defn find-usable-collections
-  [resmap user-ident]
-  (let [collections (resmap/list-user-collections resmap user-ident)
+  [resmap user-ident exclude-ids]
+  (let [exclude-ids (set exclude-ids)
+        collections (resmap/list-user-collections resmap user-ident)
+        collections (filter #(not (exclude-ids (:id %))) collections)
         with-usable-fields (fn [coll]
                              (let [coll-id (:id coll)
                                    fields (resmap/list-collection-fields resmap user-ident coll-id)
@@ -39,9 +41,12 @@
 
    (GET "/resourcemap-info" request
      (let [user-ident (util/request-ident request)
+           user-id (util/request-user-id request)
            authorised? (resmap/authorised? resmap user-ident)
+           existing-sets (datasets/list-datasets-for-user datasets user-id)
+           exclude-collection-ids (map :collection-id existing-sets)
            collections (when authorised?
-                         (find-usable-collections resmap user-ident))]
+                         (find-usable-collections resmap user-ident exclude-collection-ids))]
        (response {:authorised? authorised?
                   :collections collections})))
 
@@ -58,7 +63,7 @@
                           :mappings {:type type-field}}]
        (info "Creating new dataset of collection" coll-id "for the user" user-email)
        (let [dataset (datasets/create-dataset! datasets dataset-templ)]
-         (response (select-keys dataset [:id :name :description :facility-count :owner-id])))))
+         (response (select-keys dataset [:id :name :description :facility-count :collection-id :owner-id])))))
 
    ;; TODO: old endpoints, review!
 
