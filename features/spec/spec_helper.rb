@@ -19,6 +19,17 @@ require 'capybara/rspec'
 require 'capybara-screenshot/rspec'
 require 'selenium-webdriver'
 require 'site_prism'
+require 'byebug'
+require 'pg'
+require 'active_record'
+
+ActiveRecord::Base.establish_connection(
+  :adapter  => 'postgresql',
+  :database => 'routing',
+  :username => 'planwise',
+  :password => 'planwise',
+  :host     => 'planwisedb')
+
 Dir["#{__dir__}/support/**/*.rb"].each { |f| require f }
 
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
@@ -46,6 +57,14 @@ RSpec.configure do |config|
   end
 
   config.include FeatureSpecHelpers
+
+  config.before(:each) do
+    app_tables = ActiveRecord::Base.connection.tables.select {
+      |t| t !~ /^(ragtime_migrations|osm_|regions|relations_ways|spatial_ref_sys|ways_)/
+    }
+
+    ActiveRecord::Base.connection.execute "TRUNCATE #{app_tables.join(", ")} RESTART IDENTITY"
+  end
 
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest

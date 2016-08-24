@@ -6,3 +6,6 @@ gem 'capybara-screenshot'
 gem 'selenium-webdriver'
 gem 'site_prism'
 gem 'byebug'
+gem 'pg'
+gem 'activerecord'
+
