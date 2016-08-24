@@ -25,6 +25,8 @@
 
 `down.sh` will remove all data and state created by `up.sh`
 
+`stop.sh`/`start.sh` will recreate all the containers but preserving state.
+
 ## Run specs
 
 Connect to vnc if you want to view the progress.
