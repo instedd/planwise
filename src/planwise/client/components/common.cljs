@@ -6,6 +6,15 @@
   [:div.loading
    [:h3 "Loading..."]])
 
+;; SVG based icons
+
+(defn icon [name & [class]]
+  [:svg {:class (or class "icon")
+         ; Support for :xlinkHref is present in React 0.14+, but reagent 0.5.1 is bundled with 0.13
+         ; Change the dangerouslySetInnerHTML call to the following content after upgrading
+         ; [:use {:xlinkHref (str "#icon-" name)}]])
+         :dangerouslySetInnerHTML {:__html (str "<use xlink:href=\"#icon-" name "\" />")}}])
+
 ;; Modal dialog
 
 (defn modal-dialog [{:keys [on-backdrop-click] :as props} & children]
