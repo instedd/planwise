@@ -104,10 +104,10 @@
 
                 layer-region-boundaries  (if @map-geojson
                                            [:geojson-layer {:data @map-geojson
-                                                            :color styles/green
+                                                            :color styles/black
                                                             :fit-bounds true
-                                                            :fillOpacity 0.1
-                                                            :weight 0}])
+                                                            :fillOpacity 0
+                                                            :weight 2}])
 
                 layer-demographics (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
                                           population-map (mapping/region-map project-region-id)]
@@ -115,7 +115,7 @@
                                                         :transparent true
                                                         :layers mapping/layer-name
                                                         :DATAFILE (or demand-map population-map)
-                                                        :opacity 0.5}])
+                                                        :opacity 0.6}])
 
                 layers-facilities  (when (#{:facilities :transport} selected-tab)
                                      (for [[type facilities] @facilities-by-type]
@@ -131,12 +131,12 @@
                                       [:geojson-bbox-layer { :levels mapping/geojson-levels
                                                               :fillOpacity 1
                                                               :weight 2
-                                                              :color styles/green
-                                                              :group {:opacity 0.4}
+                                                              :color styles/black
+                                                              :group {:opacity 0.2}
                                                               :featureFn feature-fn
                                                               :callback @callback-fn}])
 
-                map-layers (concat [mapping/gray-base-tile-layer
+                map-layers (concat [mapping/bright-base-tile-layer
                                     layer-region-boundaries
                                     layer-demographics]
                                    layers-facilities

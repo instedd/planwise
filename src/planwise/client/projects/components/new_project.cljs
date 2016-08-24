@@ -5,7 +5,6 @@
             [clojure.string :as str]
             [leaflet.core :refer [map-widget]]
             [planwise.client.mapping :refer [default-base-tile-layer
-                                             gray-base-tile-layer
                                              static-image
                                              bbox-center]]
             [planwise.client.components.common :as common]

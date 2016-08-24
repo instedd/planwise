@@ -2,6 +2,10 @@
   mix-blend-mode: multiply;
 }
 
+.leaflet-overlay-pane {
+  mix-blend-mode: multiply;
+}
+
 .legend {
   background-color: $white;
   color: $gray-text;
@@ -32,10 +36,10 @@
       :first-child {
         height: 100%;
         width: 100%;
-        opacity: 0.5;
+        opacity: 0.6;
 
         // this gradient should be kept in sync with mapserver's class definitions.
-        background: linear-gradient(to right, #FFC800 0%,#FF9600 8%,#FF6400 20%,#FF3200 39%,#FF1400 59%,#FF0000 100%);
+        background: linear-gradient(to right, #FFC800 0%,#FFC700 8%,#FFC100 20%,#FFAA00 39%,#FF8500 59%,#FF0800 100%);
       }
     }
   }
