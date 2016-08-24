@@ -3,7 +3,7 @@ FROM java:8u91-jre
 # Install package dependencies and add precompiled binary
 RUN for i in {1..5}; do \
        (apt-get update \
-        && apt-get -y install postgresql-client libboost-program-options-dev libpq-dev gdal-bin \
+        && apt-get -y install postgresql-client libboost-program-options-dev libpq-dev gdal-bin python-gdal \
         && break) \
        || (sleep 5; false); done \
   && apt-get clean \
