@@ -37,14 +37,6 @@
      "/api/facilities/"
      (json-request (process-filters filters) handlers)))
 
-(defn fetch-facilities-with-isochrones [filters isochrone-options & handlers]
-  (GET
-    "/api/facilities/with-isochrones"
-    (json-request
-      (merge isochrone-options (process-filters filters))
-      handlers
-      :mapper-fn (partial merge isochrone-options))))
-
 (defn fetch-isochrones-in-bbox [filters isochrone-options & handlers]
   (POST
     "/api/facilities/bbox-isochrones"

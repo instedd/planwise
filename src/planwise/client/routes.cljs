@@ -8,8 +8,6 @@
 
 (defroute home "/" []
   (dispatch [:navigate {:page :home}]))
-(defroute playground "/playground" []
-  (dispatch [:navigate {:page :playground}]))
 (defroute project-demographics "/projects/:id" [id]
   (dispatch [:navigate {:page :projects, :id id, :section :demographics}]))
 (defroute project-facilities "/projects/:id/facilities" [id]

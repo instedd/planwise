@@ -44,16 +44,6 @@
                          :label (:name type)})
                       types))))
 
-   (GET "/with-isochrones" [& params]
-     (let [criteria   (facilities-criteria params)
-           isochrone  (isochrone-criteria params)
-           facilities (facilities/list-with-isochrones service isochrone criteria)
-           region     (:region params)
-           demand     (maps/demand-map maps-service region facilities)]
-       (response
-         (assoc demand
-                :facilities facilities))))
-
    (ANY "/bbox-isochrones" [& params]
      (let [criteria   (facilities-criteria params)
            isochrone  (isochrone-criteria params)

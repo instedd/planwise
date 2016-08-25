@@ -1,6 +1,5 @@
 (ns planwise.client.handlers
   (:require [planwise.client.db :as db]
-            [planwise.client.playground.handlers :as playground]
             [planwise.client.projects.handlers :as projects]
             [planwise.client.datasets.handlers]
             [planwise.client.regions.handlers :as regions]
@@ -30,10 +29,6 @@
 
 (defmethod on-navigate :datasets [db _ _]
   (dispatch [:datasets/load-datasets])
-  db)
-
-(defmethod on-navigate :playground [db _ _]
-  (playground/fetch-facilities-with-isochrones :immediate (:playground db))
   db)
 
 (defmethod on-navigate :default [db _ _]

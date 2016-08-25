@@ -3,8 +3,7 @@
   (:require [re-frame.core :refer [register-sub]]
             [planwise.client.projects.subs]
             [planwise.client.datasets.subs]
-            [planwise.client.regions.subs]
-            [planwise.client.playground.subs]))
+            [planwise.client.regions.subs]))
 
 
 ;; Subscriptions
