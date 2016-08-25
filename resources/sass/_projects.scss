@@ -203,6 +203,11 @@ article.project-view {
         &.active,
         &.active:hover {
           border-bottom: 3px solid $green;
+          a,
+          a:hover {
+            color: $green;
+            fill: $green;
+          }
         }
 
         &:hover {
@@ -214,6 +219,7 @@ article.project-view {
         a:hover {
           text-decoration: none;
           color: $gray3;
+          fill: $gray3;
           font-size: 14px;
         }
       }
@@ -229,10 +235,7 @@ article.project-view {
       > div {
         text-align: right;
         font-size: 14px;
-        margin-top: 13px;
-        > a {
-          margin-right: 10px;
-        }
+        margin-right: 5px;
       }
     }
   }
@@ -321,6 +324,10 @@ article.project-view {
     border-top: 1px solid $gray2;
     position: relative;
 
+    hr {
+      color: $gray2;
+    }
+
     legend {
       font-size: 14px;
       font-weight: bold;
@@ -330,13 +337,31 @@ article.project-view {
     }
 
     > div {
+      line-height: 2em;
       input[type=checkbox] {
+        margin-right: 5px;
+        margin-top: 7px;
+        float: right;
+      }
+      .filter-colour {
+        height: 10px;
+        width: 10px;
+        display: inline-block;
+        border-radius: 50%;
         margin-right: 5px;
       }
     }
 
     .rc-dropdown {
-      width: 100%;
+      width: 85%;
+    }
+
+    .icon {
+      width: 30px;
+      height: 30px;
+      fill: $gray3;
+      vertical-align: middle;
+      margin: 0 5px;
     }
   }
 }

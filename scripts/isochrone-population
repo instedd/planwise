@@ -5,6 +5,9 @@ set -euo pipefail
 
 # Used in facilities.clj
 
+# FIXME: adapt for normalized population rasters if necessary
+
+
 if [ $# -lt 1 ]; then
   echo "Usage: $0 FACILITY_POLYGON_ID"
 	exit 1
@@ -30,5 +33,6 @@ gdalwarp -q \
   -of VRT \
   $POPULATION_FILE $VRT_TARGET
 
-echo $(${BIN_PATH}/count-population ${VRT_TARGET})
+IFS=' ' read -a AGGREGATES <<< $(${BIN_PATH}/aggregate-population ${VRT_TARGET})
+echo ${AGGREGATES[0]}
 rm ${VRT_TARGET}

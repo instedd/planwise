@@ -45,7 +45,7 @@
 
 
 (def initial-db
-  {:view-state    :loading ; [:create-dialog :creating :loading :view]
+  {:view-state    :loading ; [:loading :list :create-dialog :creating :view]
    :list          nil
    :search-string ""
    :current       empty-viewmodel})

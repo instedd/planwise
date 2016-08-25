@@ -2,18 +2,21 @@
 
 ;; Filter checkboxes
 
-(defn- labeled-checkbox [{:keys [value label checked toggle-fn]}]
+(defn- labeled-checkbox [{:keys [value label checked toggle-fn decoration-fn], :as option}]
   (let [elt-id (str "checkbox-" (hash value))
-        options (some->> toggle-fn (assoc nil :on-change))]
+        options (some->> toggle-fn (assoc nil :on-change))
+        decoration (when decoration-fn (decoration-fn option))]
     [:div
+     decoration
+     [:label {:for elt-id} label]
      [:input (assoc options
                     :type "checkbox"
                     :id elt-id
                     :value value
-                    :checked checked)]
-     [:label {:for elt-id} label]]))
+                    :checked checked)]]))
 
-(defn filter-checkboxes [{:keys [options value toggle-fn]}]
+
+(defn filter-checkboxes [{:keys [options value toggle-fn decoration-fn]}]
   (let [value (set value)]
     (map-indexed (fn [idx option]
                    (let [option-value (:value option)
@@ -22,5 +25,6 @@
                      [labeled-checkbox (assoc option
                                               :key idx
                                               :checked checked
-                                              :toggle-fn callback-fn)]))
+                                              :toggle-fn callback-fn
+                                              :decoration-fn decoration-fn)]))
                  options)))

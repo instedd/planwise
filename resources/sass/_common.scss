@@ -218,7 +218,7 @@ button {
     }
   }
 
-  &.cancel {
+  &.cancel, &.delete {
     background-color: transparent;
     color: $gray-text;
     font-weight: normal;
@@ -258,4 +258,15 @@ button {
     font-size: 18px;
     margin-top: 30px;
   }
+}
+
+.icon-small {
+  width: 20px;
+  height: 20px;
+  vertical-align: text-bottom;
+  margin: 0 2px;
+}
+
+svg > use {
+  pointer-events: none;
 }

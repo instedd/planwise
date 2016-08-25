@@ -3,6 +3,7 @@
             [planwise.client.config :as config]
             [planwise.client.routes :as routes]
             [planwise.client.components.nav :as nav]
+            [planwise.client.components.common :refer [icon]]
             [planwise.client.playground.views :as playground]
             [planwise.client.projects.views :as projects]
             [planwise.client.datasets.views :as datasets]))
@@ -22,7 +23,7 @@
       (let [active @current-page]
         [:header
          [:a.logo {:href (routes/home)}
-          [:h1 "PlanWise"]]
+          (icon :logo)]
          [:nav [nav/ul-menu nav-items active]]
          [:div.user-info
           @current-user-email]]))))

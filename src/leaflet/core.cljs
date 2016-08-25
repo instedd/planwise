@@ -58,11 +58,15 @@
       (.bindPopup marker (popup-fn point))
       marker)))
 
-(defn create-point [point {:keys [lat-fn lon-fn icon-fn popup-fn], :or {lat-fn :lat lon-fn :lon}, :as props}]
-  (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
-        attrs (dissoc props :lat-fn :lon-fn :popup-fn)
+(defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+  (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
+        attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         clickable (boolean popup-fn)
-        marker (.circleMarker js/L latLng (clj->js (merge {:clickable clickable :radius 5} attrs)))]
+        style     (merge
+                    {:clickable clickable :radius 5}
+                    attrs
+                    (when style-fn (style-fn point)))
+        marker    (.circleMarker js/L latLng (clj->js style))]
     (if popup-fn
       (.bindPopup marker (popup-fn point))
       marker)))
@@ -96,9 +100,9 @@
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]
-  (let [layer (.layerGroup js/L)
+  (let [layer  (.withPathGroup js/L.layerGroup)
         points (:points props)
-        attrs (dissoc props :points)]
+        attrs  (dissoc props :points)]
     (doseq [point points] (.addLayer layer (create-point point attrs)))
     layer))
 
@@ -185,8 +189,7 @@
         (if (and children-to-fit-changed any-children-to-fit)
           (let [feature-group-to-fit (reduce #(.addLayer %1 %2) (.featureGroup js/L) layers-to-fit)
                 bounds (.getBounds feature-group-to-fit)]
-            (.fitBounds leaflet bounds)
-            (leaflet-moveend-handler this))))
+            (.fitBounds leaflet bounds))))
 
       ;; update component state
       (reagent/set-state this {:layers new-layers
@@ -198,8 +201,10 @@
         position (:position props)
         zoom (:zoom props)
         leaflet (:map state)]
-    (reagent/set-state this {:position position :zoom zoom})
-    (.setView leaflet (clj->js position) zoom)))
+    (if (or (not= position (:position state)) (not= zoom (:zoom state)))
+      (do
+        (reagent/set-state this {:position position :zoom zoom})
+        (.setView leaflet (clj->js position) zoom)))))
 
 (defn leaflet-update-options [this]
   (let [state (reagent/state this)
@@ -212,13 +217,14 @@
             lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
         (.setMaxBounds leaflet lat-lng-bounds)))))
 
-(defn leaflet-create-control [type]
+(defn leaflet-create-control [type props]
   (condp = type
     :zoom (.zoom js/L.control)
     :attribution (.attribution js/L.control #js {:prefix false})
+    :legend (.legend js/L.control #js {:legendMax (:legend-max props)} )
     (throw (str "Invalid control type " type))))
 
-(def default-controls [:zoom :attribution])
+(def default-controls [:zoom :attribution :legend])
 
 (defn leaflet-update-controls [this]
   (let [state (reagent/state this)
@@ -231,7 +237,7 @@
           destroy-control-fn (fn [old-control]
                                (.removeControl leaflet old-control))
           create-control-fn (fn [new-control-def]
-                              (let [new-control (leaflet-create-control new-control-def)]
+                              (let [new-control (leaflet-create-control new-control-def props)]
                                 (.addControl leaflet new-control)
                                 new-control))
           new-controls (update-objects-from-decls old-controls
@@ -252,6 +258,14 @@
             shiftKey (aget originalEvent "shiftKey")]
         (on-click lat lon shiftKey)))))
 
+(defn set-layer-blend-mode [mode]
+  "Create a handler that sets the mix-blend-mode for all leaflet layers."
+  (fn [e]
+    (doseq [layer (array-seq (.querySelectorAll js/document ".leaflet-tile-pane > .leaflet-layer"))]
+      (-> layer
+          (.-style)
+          (.setProperty "mix-blend-mode" mode)))))
+
 (defn leaflet-did-mount [this]
   (let [props (reagent/props this)
         leaflet (.map js/L (reagent/dom-node this)
@@ -265,6 +279,11 @@
     (leaflet-update-layers this)
     (leaflet-update-options this)
     (leaflet-update-viewport this)
+
+    ;; optimization: disable "expensive" blend mode while zooming
+    ;; TODO: try to remove coupling of this optimization with the css style
+    (.on leaflet "zoomstart" (set-layer-blend-mode ""))
+    (.on leaflet "zoomend" (set-layer-blend-mode "multiply"))
 
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))))

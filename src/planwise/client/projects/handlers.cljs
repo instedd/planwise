@@ -6,6 +6,7 @@
             [clojure.string :refer [split capitalize join]]
             [planwise.client.projects.db :as db]
             [planwise.client.mapping :as maps]
+            [planwise.client.styles :as styles]
             [re-frame.utils :as c]))
 
 (def in-projects (path [:projects]))
@@ -28,7 +29,11 @@
  :projects/facility-types-received
  in-filter-definitions
  (fn [db [_ types]]
-   (assoc db :facility-type types)))
+   (let [types-with-colours (map (fn [type colour]
+                                   (assoc type :colour colour))
+                              (sort-by :value types)
+                              (cycle styles/facility-types-palette))]
+     (assoc db :facility-type types-with-colours))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project listing
@@ -36,9 +41,12 @@
 (register-handler
  :projects/load-projects
  in-projects
- (fn [db [_ project-id]]
-   (api/load-projects :projects/projects-loaded)
-   (assoc db :view-state :loading)))
+ (fn [db [_]]
+   (if (nil? (:list db))
+     (do
+       (api/load-projects :projects/projects-loaded)
+       (assoc db :view-state :loading))
+     db)))
 
 (register-handler
  :projects/projects-loaded
@@ -74,7 +82,7 @@
  :projects/cancel-new-project
  in-projects
  (fn [db [_]]
-   (assoc db :view-state :view)))
+   (assoc db :view-state :list)))
 
 (register-handler
  :projects/create-project
@@ -90,7 +98,7 @@
    (let [project-id (:id project-data)]
      (when (nil? project-id)
        (throw "Invalid project data"))
-     (accountant/navigate! (routes/project-facilities {:id project-id}))
+     (accountant/navigate! (routes/project-demographics {:id project-id}))
      (assoc db
             :view-state :view
             :list (cons project-data (:list db))
@@ -140,14 +148,6 @@
     (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
     (assoc db :view-state :view
               :current (db/new-viewmodel project-data))))
-
-(register-handler
- :projects/delete-project
- in-projects
- (fn [db [_ id]]
-   (api/delete-project id)
-   (accountant/navigate! (routes/home))
-   (update db :list (partial filterv #(not= (:id %) id)))))
 
 (register-handler
  :projects/load-facilities
@@ -265,7 +265,27 @@
          new-db (-> db
                     cancel-prev-timeout
                     (assoc-in [:map-state :current] :loaded))]
+     (api/load-projects :projects/projects-loaded)
      (db/update-viewmodel new-db project))))
+
+;; ----------------------------------------------------------------------------
+;; Project deletion
+
+(register-handler
+ :projects/delete-project
+ in-projects
+ (fn [db [_ id]]
+   (api/delete-project id :projects/project-deleted)
+   (accountant/navigate! (routes/home))
+   ;; optimistically delete the project from our list
+   (update db :list (partial filterv #(not= (:id %) id)))))
+
+(register-handler
+ :projects/project-deleted
+ in-projects
+ (fn [db [_ data]]
+   (let [deleted-id (:deleted data)]
+     (update db :list (partial filterv #(not= (:id %) deleted-id))))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers

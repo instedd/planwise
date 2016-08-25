@@ -92,18 +92,22 @@ Configure the connection URL in your `profiles.clj`:
 {:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"}}}
 ```
 
+As a one-time task, to seed your database with routing information from OSM, run the following script:
+```bash
+$ scripts/import-osm osx/osm2pgrouting
+```
+
 And run the migrations:
 ```bash
 $ lein migrate
 ```
 
-As a one-time task, to seed your database with routing information from OSM and regions, run the following two scripts:
+Finally load regions as follows:
 ```bash
-$ scripts/import-osm osx/osm2pgrouting
 $ scripts/load-regions
 ```
 
-The first script will download the OSM dump and import it via osm2pgrouting. Note that the binary in the `osx` folder of the repository was compiled for OSX, and was generated from [a fork](https://github.com/ggiraldez/osm2pgrouting) of the project. It can be rebuilt by running:
+The `import-osm` script will download the OSM dump and import it via osm2pgrouting. Note that the binary in the `osx` folder of the repository was compiled for OSX, and was generated from [a fork](https://github.com/ggiraldez/osm2pgrouting) of the project. It can be rebuilt by running:
 ```bash
 $ git clone https://github.com/ggiraldez/osm2pgrouting
 $ cd osm2pgRouting
@@ -113,7 +117,7 @@ $ cd build
 $ make
 ```
 
-The second script will download regions from a Mapzen data dump extracted from OSM, load them into the DB, and optionally preprocess them.
+The `load-regions` script will download regions from a Mapzen data dump extracted from OSM, load them into the DB, and optionally preprocess them.
 
 ### Mapserver
 
@@ -237,9 +241,9 @@ There is a set of docker-compose files for locally running the application; one
 of them used for a first-time setup of the database, and other for regularly
 running the application.
 
-1- Create `.docker-env` file with GUISSO_CLIENT_SECRET and GUISSO_CLIENT_ID env vars, after registering your app in [GUISSO](https://github.com/instedd/guisso)
-2- Run `docker-compose -f docker-compose.setup.yml up` to set up the environment
-3- After `planwise_setup_1` exits successfully, run `docker-compose up` to start the app in port 3000
+1. Create `.docker-env` file with GUISSO_CLIENT_SECRET and GUISSO_CLIENT_ID env vars, after registering your app in [GUISSO](https://github.com/instedd/guisso)
+2. Run `docker-compose -f docker-compose.setup.yml up` to set up the environment
+3. After `planwise_setup_1` exits successfully, run `docker-compose up` to start the app in port 3000
 
 ## Legal
 

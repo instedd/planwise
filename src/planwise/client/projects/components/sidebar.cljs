@@ -2,9 +2,11 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [re-com.core :as rc]
+            [planwise.client.components.common :refer [icon]]
             [planwise.client.components.progress-bar :as progress-bar]
             [planwise.client.components.filters :as filters]
             [planwise.client.projects.db :as db]
+            [planwise.client.styles :as styles]
             [planwise.client.utils :as utils]))
 
 
@@ -18,14 +20,14 @@
     (fn []
       (let [population (:region-population @current-project)
             area (:region-area-km2 @current-project)
-            density (/ population area)]
+            density (if (pos? area) (/ population area) 0)]
         [:div.sidebar-filters
          [:div.filter-info
           ;; [:p "Filter here the population you are analyzing."]
           [:div.demographic-stats
            (demographic-stat "Area" [:span (utils/format (int area)) " km" [:sup 2]])
            (demographic-stat "Density" [:span (utils/format density) " /km" [:sup 2]])
-           (demographic-stat "Total population" (utils/format population))]
+           (demographic-stat "Total population" (utils/format (int population)))]
           [:span.small
            "Demographic data source: "
            [:a {:href "http://www.worldpop.org.uk/" :target "attribution"} "WorldPop"]
@@ -45,7 +47,7 @@
                              #(dispatch [:projects/toggle-filter :facilities field %]))]
         [:div.sidebar-filters
          [:div.filter-info
-          [:p "Select the facilities that are satisfying the demand you are analyzing."]
+          [:p "Select the types of facility to include in your analysis. We will use those to calculate the existing coverage."]
           [:p
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
@@ -56,7 +58,12 @@
           (filters/filter-checkboxes
            {:options @facility-types
             :value (:type @filters)
-            :toggle-fn (toggle-cons-fn :type)})]
+            :toggle-fn (toggle-cons-fn :type)
+            :decoration-fn (fn [{colour :colour, :as opt}] [:span.filter-colour {:style {"backgroundColor" colour}}])})
+          [:hr]
+          [:div {:title "These facilities are too far from the closest road and are not being evaluated for coverage."}
+           [:span.filter-colour {:style {"backgroundColor" styles/invalid-facility-type}}]
+           [:label "Not in road network"]]]
 
          #_[:fieldset
             [:legend "Ownership"]
@@ -77,7 +84,7 @@
     (fn []
       [:div.sidebar-filters
        [:div.filter-info
-        [:p "Indicate here the acceptable travel times to facilities. We will
+        [:p "Indicate here the acceptable one-way travel time to facilities. We will
         use that to calculate who already has access to the services that you
         are analyzing."]]
 
@@ -87,7 +94,8 @@
          :choices (:time db/transport-definitions)
          :label-fn :name
          :on-change #(dispatch [:projects/set-transport-time %])
-         :model transport-time]]])))
+         :model transport-time]
+        (icon :car)]])))
 
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab

@@ -7,14 +7,17 @@
 (defn project-tab-items [project-id]
   (let [route-params {:id project-id}]
     [{:item :demographics
-        :href (routes/project-demographics route-params)
-        :title "Demographics"}
+      :href (routes/project-demographics route-params)
+      :title "Demographics"
+      :icon :demographics}
      {:item :facilities
       :href (routes/project-facilities route-params)
-      :title "Facilities"}
+      :title "Facilities"
+      :icon :location}
      {:item :transport
       :href (routes/project-transport route-params)
-      :title "Transport Means"}
+      :title "Transport Means"
+      :icon :transport-means}
      #_{:item :scenarios
         :href (routes/project-scenarios route-params)
         :title "Scenarios"}]))
@@ -25,6 +28,8 @@
    [:nav
     [nav/ul-menu (project-tab-items project-id) selected-tab]
     [:div
-     [:a
-      {:href "#" :on-click (utils/with-confirm #(dispatch [:projects/delete-project project-id]) "Are you sure you want to delete this project?")}
-      "Delete project"]]]])
+     [:button.delete
+      {:on-click (utils/with-confirm
+                   #(dispatch [:projects/delete-project project-id])
+                   "Are you sure you want to delete this project?")}
+      "\u2716 Delete project"]]]])

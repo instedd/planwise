@@ -5,15 +5,13 @@
             [planwise.client.projects.db :as db]
             [planwise.client.mapping :as mapping]))
 
+;; ----------------------------------------------------------------------------
+;; Projects list subscriptions
+
 (register-sub
  :projects/view-state
  (fn [db [_]]
    (reaction (get-in @db [:projects :view-state]))))
-
-(register-sub
- :projects/current-data
- (fn [db [_]]
-   (reaction (get-in @db [:projects :current :project-data]))))
 
 (register-sub
  :projects/search-string
@@ -33,6 +31,15 @@
      (reaction
        (filterv #(gstring/caseInsensitiveContains (:goal %) @search-string) @list)))))
 
+
+;; ----------------------------------------------------------------------------
+;; Current project subscriptions
+
+(register-sub
+ :projects/current-data
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :current :project-data]))))
+
 (register-sub
  :projects/facilities
  (fn [db [_ data]]
@@ -43,6 +50,23 @@
         :isochrones (:isochrones @facility-data)
         :filter-stats (select-keys @facility-data [:count :total])
         :facilities (:list @facility-data))))))
+
+(register-sub
+ :projects/facilities-by-type
+ (fn [db [_ data]]
+   (let [facilities (reaction (get-in @db [:projects :current :facilities :list]))
+         types      (subscribe [:filter-definition :facility-type])]
+     (reaction
+       (->> @facilities
+         (group-by :type-id)
+         (map (fn [[type-id fs]]
+                (let [type (->> @types
+                              (filter #(= type-id (:value %)))
+                              (first))]
+                  [type fs])))
+         (sort-by (fn [[type fs]]
+                    (count fs)))
+         (reverse))))))
 
 (register-sub
  :projects/facilities-criteria
@@ -69,6 +93,7 @@
  (fn [db [_ field]]
    (let [map-view (reaction (get-in @db [:projects :current :map-view]))
          current-region-id (reaction (get-in @db [:projects :current :project-data :region-id]))
+         current-region-max-population (reaction (get-in @db [:projects :current :project-data :region-max-population]))
          current-region (reaction (get-in @db [:regions @current-region-id]))]
      (reaction
        (case field
@@ -80,7 +105,8 @@
                  (:zoom @map-view)
                  (+ 4 (:admin-level @current-region))
                  (:zoom db/initial-position-and-zoom))
-         :bbox (:bbox @current-region))))))
+         :bbox (:bbox @current-region)
+         :legend-max @current-region-max-population)))))
 
 (register-sub
  :projects/map-geojson

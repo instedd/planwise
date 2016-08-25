@@ -27,6 +27,7 @@ var L = {
   "setOptions": function () {},
   "Class": {
     "extend": function() {},
+    "addInitHook": function() {}
   },
   "Mixin": {
     "Events": {
@@ -732,6 +733,7 @@ var L = {
   "LayerGroup": function () {},
   "layerGroup": {
     "addTo": function () {},
+    "initialize": function () {},
     "addLayer": function () {},
     "removeLayer": function () {},
     "hasLayer": function () {},
@@ -741,6 +743,11 @@ var L = {
     "clearLayers": function () {},
     "hasLayer": function () {},
     "toGeoJSON": function () {},
+    "withPathGroup": function () {},
+    "prototype": function () {},
+    "onAdd": function () {},
+    "onRemove": function () {},
+    "setPathGroupStyle": function () {}
    },
   "FeatureGroup": function () {},
   "featureGroup": function () {},
@@ -860,7 +867,8 @@ var L = {
       "setPrefix": function () {},
       "addAttribution": function () {},
       "removeAttribution": function () {}
-    }
+    },
+    "legend": function () {}
   },
   "PosAnimation": function () {}
 };
