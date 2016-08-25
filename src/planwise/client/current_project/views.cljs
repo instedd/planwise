@@ -161,7 +161,8 @@
   (let [page-params (subscribe [:page-params])
         current-project (subscribe [:current-project/current-data])
         project-shares (subscribe [:current-project/shares])
-        view-state (subscribe [:current-project/view-state])]
+        view-state (subscribe [:current-project/view-state])
+        wizard-mode-state (subscribe [:projects/wizard-state])]
     (fn []
       (let [project-id (:id @page-params)
             selected-tab (:section @page-params)
@@ -171,7 +172,7 @@
             read-only (:read-only @current-project)
             share-count (count (asdf/value @project-shares))]
         [:article.project-view
-         [header-section project-id project-goal selected-tab read-only share-count]
+         [header-section project-id project-goal selected-tab read-only share-count @wizard-mode-state]
          [project-tab project-id project-dataset-id project-region-id selected-tab]
          (when (db/show-share-dialog? @view-state)
            [common/modal-dialog {:on-backdrop-click

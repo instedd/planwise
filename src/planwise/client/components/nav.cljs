@@ -3,10 +3,12 @@
 
 ;; Navigation components
 
-(defn- li-menu-item [{:keys [selected item href title icon]}]
+(defn- li-menu-item [{:keys [selected item href title icon wizard-state]}]
   (let [is-selected? (or (= selected item)
                          (item selected))]
-    [:li {:class (when is-selected? "active")}
+    [:li {:class (str
+                  (when is-selected? "active ")
+                  (when wizard-state (name wizard-state)))}
      [:a {:href href}
       (some-> icon (components/icon "icon-small"))
       title]]))

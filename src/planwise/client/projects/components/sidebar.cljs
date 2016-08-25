@@ -18,10 +18,10 @@
   (case tab-name
     :demographics    (routes/project-demographics {:id project-id})
     :facilities      (routes/project-facilities {:id project-id})
-    :transport-means (routes/project-transport {:id project-id})))
+    :transport       (routes/project-transport {:id project-id})))
 
 (defn- next-and-back-buttons [tab-name project-id]
-  (let [tabs [:demographics :facilities :transport-means]
+  (let [tabs [:demographics :facilities :transport]
         has-next? (not= (last tabs) tab-name)
         has-back? (not= (first tabs) tab-name)
         next (second (drop-while #(not= tab-name %) tabs))
@@ -34,7 +34,8 @@
        [:a {:href (route-by-tab-name next project-id)} "Next Step"])]))
 
 (defn- demographics-filters []
-  (let [current-project (subscribe [:projects/current-data])]
+  (let [current-project (subscribe [:projects/current-data])
+        wizard-mode-on  (subscribe [:projects/wizard-mode-on])]
     (fn []
       (let [population (:region-population @current-project)
             area (:region-area-km2 @current-project)
@@ -51,7 +52,8 @@
            [:a {:href "http://www.worldpop.org.uk/" :target "attribution"} "WorldPop"]
            " (Geodata Institute of the University of Southampton) / "
            [:a {:href "https://creativecommons.org/licenses/by/4.0/" :target "attribution"} "CC BY"]]]
-         (next-and-back-buttons :demographics (:id @current-project))]))))
+         (when @wizard-mode-on
+          (next-and-back-buttons :demographics (:id @current-project)))]))))
 
 (defn- facility-filters []
   (let [current-project (subscribe [:projects/current-data])
@@ -112,7 +114,7 @@
          :label-fn :name
          :on-change #(dispatch [:projects/set-transport-time %])
          :model transport-time]]
-       (next-and-back-buttons :transport-means (:id @current-project))])))
+       (next-and-back-buttons :transport (:id @current-project))])))
 
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab

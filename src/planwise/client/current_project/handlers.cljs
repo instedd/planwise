@@ -55,14 +55,36 @@
   (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
   (db/new-viewmodel project-data))
 
+(defn- update-tabs-state [db next-tab]
+  (let [tabs (get-in db [:current :wizard :tabs])
+        new-tabs (into {}
+                       (map (fn [[tab state]]
+                              (if (and (= state :visiting) (not= tab next-tab))
+                                [tab :visited]
+                                [tab state])) tabs))]
+    (assoc-in db [:current :wizard :tabs] new-tabs)))
+
+(defn- update-next-tab-state [db next-tab]
+  (if (= :unvisited (get-in db [:current :wizard :tabs next-tab]))
+    (assoc-in db [:current :wizard :tabs next-tab] :visiting)
+    db))
+
+(defn- update-wizard-state [db next-tab]
+  (-> db
+      (update-next-tab-state next-tab)
+      (update-tabs-state next-tab)))
+
 (register-handler
  :current-project/navigate-project
  in-current-project
  (fn [db [_ project-id section]]
    (if (not= project-id (db/project-id db))
-     (dispatch [:current-project/load-project project-id (section->with section)])
-     (dispatch [:current-project/reload-project project-id (section->with section)]))
-   db))
+     (do
+       (dispatch [:current-project/load-project project-id (section->with section)])
+       db)
+     (do
+       (dispatch [:current-project/reload-project project-id (section->with section)]))
+       (update-wizard-state db section))))
 
 (register-handler
  :current-project/load-project

@@ -214,6 +214,21 @@ article.project-view {
       margin-top: 8px;
       margin-left: 10px;
       padding: 5px;
+      li.unvisited {
+        a, a:hover {
+          color: $gray3;
+        }
+      }
+      li.visiting {
+        a, a:hover {
+          color: $black;
+        }
+      }
+      li.visited {
+        a, a:hover {
+          color: $green;
+        }
+      }
       li {
         display: inline-block;
         margin-right: 30px;
