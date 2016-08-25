@@ -95,7 +95,7 @@
          :label-fn :name
          :on-change #(dispatch [:projects/set-transport-time %])
          :model transport-time]
-        (icon "car")]])))
+        (icon :car)]])))
 
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab

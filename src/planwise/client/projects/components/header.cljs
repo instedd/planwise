@@ -9,15 +9,15 @@
     [{:item :demographics
       :href (routes/project-demographics route-params)
       :title "Demographics"
-      :icon "demographics"}
+      :icon :demographics}
      {:item :facilities
       :href (routes/project-facilities route-params)
       :title "Facilities"
-      :icon "location"}
+      :icon :location}
      {:item :transport
       :href (routes/project-transport route-params)
       :title "Transport Means"
-      :icon "transport-means"}
+      :icon :transport-means}
      #_{:item :scenarios
         :href (routes/project-scenarios route-params)
         :title "Scenarios"}]))

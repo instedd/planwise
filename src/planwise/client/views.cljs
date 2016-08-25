@@ -23,7 +23,7 @@
       (let [active @current-page]
         [:header
          [:a.logo {:href (routes/home)}
-          (icon "logo")]
+          (icon :logo)]
          [:nav [nav/ul-menu nav-items active]]
          [:div.user-info
           @current-user-email]]))))
