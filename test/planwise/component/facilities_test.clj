@@ -11,14 +11,20 @@
   (PGgeometry. (str "SRID=4326;POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))")))
 
 (def fixture-data
-  [[:facilities
-    [{:id 1 :name "Facility A" :type_id 1 :lat -3   :lon 42 :the_geom (make-point -3 42)}
-     {:id 2 :name "Facility B" :type_id 1 :lat -3.5 :lon 42 :the_geom (make-point -3.5 42)}]]
+  [[:users
+    [{:id 1 :email "example@instedd.org"}]]
+   [:datasets
+    [{:id 1 :name "Test Dataset" :collection_id 123 :owner_id 1}]]
+   [:facility_types
+    [{:id 1 :dataset_id 1 :name "Hospital"}]]
+   [:facilities
+    [{:id 1 :dataset_id 1 :site_id 1 :name "Facility A" :type_id 1 :lat -3   :lon 42 :the_geom (make-point -3 42)}
+     {:id 2 :dataset_id 1 :site_id 2 :name "Facility B" :type_id 1 :lat -3.5 :lon 42 :the_geom (make-point -3.5 42)}]]
    [:facilities_polygons
     [{:id 1 :facility_id 1 :threshold 900 :method "alpha-shape" :the_geom (sample-polygon)}]]])
 
 (def new-facilities
-  [{:id 3 :name "New facility" :type-id 1 :lat 4 :lon 10 :type "hospital"}])
+  [{:site-id 3 :dataset-id 1 :name "New facility" :type-id 1 :lat 4 :lon 10 :type "hospital"}])
 
 (defn system []
   (into

@@ -8,4 +8,3 @@ CREATE TABLE IF NOT EXISTS datasets (
        facility_count BIGINT
 );
 
-ALTER TABLE facilities ADD COLUMN dataset_id BIGINT REFERENCES datasets(id);
