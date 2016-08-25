@@ -64,5 +64,5 @@
  (fn [db [_ time]]
    ;; FIXME
    #_(when (= 0 (mod time 3000))
-     (dispatch [:datasets/update-import-status]))
+     (dispatch [:datasets/invalidate-datasets]))
    db))

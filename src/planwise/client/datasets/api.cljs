@@ -22,32 +22,7 @@
                      :type-field type-field}
                     handlers)))
 
-;; Old functions
-;; TODO: review
-
-(defn load-datasets-info
-  [& handlers]
-  (GET "/api/datasets/info"
-      (json-request {} handlers)))
-
-(defn load-collection-info
-  [coll-id & handlers]
-  (GET (str "/api/datasets/collection-info/" coll-id)
-      (json-request {} handlers)))
-
-(defn import-collection!
-  [coll-id type-field & handlers]
-  (POST "/api/datasets/import"
-      (json-request {:coll-id coll-id
-                     :type-field type-field}
-                    handlers)))
-
-(defn importer-status
-  [& handlers]
-  (GET "/api/datasets/status"
-      (json-request {} handlers)))
-
 (defn cancel-import!
-  [& handlers]
+  [dataset-id & handlers]
   (POST "/api/datasets/cancel"
-      (json-request {} handlers)))
+      (json-request {:dataset-id dataset-id} handlers)))

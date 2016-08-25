@@ -1,6 +1,7 @@
 (ns planwise.client.datasets.components.listing
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [planwise.client.utils :as utils]))
+            [planwise.client.utils :as utils]
+            [planwise.client.datasets.db :as db]))
 
 
 (defn new-dataset-button
@@ -31,11 +32,14 @@
     [new-dataset-button]]])
 
 (defn dataset-card
-  [{:keys [id name description facility-count] :as dataset}]
+  [{:keys [id name description facility-count server-status] :as dataset}]
   [:div.dataset-card
    [:h1 name]
    [:h2 description]
-   [:p (utils/pluralize facility-count "facility" "facilities")]])
+   [:p
+    (utils/pluralize facility-count "facility" "facilities")
+    (when (some? server-status)
+      (str " (" (db/server-status->string server-status) ")"))]])
 
 (defn datasets-list
   [datasets]

@@ -9,10 +9,23 @@
 
 (defn map-server-status
   [server-status]
-  (-> server-status
-      (update :status keyword)
-      (update :state keyword)
-      (update :result keyword)))
+  (some-> server-status
+          (update :status keyword)
+          (update :state keyword)
+          (update :result keyword)))
+
+(defn update-datasets
+  "Propagates the client states to the updated list of datasets"
+  [server-datasets]
+  (map (fn [dataset]
+         (let [status (map-server-status (:server-status dataset))
+               state (db/server-status->state status)]
+           (assoc dataset
+                  :server-status status
+                  :state state)))
+       server-datasets))
+
+
 
 ;; ----------------------------------------------------------------------------
 ;; Dataset listing
@@ -42,7 +55,7 @@
  in-datasets
  (fn [db [_ datasets]]
    (-> db
-       (assoc :list datasets)
+       (assoc :list (update-datasets datasets))
        (assoc-in [:state 0] :loaded))))
 
 (register-handler
@@ -50,6 +63,14 @@
  in-datasets
  (fn [db [_ value]]
    (assoc db :search-string value)))
+
+(register-handler
+ :datasets/cancel-import!
+ in-datasets
+ (fn [db [_ dataset-id]]
+   (c/log (str "Cancelling collection import for dataset " dataset-id))
+   (api/cancel-import! dataset-id :datasets/datasets-loaded)
+   db))
 
 
 ;; ----------------------------------------------------------------------------
@@ -113,80 +134,4 @@
      ;; the resmap available list
      (-> new-db
          (update :resourcemap asdf/swap! db/remove-resmap-collection coll-id)
-         (update :list #(conj % dataset))))))
-
-
-;; ----------------------------------------------------------------------------
-;; Old handlers
-;; TODO: review!
-
-(register-handler
- :datasets/start-import!
- in-datasets
- (fn [db [_]]
-   (let [coll-id (get-in db [:selected :collection :id])
-         type-field (get-in db [:selected :type-field])]
-     (c/log "Started collection import")
-     (api/import-collection! coll-id type-field
-                             :datasets/import-status-received :datasets/request-failed)
-     (assoc db :state :import-requested))))
-
-(register-handler
- :datasets/cancel-import!
- in-datasets
- (fn [db [_]]
-   (c/log "Cancelling collection import")
-   (api/cancel-import! :datasets/import-status-received :datasets/request-failed)
-   (assoc db :state :cancel-requested)))
-
-(register-handler
- :datasets/request-failed
- in-datasets
- (fn [db [_ error-info]]
-   (c/log (str "Error performing server request: " error-info))
-   (let [state (:state db)
-         new-state (case state
-                     :import-requested :ready
-                     :cancel-requested :importing
-                     state)]
-     (assoc db :state new-state))))
-
-(defn update-server-status
-  [db status]
-  (let [status (map-server-status status)
-        current-state (:state db)
-        current-dataset-id (get-in current-state [:project :current :project-data :dataset-id])
-        new-state (db/server-status->state status)]
-    ;; refresh critical system information if an import finished executing
-    (when (and (or (db/importing? current-state) (db/cancelling? current-state))
-               (= :ready new-state))
-      (when current-dataset-id
-        (dispatch [:projects/fetch-facility-types current-dataset-id]))
-      (dispatch [:datasets/reload-info]))
-    (assoc db
-           :state new-state
-           :server-status status)))
-
-(register-handler
- :datasets/import-status-received
- in-datasets
- (fn [db [_ status]]
-   (update-server-status db status)))
-
-(register-handler
- :datasets/async-status-received
- in-datasets
- (fn [db [_ status]]
-   (if-not (db/request-pending? (:state db))
-     (update-server-status db status)
-     db)))
-
-(register-handler
- :datasets/update-import-status
- in-datasets
- (fn [db [_]]
-   (let [state (:state db)]
-     (when (and (db/initialised? state)
-                (not (db/request-pending? state)))
-       (api/importer-status :datasets/async-status-received)))
-   db))
+         (update :list #(into % (update-datasets [dataset])))))))

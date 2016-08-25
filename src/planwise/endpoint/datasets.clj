@@ -31,13 +31,22 @@
                                  (assoc coll :fields usable-fields))))]
     (into [] (r/filter some? (r/map with-usable-fields collections)))))
 
+(defn add-status-to-datasets
+  [sets status]
+  (map (fn [dataset]
+         (let [dataset-id (:id dataset)
+               dataset-status (get status dataset-id)]
+           (assoc dataset :server-status dataset-status)))
+       sets))
+
 (defn- datasets-routes
   [{:keys [datasets facilities resmap importer]}]
   (routes
    (GET "/" request
      (let [user-id (util/request-user-id request)
-           sets (datasets/list-datasets-for-user datasets user-id)]
-       (response sets)))
+           sets (datasets/list-datasets-for-user datasets user-id)
+           status (importer/status importer)]
+       (response (add-status-to-datasets sets status))))
 
    (GET "/resourcemap-info" request
      (let [user-ident (util/request-ident request)
@@ -64,18 +73,17 @@
                           :mappings {:type type-field}}]
        (info "Creating new dataset of collection" coll-id "for the user" user-email)
        (let [dataset (datasets/create-dataset! datasets dataset-templ)]
-         (importer/run-import-for-dataset importer (:id dataset) user-ident)
-         ;; TODO: report back the importer status
-         (response dataset))))
+         (let [dataset-id (:id dataset)
+               status (importer/run-import-for-dataset importer (:id dataset) user-ident)
+               dataset-status (get status dataset-id)]
+           (response (assoc dataset :status dataset-status))))))
 
-   ;; TODO: review these, but we need them in some form or other
-   #_(GET "/status" request
-     (let [importer-status (importer/status importer)]
-       (response importer-status)))
-
-   #_(POST "/cancel" request
+   (POST "/cancel" [dataset-id :as request]
      (info "Cancelling import process by user request")
-     (response (importer/cancel-import! importer)))))
+     (let [user-id (util/request-user-id request)
+           sets (datasets/list-datasets-for-user datasets user-id)
+           status (importer/cancel-import! importer dataset-id)]
+       (response (add-status-to-datasets sets status))))))
 
 (defn datasets-endpoint
   [service]

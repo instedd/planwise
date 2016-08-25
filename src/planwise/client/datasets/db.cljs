@@ -66,11 +66,6 @@
   (or (= :create-dialog view-state)
       (= :creating view-state)))
 
-(defn initialised?
-  [state]
-  (and (not= :initialising state)
-       (not (nil? state))))
-
 (defn importing?
   [state]
   (or (= :importing state)
@@ -102,7 +97,7 @@
 
     :importing
     (let [progress (:progress server-status)
-          progress (when progress (str " (" (format-percentage progress) ")"))]
+          progress (when progress (str " " (format-percentage progress)))]
       (case (:state server-status)
         :start "Starting"
         :importing-types "Importing facility types"
@@ -134,7 +129,7 @@
     (:ready :done) :ready
     :importing     :importing
     :cancelling    :cancelling
-    :unknown       :ready))
+    :ready))
 
 (defn resmap-authorised?
   [resmap]
