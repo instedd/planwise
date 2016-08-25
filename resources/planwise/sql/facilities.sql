@@ -1,15 +1,16 @@
 -- :name insert-facility! :! :n
 INSERT INTO facilities
-    (id, name, lat, lon, type_id, the_geom)
-    VALUES (:id, :name, :lat, :lon, :type-id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
+    (dataset_id, site_id, name, lat, lon, type_id, the_geom)
+    VALUES (:dataset-id, :site-id, :name, :lat, :lon, :type-id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
 
--- :name delete-facilities! :!
-DELETE FROM facilities;
+-- :name delete-facilities-in-dataset! :!
+DELETE FROM facilities WHERE dataset_id = :dataset-id;
 
--- :name select-facilities :?
+-- :name select-facilities-in-dataset :?
 SELECT
     id, name, lat, lon
 FROM facilities
+WHERE dataset_id = :dataset-id
 ORDER BY name;
 
 -- :snip criteria-snip
@@ -23,40 +24,24 @@ ORDER BY name;
   AND ST_Contains((SELECT the_geom FROM regions WHERE id = :region LIMIT 1), facilities.the_geom)
 /*~ ) ~*/
 
--- :name facilities-by-criteria :? :*
+-- :name facilities-in-dataset-by-criteria :? :*
 SELECT
-facilities.id as id, facilities.name as name, facility_types.name as type,
-facility_types.id as "type-id", lat, lon,
-facilities.processing_status AS "processing-status"
+  facilities.id as id, facilities.name as name, facility_types.name as type,
+  facility_types.id as "type-id", lat, lon,
+  facilities.processing_status AS "processing-status"
 FROM facilities
 INNER JOIN facility_types ON facility_types.id = facilities.type_id
-WHERE 1=1
+WHERE facilities.dataset_id = :dataset-id
 :snip:criteria ;
 
--- :name count-facilities-by-criteria :? :1
+-- :name count-facilities-in-dataset-by-criteria :? :1
 SELECT
   COUNT(*)
 FROM facilities
-WHERE 1=1
+WHERE facilities.dataset_id = :dataset-id
 :snip:criteria ;
 
--- :name facilities-with-isochrones :?
-SELECT
-  facilities.id AS id, facilities.name AS name, facilities.lat AS lat, facilities.lon AS lon,
-  fp.id AS "polygon-id", ST_AsGeoJSON(ST_Simplify(fp.the_geom, :simplify)) AS isochrone,
-  fp.population AS "population", fp.area AS "area"
-  /*~ (if (:region params) */
-  , fpr.population AS "population-in-region", fpr.area AS "area-in-region"
-  /*~ ) ~*/
-FROM facilities
-  INNER JOIN facility_types ON facilities.type_id = facility_types.id
-  LEFT OUTER JOIN facilities_polygons fp ON fp.facility_id = facilities.id AND fp.threshold = :threshold AND fp.method = :algorithm
-  /*~ (if (:region params) */
-  LEFT OUTER JOIN facilities_polygons_regions fpr ON fpr.region_id = :region AND fpr.facility_polygon_id = fp.id
-  /*~ ) ~*/
-WHERE 1=1 :snip:criteria ;
-
--- :name isochrones-in-bbox* :?
+-- :name isochrones-for-dataset-in-bbox* :?
 SELECT
   facilities.id AS "id",
   fp.id AS "polygon-id",
@@ -72,26 +57,22 @@ FROM facilities
   INNER JOIN facility_types ON facilities.type_id = facility_types.id
   LEFT OUTER JOIN facilities_polygons fp ON fp.facility_id = facilities.id AND fp.threshold = :threshold AND fp.method = :algorithm
 WHERE
-  (fp.the_geom && ST_MakeEnvelope(:v*:bbox, 4326))
+  facilities.dataset_id = :dataset-id
+  AND (fp.the_geom && ST_MakeEnvelope(:v*:bbox, 4326))
   :snip:criteria ;
 
--- :name isochrone-for-facilities :? :1
-SELECT
-  ST_AsGeoJSON(ST_Union(the_geom))
-FROM facilities_polygons
-WHERE threshold = :threshold
-AND method = 'alpha-shape';
-
--- :name select-types :?
+-- :name select-types-in-dataset :?
 SELECT id, name
-FROM facility_types;
+FROM facility_types
+WHERE dataset_id = :dataset-id;
 
--- :name delete-types! :!
-DELETE FROM facility_types;
+-- :name delete-types-in-dataset! :!
+DELETE FROM facility_types
+WHERE dataset_id = :dataset-id;
 
 -- :name insert-type! :<! :1
-INSERT INTO facility_types (name)
-VALUES (:name)
+INSERT INTO facility_types (name, dataset_id)
+VALUES (:name, :dataset-id)
 RETURNING id;
 
 -- :name calculate-facility-isochrones! :<!

@@ -45,59 +45,48 @@
       (insert-facility! tx facility)))
   (count facilities))
 
-(defn destroy-facilities! [service]
-  (delete-facilities! (get-db service)))
+(defn destroy-facilities! [service dataset-id]
+  (delete-facilities-in-dataset! (get-db service) {:dataset-id dataset-id}))
 
 (defn list-facilities
-  ([service]
-   (select-facilities (get-db service)))
-  ([service criteria]
-   (facilities-by-criteria
+  ([service dataset-id]
+   (select-facilities-in-dataset (get-db service) {:dataset-id dataset-id}))
+  ([service dataset-id criteria]
+   (facilities-in-dataset-by-criteria
      (get-db service)
-     {:criteria (criteria-snip criteria)})))
+     {:dataset-id dataset-id
+      :criteria (criteria-snip criteria)})))
 
 (defn count-facilities
-  ([service]
-   (count-facilities service {}))
-  ([service criteria]
+  ([service dataset-id]
+   (count-facilities service dataset-id {}))
+  ([service dataset-id criteria]
    (let [db (get-db service)
          criteria (criteria-snip criteria)
-         result (count-facilities-by-criteria db {:criteria criteria})]
+         result (count-facilities-in-dataset-by-criteria db {:dataset-id dataset-id
+                                                             :criteria criteria})]
      (:count result))))
 
-(defn list-with-isochrones
-  ([service]
-   (list-with-isochrones service {} {}))
-  ([service isochrone-opts]
-   (list-with-isochrones service isochrone-opts {}))
-  ([service isochrone-opts criteria]
-   (facilities-with-isochrones (get-db service)
-     (assoc (isochrone-params isochrone-opts)
-       :region    (:region criteria)
-       :criteria  (criteria-snip criteria)))))
-
 (defn isochrones-in-bbox
-  ([service isochrone-opts criteria]
-   (isochrones-in-bbox* (get-db service)
+  ([service dataset-id isochrone-opts criteria]
+   (isochrones-for-dataset-in-bbox* (get-db service)
      (-> (isochrone-params isochrone-opts)
-        (merge (select-keys criteria [:bbox :excluding]))
-        (assoc :criteria (criteria-snip criteria))))))
+         (merge (select-keys criteria [:bbox :excluding]))
+         (assoc :dataset-id dataset-id
+                :criteria (criteria-snip criteria))))))
 
-(defn get-isochrone-for-all-facilities [service threshold]
-  (isochrone-for-facilities (get-db service) {:threshold threshold}))
-
-(defn list-types [service]
-  (select-types (get-db service)))
+(defn list-types [service dataset-id]
+  (select-types-in-dataset (get-db service {:dataset-id dataset-id})))
 
 (defn destroy-types!
-  [service]
-  (delete-types! (get-db service)))
+  [service dataset-id]
+  (delete-types-in-dataset! (get-db service) {:dataset-id dataset-id}))
 
 (defn insert-types!
-  [service types]
+  [service dataset-id types]
   (jdbc/with-db-transaction [tx (get-db service)]
     (-> (map (fn [type]
-               (let [type-id (insert-type! tx type)]
+               (let [type-id (insert-type! tx (assoc type :dataset-id dataset-id))]
                  (merge type type-id)))
              types)
         (vec))))
