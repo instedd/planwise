@@ -195,7 +195,8 @@
 ;; FSM definition
 
 (def default-job-value
-  {:user-ident     nil
+  {:dataset-id     nil
+   :user-ident     nil
    :collection-id  nil
    :type-field     nil
    :page           1
@@ -292,6 +293,10 @@
   [job]
   (get-in job [:value :result]))
 
+(defn job-dataset-id
+  [job]
+  (get-in job [:value :dataset-id]))
+
 (defn job-user-ident
   [job]
   (get-in job [:value :user-ident]))
@@ -357,8 +362,9 @@
       {:status :unknown})))
 
 (defn create-job
-  [user-ident coll-id type-field]
+  [dataset-id user-ident coll-id type-field]
   (let [job-value (assoc default-job-value
+                         :dataset-id dataset-id
                          :user-ident user-ident
                          :collection-id coll-id
                          :type-field type-field)]

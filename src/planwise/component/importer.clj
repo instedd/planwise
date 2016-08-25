@@ -6,6 +6,7 @@
             [planwise.component.resmap :as resmap]
             [planwise.component.projects :as projects]
             [planwise.component.facilities :as facilities]
+            [planwise.boundary.datasets :as datasets]
             [planwise.component.taskmaster :as taskmaster]))
 
 (timbre/refer-timbre)
@@ -146,7 +147,7 @@
 ;; ----------------------------------------------------------------------------
 ;; Service definition
 
-(defrecord Importer [job taskmaster concurrent-workers resmap facilities projects]
+(defrecord Importer [job taskmaster concurrent-workers resmap facilities datasets projects]
   component/Lifecycle
   (start [component]
     (info "Starting Importer component")
@@ -204,17 +205,23 @@
   [service]
   (import-job/job-status @(:job service)))
 
-(defn import-collection
-  [service user-ident coll-id type-field]
-  (let [new-job (import-job/create-job user-ident coll-id type-field)
-        accepted-job (swap! (:job service) #(try-accept-job % new-job))]
-    (if (= new-job accepted-job)
-      (do
-        (let [result (taskmaster/poll-dispatcher (:taskmaster service))]
-          (when (= :error (first result))
-            (throw (ex-info "Failure starting the import job" {:result result}))))
-        [:ok (status service)])
-      [:error :busy])))
+(defn run-import-for-dataset
+  [{:keys [datasets resmap] :as service} dataset-id user-ident]
+  (let [dataset (datasets/find-dataset datasets dataset-id)]
+    (if (some? dataset)
+      (let [coll-id (:collection-id dataset)
+            type-field-id (get-in dataset [:mappings :type])
+            type-field (resmap/find-collection-field resmap user-ident coll-id type-field-id)
+            new-job (import-job/create-job dataset-id user-ident coll-id type-field)
+            accepted-job (swap! (:job service) #(try-accept-job % new-job))]
+        (if (= new-job accepted-job)
+          (do
+            (let [result (taskmaster/poll-dispatcher (:taskmaster service))]
+              (when (= :error (first result))
+                (throw (ex-info "Failure starting the import job" {:result result}))))
+            [:ok (status service)])
+          [:error :busy]))
+      [:error :invalid-dataset])))
 
 (defn cancel-import!
   [service]

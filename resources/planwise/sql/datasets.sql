@@ -16,3 +16,14 @@ INSERT INTO datasets
 VALUES
   (:name, :description, :owner-id, :collection-id, :mappings, 0)
 RETURNING id;
+
+-- :name select-dataset :? :1
+SELECT
+  id,
+  name,
+  description,
+  collection_id AS "collection-id",
+  import_mappings AS "mappings",
+  owner_id AS "owner-id"
+FROM datasets
+WHERE id = :id;

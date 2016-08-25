@@ -16,13 +16,13 @@
 
 (defn db->dataset
   [record]
-  (-> record
-      (update :mappings edn/read-string)))
+  (some-> record
+          (update :mappings edn/read-string)))
 
 (defn dataset->db
   [dataset]
-  (-> dataset
-      (update :mappings pr-str)))
+  (some-> dataset
+          (update :mappings pr-str)))
 
 
 ;; ----------------------------------------------------------------------
@@ -48,3 +48,9 @@
                         :id)
         dataset (assoc dataset :id dataset-id)]
     dataset))
+
+(defn find-dataset
+  [store dataset-id]
+  (let [db (get-db store)]
+    (-> (select-dataset db {:id dataset-id})
+        db->dataset)))

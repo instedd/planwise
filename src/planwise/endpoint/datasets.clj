@@ -63,7 +63,9 @@
                           :mappings {:type type-field}}]
        (info "Creating new dataset of collection" coll-id "for the user" user-email)
        (let [dataset (datasets/create-dataset! datasets dataset-templ)]
-         (response (select-keys dataset [:id :name :description :facility-count :collection-id :owner-id])))))
+         (importer/run-import-for-dataset importer (:id dataset) user-ident)
+         ;; TODO: report back the importer status
+         (response dataset))))
 
    ;; TODO: old endpoints, review!
 
@@ -91,7 +93,8 @@
        (response {:fields usable-fields
                   :valid? valid?})))
 
-   (POST "/import" [coll-id type-field :as request]
+   ;; FIXME: remove
+   #_(POST "/import" [coll-id type-field :as request]
      (info "Will import collection" coll-id "using" type-field "as the facility type")
      (let [user (:identity request)
            fields (resmap/list-collection-fields resmap user coll-id)

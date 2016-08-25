@@ -215,10 +215,11 @@
           :users-store         [:db]
           :auth                [:users-store]
           :resmap              [:auth]
+          :datasets            [:db]
           :importer            [:resmap
                                 :facilities
-                                :projects]
-          :datasets            [:db]
+                                :projects
+                                :datasets]
 
           ; Endpoints
           :auth-endpoint       [:auth]
