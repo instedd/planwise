@@ -100,7 +100,6 @@
                       :externs ["prod/externs.js"]}}}}
   :aliases {"run-task"     ["with-profile" "+repl" "run" "-m"]
             "setup"        ["run-task" "dev.tasks/setup"]
-            "import-sites" ["run-task" "planwise.tasks.import-sites"]
             "migrate"      ["run-task" "planwise.tasks.db" "migrate"]
             "rollback"     ["run-task" "planwise.tasks.db" "rollback"]
             "build-icons"  ["run-task" "planwise.tasks.build-icons"]}
