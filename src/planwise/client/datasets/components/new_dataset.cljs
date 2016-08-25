@@ -2,6 +2,7 @@
   (:require [re-frame.core :refer [dispatch subscribe]]
             [reagent.core :as r]
             [re-com.core :as rc]
+            [planwise.client.asdf :as asdf]
             [planwise.client.config :as config]
             [planwise.client.components.common :as common]
             [planwise.client.utils :as utils]
@@ -39,11 +40,12 @@
    [:p
     "Collections can be imported from "
     [:a {:href config/resourcemap-url :target "resmap"} "Resourcemap"]
-    " if they have the required fields (facility type, etc.)."]
+    " if they have the required fields (facility type, etc.). "
+    "You can only create a single dataset per collection."]
    [:p
     [:a
      {:href (str config/resourcemap-url "/collections/new") :target "resmap"}
-     "Create a collection"]
+     "Create a new collection"]
     " and try again."]
    [:div.actions
     [:button.primary
@@ -78,7 +80,7 @@
         cancel-fn #(dispatch [:datasets/cancel-new-dataset])
         resmap (subscribe [:datasets/resourcemap])]
     (fn []
-      (let [collections (:collections @resmap)
+      (let [collections (:collections (asdf/value @resmap))
             selected (:collection @new-dataset-data)
             type-field (:type-field @new-dataset-data)
             fields (:fields selected)
@@ -120,8 +122,8 @@
   []
   (let [resmap (subscribe [:datasets/resourcemap])]
     (fn []
-      (let [loaded? (db/resmap-loaded? @resmap)
-            authorised? (db/resmap-authorised? @resmap)
+      (let [loaded? (asdf/valid? @resmap)
+            authorised? (db/resmap-authorised? (asdf/value @resmap))
             cancel-fn #(dispatch [:datasets/cancel-new-dataset])
             key-handler-fn #(case (.-which %)
                               27 (cancel-fn)
@@ -139,5 +141,6 @@
              [authorised-dialog]
              [unauthorised-dialog])
            (do
-             (dispatch [:datasets/load-resourcemap-info])
+             (when (not (asdf/reloading? @resmap))
+               (dispatch [:datasets/load-resourcemap-info]))
              [common/loading-placeholder "Loading Resourcemap collections..."]))]))))

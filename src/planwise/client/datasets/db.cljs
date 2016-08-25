@@ -1,5 +1,6 @@
 (ns planwise.client.datasets.db
   (:require [schema.core :as s :include-macros true]
+            [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [format-percentage]]))
 
 (s/defschema ServerStatus
@@ -46,7 +47,7 @@
                       (s/one ViewState "view")]
    :list             (s/maybe [Dataset])
    :search-string    s/Str
-   :resourcemap      (s/maybe ResourcemapData)
+   :resourcemap      (asdf/Asdf (s/maybe ResourcemapData))
    :new-dataset-data (s/maybe {(s/optional-key :collection) s/Any
                                (s/optional-key :type-field) s/Any})})
 
@@ -55,7 +56,7 @@
    :list             nil                  ; List of available datasets
    :search-string    ""                   ; Dataset search string
 
-   :resourcemap      nil
+   :resourcemap      (asdf/new nil)
 
    :new-dataset-data nil})
 
@@ -135,13 +136,14 @@
     :cancelling    :cancelling
     :unknown       :ready))
 
-(defn resmap-loaded?
-  [resmap]
-  (some? (:authorised? resmap)))
-
 (defn resmap-authorised?
   [resmap]
   (:authorised? resmap))
+
+(defn remove-resmap-collection
+  [resmap coll-id]
+  (let [pred (fn [coll] (not= coll-id (:id coll)))]
+    (update resmap :collections #(filter pred %))))
 
 (defn new-dataset-valid?
   [new-dataset-data]

@@ -1,6 +1,7 @@
 (ns planwise.client.datasets.handlers
   (:require [re-frame.core :refer [register-handler path dispatch]]
             [re-frame.utils :as c]
+            [planwise.client.asdf :as asdf]
             [planwise.client.datasets.api :as api]
             [planwise.client.datasets.db :as db]))
 
@@ -73,15 +74,13 @@
  in-datasets
  (fn [db [_]]
    (api/load-resourcemap-info :datasets/resourcemap-info-loaded)
-   (assoc-in db [:resourcemap :authorised?] nil)))
+   (update db :resourcemap asdf/reload!)))
 
 (register-handler
  :datasets/resourcemap-info-loaded
  in-datasets
  (fn [db [_ data]]
-   (-> db
-       (assoc-in [:resourcemap :authorised?] (:authorised? data))
-       (assoc-in [:resourcemap :collections] (:collections data)))))
+   (update db :resourcemap asdf/reset! (select-keys data [:authorised? :collections]))))
 
 (register-handler
  :datasets/update-new-dataset
@@ -111,10 +110,10 @@
                   (assoc-in db [:state 1] :list)
                   db)
          coll-id (:collection-id dataset)]
-     ;; optimistic update
+     ;; optimistic updates: add the new dataset and remove the collection from
+     ;; the resmap available list
      (-> new-db
-         (update-in [:resourcemap :collections]
-                    (fn [colls] (filter #(not= coll-id (:id %)) colls)))
+         (update :resourcemap asdf/swap! db/remove-resmap-collection coll-id)
          (update :list #(conj % dataset))))))
 
 
