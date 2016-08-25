@@ -3,12 +3,13 @@ INSERT INTO projects (goal, dataset_id, region_id, stats, owner_id)
     VALUES (:goal, :dataset-id, :region-id, :stats, :owner-id)
     RETURNING id;
 
--- :name select-projects :?
+-- :name select-projects-for-dataset :?
 SELECT
   projects.id, projects.goal, projects.region_id AS "region-id", projects.stats,
   regions.name AS "region-name", owner_id AS "owner-id"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
+WHERE projects.dataset_id = :dataset-id
 ORDER BY projects.id ASC;
 
 -- :name select-projects-for-user :?

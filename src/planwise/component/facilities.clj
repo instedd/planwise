@@ -39,11 +39,13 @@
 ;; ----------------------------------------------------------------------
 ;; Service functions
 
-(defn insert-facilities! [service facilities]
+(defn insert-facilities! [service dataset-id facilities]
   (jdbc/with-db-transaction [tx (get-db service)]
-    (doseq [facility facilities]
-      (insert-facility! tx facility)))
-  (count facilities))
+    (reduce (fn [ids facility]
+              (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
+                (conj ids (:id result))))
+            []
+            facilities)))
 
 (defn destroy-facilities! [service dataset-id]
   (delete-facilities-in-dataset! (get-db service) {:dataset-id dataset-id}))

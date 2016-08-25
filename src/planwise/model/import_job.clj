@@ -102,6 +102,7 @@
         facility-ids (:facility-ids job)
         facility-count (count facility-ids)
         [_ _ [_ page-ids total-pages]] event
+        page-ids (filter some? page-ids)
         total-pages (or total-pages (:page-count job))]
     (-> (complete-task job event)
         (assoc :page (inc page)
@@ -329,6 +330,9 @@
   [job]
   (let [state (:state job)]
     (cond
+      (nil? job)
+      nil
+
       (nil? state)
       {:status :ready}
 

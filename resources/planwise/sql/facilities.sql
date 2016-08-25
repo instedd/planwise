@@ -1,7 +1,8 @@
--- :name insert-facility! :! :n
+-- :name insert-facility! :<! :1
 INSERT INTO facilities
     (dataset_id, site_id, name, lat, lon, type_id, the_geom)
-    VALUES (:dataset-id, :site-id, :name, :lat, :lon, :type-id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326));
+    VALUES (:dataset-id, :site-id, :name, :lat, :lon, :type-id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
+    RETURNING id;
 
 -- :name delete-facilities-in-dataset! :!
 DELETE FROM facilities WHERE dataset_id = :dataset-id;

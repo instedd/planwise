@@ -27,3 +27,17 @@ SELECT
   owner_id AS "owner-id"
 FROM datasets
 WHERE id = :id;
+
+-- :name update-dataset* :! :n
+/* :require [clojure.string :as string] */
+UPDATE datasets SET
+/*~
+(string/join ","
+(for [field [:facility-count :description] :when (some? (field params))]
+(str (name field) " = :" (name field))))
+~*/
+WHERE datasets.id = :id;
+
+-- :name delete-dataset! :! :n
+DELETE FROM datasets
+WHERE datasets.id = :id;

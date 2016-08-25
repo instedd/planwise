@@ -31,7 +31,7 @@
     [{:id 1 :facility_id 1 :threshold 900 :method "alpha-shape" :the_geom (sample-polygon)}]]])
 
 (def new-facilities
-  [{:site-id 3 :dataset-id dataset-id :name "New facility" :type-id 1 :lat 4 :lon 10 :type "hospital"}])
+  [{:site-id 3 :name "New facility" :type-id 1 :lat 4 :lon 10 :type "hospital"}])
 
 (defn system []
   (into
@@ -49,7 +49,7 @@
   (with-system (system)
     (let [service (:facilities system)]
       (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
-      (is (= 1 (facilities/insert-facilities! service new-facilities)))
+      (is (= [100] (facilities/insert-facilities! service dataset-id new-facilities)))
       (is (= 3 (count (facilities/list-facilities service dataset-id)))))))
 
 (deftest destroy-facilities

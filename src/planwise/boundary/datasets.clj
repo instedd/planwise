@@ -12,7 +12,13 @@
     "Creates a new dataset.")
 
   (find-dataset [this dataset-id]
-    "Retrieves the dataset by ID, returning nil if not found."))
+    "Retrieves the dataset by ID, returning nil if not found.")
+
+  (update-dataset [this dataset]
+    "Updates fields in the dataset")
+
+  (destroy-dataset! [this dataset-id]
+    "Destroy a dataset"))
 
 ;; Reference implementation
 
@@ -23,4 +29,8 @@
   (create-dataset! [store dataset]
     (service/create-dataset! store dataset))
   (find-dataset [store dataset-id]
-    (service/find-dataset store dataset-id)))
+    (service/find-dataset store dataset-id))
+  (update-dataset [store dataset]
+    (service/update-dataset store dataset))
+  (destroy-dataset! [store dataset-id]
+    (service/destroy-dataset! store dataset-id)))

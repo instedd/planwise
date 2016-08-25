@@ -54,3 +54,11 @@
   (let [db (get-db store)]
     (-> (select-dataset db {:id dataset-id})
         db->dataset)))
+
+(defn update-dataset
+  [store dataset]
+  (update-dataset* (get-db store) dataset))
+
+(defn destroy-dataset!
+  [store dataset-id]
+  (delete-dataset! (get-db store) {:id dataset-id}))

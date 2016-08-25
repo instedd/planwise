@@ -47,9 +47,9 @@
 ;; ----------------------------------------------------------------------
 ;; Service functions
 
-(defn list-projects
-  [service]
-  (->> (select-projects (get-db service))
+(defn list-projects-for-dataset
+  [service dataset-id]
+  (->> (select-projects-for-dataset (get-db service) {:dataset-id dataset-id})
        (map db->project)))
 
 (defn list-projects-for-user [service user-id]

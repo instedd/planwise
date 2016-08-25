@@ -121,8 +121,9 @@
 
 (defn find-collection-field
   [service user-ident coll-id field-id]
-  (let [fields (list-collections service user-ident coll-id)]
+  (let [fields (list-collection-fields service user-ident coll-id)]
     (some (fn [field]
-            (when (= (:id field) field-id)
+            (when (or (= (:id field) field-id)
+                      (= (:id field) (str field-id)))
               field))
           fields)))

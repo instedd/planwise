@@ -27,17 +27,19 @@
 
 (defn import-types
   "Import the facility types from a Resourcemap 'select-one' field definition."
-  [facilities type-field]
-  (info "Importing facility types from Resourcemap field" (:id type-field))
-  (facilities/destroy-facilities! facilities)
-  (facilities/destroy-types! facilities)
+  [facilities dataset-id type-field]
+  (info (str "Dataset " dataset-id ": "
+             "Importing facility types from Resourcemap field " (:id type-field)))
+  (facilities/destroy-facilities! facilities dataset-id)
+  (facilities/destroy-types! facilities dataset-id)
   (let [options (get-in type-field [:config :options])
         types (map (fn [{label :label}] {:name label}) options)
         codes (map :code options)
-        inserted-types (facilities/insert-types! facilities types)
+        inserted-types (facilities/insert-types! facilities dataset-id types)
         inserted-type-ids (map :id inserted-types)
         new-options (zipmap codes inserted-type-ids)]
-    (info "Done importing" (count new-options) "facility types")
+    (info (str "Dataset " dataset-id ": "
+               "Done importing " (count new-options) " facility types"))
     {:code (:code type-field)
      :options new-options}))
 
@@ -65,7 +67,7 @@
     (fn [site]
       (-> site
           (select-keys [:id :name :lat :long])
-          (rename-keys {:long :lon})
+          (rename-keys {:id :site-id :long :lon})
           (assoc :type-id (facility-type site))))))
 
 (defn sites->facilities
@@ -80,16 +82,19 @@
   "Request a single page of sites from a Resourcemap collection and import the
   sites as facilities. Returns nil when Resourcemap returns no sites, or
   [:continue ids] where ids are from the inserted facilities."
-  [{:keys [resmap facilities]} user coll-id type-field page]
-  (info (str "Requesting page " page " of collection " coll-id " from Resourcemap"))
+  [{:keys [resmap facilities]} user dataset-id coll-id type-field page]
+  (info (str "Dataset " dataset-id ": "
+             "Requesting page " page " of collection " coll-id " from Resourcemap"))
   (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
         sites (:sites data)
         total-pages (:totalPages data)]
     (when (seq sites)
       (let [new-facilities (sites->facilities sites type-field)]
-        (info "Inserting" (count new-facilities) "facilities from page" page "of collection" coll-id)
-        (facilities/insert-facilities! facilities new-facilities)
-        [:continue (map :id new-facilities) total-pages]))))
+        (info (str "Dataset " dataset-id ": "
+                   "Inserting " (count new-facilities) " facilities from page " page
+                   " of collection " coll-id))
+        (let [new-ids (facilities/insert-facilities! facilities dataset-id new-facilities)]
+          [:continue new-ids total-pages])))))
 
 (defn process-facilities
   [facilities facility-ids]
@@ -98,9 +103,9 @@
     (facilities/preprocess-isochrones facilities id)))
 
 (defn update-projects
-  [projects]
-  (info "Updating projects after importing facilities")
-  (let [list (projects/list-projects projects)]
+  [projects dataset-id]
+  (info (str "Dataset " dataset-id ": Updating projects after importing facilities"))
+  (let [list (projects/list-projects-for-dataset projects dataset-id)]
     (doseq [project list]
       (projects/update-project-stats projects project))))
 
@@ -116,45 +121,72 @@
 
 (defn build-task-fn
   [{:keys [facilities projects resmap]} job task]
-  (case (import-job/task-type task)
-    :import-types
-    (let [type-field (import-job/job-type-field job)]
-      (partial import-types facilities type-field))
+  (let [dataset-id (import-job/job-dataset-id job)]
+    (case (import-job/task-type task)
+      :import-types
+      (let [type-field (import-job/job-type-field job)]
+        (partial import-types facilities dataset-id type-field))
 
-    :import-sites
-    (let [services {:resmap resmap
-                    :facilities facilities}
-          user-ident (import-job/job-user-ident job)
-          coll-id (import-job/job-collection-id job)
-          type-field (import-job/job-type-field job)
-          page (second task)]
-      (partial import-collection-page services user-ident coll-id type-field page))
+      :import-sites
+      (let [services {:resmap resmap
+                      :facilities facilities}
+            user-ident (import-job/job-user-ident job)
+            coll-id (import-job/job-collection-id job)
+            type-field (import-job/job-type-field job)
+            page (second task)]
+        (partial import-collection-page services user-ident dataset-id coll-id type-field page))
 
-    :process-facilities
-    (let [facility-ids (second task)]
-      (partial process-facilities facilities facility-ids))
+      :process-facilities
+      (let [facility-ids (second task)]
+        (partial process-facilities facilities facility-ids))
 
-    :update-projects
-    (partial update-projects projects)))
+      :update-projects
+      (partial update-projects projects dataset-id))))
 
-(defn log-job-status
-  [job]
-  (when (import-job/job-finished? job)
-    (let [result (import-job/job-result job)]
-      (info "Import job finished with result:" result))))
 
+(defn jobs-next-task
+  [jobs]
+  (let [reducer-fn (fn [[jobs ready-job-id] [job-id job]]
+                     (if (some? ready-job-id)
+                       [(conj jobs [job-id job]) ready-job-id]
+                       (let [job (import-job/next-task job)
+                             task (when-not (import-job/job-finished? job)
+                                    (import-job/job-peek-next-task job))]
+                         [(conj jobs [job-id job]) (when (some? task) job-id)])))
+        ;; remove previous ready job from the jobs map
+        jobs (dissoc jobs ::ready-job-id)
+        ;; find next ready job with a task to dispatch
+        [jobs ready-job-id] (reduce reducer-fn [{} nil nil] jobs)]
+    (assoc jobs ::ready-job-id ready-job-id)))
+
+(defn finish-job
+  [component job]
+  (when (some? job)
+    (let [result (import-job/job-result job)
+          dataset-id (import-job/job-dataset-id job)]
+      (info (str "Import job for dataset " dataset-id " finished with result: " result)))))
+
+(defn jobs-finisher
+  [component]
+  (fn [jobs]
+    (let [jobs (dissoc jobs ::ready-job-id)
+          reducer-fn (fn [jobs [job-id job]]
+                       (if (import-job/job-finished? job)
+                         (do (finish-job component job) jobs)
+                         (conj jobs [job-id job])))]
+      (reduce reducer-fn {} jobs))))
 
 ;; ----------------------------------------------------------------------------
 ;; Service definition
 
-(defrecord Importer [job taskmaster concurrent-workers resmap facilities datasets projects]
+(defrecord Importer [jobs taskmaster concurrent-workers resmap facilities datasets projects]
   component/Lifecycle
   (start [component]
     (info "Starting Importer component")
     (if-not (:taskmaster component)
-      (let [job (atom nil)
+      (let [jobs (atom {})
             concurrent-workers (or (:concurrent-workers component) 1)
-            component (assoc component :job job)
+            component (assoc component :jobs jobs)
             taskmaster (taskmaster/run-taskmaster component concurrent-workers)]
         (assoc component :taskmaster taskmaster))
       component))
@@ -162,33 +194,32 @@
     (info "Stopping Importer component")
     (when-let [taskmaster (:taskmaster component)]
       (taskmaster/quit taskmaster))
-    (dissoc component :job :taskmaster))
+    (dissoc component :jobs :taskmaster))
 
   taskmaster/TaskDispatcher
   (next-task [component]
-    (if-not (import-job/job-finished? @(:job component))
-      (let [job (swap! (:job component) import-job/next-task)
-            task (import-job/job-peek-next-task job)]
-        (log-job-status job)
-        (if (and (not (import-job/job-finished? job)) task)
-          (do
-            (debug "Importer: next-task" task)
-            {:task-id task
-             :task-fn (build-task-fn component job task)})
-          (do
-            (debug "No more tasks to execute")
-            nil)))
-      (debug "Nothing to do")))
+    (swap! (:jobs component) (jobs-finisher component))
+    (let [jobs (swap! (:jobs component) jobs-next-task)
+          ready-job-id (::ready-job-id jobs)]
+      (if (some? ready-job-id)
+        (let [ready-job (get jobs ready-job-id)
+              task (import-job/job-peek-next-task ready-job)]
+          (info (str "Importer: next-task " task " for job " ready-job-id))
+          {:task-id [ready-job-id task]
+           :task-fn (build-task-fn component ready-job task)})
+        (do
+          (info (str "Importer: no more tasks to execute"))
+          nil))))
 
-  (task-completed [component task-id result]
-    (debug "Importer: task-completed" task-id result)
-    (let [job (swap! (:job component) import-job/report-task-success task-id result)]
-      (log-job-status job)))
+  (task-completed [component [job-id task-id] result]
+    (info (str "Importer: task " task-id " completed for job " job-id " with result: " result))
+    (swap! (:jobs component) update job-id import-job/report-task-success task-id result)
+    (swap! (:jobs component) (jobs-finisher component)))
 
-  (task-failed [component task-id error-info]
-    (warn "Importer: task-failed" task-id error-info)
-    (let [job (swap! (:job component) import-job/report-task-failure task-id error-info)]
-      (log-job-status job))))
+  (task-failed [component [job-id task-id] error-info]
+    (warn (str "Importer: task " task-id " failed for job " job-id " with: " error-info))
+    (swap! (:jobs component) update job-id import-job/report-task-failure task-id error-info)
+    (swap! (:jobs component) (jobs-finisher component))))
 
 (defn importer
   "Constructs an Importer service"
@@ -203,7 +234,9 @@
 (defn status
   "Retrieve the importer's current status"
   [service]
-  (import-job/job-status @(:job service)))
+  (->> (dissoc @(:jobs service) ::ready-job-id)
+       (map (fn [[job-id job]] [job-id (import-job/job-status job)]))
+       (into {})))
 
 (defn run-import-for-dataset
   [{:keys [datasets resmap] :as service} dataset-id user-ident]
@@ -213,7 +246,8 @@
             type-field-id (get-in dataset [:mappings :type])
             type-field (resmap/find-collection-field resmap user-ident coll-id type-field-id)
             new-job (import-job/create-job dataset-id user-ident coll-id type-field)
-            accepted-job (swap! (:job service) #(try-accept-job % new-job))]
+            jobs (swap! (:jobs service) update dataset-id try-accept-job new-job)
+            accepted-job (get jobs dataset-id)]
         (if (= new-job accepted-job)
           (do
             (let [result (taskmaster/poll-dispatcher (:taskmaster service))]
@@ -224,6 +258,6 @@
       [:error :invalid-dataset])))
 
 (defn cancel-import!
-  [service]
-  (swap! (:job service) import-job/cancel-job)
+  [service job-id]
+  (swap! (:jobs service) update job-id import-job/cancel-job)
   (status service))
