@@ -143,6 +143,11 @@ article.project-view {
         &.active,
         &.active:hover {
           border-bottom: 3px solid $green;
+          a,
+          a:hover {
+            color: $green;
+            fill: $green;
+          }
         }
 
         &:hover {
@@ -154,6 +159,7 @@ article.project-view {
         a:hover {
           text-decoration: none;
           color: $gray3;
+          fill: $gray3;
           font-size: 14px;
         }
       }
@@ -287,7 +293,15 @@ article.project-view {
     }
 
     .rc-dropdown {
-      width: 100%;
+      width: 85%;
+    }
+
+    .icon {
+      width: 30px;
+      height: 30px;
+      fill: $gray3;
+      vertical-align: middle;
+      margin: 0 5px;
     }
   }
 }

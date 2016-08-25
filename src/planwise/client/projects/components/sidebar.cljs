@@ -2,6 +2,7 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [re-com.core :as rc]
+            [planwise.client.components.common :refer [icon]]
             [planwise.client.components.progress-bar :as progress-bar]
             [planwise.client.components.filters :as filters]
             [planwise.client.projects.db :as db]
@@ -93,7 +94,8 @@
          :choices (:time db/transport-definitions)
          :label-fn :name
          :on-change #(dispatch [:projects/set-transport-time %])
-         :model transport-time]]])))
+         :model transport-time]
+        (icon :car)]])))
 
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab

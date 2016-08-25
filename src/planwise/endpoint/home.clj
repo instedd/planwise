@@ -7,7 +7,11 @@
             [hiccup.page :refer [include-js include-css html5]]
             [buddy.auth :refer [authenticated? throw-unauthorized]]
             [planwise.util.ring :as util]
-            [planwise.component.auth :refer [create-jwe-token]]))
+            [planwise.component.auth :refer [create-jwe-token]]
+            [clojure.java.io :as io]))
+
+(def inline-svg
+  (slurp (io/resource "svg/icons.svg")))
 
 (def mount-target
   [:div#app
@@ -49,6 +53,7 @@
     (html5
      (head)
      [:body
+      inline-svg
       mount-target
       (anti-forgery-field)
       (client-config (assoc endpoint :request request))

@@ -86,6 +86,7 @@
   :target-path "target/%s/"
   :resource-paths ["resources" "target/cljsbuild" "target/sass"]
   :prep-tasks [["javac"] ["cljsbuild" "once"] ["sass" "once"] ["compile"]]
+  :uberjar-exclusions [#"resources/svg/icons/.*" #"resources/sass/.*"]
   :sass
   {:src "resources/sass"
    :output-directory "target/sass/planwise/public/css"
@@ -101,7 +102,8 @@
             "setup"        ["run-task" "dev.tasks/setup"]
             "import-sites" ["run-task" "planwise.tasks.import-sites"]
             "migrate"      ["run-task" "planwise.tasks.db" "migrate"]
-            "rollback"     ["run-task" "planwise.tasks.db" "rollback"]}
+            "rollback"     ["run-task" "planwise.tasks.db" "rollback"]
+            "build-icons"  ["run-task" "planwise.tasks.build-icons"]}
   :profiles
   {:dev  [:project/dev  :profiles/dev]
    :test [:project/test :profiles/test]
