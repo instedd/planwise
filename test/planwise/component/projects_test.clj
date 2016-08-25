@@ -14,10 +14,12 @@
   [[:users
     [{:id 1 :email "john@doe.com" :full_name "John Doe" :last_login nil :created_at (time/ago (time/minutes 5))}]]
    [:tokens []]
+   [:datasets
+    [{:id 1 :name "dataset1" :description "" :owner_id 1 :collection_id 1 :import_mappings nil :facility_count 0}]]
    [:regions
     [{:id 1 :country "kenya" :name "Kenya" :admin_level 2 :the_geom (sample-polygon) :preview_geom nil :total_population 1000 :max_population 127}]]
    [:projects
-    [{:id 1 :goal "" :region_id 1 :filters "" :stats "" :owner_id 1}]]])
+    [{:id 1 :goal "" :dataset_id 1 :region_id 1 :filters "" :stats "" :owner_id 1}]]])
 
 (defn system []
   (into
