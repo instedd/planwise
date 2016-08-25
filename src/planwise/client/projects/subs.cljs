@@ -84,6 +84,11 @@
    (reaction (get-in @db [:projects :current :demand-map-key]))))
 
 (register-sub
+ :projects/map-state
+ (fn [db [_]]
+   (reaction (get-in @db [:projects :current :map-state :current]))))
+
+(register-sub
  :projects/map-view
  (fn [db [_ field]]
    (let [map-view (reaction (get-in @db [:projects :current :map-view]))

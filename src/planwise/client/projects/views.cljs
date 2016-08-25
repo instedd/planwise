@@ -67,6 +67,15 @@
                                #(dispatch [:projects/cancel-new-project])}
           [new-project-dialog]])])))
 
+(def loading-wheel
+  [:svg.circular {:viewBox "25 25 50 50"}
+   [:circle.path {:cx 50
+                  :cy 50
+                  :fill "none"
+                  :r 20
+                  :stroke-miterlimit 10
+                  :stroke-width 2}]])
+
 (defn- project-tab [project-id project-region-id selected-tab]
   (let [facilities-by-type (subscribe [:projects/facilities-by-type])
         map-position (subscribe [:projects/map-view :position])
@@ -75,6 +84,7 @@
         map-legend-max (subscribe [:projects/map-view :legend-max])
         demand-map-key (subscribe [:projects/demand-map-key])
         map-geojson (subscribe [:projects/map-geojson])
+        map-state (subscribe [:projects/map-state])
         marker-popup-fn marker-popup
         marker-style-fn #(when (= "no-road-network" (:processing-status %)) {:fillColor styles/invalid-facility-type})
         isochrones (subscribe [:projects/facilities :isochrones])
@@ -82,7 +92,6 @@
         project-transport-time (subscribe [:projects/transport-time])
         callback-fn (reaction (geojson-bbox-callback isochrones project-facilities-criteria @project-transport-time))
         feature-fn #(aget % "isochrone")]
-
     (fn [project-id project-region-id selected-tab]
       (cond
 
@@ -92,6 +101,10 @@
          selected-tab)
         [:div
          [sidebar-section selected-tab]
+         (when (= @map-state :loading-displayed)
+           [:div.loading-indicator
+            [:div.loading-wheel loading-wheel]
+            [:div.loading-legend "Retrieving facilities"]])
          [:div.map-container
           (let [map-props   {:position @map-position
                              :zoom @map-zoom

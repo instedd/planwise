@@ -13,6 +13,9 @@
 (def in-current-project (path [:projects :current]))
 (def in-filter-definitions (path [:filter-definitions]))
 
+(def request-delay 500)
+(def loading-hint-delay 2500)
+
 ;; ---------------------------------------------------------------------------
 ;; Facility types handlers
 
@@ -180,6 +183,55 @@
 ;; ---------------------------------------------------------------------------
 ;; Project filter updating
 
+(defn set-request-timeout [db]
+  (assoc-in db [:map-state :timeout]
+            (js/setTimeout #(dispatch [:projects/trigger-map-request]) request-delay)))
+
+(defn cancel-prev-timeout [db]
+  (update-in db [:map-state :timeout] js/clearTimeout))
+
+(defn cancel-prev-request [db]
+  (some-> (get-in db [:map-state :request]) ajax.protocols/-abort)
+  (assoc-in db [:map-state :request] nil))
+
+(register-handler
+ :projects/show-map-loading-hint
+ in-current-project
+ (fn [db _]
+   (if (= (get-in db [:map-state :current]) :loading)
+     (assoc-in db [:map-state :current] :loading-displayed)
+     db)))
+
+(register-handler
+ :projects/trigger-map-request
+ in-current-project
+ (fn [db _]
+   (let [filters (db/project-filters db)
+         project-id (get-in db [:project-data :id])
+         request-with (get-in db [:map-state :request-with])]
+     (-> db
+         (assoc-in [:map-state :request] (api/update-project project-id filters request-with :projects/project-updated))
+         (assoc-in [:map-state :timeout] (js/setTimeout #(dispatch [:projects/show-map-loading-hint]) loading-hint-delay))
+         (assoc-in [:map-state :current] :loading)))))
+
+(defn initiate-project-update [db request-with]
+  (let [new-db
+        (case (get-in db [:map-state :current])
+          :loaded            (set-request-timeout db)
+          :request-pending   (-> db
+                                 cancel-prev-timeout
+                                 set-request-timeout)
+          :loading           (-> db
+                                 cancel-prev-timeout
+                                 cancel-prev-request
+                                 set-request-timeout)
+          :loading-displayed (-> db
+                                 cancel-prev-request
+                                 set-request-timeout))]
+    (-> new-db
+        (assoc-in [:map-state :current] :request-pending)
+        (assoc-in [:map-state :request-with] request-with))))
+
 (register-handler
  :projects/toggle-filter
  in-current-project
@@ -194,28 +246,27 @@
                     (assoc-in [:facilities :isochrones] nil))
          filters (db/project-filters new-db)
          project-id (get-in db [:project-data :id])]
-     (api/update-project project-id filters :facilities
-                         :projects/project-updated)
-     new-db)))
+     (initiate-project-update new-db :facilities))))
 
 (register-handler
  :projects/set-transport-time
  in-current-project
   (fn [db [_ time]]
-    (let [new-db (assoc-in db [:transport :time] time)
-          filters (db/project-filters new-db)
-          project-id (get-in db [:project-data :id])]
-      (api/update-project project-id filters nil
-                          :projects/project-updated)
+    (let [new-db (-> db
+                   (assoc-in [:transport :time] time)
+                   (initiate-project-update nil))]
       new-db)))
 
 (register-handler
  :projects/project-updated
  in-current-project
  (fn [db [_ project]]
-   ;;
-   (api/load-projects :projects/projects-loaded)
-   (db/update-viewmodel db project)))
+   (let [prev-state (get-in db [:map-state :current])
+         new-db (-> db
+                    cancel-prev-timeout
+                    (assoc-in [:map-state :current] :loaded))]
+     (api/load-projects :projects/projects-loaded)
+     (db/update-viewmodel new-db project))))
 
 ;; ----------------------------------------------------------------------------
 ;; Project deletion
