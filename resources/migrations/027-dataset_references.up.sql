@@ -19,3 +19,7 @@ ALTER TABLE facilities_polygons
       ADD CONSTRAINT facilities_polygons_facility_id_pkey
       FOREIGN KEY (facility_id)
       REFERENCES facilities(id) ON DELETE CASCADE;
+
+ALTER TABLE projects
+      ADD COLUMN dataset_id BIGINT NOT NULL
+      REFERENCES datasets(id) ON DELETE RESTRICT;

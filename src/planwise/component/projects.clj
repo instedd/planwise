@@ -68,9 +68,10 @@
 (defn compute-project-stats
   [{:keys [facilities]} project]
   (let [region-id (:region-id project)
-        facilities-total (facilities/count-facilities facilities {:region region-id})
+        dataset-id (:dataset-id project)
+        facilities-total (facilities/count-facilities facilities dataset-id {:region region-id})
         criteria (facilities-criteria project)
-        facilities-targeted (facilities/count-facilities facilities criteria)]
+        facilities-targeted (facilities/count-facilities facilities dataset-id criteria)]
     {:facilities-targeted facilities-targeted
      :facilities-total facilities-total}))
 
@@ -131,4 +132,3 @@
 (defn accessible-by?
   [project user-id]
   (or (owned-by? project user-id)))
-

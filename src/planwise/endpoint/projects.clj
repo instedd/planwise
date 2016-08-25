@@ -58,11 +58,13 @@
                (status 400)))
          (not-found {:error "Project not found"}))))
 
-   (POST "/" [goal region-id :as request]
+   (POST "/" [goal dataset-id region-id :as request]
      (let [goal (str/trim goal)
+           dataset-id (Integer. dataset-id)
            region-id (Integer. region-id)
            user-id (util/request-user-id request)
            project-templ {:goal goal
+                          :dataset-id dataset-id
                           :region-id region-id
                           :owner-id user-id}]
        (response (projects/create-project service project-templ))))

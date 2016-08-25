@@ -14,9 +14,12 @@
 (defn new-project-dialog []
   (let [view-state (subscribe [:projects/view-state])
         regions (subscribe [:regions/list])
+        datasets (subscribe [:datasets/list])
         new-project-goal (r/atom "")
         new-project-region-id (r/atom (:id (first @regions)))
+        new-project-dataset-id (r/atom (:id (first @datasets)))
         _ (dispatch [:regions/load-regions-with-geo [@new-project-region-id]])
+        _ (dispatch [:datasets/load-datasets])
         map-preview-zoom (r/atom 5)
         map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
     (fn []
@@ -30,6 +33,7 @@
           :on-submit (utils/prevent-default
                       #(dispatch [:projects/create-project
                                   {:goal @new-project-goal
+                                   :dataset-id @new-project-dataset-id
                                    :region-id @new-project-region-id}]))}
          [:div.title
           [:h1 "New Project"]
@@ -44,6 +48,14 @@
                    :on-key-down key-handler-fn
                    :on-change #(reset! new-project-goal
                                        (-> % .-target .-value str/triml))}]]
+         [:div.form-control
+          [:label "Dataset"]
+          [rc/single-dropdown
+           :choices (or @datasets [])
+           :label-fn :name
+           :filter-box? true
+           :on-change #(reset! new-project-dataset-id %)
+           :model new-project-dataset-id]]
          [:div.form-control
           [:label "Location"]
           [rc/single-dropdown
