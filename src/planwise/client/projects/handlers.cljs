@@ -194,21 +194,6 @@
   (some-> (get-in db [:map-state :request]) ajax.protocols/-abort)
   (assoc-in db [:map-state :request] nil))
 
-(defn loaded-to-request-pending [db]
-  (set-request-timeout db))
-
-(defn request-pending-to-request-pending [db]
-  (-> db cancel-prev-timeout set-request-timeout))
-
-(defn loading-to-request-pending [db]
-  (-> db
-      cancel-prev-timeout
-      cancel-prev-request
-      set-request-timeout))
-
-(defn loading-displayed-to-request-pending [db]
-  (-> db cancel-prev-request set-request-timeout))
-
 (register-handler
  :projects/show-map-loading-hint
  in-current-project
@@ -232,10 +217,17 @@
 (defn initiate-project-update [db request-with]
   (let [new-db
         (case (get-in db [:map-state :current])
-          :loaded            (loaded-to-request-pending db)
-          :request-pending   (request-pending-to-request-pending db)
-          :loading           (loading-to-request-pending db)
-          :loading-displayed (loading-displayed-to-request-pending db))]
+          :loaded            (set-request-timeout db)
+          :request-pending   (-> db
+                                 cancel-prev-timeout
+                                 set-request-timeout)
+          :loading           (-> db
+                                 cancel-prev-timeout
+                                 cancel-prev-request
+                                 set-request-timeout)
+          :loading-displayed (-> db
+                                 cancel-prev-request
+                                 set-request-timeout))]
     (-> new-db
         (assoc-in [:map-state :current] :request-pending)
         (assoc-in [:map-state :request-with] request-with))))
