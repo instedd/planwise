@@ -61,7 +61,8 @@
         facility-ownerships (subscribe [:filter-definition :facility-ownership])
         facility-services (subscribe [:filter-definition :facility-service])
         filters (subscribe [:projects/facilities :filters])
-        filter-stats (subscribe [:projects/facilities :filter-stats])]
+        filter-stats (subscribe [:projects/facilities :filter-stats])
+        wizard-mode-on  (subscribe [:projects/wizard-mode-on])]
     (fn []
       (let [filter-count (:count @filter-stats)
             filter-total (:total @filter-stats)
@@ -95,11 +96,13 @@
              {:options @facility-services
               :value (:services @filters)
               :toggle-fn (toggle-cons-fn :services)})]
-         (next-and-back-buttons :facilities (:id @current-project))]))))
+         (when @wizard-mode-on
+           (next-and-back-buttons :facilities (:id @current-project)))]))))
 
 (defn- transport-filters []
   (let [current-project (subscribe [:projects/current-data])
-        transport-time (subscribe [:projects/transport-time])]
+        transport-time (subscribe [:projects/transport-time])
+        wizard-mode-on (subscribe [:projects/wizard-mode-on])]
     (fn []
       [:div.sidebar-filters
        [:div.filter-info
@@ -113,8 +116,10 @@
          :choices (:time db/transport-definitions)
          :label-fn :name
          :on-change #(dispatch [:projects/set-transport-time %])
-         :model transport-time]]
-       (next-and-back-buttons :transport (:id @current-project))])))
+         :model transport-time]
+        (icon :car)]
+       (when @wizard-mode-on
+         (next-and-back-buttons :transport (:id @current-project)))])))
 
 (defn sidebar-section [selected-tab]
   [:aside (condp = selected-tab
