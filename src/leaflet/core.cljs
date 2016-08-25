@@ -258,6 +258,14 @@
             shiftKey (aget originalEvent "shiftKey")]
         (on-click lat lon shiftKey)))))
 
+(defn set-layer-blend-mode [mode]
+  "Create a handler that sets the mix-blend-mode for all leaflet layers."
+  (fn [e]
+    (doseq [layer (array-seq (.querySelectorAll js/document ".leaflet-tile-pane > .leaflet-layer"))]
+      (-> layer
+          (.-style)
+          (.setProperty "mix-blend-mode" mode)))))
+
 (defn leaflet-did-mount [this]
   (let [props (reagent/props this)
         leaflet (.map js/L (reagent/dom-node this)
@@ -271,6 +279,11 @@
     (leaflet-update-layers this)
     (leaflet-update-options this)
     (leaflet-update-viewport this)
+
+    ;; optimization: disable "expensive" blend mode while zooming
+    ;; TODO: try to remove coupling of this optimization with the css style
+    (.on leaflet "zoomstart" (set-layer-blend-mode ""))
+    (.on leaflet "zoomend" (set-layer-blend-mode "multiply"))
 
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))))
