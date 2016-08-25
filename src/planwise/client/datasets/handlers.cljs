@@ -156,11 +156,13 @@
   [db status]
   (let [status (map-server-status status)
         current-state (:state db)
+        current-dataset-id (get-in current-state [:project :current :project-data :dataset-id])
         new-state (db/server-status->state status)]
     ;; refresh critical system information if an import finished executing
     (when (and (or (db/importing? current-state) (db/cancelling? current-state))
                (= :ready new-state))
-      (dispatch [:projects/fetch-facility-types])
+      (when current-dataset-id
+        (dispatch [:projects/fetch-facility-types current-dataset-id]))
       (dispatch [:datasets/reload-info]))
     (assoc db
            :state new-state

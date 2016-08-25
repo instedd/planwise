@@ -78,7 +78,7 @@
                 :criteria (criteria-snip criteria))))))
 
 (defn list-types [service dataset-id]
-  (select-types-in-dataset (get-db service {:dataset-id dataset-id})))
+  (select-types-in-dataset (get-db service) {:dataset-id dataset-id}))
 
 (defn destroy-types!
   [service dataset-id]

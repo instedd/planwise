@@ -89,5 +89,7 @@
 (defn facilities-criteria
  [viewmodel]
  (let [filters (get-in viewmodel [:facilities :filters])
+       project-dataset-id (get-in viewmodel [:project-data :dataset-id])
        project-region-id (get-in viewmodel [:project-data :region-id])]
-   (assoc filters :region project-region-id)))
+   (assoc filters :dataset-id project-dataset-id
+                  :region project-region-id)))

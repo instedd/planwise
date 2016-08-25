@@ -12,7 +12,6 @@
 (register-handler
  :initialise-db
  (fn [_ _]
-   (dispatch [:projects/fetch-facility-types])
    (dispatch [:regions/load-regions])
    db/initial-db))
 

@@ -45,8 +45,8 @@
       handlers
       :mapper-fn (partial merge isochrone-options))))
 
-(defn fetch-facility-types [& handlers]
-  (GET "/api/facilities/types" (json-request {} handlers)))
+(defn fetch-facility-types [dataset-id & handlers]
+  (GET "/api/facilities/types" (json-request {:dataset-id dataset-id} handlers)))
 
 (defn update-project [project-id filters with-data & handlers]
   (let [url (str "/api/projects/" project-id)

@@ -34,6 +34,7 @@ ORDER BY projects.id ASC;
 SELECT
   projects.id,
   projects.goal,
+  projects.dataset_id AS "dataset-id",
   projects.region_id AS "region-id",
   projects.stats,
   projects.filters,

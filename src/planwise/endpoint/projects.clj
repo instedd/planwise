@@ -13,14 +13,15 @@
 
 (defn- assoc-extra-data
   [with project {:keys [facilities maps]}]
-  (let [criteria {:region (:region-id project)
+  (let [dataset-id (:dataset-id project)
+        criteria {:region (:region-id project)
                   :types (or (get-in project [:filters :facilities :type]) [])}]
     (case with
       :facilities
-      (let [project-facilities (facilities/list-facilities facilities criteria)]
+      (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)]
         (assoc project :facilities project-facilities))
       :facilities-with-demand
-      (let [project-facilities (facilities/list-facilities facilities criteria)
+      (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)
             time       (get-in project [:filters :transport :time])
             isochrones (when time
                          []) ; TODO: Load isochrones to calculate demand

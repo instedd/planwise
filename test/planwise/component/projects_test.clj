@@ -36,6 +36,12 @@
       (is (= 1000 (:region-population project)))
       (is (pos? (:region-area-km2 project))))))
 
+(deftest dataset-id-is-retrieved-on-get-project
+  (with-system (system)
+    (let [service (:projects system)
+          project (projects/get-project service 1)]
+      (is (= 1 (:dataset-id project))))))
+
 (deftest region-population-is-retrieved-on-list-projects-for-user
   (with-system (system)
     (let [service (:projects system)
