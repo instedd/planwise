@@ -17,11 +17,13 @@
 (defn db->dataset
   [record]
   (some-> record
+          (update :import-result edn/read-string)
           (update :mappings edn/read-string)))
 
 (defn dataset->db
   [dataset]
   (some-> dataset
+          (update :import-result pr-str)
           (update :mappings pr-str)))
 
 
@@ -45,9 +47,10 @@
         dataset-id (->> dataset
                         dataset->db
                         (insert-dataset! db)
-                        :id)
-        dataset (assoc dataset :id dataset-id)]
-    dataset))
+                        :id)]
+    (assoc dataset
+           :id dataset-id
+           :facility-count 0)))
 
 (defn find-dataset
   [store dataset-id]

@@ -3,7 +3,8 @@ SELECT
   id,
   name,
   description,
-  facility_count AS "facility-count",
+  (SELECT COUNT(*) FROM facilities WHERE facilities.dataset_id = datasets.id) AS "facility-count",
+  import_result AS "import-result",
   collection_id AS "collection-id",
   owner_id AS "owner-id"
 FROM datasets
@@ -12,9 +13,9 @@ ORDER BY id ASC;
 
 -- :name insert-dataset! :<! :1
 INSERT INTO datasets
-  (name, description, owner_id, collection_id, import_mappings, facility_count)
+  (name, description, owner_id, collection_id, import_mappings, import_result)
 VALUES
-  (:name, :description, :owner-id, :collection-id, :mappings, 0)
+  (:name, :description, :owner-id, :collection-id, :mappings, :import-result)
 RETURNING id;
 
 -- :name select-dataset :? :1
@@ -33,7 +34,7 @@ WHERE id = :id;
 UPDATE datasets SET
 /*~
 (string/join ","
-(for [field [:facility-count :description] :when (some? (field params))]
+(for [field [:description] :when (some? (field params))]
 (str (name field) " = :" (name field))))
 ~*/
 WHERE datasets.id = :id;

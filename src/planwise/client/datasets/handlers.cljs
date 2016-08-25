@@ -104,7 +104,6 @@
  :datasets/dataset-created
  in-datasets
  (fn [db [_ dataset]]
-   (dispatch [:datasets/invalidate-datasets])
    (let [view-state (get-in db [:state 1])
          new-db (if (= :creating view-state)
                   (assoc-in db [:state 1] :list)

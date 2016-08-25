@@ -60,6 +60,7 @@
                           :name name
                           :description description
                           :collection-id coll-id
+                          :import-result nil
                           :mappings {:type type-field}}]
        (info "Creating new dataset of collection" coll-id "for the user" user-email)
        (let [dataset (datasets/create-dataset! datasets dataset-templ)]

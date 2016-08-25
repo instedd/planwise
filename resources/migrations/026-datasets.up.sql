@@ -5,6 +5,5 @@ CREATE TABLE IF NOT EXISTS datasets (
        owner_id BIGINT NOT NULL REFERENCES users(id),
        collection_id BIGINT,
        import_mappings TEXT,
-       facility_count BIGINT
+       import_result TEXT
 );
-

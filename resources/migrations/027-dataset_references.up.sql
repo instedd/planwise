@@ -23,3 +23,5 @@ ALTER TABLE facilities_polygons
 ALTER TABLE projects
       ADD COLUMN dataset_id BIGINT NOT NULL
       REFERENCES datasets(id) ON DELETE RESTRICT;
+
+CREATE INDEX facilities_dataset_id_idx ON facilities(dataset_id);
