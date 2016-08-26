@@ -53,6 +53,7 @@ article.datasets {
   overflow: auto;
 
   .dataset-card {
+    position: relative;
     overflow: auto;
     color: $black;
     background: $white;
@@ -74,6 +75,12 @@ article.datasets {
     p {
       color: $gray-text;
       margin: 0;
+    }
+
+    .bottom-right {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
     }
   }
 }

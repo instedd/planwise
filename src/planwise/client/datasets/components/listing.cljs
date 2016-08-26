@@ -34,13 +34,23 @@
 
 (defn dataset-card
   [{:keys [id name description facility-count server-status] :as dataset}]
-  [:div.dataset-card
-   [:h1 name]
-   [:h2 description]
-   [:p
-    [common/icon :location "icon-small"]
-    (utils/pluralize facility-count "facility" "facilities")
-    (str " (" (db/server-status->string server-status) ")")]])
+  (let [state (db/server-status->state server-status)
+        importing? (db/dataset-importing? state)
+        cancelling? (db/dataset-cancelling? state)]
+    [:div.dataset-card
+     [:h1 name]
+     [:h2 description]
+     [:p
+      [common/icon :location "icon-small"]
+      (utils/pluralize facility-count "facility" "facilities")
+      (str " (" (db/server-status->string server-status) ")")]
+     (when importing?
+       [:div.bottom-right
+        [:button.danger
+         {:type :button
+          :on-click #(dispatch [:datasets/cancel-import! id])
+          :disabled cancelling?}
+         (if cancelling? "Cancelling..." "Cancel")]])]))
 
 (defn datasets-list
   [datasets]

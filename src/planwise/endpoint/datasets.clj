@@ -77,7 +77,7 @@
                [result import-status] (importer/run-import-for-dataset importer (:id dataset) user-ident)
                dataset-status (get import-status dataset-id)]
            (if (= :ok result)
-             (response (assoc dataset :status dataset-status))
+             (response (assoc dataset :server-status dataset-status))
              (-> (response {:error import-status})
                  (status 400)))))))
 
