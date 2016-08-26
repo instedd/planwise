@@ -1,6 +1,7 @@
 (ns planwise.client.datasets.handlers
   (:require [re-frame.core :refer [register-handler path dispatch]]
             [re-frame.utils :as c]
+            [clojure.string :refer [blank?]]
             [planwise.client.asdf :as asdf]
             [planwise.client.datasets.api :as api]
             [planwise.client.datasets.db :as db]))
@@ -119,8 +120,12 @@
          coll-id (:id collection)
          name (:name collection)
          description (:description collection)
+         description (if (blank? description)
+                       (str "Imported from Resourcemap collection " coll-id)
+                       description)
          type-field (get-in db [:new-dataset-data :type-field])]
-     (api/create-dataset! name description coll-id type-field :datasets/dataset-created))
+     (api/create-dataset! name description coll-id type-field
+                          :datasets/dataset-created :datasets/create-failed))
    (assoc db :state :creating)))
 
 (register-handler
@@ -137,3 +142,10 @@
      (-> new-db
          (update :resourcemap asdf/swap! db/remove-resmap-collection coll-id)
          (update :list asdf/swap! into (update-datasets [dataset]))))))
+
+(register-handler
+ :datasets/create-failed
+ in-datasets
+ (fn [db [_ error-info]]
+   (c/error (str "Dataset creation failed: " error-info))
+   (assoc db :state :list)))

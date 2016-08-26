@@ -86,7 +86,7 @@
     (let [progress (:progress server-status)
           progress (when progress (str " " (format-percentage progress)))]
       (case (:state server-status)
-        :start "Starting"
+        :start "Waiting to start"
         :importing-types "Importing facility types"
         (:request-sites :importing-sites) (str "Importing sites from Resourcemap" progress)
         (:processing-facilities) (str "Pre-processing facilities" progress)

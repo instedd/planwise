@@ -1,6 +1,7 @@
 (ns planwise.client.datasets.components.listing
   (:require [re-frame.core :refer [subscribe dispatch]]
             [planwise.client.utils :as utils]
+            [planwise.client.components.common :as common]
             [planwise.client.datasets.db :as db]))
 
 
@@ -37,6 +38,7 @@
    [:h1 name]
    [:h2 description]
    [:p
+    [common/icon :location "icon-small"]
     (utils/pluralize facility-count "facility" "facilities")
     (str " (" (db/server-status->string server-status) ")")]])
 

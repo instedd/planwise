@@ -74,9 +74,12 @@
        (info "Creating new dataset of collection" coll-id "for the user" user-email)
        (let [dataset (datasets/create-dataset! datasets dataset-templ)]
          (let [dataset-id (:id dataset)
-               status (importer/run-import-for-dataset importer (:id dataset) user-ident)
-               dataset-status (get status dataset-id)]
-           (response (assoc dataset :status dataset-status))))))
+               [result import-status] (importer/run-import-for-dataset importer (:id dataset) user-ident)
+               dataset-status (get import-status dataset-id)]
+           (if (= :ok result)
+             (response (assoc dataset :status dataset-status))
+             (-> (response {:error import-status})
+                 (status 400)))))))
 
    (POST "/cancel" [dataset-id :as request]
      (info "Cancelling import process by user request")
