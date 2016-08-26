@@ -11,19 +11,14 @@
   [server-status]
   (some-> server-status
           (update :status keyword)
-          (update :state keyword)
-          (update :result keyword)))
+          (update :state keyword)))
 
 (defn update-datasets
-  "Propagates the client states to the updated list of datasets"
   [server-datasets]
-  (map (fn [dataset]
-         (let [status (map-server-status (:server-status dataset))
-               state (db/server-status->state status)]
-           (assoc dataset
-                  :server-status status
-                  :state state)))
-       server-datasets))
+  (mapv (fn [dataset]
+          (let [status (map-server-status (:server-status dataset))]
+            (assoc dataset :server-status status)))
+        server-datasets))
 
 
 
@@ -34,29 +29,36 @@
  :datasets/load-datasets
  in-datasets
  (fn [db [_]]
-   (let [list-state (get-in db [:state 0])]
-     (if-not (#{:loaded :loading :reloading} list-state)
-       (do
-         (api/load-datasets :datasets/datasets-loaded)
-         (assoc-in db [:state 0] :loading))
-       db))))
+   (api/load-datasets :datasets/datasets-loaded)
+   (update db :list asdf/reload!)))
 
 (register-handler
  :datasets/invalidate-datasets
  in-datasets
  (fn [db [_]]
-   (let [list-state (get-in db [:state 0])]
-     (if (= :loaded list-state)
-       (assoc-in db [:state 0] :invalid)
+   (update db :list asdf/invalidate!)))
+
+(register-handler
+ :datasets/refresh-datasets
+ in-datasets
+ (fn [db [_ time]]
+   (let [sets (asdf/value (:list db))
+         statuses (map :server-status sets)
+         any-running? (some some? statuses)
+         refresh-interval (if any-running? 1000 10000)
+         last-refresh (or (:last-refresh db) 0)
+         since-last-refresh (- time last-refresh)]
+     (if (< refresh-interval since-last-refresh)
+       (-> db
+           (update :list asdf/invalidate!)
+           (assoc :last-refresh time))
        db))))
 
 (register-handler
  :datasets/datasets-loaded
  in-datasets
  (fn [db [_ datasets]]
-   (-> db
-       (assoc :list (update-datasets datasets))
-       (assoc-in [:state 0] :loaded))))
+   (update db :list asdf/reset! (update-datasets datasets))))
 
 (register-handler
  :datasets/search
@@ -80,15 +82,15 @@
  :datasets/begin-new-dataset
  in-datasets
  (fn [db [_]]
-   (-> db
-       (assoc-in [:state 1] :create-dialog)
-       (assoc :new-dataset-data nil))))
+   (assoc db
+          :state :create-dialog
+          :new-dataset-data nil)))
 
 (register-handler
  :datasets/cancel-new-dataset
  in-datasets
  (fn [db [_]]
-   (assoc-in db [:state 1] :list)))
+   (assoc db :state :list)))
 
 (register-handler
  :datasets/load-resourcemap-info
@@ -119,19 +121,19 @@
          description (:description collection)
          type-field (get-in db [:new-dataset-data :type-field])]
      (api/create-dataset! name description coll-id type-field :datasets/dataset-created))
-   (assoc-in db [:state 1] :creating)))
+   (assoc db :state :creating)))
 
 (register-handler
  :datasets/dataset-created
  in-datasets
  (fn [db [_ dataset]]
-   (let [view-state (get-in db [:state 1])
+   (let [view-state (:state db)
          new-db (if (= :creating view-state)
-                  (assoc-in db [:state 1] :list)
+                  (assoc db :state :list)
                   db)
          coll-id (:collection-id dataset)]
      ;; optimistic updates: add the new dataset and remove the collection from
      ;; the resmap available list
      (-> new-db
          (update :resourcemap asdf/swap! db/remove-resmap-collection coll-id)
-         (update :list #(into % (update-datasets [dataset])))))))
+         (update :list asdf/swap! into (update-datasets [dataset]))))))

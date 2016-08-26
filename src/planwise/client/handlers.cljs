@@ -27,7 +27,6 @@
   db)
 
 (defmethod on-navigate :datasets [db _ _]
-  (dispatch [:datasets/load-datasets])
   db)
 
 (defmethod on-navigate :default [db _ _]
@@ -62,7 +61,6 @@
 (register-handler
  :tick
  (fn [db [_ time]]
-   ;; FIXME
-   #_(when (= 0 (mod time 3000))
-     (dispatch [:datasets/invalidate-datasets]))
+   (when (= 0 (mod time 3000))
+     (dispatch [:datasets/refresh-datasets time]))
    db))

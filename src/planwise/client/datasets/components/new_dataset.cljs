@@ -75,7 +75,7 @@
 
 (defn- authorised-dialog
   []
-  (let [view-state (subscribe [:datasets/view-state])
+  (let [state (subscribe [:datasets/state])
         new-dataset-data (subscribe [:datasets/new-dataset-data])
         cancel-fn #(dispatch [:datasets/cancel-new-dataset])
         resmap (subscribe [:datasets/resourcemap])]
@@ -107,9 +107,9 @@
            [:div.actions
             [:button.primary
              {:type "submit"
-              :disabled (or (= @view-state :creating)
+              :disabled (or (= @state :creating)
                             (not valid?))}
-             (if (= @view-state :creating)
+             (if (= @state :creating)
                "Importing..."
                "Import")]
             [:button.cancel

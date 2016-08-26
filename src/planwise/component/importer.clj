@@ -204,15 +204,15 @@
       (if (some? ready-job-id)
         (let [ready-job (get jobs ready-job-id)
               task (import-job/job-peek-next-task ready-job)]
-          (info (str "Importer: next-task " task " for job " ready-job-id))
+          (debug (str "Importer: next-task " task " for job " ready-job-id))
           {:task-id [ready-job-id task]
            :task-fn (build-task-fn component ready-job task)})
         (do
-          (info (str "Importer: no more tasks to execute"))
+          (debug (str "Importer: no more tasks to execute"))
           nil))))
 
   (task-completed [component [job-id task-id] result]
-    (info (str "Importer: task " task-id " completed for job " job-id " with result: " result))
+    (debug (str "Importer: task " task-id " completed for job " job-id " with result: " result))
     (swap! (:jobs component) update job-id import-job/report-task-success task-id result)
     (swap! (:jobs component) (jobs-finisher component)))
 

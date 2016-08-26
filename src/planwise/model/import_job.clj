@@ -344,8 +344,7 @@
 
         (:error :done)
         {:status :done
-         :state state
-         :result (job-result job)}
+         :state state}
 
         (:request-sites :importing-sites)
         {:status :importing

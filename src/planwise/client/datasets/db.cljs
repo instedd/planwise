@@ -6,7 +6,6 @@
 (s/defschema ServerStatus
   {:status                    (s/enum :ready :done :importing :cancelling :unknown)
    (s/optional-key :state)    s/Keyword
-   (s/optional-key :result)   s/Any
    (s/optional-key :progress) s/Any})
 
 (s/defschema Dataset
@@ -24,13 +23,6 @@
                                            :cancelling)
    (s/optional-key :server-status) (s/maybe ServerStatus)})
 
-(s/defschema ListState
-  (s/enum nil
-          :loading
-          :loaded
-          :invalid
-          :reloading))
-
 (s/defschema ViewState
   (s/enum nil
           :list
@@ -43,9 +35,9 @@
 
 (s/defschema DatasetsViewModel
   "Datasets related portion of the client database"
-  {:state            [(s/one ListState "list")
-                      (s/one ViewState "view")]
-   :list             (s/maybe [Dataset])
+  {:state            ViewState
+   :list             (asdf/Asdf (s/maybe [Dataset]))
+   :last-refresh     s/Num
    :search-string    s/Str
    :resourcemap      (asdf/Asdf (s/maybe ResourcemapData))
    :new-dataset-data (s/maybe {(s/optional-key :collection) s/Any
@@ -53,7 +45,8 @@
 
 (def initial-db
   {:state            nil
-   :list             nil                  ; List of available datasets
+   :list             (asdf/new nil)       ; List of available datasets
+   :last-refresh     0
    :search-string    ""                   ; Dataset search string
 
    :resourcemap      (asdf/new nil)
@@ -66,19 +59,19 @@
   (or (= :create-dialog view-state)
       (= :creating view-state)))
 
-(defn importing?
+(defn dataset-importing?
   [state]
   (or (= :importing state)
       (= :import-requested state)
       (= :cancelling state)
       (= :cancel-requested state)))
 
-(defn cancelling?
+(defn dataset-cancelling?
   [state]
   (or (= :cancelling state)
       (= :cancel-requested state)))
 
-(defn request-pending?
+(defn dataset-request-pending?
   [state]
   (or (= :cancel-requested state)
       (= :import-requested state)))
@@ -86,14 +79,8 @@
 (defn server-status->string
   [server-status]
   (case (:status server-status)
-    :ready
-    "Ready"
-
-    :done
-    (case (:result server-status)
-      :success "Import was successful"
-      :cancelled "Import was cancelled"
-      "Import was unsuccessful")
+    (nil :ready :done)
+    "Ready to use"
 
     :importing
     (let [progress (:progress server-status)
@@ -112,16 +99,16 @@
     :unknown
     "Unknown server status"))
 
-(defn last-import-result
-  [{:keys [status result]}]
-  (when (and (= :done status) (some? result))
-    (case result
-      :success "Success"
-      :cancelled "Cancelled"
-      :unexpected-event "Fatal error: unexpected event received"
-      :import-types-failed "Error: failed to import facility types"
-      :import-sites-failed "Error: failed to import sites from Resourcemap"
-      :update-projects-failed "Error: failed to update projects")))
+(defn import-result->string
+  [result]
+  (case result
+    :success "Success"
+    :cancelled "Cancelled"
+    :unexpected-event "Fatal error: unexpected event received"
+    :import-types-failed "Error: failed to import facility types"
+    :import-sites-failed "Error: failed to import sites from Resourcemap"
+    :update-projects-failed "Error: failed to update projects"
+    nil))
 
 (defn server-status->state
   [{status :status}]

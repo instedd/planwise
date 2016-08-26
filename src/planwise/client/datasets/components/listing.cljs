@@ -38,8 +38,7 @@
    [:h2 description]
    [:p
     (utils/pluralize facility-count "facility" "facilities")
-    (when (some? server-status)
-      (str " (" (db/server-status->string server-status) ")"))]])
+    (str " (" (db/server-status->string server-status) ")")]])
 
 (defn datasets-list
   [datasets]

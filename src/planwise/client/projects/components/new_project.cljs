@@ -7,6 +7,7 @@
             [planwise.client.mapping :refer [default-base-tile-layer
                                              static-image
                                              bbox-center]]
+            [planwise.client.asdf :as asdf]
             [planwise.client.components.common :as common]
             [planwise.client.utils :as utils]
             [planwise.client.styles :as styles]))
@@ -51,7 +52,7 @@
          [:div.form-control
           [:label "Dataset"]
           [rc/single-dropdown
-           :choices (or @datasets [])
+           :choices (or (asdf/value @datasets) [])
            :label-fn :name
            :filter-box? true
            :on-change #(reset! new-project-dataset-id %)
