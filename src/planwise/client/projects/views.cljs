@@ -20,14 +20,15 @@
             [planwise.client.projects.components.sidebar
              :refer [sidebar-section]]))
 
-(defn geojson-bbox-callback [isochrones filters threshold]
+(defn geojson-bbox-callback [dataset-id isochrones filters threshold]
   (fn [level bounds bbox-excluding callback]
     (let [level (js/parseInt level)
           bbox-excluding (map #(js/parseInt %) bbox-excluding)
           cache-existing (keys (get-in @isochrones [threshold level]))]
       (api/fetch-isochrones-in-bbox
         @filters
-        {:threshold threshold,
+        {:dataset-id dataset-id,
+         :threshold threshold,
          :bbox bounds,
          :excluding (str/join "," cache-existing)
          :simplify (mapping/geojson-level->simplify level)}
@@ -76,7 +77,7 @@
                   :stroke-miterlimit 10
                   :stroke-width 2}]])
 
-(defn- project-tab [project-id project-region-id selected-tab]
+(defn- project-tab [project-id project-dataset-id project-region-id selected-tab]
   (let [facilities-by-type (subscribe [:projects/facilities-by-type])
         map-position (subscribe [:projects/map-view :position])
         map-zoom (subscribe [:projects/map-view :zoom])
@@ -90,9 +91,10 @@
         isochrones (subscribe [:projects/facilities :isochrones])
         project-facilities-criteria (subscribe [:projects/facilities-criteria])
         project-transport-time (subscribe [:projects/transport-time])
-        callback-fn (reaction (geojson-bbox-callback isochrones project-facilities-criteria @project-transport-time))
+        callback-fn (reaction (geojson-bbox-callback project-dataset-id isochrones project-facilities-criteria @project-transport-time))
         feature-fn #(aget % "isochrone")]
-    (fn [project-id project-region-id selected-tab]
+
+    (fn [project-id project-dataset-id project-region-id selected-tab]
       (cond
 
         (#{:demographics
@@ -169,10 +171,11 @@
       (let [project-id (:id @page-params)
             selected-tab (:section @page-params)
             project-goal (:goal @current-project)
+            project-dataset-id (:dataset-id @current-project)
             project-region-id (:region-id @current-project)]
         [:article.project-view
          [header-section project-id project-goal selected-tab]
-         [project-tab project-id project-region-id selected-tab]]))))
+         [project-tab project-id project-dataset-id project-region-id selected-tab]]))))
 
 (defn project-page []
   (let [view-state (subscribe [:projects/view-state])]

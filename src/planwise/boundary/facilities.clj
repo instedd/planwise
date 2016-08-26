@@ -4,59 +4,32 @@
 (defprotocol Facilities
   "API for reading facilities and related information."
 
-  (count-facilities [this]
-    "Return the number of all the facilities available")
-
   (list-facilities
-    [this]
-    [this criteria]
+    [this dataset-id]
+    [this dataset-id criteria]
     "List the facilities that match the supplied criteria (:types and :region)")
 
-  (list-with-isochrones
-    [this]
-    [this isochrone-options]
-    [this isochrone-options facilities-criteria]
-    "List the facilities with their corresponding catchment areas for the given
-    threshold (in seconds) calculated using algorithm and simplified according
-    to the given parameter.")
-
   (isochrones-in-bbox
-    [this isochrone-options facilities-criteria]
+    [this dataset-id isochrone-options facilities-criteria]
     "Returns the isochrones present in the :bbox specified in the criteria param,
      returning only isochrone, id and polygon-id. An :excluding parameter can be
      also provided; for such facilities the isochrones will not be returned,
      yet their id will still be returned.")
 
-  (isochrone-all-facilities
-    [this threshold]
-    "Retrieve the catchment area for all facilities available for the given
-    threshold.")
-
-  (list-types [this]
-    "Lists all the facility types."))
+  (list-types [this dataset-id]
+    "Lists all the facility types in the dataset."))
 
 
 ;; Reference implementation
 
 (extend-protocol Facilities
   planwise.component.facilities.FacilitiesService
-  (count-facilities [service]
-    (service/count-facilities service))
   (list-facilities
-    ([service]
-     (service/list-facilities service))
-    ([service criteria]
-     (service/list-facilities service criteria)))
-  (list-with-isochrones
-    ([service]
-     (service/list-with-isochrones service))
-    ([service isochrone-options]
-     (service/list-with-isochrones service isochrone-options))
-    ([service isochrone-options facilities-criteria]
-     (service/list-with-isochrones service isochrone-options facilities-criteria)))
-  (isochrone-all-facilities [service threshold]
-    (service/get-isochrone-for-all-facilities service threshold))
-  (isochrones-in-bbox [service isochrone-options facilities-criteria]
-    (service/isochrones-in-bbox service isochrone-options facilities-criteria))
-  (list-types [service]
-    (service/list-types service)))
+    ([service dataset-id]
+     (service/list-facilities service dataset-id))
+    ([service dataset-id criteria]
+     (service/list-facilities service dataset-id criteria)))
+  (isochrones-in-bbox [service dataset-id isochrone-options facilities-criteria]
+    (service/isochrones-in-bbox service dataset-id isochrone-options facilities-criteria))
+  (list-types [service dataset-id]
+    (service/list-types service dataset-id)))

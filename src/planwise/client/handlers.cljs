@@ -1,6 +1,5 @@
 (ns planwise.client.handlers
   (:require [planwise.client.db :as db]
-            [planwise.client.playground.handlers :as playground]
             [planwise.client.projects.handlers :as projects]
             [planwise.client.datasets.handlers]
             [planwise.client.regions.handlers :as regions]
@@ -13,7 +12,6 @@
 (register-handler
  :initialise-db
  (fn [_ _]
-   (dispatch [:projects/fetch-facility-types])
    (dispatch [:regions/load-regions])
    db/initial-db))
 
@@ -29,11 +27,6 @@
   db)
 
 (defmethod on-navigate :datasets [db _ _]
-  (dispatch [:datasets/initialise!])
-  db)
-
-(defmethod on-navigate :playground [db _ _]
-  (playground/fetch-facilities-with-isochrones :immediate (:playground db))
   db)
 
 (defmethod on-navigate :default [db _ _]
@@ -52,7 +45,7 @@
  (fn [db [_ message]]
    (cond
      (= message "authenticated")
-     (dispatch [:datasets/reload-info])
+     (dispatch [:datasets/load-resourcemap-info])
 
      (#{"react-devtools-content-script"
         "react-devtools-bridge"}
@@ -68,6 +61,6 @@
 (register-handler
  :tick
  (fn [db [_ time]]
-   (when (= 0 (mod time 3000))
-     (dispatch [:datasets/update-import-status]))
+   (when (= 0 (mod time 1000))
+     (dispatch [:datasets/refresh-datasets time]))
    db))

@@ -118,3 +118,12 @@
         auth (:auth service)
         token (auth/find-auth-token auth scope user-ident)]
     (fetch-collection-data service token coll-id params)))
+
+(defn find-collection-field
+  [service user-ident coll-id field-id]
+  (let [fields (list-collection-fields service user-ident coll-id)]
+    (some (fn [field]
+            (when (or (= (:id field) field-id)
+                      (= (:id field) (str field-id)))
+              field))
+          fields)))

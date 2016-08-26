@@ -13,14 +13,15 @@
 
 (defn- assoc-extra-data
   [with project {:keys [facilities maps]}]
-  (let [criteria {:region (:region-id project)
+  (let [dataset-id (:dataset-id project)
+        criteria {:region (:region-id project)
                   :types (or (get-in project [:filters :facilities :type]) [])}]
     (case with
       :facilities
-      (let [project-facilities (facilities/list-facilities facilities criteria)]
+      (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)]
         (assoc project :facilities project-facilities))
       :facilities-with-demand
-      (let [project-facilities (facilities/list-facilities facilities criteria)
+      (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)
             time       (get-in project [:filters :transport :time])
             isochrones (when time
                          []) ; TODO: Load isochrones to calculate demand
@@ -58,11 +59,13 @@
                (status 400)))
          (not-found {:error "Project not found"}))))
 
-   (POST "/" [goal region-id :as request]
+   (POST "/" [goal dataset-id region-id :as request]
      (let [goal (str/trim goal)
+           dataset-id (Integer. dataset-id)
            region-id (Integer. region-id)
            user-id (util/request-user-id request)
            project-templ {:goal goal
+                          :dataset-id dataset-id
                           :region-id region-id
                           :owner-id user-id}]
        (response (projects/create-project service project-templ))))

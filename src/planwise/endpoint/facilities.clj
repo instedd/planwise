@@ -31,39 +31,27 @@
 
 (defn- endpoint-routes [service maps-service]
   (routes
-   (GET "/" [& params]
-     (let [criteria   (facilities-criteria params)
-           facilities (facilities/list-facilities service criteria)]
+   (GET "/" [dataset-id & params]
+     (let [dataset-id (Integer. dataset-id)
+           criteria   (facilities-criteria params)
+           facilities (facilities/list-facilities service dataset-id criteria)]
        (response {:count (count facilities)
                   :facilities facilities})))
 
-   (GET "/types" req
-     (let [types (facilities/list-types service)]
+   (GET "/types" [dataset-id]
+     (let [dataset-id (Integer. dataset-id)
+           types      (facilities/list-types service dataset-id)]
        (response (map (fn [type]
                         {:value (:id type)
                          :label (:name type)})
                       types))))
 
-   (GET "/with-isochrones" [& params]
-     (let [criteria   (facilities-criteria params)
+   (ANY "/bbox-isochrones" [dataset-id & params]
+     (let [dataset-id (Integer. dataset-id)
+           criteria   (facilities-criteria params)
            isochrone  (isochrone-criteria params)
-           facilities (facilities/list-with-isochrones service isochrone criteria)
-           region     (:region params)
-           demand     (maps/demand-map maps-service region facilities)]
-       (response
-         (assoc demand
-                :facilities facilities))))
-
-   (ANY "/bbox-isochrones" [& params]
-     (let [criteria   (facilities-criteria params)
-           isochrone  (isochrone-criteria params)
-           facilities (facilities/isochrones-in-bbox service isochrone criteria)]
-       (response {:facilities facilities})))
-
-   (GET "/isochrone" [threshold]
-     (let [threshold (Integer. (or threshold 5400))
-           isochrone (facilities/isochrone-all-facilities service threshold)]
-       (response isochrone)))))
+           facilities (facilities/isochrones-in-bbox service dataset-id isochrone criteria)]
+       (response {:facilities facilities})))))
 
 (defn facilities-endpoint [{service :facilities, maps :maps}]
   (context "/api/facilities" []

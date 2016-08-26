@@ -37,14 +37,6 @@
      "/api/facilities/"
      (json-request (process-filters filters) handlers)))
 
-(defn fetch-facilities-with-isochrones [filters isochrone-options & handlers]
-  (GET
-    "/api/facilities/with-isochrones"
-    (json-request
-      (merge isochrone-options (process-filters filters))
-      handlers
-      :mapper-fn (partial merge isochrone-options))))
-
 (defn fetch-isochrones-in-bbox [filters isochrone-options & handlers]
   (POST
     "/api/facilities/bbox-isochrones"
@@ -53,8 +45,8 @@
       handlers
       :mapper-fn (partial merge isochrone-options))))
 
-(defn fetch-facility-types [& handlers]
-  (GET "/api/facilities/types" (json-request {} handlers)))
+(defn fetch-facility-types [dataset-id & handlers]
+  (GET "/api/facilities/types" (json-request {:dataset-id dataset-id} handlers)))
 
 (defn update-project [project-id filters with-data & handlers]
   (let [url (str "/api/projects/" project-id)

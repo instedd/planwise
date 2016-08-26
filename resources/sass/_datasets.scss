@@ -1,105 +1,121 @@
 @import 'defs';
 
 article.datasets {
-  .dataset-header {
-    position: relative;
-    z-index: 2;
-    padding: 10px 15px;
-    background-color: $gray1;
-    box-shadow: 0 2px 2px rgba(0,0,0,0.2);
-    height: 90px;
-    h2 {
-      font-size: 20px;
-      font-weight: normal;
-    }
-    h3 {
-      font-weight: normal;
-    }
-    .bottom-right {
-      position: absolute;
-      right: 10px;
-      bottom: 10px;
-    }
-  }
-
-  .resmap {
-    overflow: auto;
-    position: absolute;
-    top: 110px;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 15px;
-    z-index: 1;
-
-    p {
-      font-size: 16px;
-      max-width: 40em;
-    }
-
-    .disabled {
-      opacity: 0.5;
-    }
-  }
-
   ul.collections {
     list-style: none;
-    margin-left: 0;
+    margin: 0 10px 0 0;
     padding: 0;
-    background-color: $gray1;
+  }
 
-    > li {
-      margin-left: 0;
-      border-bottom: 1px solid $gray2;
-      padding: 5px 10px;
-      &.selected {
-        background-color: $white;
-      }
-      &:hover {
-        background-color: lighten($gray1, 5%);
-      }
+  .collection-card {
+    margin: 0 0 15px 0;
+    border: 1px solid $gray1;
+    border-radius: 3px;
+    border-bottom: 2px solid $gray2;
+    padding: 15px 20px;
+    cursor: pointer;
+    &.selected {
+      background-color: $white;
+    }
+    &:hover {
+      background-color: lighten($gray1, 5%);
     }
 
     h1 {
+      color: $black;
       font-size: 16px;
       font-weight: bold;
       margin: 0;
     }
-    p {
+    h2 {
       font-size: 14px;
+      font-weight: normal;
       color: $gray-text;
       margin: 0;
     }
     p.count {
+      margin: 0;
       color: $gray3;
       font-size: 90%;
     }
+  }
+}
 
-    li .loading {
-      justify-content: flex-start;
-      h3 {
-        font-size: 16px;
-        font-weight: normal;
-        margin: 0;
-      }
+.dataset-list {
+  list-style: none;
+  padding: 0;
+  position: absolute;
+  top: $search-box-height + 18px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  overflow: auto;
+
+  .dataset-card {
+    position: relative;
+    overflow: hidden;
+    color: $black;
+    background: $white;
+    margin: 20px;
+    padding: 15px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+
+    h1 {
+      font-weight: bold;
+      font-size: 16px;
+      color: $black;
+      margin: 0;
+    }
+    h2 {
+      font-weight: normal;
+      font-size: 14px;
+      margin: 0 0 10px;
+    }
+    p {
+      color: $gray-text;
+      margin: 0;
     }
 
-    .import-settings {
-      p.warning {
-        margin: 10px 0;
-        background-color: lighten($orange, 0%);
-        padding: 5px 15px;
-        border-radius: 3px;
-        color: $white;
-        font-size: 110%;
-      }
-      .actions {
-        margin-bottom: 5px;
+    .bottom-right {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+    }
+
+    .progress-bar {
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: lighten($orange, 40%);
+      .progress-filled {
+        height: 3px;
+        background-color: $orange;
       }
     }
   }
+}
 
-  .rc-dropdown {
-    width: 300px;
+.new-dataset {
+  width: 400px;
+  p {
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+  p.warning {
+    font-style: italic;
+    color: $gray-text;
+  }
+  .loading {
+    padding-top: 100px;
+    padding-bottom: 100px;
+  }
+  .content {
+    margin: 0 0 10px 0;
+    padding: 10px 0 0 0;
+    max-height: 350px;
+    overflow: auto;
   }
 }

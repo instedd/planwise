@@ -2,9 +2,12 @@
 
 ;; Loading placeholder
 
-(defn loading-placeholder []
-  [:div.loading
-   [:h3 "Loading..."]])
+(defn loading-placeholder
+  ([]
+   (loading-placeholder "Loading..."))
+  ([legend]
+   [:div.loading
+    [:h3 (str legend)]]))
 
 ;; SVG based icons
 

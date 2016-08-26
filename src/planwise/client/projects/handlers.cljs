@@ -21,8 +21,8 @@
 
 (register-handler
  :projects/fetch-facility-types
- (fn [db [_]]
-   (api/fetch-facility-types :projects/facility-types-received)
+ (fn [db [_ dataset-id]]
+   (api/fetch-facility-types dataset-id :projects/facility-types-received)
    db))
 
 (register-handler
@@ -98,6 +98,8 @@
    (let [project-id (:id project-data)]
      (when (nil? project-id)
        (throw "Invalid project data"))
+     (dispatch [:projects/fetch-facility-types (:dataset-id project-data)])
+     (dispatch [:datasets/invalidate-datasets])   ; to update project counts for the selected dataset
      (accountant/navigate! (routes/project-demographics {:id project-id}))
      (assoc db
             :view-state :view
@@ -145,6 +147,7 @@
  :projects/project-loaded
  in-projects
   (fn [db [_ project-data]]
+    (dispatch [:projects/fetch-facility-types (:dataset-id project-data)])
     (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
     (assoc db :view-state :view
               :current (db/new-viewmodel project-data))))

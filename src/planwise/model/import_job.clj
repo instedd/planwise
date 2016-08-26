@@ -102,6 +102,7 @@
         facility-ids (:facility-ids job)
         facility-count (count facility-ids)
         [_ _ [_ page-ids total-pages]] event
+        page-ids (filter some? page-ids)
         total-pages (or total-pages (:page-count job))]
     (-> (complete-task job event)
         (assoc :page (inc page)
@@ -195,7 +196,8 @@
 ;; FSM definition
 
 (def default-job-value
-  {:user-ident     nil
+  {:dataset-id     nil
+   :user-ident     nil
    :collection-id  nil
    :type-field     nil
    :page           1
@@ -292,6 +294,10 @@
   [job]
   (get-in job [:value :result]))
 
+(defn job-dataset-id
+  [job]
+  (get-in job [:value :dataset-id]))
+
 (defn job-user-ident
   [job]
   (get-in job [:value :user-ident]))
@@ -324,6 +330,9 @@
   [job]
   (let [state (:state job)]
     (cond
+      (nil? job)
+      nil
+
       (nil? state)
       {:status :ready}
 
@@ -335,8 +344,7 @@
 
         (:error :done)
         {:status :done
-         :state state
-         :result (job-result job)}
+         :state state}
 
         (:request-sites :importing-sites)
         {:status :importing
@@ -357,8 +365,9 @@
       {:status :unknown})))
 
 (defn create-job
-  [user-ident coll-id type-field]
+  [dataset-id user-ident coll-id type-field]
   (let [job-value (assoc default-job-value
+                         :dataset-id dataset-id
                          :user-ident user-ident
                          :collection-id coll-id
                          :type-field type-field)]

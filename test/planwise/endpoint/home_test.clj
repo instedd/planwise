@@ -19,7 +19,6 @@
       (wrap-authorization (backends/session))))
 
 (def home-paths ["/"
-                 "/playground"
                  "/datasets"
                  "/projects/1"
                  "/projects/1/facilities"

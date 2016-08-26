@@ -1,72 +1,84 @@
 (ns planwise.client.datasets.db
   (:require [schema.core :as s :include-macros true]
+            [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [format-percentage]]))
 
 (s/defschema ServerStatus
   {:status                    (s/enum :ready :done :importing :cancelling :unknown)
    (s/optional-key :state)    s/Keyword
-   (s/optional-key :result)   s/Any
    (s/optional-key :progress) s/Any})
 
-(s/defschema Datasets
-  "Datasets related portion of the client database"
-  {:state          (s/enum nil
-                           :initialising
-                           :ready
-                           :import-requested
-                           :importing
-                           :cancel-requested
-                           :cancelling)
-   :server-status  (s/maybe ServerStatus)
-   :facility-count (s/maybe s/Int)
-   :resourcemap    {:authorised? (s/maybe s/Bool)
-                    :collections s/Any}
-   :selected       s/Any})
+;; TODO: we should probably ditch the Dataset state concept altogether and use
+;; the server reported status always; doing so we do lose the state
+;; cancel-requested, but we're not using it right now anyway.
 
-(def empty-datasets-selected
-  {:collection nil
-                                        ; The ID of the currently selected collection
-   :valid?     false
-                                        ; If the collection if valid for import
-   :fields     nil
-                                        ; Fields available for mapping to facility type
-   :type-field nil})
-                                        ; Field selected for mapping facility type
+(s/defschema Dataset
+  "Information pertaining a single dataset"
+  {:id                             s/Int
+   :name                           s/Str
+   :description                    s/Str
+   :collection-id                  s/Int
+   :mappings                       s/Any
+   :facility-count                 s/Int
+   :project-count                  s/Int
+   (s/optional-key :state)         (s/enum :ready
+                                           :import-requested
+                                           :importing
+                                           :cancel-requested
+                                           :cancelling)
+   (s/optional-key :server-status) (s/maybe ServerStatus)})
+
+(s/defschema ViewState
+  (s/enum nil
+          :list
+          :create-dialog
+          :creating))
+
+(s/defschema ResourcemapData
+  {:authorised? s/Bool
+   :collections s/Any})
+
+(s/defschema DatasetsViewModel
+  "Datasets related portion of the client database"
+  {:state            ViewState
+   :list             (asdf/Asdf (s/maybe [Dataset]))
+   :last-refresh     s/Num
+   :search-string    s/Str
+   :resourcemap      (asdf/Asdf (s/maybe ResourcemapData))
+   :new-dataset-data (s/maybe {(s/optional-key :collection) s/Any
+                               (s/optional-key :type-field) s/Any})})
 
 (def initial-db
-  {:state          nil
-                                        ; :initialising/nil :ready :importing
-   :server-status  nil
-                                        ; Importer status as reported by the server
-   :facility-count nil
-                                        ; Count of available facilities
-   :resourcemap    {:authorised?  nil
-                                        ; Whether the user has authorised for
-                                        ; Resourcemap access
-                    :collections  nil}
-                                        ; Resourcemap collections
+  {:state            nil
+   :list             (asdf/new nil)       ; List of available datasets
+   :last-refresh     0
+   :search-string    ""                   ; Dataset search string
 
-   :selected empty-datasets-selected})
+   :resourcemap      (asdf/new nil)
+
+   :new-dataset-data nil})
 
 
-(defn initialised?
-  [state]
-  (and (not= :initialising state)
-       (not (nil? state))))
+;; TODO: review names and parameters of these utility functions and predicates
 
-(defn importing?
+(defn show-dialog?
+  [view-state]
+  (or (= :create-dialog view-state)
+      (= :creating view-state)))
+
+(defn dataset-importing?
   [state]
   (or (= :importing state)
       (= :import-requested state)
       (= :cancelling state)
       (= :cancel-requested state)))
 
-(defn cancelling?
+(defn dataset-cancelling?
   [state]
   (or (= :cancelling state)
       (= :cancel-requested state)))
 
-(defn request-pending?
+(defn dataset-request-pending?
   [state]
   (or (= :cancel-requested state)
       (= :import-requested state)))
@@ -74,20 +86,14 @@
 (defn server-status->string
   [server-status]
   (case (:status server-status)
-    :ready
-    "Ready"
-
-    :done
-    (case (:result server-status)
-      :success "Import was successful"
-      :cancelled "Import was cancelled"
-      "Import was unsuccessful")
+    (nil :ready :done)
+    "Ready to use"
 
     :importing
     (let [progress (:progress server-status)
-          progress (when progress (str " (" (format-percentage progress) ")"))]
+          progress (when progress (str " " (format-percentage progress)))]
       (case (:state server-status)
-        :start "Starting"
+        :start "Waiting to start"
         :importing-types "Importing facility types"
         (:request-sites :importing-sites) (str "Importing sites from Resourcemap" progress)
         (:processing-facilities) (str "Pre-processing facilities" progress)
@@ -100,16 +106,39 @@
     :unknown
     "Unknown server status"))
 
-(defn last-import-result
-  [{:keys [status result]}]
-  (when (and (= :done status) (some? result))
-    (case result
-      :success "Success"
-      :cancelled "Cancelled"
-      :unexpected-event "Fatal error: unexpected event received"
-      :import-types-failed "Error: failed to import facility types"
-      :import-sites-failed "Error: failed to import sites from Resourcemap"
-      :update-projects-failed "Error: failed to update projects")))
+(defn import-progress
+  [server-status]
+  (case (:status server-status)
+    (:ready :done)
+    1
+
+    :importing
+    (let [progress (:progress server-status)]
+      (case (:state server-status)
+        (:start :importing-types)
+        0
+
+        (:request-sites :importing-sites)
+        (* progress 0.05)
+
+        (:processing-facilities)
+        (+ 0.05 (* 0.95 progress))
+
+        (:update-projects :updating-projects)
+        1))
+
+    0))
+
+(defn import-result->string
+  [result]
+  (case result
+    :success "Success"
+    :cancelled "Cancelled"
+    :unexpected-event "Fatal error: unexpected event received"
+    :import-types-failed "Error: failed to import facility types"
+    :import-sites-failed "Error: failed to import sites from Resourcemap"
+    :update-projects-failed "Error: failed to update projects"
+    nil))
 
 (defn server-status->state
   [{status :status}]
@@ -117,4 +146,21 @@
     (:ready :done) :ready
     :importing     :importing
     :cancelling    :cancelling
-    :unknown       :ready))
+    :ready))
+
+(defn resmap-authorised?
+  [resmap]
+  (:authorised? resmap))
+
+(defn remove-by-id
+  [coll id]
+  (filter #(not= id (:id %)) coll))
+
+(defn remove-resmap-collection
+  [resmap coll-id]
+  (update resmap :collections remove-by-id coll-id))
+
+(defn new-dataset-valid?
+  [new-dataset-data]
+  (and (some? (:collection new-dataset-data))
+       (some? (:type-field new-dataset-data))))

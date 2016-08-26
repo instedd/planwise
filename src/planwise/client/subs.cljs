@@ -3,8 +3,7 @@
   (:require [re-frame.core :refer [register-sub]]
             [planwise.client.projects.subs]
             [planwise.client.datasets.subs]
-            [planwise.client.regions.subs]
-            [planwise.client.playground.subs]))
+            [planwise.client.regions.subs]))
 
 
 ;; Subscriptions
@@ -23,7 +22,4 @@
 (register-sub
  :filter-definition
  (fn [db [_ filter]]
-   (let [options (reaction (get-in @db [:filter-definitions filter]))]
-     (if (map? (first @options))
-       (reaction @options)
-       (reaction (map #(assoc {} :value % :label %) @options))))))
+   (reaction (get-in @db [:filter-definitions filter]))))

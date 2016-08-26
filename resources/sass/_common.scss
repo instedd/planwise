@@ -1,6 +1,6 @@
 @import 'defs';
 
-@import 'https://fonts.googleapis.com/css?family=Open+Sans:400,700';
+@import 'https://fonts.googleapis.com/css?family=Open+Sans:400,400i,700,700i';
 
 body {
   font-family: 'Open Sans', Verdana, Helvetica, Arial, sans-serif;
@@ -147,6 +147,17 @@ a:hover {
         width: 92%;
       }
     }
+  }
+}
+
+.form-control-2 {
+  label {
+    font-weight: bold;
+    display: block;
+    margin: 20px 0 10px 0;
+  }
+  .rc-dropdown {
+    width: 100%;
   }
 }
 

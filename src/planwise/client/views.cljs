@@ -4,15 +4,13 @@
             [planwise.client.routes :as routes]
             [planwise.client.components.nav :as nav]
             [planwise.client.components.common :refer [icon]]
-            [planwise.client.playground.views :as playground]
             [planwise.client.projects.views :as projects]
             [planwise.client.datasets.views :as datasets]))
 
 
 (def nav-items
   [{:item #{:home :projects} :href (routes/home) :title "Projects"}
-   {:item :datasets :href (routes/datasets) :title "Datasets"}
-   #_{:item :playground :href (routes/playground) :title "Playground"}])
+   {:item :datasets :href (routes/datasets) :title "Datasets"}])
 
 (def current-user-email
   (atom config/user-email))
@@ -35,9 +33,6 @@
 
 (defmethod content-pane :projects []
   [projects/project-page])
-
-(defmethod content-pane :playground []
-  [playground/playground-page])
 
 (defmethod content-pane :datasets []
   [datasets/datasets-page])

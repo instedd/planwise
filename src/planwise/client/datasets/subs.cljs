@@ -1,6 +1,8 @@
 (ns planwise.client.datasets.subs
   (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :refer [register-sub subscribe]]))
+  (:require [re-frame.core :refer [register-sub subscribe]]
+            [goog.string :as gstring]
+            [planwise.client.asdf :as asdf]))
 
 (register-sub
  :datasets/state
@@ -8,9 +10,22 @@
    (reaction (get-in @db [:datasets :state]))))
 
 (register-sub
- :datasets/facility-count
+ :datasets/list
  (fn [db [_]]
-   (reaction (get-in @db [:datasets :facility-count]))))
+   (reaction (get-in @db [:datasets :list]))))
+
+(register-sub
+ :datasets/search-string
+ (fn [db [_]]
+   (reaction (get-in @db [:datasets :search-string]))))
+
+(register-sub
+ :datasets/filtered-list
+ (fn [db [_]]
+   (let [search-string (subscribe [:datasets/search-string])
+         datasets (subscribe [:datasets/list])]
+     (reaction
+      (filterv #(gstring/caseInsensitiveContains (:name %) @search-string) (asdf/value @datasets))))))
 
 (register-sub
  :datasets/resourcemap
@@ -18,11 +33,6 @@
    (reaction (get-in @db [:datasets :resourcemap]))))
 
 (register-sub
- :datasets/selected
+ :datasets/new-dataset-data
  (fn [db [_]]
-   (reaction (get-in @db [:datasets :selected]))))
-
-(register-sub
- :datasets/server-status
- (fn [db [_]]
-   (reaction (get-in @db [:datasets :server-status]))))
+   (reaction (get-in @db [:datasets :new-dataset-data]))))

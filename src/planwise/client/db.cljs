@@ -1,7 +1,6 @@
 (ns planwise.client.db
   (:require [planwise.client.datasets.db :as datasets]
-            [planwise.client.projects.db :as projects]
-            [planwise.client.playground.db :as playground]))
+            [planwise.client.projects.db :as projects]))
 
 (def initial-db
   {;; Navigation (current page)
@@ -20,7 +19,4 @@
    :regions             {}
 
    ;; Datasets
-   :datasets            datasets/initial-db
-
-   ;; Playground related data
-   :playground          playground/initial-db})
+   :datasets            datasets/initial-db})

@@ -1,31 +1,33 @@
 (ns planwise.client.datasets.api
-  (:require [ajax.core :refer [GET POST]]
+  (:require [ajax.core :refer [GET POST DELETE]]
             [planwise.client.api :refer [json-request]]))
 
 
-(defn load-datasets-info
+(defn load-datasets
   [& handlers]
-  (GET "/api/datasets/info"
+  (GET "/api/datasets"
       (json-request {} handlers)))
 
-(defn load-collection-info
-  [coll-id & handlers]
-  (GET (str "/api/datasets/collection-info/" coll-id)
+(defn load-resourcemap-info
+  [& handlers]
+  (GET "/api/datasets/resourcemap-info"
       (json-request {} handlers)))
 
-(defn import-collection!
-  [coll-id type-field & handlers]
-  (POST "/api/datasets/import"
-      (json-request {:coll-id coll-id
+(defn create-dataset!
+  [name description coll-id type-field & handlers]
+  (POST "/api/datasets"
+      (json-request {:name name
+                     :description description
+                     :coll-id coll-id
                      :type-field type-field}
                     handlers)))
 
-(defn importer-status
-  [& handlers]
-  (GET "/api/datasets/status"
-      (json-request {} handlers)))
-
 (defn cancel-import!
-  [& handlers]
+  [dataset-id & handlers]
   (POST "/api/datasets/cancel"
+      (json-request {:dataset-id dataset-id} handlers)))
+
+(defn delete-dataset!
+  [dataset-id & handlers]
+  (DELETE (str "/api/datasets/" dataset-id)
       (json-request {} handlers)))

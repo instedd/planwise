@@ -1,6 +1,8 @@
 (ns planwise.client.datasets.handlers
   (:require [re-frame.core :refer [register-handler path dispatch]]
             [re-frame.utils :as c]
+            [clojure.string :refer [blank?]]
+            [planwise.client.asdf :as asdf]
             [planwise.client.datasets.api :as api]
             [planwise.client.datasets.db :as db]))
 
@@ -8,132 +10,163 @@
 
 (defn map-server-status
   [server-status]
-  (-> server-status
-      (update :status keyword)
-      (update :state keyword)
-      (update :result keyword)))
+  (some-> server-status
+          (update :status keyword)
+          (update :state keyword)))
+
+(defn map-datasets
+  [server-datasets]
+  (mapv #(update % :server-status map-server-status) server-datasets))
+
+
+;; ----------------------------------------------------------------------------
+;; Dataset listing
 
 (register-handler
- :datasets/initialise!
+ :datasets/load-datasets
  in-datasets
  (fn [db [_]]
-   (if-not (db/initialised? (:state db))
-     (api/load-datasets-info :datasets/info-loaded)
-     (assoc db :state :initialising))
-   db))
+   (api/load-datasets :datasets/datasets-loaded)
+   (update db :list asdf/reload!)))
 
 (register-handler
- :datasets/reload-info
+ :datasets/invalidate-datasets
  in-datasets
  (fn [db [_]]
-   (c/log "Reloading datasets information")
-   (api/load-datasets-info :datasets/info-loaded)
-   (assoc db :selected db/empty-datasets-selected)))
+   (update db :list asdf/invalidate!)))
 
 (register-handler
- :datasets/info-loaded
+ :datasets/refresh-datasets
  in-datasets
- (fn [db [_ datasets-info]]
-   (let [server-status (map-server-status (:status datasets-info))]
-     (-> db
-         (assoc-in [:resourcemap :authorised?] (:authorised? datasets-info))
-         (assoc-in [:resourcemap :collections] (:collections datasets-info))
-         (assoc :state (db/server-status->state server-status)
-                :server-status server-status
-                :facility-count (:facility-count datasets-info))))))
-
-(register-handler
- :datasets/select-collection
- in-datasets
- (fn [db [_ coll]]
-   (if-not (= (:id coll) (get-in db [:selected :collection :id]))
-     (do
-       (api/load-collection-info (:id coll) :datasets/collection-info-loaded)
+ (fn [db [_ time]]
+   (let [sets (asdf/value (:list db))
+         statuses (map :server-status sets)
+         any-running? (some some? statuses)
+         refresh-interval (if any-running? 1000 10000)
+         last-refresh (or (:last-refresh db) 0)
+         since-last-refresh (- time last-refresh)]
+     (if (< refresh-interval since-last-refresh)
        (-> db
-           (assoc-in [:selected :collection] coll)
-           (assoc-in [:selected :type-field] nil)
-           (assoc-in [:selected :fields] nil)))
-     db)))
+           (update :list asdf/invalidate!)
+           (assoc :last-refresh time))
+       db))))
 
 (register-handler
- :datasets/collection-info-loaded
+ :datasets/datasets-loaded
  in-datasets
- (fn [db [_ collection-info]]
-   (-> db
-       (assoc-in [:selected :fields] (:fields collection-info))
-       (assoc-in [:selected :valid?] (:valid? collection-info)))))
+ (fn [db [_ datasets]]
+   (update db :list asdf/reset! (map-datasets datasets))))
 
 (register-handler
- :datasets/select-type-field
+ :datasets/search
  in-datasets
- (fn [db [_ field]]
-   (assoc-in db [:selected :type-field] field)))
-
-(register-handler
- :datasets/start-import!
- in-datasets
- (fn [db [_]]
-   (let [coll-id (get-in db [:selected :collection :id])
-         type-field (get-in db [:selected :type-field])]
-     (c/log "Started collection import")
-     (api/import-collection! coll-id type-field
-                             :datasets/import-status-received :datasets/request-failed)
-     (assoc db :state :import-requested))))
+ (fn [db [_ value]]
+   (assoc db :search-string value)))
 
 (register-handler
  :datasets/cancel-import!
  in-datasets
- (fn [db [_]]
-   (c/log "Cancelling collection import")
-   (api/cancel-import! :datasets/import-status-received :datasets/request-failed)
-   (assoc db :state :cancel-requested)))
+ (fn [db [_ dataset-id]]
+   (c/log (str "Cancelling collection import for dataset " dataset-id))
+   (api/cancel-import! dataset-id :datasets/datasets-loaded)
+   db))
+
+
+;; ----------------------------------------------------------------------------
+;; New dataset dialog
 
 (register-handler
- :datasets/request-failed
+ :datasets/begin-new-dataset
+ in-datasets
+ (fn [db [_]]
+   (assoc db
+          :state :create-dialog
+          :new-dataset-data nil)))
+
+(register-handler
+ :datasets/cancel-new-dataset
+ in-datasets
+ (fn [db [_]]
+   (assoc db :state :list)))
+
+(register-handler
+ :datasets/load-resourcemap-info
+ in-datasets
+ (fn [db [_]]
+   (api/load-resourcemap-info :datasets/resourcemap-info-loaded)
+   (update db :resourcemap asdf/reload!)))
+
+(register-handler
+ :datasets/resourcemap-info-loaded
+ in-datasets
+ (fn [db [_ data]]
+   (update db :resourcemap asdf/reset! (select-keys data [:authorised? :collections]))))
+
+(register-handler
+ :datasets/update-new-dataset
+ in-datasets
+ (fn [db [_ field value]]
+   (assoc-in db [:new-dataset-data field] value)))
+
+(register-handler
+ :datasets/create-dataset
+ in-datasets
+ (fn [db [_]]
+   (let [collection (get-in db [:new-dataset-data :collection])
+         coll-id (:id collection)
+         name (:name collection)
+         description (:description collection)
+         description (if (blank? description)
+                       (str "Imported from Resourcemap collection " coll-id)
+                       description)
+         type-field (get-in db [:new-dataset-data :type-field])]
+     (api/create-dataset! name description coll-id type-field
+                          :datasets/dataset-created :datasets/create-failed))
+   (assoc db :state :creating)))
+
+(register-handler
+ :datasets/dataset-created
+ in-datasets
+ (fn [db [_ dataset]]
+   (let [view-state (:state db)
+         new-db (if (= :creating view-state)
+                  (assoc db :state :list)
+                  db)
+         coll-id (:collection-id dataset)]
+     ;; optimistic updates: add the new dataset and remove the collection from
+     ;; the resmap available list
+     (-> new-db
+         (update :resourcemap asdf/swap! db/remove-resmap-collection coll-id)
+         ;; TODO: under some circumstances, we might be optimistically adding a
+         ;; duplicate dataset here; if an invalidation and reload run between
+         ;; the API call and this event. We should check that the dataset is not
+         ;; already there.
+         (update :list asdf/swap! into (map-datasets [dataset]))))))
+
+(register-handler
+ :datasets/create-failed
  in-datasets
  (fn [db [_ error-info]]
-   (c/log (str "Error performing server request: " error-info))
-   (let [state (:state db)
-         new-state (case state
-                     :import-requested :ready
-                     :cancel-requested :importing
-                     state)]
-     (assoc db :state new-state))))
+   (c/error (str "Dataset creation failed: " error-info))
+   (assoc db :state :list)))
 
-(defn update-server-status
-  [db status]
-  (let [status (map-server-status status)
-        current-state (:state db)
-        new-state (db/server-status->state status)]
-    ;; refresh critical system information if an import finished executing
-    (when (and (or (db/importing? current-state) (db/cancelling? current-state))
-               (= :ready new-state))
-      (dispatch [:projects/fetch-facility-types])
-      (dispatch [:datasets/reload-info]))
-    (assoc db
-           :state new-state
-           :server-status status)))
+;; ----------------------------------------------------------------------------
+;; Dataset deletion
 
 (register-handler
- :datasets/import-status-received
+ :datasets/delete-dataset
  in-datasets
- (fn [db [_ status]]
-   (update-server-status db status)))
+ (fn [db [_ dataset-id]]
+   (api/delete-dataset! dataset-id :datasets/dataset-deleted)
+   ;; optimistic update: remove the dataset from the list and invalidate resmap infomation
+   ;; to make the collection available again
+   (-> db
+       (update :list asdf/swap! db/remove-by-id dataset-id)
+       (update :resourcemap asdf/invalidate!))))
 
 (register-handler
- :datasets/async-status-received
+ :datasets/dataset-deleted
  in-datasets
- (fn [db [_ status]]
-   (if-not (db/request-pending? (:state db))
-     (update-server-status db status)
-     db)))
-
-(register-handler
- :datasets/update-import-status
- in-datasets
- (fn [db [_]]
-   (let [state (:state db)]
-     (when (and (db/initialised? state)
-                (not (db/request-pending? state)))
-       (api/importer-status :datasets/async-status-received)))
+ (fn [db [_ data]]
+   (dispatch [:datasets/invalidate-datasets])
    db))
