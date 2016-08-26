@@ -99,9 +99,13 @@
 
 (defn process-facilities
   [facilities facility-ids]
-  (doseq [id facility-ids]
-    (info "Processing facility" id)
-    (facilities/preprocess-isochrones facilities id)))
+  (map
+    (fn [id]
+      (info "Processing facility" id)
+      (facilities/preprocess-isochrones facilities id))
+    facility-ids))
+
+
 
 (defn update-projects
   [projects dataset-id]
@@ -163,9 +167,10 @@
 (defn finish-job
   [component job]
   (when (some? job)
-    (let [result (import-job/job-result job)
+    (let [result     (import-job/job-result job)
+          stats      (import-job/job-stats job)
           dataset-id (import-job/job-dataset-id job)]
-      (info (str "Import job for dataset " dataset-id " finished with result: " result)))))
+      (info (str "Import job for dataset " dataset-id " finished with result " result " (" stats ")")))))
 
 (defn jobs-finisher
   [component]

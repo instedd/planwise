@@ -143,15 +143,26 @@
         (assoc :result :update-projects-failed
                :error-info error))))
 
+(defn- update-facilities-counts [job event]
+  (let [[_ _ results] event
+        no-road-network (filter #{:no-road-network} results)
+        outside-regions (filter #{:outside-regions} results)]
+    (-> job
+      (update :facilities-without-road-network-count + (count no-road-network))
+      (update :facilities-outside-regions-count + (count outside-regions)))))
+
 (defn complete-processing
   [job event & _]
-  ;; TODO: save the processing result in the job
-  (complete-task job event))
+  (-> job
+    (complete-task event)
+    (update-facilities-counts event)))
 
 (defn last-complete-processing
   [job event & _]
-  (-> (complete-processing job event)
-      (assoc :result :success)))
+  (-> job
+    (complete-processing event)
+    (update-facilities-counts event)
+    (assoc :result :success)))
 
 ;; FSM guards
 
@@ -209,7 +220,9 @@
    :next-task      nil
    :result         nil
    :last-event     nil
-   :sites-without-location-count 0})
+   :sites-without-location-count          0
+   :facilities-without-road-network-count 0
+   :facilities-outside-regions-count      0})
 
 (fsm/defsm-inc import-job
   [[:start
@@ -296,7 +309,9 @@
 
 (defn job-stats
   [job]
-  (select-keys (:value job) [:sites-without-location-count]))
+  (select-keys (:value job) [:sites-without-location-count
+                             :facilities-without-road-network-count
+                             :facilities-outside-regions-count]))
 
 (defn job-user-ident
   [job]

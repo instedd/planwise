@@ -79,10 +79,16 @@ begin
   facility_geom := (select the_geom from facilities where id = f_id);
   closest_node_geom := (select the_geom from ways_vertices_pgr where id = facility_node);
 
+  IF NOT EXISTS (SELECT r.id FROM regions AS r WHERE ST_Contains(r.the_geom, facility_geom) LIMIT 1) THEN
+    UPDATE facilities SET processing_status = 'outside-regions' WHERE id = f_id;
+    RAISE NOTICE 'warning: Facility % not processed, it is outside the regions boundaries.', f_id;
+    RETURN 'outside-regions';
+  END IF;
+
   IF ST_Distance(ST_GeogFromWKB(facility_geom), ST_GeogFromWKB(closest_node_geom)) > 1000 THEN
     UPDATE facilities SET processing_status = 'no-road-network' WHERE id = f_id;
-    RAISE NOTICE 'warning: Facility % not processed, its too far from the road network.', f_id;
-    RETURN 'warning: Facility ' || f_id || ' not processed, its too far from the road network.';
+    RAISE NOTICE 'warning: Facility % not processed, it is too far from the road network.', f_id;
+    RETURN 'no-road-network';
   END IF;
 
   insert into edges_agg_cost (
@@ -143,7 +149,8 @@ begin
         RAISE NOTICE 'Failed to calculate alpha shape for facility %', f_id;
       END;
     ELSE
-      RETURN 'error: Method' || _method || ' unknown. Please use buffer or alpha-shape';
+      RAISE EXCEPTION 'Method % unknown. Please use buffer or alpha-shape', _method;
+      RETURN 'error';
     END IF;
 
     -- Precalculate area
