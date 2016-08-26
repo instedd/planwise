@@ -54,7 +54,7 @@ article.datasets {
 
   .dataset-card {
     position: relative;
-    overflow: hidden;
+    height: 75px;
     color: $black;
     background: $white;
     margin: 20px;
@@ -83,6 +83,23 @@ article.datasets {
       right: 10px;
     }
 
+    .dataset-status.warning {
+      cursor: pointer;
+      color: $orange;
+      fill: $orange;
+    }
+
+    .popover {
+      pointer-events: none;
+      .popover-content {
+        padding: 10px;
+        ul {
+          padding: 0;
+          list-style-type: none;
+        }
+      }
+    }
+
     .progress-bar {
       position: absolute;
       bottom: -5px;
@@ -94,6 +111,14 @@ article.datasets {
         height: 3px;
         background-color: $orange;
       }
+    }
+
+    .delete {
+      visibility: hidden;
+    }
+
+    &:hover .delete {
+      visibility: visible;
     }
   }
 }

@@ -39,7 +39,8 @@
 
 (defn list-datasets-for-user
   [store user-id]
-  (select-datasets-for-user (get-db store) {:user-id user-id}))
+  (->> (select-datasets-for-user (get-db store) {:user-id user-id})
+       (map db->dataset)))
 
 (defn create-dataset!
   [store dataset]
