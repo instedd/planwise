@@ -149,3 +149,24 @@
  (fn [db [_ error-info]]
    (c/error (str "Dataset creation failed: " error-info))
    (assoc db :state :list)))
+
+;; ----------------------------------------------------------------------------
+;; Dataset deletion
+
+(register-handler
+ :datasets/delete-dataset
+ in-datasets
+ (fn [db [_ dataset-id]]
+   (api/delete-dataset! dataset-id :datasets/dataset-deleted)
+   ;; optimistic update: remove the dataset from the list and invalidate resmap infomation
+   ;; to make the collection available again
+   (-> db
+       (update :list asdf/swap! db/remove-by-id dataset-id)
+       (update :resourcemap asdf/invalidate!))))
+
+(register-handler
+ :datasets/dataset-deleted
+ in-datasets
+ (fn [db [_ data]]
+   (dispatch [:datasets/invalidate-datasets])
+   db))

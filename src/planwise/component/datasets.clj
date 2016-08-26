@@ -50,7 +50,8 @@
                         :id)]
     (assoc dataset
            :id dataset-id
-           :facility-count 0)))
+           :facility-count 0
+           :project-count 0)))
 
 (defn find-dataset
   [store dataset-id]

@@ -99,6 +99,7 @@
      (when (nil? project-id)
        (throw "Invalid project data"))
      (dispatch [:projects/fetch-facility-types (:dataset-id project-data)])
+     (dispatch [:datasets/invalidate-datasets])   ; to update project counts for the selected dataset
      (accountant/navigate! (routes/project-demographics {:id project-id}))
      (assoc db
             :view-state :view

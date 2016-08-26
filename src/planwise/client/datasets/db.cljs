@@ -16,6 +16,7 @@
    :collection-id                  s/Int
    :mappings                       s/Any
    :facility-count                 s/Int
+   :project-count                  s/Int
    (s/optional-key :state)         (s/enum :ready
                                            :import-requested
                                            :importing
@@ -122,10 +123,13 @@
   [resmap]
   (:authorised? resmap))
 
+(defn remove-by-id
+  [coll id]
+  (filter #(not= id (:id %)) coll))
+
 (defn remove-resmap-collection
   [resmap coll-id]
-  (let [pred (fn [coll] (not= coll-id (:id coll)))]
-    (update resmap :collections #(filter pred %))))
+  (update resmap :collections remove-by-id coll-id))
 
 (defn new-dataset-valid?
   [new-dataset-data]

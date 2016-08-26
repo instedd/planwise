@@ -33,7 +33,7 @@
     [new-dataset-button]]])
 
 (defn dataset-card
-  [{:keys [id name description facility-count server-status] :as dataset}]
+  [{:keys [id name description facility-count project-count server-status] :as dataset}]
   (let [state (db/server-status->state server-status)
         importing? (db/dataset-importing? state)
         cancelling? (db/dataset-cancelling? state)]
@@ -44,13 +44,22 @@
       [common/icon :location "icon-small"]
       (utils/pluralize facility-count "facility" "facilities")
       (str " (" (db/server-status->string server-status) ")")]
-     (when importing?
+     (cond
+       importing?
        [:div.bottom-right
         [:button.danger
          {:type :button
           :on-click #(dispatch [:datasets/cancel-import! id])
           :disabled cancelling?}
-         (if cancelling? "Cancelling..." "Cancel")]])]))
+         (if cancelling? "Cancelling..." "Cancel")]]
+
+       (zero? project-count)
+       [:div.bottom-right
+        [:button.delete
+         {:on-click (utils/with-confirm
+                      #(dispatch [:datasets/delete-dataset id])
+                      "Are you sure you want to delete this dataset?")}
+         "\u2716 Delete"]])]))
 
 (defn datasets-list
   [datasets]

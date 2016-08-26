@@ -3,7 +3,7 @@
             [taoensso.timbre :as timbre]
             [buddy.auth.accessrules :refer [restrict]]
             [buddy.auth :refer [authenticated?]]
-            [ring.util.response :refer [response status]]
+            [ring.util.response :refer [response status not-found]]
             [planwise.util.ring :as util]
             [clojure.core.reducers :as r]
             [planwise.model.ident :as ident]
@@ -86,7 +86,16 @@
      (let [user-id (util/request-user-id request)
            sets (datasets/list-datasets-for-user datasets user-id)
            status (importer/cancel-import! importer dataset-id)]
-       (response (add-status-to-datasets sets status))))))
+       (response (add-status-to-datasets sets status))))
+
+   (DELETE "/:id" [id :as request]
+     (let [id (Integer. id)
+           user-id (util/request-user-id request)
+           dataset (datasets/find-dataset datasets id)]
+       (if (and (datasets/owned-by? dataset user-id)
+                (datasets/destroy-dataset! datasets id))
+         (response {:deleted id})
+         (not-found {:error "Dataset not found"}))))))
 
 (defn datasets-endpoint
   [service]

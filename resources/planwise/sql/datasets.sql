@@ -4,6 +4,7 @@ SELECT
   name,
   description,
   (SELECT COUNT(*) FROM facilities WHERE facilities.dataset_id = datasets.id) AS "facility-count",
+  (SELECT COUNT(*) FROM projects WHERE projects.dataset_id = datasets.id) AS "project-count",
   import_result AS "import-result",
   collection_id AS "collection-id",
   owner_id AS "owner-id"

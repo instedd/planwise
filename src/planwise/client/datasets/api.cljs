@@ -1,5 +1,5 @@
 (ns planwise.client.datasets.api
-  (:require [ajax.core :refer [GET POST]]
+  (:require [ajax.core :refer [GET POST DELETE]]
             [planwise.client.api :refer [json-request]]))
 
 
@@ -26,3 +26,8 @@
   [dataset-id & handlers]
   (POST "/api/datasets/cancel"
       (json-request {:dataset-id dataset-id} handlers)))
+
+(defn delete-dataset!
+  [dataset-id & handlers]
+  (DELETE (str "/api/datasets/" dataset-id)
+      (json-request {} handlers)))

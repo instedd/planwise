@@ -61,6 +61,6 @@
 (register-handler
  :tick
  (fn [db [_ time]]
-   (when (= 0 (mod time 3000))
+   (when (= 0 (mod time 1000))
      (dispatch [:datasets/refresh-datasets time]))
    db))

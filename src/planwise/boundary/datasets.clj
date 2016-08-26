@@ -20,6 +20,10 @@
   (destroy-dataset! [this dataset-id]
     "Destroy a dataset"))
 
+(defn owned-by?
+  [dataset user-id]
+  (= user-id (:owner-id dataset)))
+
 ;; Reference implementation
 
 (extend-protocol Datasets
