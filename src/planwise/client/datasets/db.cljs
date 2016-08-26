@@ -100,6 +100,29 @@
     :unknown
     "Unknown server status"))
 
+(defn import-progress
+  [server-status]
+  (case (:status server-status)
+    (:ready :done)
+    1
+
+    :importing
+    (let [progress (:progress server-status)]
+      (case (:state server-status)
+        (:start :importing-types)
+        0
+
+        (:request-sites :importing-sites)
+        (* progress 0.05)
+
+        (:processing-facilities)
+        (+ 0.05 (* 0.95 progress))
+
+        (:update-projects :updating-projects)
+        1))
+
+    0))
+
 (defn import-result->string
   [result]
   (case result

@@ -54,7 +54,7 @@ article.datasets {
 
   .dataset-card {
     position: relative;
-    overflow: auto;
+    overflow: hidden;
     color: $black;
     background: $white;
     margin: 20px;
@@ -81,6 +81,19 @@ article.datasets {
       position: absolute;
       bottom: 10px;
       right: 10px;
+    }
+
+    .progress-bar {
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: lighten($orange, 40%);
+      .progress-filled {
+        height: 3px;
+        background-color: $orange;
+      }
     }
   }
 }
