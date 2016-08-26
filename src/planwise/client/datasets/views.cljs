@@ -18,8 +18,7 @@
         filtered-datasets (subscribe [:datasets/filtered-list])]
     (fn []
       (let [sets (asdf/value @datasets)]
-        (when-not (or (asdf/valid? @datasets)
-                      (asdf/reloading? @datasets))
+        (when (asdf/should-reload? @datasets)
           (dispatch [:datasets/load-datasets]))
         [:article.datasets
          (cond

@@ -14,13 +14,9 @@
           (update :status keyword)
           (update :state keyword)))
 
-(defn update-datasets
+(defn map-datasets
   [server-datasets]
-  (mapv (fn [dataset]
-          (let [status (map-server-status (:server-status dataset))]
-            (assoc dataset :server-status status)))
-        server-datasets))
-
+  (mapv #(update % :server-status map-server-status) server-datasets))
 
 
 ;; ----------------------------------------------------------------------------
@@ -59,7 +55,7 @@
  :datasets/datasets-loaded
  in-datasets
  (fn [db [_ datasets]]
-   (update db :list asdf/reset! (update-datasets datasets))))
+   (update db :list asdf/reset! (map-datasets datasets))))
 
 (register-handler
  :datasets/search
@@ -141,7 +137,11 @@
      ;; the resmap available list
      (-> new-db
          (update :resourcemap asdf/swap! db/remove-resmap-collection coll-id)
-         (update :list asdf/swap! into (update-datasets [dataset]))))))
+         ;; TODO: under some circumstances, we might be optimistically adding a
+         ;; duplicate dataset here; if an invalidation and reload run between
+         ;; the API call and this event. We should check that the dataset is not
+         ;; already there.
+         (update :list asdf/swap! into (map-datasets [dataset]))))))
 
 (register-handler
  :datasets/create-failed

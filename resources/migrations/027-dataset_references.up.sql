@@ -25,3 +25,4 @@ ALTER TABLE projects
       REFERENCES datasets(id) ON DELETE RESTRICT;
 
 CREATE INDEX facilities_dataset_id_idx ON facilities(dataset_id);
+CREATE INDEX projects_dataset_id_idx ON projects(dataset_id);

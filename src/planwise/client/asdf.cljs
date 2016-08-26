@@ -33,6 +33,10 @@
   [asdf]
   (= :reloading (:state asdf)))
 
+(defn should-reload?
+  [asdf]
+  (= :invalid (:state asdf)))
+
 (defn reset!
   [asdf value]
   (assoc asdf

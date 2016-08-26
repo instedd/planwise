@@ -8,6 +8,10 @@
    (s/optional-key :state)    s/Keyword
    (s/optional-key :progress) s/Any})
 
+;; TODO: we should probably ditch the Dataset state concept altogether and use
+;; the server reported status always; doing so we do lose the state
+;; cancel-requested, but we're not using it right now anyway.
+
 (s/defschema Dataset
   "Information pertaining a single dataset"
   {:id                             s/Int
@@ -54,6 +58,8 @@
 
    :new-dataset-data nil})
 
+
+;; TODO: review names and parameters of these utility functions and predicates
 
 (defn show-dialog?
   [view-state]

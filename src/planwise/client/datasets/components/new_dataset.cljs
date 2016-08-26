@@ -62,7 +62,7 @@
   [:div.collection-card {:on-click on-click}
    [:h1 name]
    [:h2 description]
-   [:p.count (str count " sites")]])
+   [:p.count (utils/pluralize count "site")]])
 
 (defn collections-list
   [collections on-select-collection-fn]
