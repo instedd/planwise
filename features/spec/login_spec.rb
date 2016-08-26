@@ -1,6 +1,6 @@
-describe Home do
+describe HomePage do
   it "should login" do
-    goto_page Home do
+    goto_page HomePage do
       expect_page GuissoLogin do |page|
       	page.form.user_name.set "admin@instedd.org"
       	page.form.password.set "admin123"
