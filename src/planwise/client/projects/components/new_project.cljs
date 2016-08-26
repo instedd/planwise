@@ -47,6 +47,7 @@
          [:div.form-control
           [:label "Goal"]
           [:input {:type "text"
+                   :id "goal"
                    :required true
                    :autoFocus true
                    :value @new-project-goal
