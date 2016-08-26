@@ -43,10 +43,10 @@
     {:code (:code type-field)
      :options new-options}))
 
-(defn sites-with-location
-  "Filter Resourcemap sites which have a valid location"
-  [sites]
-  (filter #(and (:lat %) (:long %)) sites))
+(defn with-location
+  "Filter function for valid location"
+  [{:keys [lat long], :as site}]
+  (and lat long))
 
 (defn facility-type-ctor
   "Returns a function which applied to a Resourcemap site returns the facility
@@ -75,7 +75,7 @@
   using the given facility type field definition."
   [sites type-field]
   (->> sites
-       (sites-with-location)
+       (filter with-location)
        (map (site->facility-ctor type-field))))
 
 (defn import-collection-page
@@ -89,12 +89,13 @@
         sites (:sites data)
         total-pages (:totalPages data)]
     (when (seq sites)
-      (let [new-facilities (sites->facilities sites type-field)]
+      (let [new-facilities (sites->facilities sites type-field)
+            sites-without-location (filter (complement with-location) sites)]
         (info (str "Dataset " dataset-id ": "
                    "Inserting " (count new-facilities) " facilities from page " page
                    " of collection " coll-id))
         (let [new-ids (facilities/insert-facilities! facilities dataset-id new-facilities)]
-          [:continue new-ids total-pages])))))
+          [:continue new-ids total-pages sites-without-location])))))
 
 (defn process-facilities
   [facilities facility-ids]
