@@ -11,7 +11,7 @@ services:
       - planwisedb:/var/lib/postgresql/data
 
   planwiseweb:
-    image: instedd/planwise:latest
+    image: instedd/planwise:feature_integration-tests
     environment:
       DEMO_TILE_URL: "http://mapcache/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png"
       DATA_PATH: /data

@@ -11,7 +11,7 @@ module FeatureSpecHelpers
     yield page if block_given?
   end
 
-  def sign_in
+  def log_in
     goto_page HomePage do
       expect_page GuissoLogin do |page|
         page.form.user_name.set "admin@instedd.org"
@@ -19,5 +19,26 @@ module FeatureSpecHelpers
         page.form.login.click
       end
     end
+  end
+
+  def create_project
+    expect_page HomePage do |page|  
+      page.press_primary_button 
+      fill_in  "goal", :with => "Foo"
+      page.find(".rc-dropdown b").click
+      page.find(".chosen-drop li")[1].click
+    end
+  end
+
+  def expand_locations_options
+    page.find(".rc-dropdown b").click
+  end
+
+  def select_location(option)
+    page.find(".chosen-drop li:nth-child(#{option})").click
+  end
+
+  def submit
+    page.all(".primary")[1].click
   end
 end
