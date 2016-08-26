@@ -1,6 +1,7 @@
 (ns leaflet.core
   (:require [reagent.core :as reagent :refer [atom]]
             [reagent.debug :as debug]
+            [planwise.client.utils :as utils]
             [clojure.data :as data]))
 
 
@@ -282,8 +283,10 @@
 
     ;; optimization: disable "expensive" blend mode while zooming
     ;; TODO: try to remove coupling of this optimization with the css style
-    (.on leaflet "zoomstart" (set-layer-blend-mode ""))
-    (.on leaflet "zoomend" (set-layer-blend-mode "multiply"))
+    (let [multiply-off (set-layer-blend-mode "normal")
+          multiply-on (utils/debounced (set-layer-blend-mode "multiply") 500)]
+      (mapv  #(.on leaflet % multiply-off) ["zoomstart"])
+      (mapv  #(.on leaflet % multiply-on) ["zoomend"]))
 
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))))
