@@ -30,6 +30,8 @@ deployment:
     branch:
       - master
       - stable
+      - experiment/rasterize
+      - feature/integration-tests
     owner: instedd
     commands:
       - ./deploy.sh ${CIRCLE_BRANCH/#master/latest}
