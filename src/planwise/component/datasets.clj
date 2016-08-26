@@ -61,7 +61,7 @@
 
 (defn update-dataset
   [store dataset]
-  (update-dataset* (get-db store) dataset))
+  (update-dataset* (get-db store) (dataset->db dataset)))
 
 (defn destroy-dataset!
   [store dataset-id]

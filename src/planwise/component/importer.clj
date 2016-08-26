@@ -170,7 +170,10 @@
     (let [result     (import-job/job-result job)
           stats      (import-job/job-stats job)
           dataset-id (import-job/job-dataset-id job)]
-      (info (str "Import job for dataset " dataset-id " finished with result " result " (" stats ")")))))
+      (info (str "Import job for dataset " dataset-id " finished with result " result " (" stats ")"))
+      (datasets/update-dataset (:datasets component)
+                               {:id dataset-id
+                                :import-result (assoc stats :result result)}))))
 
 (defn jobs-finisher
   [component]

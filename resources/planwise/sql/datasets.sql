@@ -24,6 +24,7 @@ SELECT
   id,
   name,
   description,
+  import_result AS "import-result",
   collection_id AS "collection-id",
   import_mappings AS "mappings",
   owner_id AS "owner-id"
@@ -35,8 +36,8 @@ WHERE id = :id;
 UPDATE datasets SET
 /*~
 (string/join ","
-(for [field [:description] :when (some? (field params))]
-(str (name field) " = :" (name field))))
+(for [[key field] [[:description :description] [:import-result :import_result]] :when (some? (key params))]
+(str (name field) " = :" (name key))))
 ~*/
 WHERE datasets.id = :id;
 
