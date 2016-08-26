@@ -86,7 +86,8 @@
           [:button.primary
            {:type "submit"
             :disabled (or (= @view-state :creating)
-                          (str/blank? @new-project-goal))}
+                          (str/blank? @new-project-goal)
+                          (str/blank? @new-project-dataset-id))}
            (if (= @view-state :creating)
              "Creating..."
              "Create")]
