@@ -145,11 +145,10 @@
 
 (defn- update-facilities-counts [job event]
   (let [[_ _ results] event
-        no-road-network (filter #{:no-road-network} results)
-        outside-regions (filter #{:outside-regions} results)]
+        results-counts (frequencies results)]
     (-> job
-      (update :facilities-without-road-network-count + (count no-road-network))
-      (update :facilities-outside-regions-count + (count outside-regions)))))
+      (update :facilities-without-road-network-count + (get results-counts :no-road-network 0))
+      (update :facilities-outside-regions-count + (get results-counts :outside-regions 0)))))
 
 (defn complete-processing
   [job event & _]
