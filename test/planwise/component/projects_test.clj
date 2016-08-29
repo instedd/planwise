@@ -78,7 +78,8 @@
     (let [service (:projects system)
           listed-projects (projects/list-projects-for-user service 2)]
       (is (= 1 (count listed-projects)))
-      (is (= 2 (:id (first listed-projects)))))))
+      (is (= 2 (:id (first listed-projects))))
+      (is (nil? (:share-token (first listed-projects)))))))
 
 (deftest get-project-for-user-should-check-project-shares
   (with-system (system fixture-data-with-sharing)
@@ -88,13 +89,19 @@
       (is (projects/get-project service project-id owner-id))
       (is (nil? (projects/get-project service project-id grantee-user-id))))))
 
+(deftest get-project-for-user-should-return-sensitive-data-only-to-owner
+  (with-system (system fixture-data-with-sharing)
+    (let [service (:projects system)]
+      (is (= project-share-token (:share-token (projects/get-project service shared-project-id owner-id))))
+      (is (nil? (:share-token (projects/get-project service shared-project-id grantee-user-id)))))))
+
 (deftest create-project-share
   (with-system (system fixture-data-with-sharing)
     (let [service (:projects system)
           project (projects/create-project-share service project-id project-share-token grantee-user-id)]
       (is project)
       (is (= project-id (:id project)))
-      (is (= project (projects/get-project service project-id grantee-user-id)))
+      (is (= (dissoc project :share-token) (projects/get-project service project-id grantee-user-id)))
       (is (= 1 (count-project-shares service project-id grantee-user-id))))))
 
 (deftest create-project-share-with-invalid-token
@@ -111,5 +118,5 @@
           project (projects/create-project-share service shared-project-id project-share-token grantee-user-id)]
       (is project)
       (is (= shared-project-id (:id project)))
-      (is (= project (projects/get-project service shared-project-id grantee-user-id)))
+      (is (= (dissoc project :share-token) (projects/get-project service shared-project-id grantee-user-id)))
       (is (= 1 (count-project-shares service shared-project-id grantee-user-id))))))

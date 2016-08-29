@@ -32,6 +32,18 @@
       (update :stats pr-str)
       (update :filters pr-str)))
 
+;; Access related functions
+
+(defn owned-by?
+  [project user-id]
+  (= user-id (:owner-id project)))
+
+(defn- dissoc-sensitive-data
+  "Removes sensitive data if the requesting user is not the project owner."
+  [project requester-user-id]
+  (if (or (nil? requester-user-id) (owned-by? project requester-user-id))
+    project
+    (dissoc project :share-token)))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -54,14 +66,16 @@
 
 (defn list-projects-for-user [service user-id]
   (->> (select-projects-for-user (get-db service) {:user-id user-id})
-       (map db->project)))
+       (map db->project)
+       (map #(dissoc-sensitive-data % user-id))))
 
 (defn get-project
  ([service id]
   (get-project service id nil))
  ([service id user-id]
   (some-> (select-project (get-db service) {:id id, :user-id user-id})
-          db->project)))
+          (db->project)
+          (dissoc-sensitive-data user-id))))
 
 (defn- facilities-criteria
   [project]
@@ -127,10 +141,6 @@
 (defn delete-project [service id]
   (pos? (delete-project* (get-db service) {:id id})))
 
-(defn owned-by?
-  [project user-id]
-  (= user-id (:owner-id project)))
-
 (defn list-project-shares
   [service]
   (list-project-shares* (get-db service)))
@@ -141,5 +151,3 @@
     (when (and project (= token (:share-token project)))
       (create-project-share! (get-db service) {:user-id user-id, :project-id project-id})
       project)))
-
-  ; TODO REMOVE TOKEN
