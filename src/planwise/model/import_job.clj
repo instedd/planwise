@@ -160,7 +160,6 @@
   [job event & _]
   (-> job
     (complete-processing event)
-    (update-facilities-counts event)
     (assoc :result :success)))
 
 ;; FSM guards
