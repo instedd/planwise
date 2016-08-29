@@ -25,7 +25,8 @@ SELECT
   owner_id AS "owner-id"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
-WHERE projects.owner_id = :user-id
+LEFT JOIN project_shares AS ps ON ps.project_id = projects.id AND ps.user_id = :user-id
+WHERE projects.owner_id = :user-id OR ps.user_id = :user-id
 ORDER BY projects.id ASC;
 
 -- :name select-project :? :1
@@ -45,7 +46,14 @@ SELECT
   projects.owner_id AS "owner-id"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
-WHERE projects.id = :id;
+WHERE projects.id = :id
+/*~ (if (:user-id params) */
+AND (projects.owner_id = :user-id
+     OR EXISTS (SELECT user_id
+                FROM project_shares AS ps
+                WHERE ps.user_id = :user-id
+                  AND ps.project_id = :id))
+/*~ ) ~*/;
 
 -- :name update-project* :! :n
 /* :require [clojure.string :as string] */

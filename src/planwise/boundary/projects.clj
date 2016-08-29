@@ -11,8 +11,11 @@
   (list-projects-for-user [this user-id]
     "Returns projects accessible by the user.")
 
-  (get-project [this id]
-    "Return project with the given ID.")
+  (get-project
+    [this id]
+    [this id user-id]
+    "Return project with the given ID, optionally filtered by access for the
+     specified user id.")
 
   (update-project [this project]
     "Updates a project's attributes. Returns the updated project on success and
@@ -30,18 +33,17 @@
     (service/create-project service project))
   (list-projects-for-user [service user-id]
     (service/list-projects-for-user service user-id))
-  (get-project [service id]
-    (service/get-project service id))
+  (get-project
+    ([service id]
+     (service/get-project service id))
+    ([service id user-id]
+     (service/get-project service id user-id)))
   (update-project [service project]
     (service/update-project service project))
   (delete-project [service id]
     (service/delete-project service id)))
 
 ;; Additional utility functions
-
-(defn accessible-by?
-  [project user-id]
-  (service/accessible-by? project user-id))
 
 (defn owned-by?
   [project user-id]

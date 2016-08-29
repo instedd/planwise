@@ -56,9 +56,12 @@
   (->> (select-projects-for-user (get-db service) {:user-id user-id})
        (map db->project)))
 
-(defn get-project [service id]
-  (some-> (select-project (get-db service) {:id id})
-          db->project))
+(defn get-project
+ ([service id]
+  (get-project service id nil))
+ ([service id user-id]
+  (some-> (select-project (get-db service) {:id id, :user-id user-id})
+          db->project)))
 
 (defn- facilities-criteria
   [project]
@@ -124,11 +127,6 @@
 (defn delete-project [service id]
   (pos? (delete-project* (get-db service) {:id id})))
 
-
 (defn owned-by?
   [project user-id]
   (= user-id (:owner-id project)))
-
-(defn accessible-by?
-  [project user-id]
-  (or (owned-by? project user-id)))
