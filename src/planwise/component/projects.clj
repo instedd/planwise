@@ -38,12 +38,15 @@
   [project user-id]
   (= user-id (:owner-id project)))
 
-(defn- dissoc-sensitive-data
-  "Removes sensitive data if the requesting user is not the project owner."
+(defn- view-for-user
+  "Removes sensitive data if the requesting user is not the project owner,
+   and adds a read-only flag."
   [project requester-user-id]
   (if (or (nil? requester-user-id) (owned-by? project requester-user-id))
     project
-    (dissoc project :share-token)))
+    (-> project
+      (dissoc :share-token)
+      (assoc :read-only true))))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -67,7 +70,7 @@
 (defn list-projects-for-user [service user-id]
   (->> (select-projects-for-user (get-db service) {:user-id user-id})
        (map db->project)
-       (map #(dissoc-sensitive-data % user-id))))
+       (map #(view-for-user % user-id))))
 
 (defn get-project
  ([service id]
@@ -75,7 +78,7 @@
  ([service id user-id]
   (some-> (select-project (get-db service) {:id id, :user-id user-id})
           (db->project)
-          (dissoc-sensitive-data user-id))))
+          (view-for-user user-id))))
 
 (defn- facilities-criteria
   [project]

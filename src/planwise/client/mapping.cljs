@@ -45,7 +45,7 @@
 ;; only "classic" mapbox styles can be used with this static API.
 ;; the new API does not allow defining an overlay as a query parameter.
 (defn static-image [geojson]
-  (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/256x144.png?access_token=%s"
+  (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/256x158.png?access_token=%s"
     emerald-mapbox-mapid
     (js/encodeURIComponent geojson)
     mapbox-access-token))

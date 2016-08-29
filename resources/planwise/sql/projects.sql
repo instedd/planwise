@@ -22,9 +22,12 @@ SELECT
   regions.name AS "region-name",
   regions.total_population AS "region-population",
   regions.max_population AS "region-max-population",
-  owner_id AS "owner-id"
+  projects.owner_id AS "owner-id",
+  owner.email AS "owner-email",
+  projects.share_token AS "share-token"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
+INNER JOIN users AS owner ON projects.owner_id = owner.id
 LEFT JOIN project_shares AS ps ON ps.project_id = projects.id AND ps.user_id = :user-id
 WHERE projects.owner_id = :user-id OR ps.user_id = :user-id
 ORDER BY projects.id ASC;
@@ -44,9 +47,11 @@ SELECT
   regions.max_population AS "region-max-population",
   ST_Area(regions.the_geom::geography) / 1000000 as "region-area-km2",
   projects.owner_id AS "owner-id",
+  owner.email AS "owner-email",
   projects.share_token AS "share-token"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
+INNER JOIN users AS owner ON projects.owner_id = owner.id
 WHERE projects.id = :id
 /*~ (if (:user-id params) */
 AND (projects.owner_id = :user-id

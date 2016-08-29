@@ -2,6 +2,7 @@
   (:require [re-frame.core :refer [subscribe dispatch]]
             [clojure.string :as str]
             [planwise.client.utils :as utils]
+            [planwise.client.components.common :as common]
             [planwise.client.routes :as routes]
             [planwise.client.components.common :as common]
             [planwise.client.mapping :refer [static-image]]))
@@ -46,7 +47,7 @@
    (project-stat "Region population"
                  (utils/format-number region-population))])
 
-(defn project-card [{:keys [id goal region-id region-name stats region-population] :as project}]
+(defn project-card [{:keys [id goal region-id region-name stats region-population owner-email read-only] :as project}]
   (let [region-geo (subscribe [:regions/preview-geojson region-id])]
     (fn [{:keys [id goal region-id region-name stats] :as project}]
       [:a {:href (routes/project-demographics project)}
@@ -54,7 +55,11 @@
           [:div.project-card-content
            [:h1 goal]
            [:h2 (str "at " region-name)]
-           [project-stats stats region-population]]
+           [project-stats stats region-population]
+           (when read-only
+            [:div.project-card-footer
+             (common/icon :share "icon-small")
+             (str "Shared by " owner-email)])]
           (if-not (str/blank? @region-geo)
             [:img.map-preview {:src (static-image @region-geo)}])]])))
 

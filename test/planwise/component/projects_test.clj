@@ -89,11 +89,15 @@
       (is (projects/get-project service project-id owner-id))
       (is (nil? (projects/get-project service project-id grantee-user-id))))))
 
-(deftest get-project-for-user-should-return-sensitive-data-only-to-owner
+(deftest get-project-for-user-return-view-for-user
   (with-system (system fixture-data-with-sharing)
-    (let [service (:projects system)]
-      (is (= project-share-token (:share-token (projects/get-project service shared-project-id owner-id))))
-      (is (nil? (:share-token (projects/get-project service shared-project-id grantee-user-id)))))))
+    (let [service (:projects system)
+          project-for-owner (projects/get-project service shared-project-id owner-id)
+          project-for-grantee (projects/get-project service shared-project-id grantee-user-id)]
+      (is (= project-share-token (:share-token project-for-owner)))
+      (is (nil? (:share-token project-for-grantee)))
+      (is (not (:read-only project-for-owner)))
+      (is (:read-only project-for-grantee)))))
 
 (deftest create-project-share
   (with-system (system fixture-data-with-sharing)
@@ -101,7 +105,7 @@
           project (projects/create-project-share service project-id project-share-token grantee-user-id)]
       (is project)
       (is (= project-id (:id project)))
-      (is (= (dissoc project :share-token) (projects/get-project service project-id grantee-user-id)))
+      (is (= project-id (:id (projects/get-project service project-id grantee-user-id))))
       (is (= 1 (count-project-shares service project-id grantee-user-id))))))
 
 (deftest create-project-share-with-invalid-token
@@ -118,5 +122,5 @@
           project (projects/create-project-share service shared-project-id project-share-token grantee-user-id)]
       (is project)
       (is (= shared-project-id (:id project)))
-      (is (= (dissoc project :share-token) (projects/get-project service shared-project-id grantee-user-id)))
+      (is (= shared-project-id (:id (projects/get-project service shared-project-id grantee-user-id))))
       (is (= 1 (count-project-shares service shared-project-id grantee-user-id))))))

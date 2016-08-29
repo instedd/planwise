@@ -25,6 +25,7 @@ $project-sidebar-width: 300px;
     .project-card-content {
       padding: 15px;
       display: inline-block;
+      float: left;
 
       .project-stats {
         .stat {
@@ -44,6 +45,13 @@ $project-sidebar-width: 300px;
         }
       }
 
+      .project-card-footer {
+        clear: both;
+        color: $gray3;
+        fill: $gray3;
+        padding-top: 12px;
+        font-size: 13px;
+      }
     }
 
     h1 {
@@ -60,7 +68,7 @@ $project-sidebar-width: 300px;
 
     .map-preview {
       float: right;
-      height: 144px;
+      height: 158px;
     }
   }
 }
