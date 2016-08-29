@@ -1,6 +1,7 @@
 (ns planwise.client.db
   (:require [planwise.client.datasets.db :as datasets]
-            [planwise.client.projects.db :as projects]))
+            [planwise.client.projects.db :as projects]
+            [planwise.client.current-project.db :as current-project]))
 
 (def initial-db
   {;; Navigation (current page)
@@ -8,12 +9,11 @@
    ;; Map of navigation params (ie. :page, :id, :section, etc)
    :page-params         {}
 
-   ;; Filter definitions - these are replaced by requests to the server
-   ;; {:filter-name [{:id 123 :label "One, two, three"}]}
-   :filter-definitions  {}
-
    ;; Projects
    :projects            projects/initial-db
+
+   ;; Currently selected project
+   :current-project     current-project/initial-db
 
    ;; Regions id => {:keys [id name admin-level & [geojson preview-geojson]]}
    :regions             {}

@@ -1,11 +1,11 @@
-(ns planwise.client.projects.components.sidebar
+(ns planwise.client.current-project.components.sidebar
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [re-com.core :as rc]
             [planwise.client.components.common :refer [icon]]
             [planwise.client.components.progress-bar :as progress-bar]
             [planwise.client.components.filters :as filters]
-            [planwise.client.projects.db :as db]
+            [planwise.client.current-project.db :as db]
             [planwise.client.styles :as styles]
             [planwise.client.utils :as utils]))
 
@@ -16,7 +16,7 @@
    [:div.stat-value value]])
 
 (defn- demographics-filters []
-  (let [current-project (subscribe [:projects/current-data])]
+  (let [current-project (subscribe [:current-project/current-data])]
     (fn []
       (let [population (:region-population @current-project)
             area (:region-area-km2 @current-project)
@@ -35,16 +35,16 @@
            [:a {:href "https://creativecommons.org/licenses/by/4.0/" :target "attribution"} "CC BY"]]]]))))
 
 (defn- facility-filters []
-  (let [facility-types (subscribe [:filter-definition :facility-type])
-        facility-ownerships (subscribe [:filter-definition :facility-ownership])
-        facility-services (subscribe [:filter-definition :facility-service])
-        filters (subscribe [:projects/facilities :filters])
-        filter-stats (subscribe [:projects/facilities :filter-stats])]
+  (let [facility-types (subscribe [:current-project/filter-definition :facility-type])
+        facility-ownerships (subscribe [:current-project/filter-definition :facility-ownership])
+        facility-services (subscribe [:current-project/filter-definition :facility-service])
+        filters (subscribe [:current-project/facilities :filters])
+        filter-stats (subscribe [:current-project/facilities :filter-stats])]
     (fn []
       (let [filter-count (:count @filter-stats)
             filter-total (:total @filter-stats)
             toggle-cons-fn (fn [field]
-                             #(dispatch [:projects/toggle-filter :facilities field %]))]
+                             #(dispatch [:current-project/toggle-filter :facilities field %]))]
         [:div.sidebar-filters
          [:div.filter-info
           [:p "Select the types of facility to include in your analysis. We will use those to calculate the existing coverage."]
@@ -80,7 +80,7 @@
               :toggle-fn (toggle-cons-fn :services)})]]))))
 
 (defn- transport-filters []
-  (let [transport-time (subscribe [:projects/transport-time])]
+  (let [transport-time (subscribe [:current-project/transport-time])]
     (fn []
       [:div.sidebar-filters
        [:div.filter-info
@@ -93,15 +93,13 @@
         [rc/single-dropdown
          :choices (:time db/transport-definitions)
          :label-fn :name
-         :on-change #(dispatch [:projects/set-transport-time %])
+         :on-change #(dispatch [:current-project/set-transport-time %])
          :model transport-time]
         (icon :car)]])))
 
 (defn sidebar-section [selected-tab]
-  [:aside (condp = selected-tab
-           :demographics
-           [demographics-filters]
-           :facilities
-           [facility-filters]
-           :transport
-           [transport-filters])])
+  [:aside
+   (case selected-tab
+     :demographics [demographics-filters]
+     :facilities   [facility-filters]
+     :transport    [transport-filters])])

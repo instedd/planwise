@@ -5,6 +5,7 @@
             [planwise.client.components.nav :as nav]
             [planwise.client.components.common :refer [icon]]
             [planwise.client.projects.views :as projects]
+            [planwise.client.current-project.views :as current-project]
             [planwise.client.datasets.views :as datasets]))
 
 
@@ -32,7 +33,7 @@
   [projects/project-list-page])
 
 (defmethod content-pane :projects []
-  [projects/project-page])
+  [current-project/project-page])
 
 (defmethod content-pane :datasets []
   [datasets/datasets-page])

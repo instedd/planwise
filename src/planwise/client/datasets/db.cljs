@@ -1,7 +1,7 @@
 (ns planwise.client.datasets.db
   (:require [schema.core :as s :include-macros true]
             [planwise.client.asdf :as asdf]
-            [planwise.client.utils :refer [format-percentage]]))
+            [planwise.client.utils :refer [format-percentage remove-by-id]]))
 
 (s/defschema ServerStatus
   {:status                    (s/enum :ready :done :importing :cancelling :unknown)
@@ -151,10 +151,6 @@
 (defn resmap-authorised?
   [resmap]
   (:authorised? resmap))
-
-(defn remove-by-id
-  [coll id]
-  (filter #(not= id (:id %)) coll))
 
 (defn remove-resmap-collection
   [resmap coll-id]

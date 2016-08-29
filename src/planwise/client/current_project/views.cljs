@@ -1,0 +1,166 @@
+(ns planwise.client.current-project.views
+  (:require-macros [reagent.ratom :refer [reaction]])
+  (:require [re-frame.core :refer [subscribe dispatch dispatch-sync]]
+            [re-com.core :as rc]
+            [re-frame.utils :as c]
+            [clojure.string :as str]
+            [leaflet.core :refer [map-widget]]
+            [planwise.client.mapping :as mapping]
+            [planwise.client.config :as config]
+            [planwise.client.styles :as styles]
+            [planwise.client.components.common :as common]
+            [planwise.client.current-project.api :as api]
+            [planwise.client.current-project.db :as db]
+            [planwise.client.current-project.components.header :refer [header-section]]
+            [planwise.client.current-project.components.sidebar :refer [sidebar-section]]))
+
+
+(defn geojson-bbox-callback [dataset-id isochrones filters threshold]
+  (fn [level bounds bbox-excluding callback]
+    (let [level (js/parseInt level)
+          bbox-excluding (map #(js/parseInt %) bbox-excluding)
+          cache-existing (keys (get-in @isochrones [threshold level]))]
+      (api/fetch-isochrones-in-bbox
+        @filters
+        {:dataset-id dataset-id,
+         :threshold threshold,
+         :bbox bounds,
+         :excluding (str/join "," cache-existing)
+         :simplify (mapping/geojson-level->simplify level)}
+        (fn [response]
+          (dispatch-sync [:current-project/isochrones-loaded response])
+          (let [isochrones-for-level (get-in @isochrones [threshold level])
+                new-isochrones (->> response
+                                  (:facilities)
+                                  (map :id)
+                                  (remove (set bbox-excluding))
+                                  (select-keys isochrones-for-level)
+                                  (mapv (fn [[id isochrone]] {:id id, :isochrone isochrone})))]
+            (callback (clj->js new-isochrones))))))))
+
+(defn marker-popup [{:keys [name type processing-status], :as marker}]
+  (str
+    "<b>" name "</b>"
+    "<br/>"
+    type
+    (when (= "no-road-network" processing-status)
+      (str
+        "<br/>" "<br/>"
+        "<i>" "This facility is too far from the closest road and it is not being evaluated for coverage." "</i>"))))
+
+(def loading-wheel
+  [:svg.circular {:viewBox "25 25 50 50"}
+   [:circle.path {:cx 50
+                  :cy 50
+                  :fill "none"
+                  :r 20
+                  :stroke-miterlimit 10
+                  :stroke-width 2}]])
+
+(defn- project-tab [project-id project-dataset-id project-region-id selected-tab]
+  (let [facilities-by-type (subscribe [:current-project/facilities-by-type])
+        map-position (subscribe [:current-project/map-view :position])
+        map-zoom (subscribe [:current-project/map-view :zoom])
+        map-bbox (subscribe [:current-project/map-view :bbox])
+        map-legend-max (subscribe [:current-project/map-view :legend-max])
+        demand-map-key (subscribe [:current-project/demand-map-key])
+        map-geojson (subscribe [:current-project/map-geojson])
+        map-state (subscribe [:current-project/map-state])
+        marker-popup-fn marker-popup
+        marker-style-fn #(when (= "no-road-network" (:processing-status %)) {:fillColor styles/invalid-facility-type})
+        isochrones (subscribe [:current-project/facilities :isochrones])
+        project-facilities-criteria (subscribe [:current-project/facilities-criteria])
+        project-transport-time (subscribe [:current-project/transport-time])
+        callback-fn (reaction (geojson-bbox-callback project-dataset-id isochrones project-facilities-criteria @project-transport-time))
+        feature-fn #(aget % "isochrone")]
+
+    (fn [project-id project-dataset-id project-region-id selected-tab]
+      (cond
+
+        (#{:demographics
+           :facilities
+           :transport}
+         selected-tab)
+        [:div
+         [sidebar-section selected-tab]
+         (when (= @map-state :loading-displayed)
+           [:div.loading-indicator
+            [:div.loading-wheel loading-wheel]
+            [:div.loading-legend "Retrieving facilities"]])
+         [:div.map-container
+          (let [map-props   {:position @map-position
+                             :zoom @map-zoom
+                             :min-zoom 5
+                             :legend-max @map-legend-max
+                             :on-position-changed
+                             #(dispatch [:current-project/update-position %])
+                             :on-zoom-changed
+                             #(dispatch [:current-project/update-zoom %])}
+
+                layer-region-boundaries  (if @map-geojson
+                                           [:geojson-layer {:data @map-geojson
+                                                            :color styles/black
+                                                            :fit-bounds true
+                                                            :fillOpacity 0
+                                                            :weight 2}])
+
+                layer-demographics (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
+                                          population-map (mapping/region-map project-region-id)]
+                                      [:wms-tile-layer {:url config/mapserver-url
+                                                        :transparent true
+                                                        :layers mapping/layer-name
+                                                        :DATAFILE (or demand-map population-map)
+                                                        :opacity 0.6}])
+
+                layers-facilities  (when (#{:facilities :transport} selected-tab)
+                                     (for [[type facilities] @facilities-by-type]
+                                       [:point-layer {:points facilities
+                                                      :popup-fn marker-popup-fn
+                                                      :style-fn marker-style-fn
+                                                      :radius 4
+                                                      :fillColor (:colour type)
+                                                      :stroke false
+                                                      :fillOpacity 1}]))
+
+                layer-isochrones   (when (= :transport selected-tab)
+                                      [:geojson-bbox-layer { :levels mapping/geojson-levels
+                                                              :fillOpacity 1
+                                                              :weight 2
+                                                              :color styles/black
+                                                              :group {:opacity 0.2}
+                                                              :featureFn feature-fn
+                                                              :callback @callback-fn}])
+
+                map-layers (concat [mapping/bright-base-tile-layer
+                                    layer-region-boundaries
+                                    layer-demographics]
+                                   layers-facilities
+                                   [layer-isochrones])]
+
+            (into [map-widget map-props] (filterv some? map-layers)))]]
+
+
+        (= :scenarios selected-tab)
+        [:div
+         [:h1 "Scenarios"]]))))
+
+(defn- project-view []
+  (let [page-params (subscribe [:page-params])
+        current-project (subscribe [:current-project/current-data])]
+    (fn []
+      (let [project-id (:id @page-params)
+            selected-tab (:section @page-params)
+            project-goal (:goal @current-project)
+            project-dataset-id (:dataset-id @current-project)
+            project-region-id (:region-id @current-project)]
+        [:article.project-view
+         [header-section project-id project-goal selected-tab]
+         [project-tab project-id project-dataset-id project-region-id selected-tab]]))))
+
+(defn project-page []
+  (let [loaded? (subscribe [:current-project/loaded?])]
+    (fn []
+      (if @loaded?
+        [project-view]
+        [:article
+         [common/loading-placeholder]]))))

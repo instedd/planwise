@@ -3,6 +3,7 @@
             [re-frame.utils :as c]
             [clojure.string :refer [blank?]]
             [planwise.client.asdf :as asdf]
+            [planwise.client.utils :refer [remove-by-id]]
             [planwise.client.datasets.api :as api]
             [planwise.client.datasets.db :as db]))
 
@@ -161,7 +162,7 @@
    ;; optimistic update: remove the dataset from the list and invalidate resmap infomation
    ;; to make the collection available again
    (-> db
-       (update :list asdf/swap! db/remove-by-id dataset-id)
+       (update :list asdf/swap! remove-by-id dataset-id)
        (update :resourcemap asdf/invalidate!))))
 
 (register-handler
