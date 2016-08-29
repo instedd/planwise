@@ -99,13 +99,12 @@
 
 (defn process-facilities
   [facilities facility-ids]
-  (map
-    (fn [id]
-      (info "Processing facility" id)
-      (facilities/preprocess-isochrones facilities id))
-    facility-ids))
-
-
+  (doall
+    (map
+      (fn [id]
+        (info "Processing facility" id)
+        (facilities/preprocess-isochrones facilities id))
+      facility-ids)))
 
 (defn update-projects
   [projects dataset-id]
