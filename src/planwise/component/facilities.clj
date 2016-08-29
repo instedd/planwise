@@ -121,13 +121,14 @@
 
 (defn preprocess-isochrones
   [service facility-id]
-  (let [result (calculate-facility-isochrones! (get-db service)
-                                               {:id facility-id
-                                                :method "alpha-shape"
-                                                :start 30
-                                                :end 180
-                                                :step 15})]
-    (debug (str "Facility " facility-id " isochrone processed with result: " (vec result))))
-  (when (get-in service [:config :raster-isochrones])
-    (calculate-isochrones-population! service facility-id)
-    (raster-isochrones! service facility-id)))
+  (let [[{result :result}] (calculate-facility-isochrones! (get-db service)
+                                                           {:id facility-id
+                                                            :method "alpha-shape"
+                                                            :start 30
+                                                            :end 180
+                                                            :step 15})]
+    (debug (str "Facility " facility-id " isochrone processed with result: " (vec result)))
+    (when (get-in service [:config :raster-isochrones])
+      (calculate-isochrones-population! service facility-id)
+      (raster-isochrones! service facility-id))
+    (keyword result)))

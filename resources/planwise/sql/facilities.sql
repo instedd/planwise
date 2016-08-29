@@ -77,7 +77,7 @@ VALUES (:name, :dataset-id)
 RETURNING id;
 
 -- :name calculate-facility-isochrones! :<!
-SELECT process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer);
+SELECT process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer) AS result;
 
 -- :name select-facilities-polygons-regions-for-facility :?
 SELECT fpr.facility_polygon_id AS "facility-polygon-id",

@@ -101,14 +101,15 @@
   (let [page (:page job)
         facility-ids (:facility-ids job)
         facility-count (count facility-ids)
-        [_ _ [_ page-ids total-pages]] event
+        [_ _ [_ page-ids total-pages sites-without-location]] event
         page-ids (filter some? page-ids)
         total-pages (or total-pages (:page-count job))]
     (-> (complete-task job event)
         (assoc :page (inc page)
                :page-count total-pages
                :facility-ids (into facility-ids page-ids)
-               :facility-count (+ facility-count (count page-ids))))))
+               :facility-count (+ facility-count (count page-ids)))
+        (update :sites-without-location-count + (count sites-without-location)))))
 
 (defn import-sites-failed
   [job event & _]
@@ -142,15 +143,25 @@
         (assoc :result :update-projects-failed
                :error-info error))))
 
+(defn- update-facilities-counts [job event]
+  (let [[_ _ results] event
+        results-counts (frequencies results)]
+    (-> job
+      (update :facilities-without-road-network-count + (get results-counts :no-road-network 0))
+      (update :facilities-outside-regions-count + (get results-counts :outside-regions 0)))))
+
 (defn complete-processing
   [job event & _]
-  ;; TODO: save the processing result in the job
-  (complete-task job event))
+  (-> job
+    (complete-task event)
+    (update-facilities-counts event)))
 
 (defn last-complete-processing
   [job event & _]
-  (-> (complete-processing job event)
-      (assoc :result :success)))
+  (-> job
+    (complete-processing event)
+    (update-facilities-counts event)
+    (assoc :result :success)))
 
 ;; FSM guards
 
@@ -207,7 +218,10 @@
    :tasks          []
    :next-task      nil
    :result         nil
-   :last-event     nil})
+   :last-event     nil
+   :sites-without-location-count          0
+   :facilities-without-road-network-count 0
+   :facilities-outside-regions-count      0})
 
 (fsm/defsm-inc import-job
   [[:start
@@ -229,12 +243,9 @@
 
    [:importing-sites
     [_ :guard page-number-mismatch?] -> {:action unexpected-event} :error
-    [[_ [:success [:import-sites _] [:continue _ _]]]]
-                                     -> {:action import-sites-succeeded} :request-sites
-    [[_ [:success [:import-sites _] _]]]
-                                     -> {:action import-sites-succeeded} :update-projects
-    [[_ [:failure [:import-sites _] _]]]
-                                     -> {:action import-sites-failed} :clean-up
+    [[_ [:success [:import-sites _] [:continue _ _]]]]  -> {:action import-sites-succeeded} :request-sites
+    [[_ [:success [:import-sites _] _]]]                -> {:action import-sites-succeeded} :update-projects
+    [[_ [:failure [:import-sites _] _]]]                -> {:action import-sites-failed} :clean-up
     [[_ :next]]                      -> {:action clear-dispatch} :importing-sites
     [[_ :cancel]]                    -> {:action cancel-import} :cancelling
     [[_ _]]                          -> {:action unexpected-event} :error]
@@ -247,16 +258,13 @@
    [:updating-projects
     [[_ :next]]                      -> {:action clear-dispatch} :updating-projects
     [[_ :cancel]]                    -> {:action cancel-import} :clean-up-wait
-    [[_ [:success :update-projects _]]]
-                                     -> {:action update-projects-succeeded} :processing-facilities
-    [[_ [:failure :update-projects _]]]
-                                     -> {:action update-projects-failed} :error
+    [[_ [:success :update-projects _]]] -> {:action update-projects-succeeded} :processing-facilities
+    [[_ [:failure :update-projects _]]] -> {:action update-projects-failed} :error
     [[_ _]]                          -> {:action unexpected-event} :error]
 
    [:processing-facilities
     [[_ :next]]                      -> {:action dispatch-process-facilities} :processing-facilities
-    [[(_ :guard no-pending-tasks?) :cancel]]
-                                     -> {:action cancel-import} :error
+    [[(_ :guard no-pending-tasks?) :cancel]] -> {:action cancel-import} :error 
     [[_ :cancel]]                    -> {:action cancel-import} :clean-up-wait
     [_ :guard done-processing?]      -> {:action last-complete-processing} :done
     [[_ (_ :guard process-report?)]] -> {:action complete-processing} :processing-facilities
@@ -297,6 +305,12 @@
 (defn job-dataset-id
   [job]
   (get-in job [:value :dataset-id]))
+
+(defn job-stats
+  [job]
+  (select-keys (:value job) [:sites-without-location-count
+                             :facilities-without-road-network-count
+                             :facilities-outside-regions-count]))
 
 (defn job-user-ident
   [job]
@@ -344,7 +358,8 @@
 
         (:error :done)
         {:status :done
-         :state state}
+         :state state
+         :stats (job-stats job)}
 
         (:request-sites :importing-sites)
         {:status :importing

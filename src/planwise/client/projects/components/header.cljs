@@ -1,5 +1,6 @@
 (ns planwise.client.projects.components.header
   (:require [re-frame.core :refer [subscribe dispatch]]
+            [planwise.client.components.common :as common]
             [planwise.client.utils :as utils]
             [planwise.client.components.nav :as nav]
             [planwise.client.routes :as routes]))
@@ -32,4 +33,5 @@
       {:on-click (utils/with-confirm
                    #(dispatch [:projects/delete-project project-id])
                    "Are you sure you want to delete this project?")}
-      "\u2716 Delete project"]]]])
+      (common/icon :delete "icon-small")
+      "Delete project"]]]])
