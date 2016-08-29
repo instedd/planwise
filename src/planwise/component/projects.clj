@@ -130,3 +130,16 @@
 (defn owned-by?
   [project user-id]
   (= user-id (:owner-id project)))
+
+(defn list-project-shares
+  [service]
+  (list-project-shares* (get-db service)))
+
+(defn create-project-share
+  [service project-id token user-id]
+  (let [project (load-project (get-db service) project-id)]
+    (when (and project (= token (:share-token project)))
+      (create-project-share! (get-db service) {:user-id user-id, :project-id project-id})
+      project)))
+
+  ; TODO REMOVE TOKEN

@@ -43,7 +43,8 @@ SELECT
   regions.total_population AS "region-population",
   regions.max_population AS "region-max-population",
   ST_Area(regions.the_geom::geography) / 1000000 as "region-area-km2",
-  projects.owner_id AS "owner-id"
+  projects.owner_id AS "owner-id",
+  projects.share_token AS "share-token"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
 WHERE projects.id = :id
@@ -68,3 +69,15 @@ WHERE projects.id = :project-id;
 -- :name delete-project* :! :n
 DELETE FROM projects
 WHERE projects.id = :id;
+
+-- :name list-project-shares* :?
+SELECT user_id AS "user-id", project_id AS "project-id"
+FROM project_shares;
+
+-- :name create-project-share! :! :n
+-- Note we are using postgresql 9.4, which does not yet support ON CONFLICT DO NOTHING
+INSERT INTO project_shares (user_id, project_id)
+SELECT :user-id, :project-id
+WHERE NOT EXISTS (SELECT 1 FROM project_shares
+                  WHERE project_id = :project-id
+                    AND user_id = :user-id);

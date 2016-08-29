@@ -23,7 +23,14 @@
 
   (delete-project [this id]
     "Deletes a project with the given ID. Returns true iff there was a row
-    affected."))
+    affected.")
+
+  (create-project-share [this project-id token user-id]
+    "If the token is valid for the selected project, upserts a new project share
+     for the specified user id, and returns the project. Returns nil otherwise.")
+
+  (list-project-shares [this]
+    "List all project shares in the system. Used for testing purposes (for now)."))
 
 ;; Reference implementation
 
@@ -41,7 +48,11 @@
   (update-project [service project]
     (service/update-project service project))
   (delete-project [service id]
-    (service/delete-project service id)))
+    (service/delete-project service id))
+  (create-project-share [service project-id token user-id]
+    (service/create-project-share service project-id token user-id))
+  (list-project-shares [service]
+    (service/list-project-shares service)))
 
 ;; Additional utility functions
 
