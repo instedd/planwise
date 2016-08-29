@@ -3,10 +3,33 @@ set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
 OSM2PGROUTING=${1:-osm2pgrouting}
+COUNTRY=${2:-}
 
-echo "Downloading Kenya OSM data and importing via osm2pgrouting"
-curl -XGET https://s3.amazonaws.com/planwise/data/kenya-20160627.osm.gz | gunzip > /tmp/kenya.osm
-${OSM2PGROUTING} -f /tmp/kenya.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
+if [[ -z $COUNTRY ]]
+then
+    echo "Please specify a country (either kenya or tanzania)."
+    exit 1
+fi
+
+if [[ $COUNTRY == "kenya" ]]; then
+    FILE="kenya-20160627"
+elif [[ $COUNTRY == "tanzania" ]]; then
+    FILE="tanzania-20160824"
+else
+    echo "Unkown country."
+    exit 1
+fi
+
+if [[ -e /tmp/$COUNTRY.osm ]]
+then
+    echo "File /tmp/$COUNTRY.osm already exists. Will not download again."
+else
+    echo "Downloading OSM data for $COUNTRY and importing via osm2pgrouting"
+    curl -XGET https://s3.amazonaws.com/planwise/data/$FILE.osm.gz | gunzip > /tmp/$COUNTRY.osm
+fi;
+
+
+${OSM2PGROUTING} -f /tmp/$COUNTRY.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
 
 echo "Populating ways_nodes table"
 psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
