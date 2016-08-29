@@ -160,7 +160,6 @@
   [job event & _]
   (-> job
     (complete-processing event)
-    (update-facilities-counts event)
     (assoc :result :success)))
 
 ;; FSM guards
@@ -243,9 +242,9 @@
 
    [:importing-sites
     [_ :guard page-number-mismatch?] -> {:action unexpected-event} :error
-    [[_ [:success [:import-sites _] [:continue _ _]]]]  -> {:action import-sites-succeeded} :request-sites
-    [[_ [:success [:import-sites _] _]]]                -> {:action import-sites-succeeded} :update-projects
-    [[_ [:failure [:import-sites _] _]]]                -> {:action import-sites-failed} :clean-up
+    [[_ [:success [:import-sites _] [:continue _ _ _]]]]  -> {:action import-sites-succeeded} :request-sites
+    [[_ [:success [:import-sites _] _]]]                  -> {:action import-sites-succeeded} :update-projects
+    [[_ [:failure [:import-sites _] _]]]                  -> {:action import-sites-failed} :clean-up
     [[_ :next]]                      -> {:action clear-dispatch} :importing-sites
     [[_ :cancel]]                    -> {:action cancel-import} :cancelling
     [[_ _]]                          -> {:action unexpected-event} :error]
@@ -264,7 +263,7 @@
 
    [:processing-facilities
     [[_ :next]]                      -> {:action dispatch-process-facilities} :processing-facilities
-    [[(_ :guard no-pending-tasks?) :cancel]] -> {:action cancel-import} :error 
+    [[(_ :guard no-pending-tasks?) :cancel]] -> {:action cancel-import} :error
     [[_ :cancel]]                    -> {:action cancel-import} :clean-up-wait
     [_ :guard done-processing?]      -> {:action last-complete-processing} :done
     [[_ (_ :guard process-report?)]] -> {:action complete-processing} :processing-facilities
