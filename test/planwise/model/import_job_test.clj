@@ -93,16 +93,16 @@
         (is (= (reduce-job job [:next [:success [:import-sites 1] [nil [1 2 3] 1]]])
                [:update-projects nil nil]))
         ;; page of sites successfully imported (continue)
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 5]]])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 5 []]]])
                [:request-sites nil nil]))
         ;; page report mismatch
         (is (= (reduce-job job [:next [:success [:import-sites 2] [nil [1 2 3] 4]]])
                [:error [:import-sites 1] :unexpected-event]))
         ;; sites page is incremented
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 3]] :next])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 3 []]] :next])
                [:importing-sites [:import-sites 2] nil]))
         ;; second page of sites is imported
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 1]]
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 1 []]]
                                     :next [:success [:import-sites 2] [nil []]]])
                [:update-projects nil nil]))
 
@@ -144,8 +144,7 @@
             (is (= (reduce-job job [:next :cancel])
                    [:clean-up-wait nil :cancelled]))
             (is (= (reduce-job job [:next :cancel [:success [:process-facilities [1]] nil]])
-                   [:error nil :cancelled]))))))
+                   [:error nil :cancelled]))))))))
 
     ;; TODO: test error conditions in all stages
     ;; TODO: test cancellation in all stages
-    ))
