@@ -20,9 +20,11 @@
 
 (defmulti on-navigate (fn [db page params] page))
 
-(defmethod on-navigate :projects [db page {id :id, section :section, :as page-params}]
+(defmethod on-navigate :projects [db page {id :id, section :section, token :token, :as page-params}]
   (let [id (js/parseInt id)]
-    (dispatch [:current-project/navigate-project id section])
+    (if (= :access (keyword section))
+      (dispatch [:current-project/access-project id token])
+      (dispatch [:current-project/navigate-project id section]))
     db))
 
 (defmethod on-navigate :home [db _ _]

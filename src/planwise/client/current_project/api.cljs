@@ -7,9 +7,13 @@
 
 (defn load-project [id with-data & handlers]
   (let [url (str "/api/projects/" id)
-        params {:id id
-                :with (some-> with-data name)}]
+        params {:with (some-> with-data name)}]
     (GET url (json-request params handlers))))
+
+(defn access-project [id token with-data & handlers]
+  (let [url (str "/api/projects/" id "/access/" token)
+        params {:with (some-> with-data name)}]
+    (POST url (json-request params handlers))))
 
 (defn update-project [project-id filters with-data & handlers]
   (let [url (str "/api/projects/" project-id)
@@ -45,4 +49,3 @@
        (merge isochrone-options (process-filters filters))
        handlers
        :mapper-fn (partial merge isochrone-options))))
-

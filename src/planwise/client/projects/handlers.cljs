@@ -22,8 +22,10 @@
 (register-handler
  :projects/invalidate-projects
  in-projects
- (fn [db [_]]
-   (update db :list asdf/invalidate!)))
+ (fn [db [_ new-projects]]
+   (if new-projects
+     (update db :list asdf/invalidate! into new-projects)
+     (update db :list asdf/invalidate!))))
 
 (register-handler
  :projects/projects-loaded

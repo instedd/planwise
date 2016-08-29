@@ -40,6 +40,13 @@
            projects (projects/list-projects-for-user service user-id)]
        (response projects)))
 
+   (POST "/:id/access/:token" [id token with :as request]
+     (let [user-id (util/request-user-id request)
+           project (projects/create-project-share service (Integer. id) token user-id)]
+       (if project
+         (response (assoc-extra-data (keyword with) project services))
+         (not-found {:error "Project not found or invalid token"}))))
+
    (GET "/:id" [id with :as request]
      (let [user-id (util/request-user-id request)
            project (projects/get-project service (Integer. id) user-id)]
