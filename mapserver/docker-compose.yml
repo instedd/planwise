@@ -1,5 +1,7 @@
 mapcache:
-  image: instedd/planwise-mapserver:kenya-mapcache
+  # image: instedd/planwise-mapserver:mapcache
+  build: .
+  dockerfile: Dockerfile.mapcache
   volumes:
     - "./mapcache.xml:/mapcache/mapcache.xml:ro"
   links:
@@ -8,10 +10,12 @@ mapcache:
     - "5002:80"
 
 mapserver:
-  image: instedd/planwise-mapserver:kenya-mapserver
+  # image: instedd/planwise-mapserver:mapserver
+  build: .
+  dockerfile: Dockerfile.mapserver
   volumes:
     - "../data:/data:ro"
     - "./mapserver.conf:/etc/apache2/conf-enabled/mapserver.conf:ro"
-    - "./kenya.map:/etc/mapserver/kenya.map:ro"
+    - "./planwise.map:/etc/mapserver/planwise.map:ro"
   ports:
     - "5001:80"

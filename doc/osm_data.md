@@ -5,7 +5,7 @@ To process OSM data, install OpenStreetMap tool Osmosis (tested version is 0.44.
 $ brew install osmosis
 ```
 
-The OSM extract for Kenya can be downloaded in OSM or PBF format from http://download.geofabrik.de/africa/kenya.html
+The OSM extracts can be downloaded in OSM or PBF format from the following http://download.geofabrik.de/africa.html
 
 To transform the OSM data from PBF format to OSM, run:
 ```bash

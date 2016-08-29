@@ -8,22 +8,22 @@
   </cache>
 
   <!-- Retrieve data from local mapserver instance via WMS-->
-  <source name="kenyasource" type="wms">
+  <source name="planwisesource" type="wms">
     <http>
       <url>http://mapserver/mapserv</url>
     </http>
     <getmap>
       <params>
-        <map>/etc/mapserver/kenya.map</map>
-        <layers>KenyaPopulation</layers>
+        <map>/etc/mapserver/planwise.map</map>
+        <layers>Population</layers>
         <format>image/png</format>
       </params>
     </getmap>
   </source>
 
   <!-- Define dynamic demand dataset to be consumed via WMS endpoint -->
-  <tileset name="kenya">
-    <source>kenyasource</source>
+  <tileset name="population">
+    <source>planwisesource</source>
     <cache>disk</cache>
     <grid>GoogleMapsCompatible</grid> <!-- EPSG:3857 -->
     <format>PNG</format>
@@ -31,7 +31,7 @@
     <metabuffer>10</metabuffer>
     <expire>86400</expire><!-- Expire in 1 day -->
     <dimensions>
-      <dimension type="regex" name="DATAFILE" default="KEN_popmap15_v2b">^[A-Za-z0-9_/]*$</dimension>
+      <dimension type="regex" name="DATAFILE" default="no_datafile">^[A-Za-z0-9_/]*$</dimension>
     </dimensions>
   </tileset>
 

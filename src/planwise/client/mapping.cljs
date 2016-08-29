@@ -11,7 +11,7 @@
    :width  256})
 
 (def layer-name
-  "kenya")
+  "population")
 
 (def default-base-tile-layer
   [:tile-layer {:url "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
