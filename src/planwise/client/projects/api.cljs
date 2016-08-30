@@ -16,3 +16,8 @@
   (DELETE
     (str "/api/projects/" id)
     (json-request {:id id} handlers)))
+
+(defn leave-project [id & handlers]
+  (DELETE
+    (str "/api/projects/" id "/access")
+    (json-request {:id id} handlers)))

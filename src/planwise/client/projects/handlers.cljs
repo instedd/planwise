@@ -94,6 +94,14 @@
    (update db :list asdf/swap! remove-by-id id)))
 
 (register-handler
+ :projects/leave-project
+ in-projects
+ (fn [db [_ id]]
+   (api/leave-project id :projects/project-deleted)
+   ;; optimistically remove the project from our list
+   (update db :list asdf/swap! remove-by-id id)))
+
+(register-handler
  :projects/project-deleted
  in-projects
  (fn [db [_ data]]

@@ -86,3 +86,8 @@ SELECT :user-id, :project-id
 WHERE NOT EXISTS (SELECT 1 FROM project_shares
                   WHERE project_id = :project-id
                     AND user_id = :user-id);
+
+-- :name delete-project-share* :! :n
+DELETE FROM project_shares
+WHERE project_shares.project_id = :project-id
+  AND project_shares.user_id = :user-id;

@@ -105,6 +105,8 @@
           project (projects/create-project-share service project-id project-share-token grantee-user-id)]
       (is project)
       (is (= project-id (:id project)))
+      (is (nil? (:share-token project)))
+      (is (:read-only project))
       (is (= project-id (:id (projects/get-project service project-id grantee-user-id))))
       (is (= 1 (count-project-shares service project-id grantee-user-id))))))
 

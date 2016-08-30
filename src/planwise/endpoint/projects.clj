@@ -84,7 +84,14 @@
        (if (and (projects/owned-by? project user-id)
                 (projects/delete-project service id))
          (response {:deleted id})
-         (not-found {:error "Project not found"}))))))
+         (not-found {:error "Project not found"}))))
+
+   (DELETE "/:id/access" [id :as request]
+     (let [project-id (Integer. id)
+           user-id (util/request-user-id request)]
+       (if (projects/delete-project-share service project-id user-id)
+         (response {:deleted-access project-id})
+         (not-found {:error "Project share not found"}))))))
 
 (defn projects-endpoint [endpoint]
   (context "/api/projects" []

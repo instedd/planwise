@@ -236,6 +236,16 @@
    ;; clear the current project view model
    db/initial-db))
 
+(register-handler
+ :current-project/leave-project
+ in-current-project
+ (fn [db [_]]
+   (let [id (db/project-id db)]
+     (dispatch [:projects/leave-project id]))
+   (accountant/navigate! (routes/home))
+   ;; clear the current project view model
+   db/initial-db))
+
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers
 

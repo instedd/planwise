@@ -153,4 +153,8 @@
   (let [project (load-project (get-db service) project-id)]
     (when (and project (= token (:share-token project)))
       (create-project-share! (get-db service) {:user-id user-id, :project-id project-id})
-      project)))
+      (view-for-user project user-id))))
+
+(defn delete-project-share
+  [service project-id user-id]
+  (pos? (delete-project-share* (get-db service) {:user-id user-id, :project-id project-id})))

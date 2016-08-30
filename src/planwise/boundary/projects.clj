@@ -29,6 +29,10 @@
     "If the token is valid for the selected project, upserts a new project share
      for the specified user id, and returns the project. Returns nil otherwise.")
 
+  (delete-project-share [this project-id user-id]
+    "Deletes a project share given the project and grantee ids. Returs true iff
+     there was a share deleted.")
+
   (list-project-shares [this]
     "List all project shares in the system. Used for testing purposes (for now)."))
 
@@ -51,6 +55,8 @@
     (service/delete-project service id))
   (create-project-share [service project-id token user-id]
     (service/create-project-share service project-id token user-id))
+  (delete-project-share [service project-id user-id]
+    (service/delete-project-share service project-id user-id))
   (list-project-shares [service]
     (service/list-project-shares service)))
 

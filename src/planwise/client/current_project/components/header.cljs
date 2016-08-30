@@ -23,15 +23,23 @@
         :href (routes/project-scenarios route-params)
         :title "Scenarios"}]))
 
-(defn header-section [project-id project-goal selected-tab]
+(defn header-section [project-id project-goal selected-tab read-only]
   [:div.project-header
    [:h2 project-goal]
    [:nav
     [nav/ul-menu (project-tab-items project-id) selected-tab]
-    [:div
-     [:button.delete
-      {:on-click (utils/with-confirm
-                   #(dispatch [:current-project/delete-project])
-                   "Are you sure you want to delete this project?")}
-      (common/icon :delete "icon-small")
-      "Delete project"]]]])
+    (if read-only
+      [:div
+       [:button.delete
+        {:on-click (utils/with-confirm
+                    #(dispatch [:current-project/leave-project])
+                    "Are you sure you want to leave this shared project?")}
+        (common/icon :exit "icon-small")
+        "Leave project"]]
+      [:div
+       [:button.delete
+        {:on-click (utils/with-confirm
+                     #(dispatch [:current-project/delete-project])
+                     "Are you sure you want to delete this project?")}
+        (common/icon :delete "icon-small")
+        "Delete project"]])]])
