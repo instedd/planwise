@@ -25,9 +25,9 @@
          [:div.filter-info
           ;; [:p "Filter here the population you are analyzing."]
           [:div.demographic-stats
-           (demographic-stat "Area" [:span (utils/format (int area)) " km" [:sup 2]])
-           (demographic-stat "Density" [:span (utils/format density) " /km" [:sup 2]])
-           (demographic-stat "Total population" (utils/format (int population)))]
+           (demographic-stat "Area" [:span (utils/format-number (int area)) " km" [:sup 2]])
+           (demographic-stat "Density" [:span (utils/format-number density) " /km" [:sup 2]])
+           (demographic-stat "Total population" (utils/format-number (int population)))]
           [:span.small
            "Demographic data source: "
            [:a {:href "http://www.worldpop.org.uk/" :target "attribution"} "WorldPop"]

@@ -1,14 +1,9 @@
 (ns planwise.client.utils
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as async :refer [chan >! <! put!]]
+            [goog.i18n.NumberFormat]
             [goog.string :as gstring]
             [goog.string.format]))
-
-;; Display
-
-(defn format [number]
-  (when number
-    (.toLocaleString number "en")))
 
 ;; Debounce functions
 
@@ -43,6 +38,13 @@
   ([count singular plural]
    (let [noun (if (= 1 count) singular plural)]
      (str count " " noun))))
+
+(defn format-number
+  ([number]
+   (when number
+     (let [format-string (if (integer? number) "#,###" "#,###.00")
+           formatter (new goog.i18n.NumberFormat format-string)]
+       (.format formatter number)))))
 
 (defn format-percentage
   ([x]
