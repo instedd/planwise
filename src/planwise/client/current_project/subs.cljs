@@ -29,8 +29,7 @@
 (register-sub
  :current-project/shares
  (fn [db [_]]
-   (let [current-data (subscribe [:current-project/current-data])]
-     (reaction (:shares @current-data)))))
+   (reaction (get-in @db [:current-project :shares]))))
 
 (register-sub
  :current-project/share-link

@@ -1,6 +1,7 @@
 (ns planwise.client.current-project.db
   (:require [schema.core :as s]
             [re-frame.utils :as c]
+            [planwise.client.asdf :as asdf]
             [planwise.client.mapping :as maps]))
 
 
@@ -46,8 +47,7 @@
    :region-name           s/Str
    :region-area-km2       s/Num
    :region-max-population s/Num
-   :stats                 ProjectStats
-   :shares                [ProjectShare]})
+   :stats                 ProjectStats})
 
 ;; An empty view model for the currently selected project
 (def initial-db
@@ -66,21 +66,27 @@
 
    :view-state         :project                   ; [:project :share-dialog]
 
+   :shares             (asdf/new [])              ; [ProjectShare]
+
    :project-data       nil})                      ; see ProjectData above
 
 
 ;; Project data manipulation functions
 
 (defn- update-viewmodel-associations
-  [viewmodel {:keys [facilities]}]
-  (if (some? facilities)
-    (assoc-in viewmodel [:facilities :list] facilities)
-    viewmodel))
+  [viewmodel {:keys [facilities shares]}]
+  (as-> viewmodel vm
+    (if (some? facilities)
+      (assoc-in vm [:facilities :list] facilities)
+      vm)
+    (if (some? shares)
+      (update vm :shares asdf/reset! shares)
+      vm)))
 
 (defn update-viewmodel
   [viewmodel project-data]
   (-> viewmodel
-      (update :project-data merge (dissoc project-data :facilities))
+      (update :project-data merge (dissoc project-data :facilities :shares))
       (update-viewmodel-associations project-data)))
 
 (defn new-viewmodel

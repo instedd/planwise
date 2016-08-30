@@ -38,11 +38,11 @@
                                :on-click reset-share-token-fn}
             (common/icon :refresh "icon-medium")]]
 
-         (when (seq @project-shares)
+         (when (seq (asdf/value @project-shares))
           [:div.shares
-           [:p (str (utils/pluralize (count @project-shares) "user has" "users have") " access to this project:")]
+           [:p (str (utils/pluralize (count (asdf/value @project-shares)) "user has" "users have") " access to this project:")]
            [:ul
-            (for [{:keys [user-id user-email]} @project-shares]
+            (for [{:keys [user-id user-email]} (asdf/value @project-shares)]
              [:li {:key user-id}
               user-email])]])
 
