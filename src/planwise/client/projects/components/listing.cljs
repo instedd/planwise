@@ -43,7 +43,7 @@
    (project-stat "Target Facilities"
                  (str (or facilities-targeted 0) " / " (or facilities-total 0)))
    (project-stat "Region population"
-                 (utils/format region-population))])
+                 (utils/format-number region-population))])
 
 (defn project-card [{:keys [id goal region-id region-name stats region-population] :as project}]
   (let [region-geo (subscribe [:regions/preview-geojson region-id])]
