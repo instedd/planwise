@@ -92,9 +92,9 @@ Configure the connection URL in your `profiles.clj`:
 {:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"}}}
 ```
 
-As a one-time task, to seed your database with routing information from OSM, run the following script:
+As a one-time task, to seed your database with routing information from OSM, run the following script to import routing information from any of the supported countries:
 ```bash
-$ scripts/import-osm osx/osm2pgrouting
+$ scripts/import-osm osx/osm2pgrouting kenya
 ```
 
 And run the migrations:
@@ -104,7 +104,7 @@ $ lein migrate
 
 Finally load regions as follows:
 ```bash
-$ scripts/load-regions
+$ scripts/load-regions kenya
 ```
 
 The `import-osm` script will download the OSM dump and import it via osm2pgrouting. Note that the binary in the `osx` folder of the repository was compiled for OSX, and was generated from [a fork](https://github.com/ggiraldez/osm2pgrouting) of the project. It can be rebuilt by running:

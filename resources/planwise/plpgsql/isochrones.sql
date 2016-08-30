@@ -59,7 +59,7 @@ $$ language plpgsql;
 -- generates the isochrone polygons for all thresholds for a single facility
 DROP FUNCTION IF EXISTS process_facility_isochrones(bigint, varchar, integer, integer, integer);
 CREATE OR REPLACE FUNCTION process_facility_isochrones(f_id bigint, _method varchar, threshold_start integer, threshold_finish integer, threshold_jump integer)
-returns text as $$
+returns RECORD as $$
 declare
   from_cost integer;
   to_cost integer;
@@ -68,6 +68,8 @@ declare
   facility_geom geometry(point, 4326);
   buffer_length integer;
   polygon_id integer;
+  country text;
+  ret record; -- (exit_code, facility_country)
 begin
   create temporary table if not exists edges_agg_cost (
     gid integer not null,
@@ -79,16 +81,19 @@ begin
   facility_geom := (select the_geom from facilities where id = f_id);
   closest_node_geom := (select the_geom from ways_vertices_pgr where id = facility_node);
 
-  IF NOT EXISTS (SELECT r.id FROM regions AS r WHERE ST_Contains(r.the_geom, facility_geom) LIMIT 1) THEN
+  country := (SELECT r.country FROM REGIONS AS r WHERE ST_Contains(r.the_geom, facility_geom) AND r.admin_level = 2 LIMIT 1);
+
+  IF country IS NULL THEN
     UPDATE facilities SET processing_status = 'outside-regions' WHERE id = f_id;
     RAISE NOTICE 'warning: Facility % not processed, it is outside the regions boundaries.', f_id;
-    RETURN 'outside-regions';
+
+    SELECT 'outside-regions'::TEXT, NULL::TEXT into ret; RETURN ret;
   END IF;
 
   IF ST_Distance(ST_GeogFromWKB(facility_geom), ST_GeogFromWKB(closest_node_geom)) > 1000 THEN
     UPDATE facilities SET processing_status = 'no-road-network' WHERE id = f_id;
     RAISE NOTICE 'warning: Facility % not processed, it is too far from the road network.', f_id;
-    RETURN 'no-road-network';
+    SELECT 'no-road-network'::TEXT, NULL::TEXT into ret; RETURN ret;
   END IF;
 
   insert into edges_agg_cost (
@@ -150,7 +155,7 @@ begin
       END;
     ELSE
       RAISE EXCEPTION 'Method % unknown. Please use buffer or alpha-shape', _method;
-      RETURN 'error';
+      SELECT 'error'::TEXT, NULL::TEXT into ret; RETURN ret;
     END IF;
 
     -- Precalculate area
@@ -175,7 +180,6 @@ begin
   -- pgr holds a reference to it
   -- drop table edges_agg_cost;
 
-  RETURN 'ok';
-
+  SELECT 'ok'::TEXT, country::TEXT into ret; RETURN ret;
 end;
 $$ language plpgsql;
