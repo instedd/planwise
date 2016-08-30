@@ -16,11 +16,7 @@
         params {:id project-id
                 :filters filters
                 :with (some-> with-data name)}]
-    (PUT url
-        (json-request
-         params
-         handlers
-         :mapper-fn (partial merge (dissoc filters :facilities))))))
+    (PUT url (json-request params handlers))))
 
 ;; Dataset related APIs
 
@@ -31,11 +27,11 @@
 ;; Facilities related APIs
 
 (defn- process-filters [filters]
-  ;; TODO: Make the set->vector conversion generic and move it into an interceptor
-  (let [processed-filters (into {} (for [[k v] filters] [k (if (set? v) (apply vector v) v)]))]
-    (if (seq (:type filters))
-      processed-filters
-      (assoc processed-filters :type ""))))
+  "Force the presence of the type filter in case there is none selected,
+  otherwise the server will not filter by type altogether"
+  (if (seq (:type filters))
+    filters
+    (assoc filters :type "")))
 
 (defn fetch-facilities [filters & handlers]
   (GET

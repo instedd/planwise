@@ -36,13 +36,13 @@
 
 (defn- facility-filters []
   (let [facility-types (subscribe [:current-project/filter-definition :facility-type])
-        facility-ownerships (subscribe [:current-project/filter-definition :facility-ownership])
-        facility-services (subscribe [:current-project/filter-definition :facility-service])
+        ;; facility-ownerships (subscribe [:current-project/filter-definition :facility-ownership])
+        ;; facility-services (subscribe [:current-project/filter-definition :facility-service])
         filters (subscribe [:current-project/facilities :filters])
-        filter-stats (subscribe [:current-project/facilities :filter-stats])]
+        stats (subscribe [:current-project/facilities :stats])]
     (fn []
-      (let [filter-count (:count @filter-stats)
-            filter-total (:total @filter-stats)
+      (let [filter-count (:facilities-targeted @stats)
+            filter-total (:facilities-total @stats)
             toggle-cons-fn (fn [field]
                              #(dispatch [:current-project/toggle-filter :facilities field %]))]
         [:div.sidebar-filters

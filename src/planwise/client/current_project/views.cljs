@@ -75,12 +75,8 @@
         feature-fn #(aget % "isochrone")]
 
     (fn [project-id project-dataset-id project-region-id selected-tab]
-      (cond
-
-        (#{:demographics
-           :facilities
-           :transport}
-         selected-tab)
+      (case selected-tab
+        (:demographics :facilities :transport)
         [:div
          [sidebar-section selected-tab]
          (when (= @map-state :loading-displayed)
@@ -123,13 +119,13 @@
                                                       :fillOpacity 1}]))
 
                 layer-isochrones   (when (= :transport selected-tab)
-                                      [:geojson-bbox-layer { :levels mapping/geojson-levels
-                                                              :fillOpacity 1
-                                                              :weight 2
-                                                              :color styles/black
-                                                              :group {:opacity 0.2}
-                                                              :featureFn feature-fn
-                                                              :callback @callback-fn}])
+                                      [:geojson-bbox-layer {:levels mapping/geojson-levels
+                                                            :fillOpacity 1
+                                                            :weight 2
+                                                            :color styles/black
+                                                            :group {:opacity 0.2}
+                                                            :featureFn feature-fn
+                                                            :callback @callback-fn}])
 
                 map-layers (concat [mapping/bright-base-tile-layer
                                     layer-region-boundaries
@@ -139,10 +135,12 @@
 
             (into [map-widget map-props] (filterv some? map-layers)))]]
 
-
-        (= :scenarios selected-tab)
+        :scenarios
         [:div
-         [:h1 "Scenarios"]]))))
+         [:h1 "Scenarios"]]
+
+        ;; default case
+        nil))))
 
 (defn- project-view []
   (let [page-params (subscribe [:page-params])

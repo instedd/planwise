@@ -91,9 +91,7 @@
  :current-project/facilities-loaded
  in-current-project
  (fn [db [_ response]]
-   (-> db
-       (assoc-in [:facilities :count] (:count response))
-       (assoc-in [:facilities :list] (:facilities response)))))
+   (assoc-in db [:facilities :list] (:facilities response))))
 
 (register-handler
  :current-project/isochrones-loaded
@@ -105,10 +103,7 @@
                        (map (juxt :id (comp js/JSON.parse :isochrone)))
                        (flatten)
                        (apply hash-map))]
-     (-> db
-       (assoc :demand-map-key map-key)
-       (assoc :unsatisfied-count unsatisfied-count)
-       (update-in [:facilities :isochrones threshold level] #(merge % isochrones))))))
+     (update-in db [:facilities :isochrones threshold level] #(merge % isochrones)))))
 
 ;; ---------------------------------------------------------------------------
 ;; Project filter updating
@@ -166,26 +161,25 @@
  :current-project/toggle-filter
  in-current-project
  (fn [db [_ filter-group filter-key filter-value]]
-   (let [path [filter-group :filters filter-key]
-         current-filter (get-in db path)
+   (let [path [:project-data :filters filter-group filter-key]
+         current-filter (set (get-in db path))
          toggled-filter (if (contains? current-filter filter-value)
                           (disj current-filter filter-value)
                           (conj current-filter filter-value))
          new-db (-> db
-                    (assoc-in path (set toggled-filter))
+                    (assoc-in path (vec toggled-filter))
                     (assoc-in [:facilities :isochrones] nil))
-         filters (db/project-filters new-db)
          project-id (get-in db [:project-data :id])]
      (initiate-project-update new-db :facilities))))
 
 (register-handler
  :current-project/set-transport-time
  in-current-project
-  (fn [db [_ time]]
-    (let [new-db (-> db
-                   (assoc-in [:transport :time] time)
-                   (initiate-project-update nil))]
-      new-db)))
+ (fn [db [_ time]]
+   (let [new-db (-> db
+                    (assoc-in [:project-data :filters :transport :time] time)
+                    (initiate-project-update nil))]
+     new-db)))
 
 (register-handler
  :current-project/project-updated

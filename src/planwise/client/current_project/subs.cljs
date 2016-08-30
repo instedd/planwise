@@ -27,13 +27,12 @@
 (register-sub
  :current-project/facilities
  (fn [db [_ data]]
-   (let [facility-data (reaction (get-in @db [:current-project :facilities]))]
-     (reaction
-      (case data
-        :filters (:filters @facility-data)
-        :isochrones (:isochrones @facility-data)
-        :filter-stats (select-keys @facility-data [:count :total])
-        :facilities (:list @facility-data))))))
+   (case data
+     :facilities (reaction (get-in @db [:current-project :facilities :list]))
+     :isochrones (reaction (get-in @db [:current-project :facilities :isochrones]))
+     :filters (reaction (get-in @db [:current-project :project-data :filters :facilities]))
+     :stats   (reaction (-> (get-in @db [:current-project :project-data :stats])
+                            (select-keys [:facilities-targeted :facilities-total]))))))
 
 (register-sub
  :current-project/facilities-by-type
@@ -41,16 +40,16 @@
    (let [facilities (reaction (get-in @db [:current-project :facilities :list]))
          types      (subscribe [:current-project/filter-definition :facility-type])]
      (reaction
-       (->> @facilities
-         (group-by :type-id)
-         (map (fn [[type-id fs]]
-                (let [type (->> @types
-                              (filter #(= type-id (:value %)))
-                              (first))]
-                  [type fs])))
-         (sort-by (fn [[type fs]]
-                    (count fs)))
-         (reverse))))))
+      (->> @facilities
+           (group-by :type-id)
+           (map (fn [[type-id fs]]
+                  (let [type (->> @types
+                                  (filter #(= type-id (:value %)))
+                                  (first))]
+                    [type fs])))
+           (sort-by (fn [[type fs]]
+                      (count fs)))
+           (reverse))))))
 
 (register-sub
  :current-project/facilities-criteria
@@ -60,12 +59,12 @@
 (register-sub
  :current-project/transport-time
  (fn [db [_]]
-   (reaction (get-in @db [:current-project :transport :time]))))
+   (reaction (get-in @db [:current-project :project-data :filters :transport :time]))))
 
 (register-sub
  :current-project/demand-map-key
  (fn [db [_]]
-   (reaction (get-in @db [:current-project :demand-map-key]))))
+   (reaction (get-in @db [:current-project :project-data :demand-map-key]))))
 
 (register-sub
  :current-project/map-state
