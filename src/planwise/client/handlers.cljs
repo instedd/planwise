@@ -1,6 +1,7 @@
 (ns planwise.client.handlers
   (:require [planwise.client.db :as db]
             [planwise.client.projects.handlers :as projects]
+            [planwise.client.current-project.handlers :as current-project]
             [planwise.client.datasets.handlers]
             [planwise.client.regions.handlers :as regions]
             [re-frame.utils :as c]
@@ -19,11 +20,10 @@
 
 (defmethod on-navigate :projects [db page {id :id, section :section, :as page-params}]
   (let [id (js/parseInt id)]
-    (dispatch [:projects/navigate-project id section])
+    (dispatch [:current-project/navigate-project id section])
     db))
 
 (defmethod on-navigate :home [db _ _]
-  (dispatch [:projects/load-projects])
   db)
 
 (defmethod on-navigate :datasets [db _ _]

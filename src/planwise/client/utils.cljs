@@ -52,3 +52,7 @@
          percentage (* 100 x)
          format-string (str "%." decimals "f%%")]
      (gstring/format format-string percentage))))
+
+(defn remove-by-id
+  [coll id]
+  (remove #(= id (:id %)) coll))

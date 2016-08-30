@@ -2,6 +2,7 @@
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub]]
             [planwise.client.projects.subs]
+            [planwise.client.current-project.subs]
             [planwise.client.datasets.subs]
             [planwise.client.regions.subs]))
 
@@ -19,7 +20,3 @@
  (fn [db _]
    (reaction (:page-params @db))))
 
-(register-sub
- :filter-definition
- (fn [db [_ filter]]
-   (reaction (get-in @db [:filter-definitions filter]))))
