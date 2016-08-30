@@ -44,12 +44,8 @@
     :projects (component/using (projects/projects-service) [:db :facilities])})))
 
 (defn- count-project-shares [service project-id user-id]
-  (->> service
-    (projects/list-project-shares)
-    (filter
-      #(and
-        (= user-id (:user-id %))
-        (= project-id (:project-id %))))
+  (->> (projects/list-project-shares service project-id)
+    (filter #(= user-id (:user-id %)))
     (count)))
 
 (deftest region-information-is-retrieved-on-get-project

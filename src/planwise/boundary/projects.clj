@@ -33,8 +33,8 @@
     "Deletes a project share given the project and grantee ids. Returs true iff
      there was a share deleted.")
 
-  (list-project-shares [this]
-    "List all project shares in the system. Used for testing purposes (for now).")
+  (list-project-shares [this project-id]
+    "List all project shares for the specified project.")
 
   (reset-share-token [this project-id]
     "Updates the project's share token and returns the new value, or nil if no
@@ -61,8 +61,8 @@
     (service/create-project-share service project-id token user-id))
   (delete-project-share [service project-id user-id]
     (service/delete-project-share service project-id user-id))
-  (list-project-shares [service]
-    (service/list-project-shares service))
+  (list-project-shares [service project-id]
+    (service/list-project-shares service project-id))
   (reset-share-token [service id]
     (service/reset-share-token service id)))
 

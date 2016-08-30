@@ -76,8 +76,10 @@ DELETE FROM projects
 WHERE projects.id = :id;
 
 -- :name list-project-shares* :?
-SELECT user_id AS "user-id", project_id AS "project-id"
-FROM project_shares;
+SELECT users.email AS "user-email", ps.user_id AS "user-id", ps.project_id AS "project-id"
+FROM project_shares AS ps
+INNER JOIN users ON users.id = ps.user_id
+WHERE ps.project_id = :project-id;
 
 -- :name create-project-share! :! :n
 -- Note we are using postgresql 9.4, which does not yet support ON CONFLICT DO NOTHING

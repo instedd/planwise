@@ -31,6 +31,11 @@
   {:facilities-total    s/Num
    :facilities-targeted s/Num})
 
+(s/defschema ProjectShare
+  {:user-id     s/Int
+   :user-email  s/Str
+   :project-id  s/Int})
+
 (s/defschema ProjectData
   {:id                    s/Int
    :goal                  s/Str
@@ -41,7 +46,8 @@
    :region-name           s/Str
    :region-area-km2       s/Num
    :region-max-population s/Num
-   :stats                 ProjectStats})
+   :stats                 ProjectStats
+   :shares                [ProjectShare]})
 
 ;; An empty view model for the currently selected project
 (def initial-db

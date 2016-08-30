@@ -153,9 +153,10 @@
             project-goal (:goal @current-project)
             project-dataset-id (:dataset-id @current-project)
             project-region-id (:region-id @current-project)
-            read-only (:read-only @current-project)]
+            read-only (:read-only @current-project)
+            share-count (count (:shares @current-project))]
         [:article.project-view
-         [header-section project-id project-goal selected-tab read-only]
+         [header-section project-id project-goal selected-tab read-only share-count]
          [project-tab project-id project-dataset-id project-region-id selected-tab]
          (when (db/show-share-dialog? @view-state)
            [common/modal-dialog {:on-backdrop-click

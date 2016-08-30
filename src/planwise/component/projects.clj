@@ -39,8 +39,8 @@
   (= user-id (:owner-id project)))
 
 (defn- view-for-user
-  "Removes sensitive data if the requesting user is not the project owner,
-   and adds a read-only flag."
+  "Removes sensitive data if the requesting user is not the project owner
+   and adds a read-only flag, or loads project shares if it is the owner."
   [project requester-user-id]
   (if (or (nil? requester-user-id) (owned-by? project requester-user-id))
     project
@@ -145,8 +145,8 @@
   (pos? (delete-project* (get-db service) {:id id})))
 
 (defn list-project-shares
-  [service]
-  (list-project-shares* (get-db service)))
+  [service project-id]
+  (list-project-shares* (get-db service) {:project-id project-id}))
 
 (defn create-project-share
   [service project-id token user-id]

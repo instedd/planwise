@@ -23,7 +23,7 @@
         :href (routes/project-scenarios route-params)
         :title "Scenarios"}]))
 
-(defn header-section [project-id project-goal selected-tab read-only]
+(defn header-section [project-id project-goal selected-tab read-only share-count]
   [:div.project-header
    [:h2 project-goal]
    [:nav
@@ -41,7 +41,9 @@
         {:on-click (utils/prevent-default
                      #(dispatch [:current-project/open-share-dialog]))}
         (common/icon :share "icon-small")
-        "Share"]
+        (if (pos? share-count)
+          (str "Shared with " share-count)
+          "Share")]
        [:button.delete
         {:on-click (utils/with-confirm
                      #(dispatch [:current-project/delete-project])

@@ -12,25 +12,28 @@
             [clojure.string :as str]))
 
 (defn- assoc-extra-data
-  [with project {:keys [facilities maps]}]
+  [with project {:keys [facilities maps projects]}]
   (let [dataset-id (:dataset-id project)
         criteria {:region (:region-id project)
-                  :types (or (get-in project [:filters :facilities :type]) [])}]
-    (case with
-      :facilities
-      (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)]
-        (assoc project :facilities project-facilities))
-      :facilities-with-demand
-      (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)
-            time       (get-in project [:filters :transport :time])
-            isochrones (when time
-                         []) ; TODO: Load isochrones to calculate demand
-            demand     (when isochrones
-                         (maps/demand-map maps (:region-id project) isochrones))]
-        (-> project
-          (merge demand)
-          (assoc :facilities project-facilities)))
-      project)))
+                  :types (or (get-in project [:filters :facilities :type]) [])}
+        with-extra-data (case with
+                          :facilities
+                          (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)]
+                            (assoc project :facilities project-facilities))
+                          :facilities-with-demand
+                          (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)
+                                time       (get-in project [:filters :transport :time])
+                                isochrones (when time
+                                             []) ; TODO: Load isochrones to calculate demand
+                                demand     (when isochrones
+                                             (maps/demand-map maps (:region-id project) isochrones))]
+                            (-> project
+                              (merge demand)
+                              (assoc :facilities project-facilities)))
+                          project)]
+    (if (:read-only project)
+      project
+      (assoc project :shares (projects/list-project-shares projects (:id project))))))
 
 (defn- endpoint-routes
   [{service :projects facilities :facilities, :as services}]
