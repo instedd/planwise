@@ -214,6 +214,11 @@ article.project-view {
       margin-top: 8px;
       margin-left: 10px;
       padding: 5px;
+
+      div {
+        display: inline-block;
+      }
+
       li {
         display: inline-block;
         margin-right: 30px;
@@ -222,21 +227,76 @@ article.project-view {
         border-bottom: 3px solid transparent;
         padding-bottom: 12px;
 
-        &.unvisited, &.unvisited.active {
+        &.wizard {
+          margin-right: 0px;
+        }
+
+        .wizard-number {
+          display: inline-block;
+          border-radius: 50%;
+
+          width: 15px;
+          height: 22px;
+
+          line-height: 21px;
+          padding-left: 8px;
+          margin-left: 3px;
+          margin-right: 5px;
+        }
+
+        .separator {
+          width: 30px;
+          height: 1px;
+          display: inline-block;
+          background-color: $gray2;
+          margin: 0px 8px 4px 8px;
+        }
+
+        .wizard-check {
+          width: 26px;
+          height: 26px;
+        }
+
+        &.unvisited, &.unvisited.active, &.unvisited.active:hover {
           a, a:hover {
-            color: $gray3;
+            color: $gray1;
+          }
+          .wizard-number {
+            background-color: $gray2;
+          }
+          span {
+            color: $gray2;
           }
         }
-        &.visiting, &.visiting.active {
+        &.visiting, &.visiting.active, &.visiting.active:hover {
           a, a:hover {
-            color: $black;
+            color: $gray1;
           }
-        }
-        &.visited, &.visited.active {
-          a, a:hover {
+          .wizard-number {
+            background-color: $green;
+          }
+          span {
             color: $green;
           }
         }
+        &.visited, &.visited.active, &.visited.active:hover {
+          a, a:hover {
+            color: $gray4;
+          }
+          .wizard-number {
+            background-color: black;
+          }
+          span {
+            color: $gray4;
+          }
+        }
+        &.unvisited.active, &.visited.active,
+        &.visiting.active, &.unvisited.active:hover,
+        &.visited.active:hover, &.visiting.active:hover,
+        &.unvisited:hover, &.visiting:hover, &.visited:hover {
+          border-bottom-color: transparent;
+        }
+
         &.active,
         &.active:hover {
           border-bottom: 3px solid $green;
@@ -329,8 +389,13 @@ article.project-view {
   background-color: $gray1;
 
   .nav-buttons {
-    width: 50%;
     margin: 40px auto auto auto;
+    &.both {
+      padding-left: 10px;
+    }
+    &.just-one {
+      width: 50%;
+    }
 
     .nav-button {
       width: 120px;
@@ -341,16 +406,25 @@ article.project-view {
 
       &.next {
         background-color: #819f51;
+        svg {
+          fill: white;
+        }
       }
 
-
-      svg {
-        fill: white;
+      &.prev {
+        svg {
+          fill: $gray4;
+        }
       }
 
-      .button-text {
+      .next-button-text {
         line-height: 40px;
         color: white;
+      }
+
+      .prev-button-text {
+        line-height: 40px;
+        color: $gray4;
       }
     }
   }

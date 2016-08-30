@@ -27,16 +27,15 @@
         has-back? (not= (first tabs) tab-name)
         next (second (drop-while #(not= tab-name %) tabs))
         back (last (take-while #(not= tab-name %) tabs))]
-    [:div.nav-buttons
-     [:div.nav-buttons-container
+    [:div.nav-buttons {:class (if (and has-back? has-next?) "both" "just-one")}
       (if has-back?
         [:div.nav-button.prev {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
          (icon :key-arrow-left "icon-small")
-         [:span.button-text "Prev"]])
+         [:span.prev-button-text "Prev"]])
       (if has-next?
         [:div.nav-button.next {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
-         [:span.button-text "Next"]
-         (icon :key-arrow-right "icon-small")])]]))
+         [:span.next-button-text "Next"]
+         (icon :key-arrow-right "icon-small")])]))
 
 (defn- demographics-filters []
   (let [current-project (subscribe [:projects/current-data])
