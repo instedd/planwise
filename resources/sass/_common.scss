@@ -229,13 +229,17 @@ button {
     }
   }
 
-  &.cancel, &.delete, &.signout {
+  &.cancel, &.delete, &.signout, &.share {
     background-color: transparent;
     color: $gray-text;
     fill: $gray-text;
     font-weight: normal;
     border:none;
     padding: 10px;
+    &:hover {
+      color: $black;
+      fill: $black;
+    }
   }
 
   &.signout {
@@ -283,6 +287,14 @@ button {
   vertical-align: text-top;
   margin: 0 2px;
 }
+
+.icon-medium {
+  width: 28px;
+  height: 28px;
+  vertical-align: text-top;
+  margin: 0 2px;
+}
+
 
 svg > use {
   pointer-events: none;

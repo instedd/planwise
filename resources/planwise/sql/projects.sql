@@ -91,3 +91,9 @@ WHERE NOT EXISTS (SELECT 1 FROM project_shares
 DELETE FROM project_shares
 WHERE project_shares.project_id = :project-id
   AND project_shares.user_id = :user-id;
+
+-- :name reset-share-token* :<! :1
+UPDATE projects
+SET share_token = gen_random_uuid()
+WHERE id = :id
+RETURNING share_token AS "share-token";

@@ -47,6 +47,17 @@
          (response (assoc-extra-data (keyword with) project services))
          (not-found {:error "Project not found or invalid token"}))))
 
+   (POST "/:id/token/reset" [id :as request]
+     (let [user-id (util/request-user-id request)
+           project-id (Integer. id)
+           project (projects/get-project service project-id)]
+       (if (projects/owned-by? project user-id)
+         (if-let [token (projects/reset-share-token service project-id)]
+           (response {:token token})
+           (-> (response {:status "failure"})
+               (status 400)))
+         (not-found {:error "Project not found"}))))
+
    (GET "/:id" [id with :as request]
      (let [user-id (util/request-user-id request)
            project (projects/get-project service (Integer. id) user-id)]

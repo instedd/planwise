@@ -158,3 +158,7 @@
 (defn delete-project-share
   [service project-id user-id]
   (pos? (delete-project-share* (get-db service) {:user-id user-id, :project-id project-id})))
+
+(defn reset-share-token
+  [service project-id]
+  (:share-token (reset-share-token* (get-db service) {:id project-id})))

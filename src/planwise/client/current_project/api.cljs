@@ -22,6 +22,13 @@
                 :with (some-> with-data name)}]
     (PUT url (json-request params handlers))))
 
+;; Project sharing
+
+(defn reset-share-token [project-id & handlers]
+  (POST
+    (str "/api/projects/" project-id "/token/reset")
+    (json-request {} handlers)))
+
 ;; Dataset related APIs
 
 (defn fetch-facility-types [dataset-id & handlers]

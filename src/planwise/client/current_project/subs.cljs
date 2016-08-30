@@ -1,6 +1,7 @@
 (ns planwise.client.current-project.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub subscribe]]
+            [planwise.client.routes :as routes]
             [planwise.client.current-project.db :as db]
             [planwise.client.mapping :as mapping]))
 
@@ -24,6 +25,16 @@
  (fn [db [_]]
    (let [current-data (subscribe [:current-project/current-data])]
      (reaction (:read-only @current-data)))))
+
+(register-sub
+ :current-project/share-link
+ (fn [db [_]]
+   (let [current-data (subscribe [:current-project/current-data])]
+     (reaction
+       (str
+         (.-origin js/document.location)
+         (routes/project-access {:id    (:id @current-data)
+                                 :token (:share-token @current-data)}))))))
 
 (register-sub
  :current-project/filter-definition
@@ -102,3 +113,8 @@
  (fn [db [_]]
    (let [current-region-id (reaction (get-in @db [:current-project :project-data :region-id]))]
      (reaction (get-in @db [:regions @current-region-id :geojson])))))
+
+(register-sub
+ :current-project/view-state
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :view-state]))))

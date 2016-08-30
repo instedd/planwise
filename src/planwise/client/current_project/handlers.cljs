@@ -260,3 +260,35 @@
  in-current-project
  (fn [db [_ new-zoom]]
    (assoc-in db [:map-view :zoom] new-zoom)))
+
+;; ---------------------------------------------------------------------------
+;; Sharing handlers
+
+(register-handler
+ :current-project/open-share-dialog
+ in-current-project
+ (fn [db [_]]
+   (assoc db :view-state :share-dialog)))
+
+(register-handler
+ :current-project/close-share-dialog
+ in-current-project
+ (fn [db [_]]
+   (assoc db :view-state :project)))
+
+(register-handler
+ :current-project/reset-share-token
+ in-current-project
+ (fn [db [_]]
+   (let [id (db/project-id db)]
+     (api/reset-share-token id :current-project/share-token-loaded))
+   ; TODO: Update share-token state to loading
+   db))
+
+(register-handler
+ :current-project/share-token-loaded
+ in-current-project
+ (fn [db [_ {token :token}]]
+   (let [db (assoc-in db [:project-data :share-token] token)]
+     ; TODO: Update share-token state to loaded
+     db)))

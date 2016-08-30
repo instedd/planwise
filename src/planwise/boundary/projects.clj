@@ -34,7 +34,11 @@
      there was a share deleted.")
 
   (list-project-shares [this]
-    "List all project shares in the system. Used for testing purposes (for now)."))
+    "List all project shares in the system. Used for testing purposes (for now).")
+
+  (reset-share-token [this project-id]
+    "Updates the project's share token and returns the new value, or nil if no
+     project was found for the specified id."))
 
 ;; Reference implementation
 
@@ -58,7 +62,10 @@
   (delete-project-share [service project-id user-id]
     (service/delete-project-share service project-id user-id))
   (list-project-shares [service]
-    (service/list-project-shares service)))
+    (service/list-project-shares service))
+  (reset-share-token [service id]
+    (service/reset-share-token service id)))
+
 
 ;; Additional utility functions
 

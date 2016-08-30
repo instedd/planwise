@@ -58,6 +58,8 @@
                         :request nil
                         :request-with nil}
 
+   :view-state         :project                   ; [:project :share-dialog]
+
    :project-data       nil})                      ; see ProjectData above
 
 
@@ -100,3 +102,7 @@
     (assoc filters
            :dataset-id project-dataset-id
            :region project-region-id)))
+
+(defn show-share-dialog?
+  [view-state]
+  (#{:share-dialog} view-state))

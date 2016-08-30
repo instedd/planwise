@@ -126,3 +126,11 @@
       (is (= shared-project-id (:id project)))
       (is (= shared-project-id (:id (projects/get-project service shared-project-id grantee-user-id))))
       (is (= 1 (count-project-shares service shared-project-id grantee-user-id))))))
+
+(deftest reset-share-token
+  (with-system (system)
+    (let [service (:projects system)
+          new-token (projects/reset-share-token service project-id)
+          updated-project (projects/get-project service project-id)]
+      (is (not= new-token project-share-token))
+      (is (= new-token (:share-token updated-project))))))

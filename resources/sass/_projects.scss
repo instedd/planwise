@@ -330,3 +330,18 @@ article.project-view {
     margin: 10px -15px;
   }
 }
+
+$project-share-width: 500px;
+
+.dialog.share {
+  width: $project-share-width;
+
+  .share-link {
+    width: $project-share-width - 35px;
+  }
+
+  .icon-medium {
+    vertical-align: middle;
+    margin-left: 5px;
+  }
+}
