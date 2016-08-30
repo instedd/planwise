@@ -48,6 +48,6 @@ module FeatureSpecHelpers
   end
 
   def accept_alert
-    page.page.driver.browser.switch_to.alert.accept
+    page.driver.browser.switch_to.alert.accept
   end
 end
