@@ -214,21 +214,6 @@ article.project-view {
       margin-top: 8px;
       margin-left: 10px;
       padding: 5px;
-      li.unvisited {
-        a, a:hover {
-          color: $gray3;
-        }
-      }
-      li.visiting {
-        a, a:hover {
-          color: $black;
-        }
-      }
-      li.visited {
-        a, a:hover {
-          color: $green;
-        }
-      }
       li {
         display: inline-block;
         margin-right: 30px;
@@ -237,6 +222,21 @@ article.project-view {
         border-bottom: 3px solid transparent;
         padding-bottom: 12px;
 
+        &.unvisited, &.unvisited.active {
+          a, a:hover {
+            color: $gray3;
+          }
+        }
+        &.visiting, &.visiting.active {
+          a, a:hover {
+            color: $black;
+          }
+        }
+        &.visited, &.visited.active {
+          a, a:hover {
+            color: $green;
+          }
+        }
         &.active,
         &.active:hover {
           border-bottom: 3px solid $green;
@@ -329,9 +329,30 @@ article.project-view {
   background-color: $gray1;
 
   .nav-buttons {
-    color: $orange;
     width: 50%;
     margin: 40px auto auto auto;
+
+    .nav-button {
+      width: 120px;
+      height: 40px;
+      border-radius: 3px;
+      text-align: center;
+      display: inline-block;
+
+      &.next {
+        background-color: #819f51;
+      }
+
+
+      svg {
+        fill: white;
+      }
+
+      .button-text {
+        line-height: 40px;
+        color: white;
+      }
+    }
   }
 
   .filter-info {

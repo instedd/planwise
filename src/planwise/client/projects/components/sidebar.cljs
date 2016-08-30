@@ -6,8 +6,9 @@
             [planwise.client.components.filters :as filters]
             [planwise.client.projects.db :as db]
             [planwise.client.utils :as utils]
-            [planwise.client.routes :as routes]))
-
+            [planwise.client.routes :as routes]
+            [accountant.core :as accountant]
+            [planwise.client.styles :as styles]))
 
 (defn- demographic-stat [title value]
   [:div.stat
@@ -27,11 +28,15 @@
         next (second (drop-while #(not= tab-name %) tabs))
         back (last (take-while #(not= tab-name %) tabs))]
     [:div.nav-buttons
-     (if has-back?
-       [:a {:href (route-by-tab-name back project-id)} "Step back"])
-     (if (and has-back? has-next?) " | ")
-     (if has-next?
-       [:a {:href (route-by-tab-name next project-id)} "Next Step"])]))
+     [:div.nav-buttons-container
+      (if has-back?
+        [:div.nav-button.prev {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
+         (icon :key-arrow-left "icon-small")
+         [:span.button-text "Prev"]])
+      (if has-next?
+        [:div.nav-button.next {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
+         [:span.button-text "Next"]
+         (icon :key-arrow-right "icon-small")])]]))
 
 (defn- demographics-filters []
   (let [current-project (subscribe [:projects/current-data])

@@ -121,6 +121,12 @@ key-arrow-down
 </title>
 <path d='M7.41,7.83,12,12.42l4.59-4.59L18,9.23l-6,6-6-6Z'/>
 </symbol>
+<symbol viewBox='0 0 24 24' id='icon-key-arrow-left' data-name='icon-key-arrow-left'>
+<title>
+key-arrow-left
+</title>
+<path d='M15.41 16.09l-4.58-4.59 4.58-4.59L14 5.5l-6 6 6 6z'/>
+</symbol>
 <symbol viewBox='0 0 24 24' data-name='icon-key-arrow-right' id='icon-key-arrow-right'>
 <title>
 key-arrow-right
