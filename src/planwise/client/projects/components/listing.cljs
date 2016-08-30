@@ -20,6 +20,7 @@
        [:div (utils/pluralize projects-count "project")]
        [:input
         {:type "search"
+         :id "search"
          :placeholder "Search projects..."
          :value @search-string
          :on-change #(dispatch [:projects/search (-> % .-target .-value str)])}]
