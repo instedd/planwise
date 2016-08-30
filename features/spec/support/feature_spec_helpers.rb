@@ -42,4 +42,8 @@ module FeatureSpecHelpers
   def submit
     page.all(".primary")[1].click
   end
+
+  def open_project_view
+    page.find(".project-card").click
+  end
 end
