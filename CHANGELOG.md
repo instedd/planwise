@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.5.1] - 2016-08-30
+### Fixed
+- Fix two importer related bugs: don't stop importing after the first page; and
+  don't update import stats twice when processing the last facility (#188)
+- Fix number formatting in Safari (#193)
+
 ## [0.5.0] - 2016-08-30
 ### Added
 - Projects are now owned by users and each user has access to their own projects
