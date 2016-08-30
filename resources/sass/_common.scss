@@ -229,7 +229,7 @@ button {
     }
   }
 
-  &.cancel, &.delete, &.signout, &.share {
+  &.cancel, &.delete, &.secondary, &.signout {
     background-color: transparent;
     color: $gray-text;
     fill: $gray-text;

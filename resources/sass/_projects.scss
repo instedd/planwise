@@ -332,16 +332,40 @@ article.project-view {
 }
 
 $project-share-width: 500px;
+$project-share-user-li-height: 21px;
+$project-share-user-li-padding: 6px;
+$project-share-user-count: 9;
 
 .dialog.share {
   width: $project-share-width;
 
   .share-link {
-    width: $project-share-width - 35px;
+    width: $project-share-width - 55px;
+    color: $green;
   }
 
   .icon-medium {
     vertical-align: middle;
-    margin-left: 5px;
+  }
+
+  .shares {
+    p {
+      font-weight: bold;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0 10px;
+      max-height: $project-share-user-count * (1 + $project-share-user-li-height + 2 * $project-share-user-li-padding);
+      overflow: auto;
+
+      li {
+        height: $project-share-user-li-height;
+        padding: $project-share-user-li-padding 0;
+        text-align: middle;
+        border-bottom: 1px solid $gray1;
+      }
+
+    }
   }
 }

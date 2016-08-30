@@ -37,7 +37,7 @@
         (common/icon :exit "icon-small")
         "Leave project"]]
       [:div
-       [:button.share
+       [:button.secondary
         {:on-click (utils/prevent-default
                      #(dispatch [:current-project/open-share-dialog]))}
         (common/icon :share "icon-small")

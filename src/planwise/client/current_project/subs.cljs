@@ -27,6 +27,12 @@
      (reaction (:read-only @current-data)))))
 
 (register-sub
+ :current-project/shares
+ (fn [db [_]]
+   (let [current-data (subscribe [:current-project/current-data])]
+     (reaction (:shares @current-data)))))
+
+(register-sub
  :current-project/share-link
  (fn [db [_]]
    (let [current-data (subscribe [:current-project/current-data])]

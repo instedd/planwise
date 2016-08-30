@@ -268,6 +268,7 @@
  :current-project/open-share-dialog
  in-current-project
  (fn [db [_]]
+   ; TODO: Fire a request to update the project shares when opening the dialog to ensure it is up to date
    (assoc db :view-state :share-dialog)))
 
 (register-handler
@@ -282,7 +283,7 @@
  (fn [db [_]]
    (let [id (db/project-id db)]
      (api/reset-share-token id :current-project/share-token-loaded))
-   ; TODO: Update share-token state to loading
+   ; TODO: Update share-token state to loading, and use it to disable reset button and hide current link
    db))
 
 (register-handler

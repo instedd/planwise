@@ -11,11 +11,18 @@
 
 (defn share-dialog []
   (let [view-state (subscribe [:current-project/view-state])
-        share-link (subscribe [:current-project/share-link])]
+        share-link (subscribe [:current-project/share-link])
+        project-shares (subscribe [:current-project/shares])]
     (fn []
       (let [close-fn #(dispatch [:current-project/close-share-dialog])
             key-handler-fn #(when (= 27 (.-which %)) (close-fn))
-            select-text-fn #(.select (.-target %))]
+            select-text-fn #(.select (.-target %))
+            reset-share-token-fn (utils/with-confirm
+                                   #(dispatch [:current-project/reset-share-token])
+                                   (str "Are you sure you want to reset the sharing link?\n\n"
+                                         "Anyone who has not yet opened the link will not "
+                                         "be able to access, and will need to be shared the new "
+                                         "link."))]
         [:div.dialog.share
          {:on-key-down key-handler-fn}
          [:div.title
@@ -27,15 +34,17 @@
           [:input.share-link  {:read-only true
                                :value @share-link
                                :on-click select-text-fn}]
-          [:a {:href "#"
-               :title "Reset the sharing link"
-               :on-click (utils/with-confirm
-                           #(dispatch [:current-project/reset-share-token])
-                           (str "Are you sure you want to reset the sharing link?\n\n"
-                                 "Anyone who has not yet opened the link will not "
-                                 "be able to access, and will need to be shared the new "
-                                 "link."))}
+          [:button.secondary  {:title "Reset the sharing link"
+                               :on-click reset-share-token-fn}
             (common/icon :refresh "icon-medium")]]
+
+         (when (seq @project-shares)
+          [:div.shares
+           [:p (str (utils/pluralize (count @project-shares) "user has" "users have") " access to this project:")]
+           [:ul
+            (for [{:keys [user-id user-email]} @project-shares]
+             [:li {:key user-id}
+              user-email])]])
 
          [:div.actions
           [:button.cancel
