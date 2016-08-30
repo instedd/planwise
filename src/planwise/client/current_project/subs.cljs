@@ -20,6 +20,12 @@
    (reaction (get-in @db [:current-project :project-data]))))
 
 (register-sub
+ :current-project/read-only?
+ (fn [db [_]]
+   (let [current-data (subscribe [:current-project/current-data])]
+     (reaction (:read-only @current-data)))))
+
+(register-sub
  :current-project/filter-definition
  (fn [db [_ filter]]
    (reaction (get-in @db [:current-project :filter-definitions filter]))))
