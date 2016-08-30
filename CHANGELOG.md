@@ -32,7 +32,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Map colours and general appearence has been changed to improve readability (#149)
 - Facilities more than 1km further away from the nearest road will be ignored
   for isochrone calculation and shown in the map with a different colour (#89)
-- Some minor rewording in texts for clarification (#148)
+- Changed wording in facility types filter texts for clarification (#148)
+- Added clarification in transport time section indicating that travel time is
+  one-way (#148)
 - Added Plumatic's Schema to validate data structures. Added several schemas and
   enabled validation in a couple of places.
 - Several refactors and code cleanups to keep the code base extensible and
