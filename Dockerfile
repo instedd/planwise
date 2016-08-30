@@ -20,8 +20,8 @@ ADD cpp/aggregate-population /app/bin/aggregate-population
 ENV BIN_PATH /app/bin/
 
 # Add uberjar with app
-ADD ./target/uberjar/planwise-0.5.0-standalone.jar /app/lib/
-ENV JAR_PATH /app/lib/planwise-0.5.0-standalone.jar
+ADD ./target/uberjar/planwise-0.6.0-SNAPSHOT-standalone.jar /app/lib/
+ENV JAR_PATH /app/lib/planwise-0.6.0-SNAPSHOT-standalone.jar
 
 # Exposed port
 ENV PORT 80
@@ -31,4 +31,4 @@ EXPOSE $PORT
 ENV DATA_PATH /data/
 ENV TMP_PATH /tmp/
 
-CMD ["java", "-jar", "/app/lib/planwise-0.5.0-standalone.jar"]
+CMD ["java", "-jar", "/app/lib/planwise-0.6.0-SNAPSHOT-standalone.jar"]
