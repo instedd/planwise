@@ -21,13 +21,14 @@ module FeatureSpecHelpers
     end
   end
 
-  def create_project
+  def create_project(name)
     expect_page HomePage do |page|  
       page.press_primary_button 
-      fill_in  "goal", :with => "Foo"
-      page.find(".rc-dropdown b").click
-      page.find(".chosen-drop li")[1].click
-    end
+      fill_in  "goal", :with => "#{name}"
+      expand_locations_options
+      select_location(1)
+      submit
+    end 
   end
 
   def expand_locations_options
