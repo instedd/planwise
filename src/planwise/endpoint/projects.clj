@@ -104,7 +104,17 @@
      (let [project-id (Integer. id)
            user-id (util/request-user-id request)]
        (if (projects/delete-project-share service project-id user-id)
-         (response {:deleted-access project-id})
+         (response {:project-id project-id})
+         (not-found {:error "Project share not found"}))))
+
+   (DELETE "/:id/shares/:user" [id user :as request]
+     (let [project-id (Integer. id)
+           share-user-id (Integer. user)
+           owner-id (util/request-user-id request)
+           project (projects/get-project service project-id)]
+       (if (and (projects/owned-by? project owner-id)
+                (projects/delete-project-share service project-id share-user-id))
+         (response {:project-id project-id, :user-id share-user-id})
          (not-found {:error "Project share not found"}))))))
 
 (defn projects-endpoint [endpoint]

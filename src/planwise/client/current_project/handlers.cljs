@@ -7,7 +7,9 @@
             [planwise.client.current-project.api :as api]
             [planwise.client.current-project.db :as db]
             [planwise.client.mapping :as maps]
-            [planwise.client.styles :as styles]))
+            [planwise.client.styles :as styles]
+            [planwise.client.asdf :as asdf]
+            [planwise.client.utils :refer [remove-by]]))
 
 (def in-current-project (path [:current-project]))
 
@@ -293,3 +295,31 @@
    (let [db (assoc-in db [:project-data :share-token] token)]
      ; TODO: Update share-token state to loaded
      db)))
+
+(defn- remove-project-share
+  [coll user-id]
+  (remove #(= user-id (:user-id %)) coll))
+
+(register-handler
+ :current-project/delete-share
+ in-current-project
+ (fn [db [_ user-id]]
+   (let [project-id (db/project-id db)]
+     (api/delete-share project-id user-id :current-project/share-deleted)
+     (update db :shares asdf/swap! remove-by :user-id user-id))))
+
+(register-handler
+ :current-project/share-deleted
+ in-current-project
+ (fn [db [_ {:keys [user-id project-id]}]]
+   ; TODO: Should we reload the list if accessed when invalidated?
+   ; If we do so, we risk loading a stale list if:
+   ; 1- The user an item from the list
+   ; 2- We optimistically remove it and issue the delete request
+   ; 3- The request returns from the server and we invalidate the list
+   ; 4- The invalidate triggers a full reload of the list
+   ; 5- The user deletes another item, which is optimistically deleted
+   ; 6- The full reload of the list resolves, adding the item just deleted by the user
+   ; Should we cancel the previous request to reload the shares list?
+   ; Or simply ignore the invalid status of the list?
+   (update db :shares asdf/invalidate! remove-by :user-id user-id)))

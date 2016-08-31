@@ -44,7 +44,10 @@
            [:ul
             (for [{:keys [user-id user-email]} (asdf/value @project-shares)]
              [:li {:key user-id}
-              user-email])]])
+              [:span user-email]
+              [:button.secondary  {:title "Remove access for this user"
+                                   :on-click #(dispatch [:current-project/delete-share user-id])}
+                (common/icon :close "icon-small")]])]])
 
          [:div.actions
           [:button.cancel

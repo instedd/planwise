@@ -331,7 +331,7 @@ article.project-view {
   }
 }
 
-$project-share-width: 500px;
+$project-share-width: 450px;
 $project-share-user-li-height: 21px;
 $project-share-user-li-padding: 6px;
 $project-share-user-count: 9;
@@ -361,10 +361,24 @@ $project-share-user-count: 9;
 
       li {
         height: $project-share-user-li-height;
-        padding: $project-share-user-li-padding 0;
-        text-align: middle;
+        padding: $project-share-user-li-padding 3px;
         border-bottom: 1px solid $gray1;
+        button {
+          padding: 0;
+          vertical-align: bottom;
+          float: right;
+          visibility: hidden;
+        }
+
+        &:hover {
+          background-color: $gray1;
+          button {
+            visibility: visible;
+          }
+        }
       }
+
+
 
     }
   }

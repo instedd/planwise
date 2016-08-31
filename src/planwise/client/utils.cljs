@@ -58,3 +58,7 @@
 (defn remove-by-id
   [coll id]
   (remove #(= id (:id %)) coll))
+
+(defn remove-by
+  [coll field value]
+  (remove #(= value (field %)) coll))

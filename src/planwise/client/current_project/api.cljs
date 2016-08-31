@@ -1,5 +1,6 @@
 (ns planwise.client.current-project.api
-  (:require [ajax.core :refer [GET POST PUT]]
+  (:require [ajax.core :refer [GET POST PUT DELETE]]
+            [re-frame.utils :as c]
             [planwise.client.api :refer [json-request]]))
 
 
@@ -27,6 +28,11 @@
 (defn reset-share-token [project-id & handlers]
   (POST
     (str "/api/projects/" project-id "/token/reset")
+    (json-request {} handlers)))
+
+(defn delete-share [id user-id & handlers]
+  (DELETE
+    (str "/api/projects/" id "/shares/" user-id)
     (json-request {} handlers)))
 
 ;; Dataset related APIs
