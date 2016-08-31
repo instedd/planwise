@@ -1,5 +1,5 @@
 (ns planwise.client.api
-  (:require [ajax.core :refer [GET to-interceptor default-interceptors]]
+  (:require [ajax.core :refer [GET DELETE to-interceptor default-interceptors]]
             [re-frame.utils :as c]
             [re-frame.core :refer [dispatch]]
             [clojure.string :as string]
@@ -73,3 +73,10 @@
      (if (> (count s) max-length)
        (str (subs s 0 (- max-length 3)) "...")
        s))))
+
+
+;; Authentication APIs
+
+(defn signout
+  [& handlers]
+  (DELETE "/logout" (json-request {} handlers)))

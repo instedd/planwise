@@ -2,6 +2,7 @@
   (:require [compojure.core :refer :all]
             [ring.util.request :refer [request-url]]
             [ring.util.response :refer [content-type response redirect header]]
+            [cheshire.core :as json]
             [hiccup.page :refer [html5]]
             [clojure.string :as string]
             [buddy.auth :refer [throw-unauthorized authenticated?]]
@@ -58,4 +59,10 @@
    (GET "/logout" []
      (-> (response logout-page)
          (content-type "text/html")
-         (auth/logout service)))))
+         (auth/logout service)))
+
+   (DELETE "/logout" []
+     (let [redirect-after-logout (auth/after-logout-url service)]
+       (-> (response (json/generate-string {:redirect-to redirect-after-logout}))
+           (content-type "application/json")
+           (auth/logout service))))))

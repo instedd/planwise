@@ -110,8 +110,13 @@
 
 (defn logout
   "Modifies the response to logout the currently authenticated user"
-  [service response]
+  [response service]
   (assoc response :session nil))
+
+(defn after-logout-url
+  "Returns the URL to redirect the user to after a successful logout"
+  [service]
+  (guisso-url service "/users/sign_out"))
 
 (defn create-jwe-token
   "Create a JWE token for the client to authenticate for API calls"
