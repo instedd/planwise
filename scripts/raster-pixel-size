@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+import sys
+from math import radians, cos, sin, asin, sqrt
+try:
+    from osgeo import gdal
+    from osgeo import osr
+except:
+    import gdal
+    import osr
+
+def main(argv):
+    filename = argv[1]
+    dataset  = gdal.Open(filename, gdal.GA_ReadOnly)
+    if dataset is None:
+        print "ERROR: Failed to open file"
+        return 1
+
+    print pixel_size(dataset)
+    return 0
+
+# return the average area a pixel covers, in squared meters
+def pixel_size(dataset):
+    transform = dataset.GetGeoTransform(can_return_null = False)
+    if transform[2] != 0.0 or transform[4] != 0.0:
+        print "ERROR: Could not determine geographic transform to use for raster"
+        sys.exit(1)
+
+    upper_left  = coordinates(dataset, transform, 0.0, 0.0)
+    upper_right = coordinates(dataset, transform, dataset.RasterXSize, 0.0)
+    lower_left  = coordinates(dataset, transform, 0.0, dataset.RasterYSize)
+
+    total_width_kms  = distance(upper_left, upper_right)
+    pixel_width_ms   = 1000 * total_width_kms / dataset.RasterXSize
+
+    total_height_kms = distance(upper_left, lower_left)
+    pixel_height_ms  = 1000 * total_height_kms / dataset.RasterYSize
+
+    return int(pixel_height_ms * pixel_width_ms)
+
+# haversine distance between two points, in kilometers
+def distance((lon1,lat1), (lon2,lat2)):
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    d_lon = lon2 - lon1
+    d_lat = lat2 - lat1
+    a = sin(d_lat/2)**2 + cos(lat1) * cos(lat2) * sin(d_lon/2)**2
+    c = 2 * asin(sqrt(a))
+    r = 6371 # radius of earth in kilometers. use 3956 for miles
+    return c * r
+
+def coordinates(dataset, transform, x, y):
+    lon = transform[0] + transform[1] * x + transform[2] * y
+    lat = transform[3] + transform[4] * x + transform[5] * y
+    return (lon, lat)
+
+if __name__ == '__main__':
+    version_num = int(gdal.VersionInfo('VERSION_NUM'))
+    if version_num < 1800: # because of GetGeoTransform(can_return_null)
+        print('ERROR: Python bindings of GDAL 1.8.0 or later required')
+        sys.exit(1)
+
+    sys.exit(main(sys.argv))
