@@ -9,7 +9,7 @@
             [planwise.client.mapping :as maps]
             [planwise.client.styles :as styles]
             [planwise.client.asdf :as asdf]
-            [planwise.client.utils :refer [remove-by]]))
+            [planwise.client.utils :refer [remove-by dispatch-delayed]]))
 
 (def in-current-project (path [:current-project]))
 
@@ -323,3 +323,33 @@
    ; Should we cancel the previous request to reload the shares list?
    ; Or simply ignore the invalid status of the list?
    (update db :shares asdf/invalidate! remove-by :user-id user-id)))
+
+(register-handler
+ :current-project/reset-sharing-emails-text
+ in-current-project
+ (fn [db [_ text]]
+   (assoc-in db [:sharing :emails-text] text)))
+
+(register-handler
+ :current-project/send-sharing-emails
+ in-current-project
+ (fn [db [_ text]]
+   (let [emails (db/split-emails (get-in db [:sharing :emails-text]))]
+     (api/send-sharing-emails (db/project-id db) emails :current-project/sharing-emails-sent))
+   (-> db
+     (assoc-in [:sharing :state] :sending))))
+
+(register-handler
+ :current-project/sharing-emails-sent
+ in-current-project
+ (fn [db [_ text]]
+   (dispatch-delayed 3000 [:current-project/clear-sharing-emails-state])
+   (-> db
+     (assoc-in [:sharing :emails-text] "")
+     (assoc-in [:sharing :state] :sent))))
+
+(register-handler
+ :current-project/clear-sharing-emails-state
+ in-current-project
+ (fn [db _]
+   (assoc-in db [:sharing :state] nil)))

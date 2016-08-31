@@ -61,6 +61,10 @@ a:hover {
   font-size: 80%;
 }
 
+.relative {
+  position: relative;
+}
+
 .modal {
   position: fixed;
   top: 0;
@@ -295,6 +299,28 @@ button {
   margin: 0 2px;
 }
 
+.icon-input-placeholder {
+  width: 20px;
+  height: 20px;
+  vertical-align: text-top;
+  position: absolute;;
+  fill: $gray3;
+  top: 16px;
+  left: 7px;
+}
+
+input {
+  &.error {
+    border: 1px solid $orange;
+    &:focus {
+      outline-color: $orange;
+    }
+  }
+
+  &.with-icon {
+    padding-left: 30px;
+  }
+}
 
 svg > use {
   pointer-events: none;

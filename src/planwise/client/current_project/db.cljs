@@ -1,6 +1,7 @@
 (ns planwise.client.current-project.db
   (:require [schema.core :as s]
             [re-frame.utils :as c]
+            [clojure.string :as string]
             [planwise.client.asdf :as asdf]
             [planwise.client.mapping :as maps]))
 
@@ -67,6 +68,8 @@
    :view-state         :project                   ; [:project :share-dialog]
 
    :shares             (asdf/new [])              ; [ProjectShare]
+   :sharing            {:emails-text nil
+                        :state nil}               ; [nil :sending :sent]
 
    :project-data       nil})                      ; see ProjectData above
 
@@ -118,3 +121,7 @@
 (defn show-share-dialog?
   [view-state]
   (#{:share-dialog} view-state))
+
+(defn split-emails
+  [text]
+  (filter seq (string/split text #"[,;\s]+")))

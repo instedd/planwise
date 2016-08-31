@@ -348,14 +348,20 @@ $project-share-user-count: 9;
     vertical-align: middle;
   }
 
+  button.primary {
+    width: 160px;
+  }
+
   .shares {
     p {
       font-weight: bold;
+      margin: 10px 0 0 0;
     }
 
     ul {
       list-style: none;
-      padding: 0 10px;
+      padding: 5px 0;
+      margin: 0 0 10px 0;
       max-height: $project-share-user-count * (1 + $project-share-user-li-height + 2 * $project-share-user-li-padding);
       overflow: auto;
 
@@ -377,9 +383,6 @@ $project-share-user-count: 9;
           }
         }
       }
-
-
-
     }
   }
 }

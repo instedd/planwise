@@ -61,6 +61,17 @@
                (status 400)))
          (not-found {:error "Project not found"}))))
 
+   (POST "/:id/share" [id emails :as request]
+     (let [user-id (util/request-user-id request)
+           project-id (Integer. id)
+           project (projects/get-project service project-id)]
+       (if (projects/owned-by? project user-id)
+         (if (projects/share-via-email service project emails)
+           (response {:emails emails})
+           (-> (response {:status "failure"})
+               (status 400)))
+         (not-found {:error "Project not found"}))))
+
    (GET "/:id" [id with :as request]
      (let [user-id (util/request-user-id request)
            project (projects/get-project service (Integer. id) user-id)]

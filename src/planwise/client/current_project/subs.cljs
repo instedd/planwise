@@ -1,9 +1,11 @@
 (ns planwise.client.current-project.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub subscribe]]
+            [clojure.string :as string]
             [planwise.client.routes :as routes]
             [planwise.client.current-project.db :as db]
-            [planwise.client.mapping :as mapping]))
+            [planwise.client.mapping :as mapping]
+            [planwise.client.utils :as utils]))
 
 
 ;; ----------------------------------------------------------------------------
@@ -123,3 +125,37 @@
  :current-project/view-state
  (fn [db [_]]
    (reaction (get-in @db [:current-project :view-state]))))
+
+(register-sub
+ :current-project/sharing-emails-text
+ (fn [db [_ field]]
+   (reaction (get-in @db [:current-project :sharing :emails-text]))))
+
+(register-sub
+ :current-project/sharing-send-emails
+ (fn [db [_ field]]
+   (let [emails-text (subscribe [:current-project/sharing-emails-text])]
+     (reaction
+       (let [emails-list    (db/split-emails @emails-text)
+             state          (get-in @db [:current-project :sharing :state])
+             has-emails     (seq emails-list)
+             valid-emails   (filter utils/is-valid-email? emails-list)
+             invalid-emails (filter (complement utils/is-valid-email?) emails-list)]
+         {:editable (not (#{:sending} state))
+          :disabled (or (#{:sending :sent} state) (not has-emails) (seq invalid-emails))
+          :valid    (not (seq invalid-emails))
+          :title    (cond
+                      (= :sending state)   "Sending..."
+                      (= :sent state)      "Emails successfully sent"
+                      (not has-emails)     "Enter one or more email addresses"
+                      (seq invalid-emails) (str
+                                              (string/join ", " invalid-emails) " "
+                                              (if (= 1 (count invalid-emails))
+                                                "is an invalid email address"
+                                                "are invalid email addresses"))
+                      :else                "Send this project sharing link to the emails above")
+          :label    (cond
+                      (= :sending state) "Sending..."
+                      (= :sent state)    "Sent"
+                      (seq valid-emails) (str "Send to " (utils/pluralize (count valid-emails) "user"))
+                      :else              "Send")})))))

@@ -12,7 +12,9 @@
 (defn share-dialog []
   (let [view-state (subscribe [:current-project/view-state])
         share-link (subscribe [:current-project/share-link])
-        project-shares (subscribe [:current-project/shares])]
+        project-shares (subscribe [:current-project/shares])
+        emails-text (subscribe [:current-project/sharing-emails-text])
+        send-emails-action (subscribe [:current-project/sharing-send-emails])]
     (fn []
       (let [close-fn #(dispatch [:current-project/close-share-dialog])
             key-handler-fn #(when (= 27 (.-which %)) (close-fn))
@@ -40,7 +42,7 @@
 
          (when (seq (asdf/value @project-shares))
           [:div.shares
-           [:p (str (utils/pluralize (count (asdf/value @project-shares)) "user has" "users have") " access to this project:")]
+           [:p (str (utils/pluralize (count (asdf/value @project-shares)) "user has" "users have") " access to this project")]
            [:ul
             (for [{:keys [user-id user-email]} (asdf/value @project-shares)]
              [:li {:key user-id}
@@ -49,8 +51,22 @@
                                    :on-click #(dispatch [:current-project/delete-share user-id])}
                 (common/icon :close "icon-small")]])]])
 
-         [:div.actions
-          [:button.cancel
-           {:type "button"
-            :on-click close-fn}
-           "Close"]]]))))
+         [:form {:on-submit (utils/prevent-default #(dispatch [:current-project/send-sharing-emails]))}
+          [:div.form-control.relative
+           (common/icon :mail-outline "icon-input-placeholder")
+           [:input.send-email.with-icon {:placeholder "Send sharing link via email"
+                                         :disabled (not (:editable @send-emails-action))
+                                         :value @emails-text
+                                         :class (when-not (:valid @send-emails-action) "error")
+                                         :on-change (utils/dispatch-value-fn :current-project/reset-sharing-emails-text)}]]
+
+          [:div.actions
+           [:button.primary
+             {:type "submit"
+              :disabled (:disabled @send-emails-action)
+              :title (:title @send-emails-action)}
+             (:label @send-emails-action)]
+           [:button.cancel
+             {:type "button"
+              :on-click close-fn}
+             "Close"]]]]))))

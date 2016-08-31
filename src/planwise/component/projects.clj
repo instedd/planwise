@@ -3,8 +3,11 @@
             [clojure.java.jdbc :as jdbc]
             [com.stuartsierra.component :as component]
             [hugsql.core :as hugsql]
+            [taoensso.timbre :as timbre]
             [clojure.edn :as edn]
             [clojure.set :as set]))
+
+(timbre/refer-timbre)
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -162,3 +165,12 @@
 (defn reset-share-token
   [service project-id]
   (:share-token (reset-share-token* (get-db service) {:id project-id})))
+
+(defn share-via-email
+  [service project emails]
+  (let [project (load-project service project)
+        token   (:share-token project)]
+    (doall
+      (for [email emails]
+        (info "Sending" token "to" email)))
+    true))

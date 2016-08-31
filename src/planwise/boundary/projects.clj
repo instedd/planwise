@@ -38,7 +38,10 @@
 
   (reset-share-token [this project-id]
     "Updates the project's share token and returns the new value, or nil if no
-     project was found for the specified id."))
+     project was found for the specified id.")
+
+  (share-via-email [this project-or-id emails]
+    "Sends the project share token via email to the specified recipients."))
 
 ;; Reference implementation
 
@@ -64,7 +67,9 @@
   (list-project-shares [service project-id]
     (service/list-project-shares service project-id))
   (reset-share-token [service id]
-    (service/reset-share-token service id)))
+    (service/reset-share-token service id))
+  (share-via-email [service project emails]
+    (service/share-via-email service project emails)))
 
 
 ;; Additional utility functions

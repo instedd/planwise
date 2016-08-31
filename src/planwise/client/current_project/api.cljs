@@ -35,6 +35,11 @@
     (str "/api/projects/" id "/shares/" user-id)
     (json-request {} handlers)))
 
+(defn send-sharing-emails [id emails & handlers]
+  (POST
+    (str "/api/projects/" id "/share")
+    (json-request {:emails emails} handlers)))
+
 ;; Dataset related APIs
 
 (defn fetch-facility-types [dataset-id & handlers]
