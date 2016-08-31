@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [planwise.client.utils :as utils]
             [planwise.client.routes :as routes]
+            [planwise.client.components.common :as common]
             [planwise.client.mapping :refer [static-image]]))
 
 (defn new-project-button []
@@ -25,7 +26,7 @@
 
 (defn no-projects-view []
   [:div.empty-list
-   [:img {:src "/images/empty-projects.png"}]
+   [common/icon :portfolio]
    [:p "You have no projects yet"]
    [:div
     [new-project-button]]])

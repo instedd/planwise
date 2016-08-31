@@ -232,6 +232,7 @@ button {
   &.cancel, &.delete {
     background-color: transparent;
     color: $gray-text;
+    fill: $gray-text;
     font-weight: normal;
     border:none;
     padding: 10px;

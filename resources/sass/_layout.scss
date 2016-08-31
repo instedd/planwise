@@ -163,10 +163,16 @@ header {
   justify-content: center;
 
   p {
-    font-size: 20px;
-    color: $gray3;
+    font-size: 24px;
+    color: $gray5;
     font-weight: bold;
     margin: 30px 0;
+  }
+
+  .icon {
+    fill: $gray5;
+    width: 260px;
+    height: 260px;
   }
 }
 

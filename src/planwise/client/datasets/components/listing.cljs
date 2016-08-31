@@ -32,7 +32,7 @@
 
 (defn no-datasets-view []
   [:div.empty-list
-   [:img {:src "/images/empty-datasets.png"}]
+   [common/icon :box]
    [:p "You have no datasets yet"]
    [:div
     [new-dataset-button]]])
