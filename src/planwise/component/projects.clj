@@ -1,11 +1,13 @@
 (ns planwise.component.projects
   (:require [planwise.component.facilities :as facilities]
+            [planwise.boundary.mailer :as mailer]
             [clojure.java.jdbc :as jdbc]
             [com.stuartsierra.component :as component]
             [hugsql.core :as hugsql]
             [taoensso.timbre :as timbre]
             [clojure.edn :as edn]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [cuerdas.core :refer [<< <<-]]))
 
 (timbre/refer-timbre)
 
@@ -54,7 +56,7 @@
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defrecord ProjectsService [db facilities])
+(defrecord ProjectsService [db facilities mailer])
 
 (defn projects-service
   "Constructs a Projects service component"
@@ -166,11 +168,28 @@
   [service project-id]
   (:share-token (reset-share-token* (get-db service) {:id project-id})))
 
+(defn- share-url
+  [host project]
+  (str host "/api/projects/" (:id project) "/access/" (:share-token project)))
+
 (defn share-via-email
-  [service project emails]
+  [service project emails {host :host}]
   (let [project (load-project service project)
-        token   (:share-token project)]
+        token   (:share-token project)
+        mailer  (:mailer service)
+        subject (str "Access to PlanWise project " (:goal project))]
     (doall
       (for [email emails]
-        (info "Sending" token "to" email)))
+        (let [body (<<- (<< "Greetings,
+
+                             ~(:owner-email project) has shared the PlanWise project \"~(:goal project)\" with you. Click on the link below to add it to your projects list:
+                             ~(share-url host project)
+
+                             If you do not have a PlanWise account, you will be prompted to create one when you access the link.
+
+                             Regards,
+
+                             PlanWise
+                             "))]
+          (mailer/send-mail mailer {:to email, :subject subject, :body body}))))
     true))

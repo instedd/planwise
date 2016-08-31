@@ -64,9 +64,10 @@
    (POST "/:id/share" [id emails :as request]
      (let [user-id (util/request-user-id request)
            project-id (Integer. id)
-           project (projects/get-project service project-id)]
+           project (projects/get-project service project-id)
+           host (get-in request [:headers "origin"])]
        (if (projects/owned-by? project user-id)
-         (if (projects/share-via-email service project emails)
+         (if (projects/share-via-email service project emails {:host host})
            (response {:emails emails})
            (-> (response {:status "failure"})
                (status 400)))

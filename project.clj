@@ -74,7 +74,9 @@
                  [com.layerware/hugsql "0.4.7"]
 
                  ; Misc
-                 [digest "1.4.4"]]
+                 [digest "1.4.4"]
+                 [com.draines/postal "2.0.0"]
+                 [funcool/cuerdas "1.0.1"]]
 
   :plugins [[lein-environ "1.0.3"]
             [lein-cljsbuild "1.1.2"]
