@@ -3,6 +3,7 @@ set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
 BIN_PATH=${BIN_PATH:-cpp}
+SCRIPT_PATH=${SCRIPT_PATH:-scripts}
 DATA_PATH=${DATA_PATH:-data}
 
 function base-raster {
@@ -18,7 +19,7 @@ function base-raster {
 # of each REGIONID in the regions table
 
 echo "Precalculating population aggregates per region"
-REGIONS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id,country FROM regions WHERE total_population IS NULL OR max_population IS NULL;')"
+REGIONS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id,country FROM regions WHERE total_population IS NULL OR max_population IS NULL OR raster_pixel_area IS NULL;')"
 echo " Regions: ${REGIONS}"
 
 mkdir -p ${DATA_PATH}/populations
@@ -30,7 +31,7 @@ for region in $REGIONS; do
 
   TARGET=${DATA_PATH}/populations/${ID}.tif
 
-  if [[ ! -e $TARGET || -z `gdalinfo $TARGET | grep -e POPULATION_SUM -e POPULATION_MAX` ]]; then
+  if [[ ! -e $TARGET || -z `gdalinfo $TARGET | grep -e POPULATION_SUM -e POPULATION_MAX -e PIXEL_AREA_M2` ]]; then
     TMP_FILE=${TARGET}-unscaled
 
     echo " Warping population for ${ID}"
@@ -46,19 +47,23 @@ for region in $REGIONS; do
     POPULATION_SUM=${AGGREGATES[0]}
     POPULATION_MAX=${AGGREGATES[1]}
 
+    echo "Calculating pixel area for ${ID}"
+    PIXEL_AREA_M2=$(${SCRIPT_PATH}/raster-pixel-size ${TMP_FILE})
+
     echo " Normalizing raster file scale for ${ID}"
     gdal_translate -ot Byte -scale 0 $POPULATION_MAX 0 255 $TMP_FILE $TARGET
 
-    echo " Storing aggregates metadata for ${ID}"
-    gdal_edit.py -mo "POPULATION_SUM=$POPULATION_SUM" -mo "POPULATION_MAX=$POPULATION_MAX" $TARGET
+    echo " Storing metadata for ${ID}"
+    gdal_edit.py -mo "POPULATION_SUM=$POPULATION_SUM" -mo "POPULATION_MAX=$POPULATION_MAX" -mo "PIXEL_AREA_M2=$PIXEL_AREA_M2" $TARGET
 
     rm $TMP_FILE
   fi;
 
   TOTAL_POPULATION=`gdalinfo $TARGET | grep POPULATION_SUM | cut -d = -f2`
   MAX_POPULATION=`gdalinfo $TARGET | grep POPULATION_MAX | cut -d = -f2`
+  PIXEL_AREA_M2=`gdalinfo $TARGET | grep PIXEL_AREA_M2 | cut -d = -f2`
 
   echo " Updating population for ${ID}"
   psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A \
-       -c "UPDATE regions SET total_population = ${TOTAL_POPULATION}, max_population = ${MAX_POPULATION} WHERE id = ${ID}";
+       -c "UPDATE regions SET total_population = ${TOTAL_POPULATION}, max_population = ${MAX_POPULATION}, raster_pixel_area = ${PIXEL_AREA_M2} WHERE id = ${ID}";
 done;
