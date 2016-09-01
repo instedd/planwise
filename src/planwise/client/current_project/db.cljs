@@ -69,6 +69,7 @@
 
    :shares             (asdf/new [])              ; [ProjectShare]
    :sharing            {:emails-text nil
+                        :token-state nil          ; [nil :reloading]
                         :state nil}               ; [nil :sending :sent]
 
    :project-data       nil})                      ; see ProjectData above

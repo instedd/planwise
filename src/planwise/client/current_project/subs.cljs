@@ -128,7 +128,7 @@
 
 (register-sub
  :current-project/sharing-emails-text
- (fn [db [_ field]]
+ (fn [db [_]]
    (reaction (get-in @db [:current-project :sharing :emails-text]))))
 
 (register-sub
@@ -159,3 +159,8 @@
                       (= :sent state)    "Sent"
                       (seq valid-emails) (str "Send to " (utils/pluralize (count valid-emails) "user"))
                       :else              "Send")})))))
+
+(register-sub
+ :current-project/sharing-token-state
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :sharing :token-state]))))

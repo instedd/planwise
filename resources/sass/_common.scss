@@ -244,6 +244,10 @@ button {
       color: $black;
       fill: $black;
     }
+    &:disabled {
+      color: $gray2;
+      fill: $gray2;
+    }
   }
 
   &.signout {

@@ -14,7 +14,8 @@
         share-link (subscribe [:current-project/share-link])
         project-shares (subscribe [:current-project/shares])
         emails-text (subscribe [:current-project/sharing-emails-text])
-        send-emails-action (subscribe [:current-project/sharing-send-emails])]
+        send-emails-action (subscribe [:current-project/sharing-send-emails])
+        share-token-state (subscribe [:current-project/sharing-token-state])]
     (fn []
       (let [close-fn #(dispatch [:current-project/close-share-dialog])
             key-handler-fn #(when (= 27 (.-which %)) (close-fn))
@@ -34,10 +35,12 @@
          [:div.form-control
           [:label "Sharing link"]
           [:input.share-link  {:read-only true
-                               :value @share-link
+                               :value (when-not (= :reloading @share-token-state) @share-link)
+                               :placeholder "Loading..."
                                :on-click select-text-fn}]
           [:button.secondary  {:title "Reset the sharing link"
-                               :on-click reset-share-token-fn}
+                               :on-click reset-share-token-fn
+                               :disabled (= :reloading @share-token-state)}
             (common/icon :refresh "icon-medium")]]
 
          (when (seq (asdf/value @project-shares))

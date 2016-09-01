@@ -271,6 +271,8 @@
  in-current-project
  (fn [db [_]]
    ; TODO: Fire a request to update the project shares when opening the dialog to ensure it is up to date
+   ; What happens if the user deletes an item from the list before the request returns? In that case,
+   ; the item that was just deleted will re-appear.
    (assoc db :view-state :share-dialog)))
 
 (register-handler
@@ -284,17 +286,16 @@
  in-current-project
  (fn [db [_]]
    (let [id (db/project-id db)]
-     (api/reset-share-token id :current-project/share-token-loaded))
-   ; TODO: Update share-token state to loading, and use it to disable reset button and hide current link
-   db))
+     (api/reset-share-token id :current-project/share-token-loaded)
+     (assoc-in db [:sharing :token-state] :reloading))))
 
 (register-handler
  :current-project/share-token-loaded
  in-current-project
  (fn [db [_ {token :token}]]
-   (let [db (assoc-in db [:project-data :share-token] token)]
-     ; TODO: Update share-token state to loaded
-     db)))
+   (-> db
+     (assoc-in [:project-data :share-token] token)
+     (assoc-in [:sharing :token-state] nil))))
 
 (defn- remove-project-share
   [coll user-id]
