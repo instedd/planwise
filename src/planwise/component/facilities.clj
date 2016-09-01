@@ -103,7 +103,7 @@
             (get-db service)
             (assoc fpr :population population)))
         (catch Exception e
-          (error e "Error on raster-isochrones for facility" facility-id "polygon" facility-polygon-id "region" region-id)
+          (error e "Error on raster-isochrone for facility" facility-id "polygon" facility-polygon-id "region" region-id)
           nil)))))
 
 (defn calculate-isochrones-population! [service facility-id country]

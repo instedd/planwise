@@ -69,6 +69,7 @@ declare
   buffer_length integer;
   polygon_id integer;
   country text;
+  bounding_radius_meters integer;
   ret record; -- (exit_code, facility_country)
 begin
   create temporary table if not exists edges_agg_cost (
@@ -96,10 +97,14 @@ begin
     SELECT 'no-road-network'::TEXT, NULL::TEXT into ret; RETURN ret;
   END IF;
 
+  -- apply an upper bound to the reachable region to avoid retrieving all ways
+  -- bound = area that can be covered travelling in a straight line at 85 km/h for the maximum threshold time
+  bounding_radius_meters := (threshold_finish / 60.0) * 85 * 1000;
+
   insert into edges_agg_cost (
     select e.edge, e.agg_cost, e.node
     from pgr_drivingdistance(
-      'select gid as id, source, target, cost_s as cost from ways',
+      'select gid as id, source, target, cost_s as cost from ways where the_geom @ (select ST_Buffer(the_geom::geography, '|| bounding_radius_meters || ')::geometry from facilities where id = ' || f_id || ' limit 1)',
       facility_node,
       threshold_finish * 60,
       false) e
