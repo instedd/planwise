@@ -302,6 +302,12 @@
   (remove #(= user-id (:user-id %)) coll))
 
 (register-handler
+ :current-project/search-shares
+ in-current-project
+ (fn [db [_ string]]
+   (assoc-in db [:sharing :shares-search-string] string)))
+
+(register-handler
  :current-project/delete-share
  in-current-project
  (fn [db [_ user-id]]

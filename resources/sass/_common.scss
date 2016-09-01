@@ -329,3 +329,13 @@ input {
 svg > use {
   pointer-events: none;
 }
+
+.small-search-box > input {
+  width: 100%;
+  border-radius: 2px;
+  margin: 5px 0 5px 0;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  border-radius: 12px;
+  border: 1px solid $gray2;
+}

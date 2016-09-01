@@ -9,10 +9,22 @@
             [planwise.client.utils :as utils]
             [planwise.client.styles :as styles]))
 
+(defn- search-box
+  []
+  (let [search-string (subscribe [:current-project/shares-search-string])]
+    (fn []
+      [:div.small-search-box
+       [:input
+        {:type "search"
+         :placeholder "Search"
+         :value @search-string
+         :on-change (utils/dispatch-value-fn :current-project/search-shares)}]])))
+
 (defn share-dialog []
   (let [view-state (subscribe [:current-project/view-state])
         share-link (subscribe [:current-project/share-link])
         project-shares (subscribe [:current-project/shares])
+        filtered-shares (subscribe [:current-project/filtered-shares])
         emails-text (subscribe [:current-project/sharing-emails-text])
         send-emails-action (subscribe [:current-project/sharing-send-emails])
         share-token-state (subscribe [:current-project/sharing-token-state])]
@@ -46,8 +58,9 @@
          (when (seq (asdf/value @project-shares))
           [:div.shares
            [:p (str (utils/pluralize (count (asdf/value @project-shares)) "user has" "users have") " access to this project")]
+           [search-box]
            [:ul
-            (for [{:keys [user-id user-email]} (asdf/value @project-shares)]
+            (for [{:keys [user-id user-email]} @filtered-shares]
              [:li {:key user-id}
               [:span user-email]
               [:button.secondary  {:title "Remove access for this user"

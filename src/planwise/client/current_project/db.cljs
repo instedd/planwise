@@ -70,7 +70,8 @@
    :shares             (asdf/new [])              ; [ProjectShare]
    :sharing            {:emails-text nil
                         :token-state nil          ; [nil :reloading]
-                        :state nil}               ; [nil :sending :sent]
+                        :state nil                ; [nil :sending :sent]
+                        :shares-search-string ""}
 
    :project-data       nil})                      ; see ProjectData above
 
