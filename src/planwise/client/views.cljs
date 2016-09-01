@@ -16,6 +16,13 @@
 (def current-user-email
   (atom config/user-email))
 
+(defn signout-button
+  []
+  [:button.signout
+   {:type :button
+    :on-click #(dispatch [:signout])}
+   [icon :signout "icon-small"]])
+
 (defn nav-bar []
   (let [current-page (subscribe [:current-page])]
     (fn []
@@ -25,7 +32,8 @@
           (icon :logo)]
          [:nav [nav/ul-menu nav-items active]]
          [:div.user-info
-          @current-user-email]]))))
+          @current-user-email
+          [signout-button]]]))))
 
 (defmulti content-pane identity)
 

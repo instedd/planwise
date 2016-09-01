@@ -229,13 +229,18 @@ button {
     }
   }
 
-  &.cancel, &.delete {
+  &.cancel, &.delete, &.signout {
     background-color: transparent;
     color: $gray-text;
     fill: $gray-text;
     font-weight: normal;
     border:none;
     padding: 10px;
+  }
+
+  &.signout {
+    margin-left: 5px;
+    padding: 0;
   }
 
   &.mini {

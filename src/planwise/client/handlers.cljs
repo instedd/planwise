@@ -1,5 +1,7 @@
 (ns planwise.client.handlers
   (:require [planwise.client.db :as db]
+            [planwise.client.api :as api]
+            [planwise.client.routes :as routes]
             [planwise.client.projects.handlers :as projects]
             [planwise.client.current-project.handlers :as current-project]
             [planwise.client.datasets.handlers]
@@ -39,6 +41,19 @@
                  :current-page page
                  :page-params params)]
      (on-navigate new-db page params))))
+
+(register-handler
+ :signout
+ (fn [db [_]]
+   (api/signout :after-signout)
+   db))
+
+(register-handler
+ :after-signout
+ (fn [db [_ data]]
+   (let [url (or (:redirect-to data) (routes/home))]
+     (set! (.-location js/window) url))
+   db))
 
 (register-handler
  :message-posted

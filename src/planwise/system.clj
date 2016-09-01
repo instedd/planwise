@@ -28,7 +28,7 @@
             [clojure.set :refer [rename-keys]]
 
             [planwise.component.compound-handler :refer [compound-handler-component]]
-            [planwise.component.auth :refer [auth-service]]
+            [planwise.component.auth :refer [auth-service wrap-check-guisso-cookie]]
             [planwise.component.facilities :refer [facilities-service]]
             [planwise.component.routing :refer [routing-service]]
             [planwise.component.projects :refer [projects-service]]
@@ -103,6 +103,7 @@
                         [wrap-webjars]
                         [wrap-resource :jar-resources]
                         [wrap-authorization :auth-backend]
+                        [wrap-check-guisso-cookie]
                         [wrap-authentication :auth-backend]
                         [wrap-defaults :app-defaults]]
          :not-found    (io/resource "planwise/errors/404.html")
