@@ -7,8 +7,11 @@ SCRIPT_PATH=${SCRIPT_PATH:-scripts}
 DATA_PATH=${DATA_PATH:-data}
 
 function base-raster {
-    if   [[ $1 == "kenya" ]];    then echo "KEN_popmap15_v2b.tif"
-    elif [[ $1 == "tanzania" ]]; then echo "TZA_popmap15_v2b.tif"
+    if   [[ $1 == "kenya" ]];        then echo "KEN_popmap15_v2b.tif"
+    elif [[ $1 == "tanzania" ]];     then echo "TZA_popmap15_v2b.tif"
+    elif [[ $1 == "ethiopia" ]];     then echo "ETH15v5.tif"
+    elif [[ $1 == "nigeria" ]];      then echo "NGA14adjv1.tif"
+    elif [[ $1 == "south-africa" ]]; then echo "ZAF15v4.tif"
     else
         echo "Unknown country: $1"
         exit 1

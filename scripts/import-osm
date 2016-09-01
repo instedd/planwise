@@ -11,10 +11,11 @@ then
     exit 1
 fi
 
-if [[ $COUNTRY == "kenya" ]]; then
-    FILE="kenya-20160627"
-elif [[ $COUNTRY == "tanzania" ]]; then
-    FILE="tanzania-20160824"
+if [[ $COUNTRY == "kenya" ]];          then FILE="kenya-20160627"
+elif [[ $COUNTRY == "tanzania" ]];     then FILE="tanzania-20160824"
+elif [[ $COUNTRY == "ethiopia" ]];     then FILE="ethiopia-20160830"
+elif [[ $COUNTRY == "nigeria" ]];      then FILE="nigeria-20160830"
+elif [[ $COUNTRY == "south-africa" ]]; then FILE="south-africa-and-lesotho-20160827"
 else
     echo "Unkown country."
     exit 1
