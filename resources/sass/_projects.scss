@@ -386,3 +386,14 @@ $project-share-user-count: 5;
     }
   }
 }
+
+.option-context {
+  color: $gray5;
+  float: right;
+  font-size: 12px;
+  margin-right: 5px;
+}
+
+.highlighted .option-context {
+  color: $white;
+}

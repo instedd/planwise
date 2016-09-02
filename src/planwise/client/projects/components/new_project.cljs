@@ -1,6 +1,5 @@
 (ns planwise.client.projects.components.new-project
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [re-com.core :as rc]
             [reagent.core :as r]
             [clojure.string :as str]
             [leaflet.core :refer [map-widget]]
@@ -9,6 +8,7 @@
                                              bbox-center]]
             [planwise.client.asdf :as asdf]
             [planwise.client.components.common :as common]
+            [planwise.client.components.dropdown :as dropdown]
             [planwise.client.utils :as utils]
             [planwise.client.styles :as styles]))
 
@@ -50,7 +50,7 @@
                                        (-> % .-target .-value str/triml))}]]
          [:div.form-control
           [:label "Dataset"]
-          [rc/single-dropdown
+          [dropdown/single-dropdown
            :choices (or (asdf/value @datasets) [])
            :label-fn :name
            :filter-box? true
@@ -58,9 +58,10 @@
            :model new-project-dataset-id]]
          [:div.form-control
           [:label "Location"]
-          [rc/single-dropdown
+          [dropdown/single-dropdown
            :choices @regions
            :label-fn :name
+           :render-fn (fn [region] [:div [:span (:name region)] [:span.option-context (:country-name region)]])
            :filter-box? true
            :on-change #(when %
                          (dispatch [:regions/load-regions-with-geo [%]])
