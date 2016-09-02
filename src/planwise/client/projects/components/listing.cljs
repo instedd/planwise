@@ -5,7 +5,7 @@
             [planwise.client.components.common :as common]
             [planwise.client.routes :as routes]
             [planwise.client.components.common :as common]
-            [planwise.client.mapping :refer [static-image]]))
+            [planwise.client.mapping :refer [static-image map-preview-size]]))
 
 (defn new-project-button []
   [:button.primary
@@ -61,7 +61,8 @@
              (common/icon :share "icon-small")
              (str "Shared by " owner-email)])]
           (if-not (str/blank? @region-geo)
-            [:img.map-preview {:src (static-image @region-geo)}])]])))
+            [:img.map-preview {:style map-preview-size
+                               :src (static-image @region-geo)}])]])))
 
 (defn projects-list [projects]
   [:div

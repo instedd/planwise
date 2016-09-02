@@ -6,6 +6,10 @@
 (def bright-mapbox-mapid "juanedi/cis9iabkx002c31lg5awqyqa8")
 (def mapbox-access-token "pk.eyJ1IjoianVhbmVkaSIsImEiOiJFeVIxckN3In0.502Q6lu_hD-Bu3r9a0jUyw")
 
+(def map-preview-size
+  {:height 158
+   :width  256})
+
 (def layer-name
   "kenya")
 
@@ -45,9 +49,11 @@
 ;; only "classic" mapbox styles can be used with this static API.
 ;; the new API does not allow defining an overlay as a query parameter.
 (defn static-image [geojson]
-  (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/256x158.png?access_token=%s"
+  (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/%dx%d.png?access_token=%s"
     emerald-mapbox-mapid
     (js/encodeURIComponent geojson)
+    (:width map-preview-size)
+    (:height map-preview-size)
     mapbox-access-token))
 
 (defn bbox-center [[[s w] [n e]]]
