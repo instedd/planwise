@@ -84,18 +84,7 @@
  in-current-project
  (fn [db [_ project-data]]
    (let [db (project-loaded db project-data)]
-     ; We need to issue a full projects list reload here, instead of an
-     ; invalidate-projects, in order to prevent a race condition:
-     ; 1- User navigates to /project/:id/access/:token
-     ; 2- Requests for projects list and request access to shared project are sent to the server
-     ; 3- The server processes the projects list before the access request, so the list does not contain the new project
-     ; 4- The server processes the request access and sends the response to the client before the response for (3)
-     ; 5- The client optimistically adds the new project to the list and asdf/invalidates it
-     ; 6- The response for (3) arrives at the client, which updates the list *without* the shared project, and marks the asdf as valid
-     ; This should be easily fixed when asdf supports versioning of data, then
-     ; the load-projects dispatch can be replaced with:
-     ; (dispatch [:projects/invalidate-projects [project-data]])
-     (dispatch [:projects/load-projects])
+     (dispatch [:projects/invalidate-projects [project-data]])
      (accountant/navigate! (routes/project-demographics project-data))
      db)))
 
