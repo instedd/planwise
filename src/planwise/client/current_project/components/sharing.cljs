@@ -35,9 +35,9 @@
             reset-share-token-fn (utils/with-confirm
                                    #(dispatch [:current-project/reset-share-token])
                                    (str "Are you sure you want to reset the sharing link?\n\n"
-                                         "Anyone who has not yet opened the link will not "
-                                         "be able to access, and will need to be shared the new "
-                                         "link."))]
+                                        "If you reset the link, anyone who has not yet accessed "
+                                        "the project will not be able to do it until you send them "
+                                        "the new link."))]
         [:div.dialog.share
          {:on-key-down key-handler-fn}
          [:div.title

@@ -42,7 +42,7 @@
                      #(dispatch [:current-project/open-share-dialog]))}
         (common/icon :share "icon-small")
         (if (pos? share-count)
-          (str "Shared with " share-count)
+          (str "Shared with " (utils/pluralize share-count "user"))
           "Share")]
        [:button.delete
         {:on-click (utils/with-confirm
