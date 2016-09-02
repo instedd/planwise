@@ -284,10 +284,6 @@
  (fn [db [_ {token :token}]]
    (update-in db [:sharing :token] asdf/reset! token)))
 
-(defn- remove-project-share
-  [coll user-id]
-  (remove #(= user-id (:user-id %)) coll))
-
 (register-handler
  :current-project/search-shares
  in-current-project
