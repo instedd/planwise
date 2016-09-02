@@ -276,15 +276,13 @@
  (fn [db [_]]
    (let [id (db/project-id db)]
      (api/reset-share-token id :current-project/share-token-loaded)
-     (assoc-in db [:sharing :token-state] :reloading))))
+     (update-in db [:sharing :token] asdf/reload!))))
 
 (register-handler
  :current-project/share-token-loaded
  in-current-project
  (fn [db [_ {token :token}]]
-   (-> db
-     (assoc-in [:project-data :share-token] token)
-     (assoc-in [:sharing :token-state] nil))))
+   (update-in db [:sharing :token] asdf/reset! token)))
 
 (defn- remove-project-share
   [coll user-id]

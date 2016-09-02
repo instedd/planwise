@@ -51,12 +51,14 @@
 (register-sub
  :current-project/share-link
  (fn [db [_]]
-   (let [current-data (subscribe [:current-project/current-data])]
-     (reaction
-       (str
-         (.-origin js/document.location)
-         (routes/project-access {:id    (:id @current-data)
-                                 :token (:share-token @current-data)}))))))
+   (reaction
+     (let [token (get-in @db [:current-project :sharing :token])
+           project-id (get-in @db [:current-project :project-data :id])]
+       (asdf/update token (fn [t]
+                            (str
+                              (.-origin js/document.location)
+                              (routes/project-access {:id project-id
+                                                      :token t}))))))))
 
 (register-sub
  :current-project/filter-definition
@@ -174,8 +176,3 @@
                       (= :sent state)    "Sent"
                       (seq valid-emails) (str "Send to " (utils/pluralize (count valid-emails) "user"))
                       :else              "Send")})))))
-
-(register-sub
- :current-project/sharing-token-state
- (fn [db [_]]
-   (reaction (get-in @db [:current-project :sharing :token-state]))))

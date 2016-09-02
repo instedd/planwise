@@ -69,7 +69,7 @@
 
    :shares             (asdf/new [])              ; [ProjectShare]
    :sharing            {:emails-text nil
-                        :token-state nil          ; [nil :reloading]
+                        :token (asdf/new "")
                         :state nil                ; [nil :sending :sent]
                         :shares-search-string ""}
 
@@ -79,19 +79,20 @@
 ;; Project data manipulation functions
 
 (defn- update-viewmodel-associations
-  [viewmodel {:keys [facilities shares]}]
+  [viewmodel {:keys [facilities shares share-token]}]
   (as-> viewmodel vm
     (if (some? facilities)
       (assoc-in vm [:facilities :list] facilities)
       vm)
     (if (some? shares)
       (update vm :shares asdf/reset! shares)
-      vm)))
+      vm)
+    (update-in vm [:sharing :token] asdf/reset! share-token)))
 
 (defn update-viewmodel
   [viewmodel project-data]
   (-> viewmodel
-      (update :project-data merge (dissoc project-data :facilities :shares))
+      (update :project-data merge (dissoc project-data :facilities :shares :share-token))
       (update-viewmodel-associations project-data)))
 
 (defn new-viewmodel

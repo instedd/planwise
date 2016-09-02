@@ -1,5 +1,5 @@
 (ns planwise.client.asdf
-  [:refer-clojure :exclude [reset! swap!]]
+  [:refer-clojure :exclude [reset! swap! update]]
   [:require [schema.core :as s]])
 
 (s/defschema AsdfState (s/enum :invalid :reloading :valid))
@@ -60,3 +60,8 @@
 (defn reload!
   [asdf]
   (assoc asdf :state :reloading))
+
+(defn update
+  "Updates the value in the asdf preserving its current state"
+  [asdf update-fn & args]
+  (assoc asdf :value (apply update-fn (:value asdf) args)))
