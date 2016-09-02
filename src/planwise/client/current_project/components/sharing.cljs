@@ -54,17 +54,23 @@
                                :disabled (not (asdf/valid? @share-link))}
             (common/icon :refresh "icon-medium")]]
 
-         (when (seq (asdf/value @project-shares))
-          [:div.shares
-           [:p (str (utils/pluralize (count (asdf/value @project-shares)) "user has" "users have") " access to this project")]
-           [search-box]
-           [:ul
-            (for [{:keys [user-id user-email]} @filtered-shares]
-             [:li {:key user-id}
-              [:span user-email]
-              [:button.secondary  {:title "Remove access for this user"
-                                   :on-click #(dispatch [:current-project/delete-share user-id])}
-                (common/icon :close "icon-small")]])]])
+         (when (asdf/should-reload? @project-shares)
+          (dispatch [:current-project/load-project-shares]))
+
+         (let [shares (asdf/value @project-shares)
+               shares-valid? (asdf/valid? @project-shares)]
+           (when (seq shares)
+            [:div.shares
+             [:p (str (utils/pluralize (count shares) "user has" "users have") " access to this project")]
+             [search-box]
+             [:ul
+              (for [{:keys [user-id user-email]} @filtered-shares]
+               [:li {:key user-id}
+                [:span user-email]
+                (when shares-valid?
+                 [:button.secondary  {:title "Remove access for this user"
+                                      :on-click #(dispatch [:current-project/delete-share user-id])}
+                   (common/icon :close "icon-small")])])]]))
 
          [:form {:on-submit (utils/prevent-default #(dispatch [:current-project/send-sharing-emails]))}
           [:div.form-control.relative

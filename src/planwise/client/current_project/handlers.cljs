@@ -259,16 +259,29 @@
  :current-project/open-share-dialog
  in-current-project
  (fn [db [_]]
-   ; TODO: Fire a request to update the project shares when opening the dialog to ensure it is up to date
-   ; What happens if the user deletes an item from the list before the request returns? In that case,
-   ; the item that was just deleted will re-appear.
-   (assoc db :view-state :share-dialog)))
+   ; Invalidate the list of shares when opening the share dialog to force a reload
+   (-> db
+     (assoc :view-state :share-dialog)
+     (update :shares asdf/invalidate!))))
 
 (register-handler
  :current-project/close-share-dialog
  in-current-project
  (fn [db [_]]
    (assoc db :view-state :project)))
+
+(register-handler
+ :current-project/load-project-shares
+ in-current-project
+ (fn [db [_]]
+   (api/load-project (db/project-id db) nil #(dispatch [:current-project/project-shares-loaded (:shares %)]))
+   (update db :shares asdf/reload!)))
+
+(register-handler
+ :current-project/project-shares-loaded
+ in-current-project
+ (fn [db [_ data]]
+   (update db :shares asdf/reset! data)))
 
 (register-handler
  :current-project/reset-share-token
@@ -302,17 +315,8 @@
  :current-project/share-deleted
  in-current-project
  (fn [db [_ {:keys [user-id project-id]}]]
-   ; TODO: Should we reload the list if accessed when invalidated?
-   ; If we do so, we risk loading a stale list if:
-   ; 1- The user an item from the list
-   ; 2- We optimistically remove it and issue the delete request
-   ; 3- The request returns from the server and we invalidate the list
-   ; 4- The invalidate triggers a full reload of the list
-   ; 5- The user deletes another item, which is optimistically deleted
-   ; 6- The full reload of the list resolves, adding the item just deleted by the user
-   ; Should we cancel the previous request to reload the shares list?
-   ; Or simply ignore the invalid status of the list?
-   (update db :shares asdf/invalidate! remove-by :user-id user-id)))
+   ; Optimistic update
+   (update db :shares asdf/swap! remove-by :user-id user-id)))
 
 (register-handler
  :current-project/reset-sharing-emails-text
