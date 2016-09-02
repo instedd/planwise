@@ -17,12 +17,11 @@
         regions (subscribe [:regions/list])
         datasets (subscribe [:datasets/list])
         new-project-goal (r/atom "")
-        new-project-region-id (r/atom (:id (first @regions)))
-        new-project-dataset-id (r/atom (:id (first @datasets)))
-        _ (dispatch [:regions/load-regions-with-geo [@new-project-region-id]])
+        new-project-region-id (r/atom nil)
+        new-project-dataset-id (r/atom nil)
         _ (dispatch [:datasets/load-datasets])
-        map-preview-zoom (r/atom 5)
-        map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
+        map-preview-zoom (r/atom 3)
+        map-preview-position (r/atom [-12.211180191503985 21.4453125])]
     (fn []
       (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])
             cancel-fn #(dispatch [:projects/cancel-new-project])
@@ -63,7 +62,7 @@
            :choices @regions
            :label-fn :name
            :filter-box? true
-           :on-change #(do
+           :on-change #(when %
                          (dispatch [:regions/load-regions-with-geo [%]])
                          (reset! new-project-region-id %))
             :model new-project-region-id]
@@ -87,7 +86,8 @@
            {:type "submit"
             :disabled (or (= @view-state :creating)
                           (str/blank? @new-project-goal)
-                          (str/blank? @new-project-dataset-id))}
+                          (str/blank? @new-project-dataset-id)
+                          (str/blank? @new-project-region-id))}
            (if (= @view-state :creating)
              "Creating..."
              "Create")]
