@@ -32,8 +32,8 @@
                               (assoc :facilities project-facilities)))
                           project)]
     (if (:read-only project)
-      project
-      (assoc project :shares (projects/list-project-shares projects (:id project))))))
+      with-extra-data
+      (assoc with-extra-data :shares (projects/list-project-shares projects (:id project))))))
 
 (defn- endpoint-routes
   [{service :projects facilities :facilities, :as services}]
