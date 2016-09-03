@@ -84,10 +84,23 @@ article.datasets {
       right: 10px;
     }
 
-    .dataset-status.warning {
-      cursor: pointer;
-      color: $orange;
-      fill: $orange;
+    .dataset-status {
+      .icon-small {
+        vertical-align: bottom;
+      }
+      &.warning {
+        cursor: pointer;
+        color: $orange;
+        fill: $orange;
+      }
+      &.cancelled {
+        color: $orange;
+        fill: $orange;
+      }
+      &.error {
+        color: $red;
+        fill: $red;
+      }
     }
 
     .popover {

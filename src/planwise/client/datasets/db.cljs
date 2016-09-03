@@ -83,29 +83,6 @@
   (or (= :cancel-requested state)
       (= :import-requested state)))
 
-(defn server-status->string
-  [server-status]
-  (case (:status server-status)
-    (nil :ready :done)
-    "Ready to use"
-
-    :importing
-    (let [progress (:progress server-status)
-          progress (when progress (str " " (format-percentage progress)))]
-      (case (:state server-status)
-        :start "Waiting to start"
-        :importing-types "Importing facility types"
-        (:request-sites :importing-sites) (str "Importing sites from Resourcemap" progress)
-        (:processing-facilities) (str "Pre-processing facilities" progress)
-        (:update-projects :updating-projects) "Updating projects"
-        "Importing..."))
-
-    :cancelling
-    "Cancelling..."
-
-    :unknown
-    "Unknown server status"))
-
 (defn import-progress
   [server-status]
   (case (:status server-status)
@@ -128,17 +105,6 @@
         1))
 
     0))
-
-(defn import-result->string
-  [result]
-  (case result
-    :success "Success"
-    :cancelled "Cancelled"
-    :unexpected-event "Fatal error: unexpected event received"
-    :import-types-failed "Error: failed to import facility types"
-    :import-sites-failed "Error: failed to import sites from Resourcemap"
-    :update-projects-failed "Error: failed to update projects"
-    nil))
 
 (defn server-status->state
   [{status :status}]
