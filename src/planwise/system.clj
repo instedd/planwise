@@ -33,6 +33,7 @@
             [planwise.component.routing :refer [routing-service]]
             [planwise.component.projects :refer [projects-service]]
             [planwise.component.regions :refer [regions-service]]
+            [planwise.component.mailer :refer [mailer-service]]
             [planwise.component.users :refer [users-store]]
             [planwise.component.resmap :refer [resmap-client]]
             [planwise.component.importer :refer [importer]]
@@ -164,6 +165,7 @@
          :db                  (hikaricp (:db config))
 
          :auth                (auth-service (:auth config))
+         :mailer              (mailer-service (:mailer config))
          :facilities          (facilities-service (:facilities config))
          :projects            (projects-service)
          :regions             (regions-service)
@@ -210,7 +212,8 @@
           :facilities          [:db
                                 :runner]
           :projects            [:db
-                                :facilities]
+                                :facilities
+                                :mailer]
           :regions             [:db]
           :routing             [:db]
           :users-store         [:db]

@@ -22,8 +22,10 @@
 (register-handler
  :projects/invalidate-projects
  in-projects
- (fn [db [_]]
-   (update db :list asdf/invalidate!)))
+ (fn [db [_ new-projects]]
+   (if new-projects
+     (update db :list asdf/invalidate! into new-projects)
+     (update db :list asdf/invalidate!))))
 
 (register-handler
  :projects/projects-loaded
@@ -89,6 +91,14 @@
  (fn [db [_ id]]
    (api/delete-project id :projects/project-deleted)
    ;; optimistically delete the project from our list
+   (update db :list asdf/swap! remove-by-id id)))
+
+(register-handler
+ :projects/leave-project
+ in-projects
+ (fn [db [_ id]]
+   (api/leave-project id :projects/project-deleted)
+   ;; optimistically remove the project from our list
    (update db :list asdf/swap! remove-by-id id)))
 
 (register-handler

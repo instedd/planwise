@@ -13,7 +13,9 @@
                 :facilities-capacity 100000
                 :calculate-demand    true}
    :facilities {:raster-isochrones   true}
-   :importer   {:concurrent-workers  2}})
+   :importer   {:concurrent-workers  2}
+   :mailer     {:smtp                nil
+                :sender              "planwise@instedd.org"}})
 
 (def environ
   {:http       {:port                 (some-> env :port Integer.)}
@@ -31,4 +33,10 @@
                 :facilities-capacity  (some-> env :maps-facilities-capacity Integer.)
                 :calculate-demand     (some-> env :calculate-demand (Boolean/valueOf))}
    :facilities {:raster-isochrones    (some-> env :raster-isochrones (Boolean/valueOf))}
-   :importer   {:concurrent-workers   (some-> env :concurrent-workers Integer.)}})
+   :importer   {:concurrent-workers   (some-> env :concurrent-workers Integer.)}
+   :mailer     {:smtp       {:host    (env :smtp-host)
+                             :user    (env :smtp-user)
+                             :pass    (env :smtp-pass)
+                             :ssl     (some-> env :smtp-ssl (Boolean/valueOf))
+                             :port    (some-> env :smtp-port Integer.)}
+                :sender               (env :mailer-sender)}})

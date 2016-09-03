@@ -73,4 +73,5 @@
        (GET "/" [] loading-page)
        (GET "/facilities" [] loading-page)
        (GET "/transport" [] loading-page)
-       (GET "/scenarios" [] loading-page)))))
+       (GET "/scenarios" [] loading-page)
+       (GET "/access/:token" [] loading-page)))))

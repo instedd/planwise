@@ -35,6 +35,7 @@
            :scripts "scripts/"
            :data "data/"}
    :maps {:facilities-capacity 2000000}
+   :mailer {:mock? true}
    :figwheel
    {:css-dirs ["resources/planwise/public/css"
                "target/sass-repl"]

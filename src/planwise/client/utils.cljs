@@ -2,6 +2,7 @@
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as async :refer [chan >! <! put!]]
             [goog.i18n.NumberFormat]
+            [re-frame.core :refer [subscribe dispatch]]
             [goog.string :as gstring]
             [goog.string.format]))
 
@@ -18,6 +19,14 @@
                     (apply partial (cons f args))
                     timeout))))))
 
+;; Dispatching
+
+(defn dispatch-delayed
+  [timeout event]
+  (js/setTimeout
+    #(dispatch event)
+    timeout))
+
 ;; Event handlers
 
 (defn prevent-default [f]
@@ -30,7 +39,16 @@
     #(when (.confirm js/window confirm-msg)
        (f))))
 
-;; Utility functions
+(defn reset-fn [atom]
+  (fn [evt]
+    (reset! atom (-> evt .-target .-value str))))
+
+(defn dispatch-value-fn [event]
+  (fn [js-evt]
+    (dispatch [event (-> js-evt .-target .-value str)])))
+
+
+;; String functions
 
 (defn pluralize
   ([count singular]
@@ -55,6 +73,18 @@
          format-string (str "%." decimals "f%%")]
      (gstring/format format-string percentage))))
 
+;; Collection manipulation
+
 (defn remove-by-id
   [coll id]
   (remove #(= id (:id %)) coll))
+
+(defn remove-by
+  [coll field value]
+  (remove #(= value (field %)) coll))
+
+;; Validation
+
+(defn is-valid-email?
+  [email]
+  (re-matches #"(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}" email))

@@ -1,5 +1,6 @@
 (ns planwise.client.current-project.api
-  (:require [ajax.core :refer [GET POST PUT]]
+  (:require [ajax.core :refer [GET POST PUT DELETE]]
+            [re-frame.utils :as c]
             [planwise.client.api :refer [json-request]]))
 
 
@@ -7,9 +8,13 @@
 
 (defn load-project [id with-data & handlers]
   (let [url (str "/api/projects/" id)
-        params {:id id
-                :with (some-> with-data name)}]
+        params {:with (some-> with-data name)}]
     (GET url (json-request params handlers))))
+
+(defn access-project [id token with-data & handlers]
+  (let [url (str "/api/projects/" id "/access/" token)
+        params {:with (some-> with-data name)}]
+    (POST url (json-request params handlers))))
 
 (defn update-project [project-id filters with-data & handlers]
   (let [url (str "/api/projects/" project-id)
@@ -17,6 +22,23 @@
                 :filters filters
                 :with (some-> with-data name)}]
     (PUT url (json-request params handlers))))
+
+;; Project sharing
+
+(defn reset-share-token [project-id & handlers]
+  (POST
+    (str "/api/projects/" project-id "/token/reset")
+    (json-request {} handlers)))
+
+(defn delete-share [id user-id & handlers]
+  (DELETE
+    (str "/api/projects/" id "/shares/" user-id)
+    (json-request {} handlers)))
+
+(defn send-sharing-emails [id emails & handlers]
+  (POST
+    (str "/api/projects/" id "/share")
+    (json-request {:emails emails} handlers)))
 
 ;; Dataset related APIs
 
@@ -45,4 +67,3 @@
        (merge isochrone-options (process-filters filters))
        handlers
        :mapper-fn (partial merge isochrone-options))))
-

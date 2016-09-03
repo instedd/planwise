@@ -1,10 +1,15 @@
 (ns planwise.component.projects
   (:require [planwise.component.facilities :as facilities]
+            [planwise.boundary.mailer :as mailer]
             [clojure.java.jdbc :as jdbc]
             [com.stuartsierra.component :as component]
             [hugsql.core :as hugsql]
+            [taoensso.timbre :as timbre]
             [clojure.edn :as edn]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [cuerdas.core :refer [<< <<-]]))
+
+(timbre/refer-timbre)
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -32,11 +37,26 @@
       (update :stats pr-str)
       (update :filters pr-str)))
 
+;; Access related functions
+
+(defn owned-by?
+  [project user-id]
+  (= user-id (:owner-id project)))
+
+(defn- view-for-user
+  "Removes sensitive data if the requesting user is not the project owner
+   and adds a read-only flag, or loads project shares if it is the owner."
+  [project requester-user-id]
+  (if (or (nil? requester-user-id) (owned-by? project requester-user-id))
+    project
+    (-> project
+      (dissoc :share-token)
+      (assoc :read-only true))))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defrecord ProjectsService [db facilities])
+(defrecord ProjectsService [db facilities mailer])
 
 (defn projects-service
   "Constructs a Projects service component"
@@ -54,11 +74,16 @@
 
 (defn list-projects-for-user [service user-id]
   (->> (select-projects-for-user (get-db service) {:user-id user-id})
-       (map db->project)))
+       (map db->project)
+       (map #(view-for-user % user-id))))
 
-(defn get-project [service id]
-  (some-> (select-project (get-db service) {:id id})
-          db->project))
+(defn get-project
+ ([service id]
+  (get-project service id nil))
+ ([service id user-id]
+  (some-> (select-project (get-db service) {:id id, :user-id user-id})
+          (db->project)
+          (view-for-user user-id))))
 
 (defn- facilities-criteria
   [project]
@@ -124,11 +149,47 @@
 (defn delete-project [service id]
   (pos? (delete-project* (get-db service) {:id id})))
 
+(defn list-project-shares
+  [service project-id]
+  (list-project-shares* (get-db service) {:project-id project-id}))
 
-(defn owned-by?
-  [project user-id]
-  (= user-id (:owner-id project)))
+(defn create-project-share
+  [service project-id token user-id]
+  (let [project (load-project (get-db service) project-id)]
+    (when (and project (= token (:share-token project)))
+      (create-project-share! (get-db service) {:user-id user-id, :project-id project-id})
+      (view-for-user project user-id))))
 
-(defn accessible-by?
-  [project user-id]
-  (or (owned-by? project user-id)))
+(defn delete-project-share
+  [service project-id user-id]
+  (pos? (delete-project-share* (get-db service) {:user-id user-id, :project-id project-id})))
+
+(defn reset-share-token
+  [service project-id]
+  (:share-token (reset-share-token* (get-db service) {:id project-id})))
+
+(defn- share-url
+  [host project]
+  (str host "/api/projects/" (:id project) "/access/" (:share-token project)))
+
+(defn share-via-email
+  [service project emails {host :host}]
+  (let [project (load-project service project)
+        token   (:share-token project)
+        mailer  (:mailer service)
+        subject (str "Access to PlanWise project " (:goal project))]
+    (doall
+      (for [email emails]
+        (let [body (<<- (<< "Greetings,
+
+                             ~(:owner-email project) has shared the PlanWise project \"~(:goal project)\" with you. Click on the link below to add it to your projects list:
+                             ~(share-url host project)
+
+                             If you do not have a PlanWise account, you will be prompted to create one when you access the link.
+
+                             Regards,
+
+                             PlanWise
+                             "))]
+          (mailer/send-mail mailer {:to email, :subject subject, :body body}))))
+    true))

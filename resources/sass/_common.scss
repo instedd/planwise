@@ -61,6 +61,10 @@ a:hover {
   font-size: 80%;
 }
 
+.relative {
+  position: relative;
+}
+
 .modal {
   position: fixed;
   top: 0;
@@ -229,13 +233,21 @@ button {
     }
   }
 
-  &.cancel, &.delete, &.signout {
+  &.cancel, &.delete, &.secondary, &.signout {
     background-color: transparent;
     color: $gray-text;
     fill: $gray-text;
     font-weight: normal;
     border:none;
     padding: 10px;
+    &:hover {
+      color: $black;
+      fill: $black;
+    }
+    &:disabled {
+      color: $gray2;
+      fill: $gray2;
+    }
   }
 
   &.signout {
@@ -280,10 +292,50 @@ button {
 .icon-small {
   width: 20px;
   height: 20px;
-  vertical-align: text-bottom;
+  vertical-align: text-top;
   margin: 0 2px;
+}
+
+.icon-medium {
+  width: 28px;
+  height: 28px;
+  vertical-align: text-top;
+  margin: 0 2px;
+}
+
+.icon-input-placeholder {
+  width: 20px;
+  height: 20px;
+  vertical-align: text-top;
+  position: absolute;;
+  fill: $gray3;
+  top: 16px;
+  left: 7px;
+}
+
+input {
+  &.error {
+    border: 1px solid $orange;
+    &:focus {
+      outline-color: $orange;
+    }
+  }
+
+  &.with-icon {
+    padding-left: 30px;
+  }
 }
 
 svg > use {
   pointer-events: none;
+}
+
+.small-search-box > input {
+  width: 100%;
+  border-radius: 2px;
+  margin: 5px 0 5px 0;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  border-radius: 12px;
+  border: 1px solid $gray2;
 }

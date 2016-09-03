@@ -39,7 +39,8 @@
         ;; facility-ownerships (subscribe [:current-project/filter-definition :facility-ownership])
         ;; facility-services (subscribe [:current-project/filter-definition :facility-service])
         filters (subscribe [:current-project/facilities :filters])
-        stats (subscribe [:current-project/facilities :stats])]
+        stats (subscribe [:current-project/facilities :stats])
+        read-only? (subscribe [:current-project/read-only?])]
     (fn []
       (let [filter-count (:facilities-targeted @stats)
             filter-total (:facilities-total @stats)
@@ -47,7 +48,9 @@
                              #(dispatch [:current-project/toggle-filter :facilities field %]))]
         [:div.sidebar-filters
          [:div.filter-info
-          [:p "Select the types of facility to include in your analysis. We will use those to calculate the existing coverage."]
+          (if @read-only?
+           [:p "Facilities used to calculate the existing coverage."]
+           [:p "Select the types of facility to include in your analysis. We will use those to calculate the existing coverage."])
           [:p
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
@@ -58,6 +61,7 @@
           (filters/filter-checkboxes
            {:options @facility-types
             :value (:type @filters)
+            :disabled @read-only?
             :toggle-fn (toggle-cons-fn :type)
             :decoration-fn (fn [{colour :colour, :as opt}] [:span.filter-colour {:style {"backgroundColor" colour}}])})
           [:hr]
@@ -80,19 +84,24 @@
               :toggle-fn (toggle-cons-fn :services)})]]))))
 
 (defn- transport-filters []
-  (let [transport-time (subscribe [:current-project/transport-time])]
+  (let [transport-time (subscribe [:current-project/transport-time])
+        read-only? (subscribe [:current-project/read-only?])]
     (fn []
       [:div.sidebar-filters
        [:div.filter-info
-        [:p "Indicate here the acceptable one-way travel time to facilities. We will
-        use that to calculate who already has access to the services that you
-        are analyzing."]]
+        (if @read-only?
+         [:p "Acceptable one-way travel time to facilities, used to calculate who
+         already has access to the services being analyzed."]
+         [:p "Indicate here the acceptable one-way travel time to facilities. We will
+         use that to calculate who already has access to the services that you
+         are analyzing."])]
 
        [:fieldset
         [:legend "By car"]
         [rc/single-dropdown
          :choices (:time db/transport-definitions)
          :label-fn :name
+         :disabled? read-only?
          :on-change #(dispatch [:current-project/set-transport-time %])
          :model transport-time]
         (icon :car)]])))

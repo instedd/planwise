@@ -11,8 +11,11 @@
   (list-projects-for-user [this user-id]
     "Returns projects accessible by the user.")
 
-  (get-project [this id]
-    "Return project with the given ID.")
+  (get-project
+    [this id]
+    [this id user-id]
+    "Return project with the given ID, optionally filtered by access for the
+     specified user id.")
 
   (update-project [this project]
     "Updates a project's attributes. Returns the updated project on success and
@@ -20,7 +23,26 @@
 
   (delete-project [this id]
     "Deletes a project with the given ID. Returns true iff there was a row
-    affected."))
+    affected.")
+
+  (create-project-share [this project-id token user-id]
+    "If the token is valid for the selected project, upserts a new project share
+     for the specified user id, and returns the project. Returns nil otherwise.")
+
+  (delete-project-share [this project-id user-id]
+    "Deletes a project share given the project and grantee ids. Returs true iff
+     there was a share deleted.")
+
+  (list-project-shares [this project-id]
+    "List all project shares for the specified project.")
+
+  (reset-share-token [this project-id]
+    "Updates the project's share token and returns the new value, or nil if no
+     project was found for the specified id.")
+
+  (share-via-email [this project-or-id emails opts]
+    "Sends the project share token via email to the specified recipients.
+     Required options are: `:host`."))
 
 ;; Reference implementation
 
@@ -30,18 +52,28 @@
     (service/create-project service project))
   (list-projects-for-user [service user-id]
     (service/list-projects-for-user service user-id))
-  (get-project [service id]
-    (service/get-project service id))
+  (get-project
+    ([service id]
+     (service/get-project service id))
+    ([service id user-id]
+     (service/get-project service id user-id)))
   (update-project [service project]
     (service/update-project service project))
   (delete-project [service id]
-    (service/delete-project service id)))
+    (service/delete-project service id))
+  (create-project-share [service project-id token user-id]
+    (service/create-project-share service project-id token user-id))
+  (delete-project-share [service project-id user-id]
+    (service/delete-project-share service project-id user-id))
+  (list-project-shares [service project-id]
+    (service/list-project-shares service project-id))
+  (reset-share-token [service id]
+    (service/reset-share-token service id))
+  (share-via-email [service project emails opts]
+    (service/share-via-email service project emails opts)))
+
 
 ;; Additional utility functions
-
-(defn accessible-by?
-  [project user-id]
-  (service/accessible-by? project user-id))
 
 (defn owned-by?
   [project user-id]

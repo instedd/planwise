@@ -1,6 +1,8 @@
 (ns planwise.client.current-project.db
   (:require [schema.core :as s]
             [re-frame.utils :as c]
+            [clojure.string :as string]
+            [planwise.client.asdf :as asdf]
             [planwise.client.mapping :as maps]))
 
 
@@ -31,6 +33,11 @@
   {:facilities-total    s/Num
    :facilities-targeted s/Num})
 
+(s/defschema ProjectShare
+  {:user-id     s/Int
+   :user-email  s/Str
+   :project-id  s/Int})
+
 (s/defschema ProjectData
   {:id                    s/Int
    :goal                  s/Str
@@ -58,21 +65,34 @@
                         :request nil
                         :request-with nil}
 
+   :view-state         :project                   ; [:project :share-dialog]
+
+   :shares             (asdf/new [])              ; [ProjectShare]
+   :sharing            {:emails-text nil
+                        :token (asdf/new "")
+                        :state nil                ; [nil :sending :sent]
+                        :shares-search-string ""}
+
    :project-data       nil})                      ; see ProjectData above
 
 
 ;; Project data manipulation functions
 
 (defn- update-viewmodel-associations
-  [viewmodel {:keys [facilities]}]
-  (if (some? facilities)
-    (assoc-in viewmodel [:facilities :list] facilities)
-    viewmodel))
+  [viewmodel {:keys [facilities shares share-token]}]
+  (as-> viewmodel vm
+    (if (some? facilities)
+      (assoc-in vm [:facilities :list] facilities)
+      vm)
+    (if (some? shares)
+      (update vm :shares asdf/reset! shares)
+      vm)
+    (update-in vm [:sharing :token] asdf/reset! share-token)))
 
 (defn update-viewmodel
   [viewmodel project-data]
   (-> viewmodel
-      (update :project-data merge (dissoc project-data :facilities))
+      (update :project-data merge (dissoc project-data :facilities :shares :share-token))
       (update-viewmodel-associations project-data)))
 
 (defn new-viewmodel
@@ -100,3 +120,11 @@
     (assoc filters
            :dataset-id project-dataset-id
            :region project-region-id)))
+
+(defn show-share-dialog?
+  [view-state]
+  (#{:share-dialog} view-state))
+
+(defn split-emails
+  [text]
+  (filter seq (string/split text #"[,;\s]+")))

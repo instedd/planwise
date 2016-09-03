@@ -25,6 +25,7 @@ $project-sidebar-width: 300px;
     .project-card-content {
       padding: 15px;
       display: inline-block;
+      float: left;
 
       .project-stats {
         .stat {
@@ -44,6 +45,13 @@ $project-sidebar-width: 300px;
         }
       }
 
+      .project-card-footer {
+        clear: both;
+        color: $gray3;
+        fill: $gray3;
+        padding-top: 12px;
+        font-size: 13px;
+      }
     }
 
     h1 {
@@ -60,7 +68,6 @@ $project-sidebar-width: 300px;
 
     .map-preview {
       float: right;
-      height: 144px;
     }
   }
 }
@@ -320,5 +327,62 @@ article.project-view {
 .new-project {
   .leaflet-container {
     margin: 10px -15px;
+  }
+}
+
+$project-share-width: 450px;
+$project-share-user-li-height: 21px;
+$project-share-user-li-padding: 6px;
+$project-share-user-count: 5;
+
+.dialog.share {
+  height: 500px;
+  width: $project-share-width;
+
+  .share-link {
+    width: $project-share-width - 55px;
+    color: $green;
+  }
+
+  .icon-medium {
+    vertical-align: middle;
+  }
+
+  button.primary {
+    width: 160px;
+  }
+
+  .shares {
+    p {
+      font-weight: bold;
+      margin: 10px 0 0 0;
+    }
+
+    ul {
+      list-style: none;
+      padding: 5px 0;
+      margin: 0 0 10px 0;
+      height: $project-share-user-count * (1 + $project-share-user-li-height + 2 * $project-share-user-li-padding);
+      overflow: auto;
+
+      li {
+        height: $project-share-user-li-height;
+        padding: $project-share-user-li-padding 3px;
+        border-bottom: 1px solid $gray1;
+        button {
+          padding: 0;
+          vertical-align: bottom;
+          float: right;
+          visibility: hidden;
+        }
+
+        &:hover {
+          background-color: $gray1;
+          button {
+            visibility: visible;
+          }
+        }
+      }
+    }
   }
 }

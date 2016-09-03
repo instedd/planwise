@@ -6,13 +6,15 @@
             [clojure.string :as str]
             [leaflet.core :refer [map-widget]]
             [planwise.client.mapping :as mapping]
+            [planwise.client.asdf :as asdf]
             [planwise.client.config :as config]
             [planwise.client.styles :as styles]
             [planwise.client.components.common :as common]
             [planwise.client.current-project.api :as api]
             [planwise.client.current-project.db :as db]
             [planwise.client.current-project.components.header :refer [header-section]]
-            [planwise.client.current-project.components.sidebar :refer [sidebar-section]]))
+            [planwise.client.current-project.components.sidebar :refer [sidebar-section]]
+            [planwise.client.current-project.components.sharing :refer [share-dialog]]))
 
 
 (defn geojson-bbox-callback [dataset-id isochrones filters threshold]
@@ -144,16 +146,25 @@
 
 (defn- project-view []
   (let [page-params (subscribe [:page-params])
-        current-project (subscribe [:current-project/current-data])]
+        current-project (subscribe [:current-project/current-data])
+        project-shares (subscribe [:current-project/shares])
+        view-state (subscribe [:current-project/view-state])]
     (fn []
       (let [project-id (:id @page-params)
             selected-tab (:section @page-params)
             project-goal (:goal @current-project)
             project-dataset-id (:dataset-id @current-project)
-            project-region-id (:region-id @current-project)]
+            project-region-id (:region-id @current-project)
+            read-only (:read-only @current-project)
+            share-count (count (asdf/value @project-shares))]
         [:article.project-view
-         [header-section project-id project-goal selected-tab]
-         [project-tab project-id project-dataset-id project-region-id selected-tab]]))))
+         [header-section project-id project-goal selected-tab read-only share-count]
+         [project-tab project-id project-dataset-id project-region-id selected-tab]
+         (when (db/show-share-dialog? @view-state)
+           [common/modal-dialog {:on-backdrop-click
+                                 #(dispatch [:current-project/close-share-dialog])}
+             [share-dialog]])]))))
+
 
 (defn project-page []
   (let [loaded? (subscribe [:current-project/loaded?])]

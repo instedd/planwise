@@ -22,10 +22,14 @@ SELECT
   regions.name AS "region-name",
   regions.total_population AS "region-population",
   regions.max_population AS "region-max-population",
-  owner_id AS "owner-id"
+  projects.owner_id AS "owner-id",
+  owner.email AS "owner-email",
+  projects.share_token AS "share-token"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
-WHERE projects.owner_id = :user-id
+INNER JOIN users AS owner ON projects.owner_id = owner.id
+LEFT JOIN project_shares AS ps ON ps.project_id = projects.id AND ps.user_id = :user-id
+WHERE projects.owner_id = :user-id OR ps.user_id = :user-id
 ORDER BY projects.id ASC;
 
 -- :name select-project :? :1
@@ -42,10 +46,20 @@ SELECT
   regions.total_population AS "region-population",
   regions.max_population AS "region-max-population",
   ST_Area(regions.the_geom::geography) / 1000000 as "region-area-km2",
-  projects.owner_id AS "owner-id"
+  projects.owner_id AS "owner-id",
+  owner.email AS "owner-email",
+  projects.share_token AS "share-token"
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
-WHERE projects.id = :id;
+INNER JOIN users AS owner ON projects.owner_id = owner.id
+WHERE projects.id = :id
+/*~ (if (:user-id params) */
+AND (projects.owner_id = :user-id
+     OR EXISTS (SELECT user_id
+                FROM project_shares AS ps
+                WHERE ps.user_id = :user-id
+                  AND ps.project_id = :id))
+/*~ ) ~*/;
 
 -- :name update-project* :! :n
 /* :require [clojure.string :as string] */
@@ -60,3 +74,28 @@ WHERE projects.id = :project-id;
 -- :name delete-project* :! :n
 DELETE FROM projects
 WHERE projects.id = :id;
+
+-- :name list-project-shares* :?
+SELECT users.email AS "user-email", ps.user_id AS "user-id", ps.project_id AS "project-id"
+FROM project_shares AS ps
+INNER JOIN users ON users.id = ps.user_id
+WHERE ps.project_id = :project-id;
+
+-- :name create-project-share! :! :n
+-- Note we are using postgresql 9.4, which does not yet support ON CONFLICT DO NOTHING
+INSERT INTO project_shares (user_id, project_id)
+SELECT :user-id, :project-id
+WHERE NOT EXISTS (SELECT 1 FROM project_shares
+                  WHERE project_id = :project-id
+                    AND user_id = :user-id);
+
+-- :name delete-project-share* :! :n
+DELETE FROM project_shares
+WHERE project_shares.project_id = :project-id
+  AND project_shares.user_id = :user-id;
+
+-- :name reset-share-token* :<! :1
+UPDATE projects
+SET share_token = gen_random_uuid()
+WHERE id = :id
+RETURNING share_token AS "share-token";

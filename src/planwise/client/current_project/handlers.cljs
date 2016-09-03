@@ -7,7 +7,9 @@
             [planwise.client.current-project.api :as api]
             [planwise.client.current-project.db :as db]
             [planwise.client.mapping :as maps]
-            [planwise.client.styles :as styles]))
+            [planwise.client.styles :as styles]
+            [planwise.client.asdf :as asdf]
+            [planwise.client.utils :refer [remove-by dispatch-delayed]]))
 
 (def in-current-project (path [:current-project]))
 
@@ -45,6 +47,11 @@
     :facilities :facilities
     :transport :facilities-with-demand))
 
+(defn- project-loaded [db project-data]
+  (dispatch [:current-project/fetch-facility-types])
+  (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
+  (db/new-viewmodel project-data))
+
 (register-handler
  :current-project/navigate-project
  in-current-project
@@ -65,6 +72,23 @@
    db/initial-db))
 
 (register-handler
+ :current-project/access-project
+ in-current-project
+ (fn [db [_ project-id token]]
+   (api/access-project project-id token (section->with :demographics)
+                       :current-project/project-access-granted :current-project/not-found)
+   db/initial-db))
+
+(register-handler
+ :current-project/project-access-granted
+ in-current-project
+ (fn [db [_ project-data]]
+   (let [db (project-loaded db project-data)]
+     (dispatch [:projects/invalidate-projects [project-data]])
+     (accountant/navigate! (routes/project-demographics project-data))
+     db)))
+
+(register-handler
  :current-project/not-found
  in-current-project
  (fn [db [_]]
@@ -75,9 +99,7 @@
  :current-project/project-loaded
  in-current-project
   (fn [db [_ project-data]]
-    (dispatch [:current-project/fetch-facility-types])
-    (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
-    (db/new-viewmodel project-data)))
+    (project-loaded db project-data)))
 
 (register-handler
  :current-project/load-facilities
@@ -205,6 +227,16 @@
    ;; clear the current project view model
    db/initial-db))
 
+(register-handler
+ :current-project/leave-project
+ in-current-project
+ (fn [db [_]]
+   (let [id (db/project-id db)]
+     (dispatch [:projects/leave-project id]))
+   (accountant/navigate! (routes/home))
+   ;; clear the current project view model
+   db/initial-db))
+
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers
 
@@ -219,3 +251,99 @@
  in-current-project
  (fn [db [_ new-zoom]]
    (assoc-in db [:map-view :zoom] new-zoom)))
+
+;; ---------------------------------------------------------------------------
+;; Sharing handlers
+
+(register-handler
+ :current-project/open-share-dialog
+ in-current-project
+ (fn [db [_]]
+   ; Invalidate the list of shares when opening the share dialog to force a reload
+   (-> db
+     (assoc :view-state :share-dialog)
+     (update :shares asdf/invalidate!))))
+
+(register-handler
+ :current-project/close-share-dialog
+ in-current-project
+ (fn [db [_]]
+   (assoc db :view-state :project)))
+
+(register-handler
+ :current-project/load-project-shares
+ in-current-project
+ (fn [db [_]]
+   (api/load-project (db/project-id db) nil #(dispatch [:current-project/project-shares-loaded (:shares %)]))
+   (update db :shares asdf/reload!)))
+
+(register-handler
+ :current-project/project-shares-loaded
+ in-current-project
+ (fn [db [_ data]]
+   (update db :shares asdf/reset! data)))
+
+(register-handler
+ :current-project/reset-share-token
+ in-current-project
+ (fn [db [_]]
+   (let [id (db/project-id db)]
+     (api/reset-share-token id :current-project/share-token-loaded)
+     (update-in db [:sharing :token] asdf/reload!))))
+
+(register-handler
+ :current-project/share-token-loaded
+ in-current-project
+ (fn [db [_ {token :token}]]
+   (update-in db [:sharing :token] asdf/reset! token)))
+
+(register-handler
+ :current-project/search-shares
+ in-current-project
+ (fn [db [_ string]]
+   (assoc-in db [:sharing :shares-search-string] string)))
+
+(register-handler
+ :current-project/delete-share
+ in-current-project
+ (fn [db [_ user-id]]
+   (let [project-id (db/project-id db)]
+     (api/delete-share project-id user-id :current-project/share-deleted)
+     (update db :shares asdf/swap! remove-by :user-id user-id))))
+
+(register-handler
+ :current-project/share-deleted
+ in-current-project
+ (fn [db [_ {:keys [user-id project-id]}]]
+   ; Optimistic update
+   (update db :shares asdf/swap! remove-by :user-id user-id)))
+
+(register-handler
+ :current-project/reset-sharing-emails-text
+ in-current-project
+ (fn [db [_ text]]
+   (assoc-in db [:sharing :emails-text] text)))
+
+(register-handler
+ :current-project/send-sharing-emails
+ in-current-project
+ (fn [db [_ text]]
+   (let [emails (db/split-emails (get-in db [:sharing :emails-text]))]
+     (api/send-sharing-emails (db/project-id db) emails :current-project/sharing-emails-sent))
+   (-> db
+     (assoc-in [:sharing :state] :sending))))
+
+(register-handler
+ :current-project/sharing-emails-sent
+ in-current-project
+ (fn [db [_ text]]
+   (dispatch-delayed 3000 [:current-project/clear-sharing-emails-state])
+   (-> db
+     (assoc-in [:sharing :emails-text] "")
+     (assoc-in [:sharing :state] :sent))))
+
+(register-handler
+ :current-project/clear-sharing-emails-state
+ in-current-project
+ (fn [db _]
+   (assoc-in db [:sharing :state] nil)))

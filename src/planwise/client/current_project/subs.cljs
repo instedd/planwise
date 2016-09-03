@@ -1,8 +1,13 @@
 (ns planwise.client.current-project.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub subscribe]]
+            [clojure.string :as string]
+            [goog.string :as gstring]
+            [planwise.client.asdf :as asdf]
+            [planwise.client.routes :as routes]
             [planwise.client.current-project.db :as db]
-            [planwise.client.mapping :as mapping]))
+            [planwise.client.mapping :as mapping]
+            [planwise.client.utils :as utils]))
 
 
 ;; ----------------------------------------------------------------------------
@@ -18,6 +23,42 @@
  :current-project/current-data
  (fn [db [_]]
    (reaction (get-in @db [:current-project :project-data]))))
+
+(register-sub
+ :current-project/read-only?
+ (fn [db [_]]
+   (let [current-data (subscribe [:current-project/current-data])]
+     (reaction (:read-only @current-data)))))
+
+(register-sub
+ :current-project/shares
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :shares]))))
+
+(register-sub
+ :current-project/shares-search-string
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :sharing :shares-search-string]))))
+
+(register-sub
+ :current-project/filtered-shares
+ (fn [db [_]]
+   (let [search-string (subscribe [:current-project/shares-search-string])
+         shares (subscribe [:current-project/shares])]
+     (reaction
+       (filterv #(gstring/caseInsensitiveContains (:user-email %) (or @search-string "")) (asdf/value @shares))))))
+
+(register-sub
+ :current-project/share-link
+ (fn [db [_]]
+   (reaction
+     (let [token (get-in @db [:current-project :sharing :token])
+           project-id (get-in @db [:current-project :project-data :id])]
+       (asdf/update token (fn [t]
+                            (str
+                              (.-origin js/document.location)
+                              (routes/project-access {:id project-id
+                                                      :token t}))))))))
 
 (register-sub
  :current-project/filter-definition
@@ -96,3 +137,18 @@
  (fn [db [_]]
    (let [current-region-id (reaction (get-in @db [:current-project :project-data :region-id]))]
      (reaction (get-in @db [:regions @current-region-id :geojson])))))
+
+(register-sub
+ :current-project/view-state
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :view-state]))))
+
+(register-sub
+ :current-project/sharing-emails-text
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :sharing :emails-text]))))
+
+(register-sub
+ :current-project/sharing-emails-state
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :sharing :state]))))
