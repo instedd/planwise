@@ -38,8 +38,7 @@
          (icon :key-arrow-right "icon-small")])]))
 
 (defn- demographics-filters []
-  (let [current-project (subscribe [:projects/current-data])
-        wizard-mode-on  (subscribe [:projects/wizard-mode-on])]
+  (let [current-project (subscribe [:projects/current-data])]
     (fn []
       (let [population (:region-population @current-project)
             area (:region-area-km2 @current-project)
@@ -55,18 +54,14 @@
            "Demographic data source: "
            [:a {:href "http://www.worldpop.org.uk/" :target "attribution"} "WorldPop"]
            " (Geodata Institute of the University of Southampton) / "
-           [:a {:href "https://creativecommons.org/licenses/by/4.0/" :target "attribution"} "CC BY"]]]
-         (when @wizard-mode-on
-          (next-and-back-buttons :demographics (:id @current-project)))]))))
+           [:a {:href "https://creativecommons.org/licenses/by/4.0/" :target "attribution"} "CC BY"]]]]))))
 
 (defn- facility-filters []
-  (let [current-project (subscribe [:projects/current-data])
-        facility-types (subscribe [:filter-definition :facility-type])
+  (let [facility-types (subscribe [:filter-definition :facility-type])
         facility-ownerships (subscribe [:filter-definition :facility-ownership])
         facility-services (subscribe [:filter-definition :facility-service])
         filters (subscribe [:projects/facilities :filters])
-        filter-stats (subscribe [:projects/facilities :filter-stats])
-        wizard-mode-on  (subscribe [:projects/wizard-mode-on])]
+        filter-stats (subscribe [:projects/facilities :filter-stats])]
     (fn []
       (let [filter-count (:count @filter-stats)
             filter-total (:total @filter-stats)
@@ -100,13 +95,10 @@
              {:options @facility-services
               :value (:services @filters)
               :toggle-fn (toggle-cons-fn :services)})]
-         (when @wizard-mode-on
-           (next-and-back-buttons :facilities (:id @current-project)))]))))
+         ]))))
 
 (defn- transport-filters []
-  (let [current-project (subscribe [:projects/current-data])
-        transport-time (subscribe [:projects/transport-time])
-        wizard-mode-on (subscribe [:projects/wizard-mode-on])]
+  (let [transport-time (subscribe [:projects/transport-time])]
     (fn []
       [:div.sidebar-filters
        [:div.filter-info
@@ -121,15 +113,17 @@
          :label-fn :name
          :on-change #(dispatch [:projects/set-transport-time %])
          :model transport-time]
-        (icon :car)]
-       (when @wizard-mode-on
-         (next-and-back-buttons :transport (:id @current-project)))])))
+        (icon :car)]])))
 
 (defn sidebar-section [selected-tab]
-  [:aside (condp = selected-tab
-           :demographics
-           [demographics-filters]
-           :facilities
-           [facility-filters]
-           :transport
-           [transport-filters])])
+  (let [current-project (subscribe [:projects/current-data])
+        wizard-mode-on (subscribe [:projects/wizard-mode-on])]
+    [:aside (condp = selected-tab
+              :demographics
+              [demographics-filters]
+              :facilities
+              [facility-filters]
+              :transport
+              [transport-filters])
+     (when @wizard-mode-on
+       (next-and-back-buttons selected-tab (:id @current-project)))]))

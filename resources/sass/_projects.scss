@@ -385,49 +385,48 @@ article.project-view {
   }
 }
 
-.sidebar-filters {
-  background-color: $gray1;
+.nav-buttons {
+  margin: 40px auto auto auto;
+  &.both {
+    padding-left: 10px;
+  }
+  &.just-one {
+    width: 50%;
+  }
 
-  .nav-buttons {
-    margin: 40px auto auto auto;
-    &.both {
-      padding-left: 10px;
+  .nav-button {
+    width: 120px;
+    height: 40px;
+    border-radius: 3px;
+    text-align: center;
+    display: inline-block;
+
+    &.next {
+      background-color: #819f51;
+      svg {
+        fill: white;
+      }
     }
-    &.just-one {
-      width: 50%;
+
+    &.prev {
+      svg {
+        fill: $gray4;
+      }
     }
 
-    .nav-button {
-      width: 120px;
-      height: 40px;
-      border-radius: 3px;
-      text-align: center;
-      display: inline-block;
+    .next-button-text {
+      line-height: 40px;
+      color: white;
+    }
 
-      &.next {
-        background-color: #819f51;
-        svg {
-          fill: white;
-        }
-      }
-
-      &.prev {
-        svg {
-          fill: $gray4;
-        }
-      }
-
-      .next-button-text {
-        line-height: 40px;
-        color: white;
-      }
-
-      .prev-button-text {
-        line-height: 40px;
-        color: $gray4;
-      }
+    .prev-button-text {
+      line-height: 40px;
+      color: $gray4;
     }
   }
+}
+.sidebar-filters {
+  background-color: $gray1;
 
   .filter-info {
     background-color: $gray2;
