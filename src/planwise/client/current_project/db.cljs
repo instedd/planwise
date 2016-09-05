@@ -105,7 +105,7 @@
 (defn update-viewmodel
   [viewmodel project-data]
   (-> viewmodel
-      (update :project-data merge (dissoc project-data :facilities :shares :share-token))
+      (update :project-data merge (dissoc project-data :facilities :shares :share-token :is-new?))
       (update-viewmodel-associations project-data)))
 
 (defn new-viewmodel

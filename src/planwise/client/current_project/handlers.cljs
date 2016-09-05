@@ -51,9 +51,12 @@
     :transport :facilities-with-demand))
 
 (defn- project-loaded [db project-data]
-  (dispatch [:current-project/fetch-facility-types])
-  (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
-  (db/new-viewmodel project-data))
+  (let [new-db (db/new-viewmodel project-data)]
+    (dispatch [:current-project/fetch-facility-types])
+    (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
+    (if (:is-new? project-data)
+      (assoc-in new-db [:wizard :set] true)
+      new-db)))
 
 (defn- update-tabs-state [db next-tab]
   (let [tabs (get-in db [:current :wizard :tabs])
