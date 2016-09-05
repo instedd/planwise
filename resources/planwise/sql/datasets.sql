@@ -44,3 +44,10 @@ WHERE datasets.id = :id;
 -- :name delete-dataset! :! :n
 DELETE FROM datasets
 WHERE datasets.id = :id;
+
+-- :name count-accessible-projects-for-dataset :? :1
+SELECT COUNT(*) AS "count"
+FROM projects AS p
+LEFT JOIN project_shares ps ON p.id = ps.project_id
+WHERE p.dataset_id = :dataset-id
+  AND (ps.user_id = :user-id OR p.owner_id = :user-id)

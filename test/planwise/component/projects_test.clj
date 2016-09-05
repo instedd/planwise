@@ -2,13 +2,10 @@
   (:require [planwise.component.projects :as projects]
             [planwise.component.facilities :as facilities]
             [planwise.test-system :refer [test-system with-system]]
+            [planwise.test-utils :refer [sample-polygon]]
             [com.stuartsierra.component :as component]
             [clj-time.core :as time]
-            [clojure.test :refer :all])
-  (:import [org.postgis PGgeometry]))
-
-(defn sample-polygon []
-  (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((1 1, 1 2, 2 2, 2 1, 1 1)))")))
+            [clojure.test :refer :all]))
 
 (def owner-id 1)
 (def project-id 1)

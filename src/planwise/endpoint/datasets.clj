@@ -48,6 +48,16 @@
            status (importer/status importer)]
        (response (add-status-to-datasets sets status))))
 
+   (GET "/:id{[0-9]+}" [id :as request]
+     (let [id (Integer. id)
+           user-id (util/request-user-id request)
+           dataset (datasets/find-dataset datasets id)
+           status (importer/status importer)]
+       (if (or (datasets/owned-by? dataset user-id)
+               (datasets/accessible-by? datasets id user-id))
+         (response (assoc dataset :server-status (get status id)))
+         (not-found {:error "Dataset not found"}))))
+
    (GET "/resourcemap-info" request
      (let [user-ident (util/request-ident request)
            user-id (util/request-user-id request)
