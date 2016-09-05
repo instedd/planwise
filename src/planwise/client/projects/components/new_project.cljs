@@ -1,4 +1,5 @@
 (ns planwise.client.projects.components.new-project
+  (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as r]
             [clojure.string :as str]
@@ -10,7 +11,17 @@
             [planwise.client.components.common :as common]
             [planwise.client.components.dropdown :as dropdown]
             [planwise.client.utils :as utils]
-            [planwise.client.styles :as styles]))
+            [planwise.client.styles :as styles]
+            [planwise.client.datasets.db :refer [dataset->status]]))
+
+(defn- dataset-warning
+  [dataset]
+  (case (dataset->status dataset)
+    :importing "This dataset is still being imported. Your project's data may be incomplete or inconsistent until the process finishes."
+    :cancelled "This dataset import process was cancelled. Your project's data may be incomplete or inconsistent."
+    :unknown   "This dataset status is unknown. Your project's data may be incomplete or inconsistent."
+    :error     "This dataset import process has failed. Your project's data may be incomplete or inconsistent."
+    nil))
 
 (defn new-project-dialog []
   (let [view-state (subscribe [:projects/view-state])
@@ -19,6 +30,8 @@
         new-project-goal (r/atom "")
         new-project-region-id (r/atom nil)
         new-project-dataset-id (r/atom nil)
+        new-project-dataset (reaction (utils/find-by-id (asdf/value @datasets) @new-project-dataset-id))
+        _ (dispatch [:regions/load-regions-with-geo [@new-project-region-id]])
         _ (dispatch [:datasets/load-datasets])
         map-preview-zoom (r/atom 3)
         map-preview-position (r/atom map-preview-position)]
@@ -55,7 +68,9 @@
            :label-fn :name
            :filter-box? true
            :on-change #(reset! new-project-dataset-id %)
-           :model new-project-dataset-id]]
+           :model new-project-dataset-id]
+          (when-let [warning (dataset-warning @new-project-dataset)]
+           [:p.notice warning])]
          [:div.form-control
           [:label "Location"]
           [dropdown/single-dropdown

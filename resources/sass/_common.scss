@@ -152,6 +152,13 @@ a:hover {
       }
     }
   }
+  p.notice {
+    font-style: italic;
+    margin-top: -5px;
+    margin-left: 5px;
+    line-height: 1.2em;
+    color: $gray-text;
+  }
 }
 
 .form-control-2 {

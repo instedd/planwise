@@ -126,3 +126,17 @@
   [new-dataset-data]
   (and (some? (:collection new-dataset-data))
        (some? (:type-field new-dataset-data))))
+
+(defn dataset->status
+  "Returns one of importing, cancelled, success or unknown, based on the dataset server status and import result"
+  [{:keys [server-status import-result], :as dataset}]
+  (when dataset
+    (case (keyword (:status server-status))
+      :importing    :importing
+      :cancelling   :cancelled
+      :unknown      :unknown
+
+      (case (keyword (:result import-result))
+        :cancelled    :cancelled
+        :success      :success
+        :error))))
