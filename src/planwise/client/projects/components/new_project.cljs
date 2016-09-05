@@ -5,7 +5,7 @@
             [leaflet.core :refer [map-widget]]
             [planwise.client.mapping :refer [default-base-tile-layer
                                              static-image
-                                             bbox-center]]
+                                             map-preview-position]]
             [planwise.client.asdf :as asdf]
             [planwise.client.components.common :as common]
             [planwise.client.components.dropdown :as dropdown]
@@ -21,7 +21,7 @@
         new-project-dataset-id (r/atom nil)
         _ (dispatch [:datasets/load-datasets])
         map-preview-zoom (r/atom 3)
-        map-preview-position (r/atom [-12.211180191503985 21.4453125])]
+        map-preview-position (r/atom map-preview-position)]
     (fn []
       (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])
             cancel-fn #(dispatch [:projects/cancel-new-project])

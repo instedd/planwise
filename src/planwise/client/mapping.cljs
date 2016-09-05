@@ -6,6 +6,9 @@
 (def bright-mapbox-mapid "juanedi/cis9iabkx002c31lg5awqyqa8")
 (def mapbox-access-token "pk.eyJ1IjoianVhbmVkaSIsImEiOiJFeVIxckN3In0.502Q6lu_hD-Bu3r9a0jUyw")
 
+(def map-preview-position
+  [-12.211180191503985 21.4453125])
+
 (def map-preview-size
   {:height 158
    :width  256})
