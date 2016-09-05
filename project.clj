@@ -99,7 +99,7 @@
            :source-paths ["src" "prod"]
            :compiler {:output-to "target/cljsbuild/planwise/public/js/main.js"
                       :optimizations :advanced
-                      :externs ["prod/externs.js"]}}}}
+                      :externs ["prod/planwise.externs.js"]}}}}
   :aliases {"run-task"     ["with-profile" "+repl" "run" "-m"]
             "setup"        ["run-task" "dev.tasks/setup"]
             "migrate"      ["run-task" "planwise.tasks.db" "migrate"]
