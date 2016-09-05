@@ -12,7 +12,7 @@
      [:a {:href href}
       (some-> icon (components/icon "icon-small"))
       (when (and wizard-state (> tab-number 1)) [:div.separator])
-      (when (and wizard-state (= wizard-state :visited)) (components/icon :check-circle "icon-small wizard-check"))
+      (when (and wizard-state (= wizard-state :visited)) (components/icon :check-circle-wizard "icon-small wizard-check"))
       (when (and wizard-state (not= wizard-state :visited)) [:div.wizard-number tab-number])
       title]]))
 

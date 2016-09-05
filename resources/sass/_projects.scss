@@ -253,8 +253,10 @@ article.project-view {
         }
 
         .wizard-check {
-          width: 26px;
-          height: 26px;
+          width: 25px;
+          height: 25px;
+
+          vertical-align: middle;
         }
 
         &.unvisited, &.unvisited.active, &.unvisited.active:hover {
