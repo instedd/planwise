@@ -170,7 +170,7 @@
 
 (defn- share-url
   [host project]
-  (str host "/api/projects/" (:id project) "/access/" (:share-token project)))
+  (str host "/projects/" (:id project) "/access/" (:share-token project)))
 
 (defn share-via-email
   [service project emails {host :host}]
