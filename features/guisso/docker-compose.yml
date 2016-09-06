@@ -9,7 +9,7 @@ services:
       - guissodb:/var/lib/mysql
 
   guissoweb:
-    image: instedd/guisso
+    image: instedd/guisso:1.1.1
     environment:
       DATABASE_URL: 'mysql2://root@guissodb/guisso'
       RAILS_CONFIG__action_mailer__smtp_settings__address: smtp
