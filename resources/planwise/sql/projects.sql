@@ -1,6 +1,6 @@
 -- :name insert-project! :<! :1
-INSERT INTO projects (goal, dataset_id, region_id, stats, owner_id)
-    VALUES (:goal, :dataset-id, :region-id, :stats, :owner-id)
+INSERT INTO projects (goal, dataset_id, region_id, stats, owner_id, share_token)
+    VALUES (:goal, :dataset-id, :region-id, :stats, :owner-id, gen_random_uuid())
     RETURNING id;
 
 -- :name select-projects-for-dataset :?
