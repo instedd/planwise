@@ -127,16 +127,53 @@
   (and (some? (:collection new-dataset-data))
        (some? (:type-field new-dataset-data))))
 
-(defn dataset->status
-  "Returns one of importing, cancelled, success or unknown, based on the dataset server status and import result"
-  [{:keys [server-status import-result], :as dataset}]
-  (when dataset
-    (case (keyword (:status server-status))
-      :importing    :importing
-      :cancelling   :cancelled
-      :unknown      :unknown
+(defn dataset->warnings
+  "Returns a map of the warnings yielded in the import result of the dataset"
+  [{import-result :import-result}]
+  (select-keys import-result [:facilities-outside-regions-count
+                              :facilities-without-road-network-count
+                              :sites-without-location-count]))
 
-      (case (keyword (:result import-result))
-        :cancelled    :cancelled
-        :success      :success
-        :error))))
+(defn dataset->status
+  "Returns one of importing, cancelled, success, warn or unknown, based on the dataset server status and import result"
+  [{:keys [server-status import-result], :as dataset}]
+  (let [warnings? (some->> dataset (dataset->warnings) (vals) (apply +) (pos?))]
+    (when dataset
+      (case (keyword (:status server-status))
+        :importing    :importing
+        :cancelling   :cancelled
+        :unknown      :unknown
+
+        (case (keyword (:result import-result))
+          :cancelled    :cancelled
+          :success      (if warnings? :warn :success)
+          :error)))))
+
+(defn dataset->warning-text
+  "Returns a warning text if the dataset status is importing, cancelled, unknown or error"
+  [dataset]
+  (case (dataset->status dataset)
+    :importing "This dataset is still being imported. Your project's data may be incomplete or inconsistent until the process finishes."
+    :cancelled "The import process for this dataset was cancelled. Your project's data may be incomplete or inconsistent."
+    :unknown   "The status for this dataset is unknown. Your project's data may be incomplete or inconsistent."
+    :error     "The import process for this dataset has failed. Your project's data may be incomplete or inconsistent."
+    nil))
+
+(defn dataset->status-icon
+  "Returns a status icon relative to the dataset status"
+  [dataset]
+  (case (dataset->status dataset)
+    (nil :success :importing) :location
+    (:cancelled :warn)        :warning
+    (:error :unknown)         :remove-circle
+    nil))
+
+(defn dataset->status-class
+  "Returns a status class relative to the dataset status"
+  [dataset]
+  (case (dataset->status dataset)
+    (nil :success :importing) nil
+    (:error :unknown)         "error"
+    :warn                     "warning"
+    :cancelled                "cancelled"
+    nil))

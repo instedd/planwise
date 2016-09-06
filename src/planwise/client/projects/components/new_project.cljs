@@ -12,16 +12,7 @@
             [planwise.client.components.dropdown :as dropdown]
             [planwise.client.utils :as utils]
             [planwise.client.styles :as styles]
-            [planwise.client.datasets.db :refer [dataset->status]]))
-
-(defn- dataset-warning
-  [dataset]
-  (case (dataset->status dataset)
-    :importing "This dataset is still being imported. Your project's data may be incomplete or inconsistent until the process finishes."
-    :cancelled "This dataset import process was cancelled. Your project's data may be incomplete or inconsistent."
-    :unknown   "This dataset status is unknown. Your project's data may be incomplete or inconsistent."
-    :error     "This dataset import process has failed. Your project's data may be incomplete or inconsistent."
-    nil))
+            [planwise.client.datasets.db :refer [dataset->status dataset->warning-text dataset->status-icon dataset->status-class]]))
 
 (defn new-project-dialog []
   (let [view-state (subscribe [:projects/view-state])
@@ -69,8 +60,10 @@
            :filter-box? true
            :on-change #(reset! new-project-dataset-id %)
            :model new-project-dataset-id]
-          (when-let [warning (dataset-warning @new-project-dataset)]
-           [:p.notice warning])]
+          (when-let [warning (dataset->warning-text @new-project-dataset)]
+           [:p.notice.dataset-status
+            {:class (dataset->status-class @new-project-dataset)}
+            warning (dataset->status-class @new-project-dataset)])]
          [:div.form-control
           [:label "Location"]
           [dropdown/single-dropdown

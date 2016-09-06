@@ -55,7 +55,8 @@ article.datasets {
   .dataset-card {
     position: relative;
     height: 75px;
-    color: $black;
+    color: $gray-text;
+    fill: $gray-text;
     background: $white;
     margin: 20px;
     padding: 15px;
@@ -73,34 +74,19 @@ article.datasets {
       margin: 0 0 10px;
     }
     p {
-      color: $gray-text;
-      fill: $gray-text;
       margin: 0;
+    }
+
+    .dataset-status {
+      &.warning {
+        cursor: pointer;
+      }
     }
 
     .bottom-right {
       position: absolute;
       bottom: 10px;
       right: 10px;
-    }
-
-    .dataset-status {
-      .icon-small {
-        vertical-align: bottom;
-      }
-      &.warning {
-        cursor: pointer;
-        color: $orange;
-        fill: $orange;
-      }
-      &.cancelled {
-        color: $orange;
-        fill: $orange;
-      }
-      &.error {
-        color: $red;
-        fill: $red;
-      }
     }
 
     .popover {
@@ -156,5 +142,23 @@ article.datasets {
     padding: 10px 0 0 0;
     max-height: 350px;
     overflow: auto;
+  }
+}
+
+.dataset-status {
+  .icon-small {
+    vertical-align: bottom;
+  }
+  &.warning {
+    color: $orange;
+    fill: $orange;
+  }
+  &.cancelled {
+    color: $orange;
+    fill: $orange;
+  }
+  &.error {
+    color: $red;
+    fill: $red;
   }
 }

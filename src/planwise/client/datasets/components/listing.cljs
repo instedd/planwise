@@ -81,28 +81,13 @@
     (import-result->string result warnings-count)
     (server-status->string server-status)))
 
-(defn- import-result->icon
-  [result warnings-count]
-  (case result
-    (nil :success) (if (pos? warnings-count) :warning :location)
-    :cancelled     :cross-circle
-    :error))
-
-(defn- import-result->class
-  [result warnings-count]
-  (case result
-    :success   (when (pos? warnings-count) "warning")
-    :cancelled "cancelled"
-    nil        nil
-    "error"))
-
 (defn dataset-card
   [dataset]
   (let [showing-warnings? (r/atom false)]
     (fn [{:keys [id name description facility-count project-count server-status import-result] :as dataset}]
-      (let [state (db/server-status->state server-status)
-            importing? (db/dataset-importing? state)
-            cancelling? (db/dataset-cancelling? state)
+      (let [server-state (db/server-status->state server-status)
+            importing? (db/dataset-importing? server-state)
+            cancelling? (db/dataset-cancelling? server-state)
             result (keyword (:result import-result))
             {no-regions :facilities-outside-regions-count
              no-road-network :facilities-without-road-network-count
@@ -115,10 +100,10 @@
           :showing? showing-warnings?
           :position :below-left
           :anchor [:p.dataset-status
-                   {:class (import-result->class result warnings-count)
+                   {:class (db/dataset->status-class dataset)
                     :on-mouse-over (handler-fn (reset! showing-warnings? (pos? warnings-count)))
                     :on-mouse-out (handler-fn (reset! showing-warnings? false))}
-                   [common/icon (import-result->icon result warnings-count) "icon-small"]
+                   [common/icon (db/dataset->status-icon dataset) "icon-small"]
                    (utils/pluralize facility-count "facility" "facilities")
                    (when-let [status (status-string server-status result warnings-count)]
                     (str " (" status ")"))]
