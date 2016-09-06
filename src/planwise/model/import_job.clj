@@ -101,7 +101,7 @@
   (let [page (:page job)
         facility-ids (:facility-ids job)
         facility-count (count facility-ids)
-        [_ _ [_ page-ids total-pages sites-without-location]] event
+        [_ _ [_ page-ids total-pages sites-without-location sites-without-type]] event
         page-ids (filter some? page-ids)
         total-pages (or total-pages (:page-count job))]
     (-> (complete-task job event)
@@ -109,7 +109,8 @@
                :page-count total-pages
                :facility-ids (into facility-ids page-ids)
                :facility-count (+ facility-count (count page-ids)))
-        (update :sites-without-location-count + (count sites-without-location)))))
+        (update :sites-without-location-count + (count sites-without-location))
+        (update :sites-without-type-count + (count sites-without-type)))))
 
 (defn import-sites-failed
   [job event & _]
@@ -219,6 +220,7 @@
    :result         nil
    :last-event     nil
    :sites-without-location-count          0
+   :sites-without-type-count              0
    :facilities-without-road-network-count 0
    :facilities-outside-regions-count      0})
 
@@ -308,6 +310,7 @@
 (defn job-stats
   [job]
   (select-keys (:value job) [:sites-without-location-count
+                             :sites-without-type-count
                              :facilities-without-road-network-count
                              :facilities-outside-regions-count]))
 
