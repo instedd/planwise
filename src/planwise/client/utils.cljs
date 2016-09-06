@@ -4,6 +4,7 @@
             [goog.i18n.NumberFormat]
             [re-frame.core :refer [subscribe dispatch]]
             [goog.string :as gstring]
+            [clojure.string :as cstring]
             [goog.string.format]))
 
 ;; Debounce functions
@@ -72,6 +73,11 @@
          percentage (* 100 x)
          format-string (str "%." decimals "f%%")]
      (gstring/format format-string percentage))))
+
+; Copied from https://github.com/teropa/hiccups/blob/master/src/cljs/hiccups/runtime.cljs#L30-L34
+(defn escape-html
+  [text]
+  (cstring/escape text {\& "&amp;", \< "&lt;", \> "&gt;", \" "&quot;"}))
 
 ;; Collection manipulation
 
