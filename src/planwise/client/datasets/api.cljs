@@ -23,6 +23,11 @@
   (GET "/api/datasets"
       (json-request {} handlers :mapper-fn (partial map map-dataset))))
 
+(defn load-dataset
+  [dataset-id & handlers]
+  (GET (str "/api/datasets/" dataset-id)
+      (json-request {} handlers :mapper-fn map-dataset)))
+
 (defn load-resourcemap-info
   [& handlers]
   (GET "/api/datasets/resourcemap-info"

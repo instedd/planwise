@@ -3,7 +3,19 @@
             [planwise.client.components.common :as common]
             [planwise.client.utils :as utils]
             [planwise.client.components.nav :as nav]
-            [planwise.client.routes :as routes]))
+            [planwise.client.routes :as routes]
+            [planwise.client.asdf :as asdf]
+            [re-frame.utils :as c]
+            [planwise.client.datasets.db :refer [dataset->warning-text]]))
+
+(defn- dataset-status []
+  (let [dataset-sub (subscribe [:current-project/dataset])]
+    (fn []
+      (when (asdf/should-reload? @dataset-sub)
+        (dispatch [:current-project/load-dataset]))
+      (when-let [warning (dataset->warning-text (asdf/value @dataset-sub))]
+        [:span {:title warning} warning]))))
+
 
 (defn project-tab-items [project-id]
   (let [route-params {:id project-id}]
@@ -25,7 +37,9 @@
 
 (defn header-section [project-id project-goal selected-tab read-only share-count]
   [:div.project-header
-   [:h2 project-goal]
+   [:div.title
+    [:h2 project-goal]
+    [dataset-status]]
    [:nav
     [nav/ul-menu (project-tab-items project-id) selected-tab]
     (if read-only
