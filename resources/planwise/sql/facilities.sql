@@ -79,6 +79,15 @@ RETURNING id;
 -- :name calculate-facility-isochrones! :<!
 SELECT process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer) AS result;
 
+-- :name select-unprocessed-facilities-ids :?
+SELECT id
+FROM facilities
+WHERE processing_status IS NULL;
+
+-- :name clear-facilities-processed-status* :!
+UPDATE facilities
+SET processing_status = NULL;
+
 -- :name select-facilities-polygons-regions-for-facility :?
 SELECT fpr.facility_polygon_id AS "facility-polygon-id",
        fpr.region_id AS "region-id",
