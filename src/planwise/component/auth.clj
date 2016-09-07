@@ -7,6 +7,7 @@
             [clojure.string :as str]
             [buddy.sign.jwt :as jwt]
             [oauthentic.core :as oauth]
+            [slingshot.slingshot :refer [try+ throw+]]
             [planwise.util.ring :refer [absolute-url]]
             [planwise.model.ident :as ident]
             [planwise.component.users :as users]
@@ -140,24 +141,34 @@
    :token (:access-token guisso-resp)
    :refresh-token (:refresh-token guisso-resp)})
 
+(defn- fetch-token-from-guisso
+  "Performs an OAuth2 token request to Guisso using the service configuration
+  and catching possible invalid grant errors and returning nil in such cases."
+  [service params]
+  (try+
+   (let [url (guisso-url service "/oauth2/token")
+         params (assoc params
+                       :client-id (:guisso-client-id service)
+                       :client-secret (:guisso-client-secret service))]
+     (-> (oauth/fetch-token url params)
+         (guisso-response->token-info)))
+   (catch [:status 400] {body :body}
+     ;; this should happen on invalid grants
+     (warn (str "Received a 400 from the OAuth server: " body))
+     nil)
+   (catch Object _
+     (error (:throwable &throw-context) "unexpected error")
+     (throw+))))
+
 (defn oauth2-fetch-token
   [service auth-code return-url]
   (info "Fetching OAuth2 token")
-  (-> (oauth/fetch-token (guisso-url service "/oauth2/token")
-                         {:client-id (:guisso-client-id service)
-                          :client-secret (:guisso-client-secret service)
-                          :redirect-uri return-url
-                          :code auth-code})
-      (guisso-response->token-info)))
+  (fetch-token-from-guisso service {:redirect-uri return-url :code auth-code}))
 
 (defn oauth2-refresh-token
   [service refresh-token]
   (info "Refreshing OAuth2 token")
-  (-> (oauth/fetch-token (guisso-url service "/oauth2/token")
-                         {:client-id (:guisso-client-id service)
-                          :client-secret (:guisso-client-secret service)
-                          :refresh-token refresh-token})
-      (guisso-response->token-info)))
+  (fetch-token-from-guisso  service {:refresh-token refresh-token}))
 
 (defn token-expired?
   [{expires :expires :as token}]
