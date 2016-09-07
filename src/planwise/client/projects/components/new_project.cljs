@@ -63,7 +63,7 @@
           (when-let [warning (dataset->warning-text @new-project-dataset)]
            [:p.notice.dataset-status
             {:class (dataset->status-class @new-project-dataset)}
-            warning (dataset->status-class @new-project-dataset)])]
+            warning])]
          [:div.form-control
           [:label "Location"]
           [dropdown/single-dropdown
