@@ -15,4 +15,9 @@ class DatasetsPage < SitePrism::Page
   def wait_for_submit
     sleep 0.5
   end
+
+  def press_delete_dataset_button
+    page.find(".dataset-card").click
+    page.find(".delete").click
+  end
 end

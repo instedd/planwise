@@ -23,4 +23,14 @@ describe "Dataset" do
       expect(page).to have_content 'Ready to use'
     end 
   end
+
+  it "should delete dataset" do
+    create_dataset
+    goto_page DatasetsPage do |page|
+      page.press_delete_dataset_button
+      accept_alert
+      expect(page).to_not have_content 'Ready to use'
+      expect(page).to have_content 'You have no datasets yet'
+    end
+  end
 end
