@@ -5,6 +5,7 @@
             [re-frame.utils :as c]
             [clojure.string :as str]
             [leaflet.core :refer [map-widget]]
+            [planwise.client.utils :as utils]
             [planwise.client.mapping :as mapping]
             [planwise.client.asdf :as asdf]
             [planwise.client.config :as config]
@@ -42,9 +43,9 @@
 
 (defn marker-popup [{:keys [name type processing-status], :as marker}]
   (str
-    "<b>" name "</b>"
+    "<b>" (utils/escape-html name) "</b>"
     "<br/>"
-    type
+    (utils/escape-html type)
     (when (= "no-road-network" processing-status)
       (str
         "<br/>" "<br/>"
