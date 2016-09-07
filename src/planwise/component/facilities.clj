@@ -120,7 +120,10 @@
           nil)))))
 
 (defn preprocess-isochrones
-  [service facility-id]
+ ([service]
+  (let [ids (map :id (select-unprocessed-facilities-ids (get-db service)))]
+    (doall (mapv (partial preprocess-isochrones service) ids))))
+ ([service facility-id]
   (let [[{result :result}] (calculate-facility-isochrones! (get-db service)
                                                            {:id facility-id
                                                             :method "alpha-shape"
@@ -131,4 +134,8 @@
     (when (get-in service [:config :raster-isochrones])
       (calculate-isochrones-population! service facility-id)
       (raster-isochrones! service facility-id))
-    (keyword result)))
+    (keyword result))))
+
+(defn clear-facilities-processed-status!
+  [service]
+  (clear-facilities-processed-status* (get-db service)))
