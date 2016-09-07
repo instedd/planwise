@@ -83,7 +83,7 @@
 
 (defn find-by-id
   [coll id]
-  (first (filter #(= id (:id %)) coll)))
+  (reduce #(when (= id (:id %2)) (reduced %2)) nil coll))
 
 (defn remove-by-id
   [coll id]
