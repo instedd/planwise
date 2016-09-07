@@ -22,17 +22,48 @@ module FeatureSpecHelpers
   end
 
   def create_project(name)
-    expect_page HomePage do |page|  
+    goto_page HomePage do |page|  
       page.press_primary_button 
       fill_in  "goal", :with => "#{name}"
+      expand_options
+      select_option(1)
       expand_locations_options
       select_location(1)
       submit
     end 
   end
 
+  def create_dataset
+    goto_page DatasetsPage do |page|
+      page.press_primary_button 
+
+      new_window = window_opened_by { 
+        page.authorise.click
+      }
+
+      within_window new_window do
+        click_button 'Approve'
+      end
+
+      page.find(".collections li").click
+      expand_options
+      select_option(1)
+      page.import.click
+      sleep 3
+      expect(page).to have_content 'Ready to use'
+    end
+  end
+
+  def expand_options
+    page.all(".rc-dropdown b")[0].click
+  end
+
+  def select_option(option)
+    page.find(".chosen-drop li:nth-child(#{option})").click
+  end
+
   def expand_locations_options
-    page.find(".rc-dropdown b").click
+    page.all(".rc-dropdown b")[1].click
   end
 
   def select_location(option)
