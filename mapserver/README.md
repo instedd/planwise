@@ -40,7 +40,7 @@ Mapserver can also be installed locally on OSX, via `brew install mapserver`. If
 
 ## Main data
 
-Download geotiff files form [worldpop.org.uk](http://www.worldpop.org.uk/data/get_data/) and place the in the `data` folder.
+Download geotiff files form [worldpop.org.uk](http://www.worldpop.org.uk/data/get_data/) and place them in the `data` folder.
 
 ### Optimisations
 
@@ -65,7 +65,7 @@ The generation of a map may be tested using the `mapserv` utility [directly](htt
 
 `$ mapserv -nh "QUERY_STRING=map=planwise.map&mode=map" > test.png`
 
-This can be run both from inside the docker container or the locally installed mapserver. Just set the full path to `kenya.map` on the query string if needed, and ensure the data file is reachable.
+This can be run both from inside the docker container or the locally installed mapserver. Just set the full path to `planwise.map` on the query string if needed, and ensure the data file is reachable.
 
 ## References
 
