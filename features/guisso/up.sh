@@ -7,4 +7,5 @@ docker-compose -f "${0%/*}/docker-compose.yml" run --rm guissoweb rake db:setup
 docker-compose -f "${0%/*}/docker-compose.yml" run --rm guissoweb bash -c 'echo "InsteddTelemetry::Setting.set_all({disable_upload: true, dismissed: true, installation_info_synced: false})" | rails console'
 # create default admin
 ${0%/*}/create-admin.sh admin@instedd.org admin123
+${0%/*}/create-admin.sh user@instedd.org user1234
 docker-compose -f "${0%/*}/docker-compose.yml" up -d
