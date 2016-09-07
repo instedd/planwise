@@ -12,7 +12,9 @@
             [planwise.client.components.dropdown :as dropdown]
             [planwise.client.utils :as utils]
             [planwise.client.styles :as styles]
-            [planwise.client.datasets.db :refer [dataset->status dataset->warning-text dataset->status-icon dataset->status-class]]))
+            [planwise.client.datasets.db :refer [dataset->status]]
+            [planwise.client.datasets.components.status-helpers :refer [dataset->warning-text
+                                                                        dataset->status-class]]))
 
 (defn new-project-dialog []
   (let [view-state (subscribe [:projects/view-state])

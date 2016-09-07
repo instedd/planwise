@@ -8,6 +8,8 @@
             [planwise.client.components.common :as common]
             [planwise.client.components.progress-bar :as progress-bar]
             [planwise.client.datasets.db :as db]
+            [planwise.client.datasets.components.status-helpers :refer [dataset->status-class
+                                                                        dataset->status-icon]]
             [planwise.client.utils :refer [format-percentage]]
             [re-frame.utils :as c]))
 
@@ -100,10 +102,10 @@
           :showing? showing-warnings?
           :position :below-left
           :anchor [:p.dataset-status
-                   {:class (db/dataset->status-class dataset)
+                   {:class (dataset->status-class dataset)
                     :on-mouse-over (handler-fn (reset! showing-warnings? (pos? warnings-count)))
                     :on-mouse-out (handler-fn (reset! showing-warnings? false))}
-                   [common/icon (db/dataset->status-icon dataset) "icon-small"]
+                   [common/icon (dataset->status-icon dataset) "icon-small"]
                    (utils/pluralize facility-count "facility" "facilities")
                    (when-let [status (status-string server-status result warnings-count)]
                     (str " (" status ")"))]
