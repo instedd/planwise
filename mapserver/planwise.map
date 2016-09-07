@@ -100,48 +100,40 @@ MAP
     # IMPORTANT!
     # Class definitions should be kept in sync with the map's legend stylesheet
     CLASS
-      NAME "lt5"
-      EXPRESSION ([pixel] < 5)
+      NAME "c1"
+      EXPRESSION ([pixel] < 2)
       STYLE
-        COLOR 255 200 0
+        COLOR 255 220 0
       END
     END
 
     CLASS
-      NAME "lt20"
-      EXPRESSION ([pixel] < 20)
-      STYLE
-        COLOR 255 199 0
-      END
-    END
-
-    CLASS
-      NAME "lt50"
-      EXPRESSION ([pixel] < 50)
+      NAME "c2"
+      EXPRESSION ([pixel] < 7)
       STYLE
         COLOR 255 193 0
       END
     END
 
     CLASS
-      NAME "lt100"
-      EXPRESSION ([pixel] < 100)
+      NAME "c3"
+      EXPRESSION ([pixel] < 64)
       STYLE
-        COLOR 255 170 0
+        COLOR 255 173 0
       END
     END
 
     CLASS
-      NAME "lt150"
-      EXPRESSION ([pixel] < 150)
+      NAME "c4"
+      EXPRESSION ([pixel] < 254)
       STYLE
         COLOR 255 133 0
       END
     END
 
     CLASS
-      NAME "geq150"
-      EXPRESSION ([pixel] >= 150)
+      NAME "c5"
+      EXPRESSION ([pixel] >= 255)
       STYLE
         COLOR 255 8 0
       END
