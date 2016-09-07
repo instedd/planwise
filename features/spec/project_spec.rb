@@ -1,6 +1,7 @@
 describe "Project" do
   before(:each) {
     log_in
+    create_dataset
     create_project("Foo")
   }
 
@@ -31,4 +32,18 @@ describe "Project" do
     end
   end
 
-end
+  it "should access only allowed projects" do
+    goto_page HomePage do |page|
+      page.press_signout_button
+      expect_page GuissoLogin do |page|
+        page.form.user_name.set "user@instedd.org"
+        page.form.password.set "user1234"
+        page.form.login.click
+      end
+      expect_page HomePage do |page|
+        expect(page).to_not have_content("Foo")
+        expect(page).to have_content("You have no projects yet")
+      end
+    end  
+  end
+end 
