@@ -117,7 +117,8 @@
  (fn [db [_ field]]
    (let [map-view (reaction (get-in @db [:current-project :map-view]))
          current-region-id (reaction (get-in @db [:current-project :project-data :region-id]))
-         current-region-max-population (reaction (get-in @db [:current-project :project-data :region-max-population]))
+         current-region-raster-max-value (reaction (get-in @db [:current-project :project-data :region-max-population]))
+         current-region-raster-pixel-area (reaction (get-in @db [:current-project :project-data :region-raster-pixel-area]))
          current-region (reaction (get-in @db [:regions @current-region-id]))]
      (reaction
        (case field
@@ -130,7 +131,8 @@
                  (+ 4 (:admin-level @current-region))
                  (:zoom db/initial-position-and-zoom))
          :bbox (:bbox @current-region)
-         :legend-max @current-region-max-population)))))
+         :pixel-max-value @current-region-raster-max-value
+         :pixel-area-m2 @current-region-raster-pixel-area)))))
 
 (register-sub
  :current-project/map-geojson

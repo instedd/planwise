@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION apply_traffic_factor(factor float)
 RETURNS void AS $$
 BEGIN
 UPDATE ways
-SET cost_s = length_m / (maxspeed_forward * 5 / 18) * factor;
+SET cost_s = length_m / (maxspeed_forward * 5.0 / 18) * factor;
 END;
 $$ LANGUAGE plpgsql;
 

@@ -77,7 +77,7 @@ VALUES (:name, :dataset-id)
 RETURNING id;
 
 -- :name calculate-facility-isochrones! :<!
-SELECT process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer) AS result;
+SELECT code, country FROM process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer) AS(code text, country text);
 
 -- :name select-unprocessed-facilities-ids :?
 SELECT id

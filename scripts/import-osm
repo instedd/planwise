@@ -3,13 +3,57 @@ set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
 OSM2PGROUTING=${1:-osm2pgrouting}
+COUNTRY=${2:-}
 
-echo "Downloading Kenya OSM data and importing via osm2pgrouting"
-curl -XGET https://s3.amazonaws.com/planwise/data/kenya-20160627.osm.gz | gunzip > /tmp/kenya.osm
-${OSM2PGROUTING} -f /tmp/kenya.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
+COUNTRIES="
+  kenya-20160627
+  tanzania-20160824
+  ethiopia-20160830
+  nigeria-20160830
+  south-africa-and-lesotho-20160827
+"
 
+if [[ -z $COUNTRY ]]; then
+    echo "Please specify a country from the following list:"
+    for f in $COUNTRIES; do echo ${f%-*}; done
+    exit 1
+fi
+
+FILE=$(for f in $COUNTRIES; do
+           if echo $f | grep "^${COUNTRY}-"; then
+               break
+           fi
+       done)
+
+if [ -z $FILE ]; then
+    echo "Unknown country"
+    exit 1
+fi
+
+if [[ -e /tmp/$COUNTRY.osm ]]
+then
+    echo "File /tmp/$COUNTRY.osm already exists. Will not download again."
+else
+    echo "Downloading OSM data for $COUNTRY and importing via osm2pgrouting"
+    curl -XGET https://s3.amazonaws.com/planwise/data/$FILE.osm.gz | gunzip > /tmp/$COUNTRY.osm
+fi;
+
+
+${OSM2PGROUTING} -f /tmp/$COUNTRY.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
+
+
+# First, popylate the ways_nodes table. Then make up for ways with NULL length_m (caused by
+# bad input data from OSM).
+#
+# When applying the traffic factor we state that the time it takes to traverse a way is 50%
+# more than allowed by the max speeds.
+#
+# If we change this value we might also need to change the bounding buffer used to filter ways
+# before calculating facility isochrones. See `bounding_radius_meters` in the `calculate_isochrones`
+# function.
 echo "Populating ways_nodes table"
 psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
 SELECT populate_ways_nodes();
+UPDATE ways SET length_m = st_length(the_geom::geography) WHERE length_m IS NULL;
 SELECT apply_traffic_factor(1.5);
 SQL_SCRIPT

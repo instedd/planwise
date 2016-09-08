@@ -1,14 +1,14 @@
 (ns planwise.client.projects.components.new-project
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [re-com.core :as rc]
             [reagent.core :as r]
             [clojure.string :as str]
             [leaflet.core :refer [map-widget]]
             [planwise.client.mapping :refer [default-base-tile-layer
                                              static-image
-                                             bbox-center]]
+                                             map-preview-position]]
             [planwise.client.asdf :as asdf]
             [planwise.client.components.common :as common]
+            [planwise.client.components.dropdown :as dropdown]
             [planwise.client.utils :as utils]
             [planwise.client.styles :as styles]))
 
@@ -17,12 +17,11 @@
         regions (subscribe [:regions/list])
         datasets (subscribe [:datasets/list])
         new-project-goal (r/atom "")
-        new-project-region-id (r/atom (:id (first @regions)))
-        new-project-dataset-id (r/atom (:id (first @datasets)))
-        _ (dispatch [:regions/load-regions-with-geo [@new-project-region-id]])
+        new-project-region-id (r/atom nil)
+        new-project-dataset-id (r/atom nil)
         _ (dispatch [:datasets/load-datasets])
-        map-preview-zoom (r/atom 5)
-        map-preview-position (r/atom (bbox-center (:bbox (first @regions))))]
+        map-preview-zoom (r/atom 3)
+        map-preview-position (r/atom map-preview-position)]
     (fn []
       (let [selected-region-geojson (subscribe [:regions/geojson @new-project-region-id])
             cancel-fn #(dispatch [:projects/cancel-new-project])
@@ -51,7 +50,7 @@
                                        (-> % .-target .-value str/triml))}]]
          [:div.form-control
           [:label "Dataset"]
-          [rc/single-dropdown
+          [dropdown/single-dropdown
            :choices (or (asdf/value @datasets) [])
            :label-fn :name
            :filter-box? true
@@ -59,11 +58,12 @@
            :model new-project-dataset-id]]
          [:div.form-control
           [:label "Location"]
-          [rc/single-dropdown
+          [dropdown/single-dropdown
            :choices @regions
            :label-fn :name
+           :render-fn (fn [region] [:div [:span (:name region)] [:span.option-context (:country-name region)]])
            :filter-box? true
-           :on-change #(do
+           :on-change #(when %
                          (dispatch [:regions/load-regions-with-geo [%]])
                          (reset! new-project-region-id %))
             :model new-project-region-id]
@@ -87,7 +87,8 @@
            {:type "submit"
             :disabled (or (= @view-state :creating)
                           (str/blank? @new-project-goal)
-                          (str/blank? @new-project-dataset-id))}
+                          (str/blank? @new-project-dataset-id)
+                          (str/blank? @new-project-region-id))}
            (if (= @view-state :creating)
              "Creating..."
              "Create")]

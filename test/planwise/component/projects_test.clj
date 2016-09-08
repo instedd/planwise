@@ -23,7 +23,7 @@
    [:datasets
     [{:id 1 :name "dataset1" :description "" :owner_id owner-id :collection_id 1 :import_mappings nil}]]
    [:regions
-    [{:id 1 :country "kenya" :name "Kenya" :admin_level 2 :the_geom (sample-polygon) :preview_geom nil :total_population 1000 :max_population 127}]]
+    [{:id 1 :country "kenya" :name "Kenya" :admin_level 2 :the_geom (sample-polygon) :preview_geom nil :total_population 1000 :max_population 127 :raster_pixel_area 950}]]
    [:projects
     [{:id project-id :goal "" :dataset_id 1 :region_id 1 :filters "" :stats "" :owner_id owner-id :share_token project-share-token}]]])
 
@@ -53,6 +53,7 @@
     (let [service (:projects system)
           project (projects/get-project service 1)]
       (is (= 127 (:region-max-population project)))
+      (is (= 950 (:region-raster-pixel-area project)))
       (is (= 1000 (:region-population project)))
       (is (pos? (:region-area-km2 project))))))
 

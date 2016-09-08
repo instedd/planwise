@@ -13,30 +13,21 @@ This will start a mapserver container and a mapcache container, mapped to ports 
 
 ### Structure
 
-Mapcache will receive all tile requests from browser clients in `WMS`. Though mapcache can also accept requests in the more used `TMS` or `gmaps` formats, it only supports _dimensions_ in WMS. The service is configured to accept a `DATAFILE` dimension, which is used to determine the source raster so clients can request a specific unsatisfied demand raster, falling back to `KEN_popmap15_v2b` that contains the original demographics.
+Mapcache will receive all tile requests from browser clients in `WMS`. Though mapcache can also accept requests in the more used `TMS` or `gmaps` formats, it only supports _dimensions_ in WMS. The service is configured to accept a `DATAFILE` dimension, which is used to determine the source raster so clients can request a specific unsatisfied demand raster.
 
 Mapcache will forward all requests to Mapserver in WMS format as well, and cache the requested tiles locally on disk at `/tmp`. Mapserver is configured to respond both in tile mode and `WMS`, and accepts the `DATAFILE` query param to change the source raster.
 
 ### Endpoints
 
-* To query mapcache in WMS format the root URL should be `http://localhost:5002/mapcache`, specifying `kenya` as `LAYER`, and optionally setting `DATAFILE`. For example:
+* To query mapcache in WMS format the root URL should be `http://localhost:5002/mapcache`, specifying `population` as `LAYER`, and setting `DATAFILE`. For example:
 ```
-http://localhost:5002/mapcache?&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=kenya&STYLES=&FORMAT=image%2Fjpeg&TRANSPARENT=true&HEIGHT=256&WIDTH=256&DATAFILE=KEN_popmap15_v2b&SRS=EPSG%3A3857&BBOX=3913575.848201024,-313086.067856082,4070118.882129065,-156543.03392804056
-```
-
-* To query mapcache in gmaps format, which does not support the `DATAFILE` parameter:
-```
-http://localhost:5002/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png
+http://localhost:5002/mapcache?&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=population&STYLES=&FORMAT=image%2Fjpeg&TRANSPARENT=true&HEIGHT=256&WIDTH=256&DATAFILE=KEN_popmap15_v2b&SRS=EPSG%3A3857&BBOX=3913575.848201024,-313086.067856082,4070118.882129065,-156543.03392804056
 ```
 
 *  To bypass mapcache and query mapserver in tile mode:
 ```
-http://localhost:5001/mapserv?map=/etc/mapserver/kenya.map&mode=tile&layers=KenyaPopulation&tile={x}+{y}+{z}
+http://localhost:5001/mapserv?map=/etc/mapserver/planwise.map&mode=tile&layers=Population&datafile=KEN_popmap15_v2b&tile={x}+{y}+{z}
 ```
-
-### Data container
-
-To run on docker cloud, there is a third data container `kenya-data`, which simply exposes a data volume with the population data TIFF file with already generated overviews, and is linked from the mapserver container.
 
 ## Local install
 
@@ -44,7 +35,7 @@ Mapserver can also be installed locally on OSX, via `brew install mapserver`. If
 
 ## Main data
 
-Download Kenya geotiff file `KEN_popmap15_v2b.tif` from [worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group), and place it in the `data` folder.
+Download geotiff files form [worldpop.org.uk](http://www.worldpop.org.uk/data/get_data/) and place them in the `data` folder.
 
 ### Optimisations
 
@@ -67,9 +58,9 @@ python partition.py
 
 The generation of a map may be tested using the `mapserv` utility [directly](http://mapserver.org/ar/cgi/mapserv.html):
 
-`$ mapserv -nh "QUERY_STRING=map=kenya.map&mode=map" > test.png`
+`$ mapserv -nh "QUERY_STRING=map=planwise.map&mode=map" > test.png`
 
-This can be run both from inside the docker container or the locally installed mapserver. Just set the full path to `kenya.map` on the query string if needed, and ensure the data file is reachable.
+This can be run both from inside the docker container or the locally installed mapserver. Just set the full path to `planwise.map` on the query string if needed, and ensure the data file is reachable.
 
 ## References
 

@@ -7,9 +7,8 @@ set -euo pipefail
 
 # FIXME: adapt for normalized population rasters if necessary
 
-
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 FACILITY_POLYGON_ID"
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 FACILITY_POLYGON_ID | $1 COUNTRY"
 	exit 1
 fi
 
@@ -18,10 +17,19 @@ BIN_PATH=${BIN_PATH:-cpp}
 TMP_PATH=${TMP_PATH:-/tmp}
 FACILITY_POLYGON_ID=$1
 
-POPULATION_FILE=${DATA_PATH}/KEN_popmap15_v2b.tif
+if   [[ $2 == "kenya" ]];        then POPULATION_FILE=${DATA_PATH}/KEN_popmap15_v2b.tif
+elif [[ $2 == "tanzania" ]];     then POPULATION_FILE=${DATA_PATH}/TZA_popmap15_v2b.tif
+elif [[ $2 == "ethiopia" ]];     then POPULATION_FILE=${DATA_PATH}/ETH15v5.tif
+elif [[ $2 == "nigeria" ]];      then POPULATION_FILE=${DATA_PATH}/NGA14adjv1.tif
+elif [[ $2 == "south-africa" ]]; then POPULATION_FILE=${DATA_PATH}/ZAF15v4.tif
+else
+    echo "ERROR: Unknown country: $2"
+    exit 1
+fi
+
 if [[ ! -e $POPULATION_FILE ]]; then
-  echo "ERROR: Region population raster ${POPULATION_FILE} not found";
-  exit 1;
+    echo "ERROR: Region population raster ${POPULATION_FILE} not found";
+    exit 1;
 fi;
 
 VRT_TARGET=${TMP_PATH}/${FACILITY_POLYGON_ID}.vrt

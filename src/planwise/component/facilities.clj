@@ -103,14 +103,14 @@
             (get-db service)
             (assoc fpr :population population)))
         (catch Exception e
-          (error e "Error on raster-isochrones for facility" facility-id "polygon" facility-polygon-id "region" region-id)
+          (error e "Error on raster-isochrone for facility" facility-id "polygon" facility-polygon-id "region" region-id)
           nil)))))
 
-(defn calculate-isochrones-population! [service facility-id]
+(defn calculate-isochrones-population! [service facility-id country]
   (let [facilities-polygons (select-facilities-polygons-for-facility (get-db service) {:facility-id facility-id})]
     (doseq [{facility-polygon-id :facility-polygon-id, :as fp} facilities-polygons]
       (try
-        (let [population (-> (run-external (:runner service) :scripts 60000 "isochrone-population" (str facility-polygon-id))
+        (let [population (-> (run-external (:runner service) :scripts 60000 "isochrone-population" (str facility-polygon-id) country)
                              (trim-to-int))]
           (set-facility-polygon-population!
             (get-db service)
@@ -124,17 +124,21 @@
   (let [ids (map :id (select-unprocessed-facilities-ids (get-db service)))]
     (doall (mapv (partial preprocess-isochrones service) ids))))
  ([service facility-id]
-  (let [[{result :result}] (calculate-facility-isochrones! (get-db service)
+  (let [[{code :code country :country}] (calculate-facility-isochrones! (get-db service)
                                                            {:id facility-id
                                                             :method "alpha-shape"
                                                             :start 30
                                                             :end 180
-                                                            :step 15})]
-    (debug (str "Facility " facility-id " isochrone processed with result: " (vec result)))
-    (when (get-in service [:config :raster-isochrones])
-      (calculate-isochrones-population! service facility-id)
+                                                            :step 15})
+        success? (= "ok" code)
+        raster-isochrones? (get-in service [:config :raster-isochrones])]
+
+    (debug (str "Facility " facility-id " isochrone processed with result: " (vec code)))
+    (when (and success? raster-isochrones?)
+      (calculate-isochrones-population! service facility-id country)
       (raster-isochrones! service facility-id))
-    (keyword result))))
+
+    (keyword code))))
 
 (defn clear-facilities-processed-status!
   [service]
