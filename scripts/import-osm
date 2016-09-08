@@ -5,19 +5,28 @@ export PGPASSWORD=$POSTGRES_PASSWORD;
 OSM2PGROUTING=${1:-osm2pgrouting}
 COUNTRY=${2:-}
 
-if [[ -z $COUNTRY ]]
-then
-    echo "Please specify a country (either kenya or tanzania)."
+COUNTRIES="
+  kenya-20160627
+  tanzania-20160824
+  ethiopia-20160830
+  nigeria-20160830
+  south-africa-and-lesotho-20160827
+"
+
+if [[ -z $COUNTRY ]]; then
+    echo "Please specify a country from the following list:"
+    for f in $COUNTRIES; do echo ${f%-*}; done
     exit 1
 fi
 
-if [[ $COUNTRY == "kenya" ]];          then FILE="kenya-20160627"
-elif [[ $COUNTRY == "tanzania" ]];     then FILE="tanzania-20160824"
-elif [[ $COUNTRY == "ethiopia" ]];     then FILE="ethiopia-20160830"
-elif [[ $COUNTRY == "nigeria" ]];      then FILE="nigeria-20160830"
-elif [[ $COUNTRY == "south-africa" ]]; then FILE="south-africa-and-lesotho-20160827"
-else
-    echo "Unkown country."
+FILE=$(for f in $COUNTRIES; do
+           if echo $f | grep "^${COUNTRY}-"; then
+               break
+           fi
+       done)
+
+if [ -z $FILE ]; then
+    echo "Unknown country"
     exit 1
 fi
 

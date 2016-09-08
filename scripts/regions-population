@@ -7,15 +7,16 @@ SCRIPT_PATH=${SCRIPT_PATH:-scripts}
 DATA_PATH=${DATA_PATH:-data}
 
 function base-raster {
-    if   [[ $1 == "kenya" ]];        then echo "KEN_popmap15_v2b.tif"
-    elif [[ $1 == "tanzania" ]];     then echo "TZA_popmap15_v2b.tif"
-    elif [[ $1 == "ethiopia" ]];     then echo "ETH15v5.tif"
-    elif [[ $1 == "nigeria" ]];      then echo "NGA14adjv1.tif"
-    elif [[ $1 == "south-africa" ]]; then echo "ZAF15v4.tif"
-    else
-        echo "Unknown country: $1"
-        exit 1
-    fi
+    case $1 in
+        kenya)        echo KEN_popmap15_v2b.tif;;
+        tanzania)     echo TZA_popmap15_v2b.tif;;
+        ethiopia)     echo ETH15v5.tif;;
+        nigeria)      echo NGA14adjv1.tif;;
+        south-africa) echo ZAF15v4.tif;;
+        *)
+            echo Unknown country $1
+            exit 1
+    esac
 }
 
 # Creates a raster file data/populations/REGIONID.tif with the population values
