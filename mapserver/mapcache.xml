@@ -40,8 +40,6 @@
 
   <!-- Expose both gmaps and tms interfaces for regular leaflet maps,
        and wms for leaflet with support for dimensions -->
-  <service type="gmaps" enabled="true"/>
-  <service type="tms" enabled="true"/>
   <service type="wms" enabled="true"/>
 
   <errors>report</errors>

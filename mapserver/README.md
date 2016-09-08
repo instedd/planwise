@@ -24,14 +24,9 @@ Mapcache will forward all requests to Mapserver in WMS format as well, and cache
 http://localhost:5002/mapcache?&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=population&STYLES=&FORMAT=image%2Fjpeg&TRANSPARENT=true&HEIGHT=256&WIDTH=256&DATAFILE=KEN_popmap15_v2b&SRS=EPSG%3A3857&BBOX=3913575.848201024,-313086.067856082,4070118.882129065,-156543.03392804056
 ```
 
-* To query mapcache in gmaps format, which does not support the `DATAFILE` parameter:
-```
-http://localhost:5002/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png
-```
-
 *  To bypass mapcache and query mapserver in tile mode:
 ```
-http://localhost:5001/mapserv?map=/etc/mapserver/planwise.map&mode=tile&layers=Population&tile={x}+{y}+{z}
+http://localhost:5001/mapserv?map=/etc/mapserver/planwise.map&mode=tile&layers=Population&datafile=KEN_popmap15_v2b&tile={x}+{y}+{z}
 ```
 
 ## Local install
