@@ -43,6 +43,7 @@ module FeatureSpecHelpers
 
       within_window new_window do
         click_button 'Approve'
+        sleep 3
       end
 
       page.find(".collections li").click
