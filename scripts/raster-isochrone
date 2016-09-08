@@ -72,7 +72,7 @@ fi;
 
 # Create facility-polygon-region population vrt to count population
 
-POPULATION_FILE=${DATA_PATH}/populations/${REGION_ID}.tif
+POPULATION_FILE=${DATA_PATH}/populations/data/${REGION_ID}.tif
 if [[ ! -e $POPULATION_FILE ]]; then
   echo "ERROR: Region population raster ${POPULATION_FILE} not found";
   exit 1;

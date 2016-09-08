@@ -35,7 +35,7 @@
 
 (defn- populations-path
   [service & args]
-  (apply data-path service (cons "populations/" args)))
+  (apply data-path service (cons "populations/data/" args)))
 
 (defn- isochrones-path
   [service & args]

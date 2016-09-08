@@ -74,4 +74,4 @@
    given the id of the region"
   [region-id]
   (some->> region-id
-    (str "populations/")))
+    (str "populations/maps/")))
