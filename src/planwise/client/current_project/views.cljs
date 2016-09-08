@@ -65,8 +65,8 @@
         map-position (subscribe [:current-project/map-view :position])
         map-zoom (subscribe [:current-project/map-view :zoom])
         map-bbox (subscribe [:current-project/map-view :bbox])
-        map-legend-max (subscribe [:current-project/map-view :legend-max])
-        map-legend-denominator-m2 (subscribe [:current-project/map-view :legend-denominator-m2])
+        map-pixel-max-value (subscribe [:current-project/map-view :pixel-max-value])
+        map-pixel-area (subscribe [:current-project/map-view :pixel-area-m2])
         demand-map-key (subscribe [:current-project/demand-map-key])
         map-geojson (subscribe [:current-project/map-geojson])
         map-state (subscribe [:current-project/map-state])
@@ -91,8 +91,8 @@
           (let [map-props   {:position @map-position
                              :zoom @map-zoom
                              :min-zoom 5
-                             :legend-max @map-legend-max
-                             :legend-denominator-m2 @map-legend-denominator-m2
+                             :pixel-max-value @map-pixel-max-value
+                             :pixel-area @map-pixel-area
                              :on-position-changed
                              #(dispatch [:current-project/update-position %])
                              :on-zoom-changed

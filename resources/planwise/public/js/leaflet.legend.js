@@ -1,7 +1,7 @@
 // goog.provide("leaflet.control.legend");
 
-var formatNumber = function(n, area) {
-  var nKm2 = (1000000 / area) * n // 1000000 squared meters in 1 squared kilometer
+var legendUpperLabel = function(pixelMaxValue, pixelArea) {
+  var nKm2 = (1000000 / pixelArea) * pixelMaxValue // 1000000 squared meters in 1 squared kilometer
   var millions, thousands;
 
 
@@ -30,7 +30,7 @@ L.Control.Legend = L.Control.extend({
     L.DomUtil.create("div", "", colorBarContainer);
 
     var max = L.DomUtil.create("span", "", content);
-    max.innerText = formatNumber(this.options.legendMax, this.options.legendDenominatorM2);
+    max.innerText = legendUpperLabel(this.options.pixelMaxValue, this.options.pixelArea);
 
     return container;
   }
