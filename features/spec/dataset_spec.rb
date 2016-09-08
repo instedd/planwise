@@ -22,6 +22,9 @@ describe "Dataset" do
       sleep 3
       expect(page).to have_content 'Ready to use'
     end 
+    goto_page HomePage do |page|
+      page.press_signout_button
+    end  
   end
 
   it "should delete dataset" do
