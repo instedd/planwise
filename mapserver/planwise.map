@@ -30,7 +30,6 @@ MAP
       WMS_ENABLE_REQUEST "*"
       WMS_FORMAT "image/png"
       WMS_SRS "EPSG:3857"
-      WMS_ONLINERESOURCE "/mapserv?map=/etc/mapserver/planwise.map&"
     END
   END
 
