@@ -81,7 +81,7 @@
 (defn import-collection-page
   "Request a single page of sites from a Resourcemap collection and import the
   sites as facilities. Returns nil when Resourcemap returns no sites, or
-  [:continue ids] where ids are from the inserted facilities."
+  [:continue result]."
   [{:keys [resmap facilities]} user dataset-id coll-id type-field page]
   (info (str "Dataset " dataset-id ": "
              "Requesting page " page " of collection " coll-id " from Resourcemap"))
@@ -97,7 +97,10 @@
                    "Inserting " (count new-facilities) " facilities from page " page
                    " of collection " coll-id))
         (let [new-ids (facilities/insert-facilities! facilities dataset-id new-facilities)]
-          [:continue new-ids total-pages sites-without-location sites-without-type])))))
+          [:continue {:page-ids new-ids
+                      :total-pages total-pages
+                      :sites-without-location sites-without-location
+                      :sites-without-type sites-without-type}])))))
 
 (defn process-facilities
   [facilities facility-ids]

@@ -101,7 +101,7 @@
   (let [page (:page job)
         facility-ids (:facility-ids job)
         facility-count (count facility-ids)
-        [_ _ [_ page-ids total-pages sites-without-location sites-without-type]] event
+        [_ _ [_ {:keys [page-ids total-pages sites-without-location sites-without-type]}]] event
         page-ids (filter some? page-ids)
         total-pages (or total-pages (:page-count job))]
     (-> (complete-task job event)
@@ -244,9 +244,9 @@
 
    [:importing-sites
     [_ :guard page-number-mismatch?] -> {:action unexpected-event} :error
-    [[_ [:success [:import-sites _] [:continue _ _ _]]]]  -> {:action import-sites-succeeded} :request-sites
-    [[_ [:success [:import-sites _] _]]]                  -> {:action import-sites-succeeded} :update-projects
-    [[_ [:failure [:import-sites _] _]]]                  -> {:action import-sites-failed} :clean-up
+    [[_ [:success [:import-sites _] [:continue _]]]]  -> {:action import-sites-succeeded} :request-sites
+    [[_ [:success [:import-sites _] _]]]              -> {:action import-sites-succeeded} :update-projects
+    [[_ [:failure [:import-sites _] _]]]              -> {:action import-sites-failed} :clean-up
     [[_ :next]]                      -> {:action clear-dispatch} :importing-sites
     [[_ :cancel]]                    -> {:action cancel-import} :cancelling
     [[_ _]]                          -> {:action unexpected-event} :error]
