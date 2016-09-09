@@ -122,8 +122,12 @@
         (icon :car)]])))
 
 (defn sidebar-section [selected-tab]
-  [:aside
-   (case selected-tab
-     :demographics [demographics-filters]
-     :facilities   [facility-filters]
-     :transport    [transport-filters])])
+  (let [current-project (subscribe [:current-project/current-data])
+        wizard-mode-on (subscribe [:projects/wizard-mode-on])]
+    [:aside
+     (case selected-tab
+       :demographics [demographics-filters]
+       :facilities   [facility-filters]
+       :transport    [transport-filters])
+     (when @wizard-mode-on
+       (next-and-back-buttons selected-tab (:id @current-project)))]))
