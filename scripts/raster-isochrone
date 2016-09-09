@@ -64,7 +64,8 @@ IFS="|" read target_minx target_miny target_maxx target_maxy <<< $extent
 if [[ ! -e $TARGET ]]; then
   gdalwarp -q \
     -te $target_minx $target_miny $target_maxx $target_maxy \
-    -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+    -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128"  \
+    -co "NBITS=1" -co "COMPRESS=CCITTFAX4" \
     -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
     -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
     $REGION_FILE $TARGET
