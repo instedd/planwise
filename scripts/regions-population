@@ -35,7 +35,7 @@ for region in $REGIONS; do
 
   TARGET=${DATA_PATH}/populations/${ID}.tif
 
-  if [[ ! -e $TARGET || -z `gdalinfo $TARGET | grep -e POPULATION_SUM -e POPULATION_MAX -e PIXEL_AREA_M2` ]]; then
+  if [[ ! -e $TARGET || "`gdalinfo $TARGET | grep -e POPULATION_SUM -e POPULATION_MAX -e PIXEL_AREA_M2 | wc -l`" -ne 3 ]]; then
     TMP_FILE=${TARGET}-unscaled
 
     echo " Warping population for ${ID}"
