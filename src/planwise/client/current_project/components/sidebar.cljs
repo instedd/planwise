@@ -7,6 +7,7 @@
             [planwise.client.components.filters :as filters]
             [planwise.client.current-project.db :as db]
             [planwise.client.styles :as styles]
+            [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]))
 
 
@@ -40,6 +41,7 @@
         ;; facility-services (subscribe [:current-project/filter-definition :facility-service])
         filters (subscribe [:current-project/facilities :filters])
         stats (subscribe [:current-project/facilities :stats])
+        dataset-sub (subscribe [:current-project/dataset])
         read-only? (subscribe [:current-project/read-only?])]
     (fn []
       (let [filter-count (:facilities-targeted @stats)
@@ -54,7 +56,9 @@
           [:p
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
-           [progress-bar/progress-bar filter-count filter-total]]]
+           [progress-bar/progress-bar filter-count filter-total]]
+          [:div.small.facilities-stats (when-let [dataset (asdf/value @dataset-sub)]
+                                         (str "Facilities from dataset "(:name dataset)))]]
 
          [:fieldset
           [:legend "Type"]
