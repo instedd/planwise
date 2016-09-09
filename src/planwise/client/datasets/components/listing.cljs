@@ -93,8 +93,9 @@
             result (keyword (:result import-result))
             {no-regions :facilities-outside-regions-count
              no-road-network :facilities-without-road-network-count
-             no-location :sites-without-location-count} import-result
-            warnings-count (+ no-regions no-road-network no-location)]
+             no-location :sites-without-location-count
+             no-type :sites-without-type-count} import-result
+            warnings-count (+ no-regions no-road-network no-location no-type)]
         [:div.dataset-card
          [:h1 name]
          [:h2 description]
@@ -118,6 +119,7 @@
                            ; "facility is" "facilities are" "outside the supported regions and will not be visible in any project"
                            ; "facility is" "facilities are" "too far from the closest road and will not be evaluated for coverage"
                            (let [warns [[no-location     "site has no" "sites have no" "location defined in ResourceMap"]
+                                        [no-type         "site has no" "sites have no" "type defined in ResourceMap"]
                                         [no-regions      "facility is" "facilities are" "outside the supported regions"]
                                         [no-road-network "facility is" "facilities are" "too far from the closest road"]]]
                              (for [[[count singular plural description] index] (zipmap warns (range)) :when (pos? count)]

@@ -85,7 +85,8 @@
       ;;
       ;; Import sites stage
       ;;
-      (let [job (reduce fsm/fsm-event initial [:next [:success :import-types :new-types]])]
+      (let [job         (reduce fsm/fsm-event initial [:next [:success :import-types :new-types]])
+            page-result #(merge {:sites-without-location [] :sites-without-type []} %)]
         ;; first page of sites is requested
         (is (= (reduce-job job [:next])
                [:importing-sites [:import-sites 1] nil]))
@@ -93,23 +94,23 @@
         (is (= (reduce-job job [:next [:success [:import-sites 1] [nil [1 2 3] 1]]])
                [:update-projects nil nil]))
         ;; page of sites successfully imported (continue)
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 5 []]]])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids [1 2 3] :total-pages 5})]]])
                [:request-sites nil nil]))
         ;; page report mismatch
         (is (= (reduce-job job [:next [:success [:import-sites 2] [nil [1 2 3] 4]]])
                [:error [:import-sites 1] :unexpected-event]))
         ;; sites page is incremented
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 3 []]] :next])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids [1 2 3] :total-pages 3})]] :next])
                [:importing-sites [:import-sites 2] nil]))
         ;; second page of sites is imported
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue [1 2 3] 1 []]]
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids [1 2 3] :total-pages 1})]]
                                     :next [:success [:import-sites 2] [nil []]]])
                [:update-projects nil nil]))
 
         ;;
         ;; Update projects stage (facilities 1,2 to process)
         ;;
-        (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil [1 2] 1]]])]
+        (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil (page-result {:page-ids [1 2] :total-pages 1})]]])]
           (is (= (reduce-job job [:next])
                  [:updating-projects :update-projects nil]))
           (is (= (reduce-job job [:next [:success :update-projects nil]])

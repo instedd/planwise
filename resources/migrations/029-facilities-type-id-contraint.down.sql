@@ -1,0 +1,1 @@
+ALTER TABLE facilities ALTER COLUMN type_id DROP NOT NULL;

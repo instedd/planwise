@@ -62,26 +62,26 @@
 (defn site->facility-ctor
   "Returns a function to transform a Resourcemap site into a valid Facility
   using the facility type information given."
-  [type-field]
-  (let [facility-type (facility-type-ctor type-field)]
-    (fn [site]
-      (-> site
-          (select-keys [:id :name :lat :long])
-          (rename-keys {:id :site-id :long :lon})
-          (assoc :type-id (facility-type site))))))
+  [facility-type]
+  (fn [site]
+    (-> site
+        (select-keys [:id :name :lat :long])
+        (rename-keys {:id :site-id :long :lon})
+        (assoc :type-id (facility-type site)))))
 
 (defn sites->facilities
   "Filters and transforms a list of Resourcemap sites into a list of facilities
   using the given facility type field definition."
-  [sites type-field]
+  [sites facility-type]
   (->> sites
        (filter with-location)
-       (map (site->facility-ctor type-field))))
+       (filter facility-type)
+       (map (site->facility-ctor facility-type))))
 
 (defn import-collection-page
   "Request a single page of sites from a Resourcemap collection and import the
   sites as facilities. Returns nil when Resourcemap returns no sites, or
-  [:continue ids] where ids are from the inserted facilities."
+  [:continue result]."
   [{:keys [resmap facilities]} user dataset-id coll-id type-field page]
   (info (str "Dataset " dataset-id ": "
              "Requesting page " page " of collection " coll-id " from Resourcemap"))
@@ -89,13 +89,18 @@
         sites (:sites data)
         total-pages (:totalPages data)]
     (when (seq sites)
-      (let [new-facilities (sites->facilities sites type-field)
-            sites-without-location (filter (complement with-location) sites)]
+      (let [facility-type (facility-type-ctor type-field)
+            new-facilities (sites->facilities sites facility-type)
+            sites-without-location (filter (complement with-location) sites)
+            sites-without-type (filter (complement facility-type) sites)]
         (info (str "Dataset " dataset-id ": "
                    "Inserting " (count new-facilities) " facilities from page " page
                    " of collection " coll-id))
         (let [new-ids (facilities/insert-facilities! facilities dataset-id new-facilities)]
-          [:continue new-ids total-pages sites-without-location])))))
+          [:continue {:page-ids new-ids
+                      :total-pages total-pages
+                      :sites-without-location sites-without-location
+                      :sites-without-type sites-without-type}])))))
 
 (defn process-facilities
   [facilities facility-ids]
