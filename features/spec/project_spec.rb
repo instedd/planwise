@@ -3,11 +3,11 @@ describe "Project" do
     log_in
     create_dataset
   }
-    context "with project" do
+    context "projects listing" do
       before(:each) {   
         create_project("Foo")
       }
-  
+
       it "should search project" do
         goto_page HomePage do |page|
           create_project("Bar")  
@@ -21,22 +21,7 @@ describe "Project" do
           page.press_signout_button
         end
       end
-  
-      it "should delete a project" do
-        goto_page HomePage do |page|
-          expect(page).to have_content("Foo")
-          open_project_view
-        end
-        expect_page ProjectPage do |page|
-          page.delete.click
-          accept_alert
-        end
-        expect_page HomePage do |page|
-          expect(page).to_not have_content("Foo")
-          page.press_signout_button
-        end
-      end
-  
+
       it "should access only allowed projects" do
         goto_page HomePage do |page|
           page.press_signout_button
@@ -52,6 +37,45 @@ describe "Project" do
           end
         end  
       end
+    end
+
+    context "project view" do
+      before(:each) {   
+        create_project("Foo")
+      }
+
+      it "should delete a project" do
+        goto_page HomePage do |page|
+          expect(page).to have_content("Foo")
+          open_project_view
+        end
+        expect_page ProjectPage do |page|
+          page.delete.click
+          accept_alert
+        end
+        expect_page HomePage do |page|
+          expect(page).to_not have_content("Foo")
+          page.press_signout_button
+        end
+      end
+
+      it "should update transport means" do
+        goto_page HomePage do |page|
+          open_project_view
+        end
+
+        expect_page ProjectPage do |page|
+          page.header.open_transport_means
+        end
+
+        expect_page ProjectTransportMeansPage do |page|
+          screenshot_and_save_page
+          expand_options
+          select_option(3)
+          screenshot_and_save_page
+          #compare screenshots (wip)
+        end
+      end       
     end
 
     context "without project" do
