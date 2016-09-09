@@ -47,9 +47,9 @@
     (if wizard-mode-on
       (->> tab-items
            (map-indexed (fn [i tab-item]
-                          assoc tab-item
+                          (assoc tab-item
                           :wizard-state ((:item tab-item) wizard-tabs-state)
-                          :tab-number (+ 1 i)))
+                          :tab-number (+ 1 i))))
            (mapv #(dissoc % :icon)))
       tab-items)))
 
