@@ -25,32 +25,41 @@
       (when-let [warning (dataset->warning-text (asdf/value @dataset-sub))]
         [:span {:title warning} warning]))))
 
+(defn project-tab-items [project-id wizard-state]
+  (let [route-params {:id project-id}
+        wizard-mode-on (:set wizard-state)
+        wizard-tabs-state (:tabs wizard-state)
+        tab-items [{:item :demographics
+                    :href (routes/project-demographics route-params)
+                    :title "Demographics"
+                    :icon :demographics}
+                   {:item :facilities
+                    :href (routes/project-facilities route-params)
+                    :title "Facilities"
+                    :icon :location}
+                   {:item :transport
+                    :href (routes/project-transport route-params)
+                    :title "Transport Means"
+                    :icon :transport-means}
+                   #_{:item :scenarios
+                      :href (routes/project-scenarios route-params)
+                      :title "Scenarios"}]]
+    (if wizard-mode-on
+      (->> tab-items
+           (map-indexed (fn [i tab-item]
+                          assoc tab-item
+                          :wizard-state ((:item tab-item) wizard-tabs-state)
+                          :tab-number (+ 1 i)))
+           (mapv #(dissoc % :icon)))
+      tab-items)))
 
-(defn project-tab-items [project-id]
-  (let [route-params {:id project-id}]
-    [{:item :demographics
-      :href (routes/project-demographics route-params)
-      :title "Demographics"
-      :icon :demographics}
-     {:item :facilities
-      :href (routes/project-facilities route-params)
-      :title "Facilities"
-      :icon :location}
-     {:item :transport
-      :href (routes/project-transport route-params)
-      :title "Transport Means"
-      :icon :transport-means}
-     #_{:item :scenarios
-        :href (routes/project-scenarios route-params)
-        :title "Scenarios"}]))
-
-(defn header-section [project-id project-goal selected-tab read-only share-count]
+(defn header-section [project-id project-goal selected-tab read-only share-count wizard-state]
   [:div.project-header
    [:div.title
     [:h2 project-goal]
     [dataset-status]]
    [:nav
-    [nav/ul-menu (project-tab-items project-id) selected-tab]
+    [nav/ul-menu (project-tab-items project-id wizard-state) selected-tab]
     (if read-only
       [:div
        [:button.delete
