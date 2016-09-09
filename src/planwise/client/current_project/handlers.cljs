@@ -64,7 +64,8 @@
                        (map (fn [[tab state]]
                               (if (and (= state :visiting) (not= tab next-tab))
                                 [tab :visited]
-                                [tab state])) tabs))]
+                                [tab state]))
+                            tabs))]
     (assoc-in db [:wizard :tabs] new-tabs)))
 
 (defn- update-next-tab-state [db next-tab]
