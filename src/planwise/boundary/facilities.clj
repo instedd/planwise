@@ -16,6 +16,12 @@
      also provided; for such facilities the isochrones will not be returned,
      yet their id will still be returned.")
 
+  (polygons-in-region
+   [this dataset-id isochrone-options criteria]
+   "Returns the facilities polygons in the criteria's :region, for the facilities
+    that satisfy the specified criteria. Includes fields :facility-polygon-id,
+    :facility-population, :facility-region-population.")
+
   (list-types [this dataset-id]
     "Lists all the facility types in the dataset."))
 
@@ -31,5 +37,7 @@
      (service/list-facilities service dataset-id criteria)))
   (isochrones-in-bbox [service dataset-id isochrone-options facilities-criteria]
     (service/isochrones-in-bbox service dataset-id isochrone-options facilities-criteria))
+  (polygons-in-region [service dataset-id isochrone-options facilities-criteria]
+    (service/polygons-in-region service dataset-id isochrone-options facilities-criteria))
   (list-types [service dataset-id]
     (service/list-types service dataset-id)))
