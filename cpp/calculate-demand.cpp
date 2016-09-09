@@ -130,7 +130,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     double facilityYRes = facilityProjection[5];
     double demoYRes = targetProjection[5];
     assert(std::abs(facilityYRes - demoYRes) < epsilon);
-    assert(facilityMaxY <= demoMaxY);
+    assert(facilityMaxY <= (demoMaxY + epsilon));
     double blocksRow = (demoMaxY - facilityMaxY)/(128 * demoYRes);
     assert(modf(blocksRow, &intPart) < epsilon);
     int blocksRowOffset = round(blocksRow);
@@ -140,7 +140,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     double facilityXRes = facilityProjection[1];
     double demoXRes = targetProjection[1];
     assert(std::abs(facilityXRes - demoXRes) < epsilon);
-    assert(demoMinX <= facilityMinX);
+    assert(demoMinX <= (facilityMinX + epsilon));
     double blocksCol = (facilityMinX - demoMinX)/(128 * demoXRes);
     assert(modf(blocksCol, &intPart) < epsilon);
     int blocksColOffset = round(blocksCol);
