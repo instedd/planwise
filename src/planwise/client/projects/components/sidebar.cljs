@@ -28,11 +28,11 @@
         next (second (drop-while #(not= tab-name %) tabs))
         back (last (take-while #(not= tab-name %) tabs))]
     [:div.nav-buttons {:class (if (and has-back? has-next?) "both" "just-one")}
-      (if has-back?
+      (when has-back?
         [:div.nav-button.prev {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
          (icon :key-arrow-left "icon-small")
          [:span.prev-button-text "Prev"]])
-      (if has-next?
+      (when has-next?
         [:div.nav-button.next {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
          [:span.next-button-text "Next"]
          (icon :key-arrow-right "icon-small")])]))
