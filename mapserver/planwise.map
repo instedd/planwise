@@ -75,8 +75,8 @@ MAP
     # one that leave it always visible
     STATUS DEFAULT
 
-    # FastCGI support disabled
-    # PROCESSING "CLOSE_CONNECTION=DEFER"
+    # FastCGI support enabled
+    PROCESSING "CLOSE_CONNECTION=DEFER"
 
     # Scale experimenting
     #PROCESSING "SCALE=0,10"

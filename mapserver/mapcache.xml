@@ -14,7 +14,7 @@
     </http>
     <getmap>
       <params>
-        <map>/etc/mapserver/planwise.map</map>
+        <map>/etc/mapserver/mapserver.map</map>
         <layers>Population</layers>
         <format>image/png</format>
       </params>

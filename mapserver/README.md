@@ -26,7 +26,7 @@ http://localhost:5002/mapcache?&SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=
 
 *  To bypass mapcache and query mapserver in tile mode:
 ```
-http://localhost:5001/mapserv?map=/etc/mapserver/planwise.map&mode=tile&layers=Population&datafile=KEN_popmap15_v2b&tile={x}+{y}+{z}
+http://localhost:5001/mapserv?map=/etc/mapserver/mapserver.map&mode=tile&layers=Population&datafile=KEN_popmap15_v2b&tile={x}+{y}+{z}
 ```
 
 ## Local install
@@ -60,7 +60,7 @@ The generation of a map may be tested using the `mapserv` utility [directly](htt
 
 `$ mapserv -nh "QUERY_STRING=map=planwise.map&mode=map" > test.png`
 
-This can be run both from inside the docker container or the locally installed mapserver. Just set the full path to `planwise.map` on the query string if needed, and ensure the data file is reachable.
+This can be run both from inside the docker container or the locally installed mapserver. Just set the full path to `mapserver.map` on the query string if needed, and ensure the data file is reachable.
 
 ## References
 
