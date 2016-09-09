@@ -62,7 +62,7 @@
    (if (not= project-id (db/project-id db))
      (dispatch [:current-project/load-project project-id (section->with section)])
      (case section
-       (:facilities :transport) (dispatch [:current-project/load-facilities])
+       (:facilities :transport) (dispatch [:current-project/load-facilities]) ; TODO: Get project and extract required data, remove otherwise unused endpoint
        nil))
    db))
 
@@ -228,7 +228,7 @@
  (fn [db [_ time]]
    (let [new-db (-> db
                     (assoc-in [:project-data :filters :transport :time] time)
-                    (initiate-project-update nil))]
+                    (initiate-project-update :demand))]
      new-db)))
 
 (register-handler
