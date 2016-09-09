@@ -25,14 +25,14 @@
    (reaction (get-in @db [:current-project :project-data]))))
 
 (register-sub
- :projects/wizard-state
+ :current-project/wizard-state
  (fn [db [_]]
-   (reaction (get-in @db [:projects :current :wizard]))))
+   (reaction (get-in @db [:current-project :wizard]))))
 
 (register-sub
- :projects/wizard-mode-on
+ :current-project/wizard-mode-on
  (fn [db [_]]
-   (reaction (get-in @db [:projects :current :wizard :set]))))
+   (reaction (get-in @db [:current-project :wizard :set]))))
 
 (register-sub
  :current-project/read-only?

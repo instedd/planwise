@@ -59,17 +59,17 @@
       new-db)))
 
 (defn- update-tabs-state [db next-tab]
-  (let [tabs (get-in db [:current :wizard :tabs])
+  (let [tabs (get-in db [:wizard :tabs])
         new-tabs (into {}
                        (map (fn [[tab state]]
                               (if (and (= state :visiting) (not= tab next-tab))
                                 [tab :visited]
                                 [tab state])) tabs))]
-    (assoc-in db [:current :wizard :tabs] new-tabs)))
+    (assoc-in db [:wizard :tabs] new-tabs)))
 
 (defn- update-next-tab-state [db next-tab]
-  (if (= :unvisited (get-in db [:current :wizard :tabs next-tab]))
-    (assoc-in db [:current :wizard :tabs next-tab] :visiting)
+  (if (= :unvisited (get-in db [:wizard :tabs next-tab]))
+    (assoc-in db [:wizard :tabs next-tab] :visiting)
     db))
 
 (defn- update-wizard-state [db next-tab]
