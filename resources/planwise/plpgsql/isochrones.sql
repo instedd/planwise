@@ -69,7 +69,7 @@ declare
   buffer_length integer;
   polygon_id integer;
   country text;
-  bounding_radius_meters integer;
+  bounding_radius_meters float;
   ret record; -- (exit_code, facility_country)
 begin
   create temporary table if not exists edges_agg_cost (
