@@ -154,3 +154,8 @@
  :current-project/sharing-emails-state
  (fn [db [_]]
    (reaction (get-in @db [:current-project :sharing :state]))))
+
+(register-sub
+ :current-project/dataset
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :dataset]))))

@@ -5,20 +5,10 @@
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [remove-by-id]]
             [planwise.client.datasets.api :as api]
-            [planwise.client.datasets.db :as db]))
+            [planwise.client.datasets.db :as db]
+            [planwise.client.utils :as utils]))
 
 (def in-datasets (path [:datasets]))
-
-(defn map-server-status
-  [server-status]
-  (some-> server-status
-          (update :status keyword)
-          (update :state keyword)))
-
-(defn map-datasets
-  [server-datasets]
-  (mapv #(update % :server-status map-server-status) server-datasets))
-
 
 ;; ----------------------------------------------------------------------------
 ;; Dataset listing
@@ -56,7 +46,7 @@
  :datasets/datasets-loaded
  in-datasets
  (fn [db [_ datasets]]
-   (update db :list asdf/reset! (map-datasets datasets))))
+   (update db :list asdf/reset! datasets)))
 
 (register-handler
  :datasets/search
@@ -142,7 +132,7 @@
          ;; duplicate dataset here; if an invalidation and reload run between
          ;; the API call and this event. We should check that the dataset is not
          ;; already there.
-         (update :list asdf/swap! into (map-datasets [dataset]))))))
+         (update :list asdf/swap! into [dataset])))))
 
 (register-handler
  :datasets/create-failed

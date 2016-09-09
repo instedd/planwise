@@ -79,7 +79,11 @@
   [text]
   (cstring/escape text {\& "&amp;", \< "&lt;", \> "&gt;", \" "&quot;"}))
 
-;; Collection manipulation
+;; Collection utils
+
+(defn find-by-id
+  [coll id]
+  (reduce #(when (= id (:id %2)) (reduced %2)) nil coll))
 
 (defn remove-by-id
   [coll id]

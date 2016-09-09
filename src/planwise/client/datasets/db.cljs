@@ -83,29 +83,6 @@
   (or (= :cancel-requested state)
       (= :import-requested state)))
 
-(defn server-status->string
-  [server-status]
-  (case (:status server-status)
-    (nil :ready :done)
-    "Ready to use"
-
-    :importing
-    (let [progress (:progress server-status)
-          progress (when progress (str " " (format-percentage progress)))]
-      (case (:state server-status)
-        :start "Waiting to start"
-        :importing-types "Importing facility types"
-        (:request-sites :importing-sites) (str "Importing sites from Resourcemap" progress)
-        (:processing-facilities) (str "Pre-processing facilities" progress)
-        (:update-projects :updating-projects) "Updating projects"
-        "Importing..."))
-
-    :cancelling
-    "Cancelling..."
-
-    :unknown
-    "Unknown server status"))
-
 (defn import-progress
   [server-status]
   (case (:status server-status)
@@ -129,17 +106,6 @@
 
     0))
 
-(defn import-result->string
-  [result]
-  (case result
-    :success "Success"
-    :cancelled "Cancelled"
-    :unexpected-event "Fatal error: unexpected event received"
-    :import-types-failed "Error: failed to import facility types"
-    :import-sites-failed "Error: failed to import sites from Resourcemap"
-    :update-projects-failed "Error: failed to update projects"
-    nil))
-
 (defn server-status->state
   [{status :status}]
   (case status
@@ -160,3 +126,25 @@
   [new-dataset-data]
   (and (some? (:collection new-dataset-data))
        (some? (:type-field new-dataset-data))))
+
+(defn dataset->warnings
+  "Returns a map of the warnings yielded in the import result of the dataset"
+  [{import-result :import-result}]
+  (select-keys import-result [:facilities-outside-regions-count
+                              :facilities-without-road-network-count
+                              :sites-without-location-count]))
+
+(defn dataset->status
+  "Returns one of importing, cancelled, success, warn or unknown, based on the dataset server status and import result"
+  [{:keys [server-status import-result], :as dataset}]
+  (let [warnings? (some->> dataset (dataset->warnings) (vals) (apply +) (pos?))]
+    (when dataset
+      (case (keyword (:status server-status))
+        :importing    :importing
+        :cancelling   :cancelled
+        :unknown      :unknown
+
+        (case (keyword (:result import-result))
+          :cancelled    :cancelled
+          :success      (if warnings? :warn :success)
+          :error)))))

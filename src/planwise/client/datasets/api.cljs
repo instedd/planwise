@@ -2,11 +2,31 @@
   (:require [ajax.core :refer [GET POST DELETE]]
             [planwise.client.api :refer [json-request]]))
 
+;; ----------------------------------------------------------------------------
+;; Utility functions
+
+(defn- map-server-status
+  [server-status]
+  (some-> server-status
+          (update :status keyword)
+          (update :state keyword)))
+
+(defn- map-dataset
+  [server-dataset]
+  (update server-dataset :server-status map-server-status))
+
+;; ----------------------------------------------------------------------------
+;; API methods
 
 (defn load-datasets
   [& handlers]
   (GET "/api/datasets"
-      (json-request {} handlers)))
+      (json-request {} handlers :mapper-fn (partial map map-dataset))))
+
+(defn load-dataset
+  [dataset-id & handlers]
+  (GET (str "/api/datasets/" dataset-id)
+      (json-request {} handlers :mapper-fn map-dataset)))
 
 (defn load-resourcemap-info
   [& handlers]
@@ -20,7 +40,8 @@
                      :description description
                      :coll-id coll-id
                      :type-field type-field}
-                    handlers)))
+                    handlers
+                    :mapper-fn map-dataset)))
 
 (defn cancel-import!
   [dataset-id & handlers]

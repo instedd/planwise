@@ -1,8 +1,10 @@
 (ns planwise.client.datasets.subs
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-sub subscribe]]
+            [clojure.string :as string]
             [goog.string :as gstring]
-            [planwise.client.asdf :as asdf]))
+            [planwise.client.asdf :as asdf]
+            [planwise.client.utils :as utils]))
 
 (register-sub
  :datasets/state
@@ -25,7 +27,10 @@
    (let [search-string (subscribe [:datasets/search-string])
          datasets (subscribe [:datasets/list])]
      (reaction
-      (filterv #(gstring/caseInsensitiveContains (:name %) @search-string) (asdf/value @datasets))))))
+       (->> @datasets
+         (asdf/value)
+         (filterv #(gstring/caseInsensitiveContains (:name %) @search-string))
+         (sort-by (comp string/lower-case :name)))))))
 
 (register-sub
  :datasets/resourcemap

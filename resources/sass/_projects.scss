@@ -141,10 +141,20 @@ article.project-view {
     box-shadow: 0 2px 2px rgba(0,0,0,0.2);
     h2 {
       color: $black;
-      padding: 25px 0 15px 15px;
+      padding: 25px 15px 15px 15px;
       font-size: 20px;
       font-weight: normal;
       margin: 0;
+      display: inline-block;
+    }
+    .title {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      &> span {
+        color: $gray-text;
+        font-style: italic;
+      }
     }
     ul {
       margin-top: 8px;
@@ -325,6 +335,7 @@ article.project-view {
 }
 
 .new-project {
+  width: 470px;
   .leaflet-container {
     margin: 10px -15px;
   }

@@ -73,6 +73,8 @@
                         :state nil                ; [nil :sending :sent]
                         :shares-search-string ""}
 
+   :dataset            (asdf/new nil)
+
    :project-data       nil})                      ; see ProjectData above
 
 

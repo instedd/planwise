@@ -67,3 +67,13 @@
 (defn destroy-dataset!
   [store dataset-id]
   (delete-dataset! (get-db store) {:id dataset-id}))
+
+
+(defn accessible-by?
+  [store dataset user-id]
+  (or
+    (= (:owner-id dataset) user-id)
+    (let [args {:user-id user-id :dataset-id (:id dataset)}]
+      (-> (count-accessible-projects-for-dataset (get-db store) args)
+        (:count)
+        (pos?)))))

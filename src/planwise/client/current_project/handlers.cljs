@@ -5,11 +5,14 @@
             [accountant.core :as accountant]
             [planwise.client.routes :as routes]
             [planwise.client.current-project.api :as api]
+            [planwise.client.datasets.api :as datasets-api]
             [planwise.client.current-project.db :as db]
+            [planwise.client.datasets.db :as datasets-db]
             [planwise.client.mapping :as maps]
             [planwise.client.styles :as styles]
             [planwise.client.asdf :as asdf]
-            [planwise.client.utils :refer [remove-by dispatch-delayed]]))
+            [planwise.client.utils :refer [remove-by dispatch-delayed]]
+            [planwise.client.datasets.db :refer [dataset->status]]))
 
 (def in-current-project (path [:current-project]))
 
@@ -126,6 +129,31 @@
                        (flatten)
                        (apply hash-map))]
      (update-in db [:facilities :isochrones threshold level] #(merge % isochrones)))))
+
+;; ----------------------------------------------------------------------------
+;; Current project dataset
+
+(register-handler
+ :current-project/load-dataset
+ in-current-project
+ (fn [db _]
+   (datasets-api/load-dataset (db/dataset-id db) :current-project/dataset-loaded)
+   (update db :dataset asdf/reload!)))
+
+(register-handler
+ :current-project/invalidate-dataset
+ in-current-project
+ (fn [db _]
+   (update db :dataset asdf/invalidate!)))
+
+(register-handler
+ :current-project/dataset-loaded
+ in-current-project
+ (fn [db [_ dataset]]
+   (when (#{:importing :unknown} (datasets-db/dataset->status dataset))
+     (dispatch-delayed 5000 [:current-project/invalidate-dataset]))
+   (update db :dataset asdf/reset! dataset)))
+
 
 ;; ---------------------------------------------------------------------------
 ;; Project filter updating

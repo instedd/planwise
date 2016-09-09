@@ -18,7 +18,11 @@
     "Updates fields in the dataset")
 
   (destroy-dataset! [this dataset-id]
-    "Destroy a dataset"))
+    "Destroy a dataset")
+
+  (accessible-by? [this dataset user-id]
+    "Returns whether a user can access a dataset, if he has access to a project
+     that uses the dataset."))
 
 (defn owned-by?
   [dataset user-id]
@@ -37,4 +41,6 @@
   (update-dataset [store dataset]
     (service/update-dataset store dataset))
   (destroy-dataset! [store dataset-id]
-    (service/destroy-dataset! store dataset-id)))
+    (service/destroy-dataset! store dataset-id))
+  (accessible-by? [store dataset user-id]
+    (service/accessible-by? store dataset user-id)))
