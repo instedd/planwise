@@ -1,6 +1,7 @@
 (ns planwise.component.maps
   (:require [com.stuartsierra.component :as component]
             [planwise.component.runner :refer [run-external]]
+            [planwise.boundary.regions :as regions]
             [clojure.string :as str]
             [planwise.util.str :refer [trim-to-int]]
             [digest :as digest]
@@ -47,6 +48,18 @@
         factor   (if population-in-region (/ population-in-region population) 1)]
     (int (* factor capacity))))
 
+(defn- create-map-raster
+  [service map-key region-id]
+  (let [{max-population :max-population} (regions/find-region (:regions service) region-id)]
+    (run-external
+        (:runner service)
+        nil
+        30000
+        "gdal_translate"
+        "-q" "-ot" "Byte" "-scale" "0" (str max-population) "0" "255"
+        (demands-path service map-key ".data.tif")
+        (demands-path service map-key ".tif"))))
+
 (defn demand-map
   [service region-id facilities]
   (when (calculate-demand? service)
@@ -63,17 +76,18 @@
                         :bin
                         180000
                         "calculate-demand"
-                        (demands-path service map-key ".tif")
+                        (demands-path service map-key ".data.tif")
                         (populations-path service region-id ".tif")
                         (vec polygons-with-capacities))
-            unsatisfied-count (trim-to-int response)]
+            unsatisfied-count (trim-to-int response)
+            _ (create-map-raster service map-key region-id)]
           {:map-key map-key,
            :unsatisfied-count unsatisfied-count})
       (catch Exception e
         (error e "Error calculating demand map for region " region-id "with polygons" (map :polygon-id facilities))
         {}))))
 
-(defrecord MapsService [config runner])
+(defrecord MapsService [config runner regions])
 
 (defn maps-service
   "Construct a Maps Service component from config"
