@@ -219,6 +219,7 @@
  (fn [db [_ time]]
    (let [new-db (-> db
                     (assoc-in [:project-data :filters :transport :time] time)
+                    (update :map-key asdf/reload!)
                     (initiate-project-update :demand))]
      new-db)))
 

@@ -60,7 +60,7 @@
                         :isochrones {}}           ; threshold => level => id => geojson
    :map-view           {}                         ; {:keys position zoom}
 
-   :map-key            nil
+   :map-key            (asdf/new nil)
 
    :map-state          {:current :loaded          ; [:loaded :request-pending :loading :loading-displayed]
                         :timeout nil
@@ -92,7 +92,7 @@
       (update vm :shares asdf/reset! shares)
       vm)
     (update-in vm [:sharing :token] asdf/reset! share-token)
-    (assoc vm :map-key map-key)))
+    (update-in vm [:map-key] asdf/reset! map-key)))
 
 (defn update-viewmodel
   [viewmodel project-data]
