@@ -55,11 +55,6 @@
     filters
     (assoc filters :type "")))
 
-(defn fetch-facilities [filters & handlers]
-  (GET
-      "/api/facilities/"
-      (json-request (process-filters filters) handlers)))
-
 (defn fetch-isochrones-in-bbox [filters isochrone-options & handlers]
   (POST
       "/api/facilities/bbox-isochrones"
