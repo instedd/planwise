@@ -17,7 +17,7 @@
 (def in-current-project (path [:current-project]))
 
 (def request-delay 500)
-(def loading-hint-delay 2500)
+(def loading-hint-delay 1000)
 
 ;; ---------------------------------------------------------------------------
 ;; Facility types handlers

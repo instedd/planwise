@@ -86,7 +86,11 @@
          (when (= @map-state :loading-displayed)
            [:div.loading-indicator
             [:div.loading-wheel loading-wheel]
-            [:div.loading-legend "Retrieving facilities"]])
+            [:div.loading-legend
+             (case selected-tab
+              :demographics "Loading demographics"
+              :facilities "Retrieving facilities"
+              :transport "Calculating coverage")]])
          [:div.map-container
           (let [map-props   {:position @map-position
                              :zoom @map-zoom
