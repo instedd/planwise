@@ -57,6 +57,11 @@
     (* scale-saturation raster-pixel-area)
     1000000.0))
 
+(defn- setup-demands-folder
+  [service]
+  (let [path (demands-path service "-")]
+    (clojure.java.io/make-parents path)))
+
 (defn- create-map-raster
   [service map-key region-id]
   (let [region (regions/find-region (:regions service) region-id)
@@ -80,6 +85,7 @@
                                               #(str (capacity-for service %))))
                                         (flatten))
             map-key  (demand-map-key region-id polygons-with-capacities)
+            _ (setup-demands-folder service)
             response (apply run-external
                         (:runner service)
                         :bin
