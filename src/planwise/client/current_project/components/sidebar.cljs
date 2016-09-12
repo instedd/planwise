@@ -17,6 +17,28 @@
    [:div.stat-title title]
    [:div.stat-value value]])
 
+(defn- route-by-tab-name [tab-name project-id]
+  (case tab-name
+    :demographics    (routes/project-demographics {:id project-id})
+    :facilities      (routes/project-facilities {:id project-id})
+    :transport       (routes/project-transport {:id project-id})))
+
+(defn- next-and-back-buttons [tab-name project-id]
+  (let [tabs [:demographics :facilities :transport]
+        has-next? (not= (last tabs) tab-name)
+        has-back? (not= (first tabs) tab-name)
+        next (second (drop-while #(not= tab-name %) tabs))
+        back (last (take-while #(not= tab-name %) tabs))]
+    [:div.nav-buttons {:class (if (and has-back? has-next?) "both" "just-one")}
+      (when has-back?
+        [:button.nav-button.prev {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
+         (icon :key-arrow-left "icon-small")
+         [:span.prev-button-text "Prev"]])
+      (when has-next?
+        [:button.nav-button.next {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
+         [:span.next-button-text "Next"]
+         (icon :key-arrow-right "icon-small")])]))
+
 (defn- demographics-filters []
   (let [current-project (subscribe [:current-project/current-data])]
     (fn []

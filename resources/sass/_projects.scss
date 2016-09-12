@@ -403,8 +403,14 @@ article.project-view {
     text-align: center;
     display: inline-block;
 
+    font-size: inherit;
+    font-weight: inherit;
+
+    background: transparent;
+    border: none;
+
     &.next {
-      background-color: #819f51;
+      background-color: $green;
       svg {
         fill: white;
       }
@@ -417,12 +423,12 @@ article.project-view {
     }
 
     .next-button-text {
-      line-height: 40px;
+      line-height: 22px;
       color: white;
     }
 
     .prev-button-text {
-      line-height: 40px;
+      line-height: 22px;
       color: $gray4;
     }
   }
