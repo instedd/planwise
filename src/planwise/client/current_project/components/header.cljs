@@ -58,7 +58,7 @@
     [:h2 project-goal]
     [dataset-status]]
    [:nav
-    [nav/ul-menu (project-tab-items project-id wizard-state) selected-tab]
+    [nav/ul-menu (project-tab-items project-id wizard-mode-state) selected-tab (:set wizard-mode-state)]
     (if read-only
       [:div
        [:button.delete

@@ -219,6 +219,10 @@ article.project-view {
         display: inline-block;
       }
 
+      &.wizard > li {
+        margin-right: 0px;
+      }
+
       li {
         display: inline-block;
         margin-right: 30px;
@@ -227,9 +231,6 @@ article.project-view {
         border-bottom: 3px solid transparent;
         padding-bottom: 12px;
 
-        &.wizard {
-          margin-right: 0px;
-        }
 
         .wizard-number {
           display: inline-block;
