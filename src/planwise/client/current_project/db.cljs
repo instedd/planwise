@@ -61,6 +61,7 @@
    :map-view           {}                         ; {:keys position zoom}
 
    :map-key            (asdf/new nil)
+   :unsatisfied-demand nil
 
    :map-state          {:current :loaded          ; [:loaded :request-pending :loading :loading-displayed]
                         :timeout nil
@@ -83,7 +84,7 @@
 ;; Project data manipulation functions
 
 (defn- update-viewmodel-associations
-  [viewmodel {:keys [facilities shares share-token map-key]}]
+  [viewmodel {:keys [facilities shares share-token map-key unsatisfied-count]}]
   (as-> viewmodel vm
     (if (some? facilities)
       (assoc-in vm [:facilities :list] facilities)
@@ -92,7 +93,8 @@
       (update vm :shares asdf/reset! shares)
       vm)
     (update-in vm [:sharing :token] asdf/reset! share-token)
-    (update-in vm [:map-key] asdf/reset! map-key)))
+    (update-in vm [:map-key] asdf/reset! map-key)
+    (assoc vm :unsatisfied-demand unsatisfied-count)))
 
 (defn update-viewmodel
   [viewmodel project-data]

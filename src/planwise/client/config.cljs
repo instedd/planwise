@@ -17,3 +17,6 @@
 
 (def app-version
   (aget global-config "app-version"))
+
+(def facilities-default-capacity
+  (aget global-config "facilities-default-capacity"))

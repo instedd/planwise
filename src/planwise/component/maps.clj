@@ -16,6 +16,10 @@
   [{config :config}]
   (:mapserver-url config))
 
+(defn default-capacity
+  [{config :config}]
+  (:default-capacity config))
+
 (defn calculate-demand?
   [{config :config}]
   (boolean (:calculate-demand config)))
@@ -25,7 +29,7 @@
   (digest/sha-256
     (str/join "_" (cons region-id polygons-with-capacities))))
 
-(defn- default-capacity
+(defn default-capacity
   [{config :config}]
   (:facilities-capacity config))
 

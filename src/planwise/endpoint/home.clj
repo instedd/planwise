@@ -35,6 +35,7 @@
   [{:keys [auth resmap request maps globals]}]
   (let [resmap-url (:url resmap)
         mapserver-url (maps/mapserver-url maps)
+        default-capacity (maps/default-capacity maps)
         ident (util/request-ident request)
         email (util/request-user-email request)
         token (create-jwe-token auth ident)
@@ -43,7 +44,9 @@
                 :identity email
                 :jwe-token token
                 :mapserver-url mapserver-url
-                :app-version app-version}]
+                :app-version app-version
+                :facilities-default-capacity default-capacity}]
+
     [:script (str "var _CONFIG=" (json/generate-string config) ";")]))
 
 (defn loading-page

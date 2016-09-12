@@ -116,11 +116,12 @@
                                                               (mapping/demand-map key)
                                                               population-map))
                                                           population-map)]
-                                      [:wms-tile-layer {:url config/mapserver-url
-                                                        :transparent true
-                                                        :layers mapping/layer-name
-                                                        :DATAFILE map-datafile
-                                                        :opacity 0.6}])
+                                      (when map-datafile
+                                        [:wms-tile-layer {:url config/mapserver-url
+                                                          :transparent true
+                                                          :layers mapping/layer-name
+                                                          :DATAFILE map-datafile
+                                                          :opacity 0.6}]))
 
                 layers-facilities  (when (#{:facilities :transport} selected-tab)
                                      (for [[type facilities] @facilities-by-type]
