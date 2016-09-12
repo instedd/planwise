@@ -249,4 +249,4 @@ running the application.
 
 Copyright © 2016 InSTEDD
 
-See LICENSE.md.
+This software is released under the GPLv3 license. See LICENSE.md.
