@@ -45,12 +45,11 @@
                       :href (routes/project-scenarios route-params)
                       :title "Scenarios"}]]
     (if wizard-mode-on
-      (->> tab-items
-           (map-indexed (fn [i tab-item]
-                          (assoc tab-item
-                          :wizard-state ((:item tab-item) wizard-tabs-state)
-                          :tab-number (+ 1 i))))
-           (mapv #(dissoc % :icon)))
+      (map-indexed (fn [i tab-item]
+                     (assoc tab-item
+                            :wizard-state ((:item tab-item) wizard-tabs-state)
+                            :tab-number (+ 1 i)))
+                   tab-items)
       tab-items)))
 
 (defn header-section [project-id project-goal selected-tab read-only share-count wizard-state]
