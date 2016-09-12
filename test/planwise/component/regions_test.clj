@@ -21,16 +21,16 @@
   (with-system (system)
     (let [service (:regions system)
           [kenya & rest] (regions/list-regions service)]
-    (is (= 1000 (:total_population kenya))))))
+     (is (= 1000 (:total-population kenya))))))
 
 (deftest total-population-is-retrieved-with-list-regions-with-preview
   (with-system (system)
     (let [service (:regions system)
           [kenya & rest] (regions/list-regions-with-preview service [1])]
-      (is (= 1000 (:total_population kenya))))))
+      (is (= 1000 (:total-population kenya))))))
 
 (deftest total-population-is-retrieved-with-list-regions-with-geo
   (with-system (system)
     (let [service (:regions system)
           [kenya & rest] (regions/list-regions-with-geo service [1] 0.5)]
-      (is (= 1000 (:total_population kenya))))))
+      (is (= 1000 (:total-population kenya))))))
