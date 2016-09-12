@@ -6,6 +6,7 @@
   mix-blend-mode: multiply;
 }
 
+
 .legend {
   background-color: $white;
   color: $gray-text;
@@ -17,30 +18,70 @@
     font-size: 11px;
     margin-bottom: 10px;
   }
-
   .color-scale {
     font-size: 14px;
 
-    div {
-      display: inline-block;
-    }
+    .category.c1 { background-color: #FFDC00; }
+    .category.c2 { background-color: #FFC100; }
+    .category.c3 { background-color: #FFAD00; }
+    .category.c4 { background-color: #FF8500; }
+    .category.c5 { background-color: #FF0800; }
 
-    .color-bar {
-      background-color: #DCDFD7;
-      height: 15px;
-      width: 60%;
-      margin: 0 10px 0 10px;
-      position: relative;
-      top: 2px;
+    &.collapsed {
+      div {
+        display: inline-block;
+      }
 
-      :first-child {
-        height: 100%;
-        width: 100%;
-        opacity: 0.6;
+      .color-bar {
+        background-color: #DCDFD7;
+        height: 15px;
+        width: 60%;
+        margin: 0 10px 0 10px;
+        position: relative;
+        top: 2px;
+        display: inline-flex;
+        flex-wrap: nowrap;
 
-        // this gradient should be kept in sync with mapserver's class definitions.
-        background: linear-gradient(to right, #FFC800 0%,#FFC700 8%,#FFC100 20%,#FFAA00 39%,#FF8500 59%,#FF0800 100%);
+        .category {
+          height: 100%;
+          flex-grow: 1;
+          opacity: 0.6;
+        }
       }
     }
+
+    &.expanded {
+      .categories {
+        list-style-type: none;
+        padding-left: 15px;
+
+        .category {
+          height: 15px;
+          width: 16px;
+          display: inline-block;
+          margin-right: 15px;
+          position: relative;
+          top: 2px;
+        }
+      }
+    }
+  }
+}
+
+.legend {
+  .collapsed {
+    display: block;
+  }
+  .expanded {
+    display: none;
+  }
+}
+
+.legend:hover {
+  .collapsed {
+    display: none;
+  }
+  .expanded {
+    display: block;
   }
 }

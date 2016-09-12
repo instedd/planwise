@@ -8,6 +8,16 @@ except:
     import gdal
     import osr
 
+# The population density at which the raster will be
+# saturated for visualization, expressed in population/km2
+SCALE_SATURATION = 1001.0
+
+# Receives the path to a raster file.
+#
+# Prints:
+#
+# - the approximate area covered by each pixel, in squared km2,
+# - the raster value that represents the population density indicated by SCALE_SATURATION
 def main(argv):
     filename = argv[1]
     dataset  = gdal.Open(filename, gdal.GA_ReadOnly)
@@ -15,7 +25,10 @@ def main(argv):
         print "ERROR: Failed to open file"
         return 1
 
-    print pixel_size(dataset)
+    size       =  pixel_size(dataset)
+    saturation = round(SCALE_SATURATION * size / 1000000.0, 2)
+
+    print size, saturation
     return 0
 
 # return the average area a pixel covers, in squared meters

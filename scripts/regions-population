@@ -52,10 +52,13 @@ for region in $REGIONS; do
     POPULATION_MAX=${AGGREGATES[1]}
 
     echo "Calculating pixel area for ${ID}"
-    PIXEL_AREA_M2=$(${SCRIPT_PATH}/raster-pixel-size ${TMP_FILE})
+
+    IFS=' ' read -a RET <<< $(${SCRIPT_PATH}/raster-pixel-size ${TMP_FILE})
+    PIXEL_AREA_M2=${RET[0]}
+    SATURATION=${RET[1]}
 
     echo " Normalizing raster file scale for ${ID}"
-    gdal_translate -ot Byte -scale 0 $POPULATION_MAX 0 255 $TMP_FILE $TARGET
+    gdal_translate -ot Byte -scale 0 $SATURATION 0 255 $TMP_FILE $TARGET
 
     echo " Storing metadata for ${ID}"
     gdal_edit.py -mo "POPULATION_SUM=$POPULATION_SUM" -mo "POPULATION_MAX=$POPULATION_MAX" -mo "PIXEL_AREA_M2=$PIXEL_AREA_M2" $TARGET
