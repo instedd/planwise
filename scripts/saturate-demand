@@ -1,0 +1,26 @@
+#! /bin/bash
+set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
+
+# Creates a byte-sized raster file from a float-sized demand tif, in order to
+# use it in mapserver, saturating to the specified value. Used in maps.clj.
+
+BIN_PATH=${BIN_PATH:-cpp}
+SCRIPT_PATH=${SCRIPT_PATH:-scripts}
+DATA_PATH=${DATA_PATH:-data}
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 DEMAND_MAP_KEY SATURATION"
+	exit 1
+fi
+
+mapkey=$1
+saturation=$2
+
+DATA_RASTER=${DATA_PATH}/demands/${mapkey}.data.tif
+VIZ_RASTER=${DATA_PATH}/demands/${mapkey}.tif
+
+if [[ ! -e $VIZ_RASTER ]]; then
+  gdal_translate -q -ot Byte -scale 0 $saturation 0 255 $DATA_RASTER $VIZ_RASTER;
+  rm $DATA_RASTER || true;
+fi

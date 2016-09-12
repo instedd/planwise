@@ -9,6 +9,9 @@
 
 (timbre/refer-timbre)
 
+(def scale-saturation
+  1001.0)
+
 (defn mapserver-url
   [{config :config}]
   (:mapserver-url config))
@@ -48,17 +51,23 @@
         factor   (if population-in-region (/ population-in-region population) 1)]
     (int (* factor capacity))))
 
+(defn- region-saturation
+  [{raster-pixel-area :raster-pixel-area}]
+  (/
+    (* scale-saturation raster-pixel-area)
+    1000000.0))
+
 (defn- create-map-raster
   [service map-key region-id]
-  (let [{max-population :max-population} (regions/find-region (:regions service) region-id)]
+  (let [region (regions/find-region (:regions service) region-id)
+        saturation (format "%.2f" (region-saturation region))]
     (run-external
-        (:runner service)
-        nil
-        30000
-        "gdal_translate"
-        "-q" "-ot" "Byte" "-scale" "0" (str max-population) "0" "255"
-        (demands-path service map-key ".data.tif")
-        (demands-path service map-key ".tif"))))
+      (:runner service)
+      :scripts
+      30000
+      "saturate-demand"
+      map-key
+      saturation)))
 
 (defn demand-map
   [service region-id facilities]
