@@ -34,7 +34,7 @@
    :paths {:bin "cpp/"
            :scripts "scripts/"
            :data "data/"}
-   :maps {:facilities-capacity 2000000}
+   :maps {:facilities-capacity 1000000}
    :mailer {:mock? true}
    :figwheel
    {:css-dirs ["resources/planwise/public/css"

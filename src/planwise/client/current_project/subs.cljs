@@ -103,9 +103,9 @@
    (reaction (get-in @db [:current-project :project-data :filters :transport :time]))))
 
 (register-sub
- :current-project/demand-map-key
+ :current-project/map-key
  (fn [db [_]]
-   (reaction (get-in @db [:current-project :project-data :demand-map-key]))))
+   (reaction (get-in @db [:current-project :map-key]))))
 
 (register-sub
  :current-project/map-state

@@ -67,7 +67,7 @@
         map-bbox (subscribe [:current-project/map-view :bbox])
         map-pixel-max-value (subscribe [:current-project/map-view :pixel-max-value])
         map-pixel-area (subscribe [:current-project/map-view :pixel-area-m2])
-        demand-map-key (subscribe [:current-project/demand-map-key])
+        map-key (subscribe [:current-project/map-key])
         map-geojson (subscribe [:current-project/map-geojson])
         map-state (subscribe [:current-project/map-state])
         marker-popup-fn marker-popup
@@ -105,8 +105,8 @@
                                                             :fillOpacity 0
                                                             :weight 2}])
 
-                layer-demographics (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
-                                          population-map (mapping/region-map project-region-id)]
+                layer-demographics (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @map-key))
+                                         population-map (mapping/region-map project-region-id)]
                                       [:wms-tile-layer {:url config/mapserver-url
                                                         :transparent true
                                                         :layers mapping/layer-name
