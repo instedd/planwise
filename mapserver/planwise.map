@@ -133,7 +133,7 @@ MAP
 
     CLASS
       NAME "c5"
-      EXPRESSION ([pixel] >= 255)
+      EXPRESSION ([pixel] >= 254)
       STYLE
         COLOR 255 8 0
       END
