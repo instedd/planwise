@@ -1,24 +1,37 @@
 (ns planwise.client.components.nav
-  (:require [planwise.client.components.common :as components]))
+  (:require [planwise.client.components.common :as components]
+            [clojure.string :as string]))
 
 ;; Navigation components
 
-(defn- li-menu-item [{:keys [selected item href title icon tab-number wizard-state]}]
+(defn- li-menu-item [{:keys [selected li-classes item href title reference]}]
   (let [is-selected? (or (= selected item)
-                         (item selected))]
-    [:li {:class (str
-                  (when is-selected? "active ")
-                  (when wizard-state (str (name wizard-state) " wizard")))}
-     [:a {:href href}
-      (some-> icon (components/icon "icon-small"))
-      (when (and wizard-state (> tab-number 1)) [:div.separator])
-      (when (and wizard-state (= wizard-state :visited)) (components/icon :check-circle-wizard "icon-small wizard-check"))
-      (when (and wizard-state (not= wizard-state :visited)) [:div.wizard-number tab-number])
-      title]]))
+                         (item selected))
+        li-all-classes (if is-selected?
+                      (conj li-classes "active")
+                      li-classes)]
+    [:li {:class (string/join " " li-all-classes)}
+     [:a {:href href} reference title]]))
+
+(defn- li-wizard-menu-item [{:keys [wizard-state tab-number] :as item}]
+  (let [li-classes #{"wizard" (name wizard-state)}
+        reference (if (= wizard-state :visited)
+                    (components/icon :check-circle-wizard "icon-small wizard-check")
+                    [:div.wizard-number tab-number])]
+    ;; (when (> tab-number 1) [:div.separator]) TODO: solve it with :after and not-first-child
+    (li-menu-item (assoc item
+                        :li-classes li-classes
+                        :reference  reference))))
+
+(defn- li-normal-menu-item [item]
+  (li-menu-item (assoc item
+                       :li-classes #{}
+                       :reference (some-> (:icon item) (components/icon "icon-small")))))
 
 (defn ul-menu [items selected]
   [:ul (map-indexed (fn [idx item]
-                      [li-menu-item (assoc item
-                                           :key idx
-                                           :selected selected)])
-                    items)])
+                      (let [item-with-metadata (assoc item :key idx :selected selected)]
+                        (if (contains? item :wizard-state)
+                          [li-wizard-menu-item item-with-metadata]
+                          [li-normal-menu-item item-with-metadata])))
+                        items)])
