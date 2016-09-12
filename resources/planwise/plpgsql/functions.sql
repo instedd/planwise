@@ -77,8 +77,8 @@ begin
 
   miny_blocks := trunc((unaligned_target_miny-region_ymin)/srs_block_length);
   target_miny := region_ymin+miny_blocks*srs_block_length;
-  maxy_blocks := trunc((unaligned_target_maxy-region_ymax)/srs_block_length);
-  target_maxy := region_ymax+maxy_blocks*srs_block_length;
+  maxy_blocks := trunc((region_ymax-unaligned_target_maxy)/srs_block_length);
+  target_maxy := region_ymax-maxy_blocks*srs_block_length;
 
   return target_minx || '|' || unaligned_target_miny || '|' || unaligned_target_maxx || '|' || target_maxy;
 end;
