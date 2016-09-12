@@ -88,7 +88,9 @@
   :target-path "target/%s/"
   :resource-paths ["resources" "target/cljsbuild" "target/sass"]
   :prep-tasks [["javac"] ["cljsbuild" "once"] ["sass" "once"] ["compile"]]
-  :uberjar-exclusions [#"resources/svg/icons/.*" #"resources/sass/.*"]
+  :jar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
+  :uberjar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
+  :uberjar-name "planwise-standalone.jar"
   :sass
   {:src "resources/sass"
    :output-directory "target/sass/planwise/public/css"
