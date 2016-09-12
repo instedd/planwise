@@ -12,6 +12,13 @@ body {
   background: $gray2;
 }
 
+:focus {
+  outline: 2px solid $green;
+}
+a:focus {
+  outline-style: initial;
+}
+
 h1, h2, h3 {
   color: $gray3;
 }
@@ -344,4 +351,17 @@ svg > use {
   padding: 5px 10px;
   border-radius: 12px;
   border: 1px solid $gray2;
+}
+
+#app {
+  .chosen-container .chosen-results li.highlighted {
+    background-color: $green;
+  }
+  .chosen-container-active {
+    .chosen-single, &.chosen-with-drop .chosen-single, .chosen-choices {
+      border: 1px solid $green;
+      -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset, 0 0 8px transparentize($green, .6);
+      box-shadow: 0 1px 1px rgba(0, 0, 0, .075) inset, 0 0 8px transparentize($green, .6);
+    }
+  }
 }
