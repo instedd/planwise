@@ -21,7 +21,11 @@
               prod-config))
 
 (defn -main [& args]
-  (timbre/set-level! :warn)
+  ;; Logging configuration for development
+  (timbre/merge-config! {:level :info
+                         :ns-blacklist ["com.zaxxer.hikari.*"
+                                        "org.apache.http.*"
+                                        "org.eclipse.jetty.*"]})
   (let [system (new-system config)]
     (report "Starting HTTP server on port" (-> system :http :port))
     (add-shutdown-hook ::stop-system #(component/stop system))

@@ -27,6 +27,8 @@
             [buddy.core.nonce :as nonce]
             [clojure.set :refer [rename-keys]]
 
+            [planwise.util.ring :refer [wrap-log-request]]
+
             [planwise.component.compound-handler :refer [compound-handler-component]]
             [planwise.component.auth :refer [auth-service wrap-check-guisso-cookie]]
             [planwise.component.facilities :refer [facilities-service]]
@@ -92,10 +94,12 @@
           :jwe-options jwe-options}
    :api {:middleware   [[wrap-authorization :jwe-auth-backend]
                         [wrap-authentication :session-auth-backend :jwe-auth-backend]
+                        [wrap-log-request :log-request-options]
                         [wrap-keyword-params]
                         [wrap-json-params]
                         [wrap-json-response]
                         [wrap-defaults :api-defaults]]
+         :log-request-options {:exclude-uris #"^/(js|css|images|assets)/.*"}
          :api-defaults (meta-merge api-defaults
                                    session-config
                                    {:params {:nested true}})}

@@ -21,8 +21,10 @@
             [planwise.system :as system]))
 
 ;; Logging configuration for development
-(timbre/merge-config! {:ns-blacklist ["com.zaxxer.hikari.*"]})
-(timbre/set-level! :info)
+(timbre/merge-config! {:level :debug
+                       :ns-blacklist ["com.zaxxer.hikari.*"
+                                      "org.apache.http.*"
+                                      "org.eclipse.jetty.*"]})
 
 ;; Fix JWE secret in development to facilitate debugging
 (def jwe-secret
