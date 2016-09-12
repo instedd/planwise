@@ -27,7 +27,7 @@
             [buddy.core.nonce :as nonce]
             [clojure.set :refer [rename-keys]]
 
-            [planwise.util.ring :refer [wrap-log-request]]
+            [planwise.util.ring :refer [wrap-log-request wrap-log-errors]]
 
             [planwise.component.compound-handler :refer [compound-handler-component]]
             [planwise.component.auth :refer [auth-service wrap-check-guisso-cookie]]
@@ -92,6 +92,8 @@
 (def base-config
   {:auth {:jwe-secret  jwe-secret
           :jwe-options jwe-options}
+   ;; Log requests in the API stack since it'll perform all the params mangling
+   ;; and it's executed before the App middleware chain
    :api {:middleware   [[wrap-authorization :jwe-auth-backend]
                         [wrap-authentication :session-auth-backend :jwe-auth-backend]
                         [wrap-log-request :log-request-options]

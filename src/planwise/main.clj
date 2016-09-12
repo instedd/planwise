@@ -7,12 +7,15 @@
             [duct.util.runtime :refer [add-shutdown-hook]]
             [meta-merge.core :refer [meta-merge]]
             [planwise.config :as config]
-            [planwise.system :refer [new-system]]))
+            [planwise.system :refer [new-system]]
+            [planwise.util.ring :refer [wrap-log-errors]]))
 
 (timbre/refer-timbre)
 
 (def prod-config
-  {:app {:middleware     [[wrap-hide-errors :internal-error]]
+  {:api {:middleware     [[wrap-log-errors]]}
+   :app {:middleware     [[wrap-log-errors]
+                          [wrap-hide-errors :internal-error]]
          :internal-error (io/resource "planwise/errors/500.html")}})
 
 (def config

@@ -64,3 +64,16 @@
            (when (seq params)
              (log level "...  with params:" (filter-params params)))))
        (handler request)))))
+
+(defn wrap-log-errors
+  "Middleware to log internal server errors"
+  [handler]
+  (fn [request]
+    (try
+      (handler request)
+      (catch Throwable t
+        (error t "Unhandled error" (.getMessage t) "while processing"
+               (-> (:request-method request) name .toUpperCase)
+               (:uri request)
+               (or (:query-string request) ""))
+        (throw t)))))
