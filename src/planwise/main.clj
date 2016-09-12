@@ -13,7 +13,7 @@
 
 (def prod-config
   {:app {:middleware     [[wrap-hide-errors :internal-error]]
-         :internal-error (io/resource "errors/500.html")}})
+         :internal-error (io/resource "planwise/errors/500.html")}})
 
 (def config
   (meta-merge config/defaults
