@@ -16,10 +16,6 @@
   [{config :config}]
   (:mapserver-url config))
 
-(defn default-capacity
-  [{config :config}]
-  (:default-capacity config))
-
 (defn calculate-demand?
   [{config :config}]
   (boolean (:calculate-demand config)))
