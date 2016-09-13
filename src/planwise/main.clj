@@ -7,13 +7,16 @@
             [duct.util.runtime :refer [add-shutdown-hook]]
             [meta-merge.core :refer [meta-merge]]
             [planwise.config :as config]
-            [planwise.system :refer [new-system]]))
+            [planwise.system :refer [new-system]]
+            [planwise.util.ring :refer [wrap-log-errors]]))
 
 (timbre/refer-timbre)
 
 (def prod-config
-  {:app {:middleware     [[wrap-hide-errors :internal-error]]
-         :internal-error (io/resource "errors/500.html")}})
+  {:api {:middleware     [[wrap-log-errors]]}
+   :app {:middleware     [[wrap-log-errors]
+                          [wrap-hide-errors :internal-error]]
+         :internal-error (io/resource "planwise/errors/500.html")}})
 
 (def config
   (meta-merge config/defaults
@@ -21,7 +24,11 @@
               prod-config))
 
 (defn -main [& args]
-  (timbre/set-level! :warn)
+  ;; Logging configuration for production
+  (timbre/merge-config! {:level :info
+                         :ns-blacklist ["com.zaxxer.hikari.*"
+                                        "org.apache.http.*"
+                                        "org.eclipse.jetty.*"]})
   (let [system (new-system config)]
     (report "Starting HTTP server on port" (-> system :http :port))
     (add-shutdown-hook ::stop-system #(component/stop system))

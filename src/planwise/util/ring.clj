@@ -1,7 +1,11 @@
 (ns planwise.util.ring
-  (:require [ring.util.request :refer [request-url]]
-            [planwise.model.ident :as ident])
+  (:require [clojure.string :as str]
+            [ring.util.request :refer [request-url]]
+            [planwise.model.ident :as ident]
+            [taoensso.timbre :as timbre])
   (:import [java.net URL MalformedURLException]))
+
+(timbre/refer-timbre)
 
 (defn- url? [^String s]
   (try (URL. s) true
@@ -34,3 +38,44 @@
     (println (str "\n\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-="))
     (clojure.pprint/pprint request)
     (handler request)))
+
+(def filtered-params #{"password"})
+
+(defn- filter-params
+  [params]
+  (into {} (map
+            (fn [[k v]]
+              [k (if (filtered-params (name k)) "[FILTERED]" v)])
+            params)))
+
+(defn- request-log-line
+  [request]
+  (str/join " " [(-> (:request-method request) name .toUpperCase)
+                 (:uri request)
+                 (or (:query-string request) "")]))
+
+(defn wrap-log-request
+  "Middleware to log each HTTP request in a single line"
+  ([handler options]
+   (let [level (:level options :info)
+         exclude-uris (:exclude-uris options)]
+     (fn [request]
+       (let [uri (:uri request "")
+             params (:params request)]
+         (when-not (and (some? exclude-uris)
+                        (re-matches exclude-uris uri))
+           (log level "Starting request:" (request-log-line request))
+           (when (seq params)
+             (log level "...  with params:" (filter-params params)))))
+       (handler request)))))
+
+(defn wrap-log-errors
+  "Middleware to log internal server errors"
+  [handler]
+  (fn [request]
+    (try
+      (handler request)
+      (catch Throwable t
+        (error t "Unhandled error" (.getMessage t) "while processing"
+               (request-log-line request))
+        (throw t)))))
