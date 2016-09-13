@@ -22,8 +22,8 @@ void closeRaster(GDALDataset* rasterDataSet) {
 int main(int argc, char *argv[]) {
   GDALAllRegister();
 
-  if (argc < 1) {
-    std::cout << "Usage: aggregate-population RASTERFILE";
+  if (argc < 2) {
+    std::cout << "Usage: aggregate-population RASTERFILE" << std::endl;
     exit(1);
   }
 

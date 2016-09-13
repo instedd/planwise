@@ -50,7 +50,7 @@ begin
   );
   truncate table ways_buffers;
   insert into ways_buffers (
-    select gid, ST_Buffer(ST_GeogFromWKB(the_geom), buffer_radius_in_meters)::geometry
+    select gid, ST_Buffer(the_geom::geography, buffer_radius_in_meters)::geometry
     from ways
   );
 end;
