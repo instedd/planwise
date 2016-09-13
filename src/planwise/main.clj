@@ -24,7 +24,7 @@
               prod-config))
 
 (defn -main [& args]
-  ;; Logging configuration for development
+  ;; Logging configuration for production
   (timbre/merge-config! {:level :info
                          :ns-blacklist ["com.zaxxer.hikari.*"
                                         "org.apache.http.*"

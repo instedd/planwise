@@ -1,5 +1,6 @@
 (ns planwise.util.ring
-  (:require [ring.util.request :refer [request-url]]
+  (:require [clojure.string :as str]
+            [ring.util.request :refer [request-url]]
             [planwise.model.ident :as ident]
             [taoensso.timbre :as timbre])
   (:import [java.net URL MalformedURLException]))
@@ -47,6 +48,12 @@
               [k (if (filtered-params (name k)) "[FILTERED]" v)])
             params)))
 
+(defn- request-log-line
+  [request]
+  (str/join " " [(-> (:request-method request) name .toUpperCase)
+                 (:uri request)
+                 (or (:query-string request) "")]))
+
 (defn wrap-log-request
   "Middleware to log each HTTP request in a single line"
   ([handler options]
@@ -57,10 +64,7 @@
              params (:params request)]
          (when-not (and (some? exclude-uris)
                         (re-matches exclude-uris uri))
-           (log level "Starting request:"
-                (-> (:request-method request) name .toUpperCase)
-                (:uri request)
-                (or (:query-string request) ""))
+           (log level "Starting request:" (request-log-line request))
            (when (seq params)
              (log level "...  with params:" (filter-params params)))))
        (handler request)))))
@@ -73,7 +77,5 @@
       (handler request)
       (catch Throwable t
         (error t "Unhandled error" (.getMessage t) "while processing"
-               (-> (:request-method request) name .toUpperCase)
-               (:uri request)
-               (or (:query-string request) ""))
+               (request-log-line request))
         (throw t)))))
