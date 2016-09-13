@@ -70,6 +70,7 @@ declare
   polygon_id integer;
   country text;
   bounding_radius_meters float;
+  distance_threshold_meters float;
   ret record; -- (exit_code, facility_country)
 begin
   create temporary table if not exists edges_agg_cost (
@@ -91,7 +92,11 @@ begin
     SELECT 'outside-regions'::TEXT, NULL::TEXT into ret; RETURN ret;
   END IF;
 
-  IF ST_Distance(ST_GeogFromWKB(facility_geom), ST_GeogFromWKB(closest_node_geom)) > 1000 THEN
+  -- Maximum distance from the closest node in the road network to discard a facility
+  -- This number was adjusted manually such that the ~90% of current facility dataset from Kenya is not discarded
+  distance_threshold_meters := 5000;
+
+  IF ST_Distance(ST_GeogFromWKB(facility_geom), ST_GeogFromWKB(closest_node_geom)) > distance_threshold_meters THEN
     UPDATE facilities SET processing_status = 'no-road-network' WHERE id = f_id;
     RAISE NOTICE 'warning: Facility % not processed, it is too far from the road network.', f_id;
     SELECT 'no-road-network'::TEXT, NULL::TEXT into ret; RETURN ret;
@@ -126,6 +131,8 @@ begin
 
   from_cost := 0;
   to_cost   := threshold_start * 60;
+
+  -- Buffer in meters to apply around the alpha shape polygon
   buffer_length := 300;
 
   while to_cost <= threshold_finish * 60 loop
