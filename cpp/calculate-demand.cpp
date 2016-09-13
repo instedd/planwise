@@ -150,8 +150,8 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     int facilityNXBlocks = (facilityXSize + xBlockSize - 1)/xBlockSize;
     int facilityNYBlocks = (facilityYSize + yBlockSize - 1)/yBlockSize;
 
-    assert(facilityXSize <= (targetXSize - (xBlockSize * blocksYOffset)));
-    assert(facilityYSize <= (targetYSize - (yBlockSize * blocksXOffset)));
+    assert(facilityXSize <= (targetXSize - (xBlockSize * blocksXOffset)));
+    assert(facilityYSize <= (targetYSize - (yBlockSize * blocksYOffset)));
 
 #ifdef DEBUG
     std::cerr << " Facility:     " << "maxY=" << facilityMaxY << " minX=" << facilityMinX << std::endl;
