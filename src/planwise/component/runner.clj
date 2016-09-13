@@ -8,9 +8,11 @@
 
 (defn- path-for
   [service kind name]
-  (if-let [folder (kind service)]
-    (apply str (kind service) name)
-    (throw (ex-info (str "Path for " kind " not found") {:kind kind}))))
+  (if kind
+    (if-let [folder (kind service)]
+      (apply str (kind service) name)
+      (throw (ex-info (str "Path for " kind " not found") {:kind kind})))
+    name))
 
 (defn run-external
   [service kind timeout name & args]

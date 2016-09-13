@@ -103,9 +103,23 @@
    (reaction (get-in @db [:current-project :project-data :filters :transport :time]))))
 
 (register-sub
- :current-project/demand-map-key
+ :current-project/map-key
  (fn [db [_]]
-   (reaction (get-in @db [:current-project :project-data :demand-map-key]))))
+   (reaction (get-in @db [:current-project :map-key]))))
+
+(register-sub
+ :current-project/unsatisfied-demand
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :unsatisfied-demand]))))
+
+(register-sub
+ :current-project/satisfied-demand
+ (fn [db [_]]
+   (let [project-data (subscribe [:current-project/current-data])
+         unsatisfied-demand (subscribe [:current-project/unsatisfied-demand])]
+     (reaction
+       (when @unsatisfied-demand
+         (- (:region-population @project-data) @unsatisfied-demand))))))
 
 (register-sub
  :current-project/map-state

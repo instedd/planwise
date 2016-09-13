@@ -17,7 +17,7 @@
 (def in-current-project (path [:current-project]))
 
 (def request-delay 500)
-(def loading-hint-delay 2500)
+(def loading-hint-delay 1000)
 
 ;; ---------------------------------------------------------------------------
 ;; Facility types handlers
@@ -61,9 +61,7 @@
  (fn [db [_ project-id section]]
    (if (not= project-id (db/project-id db))
      (dispatch [:current-project/load-project project-id (section->with section)])
-     (case section
-       (:facilities :transport) (dispatch [:current-project/load-facilities])
-       nil))
+     (dispatch [:current-project/reload-project project-id (section->with section)]))
    db))
 
 (register-handler
@@ -73,6 +71,13 @@
    (api/load-project project-id with-data
                      :current-project/project-loaded :current-project/not-found)
    db/initial-db))
+
+(register-handler
+ :current-project/reload-project
+ in-current-project
+ (fn [db [_ project-id with-data]]
+   (api/load-project project-id with-data :current-project/project-updated)
+   db))
 
 (register-handler
  :current-project/access-project
@@ -103,20 +108,6 @@
  in-current-project
   (fn [db [_ project-data]]
     (project-loaded db project-data)))
-
-(register-handler
- :current-project/load-facilities
- in-current-project
- (fn [db [_ force?]]
-   (when (or force? (nil? (get-in db [:facilities :list])))
-     (api/fetch-facilities (db/facilities-criteria db) :current-project/facilities-loaded))
-   db))
-
-(register-handler
- :current-project/facilities-loaded
- in-current-project
- (fn [db [_ response]]
-   (assoc-in db [:facilities :list] (:facilities response))))
 
 (register-handler
  :current-project/isochrones-loaded
@@ -228,15 +219,15 @@
  (fn [db [_ time]]
    (let [new-db (-> db
                     (assoc-in [:project-data :filters :transport :time] time)
-                    (initiate-project-update nil))]
+                    (update :map-key asdf/reload!)
+                    (initiate-project-update :demand))]
      new-db)))
 
 (register-handler
  :current-project/project-updated
  in-current-project
  (fn [db [_ project]]
-   (let [prev-state (get-in db [:map-state :current])
-         new-db (-> db
+   (let [new-db (-> db
                     cancel-prev-timeout
                     (assoc-in [:map-state :current] :loaded))]
      (dispatch [:projects/invalidate-projects])

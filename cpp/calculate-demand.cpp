@@ -130,28 +130,34 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     double facilityYRes = facilityProjection[5];
     double demoYRes = targetProjection[5];
     assert(std::abs(facilityYRes - demoYRes) < epsilon);
-    assert(facilityMaxY <= demoMaxY);
-    double blocksRow = (demoMaxY - facilityMaxY)/(128 * demoYRes);
-    assert(modf(blocksRow, &intPart) < epsilon);
-    int blocksRowOffset = round(blocksRow);
+    assert(facilityMaxY <= (demoMaxY + epsilon));
+    double blocksY = (facilityMaxY - demoMaxY)/(128 * demoYRes);
+    assert(modf(blocksY, &intPart) < epsilon);
+    int blocksYOffset = round(blocksY);
 
     double facilityMinX = facilityProjection[0];
     double demoMinX = targetProjection[0];
     double facilityXRes = facilityProjection[1];
     double demoXRes = targetProjection[1];
     assert(std::abs(facilityXRes - demoXRes) < epsilon);
-    assert(demoMinX <= facilityMinX);
-    double blocksCol = (facilityMinX - demoMinX)/(128 * demoXRes);
-    assert(modf(blocksCol, &intPart) < epsilon);
-    int blocksColOffset = round(blocksCol);
+    assert(demoMinX <= (facilityMinX + epsilon));
+    double blocksX = (facilityMinX - demoMinX)/(128 * demoXRes);
+    assert(modf(blocksX, &intPart) < epsilon);
+    int blocksXOffset = round(blocksX);
 
     int facilityXSize = facilityDataset->GetRasterXSize();
     int facilityYSize = facilityDataset->GetRasterYSize();
     int facilityNXBlocks = (facilityXSize + xBlockSize - 1)/xBlockSize;
     int facilityNYBlocks = (facilityYSize + yBlockSize - 1)/yBlockSize;
 
-    assert(facilityXSize <= (targetXSize - (xBlockSize * blocksColOffset)));
-    assert(facilityYSize <= (targetYSize - (yBlockSize * blocksRowOffset)));
+    assert(facilityXSize <= (targetXSize - (xBlockSize * blocksXOffset)));
+    assert(facilityYSize <= (targetYSize - (yBlockSize * blocksYOffset)));
+
+#ifdef DEBUG
+    std::cerr << " Facility:     " << "maxY=" << facilityMaxY << " minX=" << facilityMinX << std::endl;
+    std::cerr << " Demographics: " << "maxY=" << demoMaxY << " minX=" << demoMinX << std::endl;
+    std::cerr << " Blocks offsets: " << "X=" << blocksXOffset << " Y=" << blocksYOffset << std::endl;
+#endif
 
     // First pass: we count the still unsatisfied population under the isochrone
     float unsatisfiedCount = 0.0f;
@@ -165,7 +171,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
         nYValid = yBlockSize;
         if (iYBlock == facilityNYBlocks-1) nYValid = facilityYSize - yOffset;
 
-        targetBand->ReadBlock(iXBlock+blocksRowOffset, iYBlock+blocksColOffset, buffer);
+        targetBand->ReadBlock(iXBlock+blocksXOffset, iYBlock+blocksYOffset, buffer);
         facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
 
         for (int iY = 0; iY < nYValid; ++iY) {
@@ -204,7 +210,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
         nYValid = yBlockSize;
         if (iYBlock == facilityNYBlocks-1) nYValid = facilityYSize - yOffset;
 
-        targetBand->ReadBlock(iXBlock+blocksRowOffset, iYBlock+blocksColOffset, buffer);
+        targetBand->ReadBlock(iXBlock+blocksXOffset, iYBlock+blocksYOffset, buffer);
         facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
 
         bool blockChanged = false;
@@ -220,7 +226,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
         }
 
         if (blockChanged) {
-          targetBand->WriteBlock(iXBlock, iYBlock, buffer);
+          targetBand->WriteBlock(iXBlock+blocksXOffset, iYBlock+blocksYOffset, buffer);
         }
       }
     }
@@ -271,7 +277,7 @@ int main(int argc, char *argv[]) {
     std::cerr << "Usage: " << argv[0] << " TARGET.tif POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
       << std::endl << std::endl
       << "Example:" << std::endl
-      << " " << argv[0] << "out.tif data/populations/REGIONID.tif \\" << std::endl
+      << " " << argv[0] << "out.tif data/populations/data/REGIONID.tif \\" << std::endl
       << " data/isochrones/REGIONID/POLYGONID1.tif 500 \\" << std::endl
       << " data/isochrones/REGIONID/POLYGONID2.tif 800" << std::endl << std::endl
       << "Resulting total unsatisfied demand is returned via STDOUT." << std::endl

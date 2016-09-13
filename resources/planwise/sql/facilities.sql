@@ -111,3 +111,15 @@ WHERE fp.facility_id = :facility-id;
 UPDATE facilities_polygons
 SET population = :population
 WHERE id = :facility-polygon-id;
+
+-- :name select-polygons-in-region :?
+SELECT fp.id AS "facility-polygon-id",
+       fp.population AS "facility-population",
+       fpr.population AS "facility-region-population"
+FROM facilities_polygons_regions AS fpr
+  INNER JOIN facilities_polygons AS fp ON fpr.facility_polygon_id = fp.id
+  INNER JOIN facilities ON facilities.id = fp.facility_id
+WHERE facilities.dataset_id = :dataset-id
+  AND fpr.region_id = :region-id
+  AND fp.threshold = :threshold AND fp.method = :algorithm
+  :snip:criteria ;

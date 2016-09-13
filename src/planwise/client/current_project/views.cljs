@@ -67,7 +67,7 @@
         map-bbox (subscribe [:current-project/map-view :bbox])
         map-pixel-max-value (subscribe [:current-project/map-view :pixel-max-value])
         map-pixel-area (subscribe [:current-project/map-view :pixel-area-m2])
-        demand-map-key (subscribe [:current-project/demand-map-key])
+        map-key (subscribe [:current-project/map-key])
         map-geojson (subscribe [:current-project/map-geojson])
         map-state (subscribe [:current-project/map-state])
         marker-popup-fn marker-popup
@@ -86,7 +86,11 @@
          (when (= @map-state :loading-displayed)
            [:div.loading-indicator
             [:div.loading-wheel loading-wheel]
-            [:div.loading-legend "Retrieving facilities"]])
+            [:div.loading-legend
+             (case selected-tab
+              :demographics "Loading demographics"
+              :facilities "Retrieving facilities"
+              :transport "Calculating coverage")]])
          [:div.map-container
           (let [map-props   {:position @map-position
                              :zoom @map-zoom
@@ -105,13 +109,19 @@
                                                             :fillOpacity 0
                                                             :weight 2}])
 
-                layer-demographics (let [demand-map     (when (= :transport selected-tab) (mapping/demand-map @demand-map-key))
-                                          population-map (mapping/region-map project-region-id)]
-                                      [:wms-tile-layer {:url config/mapserver-url
-                                                        :transparent true
-                                                        :layers mapping/layer-name
-                                                        :DATAFILE (or demand-map population-map)
-                                                        :opacity 0.6}])
+                layer-demographics (let [population-map (mapping/region-map project-region-id)
+                                         map-datafile   (if (= :transport selected-tab)
+                                                          (when (asdf/valid? @map-key)
+                                                            (if-let [key (asdf/value @map-key)]
+                                                              (mapping/demand-map key)
+                                                              population-map))
+                                                          population-map)]
+                                      (when map-datafile
+                                        [:wms-tile-layer {:url config/mapserver-url
+                                                          :transparent true
+                                                          :layers mapping/layer-name
+                                                          :DATAFILE map-datafile
+                                                          :opacity 0.6}]))
 
                 layers-facilities  (when (#{:facilities :transport} selected-tab)
                                      (for [[type facilities] @facilities-by-type]

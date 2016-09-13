@@ -1,12 +1,16 @@
 (ns planwise.component.maps
   (:require [com.stuartsierra.component :as component]
             [planwise.component.runner :refer [run-external]]
+            [planwise.boundary.regions :as regions]
             [clojure.string :as str]
             [planwise.util.str :refer [trim-to-int]]
             [digest :as digest]
             [taoensso.timbre :as timbre]))
 
 (timbre/refer-timbre)
+
+(def scale-saturation
+  1001.0)
 
 (defn mapserver-url
   [{config :config}]
@@ -21,7 +25,7 @@
   (digest/sha-256
     (str/join "_" (cons region-id polygons-with-capacities))))
 
-(defn- default-capacity
+(defn default-capacity
   [{config :config}]
   (:facilities-capacity config))
 
@@ -35,7 +39,7 @@
 
 (defn- populations-path
   [service & args]
-  (apply data-path service (cons "populations/" args)))
+  (apply data-path service (cons "populations/data/" args)))
 
 (defn- isochrones-path
   [service & args]
@@ -46,6 +50,29 @@
   (let [capacity (default-capacity service)
         factor   (if population-in-region (/ population-in-region population) 1)]
     (int (* factor capacity))))
+
+(defn- region-saturation
+  [{raster-pixel-area :raster-pixel-area}]
+  (/
+    (* scale-saturation raster-pixel-area)
+    1000000.0))
+
+(defn- setup-demands-folder
+  [service]
+  (let [path (demands-path service "-")]
+    (clojure.java.io/make-parents path)))
+
+(defn- create-map-raster
+  [service map-key region-id]
+  (let [region (regions/find-region (:regions service) region-id)
+        saturation (format "%.2f" (region-saturation region))]
+    (run-external
+      (:runner service)
+      :scripts
+      30000
+      "saturate-demand"
+      map-key
+      saturation)))
 
 (defn demand-map
   [service region-id facilities]
@@ -58,22 +85,24 @@
                                               #(str (capacity-for service %))))
                                         (flatten))
             map-key  (demand-map-key region-id polygons-with-capacities)
+            _ (setup-demands-folder service)
             response (apply run-external
                         (:runner service)
                         :bin
                         180000
                         "calculate-demand"
-                        (demands-path service map-key ".tif")
+                        (demands-path service map-key ".data.tif")
                         (populations-path service region-id ".tif")
                         (vec polygons-with-capacities))
-            unsatisfied-count (trim-to-int response)]
+            unsatisfied-count (trim-to-int response)
+            _ (create-map-raster service map-key region-id)]
           {:map-key map-key,
            :unsatisfied-count unsatisfied-count})
       (catch Exception e
         (error e "Error calculating demand map for region " region-id "with polygons" (map :polygon-id facilities))
         {}))))
 
-(defrecord MapsService [config runner])
+(defrecord MapsService [config runner regions])
 
 (defn maps-service
   "Construct a Maps Service component from config"

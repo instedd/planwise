@@ -9,28 +9,39 @@
             [planwise.boundary.projects :as projects]
             [planwise.boundary.facilities :as facilities]
             [clojure.walk :refer [keywordize-keys]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.set :refer [rename-keys]]))
 
 (defn- assoc-extra-data
-  [with project {:keys [facilities maps projects]}]
-  (let [dataset-id (:dataset-id project)
-        criteria {:region (:region-id project)
+  [with {:keys [dataset-id region-id], :as project} {:keys [facilities maps projects]}]
+  (let [criteria {:region region-id
                   :types (or (get-in project [:filters :facilities :type]) [])}
-        with-extra-data (case with
-                          :facilities
-                          (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)]
-                            (assoc project :facilities project-facilities))
-                          :facilities-with-demand
-                          (let [project-facilities (facilities/list-facilities facilities dataset-id criteria)
-                                time       (get-in project [:filters :transport :time])
-                                isochrones (when time
-                                             []) ; TODO: Load isochrones to calculate demand
-                                demand     (when isochrones
-                                             (maps/demand-map maps (:region-id project) isochrones))]
+
+        with-extra-data (letfn [(project-facilities []
+                                  (facilities/list-facilities facilities dataset-id criteria))
+                                (demand []
+                                  (when-let [time (get-in project [:filters :transport :time])]
+                                    (let [polygons (facilities/polygons-in-region facilities dataset-id {:threshold time} criteria)]
+                                      (some->> polygons
+                                        (seq)
+                                        (map #(rename-keys % {:facility-polygon-id :polygon-id
+                                                              :facility-population :population
+                                                              :facility-region-population :population-in-region}))
+                                        (maps/demand-map maps (:region-id project))))))]
+                          (case with
+                            :facilities
+                            (assoc project :facilities (project-facilities))
+
+                            :demand
+                            (merge project (demand))
+
+                            :facilities-with-demand
                             (-> project
-                              (merge demand)
-                              (assoc :facilities project-facilities)))
-                          project)]
+                              (merge (demand))
+                              (assoc :facilities (project-facilities)))
+
+                            project))]
+
     (if (:read-only project)
       with-extra-data
       (assoc with-extra-data :shares (projects/list-project-shares projects (:id project))))))

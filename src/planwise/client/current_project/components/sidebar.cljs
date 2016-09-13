@@ -8,7 +8,8 @@
             [planwise.client.current-project.db :as db]
             [planwise.client.styles :as styles]
             [planwise.client.asdf :as asdf]
-            [planwise.client.utils :as utils]))
+            [planwise.client.utils :as utils]
+            [planwise.client.config :as config]))
 
 
 (defn- demographic-stat [title value]
@@ -89,7 +90,10 @@
 
 (defn- transport-filters []
   (let [transport-time (subscribe [:current-project/transport-time])
-        read-only? (subscribe [:current-project/read-only?])]
+        read-only? (subscribe [:current-project/read-only?])
+        satisfied-demand (subscribe [:current-project/satisfied-demand])
+        current-project (subscribe [:current-project/current-data])
+        facilities-capacity config/facilities-default-capacity]
     (fn []
       [:div.sidebar-filters
        [:div.filter-info
@@ -98,7 +102,14 @@
          already has access to the services being analyzed."]
          [:p "Indicate here the acceptable one-way travel time to facilities. We will
          use that to calculate who already has access to the services that you
-         are analyzing."])]
+         are analyzing."])
+        (let [satisfied (or @satisfied-demand 0)
+              total (:region-population @current-project)]
+         [:p
+          [:div.small "With access / Total Population"]
+          [:div (str (utils/format-number satisfied) " / " (utils/format-number total))]
+          [progress-bar/progress-bar satisfied total]
+          [:div.small.facilities-stats (str "Assuming that each facility can provide coverage for a population of " (utils/format-number facilities-capacity))]])]
 
        [:fieldset
         [:legend "By car"]

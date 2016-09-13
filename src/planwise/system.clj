@@ -208,7 +208,8 @@
                                 :resmap-auth-endpoint]
 
           ; Components
-          :maps                [:runner]
+          :maps                [:runner
+                                :regions]
           :facilities          [:db
                                 :runner]
           :projects            [:db

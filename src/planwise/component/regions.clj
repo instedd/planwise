@@ -14,12 +14,10 @@
   (get-in service [:db :spec]))
 
 (defn db->region [{json-bbox :bbox, :as record}]
-  (let [[se ne nw sw se'] (map reverse (get-in (json/read-str json-bbox) ["coordinates" 0]))]
-    (-> record
-      (assoc :bbox [sw ne])
-      (set/rename-keys {:admin_level :admin-level
-                        :preview_geojson :preview-geojson}))))
-
+  (if json-bbox
+    (let [[se ne nw sw se'] (map reverse (get-in (json/read-str json-bbox) ["coordinates" 0]))]
+      (assoc record :bbox [sw ne]))
+    record))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -46,3 +44,6 @@
 (defn list-regions-with-geo [service ids simplify]
   (map db->region
     (select-regions-with-geo-given-ids (get-db service) {:ids ids, :simplify simplify})))
+
+(defn find-region [service id]
+  (db->region (select-region (get-db service) {:id id})))
