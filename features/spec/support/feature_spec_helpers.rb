@@ -82,4 +82,15 @@ module FeatureSpecHelpers
   def accept_alert
     page.driver.browser.switch_to.alert.accept
   end
+
+  def check_facility_type
+    page.all('input[type="checkbox"]')[0].click
+  end
+
+  def screenshot_image
+    screenshot_and_save_page
+    screenshots = Dir['/features/tmp/*.png'].sort_by { |x| File.mtime(x) }
+    last = screenshots.last
+    Phashion::Image.new(last)
+  end
 end

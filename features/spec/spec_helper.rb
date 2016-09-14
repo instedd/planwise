@@ -22,6 +22,7 @@ require 'site_prism'
 require 'byebug'
 require 'pg'
 require 'active_record'
+require 'phashion'
 
 ActiveRecord::Base.establish_connection(
   :adapter  => 'postgresql',

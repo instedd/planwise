@@ -65,15 +65,23 @@ describe "Project" do
         end
 
         expect_page ProjectPage do |page|
+          page.header.open_facilities
+        end
+
+        expect_page ProjectFacilitiesPage do |page|
+          check_facility_type
           page.header.open_transport_means
         end
 
-        expect_page ProjectTransportMeansPage do |page|
-          screenshot_and_save_page
+        expect_page ProjectTransportMeansPage do |page|   
+          screen1 = screenshot_image
+          sleep 3
           expand_options
           select_option(3)
-          screenshot_and_save_page
-          #compare screenshots (wip)
+          sleep 3
+          screen2 = screenshot_image
+
+          expect(screen1.duplicate?(screen2)).to be_falsey   
         end
       end       
     end
