@@ -62,18 +62,6 @@
   (let [path (demands-path service "-")]
     (clojure.java.io/make-parents path)))
 
-(defn- create-map-raster
-  [service map-key region-id]
-  (let [region (regions/find-region (:regions service) region-id)
-        saturation (format "%.2f" (region-saturation region))]
-    (run-external
-      (:runner service)
-      :scripts
-      30000
-      "saturate-demand"
-      map-key
-      saturation)))
-
 (defn demand-map
   [service region-id facilities]
   (when (calculate-demand? service)
@@ -84,18 +72,20 @@
                                               #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
                                               #(str (capacity-for service %))))
                                         (flatten))
-            map-key  (demand-map-key region-id polygons-with-capacities)
+            map-key (demand-map-key region-id polygons-with-capacities)
+            region (regions/find-region (:regions service) region-id)
+            saturation (format "%.2f" (region-saturation region))
             _ (setup-demands-folder service)
             response (apply run-external
                         (:runner service)
                         :bin
-                        180000
+                        300000
                         "calculate-demand"
-                        (demands-path service map-key ".data.tif")
+                        (demands-path service map-key ".tif")
+                        (str saturation)
                         (populations-path service region-id ".tif")
                         (vec polygons-with-capacities))
-            unsatisfied-count (trim-to-int response)
-            _ (create-map-raster service map-key region-id)]
+            unsatisfied-count (trim-to-int response)]
           {:map-key map-key,
            :unsatisfied-count unsatisfied-count})
       (catch Exception e
