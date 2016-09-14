@@ -69,7 +69,7 @@ describe "Project" do
         end
 
         expect_page ProjectFacilitiesPage do |page|
-          check_facility_type
+          check_all_facility_types
           page.header.open_transport_means
         end
 
@@ -83,7 +83,26 @@ describe "Project" do
 
           expect(screen1.duplicate?(screen2)).to be_falsey   
         end
-      end       
+      end
+
+      it "should display place markers on the map" do
+        goto_page HomePage do |page|
+          open_project_view
+        end
+
+        expect_page ProjectPage do |page|
+          page.header.open_facilities
+        end
+
+        expect_page ProjectFacilitiesPage do |page|     
+          screen1 = screenshot_image
+          check_all_facility_types 
+          sleep 3
+          screen2 = screenshot_image
+
+          expect(screen1.duplicate?(screen2)).to be_falsey   
+        end
+      end          
     end
 
     context "without project" do

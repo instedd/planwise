@@ -83,8 +83,12 @@ module FeatureSpecHelpers
     page.driver.browser.switch_to.alert.accept
   end
 
-  def check_facility_type
+  def check_all_facility_types
     page.all('input[type="checkbox"]')[0].click
+    page.all('input[type="checkbox"]')[1].click
+    page.all('input[type="checkbox"]')[2].click
+    page.all('input[type="checkbox"]')[3].click
+    page.all('input[type="checkbox"]')[4].click
   end
 
   def screenshot_image
