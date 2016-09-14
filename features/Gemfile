@@ -8,4 +8,5 @@ gem 'site_prism'
 gem 'byebug'
 gem 'pg'
 gem 'activerecord'
+gem 'phashion'
 
