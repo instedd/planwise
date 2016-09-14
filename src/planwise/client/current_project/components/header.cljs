@@ -55,7 +55,9 @@
 (defn header-section [project-id project-goal selected-tab read-only share-count wizard-state]
   [:div.project-header
    [:div.title
-    [:h2 project-goal]
+    [:h2
+     [:a {:href (routes/home)} (common/icon :arrow-back "icon-small")]
+     project-goal]
     [dataset-status]]
    [:nav
     [nav/ul-menu (project-tab-items project-id wizard-mode-state) selected-tab (:set wizard-mode-state)]

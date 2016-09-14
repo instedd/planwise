@@ -1,6 +1,6 @@
 @import 'defs';
 
-$project-head-height: 116px;
+$project-head-height: 110px;
 $project-sidebar-width: 300px;
 $search-box-height: 42px;
 $project-header-left-margin: 15px;
@@ -190,9 +190,6 @@ article.project-view {
     z-index: 2;
     box-shadow: 0 2px 2px rgba(0,0,0,0.2);
 
-    .sub-link {
-      margin-left: $project-header-left-margin;
-    }
     h2 {
       color: $black;
       padding: 25px 0 0 $project-header-left-margin;

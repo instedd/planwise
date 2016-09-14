@@ -6,6 +6,13 @@ ambulance
 </title>
 <path d='M7,4A1,1,0,0,0,5,4V5H7Zm14,9L18,8H15V6H1V19H3a3,3,0,0,0,6,0h4a3,3,0,0,0,6,0h4V15A2,2,0,0,0,21,13ZM6,20.5A1.5,1.5,0,1,1,7.5,19,1.5,1.5,0,0,1,6,20.5ZM9,13H7v2H5V13H3V11H5V9H7v2H9Zm7,7.5A1.5,1.5,0,1,1,17.5,19,1.5,1.5,0,0,1,16,20.5ZM15,13V9.49h2.13L19.24,13Z'/>
 </symbol>
+<symbol viewBox='0 0 24 24' id='icon-arrow-back' data-name='icon-arrow-back'>
+<title>
+arrow-back
+</title>
+<path fill='none' d='M0 0h24v24H0z'/>
+<path d='M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z'/>
+</symbol>
 <symbol viewBox='0 0 24 24' data-name='icon-arrow-down' id='icon-arrow-down'>
 <title>
 arrow-down
@@ -41,6 +48,13 @@ bus
 car
 </title>
 <path d='M18.94,6,21,12v8a1,1,0,0,1-1,1H19a1,1,0,0,1-1-1V19H6v1a1,1,0,0,1-1,1H4a1,1,0,0,1-1-1V12L5.06,6A1.33,1.33,0,0,1,6.52,5h11A1.33,1.33,0,0,1,18.94,6ZM5,11H19l-1.5-4.5h-11Zm.45,4.52a1.47,1.47,0,0,0,2.11,0A1.5,1.5,0,0,0,6.52,13a1.49,1.49,0,0,0-1.05,2.55Zm11,0A1.47,1.47,0,1,0,16,14.48,1.44,1.44,0,0,0,16.43,15.54Z'/>
+</symbol>
+<symbol viewBox='0 0 24 24' id='icon-check-circle-wizard' data-name='icon-check-circle-wizard'>
+<title>
+check-circle-wizard
+</title>
+<path fill='none' d='M0 0h24v24H0z'/>
+<path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/>
 </symbol>
 <symbol viewBox='0 0 24 24' data-name='icon-check-circle' id='icon-check-circle'>
 <defs>
