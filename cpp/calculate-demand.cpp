@@ -160,7 +160,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
 #endif
 
     // First pass: we count the still unsatisfied population under the isochrone
-    float unsatisfiedCount = 0.0f;
+    double unsatisfiedCount = 0;
     for (int iXBlock = 0; iXBlock < facilityNXBlocks; ++iXBlock) {
       xOffset = iXBlock*xBlockSize;
       nXValid = xBlockSize;
@@ -238,7 +238,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
 
   // Finally, make a last pass on the target dataset to count the total
   // unsatisfied population and return it
-  float totalUnsatisfied = 0.0;
+  double totalUnsatisfied = 0;
   for (int iXBlock = 0; iXBlock < targetNXBlocks; ++iXBlock) {
     xOffset = iXBlock*xBlockSize;
     nXValid = xBlockSize;
@@ -273,7 +273,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 5 || (argc % 2) == 0) {
+  if (argc < 3 || (argc % 2) == 0) {
     std::cerr << "Usage: " << argv[0] << " TARGET.tif POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
       << std::endl << std::endl
       << "Example:" << std::endl

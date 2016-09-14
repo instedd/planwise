@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   float* buffer = (float*) CPLMalloc(sizeof(float)*xBlockSize*yBlockSize);
   float nodata = band->GetNoDataValue();
   float max = 0;
-  float sum = 0;
+  double sum = 0;
 
   for (int iXBlock = 0; iXBlock < nXBlocks; ++iXBlock) {
     xOffset = iXBlock*xBlockSize;
@@ -72,5 +72,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << ((long)sum) << " " << ceil(max) << std::endl;
+  std::cout << ((long)sum) << " " << ((long)ceil(max)) << std::endl;
 }
