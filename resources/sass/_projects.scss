@@ -207,17 +207,24 @@ article.project-view {
         font-style: italic;
       }
     }
+
     ul {
       margin-top: 8px;
       margin-left: 10px;
       padding: 5px;
 
-      div {
-        display: inline-block;
-      }
-
       &.wizard > li {
         margin-right: 0px;
+
+        & + li::before {
+          content: "";
+          width: 30px;
+          height: 1px;
+          display: inline-block;
+          background-color: $gray2;
+          margin: 0px 8px 4px 8px;
+        }
+
       }
 
       li {
@@ -240,14 +247,6 @@ article.project-view {
           padding-left: 8px;
           margin-left: 3px;
           margin-right: 5px;
-        }
-
-        .separator {
-          width: 30px;
-          height: 1px;
-          display: inline-block;
-          background-color: $gray2;
-          margin: 0px 8px 4px 8px;
         }
 
         .wizard-check {

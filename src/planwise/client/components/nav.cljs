@@ -18,7 +18,6 @@
         reference (if (= wizard-state :visited)
                     (components/icon :check-circle-wizard "icon-small wizard-check")
                     [:div.wizard-number tab-number])]
-    ;; (when (> tab-number 1) [:div.separator]) TODO: solve it with :after and not-first-child
     (li-menu-item (assoc item
                         :li-classes li-classes
                         :reference  reference))))
