@@ -35,7 +35,7 @@ function block_size {
 }
 
 if [ $# -lt 2 ]; then
-  echo "Usage: $0 REGION_ID FACILITY_POLYGON_ID"
+  echo "Usage: $0 REGION_ID FACILITY_POLYGON_ID [SCALE]"
 	exit 1
 fi
 
@@ -43,6 +43,11 @@ DATA_PATH=${DATA_PATH:-data}
 BIN_PATH=${BIN_PATH:-cpp}
 REGION_ID=$1
 FACILITY_POLYGON_ID=$2
+
+SCALE=1
+if [ $# -ge 3 ]; then
+  SCALE=$3
+fi
 
 # Create facility-polygon-region mask tif
 
@@ -83,16 +88,27 @@ fi;
 
 VRT_TARGET=${DATA_PATH}/isochrones/${REGION_ID}/${FACILITY_POLYGON_ID}.vrt
 
+scaled_resolution=$resolution
+if [[ $SCALE -ne 1 ]]; then
+  scaled_resolution=$(python -c "print ${resolution} * ${SCALE}")
+fi
+
 gdalwarp -q \
-  -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+  -overwrite \
   -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
   -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
+  -dstnodata 0 \
   -crop_to_cutline \
   -of VRT \
+  -tap \
+  -tr $scaled_resolution -$scaled_resolution \
   $POPULATION_FILE $VRT_TARGET
 
-
 IFS=' ' read -a AGGREGATES <<< $(${BIN_PATH}/aggregate-population ${VRT_TARGET})
-echo ${AGGREGATES[0]}
+if [[ $SCALE -eq 1 ]]; then
+  echo ${AGGREGATES[0]}
+else
+  echo $(python -c "print ${AGGREGATES[0]} * ${SCALE} * ${SCALE}")
+fi
 
 rm ${VRT_TARGET}
