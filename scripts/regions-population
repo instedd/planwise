@@ -47,6 +47,11 @@ for region in $REGIONS; do
   COUNTRY=`echo $region | cut -d \| -f 2`
   RASTER=${DATA_PATH}/`base-raster ${COUNTRY}`
 
+  if [[ ! -e $RASTER ]]; then
+    echo " Downloading population file for $COUNTRY"
+    curl -o $RASTER https://s3.amazonaws.com/planwise/data/$(base-raster $COUNTRY)
+  fi
+
   DATA_TARGET=${DATA_PATH}/populations/data/${ID}.tif
   VIZ_TARGET=${DATA_PATH}/populations/maps/${ID}.tif
 
