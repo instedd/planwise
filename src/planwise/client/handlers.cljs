@@ -28,7 +28,7 @@
     db))
 
 (defmethod on-navigate :home [db _ _]
-  (assoc-in db [:projects :current :wizard :set] false))
+  (assoc-in db [:current-project :wizard :set] false))
 
 (defmethod on-navigate :datasets [db _ _]
   db)

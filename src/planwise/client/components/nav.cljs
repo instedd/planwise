@@ -28,9 +28,10 @@
                        :reference (some-> (:icon item) (components/icon "icon-small")))))
 
 (defn ul-menu [items selected wizard-mode-on]
-  [:ul {:class (when wizard-mode-on "wizard")} (map-indexed (fn [idx item]
-                      (let [item-with-metadata (assoc item :key idx :selected selected)]
-                        (if wizard-mode-on
-                          [li-wizard-menu-item item-with-metadata]
-                          [li-normal-menu-item item-with-metadata])))
-                        items)])
+  [:ul {:class (when wizard-mode-on "wizard")}
+   (map-indexed (fn [idx item]
+                  (let [item-with-metadata (assoc item :key idx :selected selected)]
+                    (if wizard-mode-on
+                      [li-wizard-menu-item item-with-metadata]
+                      [li-normal-menu-item item-with-metadata])))
+                items)])

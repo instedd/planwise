@@ -9,6 +9,8 @@
             [planwise.client.styles :as styles]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
+            [planwise.client.routes :as routes]
+            [accountant.core :as accountant]
             [planwise.client.config :as config]))
 
 
@@ -145,7 +147,7 @@
 
 (defn sidebar-section [selected-tab]
   (let [current-project (subscribe [:current-project/current-data])
-        wizard-mode-on (subscribe [:projects/wizard-mode-on])]
+        wizard-mode-on (subscribe [:current-project/wizard-mode-on])]
     [:aside
      (case selected-tab
        :demographics [demographics-filters]

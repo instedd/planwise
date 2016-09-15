@@ -85,8 +85,8 @@
        (dispatch [:current-project/load-project project-id (section->with section)])
        db)
      (do
-       (dispatch [:current-project/reload-project project-id (section->with section)]))
-       (update-wizard-state db section))))
+       (dispatch [:current-project/reload-project project-id (section->with section)])
+       (update-wizard-state db section)))))
 
 (register-handler
  :current-project/load-project

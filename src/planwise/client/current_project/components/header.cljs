@@ -52,7 +52,7 @@
                    tab-items)
       tab-items)))
 
-(defn header-section [project-id project-goal selected-tab read-only share-count wizard-state]
+(defn header-section [project-id project-goal selected-tab read-only share-count wizard-mode-state]
   [:div.project-header
    [:div.title
     [:h2

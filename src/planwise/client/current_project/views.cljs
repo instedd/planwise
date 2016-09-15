@@ -162,7 +162,7 @@
         current-project (subscribe [:current-project/current-data])
         project-shares (subscribe [:current-project/shares])
         view-state (subscribe [:current-project/view-state])
-        wizard-mode-state (subscribe [:projects/wizard-state])]
+        wizard-mode-state (subscribe [:current-project/wizard-state])]
     (fn []
       (let [project-id (:id @page-params)
             selected-tab (:section @page-params)

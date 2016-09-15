@@ -84,7 +84,7 @@
                         :tabs {
                                :demographics    :unvisited
                                :facilities      :unvisited
-                               :transport-means :unvisited}}})
+                               :transport       :unvisited}}})
 
 
 ;; Project data manipulation functions

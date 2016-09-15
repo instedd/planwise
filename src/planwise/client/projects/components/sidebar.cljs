@@ -4,10 +4,11 @@
             [re-com.core :as rc]
             [planwise.client.components.progress-bar :as progress-bar]
             [planwise.client.components.filters :as filters]
-            [planwise.client.projects.db :as db]
+            [planwise.client.current-project.db :as db]
             [planwise.client.utils :as utils]
             [planwise.client.routes :as routes]
             [accountant.core :as accountant]
+            [planwise.client.components.common :as components]
             [planwise.client.styles :as styles]))
 
 (defn- demographic-stat [title value]
@@ -91,17 +92,4 @@
          :label-fn :name
          :on-change #(dispatch [:projects/set-transport-time %])
          :model transport-time]
-        (icon :car)]])))
-
-(defn sidebar-section [selected-tab]
-  (let [current-project (subscribe [:projects/current-data])
-        wizard-mode-on (subscribe [:projects/wizard-mode-on])]
-    [:aside (condp = selected-tab
-              :demographics
-              [demographics-filters]
-              :facilities
-              [facility-filters]
-              :transport
-              [transport-filters])
-     (when @wizard-mode-on
-       (next-and-back-buttons selected-tab (:id @current-project)))]))
+        (components/icon :car)]])))
