@@ -103,13 +103,14 @@
          [:p "Indicate here the acceptable one-way travel time to facilities. We will
          use that to calculate who already has access to the services that you
          are analyzing."])
-        (let [satisfied (or @satisfied-demand 0)
-              total (:region-population @current-project)]
-         [:p
-          [:div.small "With access / Total Population"]
-          [:div (str (utils/format-number satisfied) " / " (utils/format-number total))]
-          [progress-bar/progress-bar satisfied total]
-          [:div.small.facilities-stats (str "Assuming that each facility can provide coverage for a population of " (utils/format-number facilities-capacity))]])]
+        (when config/calculate-demand
+         (let [satisfied (or @satisfied-demand 0)
+               total (:region-population @current-project)]
+          [:p
+           [:div.small "With access / Total Population"]
+           [:div (str (utils/format-number satisfied) " / " (utils/format-number total))]
+           [progress-bar/progress-bar satisfied total]
+           [:div.small.facilities-stats (str "Assuming that each facility can provide coverage for a population of " (utils/format-number facilities-capacity))]]))]
 
        [:fieldset
         [:legend "By car"]

@@ -20,3 +20,6 @@
 
 (def facilities-default-capacity
   (aget global-config "facilities-default-capacity"))
+
+(def calculate-demand
+  (aget global-config "calculate-demand"))

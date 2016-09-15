@@ -36,6 +36,7 @@
   (let [resmap-url (:url resmap)
         mapserver-url (maps/mapserver-url maps)
         default-capacity (maps/default-capacity maps)
+        calculate-demand (maps/calculate-demand? maps)
         ident (util/request-ident request)
         email (util/request-user-email request)
         token (create-jwe-token auth ident)
@@ -45,7 +46,8 @@
                 :jwe-token token
                 :mapserver-url mapserver-url
                 :app-version app-version
-                :facilities-default-capacity default-capacity}]
+                :facilities-default-capacity default-capacity
+                :calculate-demand calculate-demand}]
 
     [:script (str "var _CONFIG=" (json/generate-string config) ";")]))
 
