@@ -56,10 +56,11 @@ ${OSM2PGROUTING} -f /tmp/$COUNTRY.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.x
 # If we change this value we might also need to change the bounding buffer used to filter ways
 # before calculating facility isochrones. See `bounding_radius_meters` in the `calculate_isochrones`
 # function.
-echo "Populating ways_nodes table"
+echo "Post-processing OSM information:"
 psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
 SELECT populate_ways_nodes();
-SELECT connect_isolated_segments(5000);
+SELECT pgr_analyzeGraph('ways', 0.001, 'the_geom', 'gid');
+SELECT fixpoint_connect_isolated_segments(5000);
 UPDATE ways SET length_m = st_length(the_geom::geography) WHERE length_m IS NULL;
 SELECT apply_traffic_factor(1.5);
 SQL_SCRIPT
