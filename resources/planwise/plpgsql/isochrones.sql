@@ -177,8 +177,9 @@ begin
     -- Populate facilities_polygons_regions with the intersection between the inserted polygon and regions
     INSERT INTO facilities_polygons_regions(facility_polygon_id, region_id, area)
     SELECT fp.id, r.id, ST_Area(ST_Intersection(fp.the_geom, r.the_geom))
-    FROM regions AS r INNER JOIN facilities_polygons AS fp
-      ON ST_Intersects(fp.the_geom, r.the_geom)
+    FROM facilities AS f
+      INNER JOIN facilities_polygons AS fp ON f.id = fp.facility_id
+      INNER JOIN regions AS r ON f.the_geom @ r.the_geom AND ST_Contains(r.the_geom, f.the_geom)
     WHERE fp.id = polygon_id;
 
     from_cost      := to_cost;
