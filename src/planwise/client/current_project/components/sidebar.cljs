@@ -25,20 +25,21 @@
     :facilities      (routes/project-facilities {:id project-id})
     :transport       (routes/project-transport {:id project-id})))
 
+;; TODO: refactor this to re-use header/project-tab-items
 (defn- next-and-back-buttons [tab-name project-id]
   (let [tabs [:demographics :facilities :transport]
         has-next? (not= (last tabs) tab-name)
         has-back? (not= (first tabs) tab-name)
         next (second (drop-while #(not= tab-name %) tabs))
         back (last (take-while #(not= tab-name %) tabs))]
-    [:div.nav-buttons {:class (if (and has-back? has-next?) "both" "just-one")}
+    [:div.nav-buttons
       (when has-back?
-        [:button.nav-button.prev {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
+        [:button.secondary {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
          (icon :key-arrow-left "icon-small")
-         [:span.prev-button-text "Prev"]])
+         "Prev"])
       (when has-next?
-        [:button.nav-button.next {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
-         [:span.next-button-text "Next"]
+        [:button.primary {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
+         "Next"
          (icon :key-arrow-right "icon-small")])]))
 
 (defn- demographics-filters []

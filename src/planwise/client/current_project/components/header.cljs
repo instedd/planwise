@@ -47,8 +47,8 @@
     (if wizard-mode-on
       (map-indexed (fn [i tab-item]
                      (assoc tab-item
-                            :wizard-state ((:item tab-item) wizard-tabs-state)
-                            :tab-number (+ 1 i)))
+                            :wizard-state (get wizard-tabs-state (:item tab-item))
+                            :tab-number (inc i)))
                    tab-items)
       tab-items)))
 

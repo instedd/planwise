@@ -79,8 +79,7 @@
    :dataset            (asdf/new nil)
 
    :project-data       nil                      ; see ProjectData above
-   :wizard             {
-                        :set false
+   :wizard             {:set false
                         :tabs {
                                :demographics    :unvisited
                                :facilities      :unvisited

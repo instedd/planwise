@@ -71,6 +71,7 @@
     (assoc-in db [:wizard :tabs next-tab] :visiting)
     db))
 
+;; TODO: refactor and rename his into visit-tab with a single update to the database
 (defn- update-wizard-state [db next-tab]
   (-> db
       (update-next-tab-state next-tab)
