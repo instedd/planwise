@@ -3,7 +3,11 @@ set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
 # Creates a byte-sized raster file data/regions/REGIONID.tif,
-# with a mask of each region, ie a value of 255 for the region
+# with a mask of each region, ie a value of 255 for the region.
+#
+# These masks will then be used to create masks for the facility
+# polygon regions, in raster-isochrone, that are used to calculate
+# demand.
 
 DATA_PATH=${DATA_PATH:-data}
 
@@ -18,7 +22,9 @@ for id in $REGION_IDS; do
     gdal_rasterize -q -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -ot byte -a_nodata 0 -burn 255 \
       -sql "SELECT the_geom FROM regions WHERE id = ${id};" \
+      -co "NBITS=1" -co "COMPRESS=CCITTFAX4" \
       -tr 0.0008333 0.0008333 \
+      -tap \
       PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" $TARGET
   fi;
 done;

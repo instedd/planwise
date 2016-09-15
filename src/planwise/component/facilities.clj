@@ -101,10 +101,11 @@
         (vec))))
 
 (defn raster-isochrones! [service facility-id]
-  (let [facilities-polygons-regions (select-facilities-polygons-regions-for-facility (get-db service) {:facility-id facility-id})]
+  (let [scale-resolution 8
+        facilities-polygons-regions (select-facilities-polygons-regions-for-facility (get-db service) {:facility-id facility-id})]
     (doseq [{:keys [facility-polygon-id region-id] :as fpr} facilities-polygons-regions]
       (try
-        (let [population (-> (run-external (:runner service) :scripts 60000 "raster-isochrone" (str region-id) (str facility-polygon-id))
+        (let [population (-> (run-external (:runner service) :scripts 60000 "raster-isochrone" (str region-id) (str facility-polygon-id) (str scale-resolution))
                              (trim-to-int))]
           (set-facility-polygon-region-population!
             (get-db service)

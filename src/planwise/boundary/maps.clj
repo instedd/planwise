@@ -10,6 +10,9 @@
   (default-capacity [service]
     "Retrieves the default capacity of a facility for calculating coverage")
 
+  (calculate-demand? [service]
+    "Feature toggle flag for unsatisfied emand calculation")
+
   (demand-map [service region-id polygons]
     "Returns the key for an unsatsified demand tile layer and the total unsatisfied demand,
      for the specified region and using the chosen facility polygons"))
@@ -22,5 +25,7 @@
     (service/mapserver-url service))
   (default-capacity [service]
     (service/default-capacity service))
+  (calculate-demand? [service]
+    (service/calculate-demand? service))
   (demand-map [service region-id polygons]
     (service/demand-map service region-id polygons)))
