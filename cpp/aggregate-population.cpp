@@ -46,15 +46,15 @@ int main(int argc, char *argv[]) {
   float max = 0;
   double sum = 0;
 
-  for (int iXBlock = 0; iXBlock < nXBlocks; ++iXBlock) {
-    xOffset = iXBlock*xBlockSize;
-    nXValid = xBlockSize;
-    if (iXBlock == nXBlocks-1) nXValid = xSize - xOffset;
+  for (int iYBlock = 0; iYBlock < nYBlocks; ++iYBlock) {
+    yOffset = iYBlock*yBlockSize;
+    nYValid = yBlockSize;
+    if (iYBlock == nYBlocks-1) nYValid = ySize - yOffset;
 
-    for (int iYBlock = 0; iYBlock < nYBlocks; ++iYBlock) {
-      yOffset = iYBlock*yBlockSize;
-      nYValid = yBlockSize;
-      if (iYBlock == nYBlocks-1) nYValid = ySize - yOffset;
+    for (int iXBlock = 0; iXBlock < nXBlocks; ++iXBlock) {
+      xOffset = iXBlock*xBlockSize;
+      nXValid = xBlockSize;
+      if (iXBlock == nXBlocks-1) nXValid = xSize - xOffset;
 
       band->ReadBlock(iXBlock, iYBlock, buffer);
 
