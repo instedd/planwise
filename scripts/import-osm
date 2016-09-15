@@ -42,8 +42,13 @@ fi;
 ${OSM2PGROUTING} -f /tmp/$COUNTRY.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
 
 
-# First, popylate the ways_nodes table. Then make up for ways with NULL length_m (caused by
-# bad input data from OSM).
+# Apply some post-processing:
+# - Populate the ways_nodes table.
+# - Fix ways with NULL length_m (caused by bad input data from OSM).
+# - Attempt to connect isolated segments to the main network, using a 5km
+#   threshold (5km is also the currently used theshold for considering a
+#   facility too far from the road network when computing isochrones).
+# - Recompute the cost (in seconds) by applying a traffic factor.
 #
 # When applying the traffic factor we state that the time it takes to traverse a way is 50%
 # more than allowed by the max speeds.
@@ -54,6 +59,7 @@ ${OSM2PGROUTING} -f /tmp/$COUNTRY.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.x
 echo "Populating ways_nodes table"
 psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
 SELECT populate_ways_nodes();
+SELECT connect_isolated_segments(5000);
 UPDATE ways SET length_m = st_length(the_geom::geography) WHERE length_m IS NULL;
 SELECT apply_traffic_factor(1.5);
 SQL_SCRIPT
