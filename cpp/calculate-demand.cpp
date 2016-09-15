@@ -11,9 +11,14 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 
-typedef unsigned char BYTE;
+// #define BENCHMARK 1
+// #define DEBUG 1
 
-#define DEBUG 1
+#ifdef BENCHMARK
+#include <boost/timer/timer.hpp>
+#endif
+
+typedef unsigned char BYTE;
 
 const char* DEMAND_METADATA_KEY = "UNSATISFIED_DEMAND";
 const char* APP_METADATA_DOMAIN = "PLANWISE";
@@ -39,25 +44,6 @@ GDALDataset* openRaster(std::string filename) {
   return poDataset;
 };
 
-GDALDataset* copyRaster(GDALDataset* sourceRaster, std::string filename, int blockXSize, int blockYSize) {
-  const char *pszFormat = "GTiff";
-  GDALDriver *poDriver;
-  poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
-  if (poDriver == NULL) {
-    std::cerr << "Failed loading driver" << std::endl;
-    exit(1);
-  }
-
-  char **papszOptions = NULL;
-  papszOptions = CSLSetNameValue(papszOptions, "TILED", "YES");
-  papszOptions = CSLSetNameValue(papszOptions, "BLOCKXSIZE", numberToString(blockXSize).c_str());
-  papszOptions = CSLSetNameValue(papszOptions, "BLOCKYSIZE", numberToString(blockYSize).c_str());
-
-  GDALDataset* dataset = poDriver->CreateCopy(filename.c_str(), sourceRaster, FALSE, papszOptions, NULL, NULL);
-  dataset->FlushCache();
-  return dataset;
-}
-
 void closeRaster(GDALDataset* rasterDataSet) {
   GDALClose(rasterDataSet);
 };
@@ -73,29 +59,54 @@ long readUnsatisfiedDemand(std::string targetFilename) {
   return atol(metadataValue);
 }
 
-long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFilename, std::vector<std::string> facilities, std::vector<float> capacities) {
+long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFilename, float saturation, std::vector<std::string> facilities, std::vector<float> capacities) {
 
-  // generate target dataset based on demoDataset
-  GDALDataset* demoDataset = openRaster(demoFilename);
-  GDALRasterBand* demoBand = demoDataset->GetRasterBand(1);
-  assert(demoBand->GetRasterDataType() == GDT_Float32);
-  int xBlockSize, yBlockSize;
-  demoBand->GetBlockSize(&xBlockSize, &yBlockSize);
-  GDALDataset* targetDataset = copyRaster(demoDataset, targetFilename, xBlockSize, yBlockSize);
-  GDALRasterBand* targetBand = targetDataset->GetRasterBand(1);
-  closeRaster(demoDataset);
+#ifdef BENCHMARK
+  boost::timer::auto_cpu_timer t(std::cerr, 6, "Total time elapsed: %t sec CPU, %w sec real\n");
+#endif
 
+  GDALDataset* targetDataset = NULL;
+  int xBlockSize, yBlockSize, targetXSize, targetYSize, targetNXBlocks, targetNYBlocks;
+  int nXValid, nYValid, xOffset, yOffset, dataOffset;
+  float* buffer;
+  float* data;
+  double demoProjection[6];
+  double facilityProjection[6];
+  float nodata;
+  std::string demoProjectionWKT;
 
-  float* buffer = (float*) CPLMalloc(sizeof(float)*xBlockSize*yBlockSize);
-  BYTE* facilityBuffer = (BYTE*) CPLMalloc(sizeof(BYTE)*xBlockSize*yBlockSize);
+  /****************************************************************************
+   * Read demographics raster into memory buffer
+   ****************************************************************************/
+  {
+#ifdef BENCHMARK
+    boost::timer::auto_cpu_timer t(std::cerr, 6, "Read demographics raster: %t sec CPU, %w sec real\n");
+#endif
+    GDALDataset* demoDataset = openRaster(demoFilename);
+    GDALRasterBand* demoBand = demoDataset->GetRasterBand(1);
+    assert(demoBand->GetRasterDataType() == GDT_Float32);
+    demoBand->GetBlockSize(&xBlockSize, &yBlockSize);
+    demoDataset->GetGeoTransform(demoProjection);
 
-  float nodata = targetBand->GetNoDataValue();
+    targetXSize = demoDataset->GetRasterXSize();
+    targetYSize = demoDataset->GetRasterYSize();
+    targetNXBlocks = (targetXSize + xBlockSize - 1)/xBlockSize;
+    targetNYBlocks = (targetYSize + yBlockSize - 1)/yBlockSize;
+    nodata = demoBand->GetNoDataValue();
+    demoProjectionWKT = demoDataset->GetProjectionRef();
+    data = (float*) CPLMalloc(sizeof(float) * (xBlockSize * yBlockSize) * (targetNXBlocks * targetNYBlocks));
 
-  int targetXSize = targetDataset->GetRasterXSize();
-  int targetYSize = targetDataset->GetRasterYSize();
-  int targetNXBlocks = (targetXSize + xBlockSize - 1)/xBlockSize;
-  int targetNYBlocks = (targetYSize + yBlockSize - 1)/yBlockSize;
-  int nXValid, nYValid, xOffset, yOffset;
+    for (int iYBlock = 0; iYBlock < targetNYBlocks; ++iYBlock) {
+      for (int iXBlock = 0; iXBlock < targetNXBlocks; ++iXBlock) {
+        dataOffset = (targetNXBlocks * iYBlock + iXBlock) * (xBlockSize * yBlockSize);
+        CPLErr err = demoBand->ReadBlock(iXBlock, iYBlock, data + dataOffset);
+        assert(err == CE_None);
+      }
+    }
+
+    closeRaster(demoDataset);
+  }
+
 
 #ifdef DEBUG
   std::cerr << "Target raster properties:" << std::endl;
@@ -107,10 +118,19 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
   std::cerr << " nXBlocks " << targetNXBlocks << std::endl;
 #endif
 
+  /****************************************************************************
+   * Iterate over all facilities and substract from unsatisfied demand
+   ****************************************************************************/
+
+  BYTE* facilityBuffer = (BYTE*) CPLMalloc(sizeof(BYTE)*xBlockSize*yBlockSize);
   for (size_t iFacility = 0; iFacility < facilities.size(); iFacility++) {
 
 #ifdef DEBUG
     std::cerr << "Processing facility " << facilities[iFacility] << std::endl;
+#endif
+
+#ifdef BENCHMARK
+    boost::timer::auto_cpu_timer t(std::cerr, 6, "Process facility: %t sec CPU, %w sec real\n");
 #endif
 
     // open isochrone dataset
@@ -120,15 +140,13 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     assert(facilityBand->GetRasterDataType() == GDT_Byte);
 
     // set blocks offsets
-    double targetProjection[6], facilityProjection[6];
-    targetDataset->GetGeoTransform(targetProjection);
     facilityDataset->GetGeoTransform(facilityProjection);
 
     double epsilon = 0.01;
     double facilityMaxY = facilityProjection[3];
-    double demoMaxY = targetProjection[3];
+    double demoMaxY = demoProjection[3];
     double facilityYRes = facilityProjection[5];
-    double demoYRes = targetProjection[5];
+    double demoYRes = demoProjection[5];
     assert(std::abs(facilityYRes - demoYRes) < epsilon);
     assert(facilityMaxY <= (demoMaxY + epsilon));
     double blocksY = (facilityMaxY - demoMaxY)/(128 * demoYRes);
@@ -136,9 +154,9 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     assert(std::abs(blocksY - blocksYOffset) < epsilon);
 
     double facilityMinX = facilityProjection[0];
-    double demoMinX = targetProjection[0];
+    double demoMinX = demoProjection[0];
     double facilityXRes = facilityProjection[1];
-    double demoXRes = targetProjection[1];
+    double demoXRes = demoProjection[1];
     assert(std::abs(facilityXRes - demoXRes) < epsilon);
     assert(demoMinX <= (facilityMinX + epsilon));
     double blocksX = (facilityMinX - demoMinX)/(128 * demoXRes);
@@ -159,36 +177,40 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     std::cerr << " Blocks offsets: " << "X=" << blocksXOffset << " Y=" << blocksYOffset << std::endl;
 #endif
 
-    // First pass: we count the still unsatisfied population under the isochrone
-    double unsatisfiedCount = 0;
-    for (int iXBlock = 0; iXBlock < facilityNXBlocks; ++iXBlock) {
-      xOffset = iXBlock*xBlockSize;
-      nXValid = xBlockSize;
-      if (iXBlock == facilityNXBlocks-1) nXValid = facilityXSize - xOffset;
-
+    /****************************************************************************
+     * First pass to count the still unsatisfied population under the isochrone
+     ****************************************************************************/
+    double unsatisfiedCount = 0.0f;
+    {
       for (int iYBlock = 0; iYBlock < facilityNYBlocks; ++iYBlock) {
         yOffset = iYBlock*yBlockSize;
         nYValid = yBlockSize;
         if (iYBlock == facilityNYBlocks-1) nYValid = facilityYSize - yOffset;
 
-        targetBand->ReadBlock(iXBlock+blocksXOffset, iYBlock+blocksYOffset, buffer);
-        facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
+        for (int iXBlock = 0; iXBlock < facilityNXBlocks; ++iXBlock) {
+          xOffset = iXBlock*xBlockSize;
+          nXValid = xBlockSize;
+          if (iXBlock == facilityNXBlocks-1) nXValid = facilityXSize - xOffset;
 
-        for (int iY = 0; iY < nYValid; ++iY) {
-          for (int iX = 0; iX < nXValid; ++iX) {
-            int iBuff = xBlockSize*iY+iX;
-            if (buffer[iBuff] != nodata && facilityBuffer[iBuff] != facilityNodata) {
-              unsatisfiedCount += buffer[iBuff];
+          dataOffset = (targetNXBlocks * (blocksYOffset + iYBlock) + (blocksXOffset + iXBlock)) * (xBlockSize * yBlockSize);
+          buffer = data + dataOffset;
+          facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
+
+          for (int iY = 0; iY < nYValid; ++iY) {
+            for (int iX = 0; iX < nXValid; ++iX) {
+              int iBuff = xBlockSize*iY+iX;
+              if (buffer[iBuff] != nodata && facilityBuffer[iBuff] != facilityNodata) {
+                unsatisfiedCount += buffer[iBuff];
+              }
             }
           }
         }
       }
     }
 
-    float capacity = capacities[iFacility];
-
     // Each pixel under the isochrone will be multiplied by the proportion of
     // the unsatisfied demand that is satisfied by this facility.
+    float capacity = capacities[iFacility];
     float factor = 1;
     if (unsatisfiedCount != 0) factor -= (capacity / unsatisfiedCount);
     if (factor < 0) factor = 0;
@@ -199,34 +221,32 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     std::cerr << " Satisfaction factor is " << factor << std::endl;
 #endif
 
-    // Second pass: we apply the multiplying factor to each pixel
-    for (int iXBlock = 0; iXBlock < facilityNXBlocks; ++iXBlock) {
-      xOffset = iXBlock*xBlockSize;
-      nXValid = xBlockSize;
-      if (iXBlock == facilityNXBlocks-1) nXValid = facilityXSize - xOffset;
-
+    /****************************************************************************
+     * Second pass to apply the multiplying factor to each pixel
+     ****************************************************************************/
+    {
       for (int iYBlock = 0; iYBlock < facilityNYBlocks; ++iYBlock) {
         yOffset = iYBlock*yBlockSize;
         nYValid = yBlockSize;
         if (iYBlock == facilityNYBlocks-1) nYValid = facilityYSize - yOffset;
 
-        targetBand->ReadBlock(iXBlock+blocksXOffset, iYBlock+blocksYOffset, buffer);
-        facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
+        for (int iXBlock = 0; iXBlock < facilityNXBlocks; ++iXBlock) {
+          xOffset = iXBlock*xBlockSize;
+          nXValid = xBlockSize;
+          if (iXBlock == facilityNXBlocks-1) nXValid = facilityXSize - xOffset;
 
-        bool blockChanged = false;
+          dataOffset = (targetNXBlocks * (blocksYOffset + iYBlock) + (blocksXOffset + iXBlock)) * (xBlockSize * yBlockSize);
+          buffer = data + dataOffset;
+          facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
 
-        for (int iY = 0; iY < nYValid; ++iY) {
-          for (int iX = 0; iX < nXValid; ++iX) {
-            int iBuff = xBlockSize*iY+iX;
-            if (buffer[iBuff] != nodata && facilityBuffer[iBuff] != facilityNodata) {
-              blockChanged = true;
-              buffer[iBuff] *= factor;
+          for (int iY = 0; iY < nYValid; ++iY) {
+            for (int iX = 0; iX < nXValid; ++iX) {
+              int iBuff = xBlockSize*iY+iX;
+              if (buffer[iBuff] != nodata && facilityBuffer[iBuff] != facilityNodata) {
+                buffer[iBuff] *= factor;
+              }
             }
           }
-        }
-
-        if (blockChanged) {
-          targetBand->WriteBlock(iXBlock+blocksXOffset, iYBlock+blocksYOffset, buffer);
         }
       }
     }
@@ -234,50 +254,108 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     closeRaster(facilityDataset);
   }
 
-  targetDataset->FlushCache();
-
-  // Finally, make a last pass on the target dataset to count the total
-  // unsatisfied population and return it
-  double totalUnsatisfied = 0;
-  for (int iXBlock = 0; iXBlock < targetNXBlocks; ++iXBlock) {
-    xOffset = iXBlock*xBlockSize;
-    nXValid = xBlockSize;
-    if (iXBlock == targetNXBlocks-1) nXValid = targetXSize - xOffset;
+  /****************************************************************************
+   * Last pass on dataset to count total unsatisfied population
+   ****************************************************************************/
+  double totalUnsatisfied = 0.0;
+  {
+#ifdef BENCHMARK
+    boost::timer::auto_cpu_timer t(std::cerr, 6, "Count total unsatisfied: %t sec CPU, %w sec real\n");
+#endif
 
     for (int iYBlock = 0; iYBlock < targetNYBlocks; ++iYBlock) {
       yOffset = iYBlock*yBlockSize;
-      nYValid = yBlockSize;
-      if (iYBlock == targetNYBlocks-1) nYValid = targetYSize - yOffset;
+      nYValid = (iYBlock == targetNYBlocks-1) ? (targetYSize - yOffset) : yBlockSize;
 
-      targetBand->ReadBlock(iXBlock, iYBlock, buffer);
+      for (int iXBlock = 0; iXBlock < targetNXBlocks; ++iXBlock) {
+        xOffset = iXBlock*xBlockSize;
+        nXValid = (iXBlock == targetNXBlocks-1) ? (targetXSize - xOffset) : xBlockSize;
 
-      for (int iY = 0; iY < nYValid; ++iY) {
-        for (int iX = 0; iX < nXValid; ++iX) {
-          int iBuff = xBlockSize*iY+iX;
-          if (buffer[iBuff] != nodata) {
-            totalUnsatisfied += buffer[iBuff];
+        dataOffset = (targetNXBlocks * iYBlock + iXBlock) * (xBlockSize * yBlockSize);
+
+        for (int iY = 0; iY < nYValid; ++iY) {
+          for (int iX = 0; iX < nXValid; ++iX) {
+            int i = dataOffset + xBlockSize*iY+iX;
+            if (data[i] != nodata) {
+              totalUnsatisfied += data[i];
+            }
           }
         }
       }
     }
   }
 
-  // Save calculated unsatisifiedDemand as metadata in the dataset file
-  targetDataset->SetMetadataItem(DEMAND_METADATA_KEY, numberToString((long)totalUnsatisfied).c_str(), APP_METADATA_DOMAIN);
+  /****************************************************************************
+   * Write scaled-to-byte dataset to disk
+   ****************************************************************************/
+  {
+#ifdef BENCHMARK
+    boost::timer::auto_cpu_timer t(std::cerr, 6, "Write raster: %t sec CPU, %w sec real\n");
+#endif
+    char **papszOptions = NULL;
+    papszOptions = CSLSetNameValue(papszOptions, "TILED", "YES");
+    papszOptions = CSLSetNameValue(papszOptions, "BLOCKXSIZE", numberToString(xBlockSize).c_str());
+    papszOptions = CSLSetNameValue(papszOptions, "BLOCKYSIZE", numberToString(yBlockSize).c_str());
 
-  CPLFree(buffer);
+    targetDataset = GetGDALDriverManager()->GetDriverByName("GTiff")->Create(targetFilename.c_str(), targetXSize, targetYSize, 1, GDT_Byte, papszOptions);
+    targetDataset->SetGeoTransform(demoProjection);
+    targetDataset->SetProjection(demoProjectionWKT.c_str());
+
+
+    // Save calculated unsatisifiedDemand as metadata in the dataset file
+    targetDataset->SetMetadataItem(DEMAND_METADATA_KEY, numberToString((long)totalUnsatisfied).c_str(), APP_METADATA_DOMAIN);
+
+    GDALRasterBand* targetBand = targetDataset->GetRasterBand(1);
+    targetBand->SetNoDataValue(0.0);
+
+    BYTE* byteBuffer = (BYTE*) CPLMalloc(sizeof(BYTE)*xBlockSize*yBlockSize);
+
+    for (int iYBlock = 0; iYBlock < targetNYBlocks; ++iYBlock) {
+      yOffset = iYBlock*yBlockSize;
+      nYValid = (iYBlock == targetNYBlocks-1) ? (targetYSize - yOffset) : yBlockSize;
+
+      for (int iXBlock = 0; iXBlock < targetNXBlocks; ++iXBlock) {
+        xOffset = iXBlock*xBlockSize;
+        nXValid = (iXBlock == targetNXBlocks-1) ? (targetXSize - xOffset) : xBlockSize;
+
+        dataOffset = (targetNXBlocks * iYBlock + iXBlock) * (xBlockSize * yBlockSize);
+
+        for (int iY = 0; iY < nYValid; ++iY) {
+          for (int iX = 0; iX < nXValid; ++iX) {
+            int iBuff = xBlockSize*iY+iX;
+            float value = data[dataOffset + iBuff];
+            if (value != nodata) {
+              if (value > saturation) {
+                byteBuffer[iBuff] = 255;
+              } else {
+                byteBuffer[iBuff] = (BYTE)((value * 255) / saturation);
+              }
+            } else {
+              byteBuffer[iBuff] = 0;
+            }
+          }
+        }
+
+        targetBand->WriteBlock(iXBlock, iYBlock, byteBuffer);
+      }
+    }
+
+    targetDataset->FlushCache();
+    closeRaster(targetDataset);
+  }
+
+  CPLFree(data);
   CPLFree(facilityBuffer);
-  closeRaster(targetDataset);
 
   return totalUnsatisfied;
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 3 || (argc % 2) == 0) {
-    std::cerr << "Usage: " << argv[0] << " TARGET.tif POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
+  if (argc < 4 || (argc % 2) == 1) {
+    std::cerr << "Usage: " << argv[0] << " TARGET.tif SATURATION POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
       << std::endl << std::endl
       << "Example:" << std::endl
-      << " " << argv[0] << "out.tif data/populations/data/REGIONID.tif \\" << std::endl
+      << " " << argv[0] << "out.tif 2000 data/populations/data/REGIONID.tif \\" << std::endl
       << " data/isochrones/REGIONID/POLYGONID1.tif 500 \\" << std::endl
       << " data/isochrones/REGIONID/POLYGONID2.tif 800" << std::endl << std::endl
       << "Resulting total unsatisfied demand is returned via STDOUT." << std::endl
@@ -296,12 +374,12 @@ int main(int argc, char *argv[]) {
   } else {
     std::vector<std::string> facilities;
     std::vector<float> capacities;
-    for (int i = 3; i < argc; i++) {
+    for (int i = 4; i < argc; i++) {
       facilities.push_back(argv[i]);
       capacities.push_back(atof(argv[++i]));
     }
 
-    unsatisifiedDemand = calculateUnsatisfiedDemand(argv[1], argv[2], facilities, capacities);
+    unsatisifiedDemand = calculateUnsatisfiedDemand(argv[1], argv[3], atof(argv[2]), facilities, capacities);
   }
 
   std::cout << unsatisifiedDemand << std::endl;;
