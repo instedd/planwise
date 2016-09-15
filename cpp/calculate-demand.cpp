@@ -61,9 +61,9 @@ long readUnsatisfiedDemand(std::string targetFilename) {
 
 long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFilename, float saturation, std::vector<std::string> facilities, std::vector<float> capacities) {
 
-  #ifdef BENCHMARK
+#ifdef BENCHMARK
   boost::timer::auto_cpu_timer t(std::cerr, 6, "Total time elapsed: %t sec CPU, %w sec real\n");
-  #endif
+#endif
 
   GDALDataset* targetDataset = NULL;
   int xBlockSize, yBlockSize, targetXSize, targetYSize, targetNXBlocks, targetNYBlocks;
@@ -79,9 +79,9 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
    * Read demographics raster into memory buffer
    ****************************************************************************/
   {
-    #ifdef BENCHMARK
+#ifdef BENCHMARK
     boost::timer::auto_cpu_timer t(std::cerr, 6, "Read demographics raster: %t sec CPU, %w sec real\n");
-    #endif
+#endif
     GDALDataset* demoDataset = openRaster(demoFilename);
     GDALRasterBand* demoBand = demoDataset->GetRasterBand(1);
     assert(demoBand->GetRasterDataType() == GDT_Float32);
@@ -108,7 +108,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
   }
 
 
-  #ifdef DEBUG
+#ifdef DEBUG
   std::cerr << "Target raster properties:" << std::endl;
   std::cerr << " xSize " << targetXSize << std::endl;
   std::cerr << " ySize " << targetYSize << std::endl;
@@ -116,7 +116,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
   std::cerr << " yBlockSize " << yBlockSize << std::endl;
   std::cerr << " nYBlocks " << targetNYBlocks << std::endl;
   std::cerr << " nXBlocks " << targetNXBlocks << std::endl;
-  #endif
+#endif
 
   /****************************************************************************
    * Iterate over all facilities and substract from unsatisfied demand
@@ -125,13 +125,13 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
   BYTE* facilityBuffer = (BYTE*) CPLMalloc(sizeof(BYTE)*xBlockSize*yBlockSize);
   for (size_t iFacility = 0; iFacility < facilities.size(); iFacility++) {
 
-    #ifdef DEBUG
+#ifdef DEBUG
     std::cerr << "Processing facility " << facilities[iFacility] << std::endl;
-    #endif
+#endif
 
-    #ifdef BENCHMARK
+#ifdef BENCHMARK
     boost::timer::auto_cpu_timer t(std::cerr, 6, "Process facility: %t sec CPU, %w sec real\n");
-    #endif
+#endif
 
     // open isochrone dataset
     GDALDataset* facilityDataset = openRaster(facilities[iFacility]);
@@ -171,11 +171,11 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     assert(facilityXSize <= (targetXSize - (xBlockSize * blocksXOffset)));
     assert(facilityYSize <= (targetYSize - (yBlockSize * blocksYOffset)));
 
-    #ifdef DEBUG
+#ifdef DEBUG
     std::cerr << " Facility:     " << "maxY=" << facilityMaxY << " minX=" << facilityMinX << std::endl;
     std::cerr << " Demographics: " << "maxY=" << demoMaxY << " minX=" << demoMinX << std::endl;
     std::cerr << " Blocks offsets: " << "X=" << blocksXOffset << " Y=" << blocksYOffset << std::endl;
-    #endif
+#endif
 
     /****************************************************************************
      * First pass to count the still unsatisfied population under the isochrone
@@ -215,11 +215,11 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     if (unsatisfiedCount != 0) factor -= (capacity / unsatisfiedCount);
     if (factor < 0) factor = 0;
 
-    #ifdef DEBUG
+#ifdef DEBUG
     std::cerr << " Capacity is " << capacity << std::endl;
     std::cerr << " Unsatisfied count is " << unsatisfiedCount << std::endl;
     std::cerr << " Satisfaction factor is " << factor << std::endl;
-    #endif
+#endif
 
     /****************************************************************************
      * Second pass to apply the multiplying factor to each pixel
@@ -259,9 +259,9 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
    ****************************************************************************/
   double totalUnsatisfied = 0.0;
   {
-    #ifdef BENCHMARK
+#ifdef BENCHMARK
     boost::timer::auto_cpu_timer t(std::cerr, 6, "Count total unsatisfied: %t sec CPU, %w sec real\n");
-    #endif
+#endif
 
     for (int iYBlock = 0; iYBlock < targetNYBlocks; ++iYBlock) {
       yOffset = iYBlock*yBlockSize;
@@ -289,9 +289,9 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
    * Write scaled-to-byte dataset to disk
    ****************************************************************************/
   {
-    #ifdef BENCHMARK
+#ifdef BENCHMARK
     boost::timer::auto_cpu_timer t(std::cerr, 6, "Write raster: %t sec CPU, %w sec real\n");
-    #endif
+#endif
     char **papszOptions = NULL;
     papszOptions = CSLSetNameValue(papszOptions, "TILED", "YES");
     papszOptions = CSLSetNameValue(papszOptions, "BLOCKXSIZE", numberToString(xBlockSize).c_str());
@@ -367,9 +367,9 @@ int main(int argc, char *argv[]) {
   long unsatisifiedDemand = 0;
 
   if (fileExists(argv[1])) {
-    #ifdef DEBUG
+#ifdef DEBUG
     std::cerr << "File " << argv[1] << " already exists." << std::endl;
-    #endif
+#endif
     unsatisifiedDemand = readUnsatisfiedDemand(argv[1]);
   } else {
     std::vector<std::string> facilities;
