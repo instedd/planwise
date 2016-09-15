@@ -124,7 +124,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     targetDataset->GetGeoTransform(targetProjection);
     facilityDataset->GetGeoTransform(facilityProjection);
 
-    double intPart, epsilon = 0.01;
+    double epsilon = 0.01;
     double facilityMaxY = facilityProjection[3];
     double demoMaxY = targetProjection[3];
     double facilityYRes = facilityProjection[5];
@@ -132,8 +132,8 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     assert(std::abs(facilityYRes - demoYRes) < epsilon);
     assert(facilityMaxY <= (demoMaxY + epsilon));
     double blocksY = (facilityMaxY - demoMaxY)/(128 * demoYRes);
-    assert(modf(blocksY, &intPart) < epsilon);
     int blocksYOffset = round(blocksY);
+    assert(std::abs(blocksY - blocksYOffset) < epsilon);
 
     double facilityMinX = facilityProjection[0];
     double demoMinX = targetProjection[0];
@@ -142,8 +142,8 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     assert(std::abs(facilityXRes - demoXRes) < epsilon);
     assert(demoMinX <= (facilityMinX + epsilon));
     double blocksX = (facilityMinX - demoMinX)/(128 * demoXRes);
-    assert(modf(blocksX, &intPart) < epsilon);
     int blocksXOffset = round(blocksX);
+    assert(std::abs(blocksX - blocksXOffset) < epsilon);
 
     int facilityXSize = facilityDataset->GetRasterXSize();
     int facilityYSize = facilityDataset->GetRasterYSize();
