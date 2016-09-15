@@ -139,6 +139,7 @@ article.project-view {
     position: relative;
     z-index: 2;
     box-shadow: 0 2px 2px rgba(0,0,0,0.2);
+
     h2 {
       color: $black;
       padding: 25px 15px 15px 15px;
@@ -146,6 +147,10 @@ article.project-view {
       font-weight: normal;
       margin: 0;
       display: inline-block;
+      .icon-small {
+        vertical-align: bottom;
+        margin-right: 10px;
+      }
     }
     .title {
       white-space: nowrap;
@@ -156,10 +161,30 @@ article.project-view {
         font-style: italic;
       }
     }
+
     ul {
       margin-top: 8px;
       margin-left: 10px;
       padding: 5px;
+
+      &.wizard > li {
+        margin-right: 0px;
+        &:hover,
+        &.active,
+        &.active:hover {
+          border-bottom-color: transparent;
+        }
+
+        & + li::before {
+          content: "";
+          width: 30px;
+          height: 1px;
+          display: inline-block;
+          background-color: $gray2;
+          margin: 0px 8px 4px 8px;
+        }
+      }
+
       li {
         display: inline-block;
         margin-right: 30px;
@@ -167,6 +192,63 @@ article.project-view {
         border: none;
         border-bottom: 3px solid transparent;
         padding-bottom: 12px;
+
+        .wizard-number {
+          display: inline-block;
+          border-radius: 50%;
+          border: none;
+
+          font-weight: bold;
+
+          width: 22px;
+          height: 22px;
+          text-align: center;
+          margin-right: 6px;
+        }
+
+        .wizard-check {
+          width: 25px;
+          height: 25px;
+
+          vertical-align: middle;
+          position: relative;
+          top: -1px;
+          left: -3px;
+          margin-right: 1px;
+        }
+
+        &.unvisited,
+        &.unvisited.active,
+        &.unvisited.active:hover {
+          a,
+          a:hover {
+            color: $gray2;
+          }
+          .wizard-number {
+            color: $gray1;
+            background-color: $gray2;
+          }
+        }
+
+        &.visiting,
+        &.visiting.active,
+        &.visiting.active:hover {
+          a {
+            color: $green;
+          }
+          .wizard-number {
+            color: $gray1;
+            background-color: $green;
+          }
+        }
+
+        &.visited,
+        &.visited.active,
+        &.visited.active:hover {
+          a {
+            color: $gray4;
+          }
+        }
 
         &.active,
         &.active:hover {
@@ -253,6 +335,21 @@ article.project-view {
     display: block;
     height: 12px;
     transition: width 1s;
+  }
+}
+
+.nav-buttons {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+
+  button {
+    width: 120px;
+    svg {
+      vertical-align: bottom;
+    }
   }
 }
 

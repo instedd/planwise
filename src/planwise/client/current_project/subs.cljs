@@ -25,6 +25,16 @@
    (reaction (get-in @db [:current-project :project-data]))))
 
 (register-sub
+ :current-project/wizard-state
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :wizard]))))
+
+(register-sub
+ :current-project/wizard-mode-on
+ (fn [db [_]]
+   (reaction (get-in @db [:current-project :wizard :set]))))
+
+(register-sub
  :current-project/read-only?
  (fn [db [_]]
    (let [current-data (subscribe [:current-project/current-data])]

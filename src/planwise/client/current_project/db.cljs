@@ -78,7 +78,12 @@
 
    :dataset            (asdf/new nil)
 
-   :project-data       nil})                      ; see ProjectData above
+   :project-data       nil                      ; see ProjectData above
+   :wizard             {:set false
+                        :tabs {
+                               :demographics    :unvisited
+                               :facilities      :unvisited
+                               :transport       :unvisited}}})
 
 
 ;; Project data manipulation functions
@@ -99,7 +104,7 @@
 (defn update-viewmodel
   [viewmodel project-data]
   (-> viewmodel
-      (update :project-data merge (dissoc project-data :facilities :shares :share-token))
+      (update :project-data merge (dissoc project-data :facilities :shares :share-token :is-new?))
       (update-viewmodel-associations project-data)))
 
 (defn new-viewmodel

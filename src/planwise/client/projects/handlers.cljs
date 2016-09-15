@@ -76,7 +76,7 @@
      (when (nil? project-id)
        (throw "Invalid project data"))
      (dispatch [:datasets/invalidate-datasets])   ; to update project counts for the selected dataset
-     (dispatch [:current-project/project-loaded project-data])
+     (dispatch [:current-project/project-loaded (assoc project-data :is-new? true)])
      (accountant/navigate! (routes/project-demographics {:id project-id}))
      (-> db
          (assoc :view-state :list)

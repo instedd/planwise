@@ -9,6 +9,8 @@
             [planwise.client.styles :as styles]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
+            [planwise.client.routes :as routes]
+            [accountant.core :as accountant]
             [planwise.client.config :as config]))
 
 
@@ -16,6 +18,29 @@
   [:div.stat
    [:div.stat-title title]
    [:div.stat-value value]])
+
+(defn- route-by-tab-name [tab-name project-id]
+  (case tab-name
+    :demographics    (routes/project-demographics {:id project-id})
+    :facilities      (routes/project-facilities {:id project-id})
+    :transport       (routes/project-transport {:id project-id})))
+
+;; TODO: refactor this to re-use header/project-tab-items
+(defn- next-and-back-buttons [tab-name project-id]
+  (let [tabs [:demographics :facilities :transport]
+        has-next? (not= (last tabs) tab-name)
+        has-back? (not= (first tabs) tab-name)
+        next (second (drop-while #(not= tab-name %) tabs))
+        back (last (take-while #(not= tab-name %) tabs))]
+    [:div.nav-buttons
+      (when has-back?
+        [:button.secondary {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
+         (icon :key-arrow-left "icon-small")
+         "Prev"])
+      (when has-next?
+        [:button.primary {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
+         "Next"
+         (icon :key-arrow-right "icon-small")])]))
 
 (defn- demographics-filters []
   (let [current-project (subscribe [:current-project/current-data])]
@@ -122,8 +147,12 @@
         (icon :car)]])))
 
 (defn sidebar-section [selected-tab]
-  [:aside
-   (case selected-tab
-     :demographics [demographics-filters]
-     :facilities   [facility-filters]
-     :transport    [transport-filters])])
+  (let [current-project (subscribe [:current-project/current-data])
+        wizard-mode-on (subscribe [:current-project/wizard-mode-on])]
+    [:aside
+     (case selected-tab
+       :demographics [demographics-filters]
+       :facilities   [facility-filters]
+       :transport    [transport-filters])
+     (when @wizard-mode-on
+       (next-and-back-buttons selected-tab (:id @current-project)))]))
