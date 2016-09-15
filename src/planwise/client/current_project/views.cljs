@@ -110,18 +110,17 @@
                                                             :weight 2}])
 
                 layer-demographics (let [population-map (mapping/region-map project-region-id)
-                                         map-datafile   (if (= :transport selected-tab)
+                                         map-datafile   (if (and config/calculate-demand (= :transport selected-tab))
                                                           (when (asdf/valid? @map-key)
                                                             (if-let [key (asdf/value @map-key)]
                                                               (mapping/demand-map key)
                                                               population-map))
                                                           population-map)]
-                                      (when map-datafile
-                                        [:wms-tile-layer {:url config/mapserver-url
-                                                          :transparent true
-                                                          :layers mapping/layer-name
-                                                          :DATAFILE map-datafile
-                                                          :opacity 0.6}]))
+                                      [:wms-tile-layer {:url config/mapserver-url
+                                                        :transparent true
+                                                        :layers (when map-datafile mapping/layer-name)
+                                                        :DATAFILE map-datafile
+                                                        :opacity 0.6}])
 
                 layers-facilities  (when (#{:facilities :transport} selected-tab)
                                      (for [[type facilities] @facilities-by-type]

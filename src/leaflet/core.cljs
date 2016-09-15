@@ -133,14 +133,8 @@
 (defmethod leaflet-layer :wms-tile-layer [[_ props & children]]
   (let [url   (:url props)
         attrs (dissoc props :url)
-        layer (js/L.tileLayer.wms url (clj->js attrs))]
+        layer (when (:layers props) (js/L.tileLayer.wms url (clj->js attrs)))]
     layer))
-
-(defn leaflet-replace-layer [leaflet old-layer new-layer-def]
-  (when old-layer (.removeLayer leaflet old-layer))
-  (when-let [new-layer (when new-layer-def (leaflet-layer new-layer-def))]
-    (.addLayer leaflet new-layer)
-    new-layer))
 
 (defn leaflet-moveend-handler [this]
   (fn [e]
@@ -172,7 +166,7 @@
                             (.removeLayer leaflet old-layer))
           create-layer-fn (fn [new-child]
                             (let [new-layer (leaflet-layer new-child)]
-                              (.addLayer leaflet new-layer)
+                              (when new-layer (.addLayer leaflet new-layer))
                               new-layer))
           new-layers (update-objects-from-decls old-layers
                                                 old-children
@@ -223,7 +217,7 @@
     :zoom (.zoom js/L.control)
     :attribution (.attribution js/L.control #js {:prefix false})
     :legend (.legend js/L.control #js {:pixelMaxValue (:pixel-max-value props)
-                                       :pixelArea (:pixel-area props)} )
+                                       :pixelArea (:pixel-area props)})
     (throw (str "Invalid control type " type))))
 
 (def default-controls [:zoom :attribution :legend])
