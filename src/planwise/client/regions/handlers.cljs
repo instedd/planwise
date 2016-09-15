@@ -25,7 +25,9 @@
  :regions/load-regions-with-geo
  in-regions
  (fn [db [_ region-ids]]
-   (let [missing-region-ids (remove #(get-in db [% :geojson]) region-ids)]
+   (let [missing-region-ids (->> region-ids
+                              (filter some?)
+                              (remove #(get-in db [% :geojson])))]
      (api/load-regions-with-geo missing-region-ids :regions/regions-loaded))
    db))
 
