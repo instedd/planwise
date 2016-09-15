@@ -23,6 +23,11 @@ function base-raster {
     esac
 }
 
+function target_resolution {
+    raster_name=$1
+    gdalinfo $raster_name | grep "Pixel Size" | sed -E 's/.*\(([^)]*).*/\1/g' | tr ',' ' '
+}
+
 echo "Precalculating population aggregates per region"
 REGIONS_QUERY="SELECT id ,country FROM regions WHERE total_population IS NULL OR max_population IS NULL OR raster_pixel_area IS NULL;"
 if [ $# -gt 1 ]; then
@@ -47,8 +52,11 @@ for region in $REGIONS; do
 
   if [[ ! -e $DATA_TARGET || ! -e $VIZ_TARGET || "`gdalinfo $DATA_TARGET | grep -e POPULATION_SUM -e POPULATION_MAX -e PIXEL_AREA_M2 | wc -l`" -ne 3 ]]; then
 
+    resolution=$(target_resolution $RASTER)
     echo " Warping population for ${ID}"
     gdalwarp -q \
+      -tap \
+      -tr $resolution \
       -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -crop_to_cutline \
       -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
