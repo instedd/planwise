@@ -3,6 +3,7 @@
             [planwise.component.runner :refer [run-external]]
             [planwise.boundary.regions :as regions]
             [clojure.string :as str]
+            [clojure.java.io :as io]
             [planwise.util.str :refer [trim-to-int]]
             [digest :as digest]
             [taoensso.timbre :as timbre]))
@@ -62,32 +63,44 @@
   (let [path (demands-path service "-")]
     (clojure.java.io/make-parents path)))
 
+(defn- write-args-file
+  [service map-key & args]
+  (let [filename (demands-path service map-key ".args")]
+    (spit filename (str/join " " args))
+    filename))
+
+(defn- facilities->args
+  [service region-id facilities]
+  (->> facilities
+    (filter :polygon-id)
+    (map (juxt
+          #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
+          #(str (capacity-for service %))))
+    (flatten)))
+
 (defn demand-map
   [service region-id facilities]
   (when (calculate-demand? service)
     (try
-      (let [polygons (filter :polygon-id facilities)
-            polygons-with-capacities (->> polygons
-                                        (map (juxt
-                                              #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
-                                              #(str (capacity-for service %))))
-                                        (flatten))
-            map-key (demand-map-key region-id polygons-with-capacities)
-            region (regions/find-region (:regions service) region-id)
-            saturation (format "%.2f" (region-saturation region))
-            _ (setup-demands-folder service)
-            response (apply run-external
-                        (:runner service)
-                        :bin
-                        300000
-                        "calculate-demand"
-                        (demands-path service map-key ".tif")
-                        (str saturation)
-                        (populations-path service region-id ".tif")
-                        (vec polygons-with-capacities))
-            unsatisfied-count (trim-to-int response)]
+      (let [polygons-args (facilities->args service region-id facilities)
+            map-key       (demand-map-key region-id polygons-args)
+            region        (regions/find-region (:regions service) region-id)
+            saturation    (format "%.2f" (region-saturation region))
+
+            _          (setup-demands-folder service)
+            args-fname (apply write-args-file service map-key
+                         (demands-path service map-key ".tif")
+                         (str saturation)
+                         (populations-path service region-id ".tif")
+                         (vec polygons-args))
+            response   (run-external
+                          (:runner service)
+                          :bin
+                          300000
+                          "calculate-demand"
+                          (str "@" args-fname))]
           {:map-key map-key,
-           :unsatisfied-count unsatisfied-count})
+           :unsatisfied-count (trim-to-int response)})
       (catch Exception e
         (error e "Error calculating demand map for region " region-id "with polygons" (map :polygon-id facilities))
         {}))))

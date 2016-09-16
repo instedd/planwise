@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <cmath>
@@ -351,6 +352,34 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
 }
 
 int main(int argc, char *argv[]) {
+  std::vector<char*> args;
+
+  if (argc == 2 && argv[1][0] == '@') {
+    std::cerr << "Loading arguments from file " << &argv[1][1] << std::endl;;
+
+    std::ifstream source;
+    source.open(&argv[1][1], std::ifstream::in);
+    if (!source.is_open()) {
+      std::cerr << "Error opening file. Aborting." <<  std::endl;
+      exit(1);
+    }
+
+    args.push_back(argv[0]);
+    while(source.good()) {
+      std::string arg;
+      source >> arg;
+      if (!arg.empty()) {
+        char* cstr = new char[arg.length()+1];
+        std::strcpy(cstr, arg.c_str());
+        args.push_back(cstr);
+      }
+    }
+
+    argc = args.size();
+    argv = &args[0];
+    source.close();
+  }
+
   if (argc < 4 || (argc % 2) == 1) {
     std::cerr << "Usage: " << argv[0] << " TARGET.tif SATURATION POPULATION.tif FACILITYMASK1.tif CAPACITY1 ... FACILITYMASKN.tif CAPACITYN"
       << std::endl << std::endl
