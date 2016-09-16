@@ -36,4 +36,17 @@ describe "Dataset" do
       expect(page).to have_content 'You have no datasets yet'
     end
   end
+
+  it "should search dataset" do
+    create_dataset
+    goto_page DatasetsPage do |page|
+      page.fill_search_with("Foobar")
+
+      expect(page).to have_content '0 datasets'
+      expect(page).to_not have_content 'Kenya Facilities'
+      page.fill_search_with("Kenya Facilities")
+
+      expect(page).to have_content '1 dataset'
+    end
+  end
 end

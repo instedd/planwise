@@ -20,4 +20,8 @@ class DatasetsPage < SitePrism::Page
     page.find(".dataset-card").click
     page.find(".delete").click
   end
+
+  def fill_search_with(name)
+    find(:css, "input[type$='search']").set("#{name}")
+  end
 end
