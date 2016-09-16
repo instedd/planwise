@@ -5,6 +5,7 @@ class DatasetsPage < SitePrism::Page
   element :approve, :button, 'Approve'
   element :authorise, :button, 'Authorise'
   element :import, :button, 'Import'
+  element :cancel, :button, 'Cancel'
 
 
   def press_primary_button

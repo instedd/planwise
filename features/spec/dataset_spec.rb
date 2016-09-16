@@ -49,4 +49,27 @@ describe "Dataset" do
       expect(page).to have_content '1 dataset'
     end
   end
+
+  it "should cancel dataset import process" do
+    goto_page DatasetsPage do |page|
+      page.press_primary_button 
+
+      new_window = window_opened_by { 
+        page.authorise.click
+      }
+
+      within_window new_window do
+        click_button 'Approve'
+        sleep 3
+      end
+
+      page.find(".collections li").click
+      expand_options
+      select_option(1)
+      page.import.click
+      page.cancel.click
+      sleep 3
+      page.find(".error").click
+    end
+  end
 end
