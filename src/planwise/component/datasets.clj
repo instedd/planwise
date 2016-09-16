@@ -45,6 +45,12 @@
   (->> (select-datasets-for-user (get-db store) {:user-id user-id})
        (map db->dataset)))
 
+(defn list-datasets-with-import-jobs
+  [store]
+  (->> (select-datasets-with-import-jobs (get-db store))
+       (map db->dataset)
+       (filter (comp some? :import-job))))
+
 (defn create-dataset!
   [store dataset]
   (let [db (get-db store)

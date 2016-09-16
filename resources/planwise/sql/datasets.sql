@@ -32,6 +32,19 @@ SELECT
 FROM datasets
 WHERE id = :id;
 
+-- :name select-datasets-with-import-jobs :?
+SELECT
+  id,
+  name,
+  description,
+  import_result AS "import-result",
+  import_job AS "import-job",
+  collection_id AS "collection-id",
+  import_mappings AS "mappings",
+  owner_id AS "owner-id"
+FROM datasets
+WHERE import_job IS NOT NULL;
+
 -- :name update-dataset* :! :n
 /* :require [clojure.string :as string] */
 UPDATE datasets SET
