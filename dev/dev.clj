@@ -10,7 +10,7 @@
             [duct.generate :as gen]
             [meta-merge.core :refer [meta-merge]]
             [reloaded.repl :refer [system init start stop go reset reset-all]]
-            [ring.middleware.stacktrace :refer [wrap-stacktrace]]
+            [ring.middleware.stacktrace :refer [wrap-stacktrace wrap-stacktrace-log]]
             [duct.component.figwheel :as figwheel]
             [duct.component.ragtime :refer [ragtime migrate rollback]]
             [dev.tasks :refer :all]
@@ -31,7 +31,10 @@
   "12345678901234567890123456789012")
 
 (def dev-config
-  {:app {:middleware [wrap-stacktrace]}
+  {:app {:middleware [[wrap-stacktrace :stacktrace-options]]
+         :stacktrace-options {:color? true}}
+   :api {:middleware [[wrap-stacktrace-log :stacktrace-options]]
+         :stacktrace-options {:color? true}}
    :auth {:jwe-secret jwe-secret}
    :paths {:bin "cpp/"
            :scripts "scripts/"
