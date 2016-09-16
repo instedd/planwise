@@ -146,14 +146,8 @@
          current-region (reaction (get-in @db [:regions @current-region-id]))]
      (reaction
        (case field
-         :position (or
-                     (:position @map-view)
-                     (mapping/bbox-center (:bbox @current-region))
-                     (:position db/initial-position-and-zoom))
-         :zoom (or
-                 (:zoom @map-view)
-                 (+ 4 (:admin-level @current-region))
-                 (:zoom db/initial-position-and-zoom))
+         :position (:position @map-view)
+         :zoom (:zoom @map-view)
          :bbox (:bbox @current-region)
          :pixel-max-value @current-region-raster-max-value
          :pixel-area-m2 @current-region-raster-pixel-area)))))
