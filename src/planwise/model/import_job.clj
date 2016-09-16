@@ -390,6 +390,10 @@
                          :type-field type-field)]
     (import-job job-value)))
 
+(defn restore-job
+  [job]
+  (import-job (:state job) (:value job)))
+
 (defn cancel-job
   [job]
   (when job
