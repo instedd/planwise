@@ -3,6 +3,7 @@
             [planwise.component.runner :refer [run-external]]
             [planwise.boundary.regions :as regions]
             [clojure.string :as str]
+            [clojure.java.io :as io]
             [planwise.util.str :refer [trim-to-int]]
             [digest :as digest]
             [taoensso.timbre :as timbre]))
@@ -62,6 +63,12 @@
   (let [path (demands-path service "-")]
     (clojure.java.io/make-parents path)))
 
+(defn- write-args-file
+  [service map-key & args]
+  (let [filename (demands-path service map-key ".args")]
+    (spit filename (str/join " " args))
+    filename))
+
 (defn demand-map
   [service region-id facilities]
   (when (calculate-demand? service)
@@ -76,15 +83,17 @@
             region (regions/find-region (:regions service) region-id)
             saturation (format "%.2f" (region-saturation region))
             _ (setup-demands-folder service)
-            response (apply run-external
+            args-fname (apply write-args-file service map-key
+                         (demands-path service map-key ".tif")
+                         (str saturation)
+                         (populations-path service region-id ".tif")
+                         (vec polygons-with-capacities))
+            response (run-external
                         (:runner service)
                         :bin
                         300000
                         "calculate-demand"
-                        (demands-path service map-key ".tif")
-                        (str saturation)
-                        (populations-path service region-id ".tif")
-                        (vec polygons-with-capacities))
+                        (str "@" args-fname))
             unsatisfied-count (trim-to-int response)]
           {:map-key map-key,
            :unsatisfied-count unsatisfied-count})
