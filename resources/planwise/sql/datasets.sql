@@ -14,9 +14,9 @@ ORDER BY id ASC;
 
 -- :name insert-dataset! :<! :1
 INSERT INTO datasets
-  (name, description, owner_id, collection_id, import_mappings, import_result)
+  (name, description, owner_id, collection_id, import_mappings, import_result, import_job)
 VALUES
-  (:name, :description, :owner-id, :collection-id, :mappings, :import-result)
+  (:name, :description, :owner-id, :collection-id, :mappings, :import-result, :import-job)
 RETURNING id;
 
 -- :name select-dataset :? :1
@@ -25,6 +25,7 @@ SELECT
   name,
   description,
   import_result AS "import-result",
+  import_job AS "import-job",
   collection_id AS "collection-id",
   import_mappings AS "mappings",
   owner_id AS "owner-id"
@@ -36,7 +37,7 @@ WHERE id = :id;
 UPDATE datasets SET
 /*~
 (string/join ","
-(for [[key field] [[:description :description] [:import-result :import_result]] :when (some? (key params))]
+(for [[key field] [[:description :description] [:import-result :import_result] [:import-job :import_job]] :when (contains? params key)]
 (str (name field) " = :" (name key))))
 ~*/
 WHERE datasets.id = :id;

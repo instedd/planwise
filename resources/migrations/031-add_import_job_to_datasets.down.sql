@@ -1,0 +1,2 @@
+ALTER TABLE datasets
+DROP COLUMN IF EXISTS import_job;

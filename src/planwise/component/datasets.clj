@@ -2,7 +2,8 @@
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
             [hugsql.core :as hugsql]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [planwise.util.hash :refer [update-if-contains]]))
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -18,13 +19,15 @@
   [record]
   (some-> record
           (update :import-result edn/read-string)
+          (update :import-job edn/read-string)
           (update :mappings edn/read-string)))
 
 (defn dataset->db
   [dataset]
   (some-> dataset
-          (update :import-result pr-str)
-          (update :mappings pr-str)))
+          (update-if-contains :import-result #(some-> % pr-str))
+          (update-if-contains :import-job #(some-> % pr-str))
+          (update-if-contains :mappings #(some-> % pr-str))))
 
 
 ;; ----------------------------------------------------------------------
