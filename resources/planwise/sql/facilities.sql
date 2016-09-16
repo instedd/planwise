@@ -5,7 +5,13 @@ INSERT INTO facilities
     RETURNING id;
 
 -- :name delete-facilities-in-dataset! :!
-DELETE FROM facilities WHERE dataset_id = :dataset-id;
+DELETE FROM facilities
+WHERE dataset_id = :dataset-id;
+
+-- :name delete-facilities-in-dataset-by-site-id! :!
+DELETE FROM facilities
+WHERE dataset_id = :dataset-id
+  AND site_id IN (:v*:site-ids)
 
 -- :name select-facilities-in-dataset :?
 SELECT
