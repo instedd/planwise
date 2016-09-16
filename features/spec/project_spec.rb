@@ -50,7 +50,7 @@ describe "Project" do
           open_project_view
         end
         expect_page ProjectPage do |page|
-          page.delete.click
+          page.header.delete.click
           accept_alert
         end
         expect_page HomePage do |page|
@@ -96,13 +96,34 @@ describe "Project" do
 
         expect_page ProjectFacilitiesPage do |page|     
           screen1 = screenshot_image
-          check_all_facility_types 
-          sleep 3
+          check_all_facility_types
+          page.zoom_in
           screen2 = screenshot_image
-
+          
           expect(screen1.duplicate?(screen2)).to be_falsey   
         end
-      end          
+      end
+
+      it "should change zoom level on the map" do
+        goto_page HomePage do |page|
+          open_project_view
+        end
+
+        expect_page ProjectPage do |page|
+          page.header.open_facilities
+        end
+
+        expect_page ProjectFacilitiesPage do |page|     
+          screen1 = screenshot_image
+          check_all_facility_types
+          4.times do
+            page.zoom_in
+          end
+          screen2 = screenshot_image
+  
+          expect(screen1.duplicate?(screen2)).to be_falsey
+        end
+      end           
     end
 
     context "without project" do
