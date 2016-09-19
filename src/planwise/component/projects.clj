@@ -26,6 +26,7 @@
   de application"
   [record]
   (-> record
+      (update :state edn/read-string)
       (update :stats edn/read-string)
       (update :filters edn/read-string)))
 
@@ -34,6 +35,7 @@
   functions"
   [project]
   (-> project
+      (update :state pr-str)
       (update :stats pr-str)
       (update :filters pr-str)))
 
@@ -132,9 +134,11 @@
   (jdbc/with-db-transaction [tx (get-db service)]
     (let [project-id (:id project)
           goal       (:goal project)
+          state      (:state project)
           filters    (:filters project)
           params     {:project-id project-id
                       :goal       goal
+                      :state      (some-> state pr-str)
                       :filters    (some-> filters pr-str)}
           result     (update-project* tx params)]
       (when (= 1 result)

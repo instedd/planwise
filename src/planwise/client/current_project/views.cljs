@@ -79,6 +79,7 @@
         feature-fn #(aget % "isochrone")]
 
     (fn [project-id project-dataset-id project-region-id selected-tab]
+      (dispatch [:current-project/tab-visited selected-tab])
       (case selected-tab
         (:demographics :facilities :transport)
         [:div

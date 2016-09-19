@@ -91,13 +91,15 @@
          (response (assoc-extra-data (keyword with) project services))
          (not-found {:error "Project not found"}))))
 
-   (PUT "/:id" [id filters with :as request]
+   (PUT "/:id" [id filters with state :as request]
      (let [id (Integer. id)
            filters (keywordize-keys filters)
            user-id (util/request-user-id request)
            project (projects/get-project service id)]
        (if (projects/owned-by? project user-id)
-         (if-let [project (projects/update-project service {:id id :filters filters})]
+         (if-let [project (projects/update-project service {:id id
+                                                            :filters filters
+                                                            :state state})]
            (response (assoc-extra-data (keyword with) project services))
            (-> (response {:status "failure"})
                (status 400)))

@@ -14,7 +14,7 @@
      [:a {:href href} reference title]]))
 
 (defn- li-wizard-menu-item [{:keys [wizard-state tab-number] :as item}]
-  (let [li-classes [(name wizard-state)]
+  (let [li-classes [(if (some? wizard-state) (name wizard-state) "unvisited")]
         reference (if (= wizard-state :visited)
                     (components/icon :check-circle-wizard "icon-small wizard-check")
                     [:span.wizard-number tab-number])]

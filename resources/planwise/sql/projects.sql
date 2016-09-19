@@ -41,6 +41,7 @@ SELECT
   projects.goal,
   projects.dataset_id AS "dataset-id",
   projects.region_id AS "region-id",
+  projects.state,
   projects.stats,
   projects.filters,
   regions.name AS "region-name",
@@ -68,7 +69,7 @@ AND (projects.owner_id = :user-id
 UPDATE projects SET
 /*~
 (string/join ","
-  (for [field [:goal :stats :filters] :when (some? (field params))]
+  (for [field [:goal :state :stats :filters] :when (some? (field params))]
     (str (name field) " = :" (name field))))
 ~*/
 WHERE projects.id = :project-id;
