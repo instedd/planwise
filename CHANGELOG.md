@@ -3,6 +3,41 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+### New features
+- Users can share projects to other users for read-only access. This is done via
+  a link which when accessed grants access to the project. The link can be
+  shared directly or via email through the UI (#155, #156)
+- When a new project is created, the user is presented with a wizard-like UI
+  that should guide her through the steps necessary to complete the
+  configuration of the project (#150)
+- The dataset used in a project is now shown in the "Facilities" tab (#194)
+
+### Changes and improvements
+- Added a logout button to allow users to sign off the application and the
+  InSTEDD platform. Planwise will now also check that the user logged into
+  InSTEDD platform matches the session (#119)
+- The population density color scale and map legend have been reviewed and
+  improved (#199)
+- If a dataset is used in a project while it's still importing, an alert will be
+  shown to the user (#182)
+- Reflect that a dataset import was cancelled by showing the status in the
+  datasets list (#195)
+- While importing, facilities are now considered too far away from the road
+  network if they are separated more than 5km from the nearest node. This is to
+  compensate the missing roads in the Kenya OpenStreetMap (#185)
+
+### Fixes
+- Properly escape HTML entities in facilities popups (#164)
+- Activate FastCGI for Mapserver, improving speed when retrieving the
+  demographics layers (#104)
+- Use SVG icons instead of PNGs for the empty lists of projects and datasets
+  (#197)
+- Ignore sites with no facility type while importing (#191)
+- Isolated road segments are joined to the road network while running the OSM
+  data import (#12)
+- Fixed calculation error when computing the total population from the
+  demographics rasters due to loss of numeric precision (#128)
+- Improved logging and log internal errors in production (#207)
 
 ## [0.5.1] - 2016-08-30
 ### Fixed
