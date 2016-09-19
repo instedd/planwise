@@ -398,6 +398,10 @@
     (:state job)
     (rename-keys (:value job) {:tasks :pending-tasks})))
 
+(defn serialize-job
+  [job]
+  (dissoc job :fsm))
+
 (defn cancel-job
   [job]
   (when job

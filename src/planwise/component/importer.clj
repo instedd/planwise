@@ -198,7 +198,7 @@
   (let [dataset-id (import-job/job-dataset-id job)]
     (datasets/update-dataset (:datasets component)
                              {:id dataset-id
-                              :import-job (dissoc job :fsm)})))
+                              :import-job (import-job/serialize-job job)})))
 
 (defn- pending-jobs
   [component]
