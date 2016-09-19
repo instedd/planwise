@@ -3,7 +3,7 @@
             [taoensso.timbre :as timbre]
             [clojure.set :refer [rename-keys]]
             [planwise.model.import-job :as import-job]
-            [planwise.component.resmap :as resmap]
+            [planwise.boundary.resmap :as resmap]
             [planwise.component.projects :as projects]
             [planwise.component.facilities :as facilities]
             [planwise.boundary.datasets :as datasets]
@@ -215,13 +215,14 @@
   component/Lifecycle
   (start [component]
     (info "Starting Importer component")
-    (if-not (:taskmaster component)
-      (let [jobs (atom (pending-jobs component))
-            concurrent-workers (or (:concurrent-workers component) 1)
-            component (assoc component :jobs jobs)
-            taskmaster (taskmaster/run-taskmaster component concurrent-workers)]
-        (assoc component :taskmaster taskmaster))
-      component))
+    (let [component (if-not (:jobs component)
+                      (assoc component :jobs (atom (pending-jobs component)))
+                      component)]
+      (if-not (:taskmaster component)
+        (let [concurrent-workers (or (:concurrent-workers component) 1)
+              taskmaster (taskmaster/run-taskmaster component concurrent-workers)]
+          (assoc component :taskmaster taskmaster))
+        component)))
   (stop [component]
     (info "Stopping Importer component")
     (when-let [taskmaster (:taskmaster component)]
