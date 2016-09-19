@@ -1,4 +1,4 @@
-(defproject planwise "0.6.0-SNAPSHOT"
+(defproject planwise "0.6.0"
   :description "Facility Planner"
   :url "http://github.com/instedd/planwise"
   :min-lein-version "2.0.0"
