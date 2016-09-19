@@ -3,7 +3,7 @@
             [taoensso.timbre :as timbre]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
-            [planwise.util.hash :refer [update-if-contains]]))
+            [planwise.util.hash :refer [update-if]]))
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -25,9 +25,9 @@
 (defn dataset->db
   [dataset]
   (some-> dataset
-          (update-if-contains :import-result #(some-> % pr-str))
-          (update-if-contains :import-job #(some-> % pr-str))
-          (update-if-contains :mappings #(some-> % pr-str))))
+          (update-if :import-result pr-str)
+          (update-if :import-job pr-str)
+          (update-if :mappings pr-str)))
 
 
 ;; ----------------------------------------------------------------------
