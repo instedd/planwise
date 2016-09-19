@@ -14,9 +14,9 @@ ORDER BY id ASC;
 
 -- :name insert-dataset! :<! :1
 INSERT INTO datasets
-  (name, description, owner_id, collection_id, import_mappings, import_result, import_job)
+  (name, description, owner_id, collection_id, import_mappings, import_result)
 VALUES
-  (:name, :description, :owner-id, :collection-id, :mappings, :import-result, :import-job)
+  (:name, :description, :owner-id, :collection-id, :mappings, :import-result)
 RETURNING id;
 
 -- :name select-dataset :? :1
