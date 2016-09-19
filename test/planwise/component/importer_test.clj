@@ -2,6 +2,7 @@
   (:require [planwise.component.importer :as importer]
             [planwise.component.datasets :as datasets]
             [planwise.boundary.resmap :as resmap]
+            [planwise.model.import-job :as import-job]
             [planwise.component.taskmaster :as taskmaster]
             [planwise.test-system :refer [test-system with-system]]
             [clj-time.core :as time]
@@ -66,7 +67,7 @@
           (is (= :ok result))
           (is (= :importing (:status (get statūs 1)))))
 
-          ; Proceed to next task in the import process
+        ; Proceed to next task in the import process
         (let [{task-id :task-id} (taskmaster/next-task importer)]
           (is (= [1 :import-types] task-id))
           (let [jobs (taskmaster/task-completed importer task-id :new-types)]
@@ -75,14 +76,58 @@
         (component/stop importer))
 
       ; Create a new importer component that should reload the jobs state from the previous one
-      (let [importer (importer-service system)]
-
-        ; Check that the next task is correctly restored
-        (let [{task-id :task-id} (taskmaster/next-task importer)]
-          (is (= [1 [:import-sites 1]] task-id)))
+      (let [importer (importer-service system)
+            {task-id :task-id} (taskmaster/next-task importer)
+            {next-id :task-id} (taskmaster/next-task importer)]
+          (is (= [1 [:import-sites 1]] task-id))
+          (is (nil? next-id))
 
         (component/stop importer)))))
 
+
+(deftest resume-importer-job-with-multiple-tasks
+  (timbre/with-level :warn
+    (with-system (system)
+
+      ; Create import job for a dataset with a processing-facilities state
+      (let [importer (importer-service system)
+            user-ident {:user-email "john@doe.com", :user-id 1}
+            job (import-job/restore-job {:state :processing-facilities
+                                         :value (merge import-job/default-job-value
+                                                  {:page-count 1, :collection-id 1, :dataset-id 1,
+                                                   :type-field {:code "type", :options {}},
+                                                   :page 1, :user-ident user-ident,
+                                                   :facility-ids [1 2 3 4 5 6],
+                                                   :facility-count 6})})]
+        (swap! (:jobs importer) assoc 1 job)
+
+        ; Fire 4 concurrent process facility tasks
+        (let [tasks (repeatedly 4 #(taskmaster/next-task importer))]
+          (dotimes [n 4]
+            (is (= [1 [:process-facilities [(inc n)]]]
+                   (:task-id (nth tasks n)))))
+
+          ; One of the tasks succeeds, so the intermediate job state is persisted
+          (taskmaster/task-completed importer
+                                     (:task-id (first tasks))
+                                     [:success [:process-facilities [1]] nil])
+
+          ; And then the importer dies
+          (component/stop importer)))
+
+      ; Create a new importer component that should re-run the pending tasks
+      (let [importer (importer-service system)
+            pending-tasks (get-in @(:jobs importer) [1 :value :pending-tasks])
+            tasks (repeatedly 5 #(taskmaster/next-task importer))]
+
+          ; Check that the tasks are restored with the job as pending-tasks
+          (is (= 3 (count pending-tasks)))
+          ; Check that the pending tasks are re-run, and then the following ones are dispatched
+          (dotimes [n 5]
+            (is (= [1 [:process-facilities [(+ 2 n)]]]
+                   (:task-id (nth tasks n)))))
+
+        (component/stop importer)))))
 
 (deftest facility-type-ctor-test
   (let [type-field {:code "facility_type"

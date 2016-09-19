@@ -1,7 +1,8 @@
 (ns planwise.model.import-job
   (:require [reduce-fsm :as fsm]
             [schema.core :as s]
-            [clojure.core.match :refer [match]]))
+            [clojure.core.match :refer [match]]
+            [clojure.set :refer [rename-keys]]))
 
 
 ;; Import job tasks
@@ -154,8 +155,8 @@
 (defn complete-processing
   [job event & _]
   (-> job
-    (complete-task event)
-    (update-facilities-counts event)))
+    (update-facilities-counts event)
+    (complete-task event)))
 
 (defn last-complete-processing
   [job event & _]
@@ -216,6 +217,7 @@
    :facility-count 0
    :facility-ids   []
    :tasks          []
+   :pending-tasks  []
    :next-task      nil
    :result         nil
    :last-event     nil
@@ -392,7 +394,9 @@
 
 (defn restore-job
   [job]
-  (import-job (:state job) (:value job)))
+  (import-job
+    (:state job)
+    (rename-keys (:value job) {:tasks :pending-tasks})))
 
 (defn cancel-job
   [job]
@@ -402,7 +406,11 @@
 (defn next-task
   [job]
   (when job
-    (fsm/fsm-event job :next)))
+    (if-let [pending-tasks (seq (get-in job [:value :pending-tasks]))]
+      (-> job
+        (update :value dispatch-task (peek (vec pending-tasks)))
+        (update-in [:value :pending-tasks] pop))
+      (fsm/fsm-event job :next))))
 
 (defn report-task-success
   [job task-id data]
