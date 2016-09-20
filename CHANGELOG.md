@@ -11,6 +11,10 @@ This project adheres to [Semantic Versioning](http://semver.org/).
   that should guide her through the steps necessary to complete the
   configuration of the project (#150)
 - The dataset used in a project is now shown in the "Facilities" tab (#194)
+- Experimental, disabled by default due to performance limitations: calculate
+  the remaining unsatisfied population from the population layer after
+  subtracting the capacity for each facility in the area covered for said
+  facility, ie. the isochrone for the current travel time (#187)
 
 ### Changes and improvements
 - Added a logout button to allow users to sign off the application and the
