@@ -28,7 +28,7 @@ module FeatureSpecHelpers
       expand_options
       select_option(1)
       expand_locations_options
-      select_location(1)
+      select_location
       submit
     end 
   end
@@ -50,7 +50,7 @@ module FeatureSpecHelpers
       expand_options
       select_option(1)
       page.import.click
-      sleep 3
+      sleep 5
       expect(page).to have_content 'Ready to use'
     end
   end
@@ -67,8 +67,9 @@ module FeatureSpecHelpers
     page.all(".rc-dropdown b")[1].click
   end
 
-  def select_location(option)
-    page.find(".chosen-drop li:nth-child(#{option})").click
+  def select_location
+    find(".chosen-search input").set("Kenya")
+    page.all('span', :text => 'Kenya')[1].click
   end
 
   def submit
