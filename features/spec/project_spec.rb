@@ -10,14 +10,14 @@ describe "Project" do
 
       it "should search project" do
         goto_page HomePage do |page|
-          create_project("Bar")  
+          create_project("FooBar")  
         end
         goto_page HomePage do |page| 
           fill_in "search", :with => "Foo"
         end 
         expect_page HomePage do |page|
           expect(page).to have_content("Foo")
-          expect(page).to_not have_content("Bar")
+          expect(page).to_not have_content("FooBar")
           page.press_signout_button
         end
       end
@@ -123,7 +123,39 @@ describe "Project" do
   
           expect(screen1.duplicate?(screen2)).to be_falsey
         end
-      end           
+      end 
+
+
+      it "should share a project" do
+        goto_page HomePage do |page|
+          expect(page).to have_content("Foo")
+          open_project_view
+        end
+
+        expect_page ProjectPage do |page|
+          page.header.share.click
+          find(".send-email").set("user@instedd.org")
+          $link = page.find('.share-link').value
+          page.find(".primary").click
+        end
+
+        goto_page HomePage do |page|
+          page.press_signout_button
+        end
+
+        expect_page GuissoLogin do |page|
+          page.form.user_name.set "user@instedd.org"
+          page.form.password.set "user1234"
+          page.form.login.click
+        end
+
+        expect_page HomePage do |page|
+          visit $link
+
+          expect(page).to have_content("Foo")
+          expect(page).to have_content("Leave project")
+        end
+      end          
     end
 
     context "without project" do
@@ -134,7 +166,7 @@ describe "Project" do
           expand_options
           select_option(1)
           expand_locations_options
-          select_location(1)
+          select_location
           submit
           page.press_signout_button
         end 
