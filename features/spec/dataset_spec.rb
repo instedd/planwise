@@ -68,8 +68,8 @@ describe "Dataset" do
       select_option(1)
       page.import.click
       page.cancel.click
-      sleep 3
-      page.find(".error").click
+      
+      expect(page).to have_content 'Import cancelled'
     end
   end
 end
