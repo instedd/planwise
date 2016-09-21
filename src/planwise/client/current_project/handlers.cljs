@@ -78,7 +78,7 @@
       (let [project-id (db/project-id db)
             new-state (visit-tab state next-tab)]
         (when (not= state new-state)
-          (api/update-project-state project-id new-state (fn [data] :ignore)))
+          (api/update-project-state project-id new-state))
         (assoc db :wizard new-state))
       db)))
 
