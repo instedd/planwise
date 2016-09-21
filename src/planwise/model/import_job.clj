@@ -1,8 +1,7 @@
 (ns planwise.model.import-job
   (:require [reduce-fsm :as fsm]
             [schema.core :as s]
-            [clojure.core.match :refer [match]]
-            [clojure.set :refer [rename-keys]]))
+            [clojure.core.match :refer [match]]))
 
 
 ;; Import job tasks
@@ -393,10 +392,10 @@
     (import-job job-value)))
 
 (defn restore-job
-  [job]
+  [{:keys [state value], :as job}]
   (import-job
-    (:state job)
-    (rename-keys (:value job) {:tasks :pending-tasks})))
+    state
+    (assoc value :pending-tasks (:tasks value))))
 
 (defn serialize-job
   [job]
@@ -412,8 +411,8 @@
   (when job
     (if-let [pending-tasks (seq (get-in job [:value :pending-tasks]))]
       (-> job
-        (update :value dispatch-task (peek (vec pending-tasks)))
-        (update-in [:value :pending-tasks] pop))
+        (assoc-in [:value :next-task] (first pending-tasks))
+        (update-in [:value :pending-tasks] rest))
       (fsm/fsm-event job :next))))
 
 (defn report-task-success
