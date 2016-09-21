@@ -49,7 +49,7 @@
 (defn- capacity-for
   [service {:keys [population population-in-region]}]
   (let [capacity (default-capacity service)
-        factor   (if population-in-region (/ population-in-region population) 1)]
+        factor   (/ population-in-region population)]
     (int (* factor capacity))))
 
 (defn- region-saturation
@@ -73,6 +73,9 @@
   [service region-id facilities]
   (->> facilities
     (filter :polygon-id)
+    (filter :population)
+    (filter (comp pos? :population))
+    (filter :population-in-region)
     (map (juxt
           #(isochrones-path service region-id "/" (:polygon-id %) ".tif")
           #(str (capacity-for service %))))
