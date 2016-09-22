@@ -4,6 +4,7 @@
             [planwise.util.str :refer [trim-to-int]]
             [planwise.util.collections :refer [find-by]]
             [planwise.util.hash :refer [update-if]]
+            [planwise.util.numbers :refer [float=]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [taoensso.timbre :as timbre]
@@ -47,7 +48,8 @@
    :existing, :updated, :moved or :new."
   [service dataset-id facilities]
   (jdbc/with-db-transaction [tx (get-db service)]
-    (let [updateable-keys [:name :type-id :lat :lon :capacity]
+    (let [updateable-keys [:name :type-id :capacity]
+          updateable-keys-with-pos (concat updateable-keys [:lat :lon])
           site-ids (map :site-id facilities)
           existing-facilities (when (seq site-ids)
                                 (facilities-in-dataset-by-criteria tx
@@ -55,10 +57,10 @@
                                    :criteria (criteria-snip {:site-ids site-ids})}))]
       (->> facilities
         (map  (fn [facility]
-                (let [{id :id, :as existing} (some-> existing-facilities
-                                                (find-by :site-id (:site-id facility))
-                                                (update-if :lat float)
-                                                (update-if :lon float))]
+                (let [{id :id, :as existing} (find-by existing-facilities :site-id (:site-id facility))
+                      position-unchanged?    (and (seq existing)
+                                               (float= (:lat existing) (:lat facility))
+                                               (float= (:lon existing) (:lon facility)))]
 
                   (cond
                     ; Insert new record if no existing facility with the site id was found
@@ -67,23 +69,22 @@
                       [:new (:id result)])
 
                     ; Check if we need to update any attribute
-                    (= (select-keys existing updateable-keys)
-                       (select-keys facility updateable-keys))
+                    (and position-unchanged?
+                      (= (select-keys existing updateable-keys)
+                         (select-keys facility updateable-keys)))
                     [:existing id]
 
                     ; Check if the position did not change
-                    (= (select-keys existing [:lat :lon])
-                       (select-keys facility [:lat :lon]))
+                    position-unchanged?
                     (do
-                      (update-facility* tx (merge {:id id}
-                                                  (select-keys facility [:name :type-id :capacity])))
+                      (update-facility* tx (merge {:id id} (select-keys facility updateable-keys)))
                       [:updated id])
 
                     ; If the position changed, clear processing status
                     :else
                     (do
                       (update-facility* tx (merge {:id id, :processing-status nil}
-                                                  (select-keys facility updateable-keys)))
+                                                  (select-keys facility updateable-keys-with-pos)))
                       [:moved id])))))
 
         (group-by first)
