@@ -30,8 +30,6 @@
   [facilities dataset-id type-field]
   (info (str "Dataset " dataset-id ": "
              "Importing facility types from Resourcemap field " (:id type-field)))
-  (facilities/destroy-facilities! facilities dataset-id)
-  (facilities/destroy-types! facilities dataset-id)
   (let [options (get-in type-field [:config :options])
         types (map (fn [{label :label}] {:name label}) options)
         codes (map :code options)
@@ -118,6 +116,20 @@
     (doseq [project list]
       (projects/update-project-stats projects project))))
 
+(defn delete-old-facilities
+  [facilities-service dataset-id facility-ids]
+  (facilities/destroy-facilities!
+    facilities-service
+    dataset-id
+    {:except-ids facility-ids}))
+
+(defn delete-old-types
+  [facilities-service dataset-id type-field]
+  (let [type-ids (vals (:options type-field))]
+    (facilities/destroy-types!
+      facilities-service
+      dataset-id
+      {:except-ids type-ids})))
 
 ;; ----------------------------------------------------------------------------
 ;; Job control
@@ -144,6 +156,14 @@
             type-field (import-job/job-type-field job)
             page (second task)]
         (partial import-collection-page services user-ident dataset-id coll-id type-field page))
+
+      :delete-old-types
+      (let [type-field (import-job/job-type-field job)]
+        (partial delete-old-types facilities dataset-id type-field))
+
+      :delete-old-facilities
+      (let [facility-ids (import-job/job-facility-ids job)]
+        (partial delete-old-facilities facilities dataset-id facility-ids))
 
       :process-facilities
       (let [facility-ids (second task)]

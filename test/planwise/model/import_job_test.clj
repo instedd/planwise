@@ -91,26 +91,39 @@
         (is (= (reduce-job job [:next])
                [:importing-sites [:import-sites 1] nil]))
         ;; single page of sites successfully imported
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [nil [1 2 3] 1]]])
-               [:update-projects nil nil]))
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [nil {:new [1 2 3]} 1]]])
+               [:delete-old-facilities nil nil]))
         ;; page of sites successfully imported (continue)
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids [1 2 3] :total-pages 5})]]])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids {:new [1 2 3]} :total-pages 5})]]])
                [:request-sites nil nil]))
         ;; page report mismatch
-        (is (= (reduce-job job [:next [:success [:import-sites 2] [nil [1 2 3] 4]]])
+        (is (= (reduce-job job [:next [:success [:import-sites 2] [nil {:new [1 2 3]} 4]]])
                [:error [:import-sites 1] :unexpected-event]))
         ;; sites page is incremented
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids [1 2 3] :total-pages 3})]] :next])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids {:new [1 2 3]} :total-pages 3})]] :next])
                [:importing-sites [:import-sites 2] nil]))
         ;; second page of sites is imported
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids [1 2 3] :total-pages 1})]]
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids {:new [1 2 3]} :total-pages 1})]]
                                     :next [:success [:import-sites 2] [nil []]]])
-               [:update-projects nil nil]))
+               [:delete-old-facilities nil nil]))
+
+       ;;
+       ;; Delete old facilities and types stage (facilities 1,2 to process)
+       ;;
+       (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil (page-result {:page-ids {:new [1 2]} :total-pages 1})]]])]
+         (is (= (reduce-job job [:next])
+                [:deleting-old-facilities :delete-old-facilities nil]))
+         (is (= (reduce-job job [:next [:success :delete-old-facilities nil]])
+                [:delete-old-types nil nil]))
+         (is (= (reduce-job job [:next [:success :delete-old-facilities nil] :next])
+                [:deleting-old-types :delete-old-types nil]))
+         (is (= (reduce-job job [:next [:success :delete-old-facilities nil] :next [:success :delete-old-types nil]])
+                [:update-projects nil nil]))
 
         ;;
         ;; Update projects stage (facilities 1,2 to process)
         ;;
-        (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil (page-result {:page-ids [1 2] :total-pages 1})]]])]
+        (let [job (reduce fsm/fsm-event job [:next [:success :delete-old-facilities nil] :next [:success :delete-old-types nil]])]
           (is (= (reduce-job job [:next])
                  [:updating-projects :update-projects nil]))
           (is (= (reduce-job job [:next [:success :update-projects nil]])
@@ -145,7 +158,7 @@
             (is (= (reduce-job job [:next :cancel])
                    [:clean-up-wait nil :cancelled]))
             (is (= (reduce-job job [:next :cancel [:success [:process-facilities [1]] nil]])
-                   [:error nil :cancelled]))))))))
+                   [:error nil :cancelled])))))))))
 
     ;; TODO: test error conditions in all stages
     ;; TODO: test cancellation in all stages
