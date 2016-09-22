@@ -2,6 +2,8 @@
   (:require [com.stuartsierra.component :as component]
             [planwise.component.runner :refer [run-external]]
             [planwise.util.str :refer [trim-to-int]]
+            [planwise.util.collections :refer [find-by]]
+            [planwise.util.hash :refer [update-if]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [taoensso.timbre :as timbre]
@@ -53,29 +55,37 @@
                                    :criteria (criteria-snip {:site-ids site-ids})}))]
       (->> facilities
         (map  (fn [facility]
-                (if-let [{id :id, :as existing} (some-> (filter #(= (:site-id %) (:site-id facility))
-                                                         existing-facilities)
-                                                  (first)
-                                                  (update :lat float)
-                                                  (update :lon float))]
-                  ; Check if we need to update any attribute
-                  (if (= (select-keys existing updateable-keys)
-                         (select-keys facility updateable-keys))
+                (let [{id :id, :as existing} (some-> existing-facilities
+                                                (find-by :site-id (:site-id facility))
+                                                (update-if :lat float)
+                                                (update-if :lon float))]
+
+                  (cond
+                    ; Insert new record if no existing facility with the site id was found
+                    (nil? existing)
+                    (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
+                      [:new (:id result)])
+
+                    ; Check if we need to update any attribute
+                    (= (select-keys existing updateable-keys)
+                       (select-keys facility updateable-keys))
                     [:existing id]
-                    ; Check if the position changed; if so, clear the processing status
-                    (if (= (select-keys existing [:lat :lon])
-                           (select-keys facility [:lat :lon]))
-                      (do
-                        (update-facility* tx (merge {:id id}
-                                                    (select-keys facility [:name :type-id])))
-                        [:updated id])
-                      (do
-                        (update-facility* tx (merge {:id id, :processing-status nil}
-                                                    (select-keys facility updateable-keys)))
-                        [:moved id])))
-                  ; Insert the new facility otherwise
-                  (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
-                    [:new (:id result)]))))
+
+                    ; Check if the position did not change
+                    (= (select-keys existing [:lat :lon])
+                       (select-keys facility [:lat :lon]))
+                    (do
+                      (update-facility* tx (merge {:id id}
+                                                  (select-keys facility [:name :type-id])))
+                      [:updated id])
+
+                    ; If the position changed, clear processing status
+                    :else
+                    (do
+                      (update-facility* tx (merge {:id id, :processing-status nil}
+                                                  (select-keys facility updateable-keys)))
+                      [:moved id])))))
+
         (group-by first)
         (map (fn [[state values]] [state (map second values)]))
         (into {})))))
@@ -133,7 +143,7 @@
     (let [current-types (select-types-in-dataset tx {:dataset-id dataset-id})]
       (->> types
         (mapv (fn [type]
-                (if-let [existing-type (first (filter #(= (:name type) (:name %)) current-types))]
+                (if-let [existing-type (find-by current-types :name (:name type))]
                   (merge type existing-type)
                   (let [type-id (insert-type! tx (assoc type :dataset-id dataset-id))]
                     (merge type type-id)))))))))
