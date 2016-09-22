@@ -50,6 +50,12 @@
    :region-max-population s/Num
    :stats                 ProjectStats})
 
+(def initial-wizard-state
+  {:set  true
+   :tabs {:demographics :unvisited
+          :facilities   :unvisited
+          :transport    :unvisited}})
+
 ;; An empty view model for the currently selected project
 (def initial-db
   {;; Filter definitions - these are replaced by requests to the server
@@ -79,17 +85,33 @@
    :dataset            (asdf/new nil)
 
    :project-data       nil                      ; see ProjectData above
-   :wizard             {:set false
-                        :tabs {
-                               :demographics    :unvisited
-                               :facilities      :unvisited
-                               :transport       :unvisited}}})
+   :wizard             nil})
 
 
 ;; Project data manipulation functions
 
+(defn- load-wizard-state
+  [current state]
+  (if (nil? current)
+    (if (nil? state)
+      ;; initialize wizard state when no previous one is found and the server
+      ;; doesn't provide one either
+      initial-wizard-state
+      ;; otherwise, massage the server-provided state a bit and decide if we
+      ;; should still activate the wizard or not, depending on whether the user
+      ;; already visited all the tabs
+      (let [tabs (into {} (map (fn [[key val]] [key (keyword val)]) (:tabs state)))
+            tabs (merge (:tabs initial-wizard-state) tabs)
+            all-visited? (and (some? tabs) (every? #{:visited :visiting} (vals tabs)))
+            active? (and (:set state)
+                         (not all-visited?))]
+        {:set active?
+         :tabs tabs}))
+    ;; ignore the server-provided wizard state if we already have one
+    current))
+
 (defn- update-viewmodel-associations
-  [viewmodel {:keys [facilities shares share-token map-key unsatisfied-count]}]
+  [viewmodel {:keys [facilities shares share-token map-key unsatisfied-count state] :as data}]
   (as-> viewmodel vm
     (if (some? facilities)
       (assoc-in vm [:facilities :list] facilities)
@@ -99,12 +121,13 @@
       vm)
     (update-in vm [:sharing :token] asdf/reset! share-token)
     (update-in vm [:map-key] asdf/reset! map-key)
+    (update vm :wizard load-wizard-state state)
     (assoc vm :unsatisfied-demand unsatisfied-count)))
 
 (defn update-viewmodel
   [viewmodel project-data]
   (-> viewmodel
-      (update :project-data merge (dissoc project-data :facilities :shares :share-token :is-new?))
+      (update :project-data merge (dissoc project-data :facilities :shares :share-token :state))
       (update-viewmodel-associations project-data)))
 
 (defn new-viewmodel

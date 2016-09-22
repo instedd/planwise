@@ -54,40 +54,48 @@
   (let [new-db (db/new-viewmodel project-data)]
     (dispatch [:current-project/fetch-facility-types])
     (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
-    (assoc-in new-db [:wizard :set] (:is-new? project-data false))))
+    new-db))
 
-(defn- update-tabs-state [db next-tab]
-  (let [tabs (get-in db [:wizard :tabs])
-        new-tabs (into {}
+(defn- visit-tab
+  [wizard-state visiting-tab]
+  (let [new-tabs (into {}
                        (map (fn [[tab state]]
-                              (if (and (= state :visiting) (not= tab next-tab))
-                                [tab :visited]
-                                [tab state]))
-                            tabs))]
-    (assoc-in db [:wizard :tabs] new-tabs)))
+                              (if (= tab visiting-tab)
+                                (case state
+                                  :visited [tab :visited]
+                                  [tab :visiting])
+                                (case state
+                                  (:visiting, :visited) [tab :visited]
+                                  [tab :unvisited])))
+                            (:tabs wizard-state)))]
+    (assoc wizard-state :tabs new-tabs)))
 
-(defn- update-next-tab-state [db next-tab]
-  (if (= :unvisited (get-in db [:wizard :tabs next-tab]))
-    (assoc-in db [:wizard :tabs next-tab] :visiting)
-    db))
-
-;; TODO: refactor and rename his into visit-tab with a single update to the database
-(defn- update-wizard-state [db next-tab]
-  (-> db
-      (update-next-tab-state next-tab)
-      (update-tabs-state next-tab)))
+(defn- update-wizard-state
+  [db next-tab]
+  (let [state (:wizard db)
+        active? (:set state)]
+    (if active?
+      (let [project-id (db/project-id db)
+            new-state (visit-tab state next-tab)]
+        (when (not= state new-state)
+          (api/update-project-state project-id new-state))
+        (assoc db :wizard new-state))
+      db)))
 
 (register-handler
  :current-project/navigate-project
  in-current-project
  (fn [db [_ project-id section]]
    (if (not= project-id (db/project-id db))
-     (do
-       (dispatch [:current-project/load-project project-id (section->with section)])
-       db)
-     (do
-       (dispatch [:current-project/reload-project project-id (section->with section)])
-       (update-wizard-state db section)))))
+     (dispatch [:current-project/load-project project-id (section->with section)])
+     (dispatch [:current-project/reload-project project-id (section->with section)]))
+   db))
+
+(register-handler
+ :current-project/tab-visited
+ in-current-project
+ (fn [db [_ section]]
+   (update-wizard-state db section)))
 
 (register-handler
  :current-project/load-project

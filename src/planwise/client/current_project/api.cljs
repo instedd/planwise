@@ -23,6 +23,12 @@
                 :with (some-> with-data name)}]
     (PUT url (json-request params handlers))))
 
+(defn update-project-state [project-id state & handlers]
+  (let [url (str "/api/projects/" project-id)
+        params {:id project-id
+                :state state}]
+    (PUT url (json-request params handlers))))
+
 ;; Project sharing
 
 (defn reset-share-token [project-id & handlers]
