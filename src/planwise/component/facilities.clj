@@ -39,17 +39,50 @@
 ;; ----------------------------------------------------------------------
 ;; Service functions
 
-(defn insert-facilities! [service dataset-id facilities]
+(defn insert-facilities!
+  "Upserts the facilities, identifying them by dataset-id and site-id,
+   returning a hash of state into list of ids, where state is one of
+   :existing, :updated, :moved or :new."
+  [service dataset-id facilities]
   (jdbc/with-db-transaction [tx (get-db service)]
-    (delete-facilities-in-dataset-by-site-id! tx {:dataset-id dataset-id, :site-ids (map :site-id facilities)})
-    (reduce (fn [ids facility]
-              (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
-                (conj ids (:id result))))
-            []
-            facilities)))
+    (let [updateable-keys [:name :type-id :lat :lon]
+          site-ids (map :site-id facilities)
+          existing-facilities (when (seq site-ids)
+                                (facilities-in-dataset-by-criteria tx
+                                  {:dataset-id dataset-id
+                                   :criteria (criteria-snip {:site-ids site-ids})}))]
+      (->> facilities
+        (map  (fn [facility]
+                (if-let [{id :id, :as existing} (some-> (filter #(= (:site-id %) (:site-id facility))
+                                                         existing-facilities)
+                                                  (first)
+                                                  (update :lat float)
+                                                  (update :lon float))]
+                  ; Check if we need to update any attribute
+                  (if (= (select-keys existing updateable-keys)
+                         (select-keys facility updateable-keys))
+                    [:existing id]
+                    ; Check if the position changed; if so, clear the processing status
+                    (if (= (select-keys existing [:lat :lon])
+                           (select-keys facility [:lat :lon]))
+                      (do
+                        (update-facility* tx (merge {:id id}
+                                                    (select-keys facility [:name :type-id])))
+                        [:updated id])
+                      (do
+                        (update-facility* tx (merge {:id id, :processing-status nil}
+                                                    (select-keys facility updateable-keys)))
+                        [:moved id])))
+                  ; Insert the new facility otherwise
+                  (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
+                    [:new (:id result)]))))
+        (group-by first)
+        (map (fn [[state values]] [state (map second values)]))
+        (into {})))))
 
-(defn destroy-facilities! [service dataset-id]
-  (delete-facilities-in-dataset! (get-db service) {:dataset-id dataset-id}))
+(defn destroy-facilities! [service dataset-id & [{except-ids :except-ids}]]
+  (delete-facilities-in-dataset! (get-db service) {:dataset-id dataset-id
+                                                   :except-ids except-ids}))
 
 (defn list-facilities
   ([service dataset-id]
@@ -90,17 +123,20 @@
   (select-types-in-dataset (get-db service) {:dataset-id dataset-id}))
 
 (defn destroy-types!
-  [service dataset-id]
-  (delete-types-in-dataset! (get-db service) {:dataset-id dataset-id}))
+  [service dataset-id & [{except-ids :except-ids}]]
+  (delete-types-in-dataset! (get-db service) {:dataset-id dataset-id
+                                              :except-ids except-ids}))
 
 (defn insert-types!
   [service dataset-id types]
   (jdbc/with-db-transaction [tx (get-db service)]
-    (-> (map (fn [type]
-               (let [type-id (insert-type! tx (assoc type :dataset-id dataset-id))]
-                 (merge type type-id)))
-             types)
-        (vec))))
+    (let [current-types (select-types-in-dataset tx {:dataset-id dataset-id})]
+      (->> types
+        (mapv (fn [type]
+                (if-let [existing-type (first (filter #(= (:name type) (:name %)) current-types))]
+                  (merge type existing-type)
+                  (let [type-id (insert-type! tx (assoc type :dataset-id dataset-id))]
+                    (merge type type-id)))))))))
 
 (defn raster-isochrones! [service facility-id]
   (let [scale-resolution 8

@@ -52,7 +52,7 @@
   (with-system (system)
     (let [service (:facilities system)]
       (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
-      (is (= [100] (facilities/insert-facilities! service dataset-id new-facilities)))
+      (is (= [[100]] (vals (facilities/insert-facilities! service dataset-id new-facilities))))
       (is (= 3 (count (facilities/list-facilities service dataset-id)))))))
 
 (deftest destroy-facilities
@@ -89,15 +89,16 @@
      {:id 2 :name "Test Dataset 2" :collection_id 124 :owner_id 1}]]
    [:facility_types
     [{:id 1 :dataset_id 1 :name "Hospital"}
-     {:id 2 :dataset_id 1 :name "Rural"}]]
+     {:id 2 :dataset_id 1 :name "Rural"}
+     {:id 3 :dataset_id 2 :name "General"}]]
    [:regions
     [{:id 1 :country "C" :name "R1" :the_geom (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))"))}
      {:id 2 :country "C" :name "R2" :the_geom (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((2 2, 2 3, 3 3, 3 2, 2 2)))"))}]]
    [:facilities
-    [{:id 1 :dataset_id 1 :site_id 1 :name "Facility A" :type_id 1 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5) :capacity 500}
-     {:id 2 :dataset_id 2 :site_id 2 :name "Facility B" :type_id 1 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5)}
-     {:id 3 :dataset_id 1 :site_id 3 :name "Facility C" :type_id 2 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5)}
-     {:id 4 :dataset_id 1 :site_id 4 :name "Facility D" :type_id 1 :lat 2.5 :lon 2.5 :the_geom (make-point 2.5 2.5)}]]
+    [{:id 1 :dataset_id 1 :site_id 1 :name "Facility A" :type_id 1 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5) :processing_status "ok" :capacity 500}
+     {:id 2 :dataset_id 2 :site_id 2 :name "Facility B" :type_id 1 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5) :processing_status "ok"}
+     {:id 3 :dataset_id 1 :site_id 3 :name "Facility C" :type_id 2 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5) :processing_status "ok"}
+     {:id 4 :dataset_id 1 :site_id 4 :name "Facility D" :type_id 1 :lat 2.5 :lon 2.5 :the_geom (make-point 2.5 2.5) :processing_status "ok"}]]
    [:facilities_polygons
     [{:id 1 :facility_id 1 :threshold 900 :method "alpha-shape" :the_geom (sample-polygon) :population 2000}
      {:id 2 :facility_id 1 :threshold 100 :method "alpha-shape" :the_geom (sample-polygon)}
@@ -124,3 +125,47 @@
         (is (= 2000 facility-population))
         (is (= 1000 facility-region-population))
         (is (= 500 capacity))))))
+
+(deftest insert-facility-types
+  (with-system (system multiple-facilities-fixture-data)
+    (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+    (let [service        (:facilities system)
+          result         (facilities/insert-types! service 1 [{:name "General"}, {:name "Hospital"}])
+          all-types      (facilities/list-types service 1)]
+      (is (= result
+             [{:id 100, :name "General"}
+              {:id 1,   :name "Hospital"}]))
+      (is (= (set all-types)
+             #{{:id 1,   :name "Hospital"}
+               {:id 2,   :name "Rural"}
+               {:id 100, :name "General"}}))))
+  (with-system (system multiple-facilities-fixture-data)
+    (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+    (let [service        (:facilities system)
+          reverse-result (facilities/insert-types! service 1 [{:name "Hospital"}, {:name "General"}])]
+      (is (= reverse-result
+             [{:id 1,   :name "Hospital"}
+              {:id 100, :name "General"}])))))
+
+(deftest upsert-facilities
+  (with-system (system multiple-facilities-fixture-data)
+    (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
+    (let [service (:facilities system)
+          data    [{:site-id 1 :name "Facility A" :type-id 1 :lat 0.5 :lon 0.5}  ; existing
+                   {:site-id 2 :name "Facility B" :type-id 1 :lat 0.5 :lon 0.5}  ; new
+                   {:site-id 3 :name "Updated C"  :type-id 2 :lat 0.5 :lon 0.5}  ; updated
+                   {:site-id 4 :name "Updated D"  :type-id 2 :lat 1.5 :lon 1.5}] ; moved
+          result  (facilities/insert-facilities! service dataset-id data)
+          list    (facilities/list-facilities service dataset-id {})
+          {[existing] 1, [new] 100, [updated] 3, [moved] 4} (group-by :id list)]
+      (is (= {:existing [1], :new [100], :updated [3], :moved [4]}
+             result))
+      (letfn [(select-attrs [f] (select-keys f [:id :name :site-id :type-id :lat :lon :processing-status]))]
+        (is (= (select-attrs existing)
+               {:id 1   :site-id 1 :name "Facility A" :type-id 1 :lat 0.5M :lon 0.5M :processing-status "ok"}))
+        (is (= (select-attrs new)
+               {:id 100 :site-id 2 :name "Facility B" :type-id 1 :lat 0.5M :lon 0.5M :processing-status nil}))
+        (is (= (select-attrs updated)
+               {:id 3   :site-id 3 :name "Updated C"  :type-id 2 :lat 0.5M :lon 0.5M :processing-status "ok"}))
+        (is (= (select-attrs moved)
+               {:id 4   :site-id 4 :name "Updated D"  :type-id 2 :lat 1.5M :lon 1.5M :processing-status nil}))))))
