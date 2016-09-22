@@ -16,9 +16,9 @@
   "Returns a status icon relative to the dataset status"
   [dataset]
   (case (dataset->status dataset)
-    (nil :success :importing) :location
-    (:cancelled :warn)        :warning
-    (:error :unknown)         :remove-circle
+    (nil :success :importing)    :location
+    (:warn)                      :warning
+    (:cancelled :error :unknown) :remove-circle
     nil))
 
 (defn dataset->status-class

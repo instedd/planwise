@@ -51,7 +51,7 @@
 (defn cancel-import!
   [dataset-id & handlers]
   (POST "/api/datasets/cancel"
-      (json-request {:dataset-id dataset-id} handlers)))
+      (json-request {:dataset-id dataset-id} handlers :mapper-fn (partial map map-dataset))))
 
 (defn delete-dataset!
   [dataset-id & handlers]
