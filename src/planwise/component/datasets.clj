@@ -2,7 +2,8 @@
   (:require [com.stuartsierra.component :as component]
             [taoensso.timbre :as timbre]
             [hugsql.core :as hugsql]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn]
+            [planwise.util.hash :refer [update-if]]))
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -18,13 +19,15 @@
   [record]
   (some-> record
           (update :import-result edn/read-string)
+          (update :import-job edn/read-string)
           (update :mappings edn/read-string)))
 
 (defn dataset->db
   [dataset]
   (some-> dataset
-          (update :import-result pr-str)
-          (update :mappings pr-str)))
+          (update-if :import-result pr-str)
+          (update-if :import-job pr-str)
+          (update-if :mappings pr-str)))
 
 
 ;; ----------------------------------------------------------------------
@@ -41,6 +44,12 @@
   [store user-id]
   (->> (select-datasets-for-user (get-db store) {:user-id user-id})
        (map db->dataset)))
+
+(defn list-datasets-with-import-jobs
+  [store]
+  (->> (select-datasets-with-import-jobs (get-db store))
+       (map db->dataset)
+       (filter (comp some? :import-job))))
 
 (defn create-dataset!
   [store dataset]

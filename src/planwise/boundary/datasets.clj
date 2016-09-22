@@ -8,6 +8,9 @@
   (list-datasets-for-user [this user-id]
     "Returns datasets owned by the user.")
 
+  (list-datasets-with-import-jobs [this]
+    "Returns datasets that have a pending import job.")
+
   (create-dataset! [this dataset]
     "Creates a new dataset.")
 
@@ -34,6 +37,8 @@
   planwise.component.datasets.DatasetsStore
   (list-datasets-for-user [store user-id]
     (service/list-datasets-for-user store user-id))
+  (list-datasets-with-import-jobs [store]
+    (service/list-datasets-with-import-jobs store))
   (create-dataset! [store dataset]
     (service/create-dataset! store dataset))
   (find-dataset [store dataset-id]

@@ -3,7 +3,7 @@
             [taoensso.timbre :as timbre]
             [clojure.set :refer [rename-keys]]
             [planwise.model.import-job :as import-job]
-            [planwise.component.resmap :as resmap]
+            [planwise.boundary.resmap :as resmap]
             [planwise.component.projects :as projects]
             [planwise.component.facilities :as facilities]
             [planwise.boundary.datasets :as datasets]
@@ -177,7 +177,8 @@
       (info (str "Import job for dataset " dataset-id " finished with result " result " (" stats ")"))
       (datasets/update-dataset (:datasets component)
                                {:id dataset-id
-                                :import-result (assoc stats :result result)}))))
+                                :import-result (assoc stats :result result)
+                                :import-job nil}))))
 
 (defn jobs-finisher
   [component]
@@ -190,19 +191,38 @@
       (reduce reducer-fn {} jobs))))
 
 ;; ----------------------------------------------------------------------------
+;; Jobs persistance
+
+(defn- persist-job
+  [component job]
+  (let [dataset-id (import-job/job-dataset-id job)]
+    (datasets/update-dataset (:datasets component)
+                             {:id dataset-id
+                              :import-job (import-job/serialize-job job)})))
+
+(defn- pending-jobs
+  [component]
+  (let [datasets (datasets/list-datasets-with-import-jobs (:datasets component))]
+    (into {}
+      (map
+        (juxt :id (comp import-job/restore-job :import-job))
+        datasets))))
+
+;; ----------------------------------------------------------------------------
 ;; Service definition
 
 (defrecord Importer [jobs taskmaster concurrent-workers resmap facilities datasets projects]
   component/Lifecycle
   (start [component]
     (info "Starting Importer component")
-    (if-not (:taskmaster component)
-      (let [jobs (atom {})
-            concurrent-workers (or (:concurrent-workers component) 1)
-            component (assoc component :jobs jobs)
-            taskmaster (taskmaster/run-taskmaster component concurrent-workers)]
-        (assoc component :taskmaster taskmaster))
-      component))
+    (let [component (if-not (:jobs component)
+                      (assoc component :jobs (atom (pending-jobs component)))
+                      component)]
+      (if-not (:taskmaster component)
+        (let [concurrent-workers (or (:concurrent-workers component) 1)
+              taskmaster (taskmaster/run-taskmaster component concurrent-workers)]
+          (assoc component :taskmaster taskmaster))
+        component)))
   (stop [component]
     (info "Stopping Importer component")
     (when-let [taskmaster (:taskmaster component)]
@@ -227,11 +247,13 @@
   (task-completed [component [job-id task-id] result]
     (debug (str "Importer: task " task-id " completed for job " job-id " with result: " result))
     (swap! (:jobs component) update job-id import-job/report-task-success task-id result)
+    (persist-job component (get @(:jobs component) job-id))
     (swap! (:jobs component) (jobs-finisher component)))
 
   (task-failed [component [job-id task-id] error-info]
     (warn (str "Importer: task " task-id " failed for job " job-id " with: " error-info))
     (swap! (:jobs component) update job-id import-job/report-task-failure task-id error-info)
+    (persist-job component (get @(:jobs component) job-id))
     (swap! (:jobs component) (jobs-finisher component))))
 
 (defn importer

@@ -154,8 +154,8 @@
 (defn complete-processing
   [job event & _]
   (-> job
-    (complete-task event)
-    (update-facilities-counts event)))
+    (update-facilities-counts event)
+    (complete-task event)))
 
 (defn last-complete-processing
   [job event & _]
@@ -216,6 +216,7 @@
    :facility-count 0
    :facility-ids   []
    :tasks          []
+   :pending-tasks  []
    :next-task      nil
    :result         nil
    :last-event     nil
@@ -390,6 +391,16 @@
                          :type-field type-field)]
     (import-job job-value)))
 
+(defn restore-job
+  [{:keys [state value], :as job}]
+  (import-job
+    state
+    (assoc value :pending-tasks (:tasks value))))
+
+(defn serialize-job
+  [job]
+  (dissoc job :fsm))
+
 (defn cancel-job
   [job]
   (when job
@@ -398,7 +409,11 @@
 (defn next-task
   [job]
   (when job
-    (fsm/fsm-event job :next)))
+    (if-let [pending-tasks (seq (get-in job [:value :pending-tasks]))]
+      (-> job
+        (assoc-in [:value :next-task] (first pending-tasks))
+        (update-in [:value :pending-tasks] rest))
+      (fsm/fsm-event job :next))))
 
 (defn report-task-success
   [job task-id data]

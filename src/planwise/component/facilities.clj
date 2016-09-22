@@ -41,6 +41,7 @@
 
 (defn insert-facilities! [service dataset-id facilities]
   (jdbc/with-db-transaction [tx (get-db service)]
+    (delete-facilities-in-dataset-by-site-id! tx {:dataset-id dataset-id, :site-ids (map :site-id facilities)})
     (reduce (fn [ids facility]
               (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
                 (conj ids (:id result))))
@@ -141,7 +142,7 @@
         success? (= "ok" code)
         raster-isochrones? (get-in service [:config :raster-isochrones])]
 
-    (debug (str "Facility " facility-id " isochrone processed with result: " (vec code)))
+    (debug (str "Facility " facility-id " isochrone processed with result: " (str code)))
     (when (and success? raster-isochrones?)
       (calculate-isochrones-population! service facility-id country)
       (raster-isochrones! service facility-id))
