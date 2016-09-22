@@ -1,0 +1,1 @@
+ALTER TABLE facility_types DROP COLUMN IF EXISTS code;

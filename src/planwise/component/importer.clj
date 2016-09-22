@@ -43,7 +43,7 @@
   (info (str "Dataset " dataset-id ": "
              "Importing facility types from Resourcemap field " (:id type-field)))
   (let [options (get-in type-field [:config :options])
-        types (map (fn [{label :label}] {:name label}) options)
+        types (map (fn [{:keys [label code]}] {:name label, :code code}) options)
         codes (map :code options)
         metadata (:metadata type-field)
         inserted-types (facilities/insert-types! facilities dataset-id types)
