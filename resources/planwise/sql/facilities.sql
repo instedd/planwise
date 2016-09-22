@@ -121,7 +121,8 @@ WHERE id = :facility-polygon-id;
 -- :name select-polygons-in-region :?
 SELECT fp.id AS "facility-polygon-id",
        fp.population AS "facility-population",
-       fpr.population AS "facility-region-population"
+       fpr.population AS "facility-region-population",
+       facilities.capacity AS "capacity"
 FROM facilities_polygons_regions AS fpr
   INNER JOIN facilities_polygons AS fp ON fpr.facility_polygon_id = fp.id
   INNER JOIN facilities ON facilities.id = fp.facility_id
