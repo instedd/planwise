@@ -76,7 +76,7 @@
      (let [user-id (util/request-user-id request)
            project-id (Integer. id)
            project (projects/get-project service project-id)
-           host (get-in request [:headers "origin"])]
+           host (util/absolute-url "" request)]
        (if (projects/owned-by? project user-id)
          (if (projects/share-via-email service project emails {:host host})
            (response {:emails emails})
