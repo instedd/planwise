@@ -424,7 +424,9 @@
          :state state
          :stats (job-stats job)}
 
-        (:request-sites :importing-sites)
+        (:request-sites :importing-sites
+         :delete-old-facilities :deleting-old-facilities
+         :delete-old-types :deleting-old-types)
         {:status :importing
          :state state
          :progress (import-progress (:value job))}

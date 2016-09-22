@@ -5,6 +5,7 @@
             [re-frame.core :refer [subscribe dispatch]]
             [goog.string :as gstring]
             [clojure.string :as cstring]
+            [re-frame.utils :as c]
             [goog.string.format]))
 
 ;; Debounce functions
@@ -88,6 +89,23 @@
 (defn remove-by-id
   [coll id]
   (remove #(= id (:id %)) coll))
+
+(defn replace-by-id
+  [coll replacement]
+  (let [id (:id replacement)
+        index (->> coll
+                (vec)
+                (keep-indexed #(when (= id (:id %2)) %1))
+                (first))]
+    (assoc (vec coll) index replacement)))
+
+(defn update-by-id
+  [coll id update-fn & args]
+  (let [index (->> coll
+                (vec)
+                (keep-indexed #(when (= id (:id %2)) %1))
+                (first))]
+    (apply update (vec coll) index update-fn args)))
 
 (defn remove-by
   [coll field value]

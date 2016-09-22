@@ -142,7 +142,7 @@
    (assoc db :state :list)))
 
 ;; ----------------------------------------------------------------------------
-;; Dataset deletion
+;; Dataset deletion and update
 
 (register-handler
  :datasets/delete-dataset
@@ -161,3 +161,16 @@
  (fn [db [_ data]]
    (dispatch [:datasets/invalidate-datasets])
    db))
+
+(register-handler
+ :datasets/update-dataset
+ in-datasets
+ (fn [db [_ dataset-id]]
+   (api/update-dataset! dataset-id :datasets/dataset-updated)
+   db))
+
+(register-handler
+ :datasets/dataset-updated
+ in-datasets
+ (fn [db [_ dataset]]
+   (update db :list asdf/swap! utils/replace-by-id dataset)))

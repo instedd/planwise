@@ -42,7 +42,7 @@
 
 (defn- server-status->string
   [server-status]
-  (case (:status server-status)
+  (case (keyword (:status server-status))
     (nil :ready :done)
     "Ready to use"
 
@@ -70,6 +70,8 @@
               :cancelled "Import cancelled"
               :import-types-failed "Import failed, error while importing facility types"
               :import-sites-failed "Import failed, error while importing sites from ResourceMap"
+              :delete-old-facilities-failed "Import failed, error while deleting facilities for removed sites"
+              :delete-old-types-failed "Import failed, error while deleting stale facility types"
               :update-projects-failed "Import failed, error while updating related projects"
               :unexpected-event "Import failed"
               nil)]
@@ -124,26 +126,30 @@
                                         [no-road-network "facility is" "facilities are" "too far from the closest road"]]]
                              (for [[[count singular plural description] index] (zipmap warns (range)) :when (pos? count)]
                                [:li {:key index} (string/join " " [(utils/pluralize count singular plural) description])]))]]]
+
          (when importing?
            [progress-bar/progress-bar (db/import-progress server-status)])
 
-         (cond
-           importing?
-           [:div.bottom-right
+         [:div.bottom-right
+           (if importing?
             [:button.danger
              {:type :button
               :on-click #(dispatch [:datasets/cancel-import! id])
               :disabled cancelling?}
-             (if cancelling? "Cancelling..." "Cancel")]]
+             (if cancelling? "Cancelling..." "Cancel")]
+            [:div
+             [:button.secondary
+              {:on-click #(dispatch [:datasets/update-dataset id])}
+              (common/icon :refresh "icon-small")
+              "Update"]
+             (when (zero? project-count)
+              [:button.delete
+               {:on-click (utils/with-confirm
+                            #(dispatch [:datasets/delete-dataset id])
+                            "Are you sure you want to delete this dataset?")}
+               (common/icon :delete "icon-small")
+               "Delete"])])]]))))
 
-           (zero? project-count)
-           [:div.bottom-right
-            [:button.delete
-             {:on-click (utils/with-confirm
-                          #(dispatch [:datasets/delete-dataset id])
-                          "Are you sure you want to delete this dataset?")}
-             (common/icon :delete "icon-small")
-             "Delete"]])]))))
 
 (defn datasets-list
   [datasets]
