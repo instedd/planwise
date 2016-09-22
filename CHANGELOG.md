@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.6.1] - 2016-09-22
+### Fixes
+- Fix generated share token URL when sending emails (#236)
+
 ## [0.6.0] - 2016-09-19
 ### New features
 - Users can share projects to other users for read-only access. This is done via
