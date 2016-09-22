@@ -22,7 +22,11 @@
    :config {:options [{:id 1, :code "hospital", :label "Hospital"}
                       {:id 2, :code "health center", :label "Health Center"}
                       {:id 3, :code "dispensary", :label "Dispensary"}],
-            :next_id 4}})
+            :next_id 4}
+   :metadata [{:key "hospital-capacity", :value "500"}
+              {:key "invalid-key", :value "200"}
+              {:key "dispensary-capacity", :value "300"}
+              {:key "health center-capacity", :value "INVALID"}]})
 
 (def fixture-data
   [[:users
@@ -85,6 +89,7 @@
 (defn importer-service [system]
   (-> (importer/importer)
     (merge (select-keys system [:taskmaster :datasets :resmap :facilities :projects]))
+    (assoc :facilities-capacity 100)
     (component/start)))
 
 (defn system [& [{sites :sites, data :data}]]
@@ -122,8 +127,8 @@
         (is (= (count types) 3))
         (is (= #{"Hospital" "Health Center" "Dispensary"} (set (map :name types))))
         (is (= (count facilities) 1))
-        (is (= (select-keys facility [:id :name :lat :lon :type-id])
-               {:id 100 :type-id 100 :name "s1" :lat -1.2M :lon 36.8M}))))))
+        (is (= (select-keys facility [:id :name :lat :lon :type-id :capacity])
+               {:id 100 :type-id 100 :name "s1" :lat -1.2M :lon 36.8M :capacity 500}))))))
 
 
 (deftest run-reimport
@@ -157,10 +162,10 @@
                (set types)))
 
         (is (= 3 (count facilities)))
-        (is (= #{{:id 1   :type-id 101 :name "Facility A2" :lat -3.0M :lon 42.0M :processing-status "ok"}               ; is updated but not reprocessed
-                 {:id 2   :type-id 1   :name "Facility B2" :lat -1.2M :lon 36.8M :processing-status "outside-regions"}  ; is updated and reprocessed
-                 {:id 100 :type-id 100 :name "Facility D"  :lat -1.2M :lon 36.8M :processing-status "outside-regions"}} ; is created
-               (set (map #(select-keys % [:id :name :lat :lon :type-id :processing-status]) facilities))))))))
+        (is (= #{{:id 1   :type-id 101 :name "Facility A2" :lat -3.0M :lon 42.0M :capacity 300 :processing-status "ok"}               ; is updated but not reprocessed
+                 {:id 2   :type-id 1   :name "Facility B2" :lat -1.2M :lon 36.8M :capacity 500 :processing-status "outside-regions"}  ; is updated and reprocessed
+                 {:id 100 :type-id 100 :name "Facility D"  :lat -1.2M :lon 36.8M :capacity 100 :processing-status "outside-regions"}} ; is created
+               (set (map #(select-keys % [:id :name :lat :lon :type-id :processing-status :capacity]) facilities))))))))
 
 
 (deftest resume-importer-job
@@ -255,7 +260,8 @@
 (deftest sites->facilities-test
   (let [type-field          {:code "facility_type",
                              :options {1 10,
-                                       2 11}}
+                                       2 11}
+                             :capacities {1 500}}
 
         sites               [{:id 1, :name "s1",
                               :lat -1.28721692771827, :long 36.8136030697266,
@@ -274,12 +280,14 @@
                               :properties {:facility_type nil}}]
 
         facility-type       (importer/facility-type-ctor type-field)
-        facilities          (importer/sites->facilities sites facility-type)
+        facility-capacity   (importer/facility-capacity-ctor type-field 800)
+        facilities          (importer/sites->facilities sites facility-type facility-capacity)
 
         expected-facilities [{:lat -1.28721692771827,
                               :lon 36.8136030697266,
                               :name "s1",
                               :site-id 1,
-                              :type-id 10}]]
+                              :type-id 10
+                              :capacity 500}]]
 
     (is (= expected-facilities facilities))))

@@ -1,7 +1,7 @@
 -- :name insert-facility! :<! :1
 INSERT INTO facilities
-    (dataset_id, site_id, name, lat, lon, type_id, the_geom)
-    VALUES (:dataset-id, :site-id, :name, :lat, :lon, :type-id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
+    (dataset_id, site_id, name, lat, lon, type_id, the_geom, capacity)
+    VALUES (:dataset-id, :site-id, :name, :lat, :lon, :type-id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326), :capacity)
     RETURNING id;
 
 -- :name update-facility* :! :n
@@ -14,6 +14,7 @@ UPDATE facilities SET
                      [:site-id :site_id]
                      [:lat :lat]
                      [:lon :lon]
+                     [:capacity :capacity]
                      [:processing-status :processing_status]] :when (contains? params key)]
     (str (name field) " = :" (name key))))
 ~*/
@@ -61,7 +62,8 @@ SELECT
   facilities.id as id, facilities.name as name, facility_types.name as type,
   facility_types.id as "type-id", lat, lon,
   facilities.processing_status AS "processing-status",
-  facilities.site_id as "site-id"
+  facilities.site_id as "site-id",
+  facilities.capacity as "capacity"
 FROM facilities
 INNER JOIN facility_types ON facility_types.id = facilities.type_id
 WHERE facilities.dataset_id = :dataset-id

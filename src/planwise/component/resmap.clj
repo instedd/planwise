@@ -64,13 +64,15 @@
 
 (defn get-collection-fields
   [service token coll-id]
-  (let [url (resmap-url service (str "/api/collections/" coll-id "/fields.json"))
+  (let [url (resmap-url service (str "/api/collections/" coll-id "/layers.json"))
         response (http/get url {:headers (auth-headers token)
                                 :throw-exceptions false})]
     (if (= 200 (:status response))
       (->> (json/parse-string (:body response) true)
            (mapcat (fn [layer] (:fields layer)))
-           (map (fn [field] (select-keys field [:id :name :code :kind :config]))))
+           (map (fn [field] (-> field
+                              (select-keys [:id :name :code :kind :config :metadata])
+                              (update :metadata vals)))))
       (do
         (warn "Failure retrieving fields for Resourcemap collection" coll-id
               (get-in response [:headers "status"]))
