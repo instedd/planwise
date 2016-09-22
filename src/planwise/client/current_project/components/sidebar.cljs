@@ -11,7 +11,8 @@
             [planwise.client.utils :as utils]
             [planwise.client.routes :as routes]
             [accountant.core :as accountant]
-            [planwise.client.config :as config]))
+            [planwise.client.config :as config]
+            [planwise.client.mapping :refer [calculate-demand-for-admin-level?]]))
 
 
 (defn- demographic-stat [title value]
@@ -128,7 +129,7 @@
          [:p "Indicate here the acceptable one-way travel time to facilities. We will
          use that to calculate who already has access to the services that you
          are analyzing."])
-        (when config/calculate-demand
+        (when (calculate-demand-for-admin-level? (:region-admin-level @current-project))
          (let [satisfied (or @satisfied-demand 0)
                total (:region-population @current-project)]
           [:p

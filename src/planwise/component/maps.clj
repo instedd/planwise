@@ -21,6 +21,12 @@
   [{config :config}]
   (boolean (:calculate-demand config)))
 
+(defn calculate-demand-for-region?
+  [service {admin-level :admin-level}]
+  (and
+    (calculate-demand? service)
+    (> admin-level 2)))
+
 (defn- demand-map-key
   [region-id polygons-with-capacities]
   (digest/sha-256
@@ -83,30 +89,30 @@
 
 (defn demand-map
   [service region-id facilities]
-  (when (calculate-demand? service)
-    (try
-      (let [polygons-args (facilities->args service region-id facilities)
-            map-key       (demand-map-key region-id polygons-args)
-            region        (regions/find-region (:regions service) region-id)
-            saturation    (format "%.2f" (region-saturation region))
+  (let [region (regions/find-region (:regions service) region-id)]
+    (when (calculate-demand-for-region? service region)
+      (try
+        (let [polygons-args (facilities->args service region-id facilities)
+              map-key       (demand-map-key region-id polygons-args)
+              saturation    (format "%.2f" (region-saturation region))
 
-            _          (setup-demands-folder service)
-            args-fname (apply write-args-file service map-key
-                         (demands-path service map-key ".tif")
-                         (str saturation)
-                         (populations-path service region-id ".tif")
-                         (vec polygons-args))
-            response   (run-external
-                          (:runner service)
-                          :bin
-                          300000
-                          "calculate-demand"
-                          (str "@" args-fname))]
-          {:map-key map-key,
-           :unsatisfied-count (trim-to-int response)})
-      (catch Exception e
-        (error e "Error calculating demand map for region " region-id "with polygons" (map :polygon-id facilities))
-        {}))))
+              _          (setup-demands-folder service)
+              args-fname (apply write-args-file service map-key
+                           (demands-path service map-key ".tif")
+                           (str saturation)
+                           (populations-path service region-id ".tif")
+                           (vec polygons-args))
+              response   (run-external
+                            (:runner service)
+                            :bin
+                            300000
+                            "calculate-demand"
+                            (str "@" args-fname))]
+            {:map-key map-key,
+             :unsatisfied-count (trim-to-int response)})
+        (catch Exception e
+          (error e "Error calculating demand map for region " region-id "with polygons" (map :polygon-id facilities))
+          {})))))
 
 (defrecord MapsService [config runner regions])
 

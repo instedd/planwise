@@ -23,6 +23,7 @@ SELECT
   regions.total_population AS "region-population",
   regions.max_population AS "region-max-population",
   regions.raster_pixel_area AS "region-raster-pixel-area",
+  regions.admin_level AS "region-admin-level",
   projects.owner_id AS "owner-id",
   owner.email AS "owner-email",
   projects.share_token AS "share-token"
@@ -49,6 +50,7 @@ SELECT
   regions.max_population AS "region-max-population",
   regions.raster_pixel_area AS "region-raster-pixel-area",
   ST_Area(regions.the_geom::geography) / 1000000 as "region-area-km2",
+  regions.admin_level AS "region-admin-level",
   projects.owner_id AS "owner-id",
   owner.email AS "owner-email",
   projects.share_token AS "share-token"

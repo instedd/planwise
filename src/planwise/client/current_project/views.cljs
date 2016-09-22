@@ -60,7 +60,7 @@
                   :stroke-miterlimit 10
                   :stroke-width 2}]])
 
-(defn- project-tab [project-id project-dataset-id project-region-id selected-tab]
+(defn- project-tab [project-id project-dataset-id project-region-id project-region-admin-level selected-tab]
   (let [facilities-by-type (subscribe [:current-project/facilities-by-type])
         map-position (subscribe [:current-project/map-view :position])
         map-zoom (subscribe [:current-project/map-view :zoom])
@@ -78,7 +78,7 @@
         callback-fn (reaction (geojson-bbox-callback project-dataset-id isochrones project-facilities-criteria @project-transport-time))
         feature-fn #(aget % "isochrone")]
 
-    (fn [project-id project-dataset-id project-region-id selected-tab]
+    (fn [project-id project-dataset-id project-region-id project-region-admin-level selected-tab]
       (dispatch [:current-project/tab-visited selected-tab])
       (case selected-tab
         (:demographics :facilities :transport)
@@ -111,7 +111,8 @@
                                                             :weight 2}])
 
                 layer-demographics (let [population-map (mapping/region-map project-region-id)
-                                         map-datafile   (if (and config/calculate-demand (= :transport selected-tab))
+                                         map-datafile   (if (and (mapping/calculate-demand-for-admin-level? project-region-admin-level)
+                                                                 (= :transport selected-tab))
                                                           (when (asdf/valid? @map-key)
                                                             (if-let [key (asdf/value @map-key)]
                                                               (mapping/demand-map key)
@@ -169,11 +170,12 @@
             project-goal (:goal @current-project)
             project-dataset-id (:dataset-id @current-project)
             project-region-id (:region-id @current-project)
+            project-region-admin-level (:region-admin-level @current-project)
             read-only (:read-only @current-project)
             share-count (count (asdf/value @project-shares))]
         [:article.project-view
          [header-section project-id project-goal selected-tab read-only share-count @wizard-mode-state]
-         [project-tab project-id project-dataset-id project-region-id selected-tab]
+         [project-tab project-id project-dataset-id project-region-id project-region-admin-level selected-tab]
          (when (db/show-share-dialog? @view-state)
            [common/modal-dialog {:on-backdrop-click
                                  #(dispatch [:current-project/close-share-dialog])}

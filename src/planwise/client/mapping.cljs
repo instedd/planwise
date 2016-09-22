@@ -1,6 +1,7 @@
 (ns planwise.client.mapping
   (:require [reagent.format :as fmt]
-            [re-frame.utils :as c]))
+            [re-frame.utils :as c]
+            [planwise.client.config :as config]))
 
 (def emerald-mapbox-mapid "juanedi.177h17ed")
 (def bright-mapbox-mapid "juanedi/cis9iabkx002c31lg5awqyqa8")
@@ -75,3 +76,8 @@
   [region-id]
   (some->> region-id
     (str "populations/maps/")))
+
+(defn calculate-demand-for-admin-level?
+  [admin-level]
+  (and config/calculate-demand
+       (> admin-level 2)))
