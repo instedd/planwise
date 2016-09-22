@@ -102,10 +102,10 @@
         (swap! (:jobs importer) assoc 1 job)
 
         ; Fire 4 concurrent process facility tasks
-        (let [tasks (repeatedly 4 #(taskmaster/next-task importer))]
-          (dotimes [n 4]
-            (is (= [1 [:process-facilities [(inc n)]]]
-                   (:task-id (nth tasks n)))))
+        (let [tasks (repeatedly 4 #(taskmaster/next-task importer))
+              expected-ids (for [i (range 4)] [1 [:process-facilities [(inc i)]]])
+              actual-ids (map :task-id tasks)]
+          (is (= expected-ids actual-ids))
 
           ; One of the tasks succeeds, so the intermediate job state is persisted
           (taskmaster/task-completed importer
@@ -118,14 +118,14 @@
       ; Create a new importer component that should re-run the pending tasks
       (let [importer (importer-service system)
             pending-tasks (get-in @(:jobs importer) [1 :value :pending-tasks])
-            tasks (repeatedly 5 #(taskmaster/next-task importer))]
+            tasks (repeatedly 5 #(taskmaster/next-task importer))
+            expected-ids (for [i (range 5)] [1 [:process-facilities [(+ 2 i)]]])
+            actual-ids (map :task-id tasks)]
 
           ; Check that the tasks are restored with the job as pending-tasks
           (is (= 3 (count pending-tasks)))
           ; Check that the pending tasks are re-run, and then the following ones are dispatched
-          (dotimes [n 5]
-            (is (= [1 [:process-facilities [(+ 2 n)]]]
-                   (:task-id (nth tasks n)))))
+          (is (= expected-ids actual-ids))
 
         (component/stop importer)))))
 
