@@ -47,7 +47,7 @@
    :existing, :updated, :moved or :new."
   [service dataset-id facilities]
   (jdbc/with-db-transaction [tx (get-db service)]
-    (let [updateable-keys [:name :type-id :lat :lon]
+    (let [updateable-keys [:name :type-id :lat :lon :capacity]
           site-ids (map :site-id facilities)
           existing-facilities (when (seq site-ids)
                                 (facilities-in-dataset-by-criteria tx
@@ -76,7 +76,7 @@
                        (select-keys facility [:lat :lon]))
                     (do
                       (update-facility* tx (merge {:id id}
-                                                  (select-keys facility [:name :type-id])))
+                                                  (select-keys facility [:name :type-id :capacity])))
                       [:updated id])
 
                     ; If the position changed, clear processing status

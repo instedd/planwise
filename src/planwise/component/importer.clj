@@ -7,7 +7,9 @@
             [planwise.component.projects :as projects]
             [planwise.component.facilities :as facilities]
             [planwise.boundary.datasets :as datasets]
-            [planwise.component.taskmaster :as taskmaster]))
+            [planwise.component.taskmaster :as taskmaster]
+            [planwise.util.collections :refer [find-by]]
+            [planwise.util.str :refer [try-trim-to-int]]))
 
 (timbre/refer-timbre)
 
@@ -23,7 +25,17 @@
 ;;  :config {:options [{:id 1, :code "hospital", :label "Hospital"}
 ;;                     {:id 2, :code "health center", :label "Health Center"}
 ;;                     {:id 3, :code "dispensary", :label "Dispensary"}],
-;;           :next_id 4}}
+;;           :next_id 4},
+;;  :metadata [{:key "hospital-capacity",   :value 10000}
+;;             {:key "dispensary-capacity", :value 10000}]}
+
+(defn- capacity-for
+  "Extracts capacity from field metadata for the given code"
+  [code metadata]
+  (some-> metadata
+    (find-by :key (str code "-capacity"))
+    (:value)
+    (try-trim-to-int)))
 
 (defn import-types
   "Import the facility types from a Resourcemap 'select-one' field definition."
@@ -33,13 +45,16 @@
   (let [options (get-in type-field [:config :options])
         types (map (fn [{label :label}] {:name label}) options)
         codes (map :code options)
+        metadata (:metadata type-field)
         inserted-types (facilities/insert-types! facilities dataset-id types)
         inserted-type-ids (map :id inserted-types)
-        new-options (zipmap codes inserted-type-ids)]
+        new-options (zipmap codes inserted-type-ids)
+        capacities (into {} (map (fn [c] [c (capacity-for c metadata)]) codes))]
     (info (str "Dataset " dataset-id ": "
                "Done importing " (count new-options) " facility types"))
     {:code (:code type-field)
-     :options new-options}))
+     :options new-options
+     :capacities capacities}))
 
 (defn with-location
   "Filter function for valid location"
@@ -57,30 +72,47 @@
       (let [f_type (get-in site type-path)]
         (get options f_type)))))
 
+(defn facility-capacity-ctor
+  "Returns a function which applied to a Resourcemap site returns the facility
+  capacity, defaulting to the given type field."
+  ; This function should eventually check a capacity integer resmap field
+  ; before defaulting to the capacity associated to the facility type
+  [type-field default-capacity]
+  (let [field-name (:code type-field)
+        capacities (:capacities type-field)
+        type-path [:properties (keyword field-name)]]
+    (fn [site]
+      (let [f_type (get-in site type-path)]
+        (or
+          (get capacities f_type)
+          default-capacity)))))
+
 (defn site->facility-ctor
   "Returns a function to transform a Resourcemap site into a valid Facility
   using the facility type information given."
-  [facility-type]
+  [facility-type facility-capacity]
   (fn [site]
     (-> site
         (select-keys [:id :name :lat :long])
         (rename-keys {:id :site-id :long :lon})
-        (assoc :type-id (facility-type site)))))
+        (assoc :type-id (facility-type site))
+        (assoc :capacity (facility-capacity site)))))
+
 
 (defn sites->facilities
   "Filters and transforms a list of Resourcemap sites into a list of facilities
   using the given facility type field definition."
-  [sites facility-type]
+  [sites facility-type facility-capacity]
   (->> sites
        (filter with-location)
        (filter facility-type)
-       (map (site->facility-ctor facility-type))))
+       (map (site->facility-ctor facility-type facility-capacity))))
 
 (defn import-collection-page
   "Request a single page of sites from a Resourcemap collection and import the
   sites as facilities. Returns nil when Resourcemap returns no sites, or
   [:continue result]."
-  [{:keys [resmap facilities]} user dataset-id coll-id type-field page]
+  [{:keys [resmap facilities facilities-capacity]} user dataset-id coll-id type-field page]
   (info (str "Dataset " dataset-id ": "
              "Requesting page " page " of collection " coll-id " from Resourcemap"))
   (let [data (resmap/get-collection-sites resmap user coll-id {:page page})
@@ -88,7 +120,8 @@
         total-pages (:totalPages data)]
     (when (seq sites)
       (let [facility-type (facility-type-ctor type-field)
-            new-facilities (sites->facilities sites facility-type)
+            facility-capacity (facility-capacity-ctor type-field facilities-capacity)
+            new-facilities (sites->facilities sites facility-type facility-capacity)
             sites-without-location (filter (complement with-location) sites)
             sites-without-type (filter (complement facility-type) sites)]
         (info (str "Dataset " dataset-id ": "
@@ -141,7 +174,7 @@
     old-job))
 
 (defn build-task-fn
-  [{:keys [facilities projects resmap]} job task]
+  [{:keys [facilities projects resmap facilities-capacity]} job task]
   (let [dataset-id (import-job/job-dataset-id job)]
     (case (import-job/task-type task)
       :import-types
@@ -150,7 +183,8 @@
 
       :import-sites
       (let [services {:resmap resmap
-                      :facilities facilities}
+                      :facilities facilities
+                      :facilities-capacity facilities-capacity}
             user-ident (import-job/job-user-ident job)
             coll-id (import-job/job-collection-id job)
             type-field (import-job/job-type-field job)
@@ -231,7 +265,7 @@
 ;; ----------------------------------------------------------------------------
 ;; Service definition
 
-(defrecord Importer [jobs taskmaster concurrent-workers resmap facilities datasets projects]
+(defrecord Importer [jobs taskmaster concurrent-workers facilities-capacity resmap facilities datasets projects]
   component/Lifecycle
   (start [component]
     (info "Starting Importer component")
