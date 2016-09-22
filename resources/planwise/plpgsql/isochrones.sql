@@ -180,7 +180,8 @@ begin
     FROM facilities AS f
       INNER JOIN facilities_polygons AS fp ON f.id = fp.facility_id
       INNER JOIN regions AS r ON f.the_geom @ r.the_geom AND ST_Contains(r.the_geom, f.the_geom)
-    WHERE fp.id = polygon_id;
+    WHERE fp.id = polygon_id
+      AND r.admin_level > 2;
 
     from_cost      := to_cost;
     to_cost        := to_cost + threshold_jump * 60;
