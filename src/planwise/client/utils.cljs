@@ -90,22 +90,17 @@
   [coll id]
   (remove #(= id (:id %)) coll))
 
-(defn replace-by-id
-  [coll replacement]
-  (let [id (:id replacement)
-        index (->> coll
-                (vec)
-                (keep-indexed #(when (= id (:id %2)) %1))
-                (first))]
-    (assoc (vec coll) index replacement)))
-
 (defn update-by-id
   [coll id update-fn & args]
-  (let [index (->> coll
-                (vec)
-                (keep-indexed #(when (= id (:id %2)) %1))
-                (first))]
-    (apply update (vec coll) index update-fn args)))
+  (map (fn [item]
+         (if (= id (:id item))
+           (apply update-fn item args)
+           item))
+       coll))
+
+(defn replace-by-id
+  [coll replacement]
+  (update-by-id coll (:id replacement) (constantly replacement)))
 
 (defn remove-by
   [coll field value]
