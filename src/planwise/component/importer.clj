@@ -262,6 +262,7 @@
            :task-fn (build-task-fn component ready-job task)})
         (do
           (debug (str "Importer: no more tasks to execute"))
+          (swap! (:jobs component) (jobs-finisher component))
           nil))))
 
   (task-completed [component [job-id task-id] result]

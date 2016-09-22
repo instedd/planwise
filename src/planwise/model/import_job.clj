@@ -193,6 +193,12 @@
     (complete-processing event)
     (assoc :result :success)))
 
+(defn nothing-to-process
+  [job event & _]
+  (-> job
+      (assoc :result :success)
+      (clear-dispatch)))
+
 ;; FSM guards
 
 (defn task-report?
@@ -232,6 +238,12 @@
   (and (empty? (:process-ids job))
        (process-report? event)
        (last-task-report? [job event])))
+
+(defn empty-processing?
+  "Returns true if there are no pending tasks and nothing left to process."
+  [{tasks :tasks process-ids :process-ids}]
+  (and (empty? process-ids)
+       (empty? tasks)))
 
 
 ;; FSM definition
@@ -321,6 +333,7 @@
     [[_ _]]                          -> {:action unexpected-event} :error]
 
    [:processing-facilities
+    [[(_ :guard empty-processing?) :next]] -> {:action nothing-to-process} :done
     [[_ :next]]                      -> {:action dispatch-process-facilities} :processing-facilities
     [[(_ :guard no-pending-tasks?) :cancel]] -> {:action cancel-import} :error
     [[_ :cancel]]                    -> {:action cancel-import} :clean-up-wait
