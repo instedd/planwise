@@ -20,7 +20,7 @@
    [this dataset-id isochrone-options criteria]
    "Returns the facilities polygons in the criteria's :region, for the facilities
     that satisfy the specified criteria. Includes fields :facility-polygon-id,
-    :facility-population, :facility-region-population.")
+    :facility-population, :facility-region-population and :capacity.")
 
   (list-types [this dataset-id]
     "Lists all the facility types in the dataset."))

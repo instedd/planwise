@@ -47,8 +47,8 @@
   (apply data-path service (cons "isochrones/" args)))
 
 (defn- capacity-for
-  [service {:keys [population population-in-region]}]
-  (let [capacity (default-capacity service)
+  [service {:keys [population population-in-region capacity]}]
+  (let [capacity (or capacity (default-capacity service))
         factor   (/ population-in-region population)]
     (int (* factor capacity))))
 

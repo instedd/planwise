@@ -80,10 +80,11 @@
 
 (defn polygons-in-region
   [service dataset-id isochrone-options criteria]
-  (select-polygons-in-region (get-db service) (assoc (isochrone-params isochrone-options)
-                                               :dataset-id dataset-id
-                                               :region-id (:region criteria)
-                                               :criteria (criteria-snip criteria))))
+  (select-polygons-in-region (get-db service)
+                             (assoc (isochrone-params isochrone-options)
+                                    :dataset-id dataset-id
+                                    :region-id (:region criteria)
+                                    :criteria (criteria-snip criteria))))
 
 (defn list-types [service dataset-id]
   (select-types-in-dataset (get-db service) {:dataset-id dataset-id}))

@@ -94,7 +94,7 @@
     [{:id 1 :country "C" :name "R1" :the_geom (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))"))}
      {:id 2 :country "C" :name "R2" :the_geom (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((2 2, 2 3, 3 3, 3 2, 2 2)))"))}]]
    [:facilities
-    [{:id 1 :dataset_id 1 :site_id 1 :name "Facility A" :type_id 1 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5)}
+    [{:id 1 :dataset_id 1 :site_id 1 :name "Facility A" :type_id 1 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5) :capacity 500}
      {:id 2 :dataset_id 2 :site_id 2 :name "Facility B" :type_id 1 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5)}
      {:id 3 :dataset_id 1 :site_id 3 :name "Facility C" :type_id 2 :lat 0.5 :lon 0.5 :the_geom (make-point 0.5 0.5)}
      {:id 4 :dataset_id 1 :site_id 4 :name "Facility D" :type_id 1 :lat 2.5 :lon 2.5 :the_geom (make-point 2.5 2.5)}]]
@@ -119,7 +119,8 @@
     (let [service (:facilities system)
           polygons (facilities/polygons-in-region service 1 {:threshold 900 :algorithm "alpha-shape"} {:region 1 :types [1]})]
       (is (= 1 (count polygons)))
-      (let [[{:keys [facility-polygon-id facility-population facility-region-population]}] polygons]
+      (let [[{:keys [facility-polygon-id facility-population facility-region-population capacity]}] polygons]
         (is (= 1 facility-polygon-id))
         (is (= 2000 facility-population))
-        (is (= 1000 facility-region-population))))))
+        (is (= 1000 facility-region-population))
+        (is (= 500 capacity))))))
