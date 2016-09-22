@@ -53,6 +53,7 @@
         :start "Waiting to start"
         :importing-types "Importing facility types"
         (:request-sites :importing-sites) (str "Importing sites from Resourcemap" progress)
+        (:delete-old-facilities :deleting-old-facilities :delete-old-types :deleting-old-types) "Deleting any stale data"
         (:processing-facilities) (str "Pre-processing facilities" progress)
         (:update-projects :updating-projects) "Updating projects"
         "Importing..."))
