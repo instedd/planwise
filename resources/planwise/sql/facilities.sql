@@ -4,9 +4,31 @@ INSERT INTO facilities
     VALUES (:dataset-id, :site-id, :name, :lat, :lon, :type-id, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
     RETURNING id;
 
+-- :name update-facility* :! :n
+/* :require [clojure.string :as string] */
+UPDATE facilities SET
+/*~
+(string/join ","
+  (for [[key field] [[:name :name]
+                     [:type-id :type_id]
+                     [:site-id :site_id]
+                     [:lat :lat]
+                     [:lon :lon]
+                     [:processing-status :processing_status]] :when (contains? params key)]
+    (str (name field) " = :" (name key))))
+~*/
+/*~ (if (or (:lat params) (:lon params)) */
+  , the_geom = ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)
+/*~ ) ~*/
+WHERE facilities.id = :id;
+
+
 -- :name delete-facilities-in-dataset! :!
 DELETE FROM facilities
-WHERE dataset_id = :dataset-id;
+WHERE dataset_id = :dataset-id
+/*~ (if (seq (:except-ids params)) */
+  AND id NOT IN (:v*:except-ids)
+/*~ ) ~*/;
 
 -- :name delete-facilities-in-dataset-by-site-id! :!
 DELETE FROM facilities
@@ -30,12 +52,16 @@ ORDER BY name;
   AND facilities.the_geom @ (SELECT the_geom FROM regions WHERE id = :region LIMIT 1)
   AND ST_Contains((SELECT the_geom FROM regions WHERE id = :region LIMIT 1), facilities.the_geom)
 /*~ ) ~*/
+/*~ (if (:site-ids params) */
+  AND facilities.site_id IN (:v*:site-ids)
+/*~ ) ~*/
 
 -- :name facilities-in-dataset-by-criteria :? :*
 SELECT
   facilities.id as id, facilities.name as name, facility_types.name as type,
   facility_types.id as "type-id", lat, lon,
-  facilities.processing_status AS "processing-status"
+  facilities.processing_status AS "processing-status",
+  facilities.site_id as "site-id"
 FROM facilities
 INNER JOIN facility_types ON facility_types.id = facilities.type_id
 WHERE facilities.dataset_id = :dataset-id
@@ -75,7 +101,10 @@ WHERE dataset_id = :dataset-id;
 
 -- :name delete-types-in-dataset! :!
 DELETE FROM facility_types
-WHERE dataset_id = :dataset-id;
+WHERE dataset_id = :dataset-id
+/*~ (if (seq (:except-ids params)) */
+  AND id NOT IN (:v*:except-ids)
+/*~ ) ~*/;
 
 -- :name insert-type! :<! :1
 INSERT INTO facility_types (name, dataset_id)

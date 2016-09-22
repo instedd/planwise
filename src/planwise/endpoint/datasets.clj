@@ -91,6 +91,22 @@
              (-> (response {:error import-status})
                  (status 400)))))))
 
+   (POST "/:id/update" [id :as request]
+     (let [id (Integer. id)
+           dataset (datasets/find-dataset datasets id)
+           user-ident (util/request-ident request)
+           user-email (ident/user-email user-ident)
+           user-id (ident/user-id user-ident)]
+       (if (datasets/owned-by? dataset user-id)
+         (let [[result import-status] (importer/run-import-for-dataset importer id user-ident)
+               dataset-status (get import-status id)]
+           (info "Updating dataset" id "for the user" user-email)
+           (if (= :ok result)
+             (response (assoc dataset :server-status dataset-status))
+             (-> (response {:error import-status})
+                 (status 400))))
+         (not-found {:error "Dataset not found"}))))
+
    (POST "/cancel" [dataset-id :as request]
      (info "Cancelling import process by user request")
      (let [user-id (util/request-user-id request)

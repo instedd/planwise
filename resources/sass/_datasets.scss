@@ -113,11 +113,12 @@ article.datasets {
       }
     }
 
-    .delete {
+    .delete, .secondary {
       visibility: hidden;
     }
 
-    &:hover .delete {
+    &:hover .delete,
+    &:hover .secondary {
       visibility: visible;
     }
   }

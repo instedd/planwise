@@ -99,16 +99,16 @@
 (defn import-sites-succeeded
   [job event & _]
   (let [page (:page job)
-        facility-ids (:facility-ids job)
-        facility-count (count facility-ids)
         [_ _ [_ {:keys [page-ids total-pages sites-without-location sites-without-type]}]] event
-        page-ids (filter some? page-ids)
+        {:keys [new existing moved updated]} page-ids
         total-pages (or total-pages (:page-count job))]
     (-> (complete-task job event)
         (assoc :page (inc page)
-               :page-count total-pages
-               :facility-ids (into facility-ids page-ids)
-               :facility-count (+ facility-count (count page-ids)))
+               :page-count total-pages)
+        (update :facility-ids into (apply concat (vals page-ids)))
+        (update :facility-count + (apply + (map count (vals page-ids))))
+        (update :process-ids concat new moved)
+        (update :process-count + (count new) (count moved))
         (update :sites-without-location-count + (count sites-without-location))
         (update :sites-without-type-count + (count sites-without-type)))))
 
@@ -119,15 +119,45 @@
         (assoc :result :import-sites-failed
                :error-info error))))
 
+(defn dispatch-delete-old-facilities
+  [job & _]
+  (dispatch-task job :delete-old-facilities))
+
+(defn delete-old-facilities-succeeded
+  [job event & _]
+  (complete-task job event))
+
+(defn delete-old-facilities-failed
+  [job event & _]
+  (let [[_ _ error] event]
+    (-> (complete-task job event)
+        (assoc :result :delete-old-facilities-failed
+                       :error-info error))))
+
+(defn dispatch-delete-old-types
+  [job & _]
+  (dispatch-task job :delete-old-types))
+
+(defn delete-old-types-succeeded
+  [job event & _]
+  (complete-task job event))
+
+(defn delete-old-types-failed
+  [job event & _]
+  (let [[_ _ error] event]
+    (-> (complete-task job event)
+        (assoc :result :delete-old-types-failed
+                       :error-info error))))
+
 (defn dispatch-process-facilities
   [job & _]
-  (let [facility-ids (:facility-ids job)
-        next-facility (first facility-ids)]
+  (let [process-ids (:process-ids job)
+        next-facility (first process-ids)]
     (if (nil? next-facility)
       (clear-dispatch job)
       (-> job
           (dispatch-task [:process-facilities [next-facility]])
-          (update :facility-ids rest)))))
+          (update :process-ids rest)))))
 
 (defn dispatch-update-projects
   [job & _]
@@ -199,7 +229,7 @@
 
 (defn done-processing?
   [[job event]]
-  (and (empty? (:facility-ids job))
+  (and (empty? (:process-ids job))
        (process-report? event)
        (last-task-report? [job event])))
 
@@ -214,7 +244,9 @@
    :page           1
    :page-count     1
    :facility-count 0
+   :process-count  0
    :facility-ids   []
+   :process-ids    []
    :tasks          []
    :pending-tasks  []
    :next-task      nil
@@ -246,11 +278,35 @@
    [:importing-sites
     [_ :guard page-number-mismatch?] -> {:action unexpected-event} :error
     [[_ [:success [:import-sites _] [:continue _]]]]  -> {:action import-sites-succeeded} :request-sites
-    [[_ [:success [:import-sites _] _]]]              -> {:action import-sites-succeeded} :update-projects
+    [[_ [:success [:import-sites _] _]]]              -> {:action import-sites-succeeded} :delete-old-facilities
     [[_ [:failure [:import-sites _] _]]]              -> {:action import-sites-failed} :clean-up
     [[_ :next]]                      -> {:action clear-dispatch} :importing-sites
     [[_ :cancel]]                    -> {:action cancel-import} :cancelling
     [[_ _]]                          -> {:action unexpected-event} :error]
+
+   [:delete-old-facilities
+    [[_ :next]]                      -> {:action dispatch-delete-old-facilities} :deleting-old-facilities
+    [[_ :cancel]]                    -> {:action cancel-import} :clean-up
+    [[_ _]]                          -> {:action unexpected-event} :error]
+
+   [:deleting-old-facilities
+    [[_ :next]]                               -> {:action clear-dispatch} :deleting-old-facilities
+    [[_ :cancel]]                             -> {:action cancel-import} :clean-up-wait
+    [[_ [:success :delete-old-facilities _]]] -> {:action delete-old-facilities-succeeded} :delete-old-types
+    [[_ [:failure :delete-old-facilities _]]] -> {:action delete-old-facilities-failed} :error
+    [[_ _]]                                   -> {:action unexpected-event} :error]
+
+   [:delete-old-types
+    [[_ :next]]                      -> {:action dispatch-delete-old-types} :deleting-old-types
+    [[_ :cancel]]                    -> {:action cancel-import} :clean-up
+    [[_ _]]                          -> {:action unexpected-event} :error]
+
+   [:deleting-old-types
+    [[_ :next]]                          -> {:action clear-dispatch} :deleting-old-types
+    [[_ :cancel]]                        -> {:action cancel-import} :clean-up-wait
+    [[_ [:success :delete-old-types _]]] -> {:action delete-old-types-succeeded} :update-projects
+    [[_ [:failure :delete-old-types _]]] -> {:action delete-old-types-failed} :error
+    [[_ _]]                              -> {:action unexpected-event} :error]
 
    [:update-projects
     [[_ :next]]                      -> {:action dispatch-update-projects} :updating-projects
@@ -327,6 +383,10 @@
   [job]
   (get-in job [:value :type-field]))
 
+(defn job-facility-ids
+  [job]
+  (get-in job [:value :facility-ids]))
+
 (defn job-finished?
   [job]
   (or (nil? job)
@@ -338,10 +398,10 @@
     (/ (dec page) page-count)))
 
 (defn- process-progress
-  [{:keys [facility-ids facility-count tasks]}]
-  (when (some-> facility-count pos?)
-    (let [pending-ids (+ (count tasks) (count facility-ids))]
-      (- 1 (/ pending-ids facility-count)))))
+  [{:keys [process-ids process-count tasks]}]
+  (when (some-> process-count pos?)
+    (let [pending-ids (+ (count tasks) (count process-ids))]
+      (- 1 (/ pending-ids process-count)))))
 
 (defn job-status
   [job]
@@ -364,7 +424,9 @@
          :state state
          :stats (job-stats job)}
 
-        (:request-sites :importing-sites)
+        (:request-sites :importing-sites
+         :delete-old-facilities :deleting-old-facilities
+         :delete-old-types :deleting-old-types)
         {:status :importing
          :state state
          :progress (import-progress (:value job))}

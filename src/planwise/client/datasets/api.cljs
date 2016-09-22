@@ -43,6 +43,11 @@
                     handlers
                     :mapper-fn map-dataset)))
 
+(defn update-dataset!
+  [id & handlers]
+  (POST (str "/api/datasets/" id "/update")
+    (json-request {} handlers :mapper-fn map-dataset)))
+
 (defn cancel-import!
   [dataset-id & handlers]
   (POST "/api/datasets/cancel"
