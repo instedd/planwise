@@ -154,11 +154,8 @@ article.datasets {
     color: $orange;
     fill: $orange;
   }
+  &.error,
   &.cancelled {
-    color: $orange;
-    fill: $orange;
-  }
-  &.error {
     color: $red;
     fill: $red;
   }

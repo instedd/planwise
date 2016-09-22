@@ -77,7 +77,10 @@
               :unexpected-event "Import failed"
               nil)]
     (case result
-      (:success :cancelled) (str text ", with " (utils/pluralize warnings-count "warning"))
+      (:success :cancelled)
+      (if (pos? warnings-count)
+        (str text ", with " (utils/pluralize warnings-count "warning"))
+        text)
       text)))
 
 (defn- status-string
@@ -98,7 +101,10 @@
              no-road-network :facilities-without-road-network-count
              no-location :sites-without-location-count
              no-type :sites-without-type-count} import-result
-            warnings-count (+ no-regions no-road-network no-location no-type)]
+            warnings-count (+ no-regions no-road-network no-location no-type)
+            show-popover? (and (not importing?)
+                               (not cancelling?)
+                               (pos? warnings-count))]
         [:div.dataset-card
          [:h1 name]
          [:h2 description]
@@ -107,10 +113,10 @@
           :position :below-left
           :anchor [:p.dataset-status
                    {:class (dataset->status-class dataset)
-                    :on-mouse-over (handler-fn (reset! showing-warnings? (pos? warnings-count)))
+                    :on-mouse-over (handler-fn (reset! showing-warnings? show-popover?))
                     :on-mouse-out (handler-fn (reset! showing-warnings? false))}
                    [common/icon (dataset->status-icon dataset) "icon-small"]
-                   (utils/pluralize facility-count "facility" "facilities")
+                   (utils/pluralize (or facility-count 0) "facility" "facilities")
                    (when-let [status (status-string server-status result warnings-count)]
                     (str " (" status ")"))]
           :popover [popover/popover-content-wrapper
