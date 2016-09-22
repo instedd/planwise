@@ -23,7 +23,7 @@
    [:datasets
     [{:id 1 :name "Test Dataset" :collection_id 123 :owner_id 1}]]
    [:facility_types
-    [{:id 1 :dataset_id dataset-id :name "Hospital"}]]
+    [{:id 1 :dataset_id dataset-id :name "Hospital" :code "hospital"}]]
    [:facilities
     [{:id 1 :dataset_id dataset-id :site_id 1 :name "Facility A" :type_id 1 :lat -3   :lon 42 :the_geom (make-point -3 42)}
      {:id 2 :dataset_id dataset-id :site_id 2 :name "Facility B" :type_id 1 :lat -3.5 :lon 42 :the_geom (make-point -3.5 42)}]]
@@ -88,9 +88,9 @@
     [{:id 1 :name "Test Dataset" :collection_id 123 :owner_id 1}
      {:id 2 :name "Test Dataset 2" :collection_id 124 :owner_id 1}]]
    [:facility_types
-    [{:id 1 :dataset_id 1 :name "Hospital"}
-     {:id 2 :dataset_id 1 :name "Rural"}
-     {:id 3 :dataset_id 2 :name "General"}]]
+    [{:id 1 :dataset_id 1 :name "Hospital", :code "hospital"}
+     {:id 2 :dataset_id 1 :name "Rural", :code "rural"}
+     {:id 3 :dataset_id 2 :name "General", :code "general"}]]
    [:regions
     [{:id 1 :country "C" :name "R1" :the_geom (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))"))}
      {:id 2 :country "C" :name "R2" :the_geom (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((2 2, 2 3, 3 3, 3 2, 2 2)))"))}]]
@@ -127,25 +127,27 @@
         (is (= 500 capacity))))))
 
 (deftest insert-facility-types
-  (with-system (system multiple-facilities-fixture-data)
-    (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
-    (let [service        (:facilities system)
-          result         (facilities/insert-types! service 1 [{:name "General"}, {:name "Hospital"}])
-          all-types      (facilities/list-types service 1)]
-      (is (= result
-             [{:id 100, :name "General"}
-              {:id 1,   :name "Hospital"}]))
-      (is (= (set all-types)
-             #{{:id 1,   :name "Hospital"}
-               {:id 2,   :name "Rural"}
-               {:id 100, :name "General"}}))))
-  (with-system (system multiple-facilities-fixture-data)
-    (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
-    (let [service        (:facilities system)
-          reverse-result (facilities/insert-types! service 1 [{:name "Hospital"}, {:name "General"}])]
-      (is (= reverse-result
-             [{:id 1,   :name "Hospital"}
-              {:id 100, :name "General"}])))))
+  (let [new-types [{:name "General" :code "general"}
+                   {:name "Hospital" :code "hospital"}]]
+    (with-system (system multiple-facilities-fixture-data)
+      (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+      (let [service        (:facilities system)
+            result         (facilities/insert-types! service 1 new-types)
+            all-types      (facilities/list-types service 1)]
+        (is (= result
+               [{:id 100, :name "General",  :code "general"}
+                {:id 1,   :name "Hospital", :code "hospital"}]))
+        (is (= (set all-types)
+               #{{:id 1,   :name "Hospital", :code "hospital"}
+                 {:id 2,   :name "Rural",    :code "rural"}
+                 {:id 100, :name "General",  :code "general"}}))))
+    (with-system (system multiple-facilities-fixture-data)
+      (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+      (let [service        (:facilities system)
+            reverse-result (facilities/insert-types! service 1 (reverse new-types))]
+        (is (= reverse-result
+               [{:id 1,   :name "Hospital", :code "hospital"}
+                {:id 100, :name "General",  :code "general"}]))))))
 
 (deftest upsert-facilities
   (with-system (system multiple-facilities-fixture-data)

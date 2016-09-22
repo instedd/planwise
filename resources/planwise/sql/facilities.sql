@@ -97,7 +97,7 @@ WHERE
   :snip:criteria ;
 
 -- :name select-types-in-dataset :?
-SELECT id, name
+SELECT id, name, code
 FROM facility_types
 WHERE dataset_id = :dataset-id;
 
@@ -109,9 +109,14 @@ WHERE dataset_id = :dataset-id
 /*~ ) ~*/;
 
 -- :name insert-type! :<! :1
-INSERT INTO facility_types (name, dataset_id)
-VALUES (:name, :dataset-id)
+INSERT INTO facility_types (name, dataset_id, code)
+VALUES (:name, :dataset-id, :code)
 RETURNING id;
+
+-- :name update-type! :!
+UPDATE facility_types
+SET name = :name
+WHERE id = :id;
 
 -- :name calculate-facility-isochrones! :<!
 SELECT code, country FROM process_facility_isochrones(:id, :method, :start::integer, :end::integer, :step::integer) AS(code text, country text);

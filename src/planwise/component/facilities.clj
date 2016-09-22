@@ -143,10 +143,25 @@
     (let [current-types (select-types-in-dataset tx {:dataset-id dataset-id})]
       (->> types
         (mapv (fn [type]
-                (if-let [existing-type (find-by current-types :name (:name type))]
-                  (merge type existing-type)
-                  (let [type-id (insert-type! tx (assoc type :dataset-id dataset-id))]
-                    (merge type type-id)))))))))
+                (let [existing-type (find-by current-types :code (:code type))]
+                  (cond
+                    ; No previous facility type with that code exists, create a new one
+                    (nil? existing-type)
+                    (let [type-id (insert-type! tx (assoc type :dataset-id dataset-id))]
+                      (merge type type-id))
+
+                    ; Facility type has not changed, do nothing
+                    (= (:name existing-type)
+                       (:name type))
+                    existing-type
+
+                    ; The name has changed, update it
+                    :else
+                    (do
+                      (update-type! tx {:id (:id existing-type)
+                                        :name (:name type)})
+                      (merge existing-type type))))))))))
+
 
 (defn raster-isochrones! [service facility-id]
   (let [scale-resolution 8

@@ -19,14 +19,14 @@
   {:name "Type",
    :code "type",
    :kind "select_one",
-   :config {:options [{:id 1, :code "hospital", :label "Hospital"}
-                      {:id 2, :code "health center", :label "Health Center"}
+   :config {:options [{:id 1, :code "hospital", :label "General Hospital"}
+                      {:id 2, :code "health", :label "Health Center"}
                       {:id 3, :code "dispensary", :label "Dispensary"}],
             :next_id 4}
    :metadata [{:key "hospital-capacity", :value "500"}
               {:key "invalid-key", :value "200"}
               {:key "dispensary-capacity", :value "300"}
-              {:key "health center-capacity", :value "INVALID"}]})
+              {:key "health-capacity", :value "INVALID"}]})
 
 (def fixture-data
   [[:users
@@ -42,8 +42,8 @@
     [{:id 1 :name "dataset1" :description "" :owner_id 1 :collection_id 1 :import_mappings nil}
      {:id 2 :name "dataset2" :description "" :owner_id 1 :collection_id 2 :import_mappings nil}]]
    [:facility_types
-    [{:id 1 :dataset_id 1 :name "Hospital"}
-     {:id 2 :dataset_id 1 :name "Rural"}]]
+    [{:id 1 :dataset_id 1 :name "Hospital" :code "hospital"}
+     {:id 2 :dataset_id 1 :name "Rural" :code "rural"}]]
    [:facilities
     [{:id 1 :dataset_id 1 :site_id 1 :name "Facility A" :type_id 1 :lat -3   :lon 42 :the_geom (make-point -3 42)   :processing_status "ok"}
      {:id 2 :dataset_id 1 :site_id 2 :name "Facility B" :type_id 1 :lat -3.5 :lon 42 :the_geom (make-point -3.5 42) :processing_status "ok"}
@@ -125,7 +125,7 @@
             facilities (facilities/list-facilities (:facilities system) 1 {})
             [facility] facilities]
         (is (= (count types) 3))
-        (is (= #{"Hospital" "Health Center" "Dispensary"} (set (map :name types))))
+        (is (= #{"General Hospital" "Health Center" "Dispensary"} (set (map :name types))))
         (is (= (count facilities) 1))
         (is (= (select-keys facility [:id :name :lat :lon :type-id :capacity])
                {:id 100 :type-id 100 :name "s1" :lat -1.2M :lon 36.8M :capacity 500}))))))
@@ -136,7 +136,7 @@
     (with-system (system {:data fixture-data-with-facilities
                           :sites [{:id 1, :name "Facility A2", :lat -3.0, :long 42.0, :properties {:type "dispensary"}}
                                   {:id 2, :name "Facility B2", :lat -1.2, :long 36.8, :properties {:type "hospital"}}
-                                  {:id 4, :name "Facility D",  :lat -1.2, :long 36.8, :properties {:type "health center"}}]})
+                                  {:id 4, :name "Facility D",  :lat -1.2, :long 36.8, :properties {:type "health"}}]})
 
       (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
       (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
@@ -156,9 +156,9 @@
       (let [types (facilities/list-types (:facilities system) 1)
             facilities (facilities/list-facilities (:facilities system) 1 {})]
         (is (= 3 (count types)))
-        (is (= #{{:name "Hospital" :id 1}
-                 {:name "Health Center" :id 100}
-                 {:name "Dispensary" :id 101}}
+        (is (= #{{:code "hospital"   :name "General Hospital" :id 1} ; Type label should be updated, even if id does not change
+                 {:code "health"     :name "Health Center" :id 100}
+                 {:code "dispensary" :name "Dispensary" :id 101}}
                (set types)))
 
         (is (= 3 (count facilities)))
