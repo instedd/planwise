@@ -7,7 +7,8 @@
             [taoensso.timbre :as timbre]
             [clojure.edn :as edn]
             [clojure.set :as set]
-            [cuerdas.core :refer [<< <<-]]))
+            [cuerdas.core :refer [<< <<-]]
+            [planwise.util.hash :refer [update-if]]))
 
 (timbre/refer-timbre)
 
@@ -35,9 +36,9 @@
   functions"
   [project]
   (-> project
-      (update :state pr-str)
-      (update :stats pr-str)
-      (update :filters pr-str)))
+      (update-if :state pr-str)
+      (update-if :stats pr-str)
+      (update-if :filters pr-str)))
 
 ;; Access related functions
 
@@ -132,20 +133,16 @@
 (defn update-project
   [service project]
   (jdbc/with-db-transaction [tx (get-db service)]
-    (let [project-id (:id project)
-          goal       (:goal project)
-          state      (:state project)
-          filters    (:filters project)
-          params     {:project-id project-id
-                      :goal       goal
-                      :state      (some-> state pr-str)
-                      :filters    (some-> filters pr-str)}
-          result     (update-project* tx params)]
+    (let [project-id        (:id project)
+          updating-filters? (some? (:filters project))
+          record            (project->db project)
+          params            (select-keys record [:id :goal :state :filters])
+          result            (update-project* tx params)]
       (when (= 1 result)
         (let [project (load-project tx project-id)]
-          (if filters
+          (if updating-filters?
             (let [stats (compute-project-stats service project)]
-              (update-project* tx {:project-id project-id
+              (update-project* tx {:id project-id
                                    :stats (pr-str stats)})
               (assoc project :stats stats))
             project))))))
