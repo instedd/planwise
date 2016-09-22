@@ -158,7 +158,19 @@
             (is (= (reduce-job job [:next :cancel])
                    [:clean-up-wait nil :cancelled]))
             (is (= (reduce-job job [:next :cancel [:success [:process-facilities [1]] nil]])
-                   [:error nil :cancelled])))))))))
+                   [:error nil :cancelled])))))
+
+       ;; Alternate path: no facilities were imported
+       (let [job (reduce fsm/fsm-event job [:next
+                                            [:success [:import-sites 1] [nil (page-result {:page-ids {} :total-pages 1})]]
+                                            :next
+                                            [:success :delete-old-facilities nil]
+                                            :next
+                                            [:success :delete-old-types nil]
+                                            :next
+                                            [:success :update-projects nil]])]
+         (is (= (reduce-job job [:next])
+                [:done nil :success])))))))
 
     ;; TODO: test error conditions in all stages
     ;; TODO: test cancellation in all stages
