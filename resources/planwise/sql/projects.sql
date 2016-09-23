@@ -6,7 +6,8 @@ INSERT INTO projects (goal, dataset_id, region_id, stats, owner_id, share_token)
 -- :name select-projects-for-dataset :?
 SELECT
   projects.id, projects.goal, projects.region_id AS "region-id", projects.stats,
-  regions.name AS "region-name", owner_id AS "owner-id"
+  regions.name AS "region-name", owner_id AS "owner-id",
+  projects.dataset_id AS "dataset-id", projects.filters
 FROM projects
 INNER JOIN regions ON projects.region_id = regions.id
 WHERE projects.dataset_id = :dataset-id
