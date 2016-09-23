@@ -99,16 +99,17 @@
 (defn import-sites-succeeded
   [job event & _]
   (let [page (:page job)
-        [_ _ [_ {:keys [page-ids total-pages sites-without-location sites-without-type]}]] event
-        {:keys [new existing moved updated]} page-ids
+        [_ _ [_ {:keys [page-facilities total-pages sites-without-location sites-without-type]}]] event
+        page-facilities-to-process (filter #(or (= :moved (:insertion-status %))
+                                                (nil? (:processing-status %))) page-facilities)
         total-pages (or total-pages (:page-count job))]
     (-> (complete-task job event)
         (assoc :page (inc page)
                :page-count total-pages)
-        (update :facility-ids into (apply concat (vals page-ids)))
-        (update :facility-count + (apply + (map count (vals page-ids))))
-        (update :process-ids concat new moved)
-        (update :process-count + (count new) (count moved))
+        (update :facility-ids into (map :id page-facilities))
+        (update :facility-count + (count page-facilities))
+        (update :process-ids into (map :id page-facilities-to-process))
+        (update :process-count + (count page-facilities-to-process))
         (update :sites-without-location-count + (count sites-without-location))
         (update :sites-without-type-count + (count sites-without-type)))))
 

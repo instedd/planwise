@@ -44,8 +44,8 @@
 
 (defn insert-facilities!
   "Upserts the facilities, identifying them by dataset-id and site-id,
-   returning a hash of state into list of ids, where state is one of
-   :existing, :updated, :moved or :new."
+   returning a list of the facilities with their ids, plus a new
+   :insertion-status, where state is one of :existing, :updated, :moved or :new."
   [service dataset-id facilities]
   (jdbc/with-db-transaction [tx (get-db service)]
     (let [updateable-keys [:name :type-id :capacity]
@@ -56,7 +56,7 @@
                                   {:dataset-id dataset-id
                                    :criteria (criteria-snip {:site-ids site-ids})}))]
       (->> facilities
-        (map  (fn [facility]
+        (mapv (fn [facility]
                 (let [{id :id, :as existing} (find-by existing-facilities :site-id (:site-id facility))
                       position-unchanged?    (and (seq existing)
                                                (float= (:lat existing) (:lat facility))
@@ -66,30 +66,32 @@
                     ; Insert new record if no existing facility with the site id was found
                     (nil? existing)
                     (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
-                      [:new (:id result)])
+                      (-> facility
+                        (assoc :dataset-id dataset-id
+                               :id (:id result)
+                               :insertion-status :new)
+                        (update :processing-status identity)))
 
                     ; Check if we need to update any attribute
                     (and position-unchanged?
                       (= (select-keys existing updateable-keys)
                          (select-keys facility updateable-keys)))
-                    [:existing id]
+                    (assoc existing :insertion-status :existing)
 
                     ; Check if the position did not change
                     position-unchanged?
-                    (do
-                      (update-facility* tx (merge {:id id} (select-keys facility updateable-keys)))
-                      [:updated id])
+                    (let [merged-facility (merge existing
+                                                 (select-keys facility updateable-keys))]
+                      (update-facility* tx merged-facility)
+                      (assoc merged-facility :insertion-status :updated))
 
                     ; If the position changed, clear processing status
                     :else
-                    (do
-                      (update-facility* tx (merge {:id id, :processing-status nil}
-                                                  (select-keys facility updateable-keys-with-pos)))
-                      [:moved id])))))
-
-        (group-by first)
-        (map (fn [[state values]] [state (map second values)]))
-        (into {})))))
+                    (let [merged-facility (merge existing
+                                                 (select-keys facility updateable-keys-with-pos)
+                                                 {:processing-status nil})]
+                      (update-facility* tx merged-facility)
+                      (assoc merged-facility :insertion-status :moved))))))))))
 
 (defn destroy-facilities! [service dataset-id & [{except-ids :except-ids}]]
   (delete-facilities-in-dataset! (get-db service) {:dataset-id dataset-id
