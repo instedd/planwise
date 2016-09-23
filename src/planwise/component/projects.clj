@@ -127,7 +127,7 @@
     (when-let [project (load-project tx project)]
       (let [project-id (:id project)
             stats (compute-project-stats service project)]
-        (update-project* tx {:project-id project-id
+        (update-project* tx {:id project-id
                              :stats (pr-str stats)})))))
 
 (defn update-project

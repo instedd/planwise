@@ -13,7 +13,7 @@
             [com.stuartsierra.component :as component]
             [clojure.core.async :refer [chan <! >!] :as async]
             [clojure.java.jdbc :as jdbc]
-            [planwise.test-utils :refer [make-point]]))
+            [planwise.test-utils :refer [make-point sample-polygon]]))
 
 (def resmap-type-field
   {:name "Type",
@@ -41,6 +41,10 @@
    [:datasets
     [{:id 1 :name "dataset1" :description "" :owner_id 1 :collection_id 1 :import_mappings nil}
      {:id 2 :name "dataset2" :description "" :owner_id 1 :collection_id 2 :import_mappings nil}]]
+   [:regions
+    [{:id 1 :country "kenya" :name "Kenya" :admin_level 2 :the_geom (sample-polygon) :preview_geom nil :total_population 1000 :max_population 127 :raster_pixel_area 950}]]
+   [:projects
+    [{:id 1 :goal "project1" :region_id 1 :owner_id 1 :dataset_id 1}]]
    [:facility_types
     [{:id 1 :dataset_id 1 :name "Hospital" :code "hospital"}
      {:id 2 :dataset_id 1 :name "Rural" :code "rural"}]]
@@ -156,6 +160,10 @@
                 :facilities-outside-regions-count 2
                 :result :success}
                (:import-result dataset))))
+
+      (let [project (projects/get-project (:projects system) 1)]
+        (is (= {:facilities-targeted 0, :facilities-total 0}
+               (:stats project))))
 
       (let [types (facilities/list-types (:facilities system) 1)
             facilities (facilities/list-facilities (:facilities system) 1 {})]
