@@ -1,5 +1,6 @@
 #! /bin/bash
 set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
 
 # Creates a byte-sized raster file data/isochrones/REGIONID/FACILITY_POLYGON_ID.tif,
 # with a 255 value for each facility polygon, intersected with the specified REGION,
