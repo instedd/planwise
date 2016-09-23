@@ -81,36 +81,36 @@
       ;; facility types imported successfully
       (is (= (reduce-job initial [:next [:success :import-types :new-types]])
              [:request-sites nil nil]))
-
       ;;
       ;; Import sites stage
       ;;
       (let [job         (reduce fsm/fsm-event initial [:next [:success :import-types :new-types]])
-            page-result #(merge {:sites-without-location [] :sites-without-type []} %)]
+            page-result #(merge {:sites-without-location [] :sites-without-type []} %)
+            new-facilities (mapv (fn [i] {:id (inc i) :insertion-status :new}) (range 3))]
         ;; first page of sites is requested
         (is (= (reduce-job job [:next])
                [:importing-sites [:import-sites 1] nil]))
         ;; single page of sites successfully imported
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [nil {:new [1 2 3]} 1]]])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [nil new-facilities 1]]])
                [:delete-old-facilities nil nil]))
         ;; page of sites successfully imported (continue)
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids {:new [1 2 3]} :total-pages 5})]]])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-facilities new-facilities :total-pages 5})]]])
                [:request-sites nil nil]))
         ;; page report mismatch
-        (is (= (reduce-job job [:next [:success [:import-sites 2] [nil {:new [1 2 3]} 4]]])
+        (is (= (reduce-job job [:next [:success [:import-sites 2] [nil new-facilities 4]]])
                [:error [:import-sites 1] :unexpected-event]))
         ;; sites page is incremented
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids {:new [1 2 3]} :total-pages 3})]] :next])
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-facilities new-facilities :total-pages 3})]] :next])
                [:importing-sites [:import-sites 2] nil]))
         ;; second page of sites is imported
-        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-ids {:new [1 2 3]} :total-pages 1})]]
+        (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-facilities new-facilities :total-pages 1})]]
                                     :next [:success [:import-sites 2] [nil []]]])
                [:delete-old-facilities nil nil]))
 
        ;;
        ;; Delete old facilities and types stage (facilities 1,2 to process)
        ;;
-       (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil (page-result {:page-ids {:new [1 2]} :total-pages 1})]]])]
+       (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil (page-result {:page-facilities (mapv (fn [i] {:id (inc i) :insertion-status :new}) (range 2)) :total-pages 1})]]])]
          (is (= (reduce-job job [:next])
                 [:deleting-old-facilities :delete-old-facilities nil]))
          (is (= (reduce-job job [:next [:success :delete-old-facilities nil]])
@@ -162,7 +162,7 @@
 
        ;; Alternate path: no facilities were imported
        (let [job (reduce fsm/fsm-event job [:next
-                                            [:success [:import-sites 1] [nil (page-result {:page-ids {} :total-pages 1})]]
+                                            [:success [:import-sites 1] [nil (page-result {:page-facilities {} :total-pages 1})]]
                                             :next
                                             [:success :delete-old-facilities nil]
                                             :next

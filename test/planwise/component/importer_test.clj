@@ -79,12 +79,16 @@
     channel))
 
 (defn run-tasks
-  [dispatcher]
+ ([dispatcher]
+  (run-tasks dispatcher nil))
+ ([dispatcher until-state]
   (loop []
     (when-let [{:keys [task-id task-fn]} (taskmaster/next-task dispatcher)]
-      (let [result (task-fn)]
-        (taskmaster/task-completed dispatcher task-id result)
-        (recur)))))
+      (let [result (task-fn)
+            jobs (taskmaster/task-completed dispatcher task-id result)]
+        (when-not (and until-state (= until-state (:state (get jobs 1))))
+          (recur)))))))
+
 
 (defn importer-service [system]
   (-> (importer/importer)
@@ -171,8 +175,6 @@
 (deftest resume-importer-job
   (timbre/with-level :warn
     (with-system (system)
-      (let [importer (importer-service system)]
-        (let [[result statūs] (importer/run-import-for-dataset importer 1 user-ident)]))
 
       ; Start new import for a dataset
       (let [importer (importer-service system)]
@@ -240,6 +242,43 @@
           (is (= 3 (count pending-tasks)))
           ; Check that the pending tasks are re-run, and then the following ones are dispatched
           (is (= expected-ids actual-ids))
+
+        (component/stop importer)))))
+
+(deftest update-cancelled-dataset
+  (timbre/with-level :warn
+    (with-system (system {:sites [{:id 1, :name "s1", :lat -1.2, :long 36.8,
+                                   :properties {:type "hospital"}}]})
+      (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
+      (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+
+      (let [importer (importer-service system)]
+
+        ; Start new import for a dataset, run until delete-old-types, and cancel it
+        (importer/run-import-for-dataset importer 1 user-ident)
+        (run-tasks importer :delete-old-types)
+        (importer/cancel-import! importer 1)
+        (run-tasks importer)
+
+        ; Check that the job was finished and a site was imported, though not processed
+        (is empty? @(:jobs importer))
+        (let [dataset (datasets/find-dataset (:datasets system) 1)]
+          (is (= :cancelled (get-in dataset [:import-result :result]))))
+        (let [[facility] (facilities/list-facilities (:facilities system) 1 {})]
+          (is (= {:id 100, :site-id 1, :processing-status nil}
+                 (select-keys facility [:id :site-id :processing-status]))))
+
+        ; Run a new import for the dataset
+        (importer/run-import-for-dataset importer 1 user-ident)
+        (run-tasks importer)
+
+        ; Check that the job was finished and the site was processed
+        (is empty? @(:jobs importer))
+        (let [dataset (datasets/find-dataset (:datasets system) 1)]
+          (is (= :success (get-in dataset [:import-result :result]))))
+        (let [[facility] (facilities/list-facilities (:facilities system) 1 {})]
+          (is (= {:id 100, :site-id 1, :processing-status "outside-regions"}
+                 (select-keys facility [:id :site-id :processing-status]))))
 
         (component/stop importer)))))
 

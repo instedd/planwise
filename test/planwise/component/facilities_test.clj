@@ -52,7 +52,7 @@
   (with-system (system)
     (let [service (:facilities system)]
       (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
-      (is (= [[100]] (vals (facilities/insert-facilities! service dataset-id new-facilities))))
+      (is (= [100] (map :id (facilities/insert-facilities! service dataset-id new-facilities))))
       (is (= 3 (count (facilities/list-facilities service dataset-id)))))))
 
 (deftest destroy-facilities
@@ -160,14 +160,22 @@
           result  (facilities/insert-facilities! service dataset-id data)
           list    (facilities/list-facilities service dataset-id {})
           {[existing] 1, [new] 100, [updated] 3, [moved] 4} (group-by :id list)]
-      (is (= {:existing [1], :new [100], :updated [3], :moved [4]}
-             result))
-      (letfn [(select-attrs [f] (select-keys f [:id :name :site-id :type-id :lat :lon :processing-status :capacity]))]
-        (is (= {:id 1   :site-id 1 :name "Facility A" :type-id 1 :lat 0.5M :lon 0.5M :capacity 500 :processing-status "ok"}
+      (letfn [(select-attrs [f] (-> f
+                                  (select-keys [:id :name :site-id :type-id :lat :lon :processing-status :capacity])
+                                  (update :lat float)
+                                  (update :lon float)))]
+        ; Check that the result from insertion yields the same data as the result from a select
+        (is (= (map select-attrs (sort-by :id result))
+               (map select-attrs (sort-by :id list))))
+        ; Check the insertion-status for each facility
+        (is (= [[1 :existing] [3 :updated] [4 :moved] [100 :new]]
+               (map (juxt :id :insertion-status) (sort-by :id result))))
+        ; Check the inserted attributes of each facility individually
+        (is (= {:id 1   :site-id 1 :name "Facility A" :type-id 1 :lat 0.5 :lon 0.5 :capacity 500 :processing-status "ok"}
                (select-attrs existing)))
-        (is (= {:id 100 :site-id 2 :name "Facility B" :type-id 1 :lat 0.5M :lon 0.5M :capacity 0   :processing-status nil}
+        (is (= {:id 100 :site-id 2 :name "Facility B" :type-id 1 :lat 0.5 :lon 0.5 :capacity 0   :processing-status nil}
                (select-attrs new)))
-        (is (= {:id 3   :site-id 3 :name "Updated C"  :type-id 2 :lat 0.5M :lon 0.5M :capacity 100 :processing-status "ok"}
+        (is (= {:id 3   :site-id 3 :name "Updated C"  :type-id 2 :lat 0.5 :lon 0.5 :capacity 100 :processing-status "ok"}
                (select-attrs updated)))
-        (is (= {:id 4   :site-id 4 :name "Updated D"  :type-id 2 :lat 1.5M :lon 1.5M :capacity 0   :processing-status nil}
+        (is (= {:id 4   :site-id 4 :name "Updated D"  :type-id 2 :lat 1.5 :lon 1.5 :capacity 0   :processing-status nil}
                (select-attrs moved)))))))

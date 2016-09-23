@@ -127,8 +127,8 @@
         (info (str "Dataset " dataset-id ": "
                    "Inserting " (count new-facilities) " facilities from page " page
                    " of collection " coll-id))
-        (let [new-ids (facilities/insert-facilities! facilities dataset-id new-facilities)]
-          [:continue {:page-ids new-ids
+        (let [new-facilities (facilities/insert-facilities! facilities dataset-id new-facilities)]
+          [:continue {:page-facilities new-facilities
                       :total-pages total-pages
                       :sites-without-location sites-without-location
                       :sites-without-type sites-without-type}])))))
