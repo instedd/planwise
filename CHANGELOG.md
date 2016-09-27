@@ -4,21 +4,26 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 ### New features
+- Enabled unsatisfied population layer calculation for regions with
+  administrative level smaller than country (#240)
 - Datasets can be updated by re-importing the collection from Resourcemap (#180)
 
 ### Changes and improvements
-- Importing a collection from Resourcemap can now be resumed after a server
-  restart (#93)
-- Unsatisfied population layer calculation (if enabled) will only occur for
-  regions with administrative level of province or less (#240)
 - Each facility has a capacity (used for unsatisfied population computations)
   which is initialised from metadata in the Resourcemap collection (#238, #239)
+- Importing a collection from Resourcemap is now resumed automatically after a
+  server restart (#93)
+- Changed the legend and popup for imported datasets to improve readability
+  (#230)
+- When updating a dataset, don't reprocess facilities which haven't changed
+  (#79)
 
 ### Fixes
 - Fix for some rare cases where the computed isochrone for a facility resulted
   in a NULL polygon.
 - If the user navigates away from a project before all the steps of the wizard
   were completed, remember which steps were visited and which were not (#190)
+- Fix to finish the import process if there are no facilities to process
 
 ## [0.6.1] - 2016-09-22
 ### Fixes
