@@ -128,3 +128,11 @@
           updated-project (projects/get-project service project-id)]
       (is (not= new-token project-share-token))
       (is (= new-token (:share-token updated-project))))))
+
+(deftest share-project-url
+  (let [expected "http://planwise.instedd.org/projects/1/access/TOKEN"
+        project {:id 1 :share-token "TOKEN"}]
+    (are [host] (= expected (projects/share-project-url host project))
+      "http://planwise.instedd.org"
+      "http://planwise.instedd.org/"
+      "http://planwise.instedd.org/some/path")))

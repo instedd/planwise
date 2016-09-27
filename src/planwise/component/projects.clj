@@ -8,7 +8,8 @@
             [clojure.edn :as edn]
             [clojure.set :as set]
             [cuerdas.core :refer [<< <<-]]
-            [planwise.util.hash :refer [update-if]]))
+            [planwise.util.hash :refer [update-if]])
+  (:import [java.net URL]))
 
 (timbre/refer-timbre)
 
@@ -169,9 +170,11 @@
   [service project-id]
   (:share-token (reset-share-token* (get-db service) {:id project-id})))
 
-(defn- share-url
+(defn share-project-url
   [host project]
-  (str host "/projects/" (:id project) "/access/" (:share-token project)))
+  (let [path (str "/projects/" (:id project) "/access/" (:share-token project))
+        host (URL. host)]
+    (str (URL. host path))))
 
 (defn share-via-email
   [service project emails {host :host}]
@@ -184,7 +187,7 @@
         (let [body (<<- (<< "Greetings,
 
                              ~(:owner-email project) has shared the PlanWise project \"~(:goal project)\" with you. Click on the link below to add it to your projects list:
-                             ~(share-url host project)
+                             ~(share-project-url host project)
 
                              If you do not have a PlanWise account, you will be prompted to create one when you access the link.
 
