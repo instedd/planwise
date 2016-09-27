@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.1] - 2016-09-27
+### Fixes
+- Fix access URL for shared project sent in the invitation emails (#255)
+
 ## [0.7.0] - 2016-09-27
 ### New features
 - Enabled unsatisfied population layer calculation for regions with
