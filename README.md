@@ -1,8 +1,6 @@
 # PlanWise
 
-Concern's Facility Planner. This is a tool to support decision makers in
-choosing the location of future health-care or social aid facilities and/or
-improvement of existing ones to maximize their impact in the community.
+PlanWise applies algorithms and geospatial optimisation techniques to existing data on population, road networks and health facilities, so health care planners can better understand the unmet health needs of their constituents and better locate future health facilities. Together, InSTEDD and Concern Worldwide are developing PlanWise, to apply such algorithms to help governments visualize how potential future facilities will improve access to healthcare in underserved areas.
 
 ## Developing
 
