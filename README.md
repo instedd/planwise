@@ -1,12 +1,79 @@
 # PlanWise
 
-PlanWise applies algorithms and geospatial optimisation techniques to existing data on population, road networks and health facilities, so health care planners can better understand the unmet health needs of their constituents and better locate future health facilities. Together, InSTEDD and Concern Worldwide are developing PlanWise, to apply such algorithms to help governments visualize how potential future facilities will improve access to healthcare in underserved areas.
+PlanWise applies algorithms and geospatial optimisation techniques to existing
+data on population, road networks and health facilities, so health care planners
+can better understand the unmet health needs of their constituents and better
+locate future health facilities. Together, InSTEDD and Concern Worldwide are
+developing PlanWise, to apply such algorithms to help governments visualize how
+potential future facilities will improve access to healthcare in underserved
+areas.
 
-##Technology
+## Technology
 
-###Tech stack
+PlanWise is a single page web application implemented in Clojure and
+Clojurescript, backed with PostgreSQL database storing both relational and
+spatial information, and GeoTiff raster files for demographics data.
 
-###Scalability
+### Tech Stack
+
+Server side:
+
+* [Clojure](http://clojure.org/) application, built on top of
+  the [Duct](https://github.com/duct-framework/duct) framework, served using
+  a [Jetty](http://www.eclipse.org/jetty/) webserver.
+* [PostgreSQL](https://www.postgresql.org/) database
+  with [PostGIS](http://postgis.net/) and [pgRouting](http://pgrouting.org/)
+  extensions providing spatial and routing capabilities.
+* [Mapserver](http://mapserver.org/) with
+  a [Mapcache](http://mapserver.org/mapcache/index.html) caching façade for
+  serving the demographics raster layers.
+* [GDAL](http://gdal.org/) tool suite for manipulating raster and vector
+  spatial data files.
+
+Client side:
+
+* [Clojurescript](http://clojurescript.org) application using
+  the [re-frame](https://github.com/Day8/re-frame) framework, which is built on
+  top of [reagent](https://github.com/reagent-project/reagent)
+  and [React](https://facebook.github.io/react/).
+* [Leaflet](http://leafletjs.com/) for displaying interactive maps.
+
+Deployment:
+
+* The production application is deployed as a set of [Docker](http://docker.io/)
+  containers.
+
+### Scalability
+
+The webserver is multi-threaded and there is no lock contention on any
+operation, so it can handle multiple concurrent requests. The PostgreSQL
+database can also handle multiple concurrent connnections. Pre-processing of
+facilities is parallelized to make use of multiple cores, and can be easily
+extended to multiple hosts.
+
+Beyond that, there are three main dimensions for scaling PlanWise:
+
+* Number of analyzed countries: since operations on countries are
+  independent of each other, sharding spatial routing and demographics data and
+  parallel processing can be easily implemented.
+* Number of facilities: this is the main contention point of the application,
+  since the demand calculation algorithm is linear in the number of affected
+  facilities. Right now, we have limited the demand computation to regions
+  within countries which yields near realtime performance for several hundred
+  facilities. For the preprocessing portion of the algorithm, it can be easily
+  paralellized.
+* Number of concurrent users: can be scaled horizontally by adding more
+  application servers to fulfill the requests. Most interesting operations are
+  read-only and as such can be easily paralellized. Given the nature of the
+  application we don't expect a huge demand on this dimension.
+
+### Data Sources
+
+The production deployment of [PlanWise](http://planwise.instedd.org) uses
+geospatial routing information
+from [OpenStreetMap](http://www.openstreetmap.org/about) and demographics
+datasets from [WorldPop](http://www.worldpop.org.uk/).
+
 
 ## Developing
 
