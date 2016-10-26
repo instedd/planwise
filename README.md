@@ -2,6 +2,12 @@
 
 PlanWise applies algorithms and geospatial optimisation techniques to existing data on population, road networks and health facilities, so health care planners can better understand the unmet health needs of their constituents and better locate future health facilities. Together, InSTEDD and Concern Worldwide are developing PlanWise, to apply such algorithms to help governments visualize how potential future facilities will improve access to healthcare in underserved areas.
 
+##Technology
+
+###Tech stack
+
+###Scalability
+
 ## Developing
 
 Instructions for setting up a development environment, focused on OSX.
