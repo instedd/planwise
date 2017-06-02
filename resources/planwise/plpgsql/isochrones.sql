@@ -107,14 +107,16 @@ begin
   -- for the maximum threshold time.
   bounding_radius_meters := (threshold_finish / 60.0) * 85 * 1000;
 
-  insert into edges_agg_cost (
-    select e.edge, e.agg_cost, e.node
-    from pgr_drivingdistance(
-      'select gid as id, source, target, cost_s as cost from ways where the_geom @ (select ST_Buffer(the_geom::geography, '|| bounding_radius_meters || ')::geometry from facilities where id = ' || f_id || ')',
-      facility_node,
-      threshold_finish * 60,
-      false) e
-  );
+  IF facility_node IS NOT NULL THEN
+    insert into edges_agg_cost (
+      select e.edge, e.agg_cost, e.node
+      from pgr_drivingdistance(
+        'select gid as id, source, target, cost_s as cost from ways where the_geom @ (select ST_Buffer(the_geom::geography, '|| bounding_radius_meters || ')::geometry from facilities where id = ' || f_id || ')',
+        facility_node,
+        threshold_finish * 60,
+        false) e
+    );
+  END IF;
 
   -- This snippet adds edges that may be left out but should be included.
   -- Since pgr_drivingDistance uses the Dijkstra's algorithm and its corresponding
