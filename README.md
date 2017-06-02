@@ -163,14 +163,14 @@ Configure the connection URL in your `profiles.clj`:
 {:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"}}}
 ```
 
+Run the database migrations to install the needed extensions and schema:
+```bash
+$ lein migrate
+```
+
 As a one-time task, to seed your database with routing information from OSM, run the following script to import routing information from any of the supported countries:
 ```bash
 $ scripts/import-osm osx/osm2pgrouting kenya
-```
-
-And run the migrations:
-```bash
-$ lein migrate
 ```
 
 Finally load regions as follows:
