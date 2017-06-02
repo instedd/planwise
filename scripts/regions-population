@@ -17,6 +17,8 @@ function base-raster {
         ethiopia)     echo ETH15v5.tif;;
         nigeria)      echo NGA14adjv1.tif;;
         south-africa) echo ZAF15v4.tif;;
+        niger)        echo NER15adjv4.tif;;
+        uganda)       echo UGA_ppp_v2b_2015_UNadj.tif;;
         *)
             echo Unknown country $1
             exit 1
@@ -46,10 +48,12 @@ for region in $REGIONS; do
   ID=`echo $region | cut -d \| -f 1`
   COUNTRY=`echo $region | cut -d \| -f 2`
   RASTER=${DATA_PATH}/`base-raster ${COUNTRY}`
+  DATA_URL="https://s3.amazonaws.com/planwise/data"
 
   if [[ ! -e $RASTER ]]; then
     echo " Downloading population file for $COUNTRY"
-    curl -o $RASTER https://s3.amazonaws.com/planwise/data/$(base-raster $COUNTRY)
+    curl -o $RASTER $DATA_URL/$(base-raster $COUNTRY) || (curl $DATA_URL/$(base-raster $COUNTRY).gz | gzip -d > $RASTER)
+    gdaladdo $RASTER -r average 2 4 8 16 32 64
   fi
 
   DATA_TARGET=${DATA_PATH}/populations/data/${ID}.tif

@@ -11,6 +11,8 @@ COUNTRIES="
   ethiopia-20160830
   nigeria-20160830
   south-africa-and-lesotho-20160827
+  niger-20170601
+  uganda-20170601
 "
 
 if [[ -z $COUNTRY ]]; then
