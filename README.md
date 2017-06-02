@@ -47,7 +47,7 @@ Deployment:
 
 The webserver is multi-threaded and there is no lock contention on any
 operation, so it can handle multiple concurrent requests. The PostgreSQL
-database can also handle multiple concurrent connnections. Pre-processing of
+database can also handle multiple concurrent connections. Pre-processing of
 facilities is parallelized to make use of multiple cores, and can be easily
 extended to multiple hosts.
 
@@ -299,6 +299,22 @@ Creating file src/foo/component/baz.clj
 Creating file test/foo/component/baz_test.clj
 nil
 ```
+
+### Importing a new country
+
+1. Download the OpenStreetMap data for the country from http://download.geofabrik.de/index.html (the `.osm.bz2` version) and uncompress it
+1. Copy the extracted `.osm` file to `/tmp/$COUNTRY.osm`
+  1. If you are part of InSTEDD, recompress it as `.gz` and upload it to S3 (`https://s3.amazonws.com/planwise/data/$COUNTRY.osm.gz`) to make it available to others.
+  1. If you are not part of InSTEDD, include a link to download the file in your PR so we can re-upload it
+1. Add the file name to the `COUNTRIES` list in `import-osm`
+1. Download population data file from [WorldPop](http://www.worldpop.org.uk/data/get_data/)
+  1. Search for the country and download its dataset
+  1. Extract it and look for the population `.tif` file
+  1. Copy it to `data/` directory
+    1. Upload it to AWS or another host, zipped as `.gz` to share it
+  1. Add an `elif` branch to fill `POPULATION_FILE` variable in `scripts/isochrone-population`
+  1. Add another `case` branch in `base-raster` function of `scripts/regions-population`
+
 
 ## Deploying
 
