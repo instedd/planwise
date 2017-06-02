@@ -16,6 +16,8 @@ function base-raster {
         ethiopia)     echo ETH15v5.tif;;
         nigeria)      echo NGA14adjv1.tif;;
         south-africa) echo ZAF15v4.tif;;
+        niger)        echo NER15adjv4.tif;;
+        uganda)       echo UGA_ppp_v2b_2015_UNadj.tif;;
         *)
             echo Unknown country $1
             exit 1
