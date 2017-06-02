@@ -37,7 +37,7 @@ then
     echo "File /tmp/$COUNTRY.osm already exists. Will not download again."
 else
     echo "Downloading OSM data for $COUNTRY and importing via osm2pgrouting"
-    curl -XGET https://s3.amazonaws.com/planwise/data/$FILE.osm.gz | gunzip > /tmp/$COUNTRY.osm
+    curl -f -XGET https://s3.amazonaws.com/planwise/data/$FILE.osm.gz | gunzip > /tmp/$COUNTRY.osm
 fi;
 
 

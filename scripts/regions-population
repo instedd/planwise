@@ -52,7 +52,7 @@ for region in $REGIONS; do
 
   if [[ ! -e $RASTER ]]; then
     echo " Downloading population file for $COUNTRY"
-    curl -o $RASTER $DATA_URL/$(base-raster $COUNTRY) || (curl $DATA_URL/$(base-raster $COUNTRY).gz | gzip -d > $RASTER)
+    curl -f -o $RASTER $DATA_URL/$(base-raster $COUNTRY) || (curl -f $DATA_URL/$(base-raster $COUNTRY).gz | gzip -d > $RASTER)
     gdaladdo $RASTER -r average 2 4 8 16 32 64
   fi
 

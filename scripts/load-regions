@@ -11,7 +11,7 @@ DATA_PATH=${DATA_PATH:-data}
 mkdir -p ${DATA_PATH}
 
 if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
-  curl -o ${DATA_PATH}/${COUNTRY}_geojson.tgz https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz
+  curl -f -o ${DATA_PATH}/${COUNTRY}_geojson.tgz https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz
   tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
 fi
 
