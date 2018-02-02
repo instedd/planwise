@@ -142,6 +142,8 @@
 
                    :source-paths ["dev"]
                    :repl-options {:init-ns user
+                                  :host "0.0.0.0"
+                                  :port 47480
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
                    :env {:port "3000"
                          :database-url "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"
