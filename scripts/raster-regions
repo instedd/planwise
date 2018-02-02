@@ -33,7 +33,7 @@ DATA_PATH=${DATA_PATH:-data}
 
 echo "Rasterizing regions"
 mkdir -p ${DATA_PATH}/regions/
-REGIONS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c 'SELECT id, country FROM regions;')"
+REGIONS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c 'SELECT id, country FROM regions;')"
 
 for region in $REGIONS; do
   id=`echo $region | cut -d \| -f 1`
@@ -56,6 +56,6 @@ for region in $REGIONS; do
       -co "NBITS=1" -co "COMPRESS=CCITTFAX4" \
       -tr $resolution \
       -tap \
-      PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" $TARGET
+      PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" $TARGET
   fi;
 done;

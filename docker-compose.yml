@@ -2,40 +2,36 @@ version: '2'
 
 services:
   db:
-    extends:
-      file: docker-compose.base.yml
-      service: db
-
-  web:
-    extends:
-      file: docker-compose.base.yml
-      service: app
-    depends_on:
-      - db
+    image: starefossen/pgrouting:10.1-2.4-2.5
+    environment:
+      POSTGRES_PASSWORD: planwise
+      POSTGRES_USER: planwise
+      POSTGRES_DB: planwise
+    volumes:
+      - db:/var/lib/postgresql/data
     ports:
-      - "3000:3000"
-
-  migrate:
-    extends:
-      file: docker-compose.base.yml
-      service: app
-    depends_on:
-      - db
-    command: /app/scripts/migrate
+      - "5433:5432"
 
   mapcache:
-    image: instedd/planwise-mapserver:kenya-mapcache
-    pid: host
+    image: instedd/planwise-mapserver:mapcache
+    # build: .
+    # dockerfile: Dockerfile.mapcache
+    volumes:
+      - "./mapserver/mapcache.xml:/mapcache/mapcache.xml:ro"
+    links:
+      - mapserver
+    ports:
+      - "5002:80"
 
   mapserver:
-    image: instedd/planwise-mapserver:kenya-mapserver
-    pid: host
-    volumes_from:
-      - mapserver-data
-
-  mapserver-data:
-    image: instedd/planwise-mapserver:kenya-data
-    command: /bin/true
+    image: instedd/planwise-mapserver:mapserver
+    # build: .
+    # dockerfile: Dockerfile.mapserver
+    volumes:
+      - "./data:/data:ro"
+      - "./mapserver/planwise.map:/etc/mapserver/mapserver.map:ro"
+    ports:
+      - "5001:80"
 
 volumes:
   db:

@@ -38,7 +38,7 @@ if [ $# -gt 1 ]; then
   fi
 fi
 
-REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A -c "$REGIONS_QUERY")
+REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "$REGIONS_QUERY")
 echo "Regions to process: $(echo $REGIONS | wc -w | tr -d '[[:space:]]')"
 
 mkdir -p ${DATA_PATH}/populations/data
@@ -68,7 +68,7 @@ for region in $REGIONS; do
       -tr $resolution \
       -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -crop_to_cutline \
-      -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+      -cutline PG:"dbname=${POSTGRES_DB} port=${POSTGRES_PORT} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
       -csql "SELECT the_geom FROM regions WHERE id = ${ID};" \
       $RASTER $DATA_TARGET
 
@@ -98,6 +98,6 @@ for region in $REGIONS; do
   PIXEL_AREA_M2=`gdalinfo $DATA_TARGET | grep PIXEL_AREA_M2 | cut -d = -f2`
 
   echo " Updating population for ${ID}: ${TOTAL_POPULATION}"
-  psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -t -A \
+  psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A \
        -c "UPDATE regions SET total_population = ${TOTAL_POPULATION}, max_population = ${MAX_POPULATION}, raster_pixel_area = ${PIXEL_AREA_M2} WHERE id = ${ID}";
 done;

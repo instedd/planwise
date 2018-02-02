@@ -1,5 +1,6 @@
 (ns planwise.test-system
   (:require [com.stuartsierra.component :as component]
+            [clojure.java.jdbc :as jdbc]
             [planwise.tasks.db :refer [load-sql-functions]]
             [duct.component.ragtime :refer [ragtime migrate rollback]]
             [fixtures.adapters.jdbc :refer [jdbc-adapter]]
@@ -7,11 +8,20 @@
             [meta-merge.core :refer [meta-merge]]
             [environ.core :refer [env]]))
 
+(defn create-osm2pgr-tables
+  [system]
+  (try
+    (let [sql-source (slurp "test/scripts/osm2pgr-tables.sql")]
+      (jdbc/execute! (:spec (:db system)) sql-source))
+    (catch java.sql.SQLException e
+      (throw e))))
+
 ;; Component to run the migrations on the test database automatically
 (defrecord MigrationRunner [db ragtime]
   component/Lifecycle
   (start [component]
     (load-sql-functions component)
+    (create-osm2pgr-tables component)
     (migrate (:ragtime component))
     component)
   (stop [component]

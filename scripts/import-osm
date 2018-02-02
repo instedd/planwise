@@ -41,7 +41,7 @@ else
 fi;
 
 
-${OSM2PGROUTING} -f /tmp/$COUNTRY.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST
+${OSM2PGROUTING} -f /tmp/$COUNTRY.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.xml -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT
 
 
 # Apply some post-processing:
@@ -59,7 +59,7 @@ ${OSM2PGROUTING} -f /tmp/$COUNTRY.osm -c $(dirname "${BASH_SOURCE}")/mapconfig.x
 # before calculating facility isochrones. See `bounding_radius_meters` in the `calculate_isochrones`
 # function.
 echo "Post-processing OSM information:"
-psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
+psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 SELECT populate_ways_nodes();
 SELECT pgr_analyzeGraph('ways', 0.001, 'the_geom', 'gid');
 SELECT fixpoint_connect_isolated_segments(5000);

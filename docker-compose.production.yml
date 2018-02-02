@@ -1,0 +1,41 @@
+version: '2'
+
+services:
+  db:
+    extends:
+      file: docker-compose.base.yml
+      service: db
+
+  web:
+    extends:
+      file: docker-compose.base.yml
+      service: app
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+
+  migrate:
+    extends:
+      file: docker-compose.base.yml
+      service: app
+    depends_on:
+      - db
+    command: /app/scripts/migrate
+
+  mapcache:
+    image: instedd/planwise-mapserver:kenya-mapcache
+    pid: host
+
+  mapserver:
+    image: instedd/planwise-mapserver:kenya-mapserver
+    pid: host
+    volumes_from:
+      - mapserver-data
+
+  mapserver-data:
+    image: instedd/planwise-mapserver:kenya-data
+    command: /bin/true
+
+volumes:
+  db:

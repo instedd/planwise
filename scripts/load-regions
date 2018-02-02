@@ -19,7 +19,7 @@ IFS=',';
 for i in $LEVELS; do
 FILE=${DATA_PATH}/${COUNTRY}/admin_level_${i}.geojson
 echo " Processing $FILE"
-psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
+psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 
   WITH data AS (SELECT \$$`cat $FILE`\$$::json AS fc)
   INSERT INTO "regions" (country, name, admin_level, the_geom)
@@ -38,7 +38,7 @@ done;
 
 echo
 echo "Calculating geometry previews"
-psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST << SQL_SCRIPT
+psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
   SELECT calculate_regions_previews();
 SQL_SCRIPT
 

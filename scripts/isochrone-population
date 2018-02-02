@@ -37,7 +37,7 @@ fi;
 VRT_TARGET=${TMP_PATH}/${FACILITY_POLYGON_ID}.vrt
 gdalwarp -q \
   -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
-  -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+  -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
   -csql "SELECT the_geom FROM facilities_polygons WHERE id = ${FACILITY_POLYGON_ID};" \
   -crop_to_cutline \
   -of VRT \

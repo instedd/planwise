@@ -98,23 +98,44 @@ $ lein setup
 This will create files for local configuration, and prep your system
 for the project.
 
+*Warning*: This will overwrite existing files if they are present.
+
+### Docker development containers
+
+Start the Docker compose stack defined in `docker-compose.yml`
+
+```sh
+$ docker-compose up
+```
+
+This will start the PostgreSQL/PostGIS database and the MapServer/MapCache
+containers.
+
 ### Environment
 
 The following environment variables are used by the project scripts, and it is
 suggested to set them before starting development:
+
 ```
 export RASTER_ISOCHRONES=false
 export CALCULATE_DEMAND=false
-export DATABASE_URL="jdbc:postgresql://localhost/routing?user=USERNAME"
 export POSTGRES_PASSWORD=""
 export POSTGRES_USER=USERNAME
-export POSTGRES_DB=routing
+export POSTGRES_DB=planwise-dev
 export POSTGRES_HOST=localhost
+
+# These are used by the Clojure components
+export DATABASE_URL="jdbc:postgresql://localhost/planwise-dev?user=USERNAME"
+export PORT=3000
 ```
+
+Default values are set in the file `env` or the default configuration in
+`project.clj`, which will refer to the database in the Docker container.
 
 Additionally, the project requires [GUISSO](https://github.com/instedd/guisso)
 information (identifier and secret) to establish the OAuth flow with resourcemap.
 Register your development host in GUISSO, and set the env vars:
+
 ```
 export GUISSO_CLIENT_ID=YOURID
 export GUISSO_CLIENT_SECRET=YOURSECRET
@@ -130,55 +151,57 @@ local `profiles.clj`:
 
 ### GDAL
 
-Certain processing scripts rely on GDAL binaries for processing, with PostgreSQL support. Install it with:
+Certain processing scripts rely on GDAL binaries for processing, with PostgreSQL
+support. Install it with:
+
 ```bash
 $ brew install gdal --with-postgresql
 ```
 
 ### Database
 
-The database engine is PostgreSQL, using PostGIS and pgRouting. Install them via:
-```bash
-$ brew install postgresql postgis pgrouting
-```
+The database engine is PostgreSQL, using PostGIS and pgRouting. It is included
+in the default Docker compose file.
 
-Tested versions at the time of this writing are:
+Database schema is managed through migrations via
+[ragtime](https://github.com/duct-framework/duct-ragtime-component). Lein tasks
+`lein migrate` and `lein rollback` can be issued for managing the DB schema, or
+`(migrate (:ragtime system))` from the repl.
 
-* PostgreSQL: 9.5.2
-* PostGIS: 2.2.2
-* pgRouting: 2.2.1
+Migration files are located in `resources/migrations`, and follow the
+`NUM-name.(up|down).sql` naming convention, where `NUM` is a 3-digit incremental
+ID. Additionally, SQL functions located in `resources/planwise/plpgsql` are
+regenerated on every `lein migrate`, or can be manually loaded from the REPL by
+running `(load-sql)`.
 
-Database schema is managed through migrations via [ragtime](https://github.com/duct-framework/duct-ragtime-component). Lein tasks `lein migrate` and `lein rollback` can be issued for managing the DB schema, or `(migrate (:ragtime system))` from the repl.
+To proceed with the setup of your development environment, after starting up
+docker compose, run the database migrations to install the needed extensions and
+schema:
 
-Migration files are located in `resources/migrations`, and follow the `NUM-name.(up|down).sql` naming convention, where `NUM` is a 3-digit incremental ID. Additionally, SQL functions located in `resources/planwise/plpgsql` are regenerated on every `lein migrate`, or can be manually loaded from the REPL by running `(load-sql)`.
-
-To proceed with the setup of your development environment, after installing PostgreSQL and the required extensions, create a database:
-```bash
-$ createdb routing
-```
-
-Configure the connection URL in your `profiles.clj`:
-```clojure
-;; Local profile overrides
-{:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"}}}
-```
-
-Run the database migrations to install the needed extensions and schema:
 ```bash
 $ lein migrate
 ```
 
-As a one-time task, to seed your database with routing information from OSM, run the following script to import routing information from any of the supported countries:
+As a *one-time task*, to seed your database with routing information from OSM, run
+the following script to import routing information from any of the supported
+countries:
+
 ```bash
 $ scripts/import-osm osx/osm2pgrouting kenya
 ```
 
 Finally load regions as follows:
+
 ```bash
 $ scripts/load-regions kenya
 ```
 
-The `import-osm` script will download the OSM dump and import it via osm2pgrouting. Note that the binary in the `osx` folder of the repository was compiled for OSX, and was generated from [a fork](https://github.com/ggiraldez/osm2pgrouting) of the project. It can be rebuilt by running:
+The `import-osm` script will download the OSM dump and import it via
+osm2pgrouting. Note that the binary in the `osx` folder of the repository was
+compiled for OSX, and was generated from [a
+fork](https://github.com/ggiraldez/osm2pgrouting) of the project. It can be
+rebuilt by running:
+
 ```bash
 $ git clone https://github.com/ggiraldez/osm2pgrouting
 $ cd osm2pgRouting
@@ -188,11 +211,15 @@ $ cd build
 $ make
 ```
 
-The `load-regions` script will download regions from a Mapzen data dump extracted from OSM, load them into the DB, and optionally preprocess them.
+The `load-regions` script will download regions from a Mapzen data dump
+extracted from OSM, load them into the DB, and optionally preprocess them.
 
 ### Mapserver
 
-Start mapserver and mapcache containers for development by running `docker-compose up` in the `mapserver` folder, after downloading file `KEN_popmap15_v2b.tif` from [worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group), and placing it in the `data` folder. Refer to the README in that folder for more information.
+The mapserver and mapcache containers for development will use the map data in
+the `data` folder. Download `KEN_popmap15_v2b.tif` from
+[worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group),
+and place it there. Refer to the README in that folder for more information.
 
 ### REPL
 
@@ -246,25 +273,16 @@ cljs.user=>
 
 ### Testing
 
-Running the tests require a separate scratch database. No setup is necessary
-beyond creation though, as the migrations are executed automatically upon
-running the tests.
+Running the tests require a separate scratch database.
 
 ```bash
-$ createdb routing-test
+$ docker-compose exec db createdb planwise-test
 ```
 
-And add the connection configuration in the test-database-url configuration in
-your `profiles.clj`:
+The connection configuration is the key `:test-database-url` configuration in
+`project.clj`/`profiles.clj`.
 
-```clojure
-;; Local profile overrides
-{:profiles/dev  {:env {:database-url "jdbc:postgresql://localhost/routing"
-                       :test-database-url "jdbc:postgresql://localhost/routing-test"}}}
-```
-
-Testing is fastest through the REPL, as you avoid environment startup
-time.
+Testing is fastest through the REPL, as you avoid environment startup time.
 
 ```clojure
 dev=> (test)
@@ -302,25 +320,36 @@ nil
 
 ### Importing a new country
 
-1. Download the OpenStreetMap data for the country from http://download.geofabrik.de/index.html (the `.osm.bz2` version) and uncompress it
+1. Download the OpenStreetMap data for the country from
+   http://download.geofabrik.de/index.html (the `.osm.bz2` version) and
+   uncompress it
 1. Copy the extracted `.osm` file to `/tmp/$COUNTRY.osm`
-  1. If you are part of InSTEDD, recompress it as `.gz` and upload it to S3 (`https://s3.amazonws.com/planwise/data/$COUNTRY.osm.gz`) to make it available to others.
-  1. If you are not part of InSTEDD, include a link to download the file in your PR so we can re-upload it
+  1. If you are part of InSTEDD, recompress it as `.gz` and upload it to S3
+     (`https://s3.amazonws.com/planwise/data/$COUNTRY.osm.gz`) to make it
+     available to others.
+  1. If you are not part of InSTEDD, include a link to download the file in your
+     PR so we can re-upload it
 1. Add the file name to the `COUNTRIES` list in `import-osm`
-1. Download population data file from [WorldPop](http://www.worldpop.org.uk/data/get_data/)
+1. Download population data file from
+   [WorldPop](http://www.worldpop.org.uk/data/get_data/)
   1. Search for the country and download its dataset
   1. Extract it and look for the population `.tif` file
   1. Copy it to `data/` directory
     1. Upload it to AWS or another host, zipped as `.gz` to share it
-  1. Add an `elif` branch to fill `POPULATION_FILE` variable in `scripts/isochrone-population`
-  1. Add another `case` branch in `base-raster` function of `scripts/regions-population`
+  1. Add an `elif` branch to fill `POPULATION_FILE` variable in
+     `scripts/isochrone-population`
+  1. Add another `case` branch in `base-raster` function of
+     `scripts/regions-population`
 
 
 ## Deploying
 
-Sample files for docker cloud and docker compose are provided in the root folder, which make use of the project's [Docker image](https://hub.docker.com/r/instedd/planwise/).
+Sample files for docker cloud and docker compose are provided in the root
+folder, which make use of the project's [Docker
+image](https://hub.docker.com/r/instedd/planwise/).
 
-After setting up the stack, DB data can be provisioned by running the scripts described in the _Database_ section of this document.
+After setting up the stack, DB data can be provisioned by running the scripts
+described in the _Database_ section of this document.
 
 ## Running with docker
 
@@ -328,9 +357,12 @@ There is a set of docker-compose files for locally running the application; one
 of them used for a first-time setup of the database, and other for regularly
 running the application.
 
-1. Create `.docker-env` file with GUISSO_CLIENT_SECRET and GUISSO_CLIENT_ID env vars, after registering your app in [GUISSO](https://github.com/instedd/guisso)
+1. Create `.docker-env` file with `GUISSO_CLIENT_SECRET` and `GUISSO_CLIENT_ID`
+   env vars, after registering your app in
+   [GUISSO](https://github.com/instedd/guisso)
 2. Run `docker-compose -f docker-compose.setup.yml up` to set up the environment
-3. After `planwise_setup_1` exits successfully, run `docker-compose up` to start the app in port 3000
+3. After `planwise_setup_1` exits successfully, run `docker-compose up` to start
+   the app in port 3000
 
 ## Legal
 
