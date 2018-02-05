@@ -77,30 +77,13 @@ datasets from [WorldPop](http://www.worldpop.org.uk/).
 
 ## Developing
 
-Instructions for setting up a development environment, focused on OSX.
+Instructions for setting up a development environment using Docker.
 
-### Setup
-
-You need to have [Leiningen](http://leiningen.org) and the
-[SASS compiler](https://github.com/sass/sassc) installed. In Mac OSX using
-Homebrew, just run:
+Build the required Docker images:
 
 ```sh
-$ brew install leiningen sassc
+$ docker-compose build
 ```
-
-When you first clone this repository, run:
-
-```sh
-$ lein setup
-```
-
-This will create files for local configuration, and prep your system
-for the project.
-
-*Warning*: This will overwrite existing files if they are present.
-
-### Docker development containers
 
 Start the Docker compose stack defined in `docker-compose.yml`
 
@@ -108,8 +91,73 @@ Start the Docker compose stack defined in `docker-compose.yml`
 $ docker-compose up
 ```
 
-This will start the PostgreSQL/PostGIS database and the MapServer/MapCache
-containers.
+This will start the PostgreSQL/PostGIS database, the MapServer/MapCache
+containers and a headless nREPL container.
+
+
+### Mapserver
+
+The mapserver and mapcache containers for development will use the map data in
+the `data` folder. Download `KEN_popmap15_v2b.tif` from
+[worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group),
+and place it there. Refer to the README in the `mapserver` folder for more information.
+
+
+### Bootstrap the map data
+
+Run inside the `app` container:
+
+```sh
+$ docker-compose exec app bash
+app$ scripts/bootstrap-dev.sh
+```
+
+### Configure Guisso credentials
+
+Additionally, the project requires [GUISSO](https://github.com/instedd/guisso)
+information (identifier and secret) to establish the OAuth flow with resourcemap.
+Register your development host in GUISSO, and set the environment variables in
+a `docker-compose.override.yml`:
+
+```
+version: '2'
+
+services:
+  app:
+    environment:
+      - GUISSO_CLIENT_ID=YOURID
+      - GUISSO_CLIENT_SECRET=YOURSECRET
+```
+
+Or you can set these values in the local `profiles.clj`, which is more useful if
+you plan to run the application outside Docker (see below):
+
+```clojure
+{:profiles/dev  {:env {:guisso-url "https://login.instedd.org/"
+                       :guisso-client-id "YOURID"
+                       :guisso-client-secret "YOURSECRET"}}}
+```
+
+## Extra steps for running the application outside Docker
+
+To avoid Docker from starting Leiningen, put in your
+`docker-compose.override.yml` the following configuration:
+
+```
+version: '2'
+
+services:
+  app:
+    command: /bin/true
+```
+
+You need to have [Leiningen](http://leiningen.org) and the [SASS
+compiler](https://github.com/sass/sassc) installed. In Mac OSX using Homebrew,
+just run:
+
+```sh
+$ brew install leiningen sassc
+```
 
 ### Environment
 
@@ -119,34 +167,17 @@ suggested to set them before starting development:
 ```
 export RASTER_ISOCHRONES=false
 export CALCULATE_DEMAND=false
-export POSTGRES_PASSWORD=""
-export POSTGRES_USER=USERNAME
-export POSTGRES_DB=planwise-dev
+export POSTGRES_PASSWORD="planwise"
+export POSTGRES_USER=planwise
+export POSTGRES_DB=planwise
 export POSTGRES_HOST=localhost
-
-# These are used by the Clojure components
-export DATABASE_URL="jdbc:postgresql://localhost/planwise-dev?user=USERNAME"
-export PORT=3000
+export POSTGRES_PORT=5433
 ```
 
-Default values are set in the file `env` or the default configuration in
-`project.clj`, which will refer to the database in the Docker container.
+Default values are set in the file `env`, so you can simply run:
 
-Additionally, the project requires [GUISSO](https://github.com/instedd/guisso)
-information (identifier and secret) to establish the OAuth flow with resourcemap.
-Register your development host in GUISSO, and set the env vars:
-
-```
-export GUISSO_CLIENT_ID=YOURID
-export GUISSO_CLIENT_SECRET=YOURSECRET
-```
-
-Instead of controlling them via env vars, you can set these values in the
-local `profiles.clj`:
-```clojure
-{:profiles/dev  {:env {:guisso-url "https://login.instedd.org/"
-                       :guisso-client-id "YOURID"
-                       :guisso-client-secret "YOURSECRET"}}}
+```sh 
+$ source ./env
 ```
 
 ### GDAL
@@ -157,6 +188,66 @@ support. Install it with:
 ```bash
 $ brew install gdal --with-postgresql
 ```
+
+### Binaries
+
+The application has some C++ binaries which are run in the context of the
+application. You'll need to compile these:
+
+```sh 
+$ cd cpp
+$ make clean all
+```
+
+## Development workflow with the REPL
+
+Connect to the running REPL inside the Docker container from your editor/IDE or
+from the command line:
+
+```
+$ lein repl :connect
+```
+
+Or, if running outside Docker, start up the REPL.
+
+Load the development namespace and start the system:
+
+```clojure
+user=> (dev)
+:loaded
+dev=> (go)
+```
+
+By default this creates a web server at <http://localhost:3000>. Note that
+these 3 commands are ran when invoking `scripts/dev`.
+
+When you make changes to your source files, use `reset` to reload any
+modified files and reset the server. Changes to CSS or ClojureScript
+files will be hot-loaded into the browser.
+
+```clojure
+dev=> (reset)
+:reloading (...)
+:resumed
+```
+
+By default, changes to SASS or Clojurescript files will trigger a reload
+automatically. You can change that behaviour by disabling the auto-builder in
+`dev/dev.clj` (see the `:auto` component in `new-system`).
+
+If you want to access a ClojureScript REPL, make sure that the site is loaded
+in a browser and run:
+
+```clojure
+dev=> (cljs-repl)
+Waiting for browser connection... Connected.
+To quit, type: :cljs/quit
+nil
+cljs.user=>
+```
+
+
+## Further configuration information
 
 ### Database
 
@@ -182,8 +273,8 @@ schema:
 $ lein migrate
 ```
 
-As a *one-time task*, to seed your database with routing information from OSM, run
-the following script to import routing information from any of the supported
+As a *one-time task*, to seed your database with routing information from OSM,
+run the following script to import routing information from any of the supported
 countries:
 
 ```bash
@@ -214,62 +305,6 @@ $ make
 The `load-regions` script will download regions from a Mapzen data dump
 extracted from OSM, load them into the DB, and optionally preprocess them.
 
-### Mapserver
-
-The mapserver and mapcache containers for development will use the map data in
-the `data` folder. Download `KEN_popmap15_v2b.tif` from
-[worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group),
-and place it there. Refer to the README in that folder for more information.
-
-### REPL
-
-To begin developing, start with a REPL.
-
-```sh
-$ lein repl
-```
-
-Then load the development environment.
-
-```clojure
-user=> (dev)
-:loaded
-```
-
-Run `go` to initiate and start the system.
-
-```clojure
-dev=> (go)
-:started
-```
-
-By default this creates a web server at <http://localhost:3000>. Note that
-these 3 commands are ran when invoking `scripts/dev`.
-
-When you make changes to your source files, use `reset` to reload any
-modified files and reset the server. Changes to CSS or ClojureScript
-files will be hot-loaded into the browser.
-
-```clojure
-dev=> (reset)
-:reloading (...)
-:resumed
-```
-
-By default, changes to SASS or Clojurescript files will trigger a reload
-automatically. You can change that behaviour by disabling the auto-builder in
-`dev/dev.clj` (see the `:auto` component in `new-system`).
-
-If you want to access a ClojureScript REPL, make sure that the site is loaded
-in a browser and run:
-
-```clojure
-dev=> (cljs-repl)
-Waiting for browser connection... Connected.
-To quit, type: :cljs/quit
-nil
-cljs.user=>
-```
 
 ### Testing
 
@@ -351,18 +386,6 @@ image](https://hub.docker.com/r/instedd/planwise/).
 After setting up the stack, DB data can be provisioned by running the scripts
 described in the _Database_ section of this document.
 
-## Running with docker
-
-There is a set of docker-compose files for locally running the application; one
-of them used for a first-time setup of the database, and other for regularly
-running the application.
-
-1. Create `.docker-env` file with `GUISSO_CLIENT_SECRET` and `GUISSO_CLIENT_ID`
-   env vars, after registering your app in
-   [GUISSO](https://github.com/instedd/guisso)
-2. Run `docker-compose -f docker-compose.setup.yml up` to set up the environment
-3. After `planwise_setup_1` exits successfully, run `docker-compose up` to start
-   the app in port 3000
 
 ## Legal
 
