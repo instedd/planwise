@@ -7,12 +7,20 @@ services:
       context: .
     volumes:
       - ".:/app"
-      - "~/.m2:/root/.m2"
+      # - "~/.m2:/root/.m2"
+      - m2:/root/.m2
+      - "~/.lein:/root/.lein"
     links:
       - db
     environment:
       DATABASE_URL: "jdbc:postgresql://db/planwise?user=planwise&password=planwise"
       TEST_DATABASE_URL: "jdbc:postgresql://db/planwise?user=planwise&password=planwise"
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: planwise
+      POSTGRES_PASSWORD: planwise
+      POSTGRES_DB: planwise
+      RASTER_ISOCHRONES: 'yes'
     command: "lein repl :headless"
     ports:
       - "47480:47480"
@@ -53,3 +61,4 @@ services:
 
 volumes:
   db:
+  m2:

@@ -44,6 +44,6 @@ SQL_SCRIPT
 
 $(dirname "${BASH_SOURCE}")/regions-population
 
-if [[ $RASTER_ISOCHRONES != "false" ]]; then
+if [[ "${RASTER_ISOCHRONES}" != "false" ]]; then
   $(dirname "${BASH_SOURCE}")/raster-regions
 fi

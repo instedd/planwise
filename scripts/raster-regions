@@ -52,7 +52,7 @@ for region in $REGIONS; do
   if [[ ! -e $TARGET ]]; then
     gdal_rasterize -q -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -ot byte -a_nodata 0 -burn 255 \
-      -sql "SELECT the_geom FROM regions WHERE id = ${id};" \
+      -sql "SELECT the_geom FROM regions WHERE id = ${id}" \
       -co "NBITS=1" -co "COMPRESS=CCITTFAX4" \
       -tr $resolution \
       -tap \
