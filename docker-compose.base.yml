@@ -4,9 +4,7 @@ services:
   app:
     image: instedd/planwise:latest
     environment:
-      DEMO_TILE_URL: "http://mapcache/mapcache/gmaps/kenya@GoogleMapsCompatible/{z}/{x}/{y}.png"
       DATA_PATH: /app/data
-      JAR_PATH: /app/lib/planwise-0.5.0-SNAPSHOT-standalone.jar
       DATABASE_URL: "jdbc:postgresql://db/routing?user=planwise&password=planwise"
       POSTGRES_PASSWORD: planwise
       POSTGRES_USER: planwise

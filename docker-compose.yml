@@ -1,41 +1,64 @@
 version: '2'
 
 services:
-  db:
-    extends:
-      file: docker-compose.base.yml
-      service: db
-
-  web:
-    extends:
-      file: docker-compose.base.yml
-      service: app
-    depends_on:
+  app:
+    build:
+      dockerfile: Dockerfile-dev
+      context: .
+    volumes:
+      - ".:/app"
+      # - "~/.m2:/root/.m2"
+      - m2:/root/.m2
+      - "~/.lein:/root/.lein"
+    links:
       - db
+    environment:
+      DATABASE_URL: "jdbc:postgresql://db/planwise?user=planwise&password=planwise"
+      TEST_DATABASE_URL: "jdbc:postgresql://db/planwise?user=planwise&password=planwise"
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: planwise
+      POSTGRES_PASSWORD: planwise
+      POSTGRES_DB: planwise
+      RASTER_ISOCHRONES: 'yes'
+    command: "lein repl :headless"
     ports:
+      - "47480:47480"
       - "3000:3000"
+      - "3449:3449"
 
-  migrate:
-    extends:
-      file: docker-compose.base.yml
-      service: app
-    depends_on:
-      - db
-    command: /app/scripts/migrate
+  db:
+    image: starefossen/pgrouting:10.1-2.4-2.5
+    environment:
+      POSTGRES_PASSWORD: planwise
+      POSTGRES_USER: planwise
+      POSTGRES_DB: planwise
+    volumes:
+      - db:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
 
   mapcache:
-    image: instedd/planwise-mapserver:kenya-mapcache
-    pid: host
+    image: instedd/planwise-mapserver:mapcache
+    # build: .
+    # dockerfile: Dockerfile.mapcache
+    volumes:
+      - "./mapserver/mapcache.xml:/mapcache/mapcache.xml:ro"
+    links:
+      - mapserver
+    ports:
+      - "5002:80"
 
   mapserver:
-    image: instedd/planwise-mapserver:kenya-mapserver
-    pid: host
-    volumes_from:
-      - mapserver-data
-
-  mapserver-data:
-    image: instedd/planwise-mapserver:kenya-data
-    command: /bin/true
+    image: instedd/planwise-mapserver:mapserver
+    # build: .
+    # dockerfile: Dockerfile.mapserver
+    volumes:
+      - "./data:/data:ro"
+      - "./mapserver/planwise.map:/etc/mapserver/mapserver.map:ro"
+    ports:
+      - "5001:80"
 
 volumes:
   db:
+  m2:

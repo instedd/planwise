@@ -1,0 +1,9 @@
+#!/bin/sh
+
+export POSTGRES_HOST=localhost
+export POSTGRES_PORT=5433
+export POSTGRES_USER=planwise
+export POSTGRES_PASSWORD=planwise
+export POSTGRES_DB=planwise
+export RASTER_ISOCHRONES=true
+

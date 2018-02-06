@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pgrouting;
+
 CREATE OR REPLACE FUNCTION insert_way (class_id integer, speed integer, source bigint, target bigint)
 RETURNS integer AS $$
 DECLARE
