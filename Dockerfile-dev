@@ -2,7 +2,8 @@ FROM clojure:lein-2.8.1
 
 RUN apt update && \
     apt install -y sassc build-essential libboost-program-options-dev libpq-dev \
-                   libgdal-dev postgresql-client libpq-dev gdal-bin python-gdal
+                   libgdal-dev postgresql-client libpq-dev gdal-bin python-gdal \
+                   osm2pgrouting
 
 WORKDIR /app
 

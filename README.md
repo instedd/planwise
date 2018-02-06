@@ -274,32 +274,13 @@ $ lein migrate
 ```
 
 As a *one-time task*, to seed your database with routing information from OSM,
-run the following script to import routing information from any of the supported
-countries:
+run the following scripts to import routing information from any of the
+supported countries, using the provided application container:
 
 ```bash
-$ scripts/import-osm osx/osm2pgrouting kenya
-```
-
-Finally load regions as follows:
-
-```bash
-$ scripts/load-regions kenya
-```
-
-The `import-osm` script will download the OSM dump and import it via
-osm2pgrouting. Note that the binary in the `osx` folder of the repository was
-compiled for OSX, and was generated from [a
-fork](https://github.com/ggiraldez/osm2pgrouting) of the project. It can be
-rebuilt by running:
-
-```bash
-$ git clone https://github.com/ggiraldez/osm2pgrouting
-$ cd osm2pgRouting
-$ git checkout develop
-$ cmake -H. -Bbuild
-$ cd build
-$ make
+$ docker-compose run app bash
+app$ scripts/import-osm osm2pgrouting kenya
+app$ scripts/load-regions kenya
 ```
 
 The `load-regions` script will download regions from a Mapzen data dump
