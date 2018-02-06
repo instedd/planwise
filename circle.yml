@@ -22,7 +22,6 @@ dependencies:
 test:
   override:
     - createdb test
-    - psql -f scripts/osm2pgr-tables.sql test
     - TEST_DATABASE_URL=jdbc:postgresql://localhost/test lein test
 
 deployment:
