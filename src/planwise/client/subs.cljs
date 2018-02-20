@@ -3,6 +3,7 @@
             [planwise.client.projects.subs]
             [planwise.client.current-project.subs]
             [planwise.client.datasets.subs]
+            [planwise.client.analyses.subs]
             [planwise.client.regions.subs]))
 
 

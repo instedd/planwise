@@ -1,6 +1,7 @@
 (ns planwise.client.db
   (:require [planwise.client.datasets.db :as datasets]
             [planwise.client.projects.db :as projects]
+            [planwise.client.analyses.db :as analyses]
             [planwise.client.current-project.db :as current-project]))
 
 (def initial-db
@@ -19,4 +20,7 @@
    :regions             {}
 
    ;; Datasets
-   :datasets            datasets/initial-db})
+   :datasets            datasets/initial-db
+
+   ;; Analyses
+   :analyses            analyses/initial-db})

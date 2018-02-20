@@ -74,6 +74,7 @@
     (routes
      (GET "/" [] loading-page)
      (GET "/datasets" [] loading-page)
+     (GET "/analyses" [] loading-page)
      (context "/projects/:id" []
        (GET "/" [] loading-page)
        (GET "/facilities" [] loading-page)

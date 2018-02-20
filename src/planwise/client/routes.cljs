@@ -20,3 +20,5 @@
   (dispatch [:navigate {:page :projects, :id id, :section :access, :token token}]))
 (defroute datasets "/datasets" []
   (dispatch [:navigate {:page :datasets}]))
+(defroute analyses "/analyses" []
+  (dispatch [:navigate {:page :analyses}]))

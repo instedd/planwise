@@ -37,6 +37,7 @@
             [planwise.component.regions :refer [regions-service]]
             [planwise.component.mailer :refer [mailer-service]]
             [planwise.component.users :refer [users-store]]
+            [planwise.component.analyses :refer [analyses-store]]
             [planwise.component.resmap :refer [resmap-client]]
             [planwise.component.importer :refer [importer]]
             [planwise.component.maps :refer [maps-service]]
@@ -51,6 +52,7 @@
             [planwise.endpoint.routing :refer [routing-endpoint]]
             [planwise.endpoint.monitor :refer [monitor-endpoint]]
             [planwise.endpoint.datasets :refer [datasets-endpoint]]
+            [planwise.endpoint.analyses :refer [analyses-endpoint]]
             [planwise.endpoint.resmap-auth :refer [resmap-auth-endpoint]]))
 
 (timbre/refer-timbre)
@@ -177,6 +179,7 @@
          :regions             (regions-service)
          :routing             (routing-service)
          :users-store         (users-store)
+         :analyses-store      (analyses-store)
          :resmap              (resmap-client (:resmap config))
          :importer            (importer (meta-merge (:importer config)
                                                     (select-keys (:maps config) [:facilities-capacity])))
@@ -193,6 +196,7 @@
          :routing-endpoint    (endpoint-component routing-endpoint)
          :monitor-endpoint    (endpoint-component monitor-endpoint)
          :datasets-endpoint   (endpoint-component datasets-endpoint)
+         :analyses-endpoint   (endpoint-component analyses-endpoint)
          :resmap-auth-endpoint (endpoint-component resmap-auth-endpoint))
 
         (component/system-using
@@ -209,6 +213,7 @@
                                 :regions-endpoint
                                 :projects-endpoint
                                 :routing-endpoint
+                                :analyses-endpoint
                                 :datasets-endpoint]
           :app                 [:home-endpoint
                                 :auth-endpoint
@@ -225,6 +230,7 @@
           :regions             [:db]
           :routing             [:db]
           :users-store         [:db]
+          :analyses-store      [:db]
           :auth                [:users-store]
           :resmap              [:auth]
           :datasets            [:db]
@@ -242,6 +248,7 @@
           :facilities-endpoint [:facilities
                                 :maps]
           :regions-endpoint    [:regions]
+          :analyses-endpoint   [:analyses-store]
           :projects-endpoint   [:projects
                                 :facilities
                                 :maps]
