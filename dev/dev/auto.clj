@@ -3,7 +3,7 @@
             [hawk.core :as hawk]
             [clojure.java.io :as io]
             [figwheel-sidecar.components.cljs-autobuild :as fig-auto]
-            [duct.component.figwheel :as figwheel]
+            [dev.figwheel :as figwheel]
             [dev.sass :as sass]))
 
 (defn compute-css-paths [sass]
@@ -13,7 +13,7 @@
     [path]))
 
 (defn compute-cljs-paths [figwheel]
-  (mapcat fig-auto/source-paths-that-affect-build (:builds figwheel)))
+  (mapcat fig-auto/source-paths-that-affect-build (:prepped figwheel)))
 
 (defrecord AutoBuilder [enabled figwheel sass]
 
@@ -34,6 +34,8 @@
                                             (figwheel/build-cljs figwheel)
                                             ctx)}])]
         (println "Starting auto builder")
+        (println "Watching paths for CLJS:" cljs-paths)
+        (println "Watching paths for CSS:" css-paths)
         (assoc component
                :watch watch))
       component))

@@ -13,9 +13,7 @@
                     :type "checkbox"
                     :disabled disabled
                     :id elt-id
-                    :value value
-                    :checked checked)]]))
-
+                    :checked (not (nil? checked)))]]))
 
 (defn filter-checkboxes [{:keys [options value disabled toggle-fn decoration-fn]}]
   (let [value (set value)]

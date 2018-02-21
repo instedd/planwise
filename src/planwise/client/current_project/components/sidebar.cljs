@@ -80,7 +80,7 @@
           (if @read-only?
            [:p "Facilities used to calculate the existing coverage."]
            [:p "Select the types of facility to include in your analysis. We will use those to calculate the existing coverage."])
-          [:p
+          [:div
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
            [progress-bar/progress-bar filter-count filter-total]]
@@ -132,7 +132,7 @@
         (when (calculate-demand-for-admin-level? (:region-admin-level @current-project))
          (let [satisfied (or @satisfied-demand 0)
                total (:region-population @current-project)]
-          [:p
+          [:div
            [:div.small "With access / Total Population"]
            [:div (str (utils/format-number satisfied) " / " (utils/format-number total))]
            [progress-bar/progress-bar satisfied total]

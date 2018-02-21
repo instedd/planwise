@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [test])
   (:require [duct.generate :as gen]
             [eftest.runner :as eftest]
-            [duct.component.figwheel :as figwheel]
+            [dev.figwheel :as figwheel]
             [dev.sass :as sass]
             [reloaded.repl :refer [system]]
             [planwise.tasks.db :refer [load-sql-functions]]))
