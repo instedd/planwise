@@ -1,7 +1,6 @@
 (ns planwise.client.api
   (:require [ajax.core :refer [GET DELETE to-interceptor default-interceptors]]
-            [re-frame.utils :as c]
-            [re-frame.core :refer [dispatch]]
+            [re-frame.core :refer [dispatch console]]
             [clojure.string :as string]
             [planwise.client.config :as config]))
 
@@ -34,10 +33,10 @@
 ;; Common request definitions to use with ajax requests
 
 (defn default-error-handler [{:keys [status status-text]}]
-  (c/error (str "Error " status " performing AJAX request: " status-text)))
+  (console :error "Error " status " performing AJAX request: " status-text))
 
 (defn default-success-handler [data]
-  (c/log "API response: " data))
+  (console :log "API response: " data))
 
 (defn wrap-handler [callback default]
   (cond
@@ -45,7 +44,7 @@
     (nil? callback) default
     (keyword? callback) #(dispatch [callback %])
     :else (do
-            (c/error "Invalid handler " callback)
+            (console :error "Invalid handler " callback)
             default)))
 
 (defn raw-request [params [success-fn error-fn] & {:keys [mapper-fn], :or {mapper-fn identity}}]

@@ -50,8 +50,8 @@
                   :exclusions [org.clojure/tools.reader]]
                  [reagent-forms "0.5.36"]
                  [reagent-utils "0.3.0"]
-                 [re-frame "0.7.0"]
-                 [re-com "0.8.3"]
+                 [re-frame "0.10.5"]
+                 [re-com "0.9.0"]
                  [cljs-ajax "0.7.3"
                   :exclusions [commons-codec]]
                  [secretary "1.2.3"]

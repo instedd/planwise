@@ -1,6 +1,5 @@
 (ns planwise.client.datasets.handlers
-  (:require [re-frame.core :refer [register-handler path dispatch]]
-            [re-frame.utils :as c]
+  (:require [re-frame.core :refer [register-handler path dispatch console]]
             [clojure.string :refer [blank?]]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [remove-by-id]]
@@ -58,7 +57,7 @@
  :datasets/cancel-import!
  in-datasets
  (fn [db [_ dataset-id]]
-   (c/log (str "Cancelling collection import for dataset " dataset-id))
+   (console :log "Cancelling collection import for dataset " dataset-id)
    (api/cancel-import! dataset-id :datasets/datasets-loaded)
    db))
 
@@ -138,7 +137,7 @@
  :datasets/create-failed
  in-datasets
  (fn [db [_ error-info]]
-   (c/error (str "Dataset creation failed: " error-info))
+   (console :error "Dataset creation failed: " error-info)
    (assoc db :state :list)))
 
 ;; ----------------------------------------------------------------------------
