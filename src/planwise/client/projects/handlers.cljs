@@ -1,6 +1,5 @@
 (ns planwise.client.projects.handlers
   (:require [re-frame.core :refer [register-handler dispatch] :as rf]
-            [accountant.core :as accountant]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [remove-by-id]]
             [planwise.client.projects.api :as api]
@@ -68,19 +67,19 @@
    (api/create-project project-data :projects/project-created)
    (assoc db :view-state :creating)))
 
-(register-handler
+(rf/reg-event-fx
  :projects/project-created
  in-projects
- (fn [db [_ project-data]]
+ (fn [{:keys [db]} [_ project-data]]
    (let [project-id (:id project-data)]
      (when (nil? project-id)
        (throw "Invalid project data"))
-     (dispatch [:datasets/invalidate-datasets])   ; to update project counts for the selected dataset
-     (dispatch [:current-project/project-loaded project-data])
-     (accountant/navigate! (routes/project-demographics {:id project-id}))
-     (-> db
-         (assoc :view-state :list)
-         (update :list asdf/invalidate! conj project-data)))))
+     {:dispatch-n [[:datasets/invalidate-datasets]   ; to update project counts for the selected dataset
+                   [:current-project/project-loaded project-data]]
+      :navigate (routes/project-demographics {:id project-id})
+      :db (-> db
+              (assoc :view-state :list)
+              (update :list asdf/invalidate! conj project-data))})))
 
 ;; ----------------------------------------------------------------------------
 ;; Project deletion

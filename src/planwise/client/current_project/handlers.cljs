@@ -1,7 +1,6 @@
 (ns planwise.client.current-project.handlers
   (:require [re-frame.core :refer [register-handler dispatch] :as rf]
             [clojure.string :refer [split capitalize join]]
-            [accountant.core :as accountant]
             [planwise.client.routes :as routes]
             [planwise.client.current-project.api :as api]
             [planwise.client.datasets.api :as datasets-api]
@@ -10,7 +9,7 @@
             [planwise.client.mapping :as maps]
             [planwise.client.styles :as styles]
             [planwise.client.asdf :as asdf]
-            [planwise.client.utils :refer [remove-by dispatch-delayed]]
+            [planwise.client.utils :refer [remove-by]]
             [planwise.client.datasets.db :refer [dataset->status]]))
 
 (def in-current-project (rf/path [:current-project]))
@@ -125,21 +124,18 @@
                        :current-project/project-access-granted :current-project/not-found)
    db/initial-db))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/project-access-granted
  in-current-project
- (fn [db [_ project-data]]
+ (fn [{:keys [db]} [_ project-data]]
    (let [db (project-loaded db project-data)]
-     (dispatch [:projects/invalidate-projects [project-data]])
-     (accountant/navigate! (routes/project-demographics project-data))
-     db)))
+     {:dispatch [:projects/invalidate-projects [project-data]]
+      :navigate (routes/project-demographics project-data)})))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/not-found
- in-current-project
- (fn [db [_]]
-   (accountant/navigate! (routes/home))
-   db))
+ (fn [_ _]
+   {:navigate (routes/home)}))
 
 (register-handler
  :current-project/project-loaded
@@ -274,25 +270,25 @@
 ;; ----------------------------------------------------------------------------
 ;; Project deletion
 
-(register-handler
+(rf/reg-event-fx
  :current-project/delete-project
  in-current-project
- (fn [db [_]]
+ (fn [{:keys [db]} [_]]
    (let [id (db/project-id db)]
-     (dispatch [:projects/delete-project id]))
-   (accountant/navigate! (routes/home))
-   ;; clear the current project view model
-   db/initial-db))
+     {:dispatch [:projects/delete-project id]
+      :navigate (routes/home)
+      ;; clear the current project view model
+      :db db/initial-db})))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/leave-project
  in-current-project
- (fn [db [_]]
+ (fn [{:keys [db]} [_]]
    (let [id (db/project-id db)]
-     (dispatch [:projects/leave-project id]))
-   (accountant/navigate! (routes/home))
-   ;; clear the current project view model
-   db/initial-db))
+     {:dispatch [:projects/leave-project id]
+      :navigate (routes/home)
+      ;; clear the current project view model
+      :db db/initial-db})))
 
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers

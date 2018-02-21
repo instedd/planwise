@@ -5,6 +5,7 @@
             [secretary.core :as secretary]
             [accountant.core :as accountant]
 
+            [planwise.client.effects]
             [planwise.client.routes]
             [planwise.client.handlers]
             [planwise.client.subs]

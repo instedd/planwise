@@ -33,6 +33,7 @@
         has-back? (not= (first tabs) tab-name)
         next (second (drop-while #(not= tab-name %) tabs))
         back (last (take-while #(not= tab-name %) tabs))]
+    ;; TODO: change these navigations to re-frame events
     [:div.nav-buttons
       (when has-back?
         [:button.secondary {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
