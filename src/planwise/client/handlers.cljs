@@ -6,8 +6,7 @@
             [planwise.client.current-project.handlers :as current-project]
             [planwise.client.datasets.handlers]
             [planwise.client.regions.handlers :as regions]
-            [re-frame.utils :as c]
-            [re-frame.core :refer [dispatch register-handler]]))
+            [re-frame.core :refer [dispatch register-handler console] :as rf]))
 
 ;; Event handlers
 ;; -----------------------------------------------------------------------
@@ -70,9 +69,7 @@
      nil   ; ignore React dev tools messages
 
      true
-     (do
-       (println message)
-       (c/warn "Invalid message received " message)))
+     (console :warn "Invalid message received " message))
    db))
 
 (register-handler
