@@ -1,5 +1,5 @@
 (ns planwise.client.datasets.handlers
-  (:require [re-frame.core :refer [register-handler path dispatch console]]
+  (:require [re-frame.core :refer [register-handler dispatch] :as rf]
             [clojure.string :refer [blank?]]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [remove-by-id]]
@@ -7,7 +7,7 @@
             [planwise.client.datasets.db :as db]
             [planwise.client.utils :as utils]))
 
-(def in-datasets (path [:datasets]))
+(def in-datasets (rf/path [:datasets]))
 
 ;; ----------------------------------------------------------------------------
 ;; Dataset listing
@@ -19,13 +19,13 @@
    (api/load-datasets :datasets/datasets-loaded)
    (update db :list asdf/reload!)))
 
-(register-handler
+(rf/reg-event-db
  :datasets/invalidate-datasets
  in-datasets
  (fn [db [_]]
    (update db :list asdf/invalidate!)))
 
-(register-handler
+(rf/reg-event-db
  :datasets/refresh-datasets
  in-datasets
  (fn [db [_ time]]
@@ -41,13 +41,13 @@
            (assoc :last-refresh time))
        db))))
 
-(register-handler
+(rf/reg-event-db
  :datasets/datasets-loaded
  in-datasets
  (fn [db [_ datasets]]
    (update db :list asdf/reset! datasets)))
 
-(register-handler
+(rf/reg-event-db
  :datasets/search
  in-datasets
  (fn [db [_ value]]
@@ -57,7 +57,7 @@
  :datasets/cancel-import!
  in-datasets
  (fn [db [_ dataset-id]]
-   (console :log "Cancelling collection import for dataset " dataset-id)
+   (rf/console :log "Cancelling collection import for dataset " dataset-id)
    (api/cancel-import! dataset-id :datasets/datasets-loaded)
    db))
 
@@ -65,7 +65,7 @@
 ;; ----------------------------------------------------------------------------
 ;; New dataset dialog
 
-(register-handler
+(rf/reg-event-db
  :datasets/begin-new-dataset
  in-datasets
  (fn [db [_]]
@@ -73,7 +73,7 @@
           :state :create-dialog
           :new-dataset-data nil)))
 
-(register-handler
+(rf/reg-event-db
  :datasets/cancel-new-dataset
  in-datasets
  (fn [db [_]]
@@ -86,13 +86,13 @@
    (api/load-resourcemap-info :datasets/resourcemap-info-loaded)
    (update db :resourcemap asdf/reload!)))
 
-(register-handler
+(rf/reg-event-db
  :datasets/resourcemap-info-loaded
  in-datasets
  (fn [db [_ data]]
    (update db :resourcemap asdf/reset! (select-keys data [:authorised? :collections]))))
 
-(register-handler
+(rf/reg-event-db
  :datasets/update-new-dataset
  in-datasets
  (fn [db [_ field value]]
@@ -114,7 +114,7 @@
                           :datasets/dataset-created :datasets/create-failed))
    (assoc db :state :creating)))
 
-(register-handler
+(rf/reg-event-db
  :datasets/dataset-created
  in-datasets
  (fn [db [_ dataset]]
@@ -133,11 +133,11 @@
          ;; already there.
          (update :list asdf/swap! into [dataset])))))
 
-(register-handler
+(rf/reg-event-db
  :datasets/create-failed
  in-datasets
  (fn [db [_ error-info]]
-   (console :error "Dataset creation failed: " error-info)
+   (rf/console :error "Dataset creation failed: " error-info)
    (assoc db :state :list)))
 
 ;; ----------------------------------------------------------------------------
@@ -154,12 +154,11 @@
        (update :list asdf/swap! remove-by-id dataset-id)
        (update :resourcemap asdf/invalidate!))))
 
-(register-handler
+(rf/reg-event-fx
  :datasets/dataset-deleted
  in-datasets
- (fn [db [_ data]]
-   (dispatch [:datasets/invalidate-datasets])
-   db))
+ (fn [_ _]
+   {:dispatch [:datasets/invalidate-datasets]}))
 
 (register-handler
  :datasets/update-dataset
@@ -168,7 +167,7 @@
    (api/update-dataset! dataset-id :datasets/dataset-updated)
    db))
 
-(register-handler
+(rf/reg-event-db
  :datasets/dataset-updated
  in-datasets
  (fn [db [_ dataset]]

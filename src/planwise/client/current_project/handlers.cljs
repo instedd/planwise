@@ -1,6 +1,5 @@
 (ns planwise.client.current-project.handlers
-  (:require [re-frame.core :refer [register-handler path dispatch]]
-            [re-frame.utils :as c]
+  (:require [re-frame.core :refer [register-handler dispatch] :as rf]
             [clojure.string :refer [split capitalize join]]
             [accountant.core :as accountant]
             [planwise.client.routes :as routes]
@@ -14,7 +13,7 @@
             [planwise.client.utils :refer [remove-by dispatch-delayed]]
             [planwise.client.datasets.db :refer [dataset->status]]))
 
-(def in-current-project (path [:current-project]))
+(def in-current-project (rf/path [:current-project]))
 
 (def request-delay 500)
 (def loading-hint-delay 1000)
@@ -30,14 +29,20 @@
      (api/fetch-facility-types dataset-id :current-project/facility-types-received))
    db))
 
-(register-handler
+(defn assign-facility-colours
+  ([items]
+   (assign-facility-colours items styles/facility-types-palette))
+  ([items colours]
+   (map (fn [item colour] (assoc item :colour colour))
+        items (cycle colours))))
+
+(rf/reg-event-db
  :current-project/facility-types-received
  in-current-project
  (fn [db [_ types]]
-   (let [types-with-colours (map (fn [type colour]
-                                   (assoc type :colour colour))
-                                 (sort-by :value types)
-                                 (cycle styles/facility-types-palette))]
+   (let [types-with-colours (->> types
+                                 (sort-by :value)
+                                 assign-facility-colours)]
      (assoc-in db [:filter-definitions :facility-type] types-with-colours))))
 
 ;; ---------------------------------------------------------------------------
@@ -83,19 +88,19 @@
       db)))
 
 (register-handler
- :current-project/navigate-project
- in-current-project
- (fn [db [_ project-id section]]
-   (if (not= project-id (db/project-id db))
-     (dispatch [:current-project/load-project project-id (section->with section)])
-     (dispatch [:current-project/reload-project project-id (section->with section)]))
-   db))
-
-(register-handler
  :current-project/tab-visited
  in-current-project
  (fn [db [_ section]]
    (update-wizard-state db section)))
+
+(rf/reg-event-fx
+ :current-project/navigate-project
+ in-current-project
+ (fn [{:keys [db]} [_ project-id section]]
+   (let [event-key (if (not= project-id (db/project-id db))
+                     :current-project/load-project
+                     :current-project/reload-project)]
+     {:dispatch [event-key project-id (section->with section)]})))
 
 (register-handler
  :current-project/load-project
@@ -142,16 +147,16 @@
   (fn [db [_ project-data]]
     (project-loaded db project-data)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/isochrones-loaded
  in-current-project
  (fn [db [_ {:keys [map-key unsatisfied-count facilities threshold simplify], :as response}]]
    (let [level (maps/simplify->geojson-level simplify)
          isochrones  (->> facilities
-                       (filter #(some? (:isochrone %)))
-                       (map (juxt :id (comp js/JSON.parse :isochrone)))
-                       (flatten)
-                       (apply hash-map))]
+                          (filter #(some? (:isochrone %)))
+                          (map (juxt :id (comp js/JSON.parse :isochrone)))
+                          (flatten)
+                          (apply hash-map))]
      (update-in db [:facilities :isochrones threshold level] #(merge % isochrones)))))
 
 ;; ----------------------------------------------------------------------------
@@ -164,19 +169,19 @@
    (datasets-api/load-dataset (db/dataset-id db) :current-project/dataset-loaded)
    (update db :dataset asdf/reload!)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/invalidate-dataset
  in-current-project
  (fn [db _]
    (update db :dataset asdf/invalidate!)))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/dataset-loaded
  in-current-project
- (fn [db [_ dataset]]
-   (when (#{:importing :unknown} (datasets-db/dataset->status dataset))
-     (dispatch-delayed 5000 [:current-project/invalidate-dataset]))
-   (update db :dataset asdf/reset! dataset)))
+ (fn [{:keys [db]} [_ dataset]]
+   (merge {:db (update db :dataset asdf/reset! dataset)}
+          (when (#{:importing :unknown} (datasets-db/dataset->status dataset))
+            {:dispatch-later [{:ms 5000 :dispatch [:current-project/invalidate-dataset]}]}))))
 
 
 ;; ---------------------------------------------------------------------------
@@ -193,7 +198,7 @@
   (some-> (get-in db [:map-state :request]) ajax.protocols/-abort)
   (assoc-in db [:map-state :request] nil))
 
-(register-handler
+(rf/reg-event-db
  :current-project/show-map-loading-hint
  in-current-project
  (fn [db _]
@@ -292,13 +297,13 @@
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers
 
-(register-handler
+(rf/reg-event-db
  :current-project/update-position
  in-current-project
  (fn [db [_ new-position]]
    (assoc-in db [:map-view :position] new-position)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/update-zoom
  in-current-project
  (fn [db [_ new-zoom]]
@@ -307,7 +312,7 @@
 ;; ---------------------------------------------------------------------------
 ;; Sharing handlers
 
-(register-handler
+(rf/reg-event-db
  :current-project/open-share-dialog
  in-current-project
  (fn [db [_]]
@@ -316,7 +321,7 @@
      (assoc :view-state :share-dialog)
      (update :shares asdf/invalidate!))))
 
-(register-handler
+(rf/reg-event-db
  :current-project/close-share-dialog
  in-current-project
  (fn [db [_]]
@@ -329,7 +334,7 @@
    (api/load-project (db/project-id db) nil #(dispatch [:current-project/project-shares-loaded (:shares %)]))
    (update db :shares asdf/reload!)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/project-shares-loaded
  in-current-project
  (fn [db [_ data]]
@@ -343,13 +348,13 @@
      (api/reset-share-token id :current-project/share-token-loaded)
      (update-in db [:sharing :token] asdf/reload!))))
 
-(register-handler
+(rf/reg-event-db
  :current-project/share-token-loaded
  in-current-project
  (fn [db [_ {token :token}]]
    (update-in db [:sharing :token] asdf/reset! token)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/search-shares
  in-current-project
  (fn [db [_ string]]
@@ -363,14 +368,14 @@
      (api/delete-share project-id user-id :current-project/share-deleted)
      (update db :shares asdf/swap! remove-by :user-id user-id))))
 
-(register-handler
+(rf/reg-event-db
  :current-project/share-deleted
  in-current-project
  (fn [db [_ {:keys [user-id project-id]}]]
-   ; Optimistic update
+   ; Optimistic update (??)
    (update db :shares asdf/swap! remove-by :user-id user-id)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/reset-sharing-emails-text
  in-current-project
  (fn [db [_ text]]
@@ -385,16 +390,16 @@
    (-> db
      (assoc-in [:sharing :state] :sending))))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/sharing-emails-sent
  in-current-project
- (fn [db [_ text]]
-   (dispatch-delayed 3000 [:current-project/clear-sharing-emails-state])
-   (-> db
-     (assoc-in [:sharing :emails-text] "")
-     (assoc-in [:sharing :state] :sent))))
+ (fn [{:keys [db]} [_ text]]
+   {:dispatch-later [{:ms 3000 :dispatch [:current-project/clear-sharing-emails-state]}]
+    :db (-> db
+            (assoc-in [:sharing :emails-text] "")
+            (assoc-in [:sharing :state] :sent))}))
 
-(register-handler
+(rf/reg-event-db
  :current-project/clear-sharing-emails-state
  in-current-project
  (fn [db _]

@@ -1,10 +1,10 @@
 (ns planwise.client.regions.handlers
-  (:require [re-frame.core :refer [register-handler path dispatch]]
+  (:require [re-frame.core :refer [register-handler] :as rf]
             [accountant.core :as accountant]
             [planwise.client.routes :as routes]
             [planwise.client.regions.api :as api]))
 
-(def in-regions (path [:regions]))
+(def in-regions (rf/path [:regions]))
 
 (register-handler
  :regions/load-regions
@@ -31,11 +31,11 @@
      (api/load-regions-with-geo missing-region-ids :regions/regions-loaded))
    db))
 
-(register-handler
+(rf/reg-event-db
  :regions/regions-loaded
  in-regions
-  (fn [db [_ regions-data]]
-    (reduce
-      (fn [db {id :id :as region}]
-        (update db id #(merge % region)))
-      db regions-data)))
+ (fn [db [_ regions-data]]
+   (reduce
+    (fn [db {id :id :as region}]
+      (update db id #(merge % region)))
+    db regions-data)))

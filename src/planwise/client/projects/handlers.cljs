@@ -1,5 +1,5 @@
 (ns planwise.client.projects.handlers
-  (:require [re-frame.core :refer [register-handler path dispatch]]
+  (:require [re-frame.core :refer [register-handler dispatch] :as rf]
             [accountant.core :as accountant]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [remove-by-id]]
@@ -7,7 +7,7 @@
             [planwise.client.projects.db :as db]
             [planwise.client.routes :as routes]))
 
-(def in-projects (path [:projects]))
+(def in-projects (rf/path [:projects]))
 
 ;; ---------------------------------------------------------------------------
 ;; Project listing
@@ -19,7 +19,7 @@
    (api/load-projects :projects/projects-loaded)
    (update db :list asdf/reload!)))
 
-(register-handler
+(rf/reg-event-db
  :projects/invalidate-projects
  in-projects
  (fn [db [_ new-projects]]
@@ -27,20 +27,20 @@
      (update db :list asdf/invalidate! into new-projects)
      (update db :list asdf/invalidate!))))
 
-(register-handler
+(rf/reg-event-fx
  :projects/projects-loaded
  in-projects
- (fn [db [_ projects]]
+ (fn [{:keys [db]} [_ projects]]
    (let [region-ids (->> projects
                          (map :region-id)
                          (remove nil?)
                          (set))]
-     (dispatch [:regions/load-regions-with-preview region-ids])
-     (update db :list asdf/reset! projects))))
+     {:dispatch [:regions/load-regions-with-preview region-ids]
+      :db (update db :list asdf/reset! projects)})))
 
 ;; Project searching
 
-(register-handler
+(rf/reg-event-db
  :projects/search
  in-projects
  (fn [db [_ value]]
@@ -49,13 +49,13 @@
 ;; ---------------------------------------------------------------------------
 ;; Project creation
 
-(register-handler
+(rf/reg-event-db
  :projects/begin-new-project
  in-projects
  (fn [db [_]]
    (assoc db :view-state :create-dialog)))
 
-(register-handler
+(rf/reg-event-db
  :projects/cancel-new-project
  in-projects
  (fn [db [_]]
@@ -101,7 +101,7 @@
    ;; optimistically remove the project from our list
    (update db :list asdf/swap! remove-by-id id)))
 
-(register-handler
+(rf/reg-event-db
  :projects/project-deleted
  in-projects
  (fn [db [_ data]]
