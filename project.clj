@@ -136,8 +136,9 @@
                                   [ring/ring-mock "0.3.0"]
 
                                   ; Helpers
+                                  [day8.re-frame/re-frame-10x "0.2.0"]
                                   [hawk "0.2.10"]
-                                  [binaryage/devtools "0.6.1"]]
+                                  [binaryage/devtools "0.9.9"]]
 
                    :source-paths ["dev"]
                    :repl-options {:init-ns user
