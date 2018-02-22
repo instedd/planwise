@@ -6,7 +6,7 @@
             [planwise.client.current-project.handlers :as current-project]
             [planwise.client.datasets.handlers]
             [planwise.client.regions.handlers :as regions]
-            [re-frame.core :refer [register-handler] :as rf]))
+            [re-frame.core :as rf]))
 
 ;; Event handlers
 ;; -----------------------------------------------------------------------
@@ -37,18 +37,17 @@
      (merge {:db new-db}
             (on-navigate page params)))))
 
-(register-handler
+(rf/reg-event-fx
  :signout
- (fn [db [_]]
-   (api/signout :after-signout)
-   db))
+ (fn [_ [_]]
+   {:api (assoc api/signout
+                :on-success [:after-signout])}))
 
-(register-handler
+(rf/reg-event-fx
  :after-signout
- (fn [db [_ data]]
+ (fn [_ [_ data]]
    (let [url (or (:redirect-to data) (routes/home))]
-     (set! (.-location js/window) url))
-   db))
+     {:location url})))
 
 (rf/reg-event-fx
  :message-posted

@@ -12,12 +12,13 @@
 ;; ----------------------------------------------------------------------------
 ;; Dataset listing
 
-(register-handler
+(rf/reg-event-fx
  :datasets/load-datasets
  in-datasets
- (fn [db [_]]
-   (api/load-datasets :datasets/datasets-loaded)
-   (update db :list asdf/reload!)))
+ (fn [{:keys [db]} [_]]
+   {:api (assoc api/load-datasets
+                :on-success [:datasets/datasets-loaded])
+    :db  (update db :list asdf/reload!)}))
 
 (rf/reg-event-db
  :datasets/invalidate-datasets
@@ -29,12 +30,12 @@
  :datasets/refresh-datasets
  in-datasets
  (fn [db [_ time]]
-   (let [sets (asdf/value (:list db))
-         statuses (map :server-status sets)
-         any-running? (some some? statuses)
-         refresh-interval (if any-running? 1000 10000)
-         last-refresh (or (:last-refresh db) 0)
-         since-last-refresh (- time last-refresh)]
+	 (let [sets								(asdf/value (:list db))
+				 statuses           (map :server-status sets)
+				 any-running?       (some some? statuses)
+				 refresh-interval   (if any-running? 1000 10000)
+				 last-refresh       (or (:last-refresh db) 0)
+				 since-last-refresh (- time last-refresh)]
      (if (< refresh-interval since-last-refresh)
        (-> db
            (update :list asdf/invalidate!)
@@ -53,13 +54,13 @@
  (fn [db [_ value]]
    (assoc db :search-string value)))
 
-(register-handler
+(rf/reg-event-fx
  :datasets/cancel-import!
  in-datasets
- (fn [db [_ dataset-id]]
+ (fn [_ [_ dataset-id]]
    (rf/console :log "Cancelling collection import for dataset " dataset-id)
-   (api/cancel-import! dataset-id :datasets/datasets-loaded)
-   db))
+   {:api (assoc (api/cancel-import! dataset-id)
+                :on-success [:datasets/datasets-loaded])}))
 
 
 ;; ----------------------------------------------------------------------------
@@ -79,12 +80,13 @@
  (fn [db [_]]
    (assoc db :state :list)))
 
-(register-handler
+(rf/reg-event-fx
  :datasets/load-resourcemap-info
  in-datasets
- (fn [db [_]]
-   (api/load-resourcemap-info :datasets/resourcemap-info-loaded)
-   (update db :resourcemap asdf/reload!)))
+ (fn [{:keys [db]} [_]]
+   {:api (assoc api/load-resourcemap-info
+                :on-success [:datasets/resourcemap-info-loaded])
+    :db  (update db :resourcemap asdf/reload!)}))
 
 (rf/reg-event-db
  :datasets/resourcemap-info-loaded
@@ -98,21 +100,22 @@
  (fn [db [_ field value]]
    (assoc-in db [:new-dataset-data field] value)))
 
-(register-handler
+(rf/reg-event-fx
  :datasets/create-dataset
  in-datasets
- (fn [db [_]]
-   (let [collection (get-in db [:new-dataset-data :collection])
-         coll-id (:id collection)
-         name (:name collection)
+ (fn [{:keys [db]} [_]]
+   (let [collection  (get-in db [:new-dataset-data :collection])
+         coll-id     (:id collection)
+         name        (:name collection)
          description (:description collection)
          description (if (blank? description)
                        (str "Imported from Resourcemap collection " coll-id)
                        description)
-         type-field (get-in db [:new-dataset-data :type-field])]
-     (api/create-dataset! name description coll-id type-field
-                          :datasets/dataset-created :datasets/create-failed))
-   (assoc db :state :creating)))
+         type-field  (get-in db [:new-dataset-data :type-field])]
+     {:api (assoc (api/create-dataset! name description coll-id type-field)
+                  :on-success [:datasets/dataset-created]
+                  :on-failure [:datasets/create-failed])
+      :db  (assoc db :state :creating)})))
 
 (rf/reg-event-db
  :datasets/dataset-created
@@ -143,16 +146,17 @@
 ;; ----------------------------------------------------------------------------
 ;; Dataset deletion and update
 
-(register-handler
+(rf/reg-event-fx
  :datasets/delete-dataset
  in-datasets
- (fn [db [_ dataset-id]]
-   (api/delete-dataset! dataset-id :datasets/dataset-deleted)
-   ;; optimistic update: remove the dataset from the list and invalidate resmap infomation
-   ;; to make the collection available again
-   (-> db
-       (update :list asdf/swap! remove-by-id dataset-id)
-       (update :resourcemap asdf/invalidate!))))
+ (fn [{:keys [db]} [_ dataset-id]]
+   {:api (assoc (api/delete-dataset! dataset-id)
+                :on-success [:datasets/dataset-deleted])
+    ;; optimistic update: remove the dataset from the list and invalidate resmap infomation
+    ;; to make the collection available again
+    :db  (-> db
+             (update :list asdf/swap! remove-by-id dataset-id)
+             (update :resourcemap asdf/invalidate!))}))
 
 (rf/reg-event-fx
  :datasets/dataset-deleted
@@ -160,12 +164,12 @@
  (fn [_ _]
    {:dispatch [:datasets/invalidate-datasets]}))
 
-(register-handler
+(rf/reg-event-fx
  :datasets/update-dataset
  in-datasets
- (fn [db [_ dataset-id]]
-   (api/update-dataset! dataset-id :datasets/dataset-updated)
-   db))
+ (fn [_ [_ dataset-id]]
+   {:api (assoc (api/update-dataset! dataset-id)
+                :on-success [:datasets/dataset-updated])}))
 
 (rf/reg-event-db
  :datasets/dataset-updated

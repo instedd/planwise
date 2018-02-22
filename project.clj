@@ -52,6 +52,7 @@
                  [reagent-utils "0.3.0"]
                  [re-frame "0.10.5"]
                  [re-com "0.9.0"]
+                 [day8.re-frame/http-fx "0.1.5"]
                  [cljs-ajax "0.7.3"
                   :exclusions [commons-codec]]
                  [secretary "1.2.3"]

@@ -1,6 +1,6 @@
 (ns planwise.client.current-project.views
   (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :refer [subscribe dispatch dispatch-sync]]
+  (:require [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
             [re-frame.utils :as c]
             [clojure.string :as str]
@@ -12,6 +12,7 @@
             [planwise.client.styles :as styles]
             [planwise.client.components.common :as common]
             [planwise.client.current-project.api :as api]
+            [planwise.client.effects :as effects]
             [planwise.client.current-project.db :as db]
             [planwise.client.current-project.components.header :refer [header-section]]
             [planwise.client.current-project.components.sidebar :refer [sidebar-section]]
@@ -23,23 +24,25 @@
     (let [level (js/parseInt level)
           bbox-excluding (map #(js/parseInt %) bbox-excluding)
           cache-existing (keys (get-in @isochrones [threshold level]))]
-      (api/fetch-isochrones-in-bbox
-        @filters
-        {:dataset-id dataset-id,
-         :threshold threshold,
-         :bbox bounds,
-         :excluding (str/join "," cache-existing)
-         :simplify (mapping/geojson-level->simplify level)}
-        (fn [response]
-          (dispatch-sync [:current-project/isochrones-loaded response])
-          (let [isochrones-for-level (get-in @isochrones [threshold level])
-                new-isochrones (->> response
-                                  (:facilities)
-                                  (map :id)
-                                  (remove (set bbox-excluding))
-                                  (select-keys isochrones-for-level)
-                                  (mapv (fn [[id isochrone]] {:id id, :isochrone isochrone})))]
-            (callback (clj->js new-isochrones))))))))
+      ;; TODO: remove this and route the requests through re-frame
+      (effects/make-api-request
+       (assoc (api/fetch-isochrones-in-bbox
+               @filters
+               {:dataset-id dataset-id,
+                :threshold threshold,
+                :bbox bounds,
+                :excluding (str/join "," cache-existing)
+                :simplify (mapping/geojson-level->simplify level)})
+              :on-success-cb (fn [response]
+                               (rf/dispatch-sync [:current-project/isochrones-loaded response])
+                               (let [isochrones-for-level (get-in @isochrones [threshold level])
+                                     new-isochrones (->> response
+                                                         (:facilities)
+                                                         (map :id)
+                                                         (remove (set bbox-excluding))
+                                                         (select-keys isochrones-for-level)
+                                                         (mapv (fn [[id isochrone]] {:id id, :isochrone isochrone})))]
+                                 (callback (clj->js new-isochrones)))))))))
 
 (defn marker-popup [{:keys [name type processing-status], :as marker}]
   (str
