@@ -1,7 +1,6 @@
 (ns planwise.client.api
-  (:require [ajax.core :refer [GET DELETE to-interceptor default-interceptors]]
-            [re-frame.utils :as c]
-            [re-frame.core :refer [dispatch]]
+  (:require [ajax.core :as ajax]
+            [re-frame.core :as rf]
             [clojure.string :as string]
             [planwise.client.config :as config]))
 
@@ -11,11 +10,11 @@
   (atom (.-value (.getElementById js/document "__anti-forgery-token"))))
 
 (def csrf-token-interceptor
-  (to-interceptor {:name "CSRF Token Interceptor"
-                   :request (fn [req]
-                              (if (not= "GET" (:method req))
-                                (assoc-in req [:headers "X-CSRF-Token"] @csrf-token)
-                                req))}))
+  (ajax/to-interceptor {:name "CSRF Token Interceptor"
+                        :request (fn [req]
+                                   (if (not= "GET" (:method req))
+                                     (assoc-in req [:headers "X-CSRF-Token"] @csrf-token)
+                                     req))}))
 
 ;; Add interceptor to send JWT encrypted token authentication with all requests
 
@@ -23,44 +22,25 @@
   (atom config/jwe-token))
 
 (def jwe-token-interceptor
-  (to-interceptor {:name "JWE Token Interceptor"
-                   :request (fn [req]
-                              (let [auth-value (str "Token " @jwe-token)]
-                                (assoc-in req [:headers "Authorization"] auth-value)))}))
+  (ajax/to-interceptor {:name "JWE Token Interceptor"
+                        :request (fn [req]
+                                   (let [auth-value (str "Token " @jwe-token)]
+                                     (assoc-in req [:headers "Authorization"] auth-value)))}))
 
-(swap! default-interceptors into [csrf-token-interceptor jwe-token-interceptor])
+(swap! ajax/default-interceptors into [csrf-token-interceptor jwe-token-interceptor])
 
 
-;; Common request definitions to use with ajax requests
+;; Default event handlers for http-xhrio/api effects
 
-(defn default-error-handler [{:keys [status status-text]}]
-  (c/error (str "Error " status " performing AJAX request: " status-text)))
+(rf/reg-event-fx
+ :http-no-on-success
+ (fn [_ [_ data]]
+   (rf/console :log "Unhandled successful API response: " data)))
 
-(defn default-success-handler [data]
-  (c/log "API response: " data))
-
-(defn wrap-handler [callback default]
-  (cond
-    (fn? callback) callback
-    (nil? callback) default
-    (keyword? callback) #(dispatch [callback %])
-    :else (do
-            (c/error "Invalid handler " callback)
-            default)))
-
-(defn raw-request [params [success-fn error-fn] & {:keys [mapper-fn], :or {mapper-fn identity}}]
-  (let [success-handler (wrap-handler success-fn default-success-handler)
-        error-handler (wrap-handler error-fn default-error-handler)]
-    {:format :raw
-     :params params
-     :handler (comp success-handler mapper-fn)
-     :error-handler error-handler}))
-
-(defn json-request [params fns & keyargs]
-  (assoc (apply raw-request params fns keyargs)
-    :format :json
-    :response-format :json
-    :keywords? true))
+(rf/reg-event-fx
+ :http-no-on-failure
+ (fn [_ [_ {:keys [status] :as response}]]
+   (rf/console :error (str "Got HTTP response " status ":") response)))
 
 
 ;; Debugging utility functions
@@ -77,6 +57,6 @@
 
 ;; Authentication APIs
 
-(defn signout
-  [& handlers]
-  (DELETE "/logout" (json-request {} handlers)))
+(def signout
+  {:method :delete
+   :uri    "/logout"})

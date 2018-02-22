@@ -6,78 +6,67 @@
             [planwise.client.current-project.handlers :as current-project]
             [planwise.client.datasets.handlers]
             [planwise.client.regions.handlers :as regions]
-            [re-frame.utils :as c]
-            [re-frame.core :refer [dispatch register-handler]]))
+            [re-frame.core :as rf]))
 
 ;; Event handlers
 ;; -----------------------------------------------------------------------
 
-(register-handler
+(rf/reg-event-fx
  :initialise-db
  (fn [_ _]
-   (dispatch [:regions/load-regions])
-   db/initial-db))
+   {:dispatch [:regions/load-regions]
+    :db db/initial-db}))
 
-(defmulti on-navigate (fn [db page params] page))
+(defmulti on-navigate (fn [page params] page))
 
-(defmethod on-navigate :projects [db page {id :id, section :section, token :token, :as page-params}]
+(defmethod on-navigate :projects [page {id :id, section :section, token :token, :as page-params}]
   (let [id (js/parseInt id)]
     (if (= :access (keyword section))
-      (dispatch [:current-project/access-project id token])
-      (dispatch [:current-project/navigate-project id section]))
-    db))
+      {:dispatch [:current-project/access-project id token]}
+      {:dispatch [:current-project/navigate-project id section]})))
 
-(defmethod on-navigate :home [db _ _]
-  db)
+(defmethod on-navigate :default [_ _]
+  nil)
 
-(defmethod on-navigate :datasets [db _ _]
-  db)
-
-(defmethod on-navigate :default [db _ _]
-  db)
-
-(register-handler
+(rf/reg-event-fx
  :navigate
- (fn [db [_ {page :page, :as params}]]
+ (fn [{:keys [db]} [_ {page :page, :as params}]]
    (let [new-db (assoc db
                  :current-page page
                  :page-params params)]
-     (on-navigate new-db page params))))
+     (merge {:db new-db}
+            (on-navigate page params)))))
 
-(register-handler
+(rf/reg-event-fx
  :signout
- (fn [db [_]]
-   (api/signout :after-signout)
-   db))
+ (fn [_ [_]]
+   {:api (assoc api/signout
+                :on-success [:after-signout])}))
 
-(register-handler
+(rf/reg-event-fx
  :after-signout
- (fn [db [_ data]]
+ (fn [_ [_ data]]
    (let [url (or (:redirect-to data) (routes/home))]
-     (set! (.-location js/window) url))
-   db))
+     {:location url})))
 
-(register-handler
+(rf/reg-event-fx
  :message-posted
- (fn [db [_ message]]
+ (fn [_ [_ message]]
    (cond
      (= message "authenticated")
-     (dispatch [:datasets/load-resourcemap-info])
+     {:dispatch [:datasets/load-resourcemap-info]}
 
      (#{"react-devtools-content-script"
-        "react-devtools-bridge"}
+        "react-devtools-bridge"
+        "react-devtools-detector"}
       (aget message "source"))
      nil   ; ignore React dev tools messages
 
      true
-     (do
-       (println message)
-       (c/warn "Invalid message received " message)))
-   db))
+     (rf/console :warn "Invalid message received " message))))
 
-(register-handler
+(rf/reg-event-fx
  :tick
- (fn [db [_ time]]
+ (fn [_ [_ time]]
    (when (= 0 (mod time 1000))
-     (dispatch [:datasets/refresh-datasets time]))
-   db))
+     {:dispatch [:datasets/refresh-datasets time]})))

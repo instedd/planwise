@@ -21,14 +21,6 @@
                     (apply partial (cons f args))
                     timeout))))))
 
-;; Dispatching
-
-(defn dispatch-delayed
-  [timeout event]
-  (js/setTimeout
-    #(dispatch event)
-    timeout))
-
 ;; Event handlers
 
 (defn prevent-default [f]

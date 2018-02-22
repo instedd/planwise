@@ -4,10 +4,10 @@
   :min-lein-version "2.0.0"
   :dependencies [; Base infrastructure
                  [org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.8.51"]
+                 [org.clojure/clojurescript "1.9.908"]
                  [org.clojure/core.async "0.2.385"]
                  [com.stuartsierra/component "0.3.1"]
-                 [prismatic/schema "1.1.3"]
+                 [prismatic/schema "1.1.7"]
                  [duct "0.6.1"]
 
                  ; Web server and routing
@@ -46,13 +46,14 @@
                  [reduce-fsm "0.1.4"]
 
                  ; Client infrastructure
-                 [reagent "0.5.1"
+                 [reagent "0.7.0"
                   :exclusions [org.clojure/tools.reader]]
-                 [reagent-forms "0.5.23"]
-                 [reagent-utils "0.1.8"]
-                 [re-frame "0.7.0"]
-                 [re-com "0.8.3"]
-                 [cljs-ajax "0.5.4"
+                 [reagent-forms "0.5.36"]
+                 [reagent-utils "0.3.0"]
+                 [re-frame "0.10.5"]
+                 [re-com "0.9.0"]
+                 [day8.re-frame/http-fx "0.1.5"]
+                 [cljs-ajax "0.7.3"
                   :exclusions [commons-codec]]
                  [secretary "1.2.3"]
                  [venantius/accountant "0.1.7"
@@ -79,7 +80,7 @@
                  [funcool/cuerdas "1.0.1"]]
 
   :plugins [[lein-environ "1.0.3"]
-            [lein-cljsbuild "1.1.2"]
+            [lein-cljsbuild "1.1.5"]
             [lein-sass "0.3.7"
              :exclusions
              [org.apache.commons/commons-compress
@@ -119,9 +120,7 @@
    :project/dev   {:dependencies [; Framework
                                   [duct/generate "0.6.1"
                                    :exclusions [org.codehaus.plexus/plexus-utils]]
-                                  [duct/figwheel-component "0.3.2"
-                                   :exclusions [org.clojure/data.priority-map
-                                                org.clojure/core.async]]
+                                  [figwheel-sidecar "0.5.14"]
 
                                   ; REPL tools
                                   [reloaded.repl "0.2.1"]
@@ -137,8 +136,9 @@
                                   [ring/ring-mock "0.3.0"]
 
                                   ; Helpers
+                                  [day8.re-frame/re-frame-10x "0.2.0"]
                                   [hawk "0.2.10"]
-                                  [binaryage/devtools "0.6.1"]]
+                                  [binaryage/devtools "0.9.9"]]
 
                    :source-paths ["dev"]
                    :repl-options {:init-ns user

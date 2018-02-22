@@ -1,10 +1,11 @@
 (ns planwise.client.core
   (:require-macros [secretary.core :refer [defroute]])
   (:require [reagent.core :as reagent :refer [atom]]
-            [re-frame.core :refer [dispatch dispatch-sync]]
+            [re-frame.core :as rf]
             [secretary.core :as secretary]
             [accountant.core :as accountant]
 
+            [planwise.client.effects]
             [planwise.client.routes]
             [planwise.client.handlers]
             [planwise.client.subs]
@@ -23,7 +24,7 @@
                      "message"
                      (fn [e]
                        (let [message (.-data e)]
-                         (dispatch [:message-posted message])))))
+                         (rf/dispatch [:message-posted message])))))
 
 (defn install-ticker! []
   (let [time (atom 0)
@@ -31,13 +32,13 @@
     (letfn [(timeout-fn [] (.setTimeout
                             js/window
                             #(do
-                              (dispatch [:tick (swap! time + interval)])
+                              (rf/dispatch [:tick (swap! time + interval)])
                               (timeout-fn))
                             interval))]
       (timeout-fn))))
 
 (defn- ^:export main []
-  (dispatch-sync [:initialise-db])
+  (rf/dispatch-sync [:initialise-db])
   (accountant/configure-navigation!
     {:nav-handler
      (fn [path]

@@ -1,23 +1,17 @@
-(ns planwise.client.projects.api
-  (:require [ajax.core :refer [GET POST DELETE]]
-            [planwise.client.api :refer [json-request]]))
+(ns planwise.client.projects.api)
 
-(defn load-projects [& handlers]
-  (GET
-    "/api/projects/"
-    (json-request {} handlers)))
+(def load-projects
+  {:method :get
+   :uri    "/api/projects"})
 
-(defn create-project [params & handlers]
-  (POST
-    "/api/projects/"
-    (json-request params handlers)))
+(def create-project
+  {:method :post
+   :uri    "/api/projects/"})
 
-(defn delete-project [id & handlers]
-  (DELETE
-    (str "/api/projects/" id)
-    (json-request {:id id} handlers)))
+(defn delete-project [id]
+  {:method :delete
+   :uri    (str "/api/projects/" id)})
 
-(defn leave-project [id & handlers]
-  (DELETE
-    (str "/api/projects/" id "/access")
-    (json-request {:id id} handlers)))
+(defn leave-project [id]
+  {:method :delete
+   :uri    (str "/api/projects/" id "/access")})

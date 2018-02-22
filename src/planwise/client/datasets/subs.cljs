@@ -1,43 +1,46 @@
 (ns planwise.client.datasets.subs
-  (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :refer [register-sub subscribe]]
+  (:require [re-frame.core :as rf]
             [clojure.string :as string]
             [goog.string :as gstring]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]))
 
-(register-sub
+(rf/reg-sub
  :datasets/state
- (fn [db [_]]
-   (reaction (get-in @db [:datasets :state]))))
+ (fn [db _]
+   (get-in db [:datasets :state])))
 
-(register-sub
+(rf/reg-sub
  :datasets/list
- (fn [db [_]]
-   (reaction (get-in @db [:datasets :list]))))
+ (fn [db _]
+   (get-in db [:datasets :list])))
 
-(register-sub
+(rf/reg-sub
  :datasets/search-string
- (fn [db [_]]
-   (reaction (get-in @db [:datasets :search-string]))))
+ (fn [db _]
+   (get-in db [:datasets :search-string])))
 
-(register-sub
+(defn matches-dataset?
+  [search-string dataset]
+  (gstring/caseInsensitiveContains (:name dataset) search-string))
+
+(rf/reg-sub
  :datasets/filtered-list
- (fn [db [_]]
-   (let [search-string (subscribe [:datasets/search-string])
-         datasets (subscribe [:datasets/list])]
-     (reaction
-       (->> @datasets
-         (asdf/value)
-         (filterv #(gstring/caseInsensitiveContains (:name %) @search-string))
-         (sort-by (comp string/lower-case :name)))))))
+ (fn [_ _]
+   [(rf/subscribe [:datasets/search-string])
+    (rf/subscribe [:datasets/list])])
+ (fn [[search-string datasets] _]
+   (->> datasets
+        asdf/value
+        (filterv (partial matches-dataset? search-string))
+        (sort-by (comp string/lower-case :name)))))
 
-(register-sub
+(rf/reg-sub
  :datasets/resourcemap
- (fn [db [_]]
-   (reaction (get-in @db [:datasets :resourcemap]))))
+ (fn [db _]
+   (get-in db [:datasets :resourcemap])))
 
-(register-sub
+(rf/reg-sub
  :datasets/new-dataset-data
- (fn [db [_]]
-   (reaction (get-in @db [:datasets :new-dataset-data]))))
+ (fn [db _]
+   (get-in db [:datasets :new-dataset-data])))

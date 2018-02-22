@@ -1,6 +1,7 @@
 (ns cljs.user
   (:require [figwheel.client :as figwheel]
             [devtools.core :as devtools]
+            [day8.re-frame-10x.preload]
             [schema.core :as s]
             [planwise.client.core :as client]))
 
@@ -9,7 +10,7 @@
 
 (js/console.info "Starting in development mode")
 
-(devtools/install! [:custom-formatters :sanity-hints])
+(devtools/install! [:formatters :hints])
 
 (enable-console-print!)
 

@@ -11,8 +11,8 @@
             [meta-merge.core :refer [meta-merge]]
             [reloaded.repl :refer [system init start stop go reset reset-all]]
             [ring.middleware.stacktrace :refer [wrap-stacktrace wrap-stacktrace-log]]
-            [duct.component.figwheel :as figwheel]
             [duct.component.ragtime :refer [ragtime migrate rollback]]
+            [dev.figwheel :as figwheel]
             [dev.tasks :refer :all]
             [dev.sass :as sass]
             [dev.auto :as auto]
@@ -48,6 +48,7 @@
     :builds   [{:source-paths ["src" "dev"]
                 :build-options
                 {:optimizations :none
+                 :closure-defines {"re_frame.trace.trace_enabled_QMARK_" true}
                  :main "cljs.user"
                  :asset-path "/js"
                  :output-to  "target/figwheel/planwise/public/js/main.js"

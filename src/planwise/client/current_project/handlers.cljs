@@ -1,8 +1,6 @@
 (ns planwise.client.current-project.handlers
-  (:require [re-frame.core :refer [register-handler path dispatch]]
-            [re-frame.utils :as c]
+  (:require [re-frame.core :as rf]
             [clojure.string :refer [split capitalize join]]
-            [accountant.core :as accountant]
             [planwise.client.routes :as routes]
             [planwise.client.current-project.api :as api]
             [planwise.client.datasets.api :as datasets-api]
@@ -11,10 +9,10 @@
             [planwise.client.mapping :as maps]
             [planwise.client.styles :as styles]
             [planwise.client.asdf :as asdf]
-            [planwise.client.utils :refer [remove-by dispatch-delayed]]
+            [planwise.client.utils :refer [remove-by]]
             [planwise.client.datasets.db :refer [dataset->status]]))
 
-(def in-current-project (path [:current-project]))
+(def in-current-project (rf/path [:current-project]))
 
 (def request-delay 500)
 (def loading-hint-delay 1000)
@@ -22,22 +20,28 @@
 ;; ---------------------------------------------------------------------------
 ;; Facility types handlers
 
-(register-handler
+(rf/reg-event-fx
  :current-project/fetch-facility-types
  in-current-project
- (fn [db [_]]
+ (fn [{:keys [db]} [_]]
    (let [dataset-id (db/dataset-id db)]
-     (api/fetch-facility-types dataset-id :current-project/facility-types-received))
-   db))
+     {:api (assoc (api/fetch-facility-types dataset-id)
+                  :on-success [:current-project/facility-types-received])})))
 
-(register-handler
+(defn assign-facility-colours
+  ([items]
+   (assign-facility-colours items styles/facility-types-palette))
+  ([items colours]
+   (map (fn [item colour] (assoc item :colour colour))
+        items (cycle colours))))
+
+(rf/reg-event-db
  :current-project/facility-types-received
  in-current-project
  (fn [db [_ types]]
-   (let [types-with-colours (map (fn [type colour]
-                                   (assoc type :colour colour))
-                                 (sort-by :value types)
-                                 (cycle styles/facility-types-palette))]
+   (let [types-with-colours (->> types
+                                 (sort-by :value)
+                                 assign-facility-colours)]
      (assoc-in db [:filter-definitions :facility-type] types-with-colours))))
 
 ;; ---------------------------------------------------------------------------
@@ -47,14 +51,8 @@
   [section]
   (case section
     :demographics nil
-    :facilities :facilities
-    :transport :facilities-with-demand))
-
-(defn- project-loaded [db project-data]
-  (let [new-db (db/new-viewmodel project-data)]
-    (dispatch [:current-project/fetch-facility-types])
-    (dispatch [:regions/load-regions-with-geo [(:region-id project-data)]])
-    new-db))
+    :facilities   :facilities
+    :transport    :facilities-with-demand))
 
 (defn- visit-tab
   [wizard-state visiting-tab]
@@ -72,128 +70,137 @@
 
 (defn- update-wizard-state
   [db next-tab]
-  (let [state (:wizard db)
+  (let [state   (:wizard db)
         active? (:set state)]
-    (if active?
+    (when active?
       (let [project-id (db/project-id db)
-            new-state (visit-tab state next-tab)]
-        (when (not= state new-state)
-          (api/update-project-state project-id new-state))
-        (assoc db :wizard new-state))
-      db)))
+            new-state  (visit-tab state next-tab)]
+        (merge {:db (assoc db :wizard new-state)}
+               (when (not= state new-state)
+                 {:api (api/update-project-state project-id new-state)}))))))
 
-(register-handler
- :current-project/navigate-project
- in-current-project
- (fn [db [_ project-id section]]
-   (if (not= project-id (db/project-id db))
-     (dispatch [:current-project/load-project project-id (section->with section)])
-     (dispatch [:current-project/reload-project project-id (section->with section)]))
-   db))
-
-(register-handler
+(rf/reg-event-fx
  :current-project/tab-visited
  in-current-project
- (fn [db [_ section]]
+ (fn [{:keys [db]} [_ section]]
    (update-wizard-state db section)))
 
-(register-handler
+(rf/reg-event-fx
+ :current-project/navigate-project
+ in-current-project
+ (fn [{:keys [db]} [_ project-id section]]
+   (let [event-key (if (not= project-id (db/project-id db))
+                     :current-project/load-project
+                     :current-project/reload-project)]
+     {:dispatch [event-key project-id (section->with section)]})))
+
+(rf/reg-event-fx
  :current-project/load-project
  in-current-project
- (fn [db [_ project-id with-data]]
-   (api/load-project project-id with-data
-                     :current-project/project-loaded :current-project/not-found)
-   db/initial-db))
+ (fn [{:keys [db]} [_ project-id with-data]]
+   {:api (assoc (api/load-project project-id with-data)
+                :on-success [:current-project/project-loaded]
+                :on-failure [:current-project/not-found])
+    :db  db/initial-db}))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/reload-project
  in-current-project
- (fn [db [_ project-id with-data]]
-   (api/load-project project-id with-data :current-project/project-updated)
-   db))
+ (fn [_ [_ project-id with-data]]
+   {:api (assoc (api/load-project project-id with-data)
+                :on-success [:current-project/project-updated])}))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/access-project
  in-current-project
- (fn [db [_ project-id token]]
-   (api/access-project project-id token (section->with :demographics)
-                       :current-project/project-access-granted :current-project/not-found)
-   db/initial-db))
+ (fn [_ [_ project-id token]]
+   {:api (assoc (api/access-project project-id token (section->with :demographics))
+                :on-success [:current-project/project-access-granted]
+                :on-failure [:current-project/not-found])
+    :db  db/initial-db}))
 
-(register-handler
+(defn- project-loaded
+  [db project-data]
+  {:dispatch-n [[:current-project/fetch-facility-types]
+                [:regions/load-regions-with-geo [(:region-id project-data)]]]
+   :db         (db/new-viewmodel project-data)})
+
+
+(rf/reg-event-fx
  :current-project/project-access-granted
  in-current-project
- (fn [db [_ project-data]]
-   (let [db (project-loaded db project-data)]
-     (dispatch [:projects/invalidate-projects [project-data]])
-     (accountant/navigate! (routes/project-demographics project-data))
-     db)))
+ (fn [{:keys [db]} [_ project-data]]
+   (merge (project-loaded db project-data)
+          {:dispatch [:projects/invalidate-projects [project-data]]
+           :navigate (routes/project-demographics project-data)})))
 
-(register-handler
- :current-project/not-found
- in-current-project
- (fn [db [_]]
-   (accountant/navigate! (routes/home))
-   db))
-
-(register-handler
+(rf/reg-event-fx
  :current-project/project-loaded
  in-current-project
-  (fn [db [_ project-data]]
+  (fn [{:keys [db]} [_ project-data]]
     (project-loaded db project-data)))
 
-(register-handler
+(rf/reg-event-fx
+ :current-project/not-found
+ (fn [_ _]
+   {:navigate (routes/home)}))
+
+(rf/reg-event-db
  :current-project/isochrones-loaded
  in-current-project
  (fn [db [_ {:keys [map-key unsatisfied-count facilities threshold simplify], :as response}]]
    (let [level (maps/simplify->geojson-level simplify)
          isochrones  (->> facilities
-                       (filter #(some? (:isochrone %)))
-                       (map (juxt :id (comp js/JSON.parse :isochrone)))
-                       (flatten)
-                       (apply hash-map))]
+                          (filter #(some? (:isochrone %)))
+                          (map (juxt :id (comp js/JSON.parse :isochrone)))
+                          (flatten)
+                          (apply hash-map))]
      (update-in db [:facilities :isochrones threshold level] #(merge % isochrones)))))
 
 ;; ----------------------------------------------------------------------------
 ;; Current project dataset
 
-(register-handler
+(rf/reg-event-fx
  :current-project/load-dataset
  in-current-project
- (fn [db _]
-   (datasets-api/load-dataset (db/dataset-id db) :current-project/dataset-loaded)
-   (update db :dataset asdf/reload!)))
+ (fn [{:keys [db]} _]
+   {:api (assoc (datasets-api/load-dataset (db/dataset-id db))
+                :on-success [:current-project/dataset-loaded])
+    :db  (update db :dataset asdf/reload!)}))
 
-(register-handler
+(rf/reg-event-db
  :current-project/invalidate-dataset
  in-current-project
  (fn [db _]
    (update db :dataset asdf/invalidate!)))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/dataset-loaded
  in-current-project
- (fn [db [_ dataset]]
-   (when (#{:importing :unknown} (datasets-db/dataset->status dataset))
-     (dispatch-delayed 5000 [:current-project/invalidate-dataset]))
-   (update db :dataset asdf/reset! dataset)))
+ (fn [{:keys [db]} [_ dataset]]
+   (merge {:db (update db :dataset asdf/reset! dataset)}
+          (when (#{:importing :unknown} (datasets-db/dataset->status dataset))
+            {:dispatch-later [{:ms 5000 :dispatch [:current-project/invalidate-dataset]}]}))))
 
 
 ;; ---------------------------------------------------------------------------
 ;; Project filter updating
 
-(defn set-request-timeout [db]
-  (assoc-in db [:map-state :timeout]
-            (js/setTimeout #(dispatch [:current-project/trigger-map-request]) request-delay)))
+(def timeout-key [:current-project :map-state :timeout])
+(def request-key [:current-project :map-state :request])
 
-(defn cancel-prev-timeout [db]
-  (update-in db [:map-state :timeout] js/clearTimeout))
+(def set-request-timeout
+  {:delayed-dispatch {:ms       request-delay
+                      :key      timeout-key
+                      :dispatch [:current-project/trigger-map-request]}})
 
-(defn cancel-prev-request [db]
-  (some-> (get-in db [:map-state :request]) ajax.protocols/-abort)
-  (assoc-in db [:map-state :request] nil))
+(def cancel-prev-timeout
+  {:cancel-dispatch timeout-key})
 
-(register-handler
+(def cancel-prev-request
+  {:api-abort request-key})
+
+(rf/reg-event-db
  :current-project/show-map-loading-hint
  in-current-project
  (fn [db _]
@@ -201,40 +208,35 @@
      (assoc-in db [:map-state :current] :loading-displayed)
      db)))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/trigger-map-request
  in-current-project
- (fn [db _]
-   (let [filters (db/project-filters db)
-         project-id (get-in db [:project-data :id])
+ (fn [{:keys [db]} _]
+   (let [filters      (db/project-filters db)
+         project-id   (get-in db [:project-data :id])
          request-with (get-in db [:map-state :request-with])]
-     (-> db
-         (assoc-in [:map-state :request] (api/update-project project-id filters request-with :current-project/project-updated))
-         (assoc-in [:map-state :timeout] (js/setTimeout #(dispatch [:current-project/show-map-loading-hint]) loading-hint-delay))
-         (assoc-in [:map-state :current] :loading)))))
+     {:api (assoc (api/update-project project-id filters request-with)
+                  :on-success [:current-project/project-updated]
+                  :key request-key)
+      :delayed-dispatch {:ms       loading-hint-delay
+                         :key      timeout-key
+                         :dispatch [:current-project/show-map-loading-hint]}
+      :db (assoc-in db [:map-state :current] :loading)})))
 
-(defn initiate-project-update [db request-with]
-  (let [new-db
-        (case (get-in db [:map-state :current])
-          :loaded            (set-request-timeout db)
-          :request-pending   (-> db
-                                 cancel-prev-timeout
-                                 set-request-timeout)
-          :loading           (-> db
-                                 cancel-prev-timeout
-                                 cancel-prev-request
-                                 set-request-timeout)
-          :loading-displayed (-> db
-                                 cancel-prev-request
-                                 set-request-timeout))]
-    (-> new-db
-        (assoc-in [:map-state :current] :request-pending)
-        (assoc-in [:map-state :request-with] request-with))))
+(defn initiate-project-update
+  "Effects necessary to initiate a project update given current state"
+  [db request-with]
+  (assoc (case (get-in db [:map-state :current])
+           (:loaded  :request-pending)   set-request-timeout
+           (:loading :loading-displayed) (merge set-request-timeout cancel-prev-request))
+         :db (-> db
+                 (assoc-in [:map-state :current] :request-pending)
+                 (assoc-in [:map-state :request-with] request-with))))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/toggle-filter
  in-current-project
- (fn [db [_ filter-group filter-key filter-value]]
+ (fn [{:keys [db]} [_ filter-group filter-key filter-value]]
    (let [path [:project-data :filters filter-group filter-key]
          current-filter (set (get-in db path))
          toggled-filter (if (contains? current-filter filter-value)
@@ -246,59 +248,58 @@
          project-id (get-in db [:project-data :id])]
      (initiate-project-update new-db :facilities))))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/set-transport-time
  in-current-project
- (fn [db [_ time]]
+ (fn [{:keys [db]} [_ time]]
    (let [new-db (-> db
                     (assoc-in [:project-data :filters :transport :time] time)
-                    (update :map-key asdf/reload!)
-                    (initiate-project-update :demand))]
-     new-db)))
+                    (update :map-key asdf/reload!))]
+     (initiate-project-update new-db :demand))))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/project-updated
  in-current-project
- (fn [db [_ project]]
-   (let [new-db (-> db
-                    cancel-prev-timeout
-                    (assoc-in [:map-state :current] :loaded))]
-     (dispatch [:projects/invalidate-projects])
-     (db/update-viewmodel new-db project))))
+ (fn [{:keys [db]} [_ project]]
+   (assoc cancel-prev-timeout
+          :dispatch [:projects/invalidate-projects]
+          :db       (-> db
+                        (assoc-in [:map-state :current] :loaded)
+                        (db/update-viewmodel project)))))
 
 ;; ----------------------------------------------------------------------------
 ;; Project deletion
 
-(register-handler
+(rf/reg-event-fx
  :current-project/delete-project
  in-current-project
- (fn [db [_]]
+ (fn [{:keys [db]} [_]]
    (let [id (db/project-id db)]
-     (dispatch [:projects/delete-project id]))
-   (accountant/navigate! (routes/home))
-   ;; clear the current project view model
-   db/initial-db))
+     {:dispatch [:projects/delete-project id]
+      :navigate (routes/home)
+      ;; clear the current project view model
+      :db db/initial-db})))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/leave-project
  in-current-project
- (fn [db [_]]
+ (fn [{:keys [db]} [_]]
    (let [id (db/project-id db)]
-     (dispatch [:projects/leave-project id]))
-   (accountant/navigate! (routes/home))
-   ;; clear the current project view model
-   db/initial-db))
+     {:dispatch [:projects/leave-project id]
+      :navigate (routes/home)
+      ;; clear the current project view model
+      :db db/initial-db})))
 
 ;; ---------------------------------------------------------------------------
 ;; Project map view handlers
 
-(register-handler
+(rf/reg-event-db
  :current-project/update-position
  in-current-project
  (fn [db [_ new-position]]
    (assoc-in db [:map-view :position] new-position)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/update-zoom
  in-current-project
  (fn [db [_ new-zoom]]
@@ -307,7 +308,7 @@
 ;; ---------------------------------------------------------------------------
 ;; Sharing handlers
 
-(register-handler
+(rf/reg-event-db
  :current-project/open-share-dialog
  in-current-project
  (fn [db [_]]
@@ -316,85 +317,87 @@
      (assoc :view-state :share-dialog)
      (update :shares asdf/invalidate!))))
 
-(register-handler
+(rf/reg-event-db
  :current-project/close-share-dialog
  in-current-project
  (fn [db [_]]
    (assoc db :view-state :project)))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/load-project-shares
  in-current-project
- (fn [db [_]]
-   (api/load-project (db/project-id db) nil #(dispatch [:current-project/project-shares-loaded (:shares %)]))
-   (update db :shares asdf/reload!)))
+ (fn [{:keys [db]} [_]]
+   {:api (assoc (api/load-project (db/project-id db) nil)
+                :on-success [:current-project/project-shares-loaded]
+                :mapper-fn :shares)
+    :db  (update db :shares asdf/reload!)}))
 
-(register-handler
+(rf/reg-event-db
  :current-project/project-shares-loaded
  in-current-project
  (fn [db [_ data]]
    (update db :shares asdf/reset! data)))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/reset-share-token
  in-current-project
- (fn [db [_]]
-   (let [id (db/project-id db)]
-     (api/reset-share-token id :current-project/share-token-loaded)
-     (update-in db [:sharing :token] asdf/reload!))))
+ (fn [{:keys [db]} [_]]
+   {:api (assoc (api/reset-share-token (db/project-id db))
+                :on-success [:current-project/share-token-loaded])
+    :db  (update-in db [:sharing :token] asdf/reload!)}))
 
-(register-handler
+(rf/reg-event-db
  :current-project/share-token-loaded
  in-current-project
  (fn [db [_ {token :token}]]
    (update-in db [:sharing :token] asdf/reset! token)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/search-shares
  in-current-project
  (fn [db [_ string]]
    (assoc-in db [:sharing :shares-search-string] string)))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/delete-share
  in-current-project
- (fn [db [_ user-id]]
-   (let [project-id (db/project-id db)]
-     (api/delete-share project-id user-id :current-project/share-deleted)
-     (update db :shares asdf/swap! remove-by :user-id user-id))))
+ (fn [{:keys [db]} [_ user-id]]
+   {:api (assoc (api/delete-share (db/project-id db) user-id)
+                :on-success [:current-project/share-deleted])
+    :db  (update db :shares asdf/swap! remove-by :user-id user-id)}))
 
-(register-handler
+(rf/reg-event-db
  :current-project/share-deleted
  in-current-project
  (fn [db [_ {:keys [user-id project-id]}]]
-   ; Optimistic update
+   ; Optimistic update (??)
    (update db :shares asdf/swap! remove-by :user-id user-id)))
 
-(register-handler
+(rf/reg-event-db
  :current-project/reset-sharing-emails-text
  in-current-project
  (fn [db [_ text]]
    (assoc-in db [:sharing :emails-text] text)))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/send-sharing-emails
  in-current-project
- (fn [db [_ text]]
+ (fn [{:keys [db]} [_ text]]
    (let [emails (db/split-emails (get-in db [:sharing :emails-text]))]
-     (api/send-sharing-emails (db/project-id db) emails :current-project/sharing-emails-sent))
-   (-> db
-     (assoc-in [:sharing :state] :sending))))
+     {:api (assoc (api/send-sharing-emails (db/project-id db) emails)
+                  :on-success [:current-project/sharing-emails-sent])
+      :db  (assoc-in db [:sharing :state] :sending)})))
 
-(register-handler
+(rf/reg-event-fx
  :current-project/sharing-emails-sent
  in-current-project
- (fn [db [_ text]]
-   (dispatch-delayed 3000 [:current-project/clear-sharing-emails-state])
-   (-> db
-     (assoc-in [:sharing :emails-text] "")
-     (assoc-in [:sharing :state] :sent))))
+ (fn [{:keys [db]} [_ text]]
+   {:dispatch-later [{:ms 3000 :dispatch [:current-project/clear-sharing-emails-state]}]
+    :db (-> db
+            (assoc-in [:sharing :emails-text] "")
+            (assoc-in [:sharing :state] :sent))}))
 
-(register-handler
+(rf/reg-event-db
  :current-project/clear-sharing-emails-state
  in-current-project
  (fn [db _]
