@@ -3,46 +3,51 @@
   :url "http://github.com/instedd/planwise"
   :min-lein-version "2.0.0"
   :dependencies [; Base infrastructure
-                 [org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojure "1.9.0"]
                  [org.clojure/clojurescript "1.9.908"]
-                 [org.clojure/core.async "0.2.385"]
+                 [org.clojure/core.async "0.4.474"]
                  [com.stuartsierra/component "0.3.1"]
                  [prismatic/schema "1.1.7"]
                  [duct "0.6.1"]
 
                  ; Web server and routing
-                 [compojure "1.5.0"
+                 [compojure "1.6.0"
                   :exclusions [commons-codec]]
-                 [ring "1.4.0"]
-                 [ring/ring-defaults "0.2.0"]
+                 [ring/ring-core "1.6.3"]
+                 [ring/ring-servlet "1.6.3"]
+                 [ring/ring-jetty-adapter "1.6.3"]
+                 [ring/ring-defaults "0.3.1"]
                  [ring/ring-json "0.4.0"]
                  [ring-jetty-component "0.3.1"]
-                 [ring-webjars "0.1.1"]
+                 [ring-webjars "0.2.0"]
                  [amalloy/ring-gzip-middleware "0.1.3"]
+                 [clj-http "3.7.0"]
+                                        ; needed by oauthentic
 
                  ; Security
-                 [buddy "1.0.0"]
+                 [buddy "2.0.0"]
                  [org.openid4java/openid4java "1.0.0"
                   :exclusions [commons-logging
                                org.apache.httpcomponents/httpclient]]
                  [oauthentic "1.0.1"
-                  :exclusions [org.apache.httpcomponents/httpclient]]
+                  :exclusions [org.apache.httpcomponents/httpclient
+                               clj-http]]
 
                  ; Configuration
                  [environ "1.0.3"]
                  [meta-merge "0.1.1"]
 
                  ; Logging
-                 [com.taoensso/timbre "4.5.1"]
-                 [com.fzakaria/slf4j-timbre "0.3.2"]
+                 [com.taoensso/timbre "4.10.0"]
+                 [com.fzakaria/slf4j-timbre "0.3.8"]
                  [org.slf4j/log4j-over-slf4j "1.7.14"]
                  [org.slf4j/jul-to-slf4j "1.7.14"]
                  [org.slf4j/jcl-over-slf4j "1.7.14"]
 
                  ; Rendering and data handling
                  [hiccup "1.0.5"]
-                 [cheshire "5.6.3"]
-                 [clj-time "0.12.0"]
+                 [cheshire "5.8.0"]
+                 [clj-time "0.14.2"]
                  [reduce-fsm "0.1.4"]
 
                  ; Client infrastructure
@@ -64,11 +69,11 @@
                  [org.webjars/leaflet "0.7.7"]
 
                  ; Database access
-                 [duct/hikaricp-component "0.1.0"
+                 [duct/hikaricp-component "0.1.2"
                   :exclusions [org.slf4j/slf4j-nop]]
                  [duct/ragtime-component "0.1.4"]
-                 [org.postgresql/postgresql "9.4.1208"]
-                 [net.postgis/postgis-jdbc "2.1.7.2"
+                 [org.postgresql/postgresql "42.2.1"]
+                 [net.postgis/postgis-jdbc "2.2.1"
                   :exclusions [postgresql
                                ch.qos.logback/logback-classic
                                ch.qos.logback/logback-core]]
@@ -77,7 +82,7 @@
                  ; Misc
                  [digest "1.4.4"]
                  [com.draines/postal "2.0.0"]
-                 [funcool/cuerdas "1.0.1"]]
+                 [funcool/cuerdas "2.0.3"]]
 
   :plugins [[lein-environ "1.0.3"]
             [lein-cljsbuild "1.1.5"]
@@ -121,6 +126,7 @@
                                   [duct/generate "0.6.1"
                                    :exclusions [org.codehaus.plexus/plexus-utils]]
                                   [figwheel-sidecar "0.5.14"]
+                                  [ring/ring-devel "1.6.3"]
 
                                   ; REPL tools
                                   [reloaded.repl "0.2.1"]
@@ -129,7 +135,7 @@
                                   [com.cemerick/piggieback "0.2.1"]
 
                                   ; Testing libraries
-                                  [eftest "0.1.1"]
+                                  [eftest "0.4.3"]
                                   [kerodon "0.7.0"]
                                   [fixtures-component "0.4.2"
                                    :exclusions [org.clojure/java.jdbc]]
