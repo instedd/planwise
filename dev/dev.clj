@@ -58,7 +58,7 @@
    :sass
    {:input "resources/sass/site.scss"
     :output "target/sass-repl/planwise/public/css/site.css"
-    :options ["-m"]}})
+    :options ["-m" "auto"]}})
 
 (def config
   (meta-merge config/defaults
