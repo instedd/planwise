@@ -12,15 +12,16 @@ pom.xml.asc
 /.nrepl-port
 /.dir-locals.el
 /profiles.clj
-dev/local.clj
-/cpp/aggregate-population
-/cpp/calculate-demand
+dev/src/local.clj
 
 *.pyc
 .idea
 resources/planwise/public/data/
 /mapserver/data/*
+
 /cpp/*.dSYM
 /cpp/*.o
+/cpp/aggregate-population
+/cpp/calculate-demand
 
 /docker-compose.override.yml
