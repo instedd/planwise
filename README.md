@@ -98,10 +98,20 @@ containers and a headless nREPL container.
 ### Mapserver
 
 The mapserver and mapcache containers for development will use the map data in
-the `data` folder. Download `KEN_popmap15_v2b.tif` from
-[worldpop.org.uk](http://www.worldpop.org.uk/data/files/index.php?dataset=KEN-POP&action=group),
-and place it there. Refer to the README in the `mapserver` folder for more information.
+the `data` folder. Download [KEN_popmap15_v2b.zip](http://www.worldpop.org.uk/data/files/index.php?dataset=129&zip_title=Kenya%20100m%20Population&action=group) from
+[worldpop.org.uk](http://www.worldpop.org.uk/data/summary/?doi=10.5258/SOTON/WP00124),
+and extract it's content there. Refer to the README in the `mapserver` folder for more information.
 
+```
+data
+├── KEN_popmap15_v2b.tfw
+├── KEN_popmap15_v2b.tif
+├── KEN_popmap15_v2b.tif.aux.xml
+├── demands
+├── isochrones
+├── populations
+└── regions
+```
 
 ### Bootstrap the map data
 
@@ -176,7 +186,7 @@ export POSTGRES_PORT=5433
 
 Default values are set in the file `env`, so you can simply run:
 
-```sh 
+```sh
 $ source ./env
 ```
 
@@ -194,7 +204,7 @@ $ brew install gdal --with-postgresql
 The application has some C++ binaries which are run in the context of the
 application. You'll need to compile these:
 
-```sh 
+```sh
 $ cd cpp
 $ make clean all
 ```
