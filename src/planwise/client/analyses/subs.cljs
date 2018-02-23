@@ -1,11 +1,7 @@
 (ns planwise.client.analyses.subs
-  (:require-macros [reagent.ratom :refer [reaction]])
-  (:require [re-frame.core :refer [register-sub subscribe]]
-            [clojure.string :as string]
-            [planwise.client.asdf :as asdf]
-            [planwise.client.utils :as utils]))
+  (:require [re-frame.core :as rf]))
 
-(register-sub
+(rf/reg-sub
  :analyses/list
- (fn [db [_]]
-   (reaction (get-in @db [:analyses :list]))))
+ (fn [db _]
+   (get-in db [:analyses :list])))

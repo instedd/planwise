@@ -1,21 +1,14 @@
-(ns planwise.client.analyses.api
-  (:require [ajax.core :refer [GET POST DELETE]]
-            [planwise.client.api :refer [json-request]]))
-
-;; ----------------------------------------------------------------------------
-;; Utility functions
-
+(ns planwise.client.analyses.api)
 
 ;; ----------------------------------------------------------------------------
 ;; API methods
 
-(defn load-analyses
-  [& handlers]
-  (GET "/api/analyses"
-      (json-request {} handlers)))
+(def load-analyses
+  {:method :get
+   :uri    "/api/analyses"})
 
 (defn create-analysis!
-  [name & handlers]
-  (POST "/api/analyses"
-      (json-request {:name name}
-                    handlers)))
+  [name]
+  {:method :post
+   :uri    "/api/analyses"
+   :params {:name name}})

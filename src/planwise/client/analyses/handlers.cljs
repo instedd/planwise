@@ -1,40 +1,36 @@
 (ns planwise.client.analyses.handlers
-  (:require [re-frame.core :refer [register-handler path dispatch]]
-            [re-frame.utils :as c]
-            [clojure.string :refer [blank?]]
+  (:require [re-frame.core :as rf]
             [planwise.client.asdf :as asdf]
-            [planwise.client.utils :refer [remove-by-id]]
-            [planwise.client.analyses.api :as api]
-            [planwise.client.analyses.db :as db]
-            [planwise.client.utils :as utils]))
+            [planwise.client.analyses.api :as api]))
 
-(def in-analyses (path [:analyses]))
+(def in-analyses (rf/path [:analyses]))
 
 ;; ----------------------------------------------------------------------------
 ;; Analyses listing
 
-(register-handler
+(rf/reg-event-fx
  :analyses/load-analyses
  in-analyses
- (fn [db [_]]
-   (api/load-analyses :analyses/analyses-loaded)
-   (update db :list asdf/reload!)))
+ (fn [{:keys [db]} [_]]
+   {:api (assoc api/load-analyses
+                :on-success [:analyses/analyses-loaded])
+    :db  (update db :list asdf/reload!)}))
 
-(register-handler
+(rf/reg-event-db
  :analyses/invalidate-analyses
  in-analyses
  (fn [db [_]]
    (update db :list asdf/invalidate!)))
 
-(register-handler
+(rf/reg-event-db
  :analyses/analyses-loaded
  in-analyses
  (fn [db [_ analyses]]
    (update db :list asdf/reset! analyses)))
 
-(register-handler
+(rf/reg-event-fx
  :analyses/create-analysis!
  in-analyses
- (fn [db [_]]
-   (api/create-analysis! "Test" :analyses/invalidate-analyses)
-   db))
+ (fn [_ [_]]
+   {:api (assoc (api/create-analysis! "Test")
+                :on-success [:analyses/invalidate-analyses])}))
