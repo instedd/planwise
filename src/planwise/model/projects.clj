@@ -24,3 +24,7 @@
    (s/optional-key :region-name)       s/Str
    (s/optional-key :region-population) s/Int
    (s/optional-key :region-area-km2)   s/Num})
+
+(defn owned-by?
+  [project user-id]
+  (= user-id (:owner-id project)))

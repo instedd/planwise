@@ -37,8 +37,8 @@
  ([data]
   (into
    (test-system {:fixtures {:data data}})
-   {:facilities (component/using (facilities/facilities-service {:config {}}) [])
-    :projects (component/using (projects/projects-service) [:db :facilities])})))
+   {:facilities (component/using nil #_(facilities/facilities-service {:config {}}) [])
+    :projects (component/using nil #_(projects/projects-service) [:db :facilities])})))
 
 (defn- count-project-shares [service project-id user-id]
   (->> (projects/list-project-shares service project-id)

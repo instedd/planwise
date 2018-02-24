@@ -1,5 +1,5 @@
 (ns planwise.system
-  (:require [clojure.java.io :as io]
+  #_(:require [clojure.java.io :as io]
             [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
             [duct.component.endpoint :refer [endpoint-component]]
@@ -28,9 +28,10 @@
             [clojure.set :refer [rename-keys]]
 
             [planwise.util.ring :refer [wrap-log-request wrap-log-errors]]
+            [planwise.auth.guisso :refer [wrap-check-guisso-cookie]]
 
             [planwise.component.compound-handler :refer [compound-handler-component]]
-            [planwise.component.auth :refer [auth-service wrap-check-guisso-cookie]]
+            [planwise.component.auth :refer [auth-service]]
             [planwise.component.facilities :refer [facilities-service]]
             [planwise.component.routing :refer [routing-service]]
             [planwise.component.projects :refer [projects-service]]
@@ -53,12 +54,12 @@
             [planwise.endpoint.datasets :refer [datasets-endpoint]]
             [planwise.endpoint.resmap-auth :refer [resmap-auth-endpoint]]))
 
-(timbre/refer-timbre)
+#_(timbre/refer-timbre)
 
 
 ;; TODO: move these to auth endpoint/component?
 
-(defn api-unauthorized-handler
+#_(defn api-unauthorized-handler
   [request metadata]
   (let [authenticated? (authenticated? request)
         error-response {:error "Unauthorized"}
@@ -67,7 +68,7 @@
         (response/content-type "application/json")
         (response/status status))))
 
-(defn app-unauthorized-handler
+#_(defn app-unauthorized-handler
   [request metadata]
   (cond
     (authenticated? request)
@@ -80,16 +81,16 @@
       (response/redirect (format "/login?next=%s" current-url)))))
 
 
-(def jwe-options {:alg :a256kw :enc :a128gcm})
-(def jwe-secret (nonce/random-bytes 32))
+#_(def jwe-options {:alg :a256kw :enc :a128gcm})
+#_(def jwe-secret (nonce/random-bytes 32))
 
-(def session-config
+#_(def session-config
   {:cookies true
    :session {:store (cookie-store)
              :cookie-attrs {:max-age (* 24 3600)}
              :cookie-name "planwise-session"}})
 
-(def base-config
+#_(def base-config
   {:auth {:jwe-secret  jwe-secret
           :jwe-options jwe-options}
    ;; Log requests in the API stack since it'll perform all the params mangling
@@ -133,7 +134,7 @@
                 (str/trim-newline)
                 (str/trim)))})
 
-(defn jwe-backend
+#_(defn jwe-backend
   "Construct a Buddy JWE auth backend from the configuration map"
   [config]
   (let [config (-> config
@@ -146,13 +147,13 @@
                                  :on-error]))]
     (backends/jwe config)))
 
-(defn session-backend
+#_(defn session-backend
   "Construct a Buddy session auth backend from the configuration map"
   [config]
   (let [config (select-keys config [:unauthorized-handler])]
     (backends/session config)))
 
-(defn new-system [config]
+#_(defn new-system [config]
   (let [config (meta-merge base-config config)]
     (-> (component/system-map
          :globals             {:app-version (:version config)}

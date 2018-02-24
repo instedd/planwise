@@ -3,7 +3,7 @@
             [clj-time.core :as time]
             [clojure.java.jdbc :as jdbc]
             [com.stuartsierra.component :as component]
-            [planwise.component.users :as users]
+            [planwise.boundary.users :as users]
             [planwise.test-system :refer [test-system with-system]]))
 
 (defn execute-sql
@@ -30,7 +30,7 @@
   []
   (into
    (test-system {:fixtures {:data (fixture-data)}})
-   {:users-store (component/using (users/users-store) [:db])}))
+   {:users-store (component/using nil #_(users/users-store) [:db])}))
 
 (deftest find-user-test
   (with-system (system)

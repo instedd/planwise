@@ -1,5 +1,6 @@
 (ns planwise.auth.guisso
-  (:require [taoensso.timbre :as timbre])
+  (:require [planwise.model.ident :as ident]
+            [taoensso.timbre :as timbre])
   (:import [org.openid4java.consumer ConsumerManager]
            [org.openid4java.discovery DiscoveryInformation]
            [org.openid4java.message.sreg SRegMessage SRegRequest SRegResponse]
@@ -65,3 +66,22 @@
       (do
         (info "OpenID authentication failed or no SReg message found in the response")
         nil))))
+
+(defn wrap-check-guisso-cookie
+  "Ring middleware to check that the Guisso cookie value matches the currently
+  authenticated user, usually from the session. This middleware needs to be
+  placed after the authentication middleware but before the authorization. It's
+  essentially authentication post-processing."
+  [handler]
+  (fn [request]
+    (let [guisso-cookie (get-in request [:cookies "guisso"])
+          ident (:identity request)
+          user-email (some-> ident ident/user-email)]
+      (if (and (some? guisso-cookie)
+               (some? user-email)
+               (not= user-email (:value guisso-cookie)))
+        (do
+          (info "Found Guisso cookie but is not equal to current session user")
+          ;; Remove the identity from the request
+          (handler (dissoc request :identity)))
+        (handler request)))))

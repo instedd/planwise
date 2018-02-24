@@ -1,8 +1,10 @@
 (ns planwise.component.projects
-  (:require [planwise.component.facilities :as facilities]
+  (:require [planwise.boundary.projects :as boundary]
+            [planwise.boundary.facilities :as facilities]
             [planwise.boundary.mailer :as mailer]
+            [planwise.model.projects :refer [owned-by?]]
+            [integrant.core :as ig]
             [clojure.java.jdbc :as jdbc]
-            [com.stuartsierra.component :as component]
             [hugsql.core :as hugsql]
             [taoensso.timbre :as timbre]
             [clojure.edn :as edn]
@@ -43,10 +45,6 @@
 
 ;; Access related functions
 
-(defn owned-by?
-  [project user-id]
-  (= user-id (:owner-id project)))
-
 (defn- view-for-user
   "Removes sensitive data if the requesting user is not the project owner
    and adds a read-only flag, or loads project shares if it is the owner."
@@ -56,16 +54,6 @@
     (-> project
       (dissoc :share-token)
       (assoc :read-only true))))
-
-;; ----------------------------------------------------------------------
-;; Service definition
-
-(defrecord ProjectsService [db facilities mailer])
-
-(defn projects-service
-  "Constructs a Projects service component"
-  []
-  (map->ProjectsService {}))
 
 
 ;; ----------------------------------------------------------------------
@@ -186,10 +174,13 @@
       (for [email emails]
         (let [body (<<- (<< "Greetings,
 
-                             ~(:owner-email project) has shared the PlanWise project \"~(:goal project)\" with you. Click on the link below to add it to your projects list:
+                             ~(:owner-email project) has shared the PlanWise
+                             project \"~(:goal project)\" with you. Click on the
+                             link below to add it to your projects list:
                              ~(share-project-url host project)
 
-                             If you do not have a PlanWise account, you will be prompted to create one when you access the link.
+                             If you do not have a PlanWise account, you will be
+                             prompted to create one when you access the link.
 
                              Regards,
 
@@ -197,3 +188,42 @@
                              "))]
           (mailer/send-mail mailer {:to email, :subject subject, :body body}))))
     true))
+
+
+;; ----------------------------------------------------------------------
+;; Service definition
+
+(defrecord ProjectsService [db facilities mailer]
+
+  boundary/Projects
+  (create-project [service project]
+    (create-project service project))
+  (list-projects-for-user [service user-id]
+    (list-projects-for-user service user-id))
+  (get-project [service id]
+    (get-project service id))
+  (get-project [service id user-id]
+    (get-project service id user-id))
+  (update-project [service project]
+    (update-project service project))
+  (delete-project [service id]
+    (delete-project service id))
+  (create-project-share [service project-id token user-id]
+    (create-project-share service project-id token user-id))
+  (delete-project-share [service project-id user-id]
+    (delete-project-share service project-id user-id))
+  (list-project-shares [service project-id]
+    (list-project-shares service project-id))
+  (reset-share-token [service id]
+    (reset-share-token service id))
+  (share-via-email [service project emails opts]
+    (share-via-email service project emails opts))
+  (list-projects-for-dataset [service dataset-id]
+    (list-projects-for-dataset service dataset-id))
+  (update-project-stats [service project]
+    (update-project-stats service project)))
+
+
+(defmethod ig/init-key :planwise.component/projects
+  [_ config]
+  (map->ProjectsService config))

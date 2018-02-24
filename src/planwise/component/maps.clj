@@ -1,7 +1,8 @@
 (ns planwise.component.maps
-  (:require [com.stuartsierra.component :as component]
-            [planwise.component.runner :refer [run-external]]
+  (:require [planwise.boundary.maps :as boundary]
+            [planwise.boundary.runner :as runner]
             [planwise.boundary.regions :as regions]
+            [integrant.core :as ig]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [planwise.util.str :refer [trim-to-int]]
@@ -102,21 +103,29 @@
                            (str saturation)
                            (populations-path service region-id ".tif")
                            (vec polygons-args))
-              response   (run-external
+              response   (runner/run-external
                             (:runner service)
                             :bin
                             300000
                             "calculate-demand"
-                            (str "@" args-fname))]
+                            [(str "@" args-fname)])]
             {:map-key map-key,
              :unsatisfied-count (trim-to-int response)})
         (catch Exception e
           (error e "Error calculating demand map for region " region-id "with polygons" (map :polygon-id facilities))
           {})))))
 
-(defrecord MapsService [config runner regions])
+(defrecord MapsService [config runner regions]
+  boundary/Maps
+  (mapserver-url [service]
+    (mapserver-url service))
+  (default-capacity [service]
+    (default-capacity service))
+  (calculate-demand? [service]
+    (calculate-demand? service))
+  (demand-map [service region-id polygons]
+    (demand-map service region-id polygons)))
 
-(defn maps-service
-  "Construct a Maps Service component from config"
-  [config]
-  (map->MapsService {:config config}))
+(defmethod ig/init-key :planwise.component/maps
+  [_ config]
+  (map->MapsService config))

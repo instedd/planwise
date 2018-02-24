@@ -1,4 +1,5 @@
 /target
+/logs
 /classes
 /checkouts
 /data
@@ -10,9 +11,11 @@ pom.xml.asc
 /.docker-env
 /.lein-*
 /.nrepl-port
+
 /.dir-locals.el
 /profiles.clj
-dev/src/local.clj
+/dev/src/local.clj
+/dev/resources/local.edn
 
 *.pyc
 .idea

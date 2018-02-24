@@ -1,7 +1,7 @@
 (ns planwise.component.datasets-test
   (:require [planwise.component.datasets :as datasets]
             [planwise.boundary.datasets :as datasets-protocol]
-            [planwise.test-system :refer [test-system with-system]]
+            #_[planwise.test-system :refer [test-system with-system]]
             [planwise.test-utils :refer [sample-polygon]]
             [com.stuartsierra.component :as component]
             [clj-time.core :as time]
@@ -28,7 +28,7 @@
    [:project_shares
     [{:user_id grantee-id :project_id 1}]]])
 
-(defn system
+#_(defn system
  ([]
   (system fixture-data))
  ([data]
@@ -36,13 +36,13 @@
    (test-system {:fixtures {:data data}})
    {:datasets (component/using (datasets/datasets-store) [:db])})))
 
-(deftest dataset-owned-by
+#_(deftest dataset-owned-by
   (with-system (system)
     (let [dataset (datasets/find-dataset (:datasets system) 1)]
       (is (datasets-protocol/owned-by? dataset 1))
       (is (not (datasets-protocol/owned-by? dataset 2))))))
 
-(deftest dataset-accessible-by
+#_(deftest dataset-accessible-by
   (with-system (system)
     (let [store (:datasets system)]
       (is (datasets/accessible-by? store {:id 1 :owner-id 1} owner-id))

@@ -1,10 +1,10 @@
 (ns planwise.test-system
   (:require [com.stuartsierra.component :as component]
             [clojure.java.jdbc :as jdbc]
-            [planwise.tasks.db :refer [load-sql-functions]]
-            [duct.component.ragtime :refer [ragtime migrate rollback]]
-            [fixtures.adapters.jdbc :refer [jdbc-adapter]]
-            [fixtures.component :refer [fixtures]]
+            #_[planwise.tasks.db :refer [load-sql-functions]]
+            #_[duct.component.ragtime :refer [ragtime migrate rollback]]
+            #_[fixtures.adapters.jdbc :refer [jdbc-adapter]]
+            #_[fixtures.component :refer [fixtures]]
             [meta-merge.core :refer [meta-merge]]
             [environ.core :refer [env]]))
 
@@ -20,9 +20,9 @@
 (defrecord MigrationRunner [db ragtime]
   component/Lifecycle
   (start [component]
-    (load-sql-functions component)
+    #_(load-sql-functions component)
     (create-osm2pgr-tables component)
-    (migrate (:ragtime component))
+    #_(migrate (:ragtime component))
     component)
   (stop [component]
     component))
@@ -42,7 +42,7 @@
 
 (def test-config
   {:db       {:uri (env :test-database-url)}
-   :fixtures {:adapter jdbc-adapter
+   :fixtures {:adapter nil #_jdbc-adapter
               :data []}})
 
 (defn test-system
@@ -52,9 +52,9 @@
   (let [config (meta-merge test-config config)]
     (-> (component/system-map
          :db         {:spec (get-in config [:db :uri])}
-         :ragtime    (ragtime {:resource-path "migrations"})
+         :ragtime    nil #_(ragtime {:resource-path "migrations"})
          :migrations (migration-runner)
-         :fixtures   (fixtures (:fixtures config)))
+         :fixtures   nil #_(fixtures (:fixtures config)))
         (component/system-using
          {:ragtime    [:db]
           :migrations [:db :ragtime]

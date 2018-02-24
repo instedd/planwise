@@ -1,5 +1,4 @@
-(ns planwise.boundary.maps
-  (:require [planwise.component.maps :as service]))
+(ns planwise.boundary.maps)
 
 (defprotocol Maps
   "Mapping utilities"
@@ -17,15 +16,3 @@
     "Returns the key for an unsatsified demand tile layer and the total unsatisfied demand,
      for the specified region and using the chosen facility polygons"))
 
-;; Reference implementation
-
-(extend-protocol Maps
-  planwise.component.maps.MapsService
-  (mapserver-url [service]
-    (service/mapserver-url service))
-  (default-capacity [service]
-    (service/default-capacity service))
-  (calculate-demand? [service]
-    (service/calculate-demand? service))
-  (demand-map [service region-id polygons]
-    (service/demand-map service region-id polygons)))

@@ -15,7 +15,7 @@
   {:jwe-secret (nonce/random-bytes 32)})
 
 (def handler
-  (-> (home/home-endpoint {:auth mocked-auth-service, :maps (maps/maps-service {})})
+  (-> (home/home-endpoint {:auth mocked-auth-service, :maps nil #_(maps/maps-service {})})
       (wrap-authorization (backends/session))))
 
 (def home-paths ["/"

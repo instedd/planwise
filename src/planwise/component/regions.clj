@@ -1,8 +1,7 @@
 (ns planwise.component.regions
-  (:require [clojure.java.jdbc :as jdbc]
-            [com.stuartsierra.component :as component]
+  (:require [planwise.boundary.regions :as boundary]
+            [integrant.core :as ig]
             [clojure.data.json :as json]
-            [clojure.set :as set]
             [hugsql.core :as hugsql]))
 
 ;; ----------------------------------------------------------------------
@@ -10,40 +9,36 @@
 
 (hugsql/def-db-fns "planwise/sql/regions.sql")
 
-(defn get-db [service]
-  (get-in service [:db :spec]))
-
-(defn db->region [{json-bbox :bbox, :as record}]
+(defn db->region [{json-bbox :bbox :as record}]
   (if json-bbox
-    (let [[se ne nw sw se'] (map reverse (get-in (json/read-str json-bbox) ["coordinates" 0]))]
+    (let [coordinates (-> json-bbox json/read-str (get-in ["coordinates" 0]))
+          [se ne nw sw se'] (map reverse coordinates)]
       (assoc record :bbox [sw ne]))
     record))
+
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defrecord RegionsService [db])
+(defrecord RegionsService [db]
 
-(defn regions-service
-  "Constructs a Regions service component"
-  []
-  (map->RegionsService {}))
+  boundary/Regions
+  (list-regions [{:keys [db]}]
+    (map db->region (select-regions (:spec db))))
+  (list-regions-with-preview [{:keys [db]} ids]
+    (map db->region
+         (select-regions-with-preview-given-ids (:spec db) {:ids ids})))
+  (list-regions-with-geo [{:keys [db]} ids simplify]
+    (map db->region
+         (select-regions-with-geo-given-ids (:spec db)
+                                            {:ids ids :simplify simplify})))
+  (find-region [{:keys [db]} id]
+    (db->region (select-region (:spec db) {:id id}))))
 
 
 ;; ----------------------------------------------------------------------
-;; Service functions
+;; Service initialization
 
-(defn list-regions [service]
-  (map db->region
-    (select-regions (get-db service))))
-
-(defn list-regions-with-preview [service ids]
-  (map db->region
-    (select-regions-with-preview-given-ids (get-db service) {:ids ids})))
-
-(defn list-regions-with-geo [service ids simplify]
-  (map db->region
-    (select-regions-with-geo-given-ids (get-db service) {:ids ids, :simplify simplify})))
-
-(defn find-region [service id]
-  (db->region (select-region (get-db service) {:id id})))
+(defmethod ig/init-key :planwise.component/regions
+  [_ config]
+  (map->RegionsService config))

@@ -4,11 +4,12 @@
             [resauce.core :as resauce]
             [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
-            [duct.component.hikaricp :refer [hikaricp]]
+            #_[duct.component.hikaricp :refer [hikaricp]]
             [meta-merge.core :refer [meta-merge]]
             [planwise.config :as config]
-            [planwise.component.facilities :as facilities :refer [facilities-service]]
-            [planwise.component.runner :refer [runner-service]])
+            [planwise.boundary.facilities :as facilities]
+            #_[planwise.component.facilities :as facilities :refer [facilities-service]]
+            #_[planwise.component.runner :refer [runner-service]])
   (:gen-class))
 
 (timbre/refer-timbre)
@@ -19,9 +20,9 @@
 
 (defn new-system [config]
   (-> (component/system-map
-       :db         (hikaricp (:db config))
-       :runner     (runner-service (:paths config))
-       :facilities (facilities-service (:facilities config)))
+       :db         nil #_(hikaricp (:db config))
+       :runner     nil #_(runner-service (:paths config))
+       :facilities nil #_(facilities-service (:facilities config)))
       (component/system-using
         {:facilities          [:db :runner]})))
 
@@ -34,9 +35,9 @@
       (if (= "all" cmd)
         (do
           (println "Clearing facilities processed status to reprocess them all")
-          (facilities/clear-facilities-processed-status! facilities))
+          #_(facilities/clear-facilities-processed-status! facilities))
         (println "Unsupported command" cmd "- ignoring")))
 
     (println "Pre-processing facilities")
-    (let [result (facilities/preprocess-isochrones facilities)]
+    (let [result nil #_(facilities/preprocess-isochrones facilities)]
       (println "Processed" (count result) "facilities"))))

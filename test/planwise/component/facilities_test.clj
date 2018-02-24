@@ -39,7 +39,7 @@
  ([data]
   (into
    (test-system {:fixtures {:data data}})
-   {:facilities (component/using (facilities/facilities-service {}) [:db])})))
+   {:facilities (component/using nil #_(facilities/facilities-service {}) [:db])})))
 
 (deftest list-facilities
   (with-system (system)

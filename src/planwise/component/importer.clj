@@ -1,11 +1,11 @@
 (ns planwise.component.importer
-  (:require [com.stuartsierra.component :as component]
+  (:require [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.set :refer [rename-keys]]
             [planwise.model.import-job :as import-job]
             [planwise.boundary.resmap :as resmap]
-            [planwise.component.projects :as projects]
-            [planwise.component.facilities :as facilities]
+            [planwise.boundary.projects :as projects]
+            [planwise.boundary.facilities :as facilities]
             [planwise.boundary.datasets :as datasets]
             [planwise.component.taskmaster :as taskmaster]
             [planwise.util.collections :refer [find-by]]
@@ -266,22 +266,6 @@
 ;; Service definition
 
 (defrecord Importer [jobs taskmaster concurrent-workers facilities-capacity resmap facilities datasets projects]
-  component/Lifecycle
-  (start [component]
-    (info "Starting Importer component")
-    (let [component (if-not (:jobs component)
-                      (assoc component :jobs (atom (pending-jobs component)))
-                      component)]
-      (if-not (:taskmaster component)
-        (let [concurrent-workers (or (:concurrent-workers component) 1)
-              taskmaster (taskmaster/run-taskmaster component concurrent-workers)]
-          (assoc component :taskmaster taskmaster))
-        component)))
-  (stop [component]
-    (info "Stopping Importer component")
-    (when-let [taskmaster (:taskmaster component)]
-      (taskmaster/quit taskmaster))
-    (dissoc component :jobs :taskmaster))
 
   taskmaster/TaskDispatcher
   (next-task [component]
@@ -310,13 +294,6 @@
     (swap! (:jobs component) update job-id import-job/report-task-failure task-id error-info)
     (persist-job component (get @(:jobs component) job-id))
     (swap! (:jobs component) (jobs-finisher component))))
-
-(defn importer
-  "Constructs an Importer service"
-  ([]
-   (importer {}))
-  ([config]
-   (map->Importer config)))
 
 
 ;; Importer public API
@@ -351,3 +328,19 @@
   [service job-id]
   (swap! (:jobs service) update job-id import-job/cancel-job)
   (status service))
+
+
+(defmethod ig/init-key :planwise.component/importer
+  [_ config]
+  (info "Starting Importer component")
+  (let [service            (map->Importer config)
+        concurrent-workers (or (:concurrent-workers service) 1)
+        pending-jobs       (pending-jobs service)]
+    (as-> service service
+      (assoc service :jobs (atom pending-jobs))
+      (assoc service :taskmaster (taskmaster/run-taskmaster service concurrent-workers)))))
+
+(defmethod ig/halt-key! :planwise.component/importer
+  [_ importer]
+  (info "Stopping Importer component")
+  (taskmaster/quit (:taskmaster importer)))

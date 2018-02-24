@@ -1,14 +1,10 @@
 (ns dev.tasks
   (:refer-clojure :exclude [test])
-  (:require [duct.generate :as gen]
-            [eftest.runner :as eftest]
+  (:require [eftest.runner :as eftest]
             [dev.figwheel :as figwheel]
             [dev.sass :as sass]
-            [reloaded.repl :refer [system]]
-            [planwise.tasks.db :refer [load-sql-functions]]))
-
-(defn setup []
-  (gen/locals))
+            [integrant.repl.state :refer [config system]]
+            #_[planwise.tasks.db :refer [load-sql-functions]]))
 
 (defn test
   ([]
@@ -29,5 +25,5 @@
   (sass/rebuild (:sass system))
   (figwheel/refresh-css (:figwheel system)))
 
-(defn load-sql []
+#_(defn load-sql []
   (load-sql-functions system))

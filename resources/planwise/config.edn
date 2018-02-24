@@ -1,0 +1,58 @@
+{:duct.core/project-ns  planwise
+ :duct.core/environment :production
+
+ :duct.module/logging {}
+ :duct.module.web/site {}
+ :duct.module/sql {}
+ :duct.module/cljs {:main planwise.client.core}
+
+ :planwise/ragtime ["migrations"]
+ :duct.migrator/ragtime {:migrations ^:replace #ig/ref :planwise/ragtime}
+
+ :duct.router/cascading
+ []
+
+ ;; Components
+
+ :planwise.component/auth
+ {:users-store #ig/ref :planwise.component/users}
+
+ :planwise.component/datasets
+ {:db #ig/ref :duct.database/sql}
+
+ :planwise.component/facilities
+ {:db     #ig/ref :duct.database/sql
+  :runner #ig/ref :planwise.component/runner}
+
+ :planwise.component/importer
+ {:datasets   #ig/ref :planwise.component/datasets
+  :facilities #ig/ref :planwise.component/facilities
+  :projects   #ig/ref :planwise.component/projects
+  :resmap     #ig/ref :planwise.component/resmap}
+
+ :planwise.component/mailer
+ {}
+
+ :planwise.component/maps
+ {:regions #ig/ref :planwise.component/regions
+  :runner  #ig/ref :planwise.component/runner}
+
+ :planwise.component/projects
+ {:db         #ig/ref :duct.database/sql
+  :facilities #ig/ref :planwise.component/facilities
+  :mailer     #ig/ref :planwise.component/mailer}
+
+ :planwise.component/regions
+ {:db #ig/ref :duct.database/sql}
+
+ :planwise.component/resmap
+ {:auth #ig/ref :planwise.component/auth}
+
+ :planwise.component/routing
+ {:db #ig/ref :duct.database/sql}
+
+ :planwise.component/runner
+ {}
+
+ :planwise.component/users
+ {:db #ig/ref :duct.database/sql}}

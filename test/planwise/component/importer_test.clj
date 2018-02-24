@@ -1,6 +1,6 @@
 (ns planwise.component.importer-test
   (:require [planwise.component.importer :as importer]
-            [planwise.component.datasets :as datasets]
+            [planwise.boundary.datasets :as datasets]
             [planwise.component.facilities :as facilities]
             [planwise.component.projects :as projects]
             [planwise.boundary.resmap :as resmap]
@@ -96,7 +96,7 @@
 
 
 (defn importer-service [system]
-  (-> (importer/importer)
+  (-> nil #_(importer/importer)
     (merge (select-keys system [:taskmaster :datasets :resmap :facilities :projects]))
     (assoc :facilities-capacity 100)
     (component/start)))
@@ -106,9 +106,9 @@
     (test-system {:fixtures {:data (or data fixture-data)}})
     {:taskmaster (mock-taskmaster)
      :resmap (mock-resmap {:sites sites})
-     :datasets (component/using (datasets/datasets-store) [:db])
-     :facilities (component/using (facilities/facilities-service {}) [:db])
-     :projects  (component/using (projects/projects-service) [:db :facilities])}))
+     :datasets nil #_(component/using (datasets/datasets-store) [:db])
+     :facilities nil #_(component/using (facilities/facilities-service {}) [:db])
+     :projects  nil #_(component/using (projects/projects-service) [:db :facilities])}))
 
 
 (deftest run-import

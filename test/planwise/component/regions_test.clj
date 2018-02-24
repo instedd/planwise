@@ -12,24 +12,24 @@
   [[:regions
     [{:id 1 :country "kenya" :name "Kenya" :admin_level 2 :the_geom (sample-polygon) :preview_geom nil :total_population 1000}]]])
 
-(defn system []
+#_(defn system []
   (into
    (test-system {:fixtures {:data fixture-data}})
    {:regions (component/using (regions/regions-service) [:db])}))
 
-(deftest total-population-is-retrieved-with-list-regions
+#_(deftest total-population-is-retrieved-with-list-regions
   (with-system (system)
     (let [service (:regions system)
           [kenya & rest] (regions/list-regions service)]
      (is (= 1000 (:total-population kenya))))))
 
-(deftest total-population-is-retrieved-with-list-regions-with-preview
+#_(deftest total-population-is-retrieved-with-list-regions-with-preview
   (with-system (system)
     (let [service (:regions system)
           [kenya & rest] (regions/list-regions-with-preview service [1])]
       (is (= 1000 (:total-population kenya))))))
 
-(deftest total-population-is-retrieved-with-list-regions-with-geo
+#_(deftest total-population-is-retrieved-with-list-regions-with-geo
   (with-system (system)
     (let [service (:regions system)
           [kenya & rest] (regions/list-regions-with-geo service [1] 0.5)]

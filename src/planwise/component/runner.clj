@@ -1,5 +1,6 @@
 (ns planwise.component.runner
-  (:require [com.stuartsierra.component :as component]
+  (:require [planwise.boundary.runner :as boundary]
+            [integrant.core :as ig]
             [clojure.string :as str]
             [taoensso.timbre :as timbre]
             [clojure.java.shell :refer [sh]]))
@@ -28,9 +29,11 @@
           (str "Error running external " kind ": " (:err response))
           {:args args, :code (:exit response), :err (:err response)})))))
 
-(defrecord RunnerService [config])
+(defrecord RunnerService [config]
+  boundary/Runner
+  (run-external [service kind timeout name args]
+    (apply run-external (concat [service kind timeout name] args))))
 
-(defn runner-service
-  "Construct a Runner Service component"
-  [config]
+(defmethod ig/init-key :planwise.component/runner
+  [_ config]
   (map->RunnerService config))

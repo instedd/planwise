@@ -1,6 +1,7 @@
 (ns planwise.component.facilities
-  (:require [com.stuartsierra.component :as component]
-            [planwise.component.runner :refer [run-external]]
+  (:require [planwise.boundary.facilities :as boundary]
+            [planwise.boundary.runner :as runner]
+            [integrant.core :as ig]
             [planwise.util.str :refer [trim-to-int]]
             [planwise.util.collections :refer [find-by]]
             [planwise.util.hash :refer [update-if]]
@@ -26,17 +27,6 @@
   {:threshold (or threshold 900)
    :algorithm (or algorithm "alpha-shape")
    :simplify  (or simplify 0.001)})
-
-
-;; ----------------------------------------------------------------------
-;; Service definition
-
-(defrecord FacilitiesService [config db runner])
-
-(defn facilities-service
-  "Construct a Facilities Service component"
-  [config]
-  (map->FacilitiesService {:config config}))
 
 
 ;; ----------------------------------------------------------------------
@@ -171,7 +161,8 @@
         facilities-polygons-regions (select-facilities-polygons-regions-for-facility (get-db service) {:facility-id facility-id})]
     (doseq [{:keys [facility-polygon-id region-id] :as fpr} facilities-polygons-regions]
       (try
-        (let [population (-> (run-external (:runner service) :scripts 60000 "raster-isochrone" (str region-id) (str facility-polygon-id) (str scale-resolution))
+        (let [population (-> (runner/run-external (:runner service) :scripts 60000 "raster-isochrone"
+                                                  [(str region-id) (str facility-polygon-id) (str scale-resolution)])
                              (trim-to-int))]
           (set-facility-polygon-region-population!
             (get-db service)
@@ -184,7 +175,8 @@
   (let [facilities-polygons (select-facilities-polygons-for-facility (get-db service) {:facility-id facility-id})]
     (doseq [{facility-polygon-id :facility-polygon-id, :as fp} facilities-polygons]
       (try
-        (let [population (-> (run-external (:runner service) :scripts 60000 "isochrone-population" (str facility-polygon-id) country)
+        (let [population (-> (runner/run-external (:runner service) :scripts 60000 "isochrone-population"
+                                                  [(str facility-polygon-id) country])
                              (trim-to-int))]
           (set-facility-polygon-population!
             (get-db service)
@@ -217,3 +209,39 @@
 (defn clear-facilities-processed-status!
   [service]
   (clear-facilities-processed-status* (get-db service)))
+
+
+;; ----------------------------------------------------------------------
+;; Service definition
+
+(defrecord FacilitiesService [config db runner]
+  boundary/Facilities
+  (list-facilities [service dataset-id]
+    (list-facilities service dataset-id))
+  (list-facilities [service dataset-id criteria]
+    (list-facilities [service dataset-id criteria]))
+  (isochrones-in-bbox [service dataset-id isochrone-options facilities-criteria]
+    (isochrones-in-bbox service dataset-id isochrone-options facilities-criteria))
+  (polygons-in-region [service dataset-id isochrone-options facilities-criteria]
+    (polygons-in-region service dataset-id isochrone-options facilities-criteria))
+  (list-types [service dataset-id]
+    (list-types service dataset-id))
+  (count-facilities [service dataset-id criteria]
+    (count-facilities service dataset-id criteria))
+  (insert-types! [service dataset-id types]
+    (insert-types! service dataset-id types))
+  (insert-facilities! [service dataset-id facilities]
+    (insert-facilities! service dataset-id facilities))
+  (preprocess-isochrones [service id]
+    (preprocess-isochrones service id))
+  (clear-facilities-processed-status! [service facilities]
+    (clear-facilities-processed-status! service facilities))
+  (destroy-facilities! [service dataset-id options]
+    (destroy-facilities! service dataset-id options))
+  (destroy-types! [service dataset-id options]
+    (destroy-types! service dataset-id options)))
+
+
+(defmethod ig/init-key :planwise.component/facilities
+  [_ config]
+  (map->FacilitiesService config))
