@@ -219,7 +219,7 @@
   (list-facilities [service dataset-id]
     (list-facilities service dataset-id))
   (list-facilities [service dataset-id criteria]
-    (list-facilities [service dataset-id criteria]))
+    (list-facilities service dataset-id criteria))
   (isochrones-in-bbox [service dataset-id isochrone-options facilities-criteria]
     (isochrones-in-bbox service dataset-id isochrone-options facilities-criteria))
   (polygons-in-region [service dataset-id isochrone-options facilities-criteria]

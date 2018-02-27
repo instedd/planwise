@@ -25,7 +25,3 @@
     "Returns whether a user can access a dataset, if he has access to a project
      that uses the dataset."))
 
-(defn owned-by?
-  [dataset user-id]
-  (= user-id (:owner-id dataset)))
-

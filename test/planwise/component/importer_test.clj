@@ -1,19 +1,21 @@
 (ns planwise.component.importer-test
-  (:require [planwise.component.importer :as importer]
+  (:require [clojure.test :refer :all]
+            [planwise.component.importer :as importer]
             [planwise.boundary.datasets :as datasets]
-            [planwise.component.facilities :as facilities]
-            [planwise.component.projects :as projects]
+            [planwise.boundary.facilities :as facilities]
+            [planwise.boundary.projects :as projects]
             [planwise.boundary.resmap :as resmap]
             [planwise.model.import-job :as import-job]
             [planwise.component.taskmaster :as taskmaster]
-            [planwise.test-system :refer [test-system with-system]]
+            [planwise.test-system :as test-system]
+            [planwise.test-utils :refer [make-point sample-polygon]]
             [clj-time.core :as time]
-            [clojure.test :refer :all]
+            [clj-time.jdbc]
             [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]
             [clojure.core.async :refer [chan <! >!] :as async]
             [clojure.java.jdbc :as jdbc]
-            [planwise.test-utils :refer [make-point sample-polygon]]))
+            [integrant.core :as ig]))
 
 (def resmap-type-field
   {:name "Type",
@@ -60,10 +62,6 @@
 (def user-ident
   {:user-email "john@doe.com", :user-id 1})
 
-(defn execute-sql
-  [system sql]
-  (jdbc/execute! (get-in system [:db :spec]) sql))
-
 (defn mock-resmap [{sites :sites}]
   (reify resmap/Resmap
     (get-collection-sites
@@ -95,34 +93,42 @@
           (recur)))))))
 
 
-(defn importer-service [system]
-  (-> nil #_(importer/importer)
-    (merge (select-keys system [:taskmaster :datasets :resmap :facilities :projects]))
-    (assoc :facilities-capacity 100)
-    (component/start)))
+(defmethod ig/init-key :planwise.test/resmap
+  [_ config]
+  (mock-resmap config))
 
-(defn system [& [{sites :sites, data :data}]]
-  (into
-    (test-system {:fixtures {:data (or data fixture-data)}})
-    {:taskmaster (mock-taskmaster)
-     :resmap (mock-resmap {:sites sites})
-     :datasets nil #_(component/using (datasets/datasets-store) [:db])
-     :facilities nil #_(component/using (facilities/facilities-service {}) [:db])
-     :projects  nil #_(component/using (projects/projects-service) [:db :facilities])}))
+(defn test-config
+  [& [{sites :sites, data :data}]]
+  (test-system/config
+   {:planwise.test/fixtures        {:fixtures (or data fixture-data)}
+    :planwise.test/resmap          {:sites sites}
+    :planwise.component/datasets   {:db (ig/ref :duct.database/sql)}
+    :planwise.component/facilities {:db (ig/ref :duct.database/sql)}
+    :planwise.component/projects   {:db (ig/ref :duct.database/sql)
+                                    :facilities (ig/ref :planwise.component/facilities)}}))
 
+(defn importer-service
+  [system]
+  (ig/init-key :planwise.component/importer
+               {:taskmaster          (mock-taskmaster)
+                :resmap              (:planwise.test/resmap system)
+                :facilities-capacity 100
+                :datasets            (:planwise.component/datasets system)
+                :facilities          (:planwise.component/facilities system)
+                :projects            (:planwise.component/projects system)}))
 
 (deftest run-import
   (timbre/with-level :warn
-    (with-system (system {:sites [{:id 1, :name "s1", :lat -1.2, :long 36.8,
-                                   :properties {:type "hospital"}}]})
-      (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
-      (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+    (test-system/with-system (test-config {:sites [{:id 1, :name "s1", :lat -1.2, :long 36.8,
+                                                    :properties {:type "hospital"}}]})
+      (test-system/execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
+      (test-system/execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
 
       (let [importer (importer-service system)]
         (importer/run-import-for-dataset importer 1 user-ident)
         (run-tasks importer))
 
-      (let [dataset (datasets/find-dataset (:datasets system) 1)]
+      (let [dataset (datasets/find-dataset (:planwise.component/datasets system) 1)]
         (is (= {:sites-without-location-count 0
                 :sites-without-type-count 0
                 :facilities-without-road-network-count 0
@@ -130,31 +136,30 @@
                 :result :success}
                (:import-result dataset))))
 
-      (let [types (facilities/list-types (:facilities system) 1)
-            facilities (facilities/list-facilities (:facilities system) 1 {})
+      (let [types (facilities/list-types (:planwise.component/facilities system) 1)
+            facilities (facilities/list-facilities (:planwise.component/facilities system) 1 {})
             [facility] facilities]
-        (is (= (count types) 3))
-        (is (= #{"General Hospital" "Health Center" "Dispensary"} (set (map :name types))))
-        (is (= (count facilities) 1))
+        (is (= 3 (count types)))
+        (is (= (set (map :name types)) #{"General Hospital" "Health Center" "Dispensary"}))
+        (is (= 1 (count facilities)))
         (is (= (select-keys facility [:id :name :lat :lon :type-id :capacity])
                {:id 100 :type-id 100 :name "s1" :lat -1.2M :lon 36.8M :capacity 500}))))))
 
-
 (deftest run-reimport
   (timbre/with-level :warn
-    (with-system (system {:data fixture-data-with-facilities
-                          :sites [{:id 1, :name "Facility A2", :lat -3.0, :long 42.0, :properties {:type "dispensary"}}
-                                  {:id 2, :name "Facility B2", :lat -1.2, :long 36.8, :properties {:type "hospital"}}
-                                  {:id 4, :name "Facility D",  :lat -1.2, :long 36.8, :properties {:type "health"}}]})
+    (test-system/with-system (test-config {:data fixture-data-with-facilities
+                                           :sites [{:id 1, :name "Facility A2", :lat -3.0, :long 42.0, :properties {:type "dispensary"}}
+                                                   {:id 2, :name "Facility B2", :lat -1.2, :long 36.8, :properties {:type "hospital"}}
+                                                   {:id 4, :name "Facility D",  :lat -1.2, :long 36.8, :properties {:type "health"}}]})
 
-      (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
-      (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+      (test-system/execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
+      (test-system/execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
 
       (let [importer (importer-service system)]
         (importer/run-import-for-dataset importer 1 user-ident)
         (run-tasks importer))
 
-      (let [dataset (datasets/find-dataset (:datasets system) 1)]
+      (let [dataset (datasets/find-dataset (:planwise.component/datasets system) 1)]
         (is (= {:sites-without-location-count 0
                 :sites-without-type-count 0
                 :facilities-without-road-network-count 0
@@ -162,12 +167,12 @@
                 :result :success}
                (:import-result dataset))))
 
-      (let [project (projects/get-project (:projects system) 1)]
+      (let [project (projects/get-project (:planwise.component/projects system) 1)]
         (is (= {:facilities-targeted 1, :facilities-total 3}
                (:stats project))))
 
-      (let [types (facilities/list-types (:facilities system) 1)
-            facilities (facilities/list-facilities (:facilities system) 1 {})]
+      (let [types (facilities/list-types (:planwise.component/facilities system) 1)
+            facilities (facilities/list-facilities (:planwise.component/facilities system) 1 {})]
         (is (= 3 (count types)))
         (is (= #{{:code "hospital"   :name "General Hospital" :id 1} ; Type label should be updated, even if id does not change
                  {:code "health"     :name "Health Center" :id 100}
@@ -183,7 +188,7 @@
 
 (deftest resume-importer-job
   (timbre/with-level :warn
-    (with-system (system)
+    (test-system/with-system (test-config)
 
       ; Start new import for a dataset
       (let [importer (importer-service system)]
@@ -197,21 +202,21 @@
           (let [jobs (taskmaster/task-completed importer task-id :new-types)]
             (is (= :request-sites (:state (get jobs 1))))))
 
-        (component/stop importer))
+        (ig/halt-key! :planwise.component/importer importer))
 
       ; Create a new importer component that should reload the jobs state from the previous one
       (let [importer (importer-service system)
             {task-id :task-id} (taskmaster/next-task importer)
             {next-id :task-id} (taskmaster/next-task importer)]
-          (is (= [1 [:import-sites 1]] task-id))
-          (is (nil? next-id))
+        (is (= [1 [:import-sites 1]] task-id))
+        (is (nil? next-id))
 
-        (component/stop importer)))))
+        (ig/halt-key! :planwise.component/importer importer)))))
 
 
 (deftest resume-importer-job-with-multiple-tasks
   (timbre/with-level :warn
-    (with-system (system)
+    (test-system/with-system (test-config)
 
       ; Create import job for a dataset with a processing-facilities state
       (let [importer (importer-service system)
@@ -238,7 +243,7 @@
                                      [:success [:process-facilities [1]] nil])
 
           ; And then the importer dies
-          (component/stop importer)))
+          (ig/halt-key! :planwise.component/importer importer)))
 
       ; Create a new importer component that should re-run the pending tasks
       (let [importer (importer-service system)
@@ -252,14 +257,14 @@
           ; Check that the pending tasks are re-run, and then the following ones are dispatched
           (is (= expected-ids actual-ids))
 
-        (component/stop importer)))))
+          (ig/halt-key! :planwise.component/importer importer)))))
 
 (deftest update-cancelled-dataset
   (timbre/with-level :warn
-    (with-system (system {:sites [{:id 1, :name "s1", :lat -1.2, :long 36.8,
-                                   :properties {:type "hospital"}}]})
-      (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
-      (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+    (test-system/with-system (test-config {:sites [{:id 1, :name "s1", :lat -1.2, :long 36.8,
+                                                    :properties {:type "hospital"}}]})
+      (test-system/execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
+      (test-system/execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
 
       (let [importer (importer-service system)]
 
@@ -271,9 +276,9 @@
 
         ; Check that the job was finished and a site was imported, though not processed
         (is empty? @(:jobs importer))
-        (let [dataset (datasets/find-dataset (:datasets system) 1)]
+        (let [dataset (datasets/find-dataset (:planwise.component/datasets system) 1)]
           (is (= :cancelled (get-in dataset [:import-result :result]))))
-        (let [[facility] (facilities/list-facilities (:facilities system) 1 {})]
+        (let [[facility] (facilities/list-facilities (:planwise.component/facilities system) 1 {})]
           (is (= {:id 100, :site-id 1, :processing-status nil}
                  (select-keys facility [:id :site-id :processing-status]))))
 
@@ -283,13 +288,13 @@
 
         ; Check that the job was finished and the site was processed
         (is empty? @(:jobs importer))
-        (let [dataset (datasets/find-dataset (:datasets system) 1)]
+        (let [dataset (datasets/find-dataset (:planwise.component/datasets system) 1)]
           (is (= :success (get-in dataset [:import-result :result]))))
-        (let [[facility] (facilities/list-facilities (:facilities system) 1 {})]
+        (let [[facility] (facilities/list-facilities (:planwise.component/facilities system) 1 {})]
           (is (= {:id 100, :site-id 1, :processing-status "outside-regions"}
                  (select-keys facility [:id :site-id :processing-status]))))
 
-        (component/stop importer)))))
+        (ig/halt-key! :planwise.component/importer importer)))))
 
 (deftest facility-type-ctor-test
   (let [type-field {:code "facility_type"

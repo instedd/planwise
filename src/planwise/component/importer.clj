@@ -333,14 +333,18 @@
 (defmethod ig/init-key :planwise.component/importer
   [_ config]
   (info "Starting Importer component")
-  (let [service            (map->Importer config)
-        concurrent-workers (or (:concurrent-workers service) 1)
-        pending-jobs       (pending-jobs service)]
-    (as-> service service
-      (assoc service :jobs (atom pending-jobs))
-      (assoc service :taskmaster (taskmaster/run-taskmaster service concurrent-workers)))))
+  (let [service (map->Importer config)]
+    (let [service' (if-not (:jobs service)
+                     (assoc service :jobs (atom (pending-jobs service)))
+                     service)]
+      (if-not (:taskmaster service')
+        (let [concurrent-workers (or (:concurrent-workers service) 1)
+              taskmaster (taskmaster/run-taskmaster service' concurrent-workers)]
+          (assoc service' :taskmaster taskmaster))
+        service'))))
 
 (defmethod ig/halt-key! :planwise.component/importer
   [_ importer]
   (info "Stopping Importer component")
-  (taskmaster/quit (:taskmaster importer)))
+  (when-let [taskmaster (:taskmaster importer)]
+    (taskmaster/quit taskmaster)))

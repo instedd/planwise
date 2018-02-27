@@ -148,7 +148,7 @@
                                   [binaryage/devtools "0.9.9"]]
 
                    :source-paths   ["dev/src"]
-                   :resource-paths ["dev/resources"]
+                   :resource-paths ["dev/resources" "test/resources"]
                    :env {:port "3000"
                          :database-url "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"
                          :test-database-url "jdbc:postgresql://localhost:5433/planwise-test?user=planwise&password=planwise"

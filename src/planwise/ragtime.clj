@@ -2,8 +2,7 @@
   (:require [integrant.core :as ig]
             [ragtime.jdbc :as rag-jdbc]
             [ragtime.core :as ragtime]
-            [clojure.string :as str]
-            [ragtime.repl :as rag-repl]))
+            [clojure.string :as str]))
 
 (defn- update-migration-id [{:keys [id] :as migration}]
   (assoc migration :id (str/replace id #".*/" "")))

@@ -2,7 +2,7 @@
   (:require [planwise.boundary.projects :as boundary]
             [planwise.boundary.facilities :as facilities]
             [planwise.boundary.mailer :as mailer]
-            [planwise.model.projects :refer [owned-by?]]
+            [planwise.model.projects :as model]
             [integrant.core :as ig]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
@@ -10,8 +10,7 @@
             [clojure.edn :as edn]
             [clojure.set :as set]
             [cuerdas.core :refer [<< <<-]]
-            [planwise.util.hash :refer [update-if]])
-  (:import [java.net URL]))
+            [planwise.util.hash :refer [update-if]]))
 
 (timbre/refer-timbre)
 
@@ -49,7 +48,7 @@
   "Removes sensitive data if the requesting user is not the project owner
    and adds a read-only flag, or loads project shares if it is the owner."
   [project requester-user-id]
-  (if (or (nil? requester-user-id) (owned-by? project requester-user-id))
+  (if (or (nil? requester-user-id) (model/owned-by? project requester-user-id))
     project
     (-> project
       (dissoc :share-token)
@@ -158,12 +157,6 @@
   [service project-id]
   (:share-token (reset-share-token* (get-db service) {:id project-id})))
 
-(defn share-project-url
-  [host project]
-  (let [path (str "/projects/" (:id project) "/access/" (:share-token project))
-        host (URL. host)]
-    (str (URL. host path))))
-
 (defn share-via-email
   [service project emails {host :host}]
   (let [project (load-project service project)
@@ -177,7 +170,7 @@
                              ~(:owner-email project) has shared the PlanWise
                              project \"~(:goal project)\" with you. Click on the
                              link below to add it to your projects list:
-                             ~(share-project-url host project)
+                             ~(model/share-project-url host project)
 
                              If you do not have a PlanWise account, you will be
                              prompted to create one when you access the link.

@@ -1,17 +1,17 @@
 (ns planwise.component.datasets-test
-  (:require [planwise.component.datasets :as datasets]
-            [planwise.boundary.datasets :as datasets-protocol]
-            #_[planwise.test-system :refer [test-system with-system]]
+  (:require [clojure.test :refer :all]
+            [planwise.boundary.datasets :as datasets]
+            [planwise.model.datasets :as model]
+            [planwise.test-system :as test-system]
             [planwise.test-utils :refer [sample-polygon]]
-            [com.stuartsierra.component :as component]
             [clj-time.core :as time]
-            [clojure.test :refer :all]))
+            [integrant.core :as ig]))
 
-
-(def owner-id 1)
+(def owner-id   1)
 (def grantee-id 2)
 
-(def fixture-data
+(defn fixture-data
+  []
   [[:users
     [{:id owner-id   :email "john@doe.com" :full_name "John Doe" :last_login nil :created_at (time/ago (time/minutes 5))}
      {:id grantee-id :email "jane@doe.com" :full_name "Jane Doe" :last_login nil :created_at (time/ago (time/minutes 5))}]]
@@ -28,23 +28,22 @@
    [:project_shares
     [{:user_id grantee-id :project_id 1}]]])
 
-#_(defn system
- ([]
-  (system fixture-data))
- ([data]
-  (into
-   (test-system {:fixtures {:data data}})
-   {:datasets (component/using (datasets/datasets-store) [:db])})))
+(defn test-config
+  []
+  (test-system/config
+   {:planwise.test/fixtures      {:fixtures (fixture-data)}
+    :planwise.component/datasets {:db (ig/ref :duct.database/sql)}}))
 
-#_(deftest dataset-owned-by
-  (with-system (system)
-    (let [dataset (datasets/find-dataset (:datasets system) 1)]
-      (is (datasets-protocol/owned-by? dataset 1))
-      (is (not (datasets-protocol/owned-by? dataset 2))))))
+(deftest dataset-owned-by
+  (test-system/with-system (test-config)
+    (let [store (:planwise.component/datasets system)
+          dataset (datasets/find-dataset store 1)]
+      (is (model/owned-by? dataset 1))
+      (is (not (model/owned-by? dataset 2))))))
 
-#_(deftest dataset-accessible-by
-  (with-system (system)
-    (let [store (:datasets system)]
+(deftest dataset-accessible-by
+  (test-system/with-system (test-config)
+    (let [store (:planwise.component/datasets system)]
       (is (datasets/accessible-by? store {:id 1 :owner-id 1} owner-id))
       (is (datasets/accessible-by? store {:id 2 :owner-id 1} owner-id))
       (is (datasets/accessible-by? store {:id 3 :owner-id 1} owner-id))

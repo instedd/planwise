@@ -1,8 +1,8 @@
 (ns planwise.component.regions-test
-  (:require [planwise.component.regions :as regions]
-            [planwise.test-system :refer [test-system with-system]]
-            [com.stuartsierra.component :as component]
-            [clojure.test :refer :all])
+  (:require [clojure.test :refer :all]
+            [planwise.boundary.regions :as regions]
+            [planwise.test-system :as test-system]
+            [integrant.core :as ig])
   (:import [org.postgis PGgeometry]))
 
 (defn sample-polygon []
@@ -12,25 +12,26 @@
   [[:regions
     [{:id 1 :country "kenya" :name "Kenya" :admin_level 2 :the_geom (sample-polygon) :preview_geom nil :total_population 1000}]]])
 
-#_(defn system []
-  (into
-   (test-system {:fixtures {:data fixture-data}})
-   {:regions (component/using (regions/regions-service) [:db])}))
+(defn test-config
+  []
+  (test-system/config
+   {:planwise.test/fixtures     {:fixtures fixture-data}
+    :planwise.component/regions {:db (ig/ref :duct.database/sql)}}))
 
-#_(deftest total-population-is-retrieved-with-list-regions
-  (with-system (system)
-    (let [service (:regions system)
+(deftest total-population-is-retrieved-with-list-regions
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/regions system)
           [kenya & rest] (regions/list-regions service)]
      (is (= 1000 (:total-population kenya))))))
 
-#_(deftest total-population-is-retrieved-with-list-regions-with-preview
-  (with-system (system)
-    (let [service (:regions system)
+(deftest total-population-is-retrieved-with-list-regions-with-preview
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/regions system)
           [kenya & rest] (regions/list-regions-with-preview service [1])]
       (is (= 1000 (:total-population kenya))))))
 
-#_(deftest total-population-is-retrieved-with-list-regions-with-geo
-  (with-system (system)
-    (let [service (:regions system)
+(deftest total-population-is-retrieved-with-list-regions-with-geo
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/regions system)
           [kenya & rest] (regions/list-regions-with-geo service [1] 0.5)]
       (is (= 1000 (:total-population kenya))))))
