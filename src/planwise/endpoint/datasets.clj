@@ -9,6 +9,7 @@
             [planwise.model.ident :as ident]
             [planwise.boundary.facilities :as facilities]
             [planwise.boundary.datasets :as datasets]
+            [planwise.model.datasets :as model]
             [planwise.component.importer :as importer]
             [planwise.component.resmap :as resmap]))
 
@@ -53,7 +54,7 @@
            user-id (util/request-user-id request)
            dataset (datasets/find-dataset datasets id)
            status (importer/status importer)]
-       (if (or (datasets/owned-by? dataset user-id)
+       (if (or (model/owned-by? dataset user-id)
                (datasets/accessible-by? datasets id user-id))
          (response (assoc dataset :server-status (get status id)))
          (not-found {:error "Dataset not found"}))))
@@ -97,7 +98,7 @@
            user-ident (util/request-ident request)
            user-email (ident/user-email user-ident)
            user-id (ident/user-id user-ident)]
-       (if (datasets/owned-by? dataset user-id)
+       (if (model/owned-by? dataset user-id)
          (let [[result import-status] (importer/run-import-for-dataset importer id user-ident)
                dataset-status (get import-status id)]
            (info "Updating dataset" id "for the user" user-email)
@@ -118,7 +119,7 @@
      (let [id (Integer. id)
            user-id (util/request-user-id request)
            dataset (datasets/find-dataset datasets id)]
-       (if (and (datasets/owned-by? dataset user-id)
+       (if (and (model/owned-by? dataset user-id)
                 (datasets/destroy-dataset! datasets id))
          (response {:deleted id})
          (not-found {:error "Dataset not found"}))))))

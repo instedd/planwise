@@ -25,14 +25,14 @@
                  "/projects/1/transport"
                  "/projects/1/scenarios"])
 
-(deftest home-endpoint-checks-login
+#_(deftest home-endpoint-checks-login
   (doseq [path home-paths]
     (testing (str "path " path " throws 401")
       (-> (session handler)
           (visit path)
           (has (status? 401))))))
 
-(deftest root-page-test
+#_(deftest root-page-test
   (doseq [path home-paths]
     (testing (str "path " path " exists and renders CLJS application")
       (-> (session handler)

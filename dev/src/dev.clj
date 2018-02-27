@@ -32,7 +32,7 @@
   (duct/read-config (io/resource "dev.edn")))
 
 (defn test []
-  (eftest/run-tests (eftest/find-tests "test")))
+  (eftest/run-tests (eftest/find-tests "test") {:multithread? false}))
 
 (clojure.tools.namespace.repl/set-refresh-dirs "dev/src" "src" "test")
 

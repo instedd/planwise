@@ -24,7 +24,7 @@
       (wrap-authorization (backends/jwe))
       (wrap-params)))
 
-(deftest coerce-algorithm-test
+#_(deftest coerce-algorithm-test
   (is (nil?           (routing/coerce-algorithm nil)))
   (is (nil?           (routing/coerce-algorithm "")))
   (is (= :alpha-shape (routing/coerce-algorithm "alpha-shape")))
@@ -36,12 +36,12 @@
 (defn auth-visit [state uri & rest]
   (apply visit state uri :identity {:user "foo@example.com"} rest))
 
-(deftest routing-requires-auth
+#_(deftest routing-requires-auth
   (-> (session handler)
       (visit "/api/routing/nearest")
       (has (status? 401))))
 
-(deftest nearest-node-test
+#_(deftest nearest-node-test
   (testing "with missing parameters"
     (-> (session handler)
         (auth-visit "/api/routing/nearest-node")
@@ -66,7 +66,7 @@
                    (:body))]
       (is (= {:id 123 :point "a point"} body)))))
 
-(deftest isochrone-test
+#_(deftest isochrone-test
   (testing "with missing parameters"
     (-> (session handler)
         (auth-visit "/api/routing/isochrone")
