@@ -1,5 +1,6 @@
 (ns planwise.endpoint.monitor
   (:require [compojure.core :refer :all]
+            [integrant.core :as ig]
             [ring.util.response :refer [response]]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
@@ -15,3 +16,7 @@
     (GET "/ping" [] "pong")
     (GET "/whoami" req
       (restrict whoami-handler {:handler authenticated?}))))
+
+(defmethod ig/init-key :planwise.endpoint/monitor
+  [_ config]
+  (monitor-endpoint config))

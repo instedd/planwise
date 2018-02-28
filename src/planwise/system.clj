@@ -1,4 +1,7 @@
 (ns planwise.system
+  (:require [integrant.core :as ig]
+            [planwise.router :as router])
+
   #_(:require [clojure.java.io :as io]
             [taoensso.timbre :as timbre]
             [com.stuartsierra.component :as component]

@@ -2,15 +2,73 @@
  :duct.core/environment :production
 
  :duct.module/logging {}
- :duct.module.web/site {}
+ :duct.module/web {}
  :duct.module/sql {}
  :duct.module/cljs {:main planwise.client.core}
 
  :planwise/ragtime ["migrations"]
  :duct.migrator/ragtime {:migrations ^:replace #ig/ref :planwise/ragtime}
 
+ :duct.core/handler
+ {:middleware []}
+
  :duct.router/cascading
- []
+ [#ig/ref :planwise.router/api
+  #ig/ref :planwise.router/app]
+
+ :planwise.router/api
+ {:middleware []
+  :handlers   [#ig/ref :planwise.endpoint/monitor
+               #ig/ref :planwise.endpoint/facilities
+               #ig/ref :planwise.endpoint/regions
+               #ig/ref :planwise.endpoint/projects
+               #ig/ref :planwise.endpoint/routing
+               #ig/ref :planwise.endpoint/datasets]}
+
+ :planwise.router/app
+ {:middleware []
+  :handlers   [#ig/ref :planwise.endpoint/home
+               #ig/ref :planwise.endpoint/auth
+               #ig/ref :planwise.endpoint/resmap-auth]}
+
+ ;; Endpoints
+
+ :planwise.endpoint/auth
+ {:auth #ig/ref :planwise.component/auth}
+
+ :planwise.endpoint/home
+ {:maps       #ig/ref :planwise.component/maps
+  :auth       #ig/ref :planwise.component/auth
+  :resmap     #ig/ref :planwise.component/resmap}
+
+ :planwise.endpoint/monitor
+ {}
+
+ :planwise.endpoint/facilities
+ {:facilities #ig/ref :planwise.component/facilities
+  :maps       #ig/ref :planwise.component/maps}
+
+ :planwise.endpoint/regions
+ {:regions    #ig/ref :planwise.component/regions}
+
+ :planwise.endpoint/projects
+ {:projects   #ig/ref :planwise.component/projects
+  :facilities #ig/ref :planwise.component/facilities
+  :maps       #ig/ref :planwise.component/maps}
+
+ :planwise.endpoint/routing
+ {:routing    #ig/ref :planwise.component/routing}
+
+ :planwise.endpoint/datasets
+ {:datasets   #ig/ref :planwise.component/datasets
+  :facilities #ig/ref :planwise.component/facilities
+  :resmap     #ig/ref :planwise.component/resmap
+  :importer   #ig/ref :planwise.component/importer}
+
+ :planwise.endpoint/resmap-auth
+ {:auth   #ig/ref :planwise.component/auth
+  :resmap #ig/ref :planwise.component/resmap}
+
 
  ;; Components
 
@@ -18,41 +76,41 @@
  {:users-store #ig/ref :planwise.component/users}
 
  :planwise.component/datasets
- {:db #ig/ref :duct.database/sql}
+ {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/facilities
- {:db     #ig/ref :duct.database/sql
-  :runner #ig/ref :planwise.component/runner}
+ {:db          #ig/ref :duct.database/sql
+  :runner      #ig/ref :planwise.component/runner}
 
  :planwise.component/importer
- {:datasets   #ig/ref :planwise.component/datasets
-  :facilities #ig/ref :planwise.component/facilities
-  :projects   #ig/ref :planwise.component/projects
-  :resmap     #ig/ref :planwise.component/resmap}
+ {:datasets    #ig/ref :planwise.component/datasets
+  :facilities  #ig/ref :planwise.component/facilities
+  :projects    #ig/ref :planwise.component/projects
+  :resmap      #ig/ref :planwise.component/resmap}
 
  :planwise.component/mailer
  {}
 
  :planwise.component/maps
- {:regions #ig/ref :planwise.component/regions
-  :runner  #ig/ref :planwise.component/runner}
+ {:regions     #ig/ref :planwise.component/regions
+  :runner      #ig/ref :planwise.component/runner}
 
  :planwise.component/projects
- {:db         #ig/ref :duct.database/sql
-  :facilities #ig/ref :planwise.component/facilities
-  :mailer     #ig/ref :planwise.component/mailer}
+ {:db          #ig/ref :duct.database/sql
+  :facilities  #ig/ref :planwise.component/facilities
+  :mailer      #ig/ref :planwise.component/mailer}
 
  :planwise.component/regions
- {:db #ig/ref :duct.database/sql}
+ {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/resmap
- {:auth #ig/ref :planwise.component/auth}
+ {:auth        #ig/ref :planwise.component/auth}
 
  :planwise.component/routing
- {:db #ig/ref :duct.database/sql}
+ {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/runner
  {}
 
  :planwise.component/users
- {:db #ig/ref :duct.database/sql}}
+ {:db          #ig/ref :duct.database/sql}}

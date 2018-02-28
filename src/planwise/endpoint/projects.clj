@@ -1,5 +1,6 @@
 (ns planwise.endpoint.projects
   (:require [compojure.core :refer :all]
+            [integrant.core :as ig]
             [ring.util.response :refer [content-type response status not-found]]
             [clojure.data.json :as json]
             [planwise.boundary.maps :as maps]
@@ -146,3 +147,7 @@
 (defn projects-endpoint [endpoint]
   (context "/api/projects" []
     (restrict (endpoint-routes endpoint) {:handler authenticated?})))
+
+(defmethod ig/init-key :planwise.endpoint/projects
+  [_ config]
+  (projects-endpoint config))

@@ -1,5 +1,6 @@
 (ns planwise.endpoint.datasets
   (:require [compojure.core :refer :all]
+            [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [buddy.auth.accessrules :refer [restrict]]
             [buddy.auth :refer [authenticated?]]
@@ -128,3 +129,7 @@
   [service]
   (context "/api/datasets" []
     (restrict (datasets-routes service) {:handler authenticated?})))
+
+(defmethod ig/init-key :planwise.endpoint/datasets
+  [_ config]
+  (datasets-endpoint config))

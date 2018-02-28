@@ -1,6 +1,7 @@
 (ns planwise.endpoint.routing
   (:require [planwise.boundary.routing :as routing]
             [compojure.core :refer :all]
+            [integrant.core :as ig]
             [ring.util.response :refer [response status]]
             [clojure.string :refer [blank?]]
             [buddy.auth :refer [authenticated?]]
@@ -48,3 +49,7 @@
 (defn routing-endpoint [{service :routing}]
   (context "/api/routing" []
     (restrict (endpoint-routes service) {:handler authenticated?})))
+
+(defmethod ig/init-key :planwise.endpoint/routing
+  [_ config]
+  (routing-endpoint config))

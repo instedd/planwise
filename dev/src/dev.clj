@@ -11,11 +11,12 @@
             [integrant.core :as ig]
             [integrant.repl :refer [clear halt go init prep reset]]
             [integrant.repl.state :refer [config system]]
+            [taoensso.timbre :as timbre]
+            [schema.core :as s]
 
+            [planwise.system :as system]
             [planwise.repl :refer :all]
 
-            #_[taoensso.timbre :as timbre]
-            #_[schema.core :as s]
             #_[meta-merge.core :refer [meta-merge]]
             #_[ring.middleware.stacktrace :refer [wrap-stacktrace wrap-stacktrace-log]]
             #_[dev.figwheel :as figwheel]
@@ -28,11 +29,17 @@
 
 (duct/load-hierarchy)
 
+;; Logging configuration for development
+(timbre/merge-config! {:level :debug
+                       :ns-blacklist ["com.zaxxer.hikari.*"
+                                      "org.apache.http.*"
+                                      "org.eclipse.jetty.*"]})
+
+;; ;; Activate Schema validation for *all* functions
+;; (s/set-fn-validation! true)
+
 (defn read-config []
   (duct/read-config (io/resource "dev.edn")))
-
-(defn test []
-  (eftest/run-tests (eftest/find-tests "test") {:multithread? false}))
 
 (clojure.tools.namespace.repl/set-refresh-dirs "dev/src" "src" "test")
 
@@ -41,12 +48,6 @@
 
 (integrant.repl/set-prep! (comp duct/prep read-config))
 
-
-;; ;; Logging configuration for development
-;; (timbre/merge-config! {:level :debug
-;;                        :ns-blacklist ["com.zaxxer.hikari.*"
-;;                                       "org.apache.http.*"
-;;                                       "org.eclipse.jetty.*"]})
 
 ;; ;; Fix JWE secret in development to facilitate debugging
 ;; (def jwe-secret
@@ -100,8 +101,3 @@
 ;;                    (ragtime {:resource-path "migrations"})
 ;;                    [:db])}))
 
-;; (defn db []
-;;   (:spec (:db system)))
-
-;; ;; Activate Schema validation for *all* functions
-;; (s/set-fn-validation! true)
