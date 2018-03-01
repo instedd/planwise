@@ -1,7 +1,7 @@
 (ns planwise.endpoint.home
   (:require [compojure.core :refer :all]
             [planwise.boundary.maps :as maps]
-            [planwise.component.auth :refer [create-jwe-token]]
+            [planwise.boundary.auth :as auth]
             [planwise.util.ring :as util]
             [integrant.core :as ig]
             [cheshire.core :as json]
@@ -40,7 +40,7 @@
         calculate-demand (maps/calculate-demand? maps)
         ident (util/request-ident request)
         email (util/request-user-email request)
-        token (create-jwe-token auth ident)
+        token (auth/create-jwe-token auth ident)
         app-version (or (:app-version globals) "unspecified")
         config {:resourcemap-url resmap-url
                 :identity email

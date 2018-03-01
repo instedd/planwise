@@ -188,7 +188,9 @@
                         users-store]
   boundary/Auth
   (find-auth-token [service scope user-ident]
-    (find-auth-token service scope user-ident)))
+    (find-auth-token service scope user-ident))
+  (create-jwe-token [service user-ident]
+    (create-jwe-token service user-ident)))
 
 (defmethod ig/init-key :planwise.component/auth
   [_ config]
