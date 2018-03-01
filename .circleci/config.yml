@@ -1,0 +1,44 @@
+version: 2
+
+jobs:
+  test:
+    machine:
+      docker_layer_caching: true
+    steps:
+      - run:
+          name: Install Docker Compose
+          command: |
+            curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+            chmod +x ~/docker-compose
+            sudo mv ~/docker-compose /usr/local/bin/docker-compose
+
+      - checkout
+      - run: docker-compose up -d db
+      - run: docker-compose build
+      - run: docker-compose exec db createdb planwise-test -Uplanwise
+      - run: docker-compose run --rm app lein test
+
+  build:
+    docker:
+      - image: circleci/buildpack-deps:xenial-curl
+    steps:
+      - checkout
+      - run: ./deploy.sh ${CIRCLE_TAG:-${CIRCLE_BRANCH/#master/latest}}
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - test
+      - build:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
+                - stable
+                - /.*\bci\b.*/
+            tags:
+              only:
+                - /[0-9]+(\.[0-9]+)*(-pre\d+)?/
