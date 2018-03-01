@@ -4,7 +4,8 @@
 
 (defn make-router
   [{:keys [handlers middleware]}]
-  (apply compojure/routes handlers))
+  (let [router (apply compojure/routes handlers)]
+    ((apply comp (reverse middleware)) router)))
 
 (defmethod ig/init-key :planwise.router/api
   [_ config]
@@ -13,3 +14,4 @@
 (defmethod ig/init-key :planwise.router/app
   [_ config]
   (make-router config))
+

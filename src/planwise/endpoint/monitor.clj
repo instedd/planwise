@@ -13,9 +13,11 @@
 
 (defn monitor-endpoint [system]
   (context "/api" []
-    (GET "/ping" [] "pong")
-    (GET "/whoami" req
-      (restrict whoami-handler {:handler authenticated?}))))
+           (GET "/ping" [] {:status 200
+                            :headers {"content-type" "text/plain"}
+                            :body "pong"})
+           (GET "/whoami" req
+                (restrict whoami-handler {:handler authenticated?}))))
 
 (defmethod ig/init-key :planwise.endpoint/monitor
   [_ config]

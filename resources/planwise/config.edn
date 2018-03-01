@@ -6,18 +6,22 @@
  :duct.module/sql {}
  :duct.module/cljs {:main planwise.client.core}
 
+ ;; Database
+
  :planwise/ragtime ["migrations"]
  :duct.migrator/ragtime {:migrations ^:replace #ig/ref :planwise/ragtime}
 
+ ;; Routers
+
  :duct.core/handler
- {:middleware []}
+ {:middleware ^:replace [#ig/ref :planwise.middleware/common]}
 
  :duct.router/cascading
  [#ig/ref :planwise.router/api
   #ig/ref :planwise.router/app]
 
  :planwise.router/api
- {:middleware []
+ {:middleware [#ig/ref :planwise.middleware/api]
   :handlers   [#ig/ref :planwise.endpoint/monitor
                #ig/ref :planwise.endpoint/facilities
                #ig/ref :planwise.endpoint/regions
@@ -26,15 +30,51 @@
                #ig/ref :planwise.endpoint/datasets]}
 
  :planwise.router/app
- {:middleware []
+ {:middleware [#ig/ref :planwise.middleware/app]
   :handlers   [#ig/ref :planwise.endpoint/home
                #ig/ref :planwise.endpoint/auth
                #ig/ref :planwise.endpoint/resmap-auth]}
 
+ ;; Middleware
+
+ :planwise.middleware/common {}
+
+ :planwise.middleware/api
+ {:session-store  #ig/ref :planwise.auth/session-store
+  :authz-backend  #ig/ref :planwise.auth.backend/jwe
+  :authn-backends [#ig/ref :planwise.auth.backend/session
+                   #ig/ref :planwise.auth.backend/jwe]}
+
+ :planwise.middleware/app
+ {:session-store  #ig/ref :planwise.auth/session-store
+  :authz-backend  #ig/ref :planwise.auth.backend/session
+  :authn-backends [#ig/ref :planwise.auth.backend/session]}
+
+ ;; Security
+
+ :planwise.auth/jwe-options
+ {:alg :a256kw :enc :a128gcm}
+
+ :planwise.auth/jwe-secret
+ #duct/env ["JWE_SECRET" String]
+
+ :planwise.auth/cookie-secret
+ #duct/env ["COOKIE_SECRET" String]
+
+ :planwise.auth/session-store
+ {:key #ig/ref :planwise.auth/cookie-secret}
+
+ :planwise.auth.backend/jwe
+ {:jwe-options #ig/ref :planwise.auth/jwe-options
+  :jwe-secret  #ig/ref :planwise.auth/jwe-secret}
+
+ :planwise.auth.backend/session
+ {}
+
  ;; Endpoints
 
  :planwise.endpoint/auth
- {:auth #ig/ref :planwise.component/auth}
+ {:auth       #ig/ref :planwise.component/auth}
 
  :planwise.endpoint/home
  {:maps       #ig/ref :planwise.component/maps
@@ -73,7 +113,10 @@
  ;; Components
 
  :planwise.component/auth
- {:users-store #ig/ref :planwise.component/users}
+ {:users-store #ig/ref :planwise.component/users
+  :guisso-url  #duct/env ["GUISSO_URL" String :or "https://login.instedd.org"]
+  :jwe-options #ig/ref :planwise.auth/jwe-options
+  :jwe-secret  #ig/ref :planwise.auth/jwe-secret}
 
  :planwise.component/datasets
  {:db          #ig/ref :duct.database/sql}

@@ -1,13 +1,8 @@
 (ns planwise.system
-  (:require [integrant.core :as ig]
-            [planwise.router :as router])
+  (:require [integrant.core :as ig])
 
   #_(:require [clojure.java.io :as io]
             [taoensso.timbre :as timbre]
-            [com.stuartsierra.component :as component]
-            [duct.component.endpoint :refer [endpoint-component]]
-            [duct.component.handler :refer [handler-component]]
-            [duct.component.hikaricp :refer [hikaricp]]
             [duct.middleware.not-found :refer [wrap-not-found]]
             [duct.middleware.route-aliases :refer [wrap-route-aliases]]
             [meta-merge.core :refer [meta-merge]]
@@ -33,55 +28,10 @@
             [planwise.util.ring :refer [wrap-log-request wrap-log-errors]]
             [planwise.auth.guisso :refer [wrap-check-guisso-cookie]]
 
-            [planwise.component.compound-handler :refer [compound-handler-component]]
-            [planwise.component.auth :refer [auth-service]]
-            [planwise.component.facilities :refer [facilities-service]]
-            [planwise.component.routing :refer [routing-service]]
-            [planwise.component.projects :refer [projects-service]]
-            [planwise.component.regions :refer [regions-service]]
-            [planwise.component.mailer :refer [mailer-service]]
-            [planwise.component.users :refer [users-store]]
-            [planwise.component.resmap :refer [resmap-client]]
-            [planwise.component.importer :refer [importer]]
-            [planwise.component.maps :refer [maps-service]]
-            [planwise.component.runner :refer [runner-service]]
-            [planwise.component.datasets :refer [datasets-store]]
-
-            [planwise.endpoint.home :refer [home-endpoint]]
-            [planwise.endpoint.auth :refer [auth-endpoint]]
-            [planwise.endpoint.facilities :refer [facilities-endpoint]]
-            [planwise.endpoint.projects :refer [projects-endpoint]]
-            [planwise.endpoint.regions :refer [regions-endpoint]]
-            [planwise.endpoint.routing :refer [routing-endpoint]]
-            [planwise.endpoint.monitor :refer [monitor-endpoint]]
-            [planwise.endpoint.datasets :refer [datasets-endpoint]]
-            [planwise.endpoint.resmap-auth :refer [resmap-auth-endpoint]]))
-
-#_(timbre/refer-timbre)
+            ))
 
 
-;; TODO: move these to auth endpoint/component?
 
-#_(defn api-unauthorized-handler
-  [request metadata]
-  (let [authenticated? (authenticated? request)
-        error-response {:error "Unauthorized"}
-        status (if authenticated? 403 401)]
-    (-> (response/response error-response)
-        (response/content-type "application/json")
-        (response/status status))))
-
-#_(defn app-unauthorized-handler
-  [request metadata]
-  (cond
-    (authenticated? request)
-    (let [error-response (io/resource "planwise/errors/403.html")]
-      (-> (compojure/render error-response request)
-          (response/content-type "text/html")
-          (response/status 403)))
-    :else
-    (let [current-url (request-url request)]
-      (response/redirect (format "/login?next=%s" current-url)))))
 
 
 #_(def jwe-options {:alg :a256kw :enc :a128gcm})
@@ -168,91 +118,10 @@
          :app-auth-backend    (session-backend (meta-merge (:auth config)
                                                            (:app-auth-backend config)))
 
-         :app                 (handler-component (:app config))
-         :api                 (handler-component (:api config))
-         :webapp              (compound-handler-component (:webapp config))
-         :http                (jetty-server (:http config))
-         :db                  (hikaricp (:db config))
-
-         :auth                (auth-service (:auth config))
-         :mailer              (mailer-service (:mailer config))
-         :facilities          (facilities-service (:facilities config))
-         :projects            (projects-service)
-         :regions             (regions-service)
-         :routing             (routing-service)
-         :users-store         (users-store)
-         :resmap              (resmap-client (:resmap config))
-         :importer            (importer (meta-merge (:importer config)
-                                                    (select-keys (:maps config) [:facilities-capacity])))
-         :runner              (runner-service (:paths config))
-         :maps                (maps-service (meta-merge (:maps config)
-                                                        (:paths config)))
-         :datasets            (datasets-store)
-
-         :auth-endpoint       (endpoint-component auth-endpoint)
-         :home-endpoint       (endpoint-component home-endpoint)
-         :facilities-endpoint (endpoint-component facilities-endpoint)
-         :projects-endpoint   (endpoint-component projects-endpoint)
-         :regions-endpoint    (endpoint-component regions-endpoint)
-         :routing-endpoint    (endpoint-component routing-endpoint)
-         :monitor-endpoint    (endpoint-component monitor-endpoint)
-         :datasets-endpoint   (endpoint-component datasets-endpoint)
-         :resmap-auth-endpoint (endpoint-component resmap-auth-endpoint))
-
-        (component/system-using
+         (component/system-using
          {:api                 {:session-auth-backend :api-session-auth-backend
                                 :jwe-auth-backend :api-jwe-auth-backend}
           :app                 {:auth-backend :app-auth-backend}
           :http                {:app :webapp}})
 
-        (component/system-using
-         {; Server and handlers
-          :webapp              [:app :api]
-          :api                 [:monitor-endpoint
-                                :facilities-endpoint
-                                :regions-endpoint
-                                :projects-endpoint
-                                :routing-endpoint
-                                :datasets-endpoint]
-          :app                 [:home-endpoint
-                                :auth-endpoint
-                                :resmap-auth-endpoint]
-
-          ; Components
-          :maps                [:runner
-                                :regions]
-          :facilities          [:db
-                                :runner]
-          :projects            [:db
-                                :facilities
-                                :mailer]
-          :regions             [:db]
-          :routing             [:db]
-          :users-store         [:db]
-          :auth                [:users-store]
-          :resmap              [:auth]
-          :datasets            [:db]
-          :importer            [:resmap
-                                :facilities
-                                :projects
-                                :datasets]
-
-          ; Endpoints
-          :auth-endpoint       [:auth]
-          :home-endpoint       [:auth
-                                :resmap
-                                :maps
-                                :globals]
-          :facilities-endpoint [:facilities
-                                :maps]
-          :regions-endpoint    [:regions]
-          :projects-endpoint   [:projects
-                                :facilities
-                                :maps]
-          :routing-endpoint    [:routing]
-          :datasets-endpoint   [:datasets
-                                :facilities
-                                :resmap
-                                :importer]
-          :resmap-auth-endpoint [:auth
-                                 :resmap]}))))
+         ))))

@@ -33,7 +33,8 @@
    (GET "/identity" req
      (if-not (authenticated? req)
        (throw-unauthorized)
-       (let [ident (util/request-ident req)]
+       (let [ident (util/request-ident req)
+             token (auth/create-jwe-token service ident)]
         (html5
          [:body
           [:p (str "Current identity: " (util/request-user-email req)
@@ -42,7 +43,13 @@
            "API Token:"
            [:br]
            [:code {:style "white-space: normal; word-wrap: break-word;"}
-            (auth/create-jwe-token service ident)]]
+            token]]
+          [:p
+           "Example usage:"
+           [:br]
+           [:code {:style "white-space: normal; word-wrap: break-word;"}
+            "$ curl -H 'Authorization: Token " token "' "
+            (util/absolute-url "/api/whoami" req)]]
           [:p
            [:a {:href "/logout"} "Logout"]]]))))
 

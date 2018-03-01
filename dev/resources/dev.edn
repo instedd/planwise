@@ -4,4 +4,10 @@
  :duct.module/cljs {:main cljs.user}
 
  :duct.module/sql
- {:database-url #duct/env ["DATABASE_URL" String :or "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"]}}
+ {:database-url #duct/env ["DATABASE_URL" String :or "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"]}
+
+ :planwise.auth/jwe-secret
+ "12345678901234567890123456789012"
+
+ :planwise.auth/cookie-secret
+ "1234567890123456"}
