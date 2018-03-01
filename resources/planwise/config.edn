@@ -6,6 +6,11 @@
  :duct.module/sql {}
  :duct.module/cljs {:main planwise.client.core}
 
+ :duct.compiler/sass
+ {:source-paths ["resources/sass"]
+  :output-path  "target/resources/planwise/public/css"
+  :output-style :compressed}
+
  ;; Database
 
  :planwise/ragtime ["migrations"]
@@ -56,10 +61,10 @@
  {:alg :a256kw :enc :a128gcm}
 
  :planwise.auth/jwe-secret
- #duct/env ["JWE_SECRET" String]
+ #duct/env ["JWE_SECRET" Str]
 
  :planwise.auth/cookie-secret
- #duct/env ["COOKIE_SECRET" String]
+ #duct/env ["COOKIE_SECRET" Str]
 
  :planwise.auth/session-store
  {:key #ig/ref :planwise.auth/cookie-secret}
@@ -113,30 +118,43 @@
  ;; Components
 
  :planwise.component/auth
- {:users-store #ig/ref :planwise.component/users
-  :guisso-url  #duct/env ["GUISSO_URL" String :or "https://login.instedd.org"]
-  :jwe-options #ig/ref :planwise.auth/jwe-options
-  :jwe-secret  #ig/ref :planwise.auth/jwe-secret}
+ {:users-store          #ig/ref :planwise.component/users
+  :guisso-url           #duct/env ["GUISSO_URL" Str :or "https://login.instedd.org"]
+  :guisso-client-id     #duct/env ["GUISSO_CLIENT_ID" Str]
+  :guisso-client-secret #duct/env ["GUISSO_CLIENT_SECRET" Str]
+  :jwe-options          #ig/ref :planwise.auth/jwe-options
+  :jwe-secret           #ig/ref :planwise.auth/jwe-secret}
 
  :planwise.component/datasets
  {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/facilities
  {:db          #ig/ref :duct.database/sql
-  :runner      #ig/ref :planwise.component/runner}
+  :runner      #ig/ref :planwise.component/runner
+  :config      {:raster-isochrones #duct/env ["RASTER_ISOCHRONES" Bool :or true]}}
 
  :planwise.component/importer
- {:datasets    #ig/ref :planwise.component/datasets
-  :facilities  #ig/ref :planwise.component/facilities
-  :projects    #ig/ref :planwise.component/projects
-  :resmap      #ig/ref :planwise.component/resmap}
+ {:datasets           #ig/ref :planwise.component/datasets
+  :facilities         #ig/ref :planwise.component/facilities
+  :projects           #ig/ref :planwise.component/projects
+  :resmap             #ig/ref :planwise.component/resmap
+  :concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
 
  :planwise.component/mailer
- {}
+ {:config       {:sender #duct/env ["MAILER_SENDER" Str :or "planwise@instedd.org"]
+                 :smtp   {:host #duct/env ["SMTP_HOST" Str]
+                          :user #duct/env ["SMTP_USER" Str]
+                          :pass #duct/env ["SMTP_PASS" Str]
+                          :ssl  #duct/env ["SMTP_SSL" Bool]
+                          :port #duct/env ["SMTP_PORT" Int]}}}
 
  :planwise.component/maps
  {:regions     #ig/ref :planwise.component/regions
-  :runner      #ig/ref :planwise.component/runner}
+  :runner      #ig/ref :planwise.component/runner
+  :config      {:mapserver-url       #duct/env ["MAPSERVER_URL" Str :or "http://localhost:5002/mapcache?"]
+                :facilities-capacity #duct/env ["FACILITIES_CAPACITY" Int :or 100000]
+                :calculate-demand    #duct/env ["CALCULATE_DEMAND" Bool :or true]
+                :data                #duct/env ["DATA_PATH" Str :or "data/"]}}
 
  :planwise.component/projects
  {:db          #ig/ref :duct.database/sql
@@ -147,13 +165,15 @@
  {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/resmap
- {:auth        #ig/ref :planwise.component/auth}
+ {:auth        #ig/ref :planwise.component/auth
+  :url         #duct/env ["RESOURCEMAP_URL" Str :or "http://resourcemap.instedd.org"]}
 
  :planwise.component/routing
  {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/runner
- {}
+ {:bin         #duct/env ["BIN_PATH" Str :or "bin/"]
+  :scripts     #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
 
  :planwise.component/users
  {:db          #ig/ref :duct.database/sql}}

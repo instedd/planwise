@@ -13,6 +13,7 @@
                  [duct/module.web "0.6.4"]
                  [duct/module.cljs "0.3.2"]
                  [duct/module.sql "0.4.2"]
+                 [duct/compiler.sass "0.1.1"]
 
                  ; Web server and routing
                  [compojure "1.6.0"

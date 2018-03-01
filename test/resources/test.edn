@@ -1,5 +1,5 @@
 {:duct.module/sql
- {:database-url #duct/env ["TEST_DATABASE_URL" :or "jdbc:postgresql://localhost:5433/planwise-test?user=planwise&password=planwise"]}
+ {:database-url #duct/env ["TEST_DATABASE_URL" Str :or "jdbc:postgresql://localhost:5433/planwise-test?user=planwise&password=planwise"]}
 
  :planwise.test/logger
  {}
@@ -12,8 +12,8 @@
 
  :duct.migrator/ragtime
  {:migrations ^:replace #ig/ref :planwise/ragtime
-  :pre-run #ig/ref :planwise.test/db-pre-setup}
+  :pre-run              #ig/ref :planwise.test/db-pre-setup}
 
  :planwise.test/fixtures
- {:db #ig/ref :duct.database/sql
+ {:db      #ig/ref :duct.database/sql
   :pre-run #ig/ref :duct/migrator}}
