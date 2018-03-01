@@ -68,6 +68,7 @@
        duct/read-config
        (duct/merge-configs other))))
 
+;; REPL code to check that the base test system can be started successfully
 (comment (let [config (config)
                prepped (duct/prep config)
                system (ig/init prepped)]

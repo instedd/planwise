@@ -16,8 +16,7 @@
                  [duct/compiler.sass "0.1.1"]
 
                  ; Web server and routing
-                 [compojure "1.6.0"
-                  :exclusions [commons-codec]]
+                 [compojure "1.6.0"]
                  [ring/ring-core "1.6.3"]
                  [ring/ring-servlet "1.6.3"]
                  [ring/ring-jetty-adapter "1.6.3"]
@@ -36,10 +35,6 @@
                                clj-http]]
                  [clj-http "3.7.0"]
                                         ; needed by oauthentic
-
-                 ; Configuration
-                 [environ "1.0.3"]
-                 [meta-merge "0.1.1"]
 
                  ; Logging
                  [com.taoensso/timbre "4.10.0"]
@@ -84,30 +79,20 @@
                  ; Misc
                  [digest "1.4.4"]
                  [com.draines/postal "2.0.0"]
+
                  [funcool/cuerdas "2.0.3"]]
 
   :plugins [[duct/lein-duct "0.10.6"]
-            [lein-environ "1.0.3"]
-            [lein-cljsbuild "1.1.5"]
-            [lein-sass "0.3.7"
-             :exclusions
-             [org.apache.commons/commons-compress
-              org.codehaus.plexus/plexus-utils]]]
+            [lein-cljsbuild "1.1.5"]]
   :main ^:skip-aot planwise.main
   :target-path "target/%s/"
-  :resource-paths ["resources" "target/resources" "target/cljsbuild" "target/sass"]
+  :resource-paths ["resources" "target/resources"]
   :prep-tasks ["javac"
-               ["cljsbuild" "once"]
-               ["sass" "once"]
                "compile"
                ["run" ":duct/compiler"]]
   :jar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
   :uberjar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
   :uberjar-name "planwise-standalone.jar"
-  :sass
-  {:src "resources/sass"
-   :output-directory "target/sass/planwise/public/css"
-   :style :compressed}
   :cljsbuild
   {:builds
    {:main {:jar true
@@ -115,11 +100,12 @@
            :compiler {:output-to "target/cljsbuild/planwise/public/js/main.js"
                       :optimizations :advanced
                       :externs ["prod/planwise.externs.js"]}}}}
-  :aliases {"run-task"              ["with-profile" "+repl" "run" "-m"]
-            "migrate"               ["run-task" "planwise.tasks.db" "migrate"]
-            "rollback"              ["run-task" "planwise.tasks.db" "rollback"]
+  :aliases {;;"run-task"              ["with-profile" "+repl" "run" "-m"]
+            ;;"migrate"               ["run-task" "planwise.tasks.db" "migrate"]
+            ;;"rollback"              ["run-task" "planwise.tasks.db" "rollback"]
             "build-icons"           ["run-task" "planwise.tasks.build-icons"]
-            "preprocess-facilities" ["run-task" "planwise.tasks.preprocess-facilities"]}
+            ;;"preprocess-facilities" ["run-task" "planwise.tasks.preprocess-facilities"]
+            }
   :profiles
   {:dev  [:project/dev  :profiles/dev]
    :test [:project/test :profiles/test]
@@ -145,13 +131,8 @@
 
                                   ; Helpers
                                   [day8.re-frame/re-frame-10x "0.2.0"]
-                                  [hawk "0.2.10"]
                                   [binaryage/devtools "0.9.9"]]
 
                    :source-paths   ["dev/src"]
-                   :resource-paths ["dev/resources" "test/resources"]
-                   :env {:port "3000"
-                         :database-url "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"
-                         :test-database-url "jdbc:postgresql://localhost:5433/planwise-test?user=planwise&password=planwise"
-                         :guisso-url "https://login.instedd.org"}}
+                   :resource-paths ["dev/resources" "test/resources"]}
    :project/test  {}})

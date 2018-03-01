@@ -3,12 +3,13 @@
   (:require [integrant.core :as ig]
             [integrant.repl.state :refer [config system]]
             [duct.server.figwheel :as figwheel]
-            [eftest.runner :as eftest]))
+            [eftest.runner :as eftest]
+            [planwise.database :as database]))
 
-(defn db-spec
+(defn db
   []
   (let [[_ database] (ig/find-derived-1 system :duct.database/sql)]
-    (:spec database)))
+    database))
 
 (defn rebuild-cljs
   []
@@ -30,3 +31,7 @@
          tests (->> (eftest/find-tests "test")
                     (filter filterer))]
      (run-tests tests))))
+
+(defn load-sql
+  []
+  (database/load-sql-functions (db)))

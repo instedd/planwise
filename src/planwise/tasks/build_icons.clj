@@ -2,8 +2,7 @@
   (:require [clojure.xml :as xml]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [taoensso.timbre :as timbre]
-            [planwise.config :as config])
+            [taoensso.timbre :as timbre])
   (:gen-class))
 
 (timbre/refer-timbre)

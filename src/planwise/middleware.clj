@@ -29,6 +29,14 @@
    :session {:cookie-attrs {:max-age (* 24 3600)}
              :cookie-name "planwise-session"}})
 
+;; TODO: hide and log errors in production environment
+;; Old code (was in main.clj):
+;; (def prod-config
+;;     {:api {:middleware     [[wrap-log-errors]]}
+;;      :app {:middleware     [[wrap-log-errors]
+;;                             [wrap-hide-errors :internal-error]]
+;;            :internal-error (io/resource "planwise/errors/500.html")}})
+
 (defmethod ig/init-key :planwise.middleware/common
   [_ config]
   (fn [handler]

@@ -1,0 +1,13 @@
+* Migration tasks
+
+** migrate/rollback from REPL
+** migrate/rollback from CLI
+** test production build
+** preprocess facilities tasks
+** build icons task (and how to run it)
+** check CLJS production build (esp. regarding externs and configuration)
+** hide (from user) and log errors in production (see middleware.clj)
+** update README documentation
+
+** upgrade leaflet (!)
+** replace prismatic.schema with clojure.spec (!)

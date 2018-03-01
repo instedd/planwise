@@ -4,7 +4,8 @@
  :duct.module/cljs {:main cljs.user}
 
  :duct.server/figwheel
- {:builds [{:id "dev"
+ {:reload-clj-files false
+  :builds [{:id "dev"
             :source-paths ["dev/src" "src"]
             :build-options {:main cljs.user
                             :output-to "target/resources/planwise/public/js/main.js"
@@ -32,4 +33,7 @@
  {:bin #duct/env ["BIN_PATH" Str :or "cpp/"]}
 
  :planwise.component/mailer
- {:config {:mock? true}}}
+ {:config {:mock? true}}
+
+ :planwise.component/maps
+ {:config {:facilities-capacity 1000000}}}
