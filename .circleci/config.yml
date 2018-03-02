@@ -1,17 +1,22 @@
 version: 2
 
-jobs:
-  test:
+defaults:
+  environment: &environment
     machine:
       docker_layer_caching: true
+  install-docker-compose: &install-docker-compose
+    name: Install Docker Compose
+    command: |
+      curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+      chmod +x ~/docker-compose
+      sudo mv ~/docker-compose /usr/local/bin/docker-compose
+
+jobs:
+  test:
+    <<: *environment
     steps:
       - run:
-          name: Install Docker Compose
-          command: |
-            curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
-            chmod +x ~/docker-compose
-            sudo mv ~/docker-compose /usr/local/bin/docker-compose
-
+          <<: *install-docker-compose
       - checkout
       - run: mv docker-compose.ci.yml docker-compose.override.yml
       - restore_cache:
@@ -31,11 +36,20 @@ jobs:
             - ~/cache/.m2
 
   build:
-    docker:
-      - image: circleci/buildpack-deps:xenial-curl
+    <<: *environment
     steps:
+      - run:
+          <<: *install-docker-compose
       - checkout
-      - run: ./deploy.sh ${CIRCLE_TAG:-${CIRCLE_BRANCH/#master/latest}}
+      - run: mv docker-compose.ci.yml docker-compose.override.yml
+      - restore_cache:
+          keys:
+            - v1-planwise-m2-{{ checksum "project.clj" }}
+            - v1-planwise-m2-
+      - run:
+          name: Publish docker image
+          command: |
+            ./deploy.sh ${CIRCLE_TAG:-${CIRCLE_BRANCH/#master/latest}}
 
 workflows:
   version: 2

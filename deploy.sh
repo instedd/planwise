@@ -9,8 +9,8 @@ if [ $# -lt 1 ]; then
 fi
 
 git describe --always > resources/planwise/version
-lein uberjar
-make -C cpp release
+docker-compose run --rm app lein uberjar
+docker-compose run --rm app make -C cpp release
 
 TAG=${1/\//_}
 
