@@ -13,10 +13,21 @@ jobs:
             sudo mv ~/docker-compose /usr/local/bin/docker-compose
 
       - checkout
+      - run: mv docker-compose.ci.yml docker-compose.override.yml
+      - restore_cache:
+          keys:
+            - v1-planwise-m2-{{ checksum "project.clj" }}
+            - v1-planwise-m2-
+
       - run: docker-compose up -d db
       - run: docker-compose build
       - run: docker-compose exec db createdb planwise-test -Uplanwise
       - run: docker-compose run --rm app lein test
+
+      - save_cache:
+          key: v1-planwise-m2-{{ checksum "project.clj" }}
+          paths:
+            - ~/cache/.m2
 
   build:
     docker:
