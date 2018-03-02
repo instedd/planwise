@@ -2,9 +2,9 @@
  :duct.core/environment :production
 
  :duct.module/logging {}
- :duct.module/web {}
- :duct.module/sql {}
- :duct.module/cljs {:main planwise.client.core}
+ :duct.module/web     {}
+ :duct.module/sql     {}
+ :duct.module/cljs    {:main planwise.client.core}
 
  :duct.compiler/sass
  {:source-paths ["resources/sass"]
@@ -13,8 +13,15 @@
 
  ;; Database
 
- :planwise/ragtime ["migrations"]
- :duct.migrator/ragtime {:migrations ^:replace #ig/ref :planwise/ragtime}
+ :planwise.database/migrations
+ ["migrations"]
+
+ :planwise.database/pre-init
+ {:db #ig/ref :duct.database/sql}
+
+ :duct.migrator/ragtime
+ {:migrations ^:replace #ig/ref :planwise.database/migrations
+  :pre-init             #ig/ref :planwise.database/pre-init}
 
  ;; Routers
 

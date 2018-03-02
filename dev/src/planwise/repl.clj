@@ -4,7 +4,10 @@
             [integrant.repl.state :refer [config system]]
             [duct.server.figwheel :as figwheel]
             [eftest.runner :as eftest]
-            [planwise.database :as database]))
+            [planwise.database :as database]
+            [ragtime.core :as ragtime]
+            [ragtime.jdbc :as rag-jdbc]
+            [duct.migrator.ragtime :as dmr]))
 
 (defn db
   []
@@ -35,3 +38,11 @@
 (defn load-sql
   []
   (database/load-sql-functions (db)))
+
+(defn rollback-1
+  []
+  (let [[_ index] (ig/find-derived-1 system :duct.migrator/ragtime)
+        [_ logger] (ig/find-derived-1 system :duct/logger)
+        store (rag-jdbc/sql-database (:spec (db)))
+        options {:reporter (dmr/logger-reporter logger)}]
+    (ragtime/rollback-last store index 1 options)))

@@ -11,3 +11,4 @@
 
 ** upgrade leaflet (!)
 ** replace prismatic.schema with clojure.spec (!)
+** modify docker-compose to build mapserver/mapcache from the Dockerfiles in mapserver/
