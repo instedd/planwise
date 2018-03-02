@@ -76,6 +76,7 @@
 
                  ; Misc
                  [digest "1.4.4"]
+                 [org.clojure/data.csv "0.1.4"]
                  [com.draines/postal "2.0.0"]
                  [funcool/cuerdas "1.0.1"]]
 
@@ -112,11 +113,11 @@
   :profiles
   {:dev  [:project/dev  :profiles/dev]
    :test [:project/test :profiles/test]
-   :repl {:resource-paths ^:replace ["resources" "target/figwheel" "target/sass-repl"]
+   :repl {:resource-paths ^:replace ["resources" "target/figwheel" "target/sass-repl" "test/resources"]
           :prep-tasks     ^:replace [["javac"] ["compile"]]}
    :uberjar {:aot :all}
    :profiles/dev  {}
-   :profiles/test {}
+   :profiles/test {:resource-paths ["test/resources"]}
    :project/dev   {:dependencies [; Framework
                                   [duct/generate "0.6.1"
                                    :exclusions [org.codehaus.plexus/plexus-utils]]

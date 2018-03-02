@@ -41,6 +41,7 @@
             [planwise.component.importer :refer [importer]]
             [planwise.component.maps :refer [maps-service]]
             [planwise.component.runner :refer [runner-service]]
+            [planwise.component.sites-datasets :refer [sites-datasets-store]]
             [planwise.component.datasets :refer [datasets-store]]
 
             [planwise.endpoint.home :refer [home-endpoint]]
@@ -183,6 +184,7 @@
          :runner              (runner-service (:paths config))
          :maps                (maps-service (meta-merge (:maps config)
                                                         (:paths config)))
+         :sites-datasets-store (sites-datasets-store)
          :datasets            (datasets-store)
 
          :auth-endpoint       (endpoint-component auth-endpoint)
@@ -228,6 +230,7 @@
           :auth                [:users-store]
           :resmap              [:auth]
           :datasets            [:db]
+          :sites-datasets-store [:db]
           :importer            [:resmap
                                 :facilities
                                 :projects
