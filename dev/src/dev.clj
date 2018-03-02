@@ -13,6 +13,7 @@
             [integrant.repl.state :refer [config system]]
             [taoensso.timbre :as timbre]
             [schema.core :as s]
+            [planwise.config]
             [planwise.repl :refer :all]))
 
 (duct/load-hierarchy)

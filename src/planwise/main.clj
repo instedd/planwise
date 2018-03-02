@@ -2,6 +2,7 @@
   (:gen-class)
   (:require [clojure.java.io :as io]
             [duct.core :as duct]
+            [planwise.config]
             [taoensso.timbre :as timbre]))
 
 (timbre/refer-timbre)
