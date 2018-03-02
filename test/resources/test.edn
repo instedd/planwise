@@ -7,11 +7,11 @@
  :planwise.test/db-pre-setup
  {:db #ig/ref :duct.database/sql}
 
- :planwise/ragtime
+ :planwise.database/migrations
  ["migrations"]
 
  :duct.migrator/ragtime
- {:migrations ^:replace #ig/ref :planwise/ragtime
+ {:migrations ^:replace #ig/ref :planwise.database/migrations
   :pre-run              #ig/ref :planwise.test/db-pre-setup}
 
  :planwise.test/fixtures

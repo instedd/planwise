@@ -100,7 +100,7 @@
            :compiler {:output-to "target/cljsbuild/planwise/public/js/main.js"
                       :optimizations :advanced
                       :externs ["prod/planwise.externs.js"]}}}}
-  :aliases {;;"run-task"              ["with-profile" "+repl" "run" "-m"]
+  :aliases {"run-task"              ["with-profile" "+repl" "run" "-m"]
             ;;"migrate"               ["run-task" "planwise.tasks.db" "migrate"]
             ;;"rollback"              ["run-task" "planwise.tasks.db" "rollback"]
             "build-icons"           ["run-task" "planwise.tasks.build-icons"]
