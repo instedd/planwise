@@ -97,7 +97,7 @@
   :uberjar-name       "planwise-standalone.jar"
 
   :aliases {"migrate"               ["with-profile" "+repl" "run" ":duct/migrator"]
-            ;;"build-icons"           ["run-task" "planwise.tasks.build-icons"]
+            "build-icons"           ["with-profile" "+repl" "run" "-m" "planwise.tasks.build-icons"]
             ;;"preprocess-facilities" ["run-task" "planwise.tasks.preprocess-facilities"]
             }
 

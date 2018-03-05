@@ -5,6 +5,7 @@
             [duct.server.figwheel :as figwheel]
             [eftest.runner :as eftest]
             [planwise.database :as database]
+            [planwise.tasks.build-icons :as build-icons]
             [ragtime.core :as ragtime]
             [ragtime.jdbc :as rag-jdbc]
             [duct.migrator.ragtime :as dmr]))
@@ -46,3 +47,7 @@
         store (rag-jdbc/sql-database (:spec (db)))
         options {:reporter (dmr/logger-reporter logger)}]
     (ragtime/rollback-last store index 1 options)))
+
+(defn build-icons
+  []
+  (build-icons/process-svgs))

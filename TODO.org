@@ -8,14 +8,17 @@
    CLOSED: [2018-03-05 Mon 12:23]
 ** DONE test production build
    CLOSED: [2018-03-05 Mon 12:27]
-** TODO build icons task (and how to run it)
+** DONE build icons task (and how to run it)
+   CLOSED: [2018-03-05 Mon 12:40]
 ** TODO preprocess facilities tasks
+** TODO silence debug messages in test (ie. lein test)
 ** TODO check CLJS production build (esp. regarding externs and configuration)
 ** TODO hide (from user) and log errors in production (see middleware.clj)
 ** TODO update README documentation
 ** TODO recover version for rendering in the home page
 ** TODO check what's up with slf4j and timbre
 ** TODO review dependencies exclusions
+** TODO review files included in uberjar
 
 ** TODO rollback from CLI (?)
 ** TODO upgrade leaflet (!)
