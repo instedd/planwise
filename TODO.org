@@ -18,9 +18,10 @@
    CLOSED: [2018-03-05 Mon 14:02]
 ** DONE check what's up with slf4j and timbre
    CLOSED: [2018-03-05 Mon 14:03]
+** DONE recover version for rendering in the home page
+   CLOSED: [2018-03-05 Mon 14:17]
 ** TODO hide (from user) and log errors in production (see middleware.clj)
 ** TODO update README documentation
-** TODO recover version for rendering in the home page
 ** TODO review dependencies exclusions
 ** TODO review files included in uberjar
 

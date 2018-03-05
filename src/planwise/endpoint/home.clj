@@ -3,6 +3,7 @@
             [planwise.boundary.maps :as maps]
             [planwise.boundary.auth :as auth]
             [planwise.util.ring :as util]
+            [planwise.config :as config]
             [integrant.core :as ig]
             [cheshire.core :as json]
             [hiccup.form :refer [hidden-field]]
@@ -41,7 +42,7 @@
         ident (util/request-ident request)
         email (util/request-user-email request)
         token (auth/create-jwe-token auth ident)
-        app-version (or (:app-version globals) "unspecified")
+        app-version config/app-version
         config {:resourcemap-url resmap-url
                 :identity email
                 :jwe-token token
