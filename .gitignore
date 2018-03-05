@@ -30,3 +30,4 @@ resources/planwise/public/data/
 /docker-compose.override.yml
 
 node_modules
+/scripts/population/target
