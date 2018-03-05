@@ -38,3 +38,4 @@
 ** TODO change logging middleware (request and error) to use the duct default ones
 ** TODO remove digest dependency in favor of pandect (included in duct/migrator.ragtime)
 ** TODO read/parse secret environment configuration either as hexstrings or base64
+** TODO guarantee load ordering of PL/SQL function files

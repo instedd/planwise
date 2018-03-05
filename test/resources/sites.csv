@@ -1,0 +1,5 @@
+id,type,name,lat,lon,capacity,tags
+1,clinic,foo,10,8,600,lorem
+2,clinic,bar,11,7,700,ipsum
+3,clinic,foofoo,12,8,680,dolor sit
+4,clinic,barbar,13,9,560,amet

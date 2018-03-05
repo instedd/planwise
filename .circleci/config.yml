@@ -1,0 +1,70 @@
+version: 2
+
+defaults:
+  environment: &environment
+    machine:
+      docker_layer_caching: true
+  install-docker-compose: &install-docker-compose
+    name: Install Docker Compose
+    command: |
+      curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+      chmod +x ~/docker-compose
+      sudo mv ~/docker-compose /usr/local/bin/docker-compose
+      docker-compose --version
+jobs:
+  test:
+    <<: *environment
+    steps:
+      - run:
+          <<: *install-docker-compose
+      - checkout
+      - run: mv docker-compose.ci.yml docker-compose.override.yml
+      - restore_cache:
+          keys:
+            - v1-planwise-m2-{{ checksum "project.clj" }}
+            - v1-planwise-m2-
+
+      - run: docker-compose up -d db
+      - run: docker-compose build
+      - run: sleep 10
+      - run: docker-compose exec db createdb planwise-test -Uplanwise
+      - run: docker-compose run --rm app lein test
+
+      - save_cache:
+          key: v1-planwise-m2-{{ checksum "project.clj" }}
+          paths:
+            - ~/cache/.m2
+
+  deploy:
+    <<: *environment
+    steps:
+      - run:
+          <<: *install-docker-compose
+      - checkout
+      - run: mv docker-compose.ci.yml docker-compose.override.yml
+      - restore_cache:
+          keys:
+            - v1-planwise-m2-{{ checksum "project.clj" }}
+            - v1-planwise-m2-
+      - run:
+          name: Publish docker image
+          command: |
+            ./deploy.sh ${CIRCLE_TAG:-${CIRCLE_BRANCH/#master/latest}}
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - test
+      - deploy:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
+                - stable
+                - /.*\bci\b.*/
+            tags:
+              only:
+                - /[0-9]+(\.[0-9]+)*(-pre\d+)?/

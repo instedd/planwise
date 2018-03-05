@@ -79,6 +79,7 @@
 
                  ; Misc
                  [digest "1.4.4"]
+                 [org.clojure/data.csv "0.1.4"]
                  [com.draines/postal "2.0.0"]
 
                  [funcool/cuerdas "2.0.3"]]
