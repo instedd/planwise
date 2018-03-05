@@ -65,7 +65,7 @@
                   :exclusions [org.clojure/tools.reader]]
 
                  ; Client assets and components
-                 [org.webjars/normalize.css "3.0.2"]
+                 [org.webjars/normalize.css "5.0.0"]
                  [org.webjars/leaflet "0.7.7"]
 
                  ; Database access
@@ -119,7 +119,8 @@
                                   [integrant/repl "0.2.0"]
 
                                   ; Testing libraries
-                                  [eftest "0.4.3"]
+                                  [eftest "0.4.3"
+                                   :exclusions [io.aviso/pretty]]
                                   [kerodon "0.9.0"]
                                   [ring/ring-mock "0.3.0"]
 

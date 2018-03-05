@@ -33,3 +33,4 @@
 ** TODO review system configuration and try to use composite keys whenever possible
 ** TODO write pre-init-spec for all system keys
 ** TODO change logging middleware (request and error) to use the duct default ones
+** TODO remove digest dependency in favor of pandect (included in duct/migrator.ragtime)
