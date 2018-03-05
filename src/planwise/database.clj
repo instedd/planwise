@@ -20,7 +20,6 @@
 
 (defn load-sql-functions
   [database]
-  (info "Loading PL/SQL functions into database")
   (doseq [source (resauce/resource-dir "planwise/plpgsql")]
     (load-and-execute-sql database source)))
 
@@ -64,4 +63,5 @@
 
 (defmethod ig/init-key :planwise.database/pre-init
   [_ {:keys [db]}]
+  (info "Loading PL/SQL functions into database")
   (load-sql-functions db))

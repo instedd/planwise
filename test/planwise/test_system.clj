@@ -4,9 +4,18 @@
             [clojure.java.jdbc :as jdbc]
             [clojure.java.io :as io]
             [duct.core :as duct]
-            [duct.logger :as logger]))
+            [duct.logger :as logger]
+            [taoensso.timbre :as timbre]))
+
+(timbre/refer-timbre)
 
 (duct/load-hierarchy)
+
+;; Logging configuration for development
+(timbre/merge-config! {:level :debug
+                       :ns-blacklist ["com.zaxxer.hikari.*"
+                                      "org.apache.http.*"
+                                      "org.eclipse.jetty.*"]})
 
 (defrecord TestLogger [logs]
   logger/Logger

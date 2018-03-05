@@ -12,12 +12,15 @@
    CLOSED: [2018-03-05 Mon 12:40]
 ** DONE preprocess facilities tasks
    CLOSED: [2018-03-05 Mon 13:57]
-** TODO silence debug messages in test (ie. lein test)
-** TODO check CLJS production build (esp. regarding externs and configuration)
+** DONE silence debug messages in test (ie. lein test)
+   CLOSED: [2018-03-05 Mon 14:02]
+** DONE check CLJS production build (esp. regarding externs and configuration)
+   CLOSED: [2018-03-05 Mon 14:02]
+** DONE check what's up with slf4j and timbre
+   CLOSED: [2018-03-05 Mon 14:03]
 ** TODO hide (from user) and log errors in production (see middleware.clj)
 ** TODO update README documentation
 ** TODO recover version for rendering in the home page
-** TODO check what's up with slf4j and timbre
 ** TODO review dependencies exclusions
 ** TODO review files included in uberjar
 
