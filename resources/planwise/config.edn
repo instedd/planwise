@@ -53,13 +53,15 @@
  :planwise.middleware/common {}
 
  :planwise.middleware/api
- {:session-store  #ig/ref :planwise.auth/session-store
+ {:environment    #ig/ref :duct.core/environment
+  :session-store  #ig/ref :planwise.auth/session-store
   :authz-backend  #ig/ref :planwise.auth.backend/jwe
   :authn-backends [#ig/ref :planwise.auth.backend/session
                    #ig/ref :planwise.auth.backend/jwe]}
 
  :planwise.middleware/app
- {:session-store  #ig/ref :planwise.auth/session-store
+ {:environment    #ig/ref :duct.core/environment
+  :session-store  #ig/ref :planwise.auth/session-store
   :authz-backend  #ig/ref :planwise.auth.backend/session
   :authn-backends [#ig/ref :planwise.auth.backend/session]}
 

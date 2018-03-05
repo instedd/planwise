@@ -75,6 +75,7 @@
   (let [loading-page (partial loading-page endpoint)]
     (routes
      (GET "/" [] loading-page)
+     #_(GET "/crash" [] (throw (RuntimeException. "Crash")))
      (GET "/datasets" [] loading-page)
      (context "/projects/:id" []
        (GET "/" [] loading-page)

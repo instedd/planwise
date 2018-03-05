@@ -16,6 +16,7 @@
            (GET "/ping" [] {:status 200
                             :headers {"content-type" "text/plain"}
                             :body "pong"})
+           #_(GET "/crash" [] (throw (RuntimeException. "Crash")))
            (GET "/whoami" req
                 (restrict whoami-handler {:handler authenticated?}))))
 

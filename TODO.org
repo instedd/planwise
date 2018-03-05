@@ -20,7 +20,8 @@
    CLOSED: [2018-03-05 Mon 14:03]
 ** DONE recover version for rendering in the home page
    CLOSED: [2018-03-05 Mon 14:17]
-** TODO hide (from user) and log errors in production (see middleware.clj)
+** DONE hide (from user) and log errors in production (see middleware.clj)
+   CLOSED: [2018-03-05 Mon 15:14]
 ** TODO update README documentation
 ** TODO review dependencies exclusions
 ** TODO review files included in uberjar
@@ -31,3 +32,4 @@
 ** TODO modify docker-compose to build mapserver/mapcache from the Dockerfiles in mapserver/
 ** TODO review system configuration and try to use composite keys whenever possible
 ** TODO write pre-init-spec for all system keys
+** TODO change logging middleware (request and error) to use the duct default ones
