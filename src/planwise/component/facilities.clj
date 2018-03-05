@@ -232,10 +232,12 @@
     (insert-types! service dataset-id types))
   (insert-facilities! [service dataset-id facilities]
     (insert-facilities! service dataset-id facilities))
+  (preprocess-isochrones [service]
+    (preprocess-isochrones service))
   (preprocess-isochrones [service id]
     (preprocess-isochrones service id))
-  (clear-facilities-processed-status! [service facilities]
-    (clear-facilities-processed-status! service facilities))
+  (clear-facilities-processed-status! [service]
+    (clear-facilities-processed-status! service))
   (destroy-facilities! [service dataset-id options]
     (destroy-facilities! service dataset-id options))
   (destroy-types! [service dataset-id options]

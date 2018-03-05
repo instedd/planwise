@@ -98,8 +98,7 @@
 
   :aliases {"migrate"               ["with-profile" "+repl" "run" ":duct/migrator"]
             "build-icons"           ["with-profile" "+repl" "run" "-m" "planwise.tasks.build-icons"]
-            ;;"preprocess-facilities" ["run-task" "planwise.tasks.preprocess-facilities"]
-            }
+            "preprocess-facilities" ["with-profile" "+repl" "run" "-m" "planwise.tasks.preprocess-facilities"]}
 
   :profiles
   {:dev           [:project/dev  :profiles/dev]

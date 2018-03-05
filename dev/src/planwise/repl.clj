@@ -8,7 +8,8 @@
             [planwise.tasks.build-icons :as build-icons]
             [ragtime.core :as ragtime]
             [ragtime.jdbc :as rag-jdbc]
-            [duct.migrator.ragtime :as dmr]))
+            [duct.migrator.ragtime :as dmr]
+            [planwise.boundary.facilities :as facilities]))
 
 (defn db
   []
@@ -51,3 +52,14 @@
 (defn build-icons
   []
   (build-icons/process-svgs))
+
+(defn preprocess-facilities
+  ([]
+   (preprocess-facilities :unprocessed))
+  ([filter]
+   (let [service (:planwise.component/facilities system)]
+     (case filter
+       :unprocessed nil
+       :all         (facilities/clear-facilities-processed-status! service)
+       (throw (IllegalArgumentException. "unknown filter for preprocess-facilities")))
+     (facilities/preprocess-isochrones service))))

@@ -10,7 +10,8 @@
    CLOSED: [2018-03-05 Mon 12:27]
 ** DONE build icons task (and how to run it)
    CLOSED: [2018-03-05 Mon 12:40]
-** TODO preprocess facilities tasks
+** DONE preprocess facilities tasks
+   CLOSED: [2018-03-05 Mon 13:57]
 ** TODO silence debug messages in test (ie. lein test)
 ** TODO check CLJS production build (esp. regarding externs and configuration)
 ** TODO hide (from user) and log errors in production (see middleware.clj)

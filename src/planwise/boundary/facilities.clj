@@ -30,9 +30,11 @@
 
   (insert-facilities! [this dataset-id facilities])
 
-  (preprocess-isochrones [this id])
+  (preprocess-isochrones
+    [this]
+    [this id])
 
-  (clear-facilities-processed-status! [this facilities])
+  (clear-facilities-processed-status! [this])
 
   (destroy-facilities! [this dataset-id options])
 
