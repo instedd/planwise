@@ -11,19 +11,12 @@ defaults:
       chmod +x ~/docker-compose
       sudo mv ~/docker-compose /usr/local/bin/docker-compose
       docker-compose --version
-  install-dockerize: &install-dockerize
-    name: Install Dockerize
-    command: |
-      curl -L https://github.com/jwilder/dockerize/releases/download/v0.6.0/dockerize-linux-amd64-v0.6.0.tar.gz | sudo tar xz -C /usr/local/bin
-      dockerize --version
 jobs:
   test:
     <<: *environment
     steps:
       - run:
           <<: *install-docker-compose
-      - run:
-          <<: *install-dockerize
       - checkout
       - run: mv docker-compose.ci.yml docker-compose.override.yml
       - restore_cache:
@@ -33,7 +26,7 @@ jobs:
 
       - run: docker-compose up -d db
       - run: docker-compose build
-      - run: dockerize -wait tcp://localhost:5433
+      - run: sleep 10
       - run: docker-compose exec db createdb planwise-test -Uplanwise
       - run: docker-compose run --rm app lein test
 
