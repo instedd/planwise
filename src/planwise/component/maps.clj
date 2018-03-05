@@ -6,7 +6,7 @@
             [clojure.string :as str]
             [clojure.java.io :as io]
             [planwise.util.str :refer [trim-to-int]]
-            [digest :as digest]
+            [pandect.algo.sha256 :as pandect]
             [taoensso.timbre :as timbre]))
 
 (timbre/refer-timbre)
@@ -30,7 +30,7 @@
 
 (defn- demand-map-key
   [region-id polygons-with-capacities]
-  (digest/sha-256
+  (pandect/sha256
     (str/join "_" (cons region-id polygons-with-capacities))))
 
 (defn default-capacity

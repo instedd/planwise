@@ -31,6 +31,8 @@
 
 ** DONE read/parse secret environment configuration either as hexstrings or base64
    CLOSED: [2018-03-05 Mon 18:26]
+** DONE remove digest dependency in favor of pandect (included in duct/migrator.ragtime)
+   CLOSED: [2018-03-05 Mon 18:57]
 ** TODO review files included in uberjar
 ** TODO rollback from CLI (?)
 ** TODO upgrade leaflet (!)
@@ -39,5 +41,4 @@
 ** TODO review system configuration and try to use composite keys whenever possible
 ** TODO write pre-init-spec for all system keys
 ** TODO change logging middleware (request and error) to use the duct default ones
-** TODO remove digest dependency in favor of pandect (included in duct/migrator.ragtime)
 ** TODO guarantee load ordering of PL/SQL function files
