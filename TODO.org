@@ -22,9 +22,12 @@
    CLOSED: [2018-03-05 Mon 14:17]
 ** DONE hide (from user) and log errors in production (see middleware.clj)
    CLOSED: [2018-03-05 Mon 15:14]
-** TODO update README documentation
-** TODO review dependencies exclusions
+** DONE review dependencies exclusions
+   CLOSED: [2018-03-05 Mon 15:33]
+** DONE update README documentation
+   CLOSED: [2018-03-05 Mon 16:17]
 ** TODO review files included in uberjar
+** TODO update circleci scripts
 
 ** TODO rollback from CLI (?)
 ** TODO upgrade leaflet (!)
@@ -34,3 +37,4 @@
 ** TODO write pre-init-spec for all system keys
 ** TODO change logging middleware (request and error) to use the duct default ones
 ** TODO remove digest dependency in favor of pandect (included in duct/migrator.ragtime)
+** TODO read/parse secret environment configuration either as hexstrings or base64
