@@ -7,7 +7,8 @@
  :duct.module/cljs    {:main planwise.client.core}
 
  :duct.compiler/sass
- {:source-paths ["resources/sass"]
+ {:logger       #ig/ref :duct/logger
+  :source-paths ["resources/sass"]
   :output-path  "target/resources/planwise/public/css"
   :output-style :compressed}
 

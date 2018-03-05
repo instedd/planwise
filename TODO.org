@@ -1,14 +1,25 @@
 * Migration tasks
 
-** migrate/rollback from REPL
-** migrate/rollback from CLI
-** test production build
-** preprocess facilities tasks
-** build icons task (and how to run it)
-** check CLJS production build (esp. regarding externs and configuration)
-** hide (from user) and log errors in production (see middleware.clj)
-** update README documentation
+** DONE migrate/rollback from REPL
+   CLOSED: [2018-03-02 Fri 17:20]
+** DONE lein run must work
+   CLOSED: [2018-03-05 Mon 12:20]
+** DONE migrate from CLI
+   CLOSED: [2018-03-05 Mon 12:23]
+** DONE test production build
+   CLOSED: [2018-03-05 Mon 12:27]
+** TODO build icons task (and how to run it)
+** TODO preprocess facilities tasks
+** TODO check CLJS production build (esp. regarding externs and configuration)
+** TODO hide (from user) and log errors in production (see middleware.clj)
+** TODO update README documentation
+** TODO recover version for rendering in the home page
+** TODO check what's up with slf4j and timbre
+** TODO review dependencies exclusions
 
-** upgrade leaflet (!)
-** replace prismatic.schema with clojure.spec (!)
-** modify docker-compose to build mapserver/mapcache from the Dockerfiles in mapserver/
+** TODO rollback from CLI (?)
+** TODO upgrade leaflet (!)
+** TODO replace prismatic.schema with clojure.spec (!)
+** TODO modify docker-compose to build mapserver/mapcache from the Dockerfiles in mapserver/
+** TODO review system configuration and try to use composite keys whenever possible
+** TODO write pre-init-spec for all system keys

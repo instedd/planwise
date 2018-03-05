@@ -4,13 +4,14 @@
   :min-lein-version "2.0.0"
   :dependencies [; Base infrastructure
                  [org.clojure/clojure "1.9.0"]
-                 [org.clojure/clojurescript "1.9.908"]
+                 [org.clojure/clojurescript "1.9.946"]
                  [org.clojure/core.async "0.4.474"]
                  [prismatic/schema "1.1.7"]
 
                  [duct/core "0.6.2"]
                  [duct/module.logging "0.3.1"]
-                 [duct/module.web "0.6.4"]
+                 [duct/module.web "0.6.4"
+                  :exclusions [org.slf4j/slf4j-nop]]
                  [duct/module.cljs "0.3.2"]
                  [duct/module.sql "0.4.2"]
                  [duct/compiler.sass "0.1.1"]
@@ -82,39 +83,33 @@
 
                  [funcool/cuerdas "2.0.3"]]
 
-  :plugins [[duct/lein-duct "0.10.6"]
-            [lein-cljsbuild "1.1.5"]]
-  :main ^:skip-aot planwise.main
-  :target-path "target/%s/"
-  :resource-paths ["resources" "target/resources"]
-  :prep-tasks ["javac"
-               "compile"
-               ["run" ":duct/compiler"]]
-  :jar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
+  :plugins [[duct/lein-duct "0.10.6"]]
+
+  :resource-paths     ["resources" "target/resources"]
+  :target-path        "target/%s/"
+  :main               ^:skip-aot planwise.main
+
+  :prep-tasks         ["javac"
+                       "compile"
+                       ["run" ":duct/compiler"]]
+  :jar-exclusions     [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
   :uberjar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
-  :uberjar-name "planwise-standalone.jar"
-  :cljsbuild
-  {:builds
-   {:main {:jar true
-           :source-paths ["src" "prod"]
-           :compiler {:output-to "target/cljsbuild/planwise/public/js/main.js"
-                      :optimizations :advanced
-                      :externs ["prod/planwise.externs.js"]}}}}
-  :aliases {"run-task"              ["with-profile" "+repl" "run" "-m"]
-            ;;"migrate"               ["run-task" "planwise.tasks.db" "migrate"]
-            ;;"rollback"              ["run-task" "planwise.tasks.db" "rollback"]
-            "build-icons"           ["run-task" "planwise.tasks.build-icons"]
+  :uberjar-name       "planwise-standalone.jar"
+
+  :aliases {"migrate"               ["with-profile" "+repl" "run" ":duct/migrator"]
+            ;;"build-icons"           ["run-task" "planwise.tasks.build-icons"]
             ;;"preprocess-facilities" ["run-task" "planwise.tasks.preprocess-facilities"]
             }
+
   :profiles
-  {:dev  [:project/dev  :profiles/dev]
-   :test [:project/test :profiles/test]
-   :repl {:prep-tasks     ^:replace ["javac" "compile"]
-          :repl-options   {:init-ns user
-                           :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
-                           :host "0.0.0.0"
-                           :port 47480}}
-   :uberjar {:aot :all}
+  {:dev           [:project/dev  :profiles/dev]
+   :test          [:project/test :profiles/test]
+   :repl          {:prep-tasks   ^:replace ["javac" "compile"]
+                   :repl-options {:init-ns user
+                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
+                                  :host "0.0.0.0"
+                                  :port 47480}}
+   :uberjar       {:aot :all}
    :profiles/dev  {}
    :profiles/test {}
    :project/dev   {:dependencies [; Framework
@@ -135,4 +130,5 @@
 
                    :source-paths   ["dev/src"]
                    :resource-paths ["dev/resources" "test/resources"]}
-   :project/test  {}})
+   :project/test  {:prep-tasks     ^:replace ["javac" "compile"]
+                   :resource-paths ["test/resources"]}})

@@ -16,7 +16,8 @@
                                         "org.apache.http.*"
                                         "org.eclipse.jetty.*"]})
   (let [keys (or (duct/parse-keys args) [:duct/daemon])]
-    (-> (duct/read-config (io/resource "planwise/config.edn"))
+    (println "Starting" keys)
+    (-> (duct/read-config (io/resource "planwise/prod.edn"))
         (duct/prep keys)
         (duct/exec keys))))
 
