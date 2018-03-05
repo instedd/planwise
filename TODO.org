@@ -26,9 +26,12 @@
    CLOSED: [2018-03-05 Mon 15:33]
 ** DONE update README documentation
    CLOSED: [2018-03-05 Mon 16:17]
-** TODO review files included in uberjar
-** TODO update circleci scripts
+** DONE update circleci scripts
+   CLOSED: [2018-03-05 Mon 17:11]
 
+** DONE read/parse secret environment configuration either as hexstrings or base64
+   CLOSED: [2018-03-05 Mon 18:26]
+** TODO review files included in uberjar
 ** TODO rollback from CLI (?)
 ** TODO upgrade leaflet (!)
 ** TODO replace prismatic.schema with clojure.spec (!)
@@ -37,5 +40,4 @@
 ** TODO write pre-init-spec for all system keys
 ** TODO change logging middleware (request and error) to use the duct default ones
 ** TODO remove digest dependency in favor of pandect (included in duct/migrator.ragtime)
-** TODO read/parse secret environment configuration either as hexstrings or base64
 ** TODO guarantee load ordering of PL/SQL function files

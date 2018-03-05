@@ -70,11 +70,14 @@
  :planwise.auth/jwe-options
  {:alg :a256kw :enc :a128gcm}
 
+ :planwise.auth/base-secret
+ #duct/env ["BASE_SECRET" Str]
+
  :planwise.auth/jwe-secret
- #duct/env ["JWE_SECRET" Str]
+ #duct/env ["JWE_SECRET" Str :or #ig/ref :planwise.auth/base-secret]
 
  :planwise.auth/cookie-secret
- #duct/env ["COOKIE_SECRET" Str]
+ #duct/env ["COOKIE_SECRET" Str :or #ig/ref :planwise.auth/base-secret]
 
  :planwise.auth/session-store
  {:key #ig/ref :planwise.auth/cookie-secret}
