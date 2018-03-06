@@ -106,6 +106,10 @@ for region in $REGIONS; do
   PIXEL_AREA_M2=`gdalinfo $DATA_TARGET | grep PIXEL_AREA_M2 | cut -d = -f2`
 
   echo " Updating population for ${ID}: ${TOTAL_POPULATION}"
-  psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A \
-       -c "UPDATE regions SET total_population = ${TOTAL_POPULATION}, max_population = ${MAX_POPULATION}, raster_pixel_area = ${PIXEL_AREA_M2} WHERE id = ${ID}";
+  psql  -d $POSTGRES_DB -U $POSTGRES_USER \
+        -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+          INSERT INTO "populations" (source_id, region_id, total_population, max_population, raster_pixel_area)
+            VALUES (${PARAM_ID_SOURCE}, ${ID}, ${TOTAL_POPULATION}, ${MAX_POPULATION}, ${PIXEL_AREA_M2});
+SQL_SCRIPT
+
 done;
