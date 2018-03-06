@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS population_filename;
+DROP TABLE IF EXISTS population_sources;

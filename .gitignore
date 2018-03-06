@@ -31,3 +31,4 @@ resources/planwise/public/data/
 
 node_modules
 /scripts/population/target
+/scripts/population/data

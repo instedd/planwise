@@ -16,11 +16,26 @@
 (def sql-insert! ; db-spec :table {:col1 42 :col2 "123"}
   #(jdbc/insert! pg-db %1 %2))
 
+(def run-script
+  #(let [sh-result (apply shell/sh %1)]
+      (println (:out sh-result))
+      (println (:err sh-result))))
+
+;
 (defn add-population-source
   [name, filename]
   (sql-insert! :population_sources {:name name :tif_file filename}))
 
-;
+(defn add-country-regions
+  [country]
+  (println (str "Running script to add regions from: " country))
+  (run-script ["./load-regions" country]))
+
+(defn calculate-country-population
+  [country tif-filename]
+  (println (str "Running script to calculate population for: " country " with tif file id: " tif-filename))
+  (run-script ["./regions-population" country (str tif-filename)]))
+
 ;
 (defn print-source
   [source]
@@ -28,7 +43,7 @@
   (println (:name source))
   (println (:tif_file source)))
 
-
+;
 (defn -main
   [name filename country]
 
@@ -36,12 +51,12 @@
   (println (str "Filename: " filename))
   (println (str "Country: " country))
 
-  ; (println (:out (shell/sh "ls" "-al")))
-
-  (let [ sources (sql-query ["select * from population_sources where id = ?" 1]) ]
-    (map print-source sources)
-  )
-
-  (add-population-source name filename)
+  (let [ result (add-population-source name filename) ]
+    (doseq [r result]
+      (print-source r)
+      (add-country-regions country) ;load-regions
+      (calculate-country-population country (:id r)) ;regions-population
+      ; TODO: (rasterize-all-regions)
+    ))
 
   (System/exit 0)) ; https://stackoverflow.com/questions/1134770/how-to-end-force-a-close-to-a-program-in-clojure?rq=1
