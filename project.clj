@@ -3,46 +3,51 @@
   :url "http://github.com/instedd/planwise"
   :min-lein-version "2.0.0"
   :dependencies [; Base infrastructure
-                 [org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.9.908"]
-                 [org.clojure/core.async "0.2.385"]
-                 [com.stuartsierra/component "0.3.1"]
+                 [org.clojure/clojure "1.9.0"]
+                 [org.clojure/clojurescript "1.9.946"]
+                 [org.clojure/core.async "0.4.474"]
                  [prismatic/schema "1.1.7"]
-                 [duct "0.6.1"]
+
+                 [duct/core "0.6.2"]
+                 [duct/module.logging "0.3.1"]
+                 [duct/module.web "0.6.4"
+                  :exclusions [org.slf4j/slf4j-nop]]
+                 [duct/module.cljs "0.3.2"]
+                 [duct/module.sql "0.4.2"]
+                 [duct/compiler.sass "0.1.1"]
 
                  ; Web server and routing
-                 [compojure "1.5.0"
-                  :exclusions [commons-codec]]
-                 [ring "1.4.0"]
-                 [ring/ring-defaults "0.2.0"]
+                 [compojure "1.6.0"]
+                 [ring/ring-core "1.6.3"]
+                 [ring/ring-servlet "1.6.3"]
+                 [ring/ring-jetty-adapter "1.6.3"]
+                 [ring/ring-defaults "0.3.1"]
                  [ring/ring-json "0.4.0"]
-                 [ring-jetty-component "0.3.1"]
-                 [ring-webjars "0.1.1"]
+                 [ring-webjars "0.2.0"]
                  [amalloy/ring-gzip-middleware "0.1.3"]
 
                  ; Security
-                 [buddy "1.0.0"]
+                 [buddy "2.0.0"]
                  [org.openid4java/openid4java "1.0.0"
                   :exclusions [commons-logging
                                org.apache.httpcomponents/httpclient]]
                  [oauthentic "1.0.1"
-                  :exclusions [org.apache.httpcomponents/httpclient]]
-
-                 ; Configuration
-                 [environ "1.0.3"]
-                 [meta-merge "0.1.1"]
+                  :exclusions [org.apache.httpcomponents/httpclient
+                               clj-http]]
+                 [clj-http "3.7.0"]
+                                        ; needed by oauthentic
 
                  ; Logging
-                 [com.taoensso/timbre "4.5.1"]
-                 [com.fzakaria/slf4j-timbre "0.3.2"]
+                 [com.taoensso/timbre "4.10.0"]
+                 [com.fzakaria/slf4j-timbre "0.3.8"]
                  [org.slf4j/log4j-over-slf4j "1.7.14"]
                  [org.slf4j/jul-to-slf4j "1.7.14"]
                  [org.slf4j/jcl-over-slf4j "1.7.14"]
 
                  ; Rendering and data handling
                  [hiccup "1.0.5"]
-                 [cheshire "5.6.3"]
-                 [clj-time "0.12.0"]
+                 [cheshire "5.8.0"]
+                 [clj-time "0.14.2"]
                  [reduce-fsm "0.1.4"]
 
                  ; Client infrastructure
@@ -60,94 +65,70 @@
                   :exclusions [org.clojure/tools.reader]]
 
                  ; Client assets and components
-                 [org.webjars/normalize.css "3.0.2"]
+                 [org.webjars/normalize.css "5.0.0"]
                  [org.webjars/leaflet "0.7.7"]
 
                  ; Database access
-                 [duct/hikaricp-component "0.1.0"
-                  :exclusions [org.slf4j/slf4j-nop]]
-                 [duct/ragtime-component "0.1.4"]
-                 [org.postgresql/postgresql "9.4.1208"]
-                 [net.postgis/postgis-jdbc "2.1.7.2"
+                 [org.postgresql/postgresql "42.2.1"]
+                 [net.postgis/postgis-jdbc "2.2.1"
                   :exclusions [postgresql
+                               org.postgresql/postgresql
                                ch.qos.logback/logback-classic
                                ch.qos.logback/logback-core]]
                  [com.layerware/hugsql "0.4.7"]
 
                  ; Misc
-                 [digest "1.4.4"]
                  [org.clojure/data.csv "0.1.4"]
                  [com.draines/postal "2.0.0"]
-                 [funcool/cuerdas "1.0.1"]]
 
-  :plugins [[lein-environ "1.0.3"]
-            [lein-cljsbuild "1.1.5"]
-            [lein-sass "0.3.7"
-             :exclusions
-             [org.apache.commons/commons-compress
-              org.codehaus.plexus/plexus-utils]]]
-  :main ^:skip-aot planwise.main
-  :target-path "target/%s/"
-  :resource-paths ["resources" "target/cljsbuild" "target/sass"]
-  :prep-tasks [["javac"] ["cljsbuild" "once"] ["sass" "once"] ["compile"]]
-  :jar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
+                 [funcool/cuerdas "2.0.3"]]
+
+  :plugins [[duct/lein-duct "0.10.6"]]
+
+  :resource-paths     ["resources" "target/resources"]
+  :target-path        "target/%s/"
+  :main               ^:skip-aot planwise.main
+
+  :prep-tasks         ["javac"
+                       "compile"
+                       ["run" ":duct/compiler"]]
+  :jar-exclusions     [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
   :uberjar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
-  :uberjar-name "planwise-standalone.jar"
-  :sass
-  {:src "resources/sass"
-   :output-directory "target/sass/planwise/public/css"
-   :style :compressed}
-  :cljsbuild
-  {:builds
-   {:main {:jar true
-           :source-paths ["src" "prod"]
-           :compiler {:output-to "target/cljsbuild/planwise/public/js/main.js"
-                      :optimizations :advanced
-                      :externs ["prod/planwise.externs.js"]}}}}
-  :aliases {"run-task"              ["with-profile" "+repl" "run" "-m"]
-            "setup"                 ["run-task" "dev.tasks/setup"]
-            "migrate"               ["run-task" "planwise.tasks.db" "migrate"]
-            "rollback"              ["run-task" "planwise.tasks.db" "rollback"]
-            "build-icons"           ["run-task" "planwise.tasks.build-icons"]
-            "preprocess-facilities" ["run-task" "planwise.tasks.preprocess-facilities"]}
+  :uberjar-name       "planwise-standalone.jar"
+
+  :aliases {"migrate"               ["with-profile" "+repl" "run" ":duct/migrator"]
+            "build-icons"           ["with-profile" "+repl" "run" "-m" "planwise.tasks.build-icons"]
+            "preprocess-facilities" ["with-profile" "+repl" "run" "-m" "planwise.tasks.preprocess-facilities"]}
+
   :profiles
-  {:dev  [:project/dev  :profiles/dev]
-   :test [:project/test :profiles/test]
-   :repl {:resource-paths ^:replace ["resources" "target/figwheel" "target/sass-repl" "test/resources"]
-          :prep-tasks     ^:replace [["javac"] ["compile"]]}
-   :uberjar {:aot :all}
+  {:dev           [:project/dev  :profiles/dev]
+   :test          [:project/test :profiles/test]
+   :repl          {:prep-tasks   ^:replace ["javac" "compile"]
+                   :repl-options {:init-ns user
+                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
+                                  :host "0.0.0.0"
+                                  :port 47480}}
+   :uberjar       {:aot :all}
    :profiles/dev  {}
-   :profiles/test {:resource-paths ["test/resources"]}
+   :profiles/test {}
    :project/dev   {:dependencies [; Framework
-                                  [duct/generate "0.6.1"
-                                   :exclusions [org.codehaus.plexus/plexus-utils]]
                                   [figwheel-sidecar "0.5.14"]
+                                  [ring/ring-devel "1.6.3"]
 
                                   ; REPL tools
-                                  [reloaded.repl "0.2.1"]
-                                  [org.clojure/tools.namespace "0.2.11"]
-                                  [org.clojure/tools.nrepl "0.2.12"]
-                                  [com.cemerick/piggieback "0.2.1"]
+                                  [integrant/repl "0.2.0"]
 
                                   ; Testing libraries
-                                  [eftest "0.1.1"]
-                                  [kerodon "0.7.0"]
-                                  [fixtures-component "0.4.2"
-                                   :exclusions [org.clojure/java.jdbc]]
+                                  [eftest "0.4.3"
+                                   :exclusions [io.aviso/pretty]]
+                                  [kerodon "0.9.0"]
                                   [ring/ring-mock "0.3.0"]
 
                                   ; Helpers
                                   [day8.re-frame/re-frame-10x "0.2.0"]
-                                  [hawk "0.2.10"]
                                   [binaryage/devtools "0.9.9"]]
 
-                   :source-paths ["dev"]
-                   :repl-options {:init-ns user
-                                  :host "0.0.0.0"
-                                  :port 47480
-                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
-                   :env {:port "3000"
-                         :database-url "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"
-                         :test-database-url "jdbc:postgresql://localhost:5433/planwise-test?user=planwise&password=planwise"
-                         :guisso-url "https://login.instedd.org"}}
-   :project/test  {}})
+                   :source-paths   ["dev/src"]
+                   :resource-paths ["dev/resources" "test/resources"]}
+   :project/test  {:prep-tasks     ^:replace ["javac" "compile"]
+                   :resource-paths ["test/resources"]}})

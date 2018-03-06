@@ -1,5 +1,6 @@
 (ns planwise.endpoint.resmap-auth
   (:require [compojure.core :refer :all]
+            [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [ring.util.response :refer [redirect response content-type]]
             [hiccup.page :refer [html5]]
@@ -45,3 +46,7 @@
   [system]
   (context "/oauth2" []
     (restrict (resmap-auth-routes system) {:handler authenticated?})))
+
+(defmethod ig/init-key :planwise.endpoint/resmap-auth
+  [_ config]
+  (resmap-auth-endpoint config))

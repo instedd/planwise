@@ -1,9 +1,9 @@
 (ns planwise.component.sites-datasets-test
-  (:require [planwise.component.sites-datasets :as sites-datasets]
-            [planwise.test-system :refer [test-system with-system]]
-            [com.stuartsierra.component :as component]
+  (:require [clojure.test :refer :all]
+            [planwise.component.sites-datasets :as sites-datasets]
+            [planwise.test-system :as test-system]
             [clj-time.core :as time]
-            [clojure.test :refer :all]))
+            [integrant.core :as ig]))
 
 (def owner-id 1)
 
@@ -24,32 +24,32 @@
    [:sites_facilities
      []]])
 
-(defn system
+(defn test-config
   ([]
-   (system fixture-user))
+   (test-config fixture-user))
   ([data]
-   (into
-    (test-system {:fixtures {:data data}})
-    {:sites-datasets-store (component/using (sites-datasets/sites-datasets-store) [:db])})))
+   (test-system/config
+    {:planwise.test/fixtures            {:fixtures data}
+     :planwise.component/sites-datasets {:db (ig/ref :duct.database/sql)}})))
 
 ;; ----------------------------------------------------------------------
 ;; Testing dataset's creation
 
 (deftest empty-list-of-dataset
-  (with-system (system)
-    (let [store (:sites-datasets-store system)
+  (test-system/with-system (test-config)
+    (let [store (:planwise.component/sites-datasets system)
           datasets (sites-datasets/list-sites-datasets store owner-id)]
       (is (= (count datasets) 0)))))
 
 (deftest list-of-datasets
-  (with-system (system fixture-listing-datasets)
-    (let [store (:sites-datasets-store system)
+  (test-system/with-system (test-config fixture-listing-datasets)
+    (let [store (:planwise.component/sites-datasets system)
           datasets (sites-datasets/list-sites-datasets store owner-id)]
       (is (= (count datasets) 2)))))
 
 (deftest create-dataset
-  (with-system (system)
-    (let [store (:sites-datasets-store system)
+  (test-system/with-system (test-config)
+    (let [store (:planwise.component/sites-datasets system)
           dataset-id (:id (sites-datasets/create-sites-dataset store "Initial" owner-id))
           datasets (sites-datasets/list-sites-datasets store owner-id)
           version (sites-datasets/get-dataset-version store dataset-id)]
@@ -60,8 +60,8 @@
 ;; Testing site's creation from csv-file
 
 (deftest csv-to-correct-dataset
-  (with-system (system)
-    (let [store                    (:sites-datasets-store system)
+  (test-system/with-system (test-config)
+    (let [store                    (:planwise.component/sites-datasets system)
           dataset1-id              (:id (sites-datasets/create-sites-dataset store "Initial" owner-id))
           dataset2-id              (:id (sites-datasets/create-sites-dataset store "Other" owner-id))
           facilities-dataset1      (sites-datasets/csv-to-facilities store dataset1-id "sites.csv")
@@ -73,8 +73,8 @@
        (is (= (count listed-sites-dataset2) 0))))))
 
 (deftest several-csv-to-dataset
- (with-system (system)
-   (let [store                    (:sites-datasets-store system)
+ (test-system/with-system (test-config)
+   (let [store                    (:planwise.component/sites-datasets system)
          dataset-id               (:id (sites-datasets/create-sites-dataset store "Initial" owner-id))
          sites                    (sites-datasets/csv-to-facilities store dataset-id "sites.csv")
          other-sites              (sites-datasets/csv-to-facilities store dataset-id "other-sites.csv")

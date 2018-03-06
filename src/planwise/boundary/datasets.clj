@@ -1,6 +1,4 @@
-(ns planwise.boundary.datasets
-  (:require [schema.core :as s]
-            [planwise.component.datasets :as service]))
+(ns planwise.boundary.datasets)
 
 (defprotocol Datasets
   "API for managing datasets."
@@ -27,25 +25,3 @@
     "Returns whether a user can access a dataset, if he has access to a project
      that uses the dataset."))
 
-(defn owned-by?
-  [dataset user-id]
-  (= user-id (:owner-id dataset)))
-
-;; Reference implementation
-
-(extend-protocol Datasets
-  planwise.component.datasets.DatasetsStore
-  (list-datasets-for-user [store user-id]
-    (service/list-datasets-for-user store user-id))
-  (list-datasets-with-import-jobs [store]
-    (service/list-datasets-with-import-jobs store))
-  (create-dataset! [store dataset]
-    (service/create-dataset! store dataset))
-  (find-dataset [store dataset-id]
-    (service/find-dataset store dataset-id))
-  (update-dataset [store dataset]
-    (service/update-dataset store dataset))
-  (destroy-dataset! [store dataset-id]
-    (service/destroy-dataset! store dataset-id))
-  (accessible-by? [store dataset user-id]
-    (service/accessible-by? store dataset user-id)))

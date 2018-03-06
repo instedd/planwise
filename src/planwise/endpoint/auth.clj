@@ -1,5 +1,6 @@
 (ns planwise.endpoint.auth
   (:require [compojure.core :refer :all]
+            [integrant.core :as ig]
             [ring.util.request :refer [request-url]]
             [ring.util.response :refer [content-type response redirect header]]
             [cheshire.core :as json]
@@ -32,7 +33,8 @@
    (GET "/identity" req
      (if-not (authenticated? req)
        (throw-unauthorized)
-       (let [ident (util/request-ident req)]
+       (let [ident (util/request-ident req)
+             token (auth/create-jwe-token service ident)]
         (html5
          [:body
           [:p (str "Current identity: " (util/request-user-email req)
@@ -41,7 +43,13 @@
            "API Token:"
            [:br]
            [:code {:style "white-space: normal; word-wrap: break-word;"}
-            (auth/create-jwe-token service ident)]]
+            token]]
+          [:p
+           "Example usage:"
+           [:br]
+           [:code {:style "white-space: normal; word-wrap: break-word;"}
+            "$ curl -H 'Authorization: Token " token "' "
+            (util/absolute-url "/api/whoami" req)]]
           [:p
            [:a {:href "/logout"} "Logout"]]]))))
 
@@ -66,3 +74,7 @@
        (-> (response (json/generate-string {:redirect-to redirect-after-logout}))
            (content-type "application/json")
            (auth/logout service))))))
+
+(defmethod ig/init-key :planwise.endpoint/auth
+  [_ config]
+  (auth-endpoint config))

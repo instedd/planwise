@@ -1,5 +1,4 @@
-(ns planwise.boundary.facilities
-  (:require [planwise.component.facilities :as service]))
+(ns planwise.boundary.facilities)
 
 (defprotocol Facilities
   "API for reading facilities and related information."
@@ -23,21 +22,20 @@
     :facility-population, :facility-region-population and :capacity.")
 
   (list-types [this dataset-id]
-    "Lists all the facility types in the dataset."))
+    "Lists all the facility types in the dataset.")
 
+  (count-facilities [this dataset-id criteria])
 
-;; Reference implementation
+  (insert-types! [this dataset-id types])
 
-(extend-protocol Facilities
-  planwise.component.facilities.FacilitiesService
-  (list-facilities
-    ([service dataset-id]
-     (service/list-facilities service dataset-id))
-    ([service dataset-id criteria]
-     (service/list-facilities service dataset-id criteria)))
-  (isochrones-in-bbox [service dataset-id isochrone-options facilities-criteria]
-    (service/isochrones-in-bbox service dataset-id isochrone-options facilities-criteria))
-  (polygons-in-region [service dataset-id isochrone-options facilities-criteria]
-    (service/polygons-in-region service dataset-id isochrone-options facilities-criteria))
-  (list-types [service dataset-id]
-    (service/list-types service dataset-id)))
+  (insert-facilities! [this dataset-id facilities])
+
+  (preprocess-isochrones
+    [this]
+    [this id])
+
+  (clear-facilities-processed-status! [this])
+
+  (destroy-facilities! [this dataset-id options])
+
+  (destroy-types! [this dataset-id options]))

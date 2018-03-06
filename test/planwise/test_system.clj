@@ -1,63 +1,100 @@
 (ns planwise.test-system
-  (:require [com.stuartsierra.component :as component]
+  (:require [planwise.database :as database]
+            [integrant.core :as ig]
             [clojure.java.jdbc :as jdbc]
-            [planwise.tasks.db :refer [load-sql-functions]]
-            [duct.component.ragtime :refer [ragtime migrate rollback]]
-            [fixtures.adapters.jdbc :refer [jdbc-adapter]]
-            [fixtures.component :refer [fixtures]]
-            [meta-merge.core :refer [meta-merge]]
-            [environ.core :refer [env]]))
+            [clojure.java.io :as io]
+            [duct.core :as duct]
+            [duct.logger :as logger]
+            [taoensso.timbre :as timbre]))
 
-(defn create-osm2pgr-tables
-  [system]
-  (try
-    (let [sql-source (slurp "test/scripts/osm2pgr-tables.sql")]
-      (jdbc/execute! (:spec (:db system)) sql-source))
-    (catch java.sql.SQLException e
-      (throw e))))
+(timbre/refer-timbre)
 
-;; Component to run the migrations on the test database automatically
-(defrecord MigrationRunner [db ragtime]
-  component/Lifecycle
-  (start [component]
-    (load-sql-functions component)
-    (create-osm2pgr-tables component)
-    (migrate (:ragtime component))
-    component)
-  (stop [component]
-    component))
+(duct/load-hierarchy)
 
-(defn migration-runner []
-  (map->MigrationRunner {}))
+;; Logging configuration for development
+(timbre/merge-config! {:level :debug
+                       :ns-blacklist ["com.zaxxer.hikari.*"
+                                      "org.apache.http.*"
+                                      "org.eclipse.jetty.*"]})
+
+(defrecord TestLogger [logs]
+  logger/Logger
+  (-log [_ level ns-str file line id event data]
+    (swap! logs conj [event data])))
+
+(def logs
+  (atom []))
+
+(defmethod ig/init-key :planwise.test/logger
+  [_ config]
+  (->TestLogger logs))
+
+(derive :planwise.test/logger :duct/logger)
+
+;; This is injected as a dependency to duct.migrator/ragtime to make sure it's
+;; initialized *before* running the migrations
+(defmethod ig/init-key :planwise.test/db-pre-setup
+  [_ {:keys [db]}]
+  (database/create-osm2pgr-tables db)
+  (database/load-sql-functions db))
+
+(defn- load-table!
+  [spec table records]
+  (jdbc/insert-multi! spec table records))
+
+(defn- clear-table!
+  [spec table]
+  (jdbc/delete! spec table []))
+
+(defn- unload-fixtures!
+  [spec fixtures]
+  (doseq [[table _] (reverse fixtures)]
+    (clear-table! spec table)))
+
+(defmethod ig/init-key :planwise.test/fixtures
+  [_ {:keys [db fixtures]}]
+  (if (nil? db)
+    (throw (IllegalArgumentException. "Missing :db configuration for fixtures")))
+  (let [spec (:spec db)]
+    (unload-fixtures! spec fixtures)
+    (doseq [[table records] fixtures]
+      (when (seq records)
+        (load-table! spec table records))))
+  {:db       db
+   :fixtures fixtures})
+
+(defmethod ig/halt-key! :planwise.test/fixtures
+  [_ {:keys [db fixtures]}]
+  (when (some? db)
+    (let [spec (:spec db)]
+      (unload-fixtures! spec fixtures))))
+
+(defn config
+  ([]
+   (config {}))
+  ([other]
+   (-> (io/resource "test.edn")
+       duct/read-config
+       (duct/merge-configs other))))
+
+;; REPL code to check that the base test system can be started successfully
+(comment (let [config (config)
+               prepped (duct/prep config)
+               system (ig/init prepped)]
+           (ig/halt! system)))
 
 (defmacro with-system
-  "Execute body with the system in the first argument started and bound to the
-  'system' symbol, and stop it after the execution is complete."
-  [system & body]
-  `(let [~'system (component/start ~system)]
+  "Execute body with a system initialized from the configuration in the first
+  argument and bound to the 'system' symbol, and stop it after the execution is
+  complete."
+  [config & body]
+  `(let [~'system (ig/init (duct/prep ~config))]
      (try
        ~@body
        (finally
-         (component/stop ~'system)))))
+         (ig/halt! ~'system)))))
 
-(def test-config
-  {:db       {:uri (env :test-database-url)}
-   :fixtures {:adapter jdbc-adapter
-              :data []}})
-
-(defn test-system
-  "Construct a base test system with migrations (will auto-run when the system
-  is started) and fixtures components."
-  [config]
-  (let [config (meta-merge test-config config)]
-    (-> (component/system-map
-         :db         {:spec (get-in config [:db :uri])}
-         :ragtime    (ragtime {:resource-path "migrations"})
-         :migrations (migration-runner)
-         :fixtures   (fixtures (:fixtures config)))
-        (component/system-using
-         {:ragtime    [:db]
-          :migrations [:db :ragtime]
-          ; make fixtures depend on migrations so we ensure they are executed
-          ; before loading the fixture data
-          :fixtures   [:db :migrations]}))))
+(defn execute-sql
+  [system sql]
+  (let [[_ db] (ig/find-derived-1 system :duct.database/sql)]
+    (jdbc/execute! (:spec db) sql)))

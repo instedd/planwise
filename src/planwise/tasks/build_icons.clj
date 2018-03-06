@@ -2,14 +2,13 @@
   (:require [clojure.xml :as xml]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [taoensso.timbre :as timbre]
-            [planwise.config :as config])
+            [taoensso.timbre :as timbre])
   (:gen-class))
 
 (timbre/refer-timbre)
 
 (defn process-svg [file]
-  (info " Processing " file)
+  (info "Processing" file)
   (with-open [input (io/input-stream file)]
     (let [xml-tree    (xml/parse input)
           title-tag   (filter #(= :title (:tag %)) (xml-seq xml-tree))
@@ -40,7 +39,7 @@
                     (wrap-in-svg))]
     (spit target
           (str
-            "<!-- Auto-generated via build-icons lein task -->\n"
+            "<!-- Auto-generated - DO NOT EDIT -->\n"
             (with-out-str (xml/emit-element svg))))))
 
 (defn -main [& args]

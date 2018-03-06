@@ -118,7 +118,7 @@ data
 Run inside the `app` container:
 
 ```sh
-$ docker-compose exec app bash
+$ docker-compose run app bash
 app$ scripts/bootstrap-dev.sh
 ```
 
@@ -139,13 +139,15 @@ services:
       - GUISSO_CLIENT_SECRET=YOURSECRET
 ```
 
-Or you can set these values in the local `profiles.clj`, which is more useful if
-you plan to run the application outside Docker (see below):
+Or you can set these values in the local `dev/resources/local.edn`, which is
+more useful if you plan to run the application outside Docker (see below):
 
 ```clojure
-{:profiles/dev  {:env {:guisso-url "https://login.instedd.org/"
-                       :guisso-client-id "YOURID"
-                       :guisso-client-secret "YOURSECRET"}}}
+{:duct.core/include ["dev.edn"]
+
+ :planwise.component/auth
+ {:guisso-client-id     "YOURID"
+  :guisso-client-secret "YOURSECRET"}}
 ```
 
 ## Extra steps for running the application outside Docker
@@ -161,12 +163,11 @@ services:
     command: /bin/true
 ```
 
-You need to have [Leiningen](http://leiningen.org) and the [SASS
-compiler](https://github.com/sass/sassc) installed. In Mac OSX using Homebrew,
-just run:
+You need to have [Leiningen](http://leiningen.org) installed. In Mac OSX using
+Homebrew, just run:
 
 ```sh
-$ brew install leiningen sassc
+$ brew install leiningen
 ```
 
 ### Environment
@@ -218,7 +219,7 @@ from the command line:
 $ lein repl :connect
 ```
 
-Or, if running outside Docker, start up the REPL.
+Or, if running outside Docker, start up the REPL with `lein repl`.
 
 Load the development namespace and start the system:
 
@@ -232,18 +233,13 @@ By default this creates a web server at <http://localhost:3000>. Note that
 these 3 commands are ran when invoking `scripts/dev`.
 
 When you make changes to your source files, use `reset` to reload any
-modified files and reset the server. Changes to CSS or ClojureScript
-files will be hot-loaded into the browser.
+modified files and reset the server.
 
 ```clojure
 dev=> (reset)
 :reloading (...)
 :resumed
 ```
-
-By default, changes to SASS or Clojurescript files will trigger a reload
-automatically. You can change that behaviour by disabling the auto-builder in
-`dev/dev.clj` (see the `:auto` component in `new-system`).
 
 If you want to access a ClojureScript REPL, make sure that the site is loaded
 in a browser and run:
@@ -265,36 +261,34 @@ The database engine is PostgreSQL, using PostGIS and pgRouting. It is included
 in the default Docker compose file.
 
 Database schema is managed through migrations via
-[ragtime](https://github.com/duct-framework/duct-ragtime-component). Lein tasks
-`lein migrate` and `lein rollback` can be issued for managing the DB schema, or
-`(migrate (:ragtime system))` from the repl.
+[ragtime](https://github.com/duct-framework/duct-ragtime-component). In
+development, they are run automatically on system startup and after every
+`(reset)`.
+
+With a running system, there is a `(rollback-1)` function to manually rollback
+the last migration, though will be rarely needed since the migrations are
+rebased automatically on each reset. The expected workflow is:
+
+ - create a new migration, adding both the up and down SQL scripts
+ - run `(reset)` to apply the migration
+ - modify the migration
+ - run `(reset)` again, to rollback the old version and apply the modified
+   migration
+   
+The function `(rollback-1)` can be used to manually rollback until a specific
+migration. This would be needed if switching the development branch *and*
+restarting the REPL at the same time. Otherwise the system should be able to
+rebase the migrations when resetting.
+
+Migrations can be executed outside the REPL via the `lein migrate` task.
 
 Migration files are located in `resources/migrations`, and follow the
 `NUM-name.(up|down).sql` naming convention, where `NUM` is a 3-digit incremental
-ID. Additionally, SQL functions located in `resources/planwise/plpgsql` are
+ID.
+
+Additionally, SQL functions located in `resources/planwise/plpgsql` are
 regenerated on every `lein migrate`, or can be manually loaded from the REPL by
 running `(load-sql)`.
-
-To proceed with the setup of your development environment, after starting up
-docker compose, run the database migrations to install the needed extensions and
-schema:
-
-```bash
-$ lein migrate
-```
-
-As a *one-time task*, to seed your database with routing information from OSM,
-run the following scripts to import routing information from any of the
-supported countries, using the provided application container:
-
-```bash
-$ docker-compose run app bash
-app$ scripts/import-osm osm2pgrouting kenya
-app$ scripts/load-regions kenya
-```
-
-The `load-regions` script will download regions from a Mapzen data dump
-extracted from OSM, load them into the DB, and optionally preprocess them.
 
 
 ### Testing
@@ -305,8 +299,9 @@ Running the tests require a separate scratch database.
 $ docker-compose exec db createdb planwise-test
 ```
 
-The connection configuration is the key `:test-database-url` configuration in
-`project.clj`/`profiles.clj`.
+The connection configuration is located in the environment variable
+`TEST_DATABASE_URL`, with the default being as specified in
+`test/resources/test.edn`.
 
 Testing is fastest through the REPL, as you avoid environment startup time.
 
@@ -319,29 +314,6 @@ But you can also run tests through Leiningen.
 
 ```sh
 lein test
-```
-
-### Generators
-
-This project has several generator functions to help you create files.
-
-To create a new endpoint:
-
-```clojure
-dev=> (gen/endpoint "bar")
-Creating file src/foo/endpoint/bar.clj
-Creating file test/foo/endpoint/bar_test.clj
-Creating directory resources/foo/endpoint/bar
-nil
-```
-
-To create a new component:
-
-```clojure
-dev=> (gen/component "baz")
-Creating file src/foo/component/baz.clj
-Creating file test/foo/component/baz_test.clj
-nil
 ```
 
 ### Importing a new country

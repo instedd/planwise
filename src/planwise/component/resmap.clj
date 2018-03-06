@@ -1,21 +1,18 @@
 (ns planwise.component.resmap
-  (:require [com.stuartsierra.component :as component]
+  (:require [planwise.boundary.resmap :as boundary]
+            [planwise.boundary.auth :as auth]
+            [planwise.model.ident :as ident]
+            [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.string :as str]
             [cheshire.core :as json]
-            [clj-http.client :as http]
-            [planwise.model.ident :as ident]
-            [planwise.component.auth :as auth])
+            [clj-http.client :as http])
   (:import [java.net URL]))
 
 (timbre/refer-timbre)
 
-(defrecord ResmapClient [url auth])
-
-(defn resmap-client
-  [config]
-  (map->ResmapClient config))
-
+;; ----------------------------------------------------------------------
+;; Auxiliary and utility functions
 
 (defn resmap-url
   ([service]
@@ -114,18 +111,30 @@
               (get-in response [:headers "status"]))
         nil))))
 
-(defn get-collection-sites
-  [service user-ident coll-id params]
-  (let [scope (auth-scope service)
-        auth (:auth service)
-        token (auth/find-auth-token auth scope user-ident)]
-    (fetch-collection-data service token coll-id params)))
 
-(defn find-collection-field
-  [service user-ident coll-id field-id]
-  (let [fields (list-collection-fields service user-ident coll-id)]
-    (some (fn [field]
-            (when (or (= (:id field) field-id)
-                      (= (:id field) (str field-id)))
-              field))
-          fields)))
+;; ----------------------------------------------------------------------
+;; Service definition
+
+(defrecord ResmapClient [url auth]
+
+  boundary/Resmap
+  (get-collection-sites [service user-ident coll-id params]
+    (let [scope (auth-scope service)
+          auth (:auth service)
+          token (auth/find-auth-token auth scope user-ident)]
+      (fetch-collection-data service token coll-id params)))
+  (find-collection-field [service user-ident coll-id field-id]
+    (let [fields (list-collection-fields service user-ident coll-id)]
+      (some (fn [field]
+              (when (or (= (:id field) field-id)
+                        (= (:id field) (str field-id)))
+                field))
+            fields))))
+
+
+;; ----------------------------------------------------------------------
+;; Service initialization
+
+(defmethod ig/init-key :planwise.component/resmap
+  [_ config]
+  (map->ResmapClient config))

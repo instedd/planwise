@@ -1,5 +1,4 @@
-(ns planwise.boundary.projects
-  (:require [planwise.component.projects :as service]))
+(ns planwise.boundary.projects)
 
 (defprotocol Projects
   "API for managing projects."
@@ -42,39 +41,8 @@
 
   (share-via-email [this project-or-id emails opts]
     "Sends the project share token via email to the specified recipients.
-     Required options are: `:host`."))
+     Required options are: `:host`.")
 
-;; Reference implementation
+  (list-projects-for-dataset [this dataset-id])
 
-(extend-protocol Projects
-  planwise.component.projects.ProjectsService
-  (create-project [service project]
-    (service/create-project service project))
-  (list-projects-for-user [service user-id]
-    (service/list-projects-for-user service user-id))
-  (get-project
-    ([service id]
-     (service/get-project service id))
-    ([service id user-id]
-     (service/get-project service id user-id)))
-  (update-project [service project]
-    (service/update-project service project))
-  (delete-project [service id]
-    (service/delete-project service id))
-  (create-project-share [service project-id token user-id]
-    (service/create-project-share service project-id token user-id))
-  (delete-project-share [service project-id user-id]
-    (service/delete-project-share service project-id user-id))
-  (list-project-shares [service project-id]
-    (service/list-project-shares service project-id))
-  (reset-share-token [service id]
-    (service/reset-share-token service id))
-  (share-via-email [service project emails opts]
-    (service/share-via-email service project emails opts)))
-
-
-;; Additional utility functions
-
-(defn owned-by?
-  [project user-id]
-  (service/owned-by? project user-id))
+  (update-project-stats [this project]))

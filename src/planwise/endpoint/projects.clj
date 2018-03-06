@@ -1,5 +1,6 @@
 (ns planwise.endpoint.projects
   (:require [compojure.core :refer :all]
+            [integrant.core :as ig]
             [ring.util.response :refer [content-type response status not-found]]
             [clojure.data.json :as json]
             [planwise.boundary.maps :as maps]
@@ -8,6 +9,7 @@
             [planwise.util.ring :as util]
             [planwise.boundary.projects :as projects]
             [planwise.boundary.facilities :as facilities]
+            [planwise.model.projects :refer [owned-by?]]
             [clojure.walk :refer [keywordize-keys]]
             [clojure.string :as str]
             [clojure.set :refer [rename-keys]]))
@@ -65,7 +67,7 @@
      (let [user-id (util/request-user-id request)
            project-id (Integer. id)
            project (projects/get-project service project-id)]
-       (if (projects/owned-by? project user-id)
+       (if (owned-by? project user-id)
          (if-let [token (projects/reset-share-token service project-id)]
            (response {:token token})
            (-> (response {:status "failure"})
@@ -77,7 +79,7 @@
            project-id (Integer. id)
            project (projects/get-project service project-id)
            host (util/absolute-url "/" request)]
-       (if (projects/owned-by? project user-id)
+       (if (owned-by? project user-id)
          (if (projects/share-via-email service project emails {:host host})
            (response {:emails emails})
            (-> (response {:status "failure"})
@@ -96,7 +98,7 @@
            filters (keywordize-keys filters)
            user-id (util/request-user-id request)
            project (projects/get-project service id)]
-       (if (projects/owned-by? project user-id)
+       (if (owned-by? project user-id)
          (if-let [project (projects/update-project service {:id id
                                                             :filters filters
                                                             :state state})]
@@ -120,7 +122,7 @@
      (let [id (Integer. id)
            user-id (util/request-user-id request)
            project (projects/get-project service id)]
-       (if (and (projects/owned-by? project user-id)
+       (if (and (owned-by? project user-id)
                 (projects/delete-project service id))
          (response {:deleted id})
          (not-found {:error "Project not found"}))))
@@ -137,7 +139,7 @@
            share-user-id (Integer. user)
            owner-id (util/request-user-id request)
            project (projects/get-project service project-id)]
-       (if (and (projects/owned-by? project owner-id)
+       (if (and (owned-by? project owner-id)
                 (projects/delete-project-share service project-id share-user-id))
          (response {:project-id project-id, :user-id share-user-id})
          (not-found {:error "Project share not found"}))))))
@@ -145,3 +147,7 @@
 (defn projects-endpoint [endpoint]
   (context "/api/projects" []
     (restrict (endpoint-routes endpoint) {:handler authenticated?})))
+
+(defmethod ig/init-key :planwise.endpoint/projects
+  [_ config]
+  (projects-endpoint config))

@@ -1,14 +1,10 @@
 (ns planwise.component.facilities-test
-  (:require [planwise.component.facilities :as facilities]
-            [planwise.test-system :refer [test-system with-system]]
-            [com.stuartsierra.component :as component]
+  (:require [clojure.test :refer :all]
+            [planwise.boundary.facilities :as facilities]
+            [planwise.test-system :as test-system]
             [clojure.java.jdbc :as jdbc]
-            [clojure.test :refer :all])
+            [integrant.core :as ig])
   (:import [org.postgis PGgeometry]))
-
-(defn execute-sql
-  [system sql]
-  (jdbc/execute! (get-in system [:db :spec]) sql))
 
 (defn make-point [lat lon]
   (PGgeometry. (str "SRID=4326;POINT(" lon " " lat ")")))
@@ -33,37 +29,37 @@
 (def new-facilities
   [{:site-id 3 :name "New facility" :type-id 1 :lat 4 :lon 10 :type "hospital" :capacity 10}])
 
-(defn system
- ([]
-  (system fixture-data))
- ([data]
-  (into
-   (test-system {:fixtures {:data data}})
-   {:facilities (component/using (facilities/facilities-service {}) [:db])})))
+(defn test-config
+  ([]
+   (test-config fixture-data))
+  ([data]
+   (test-system/config
+    {:planwise.test/fixtures {:fixtures data}
+     :planwise.component/facilities {:db (ig/ref :duct.database/sql)}})))
 
 (deftest list-facilities
-  (with-system (system)
-    (let [service (:facilities system)
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/facilities system)
           facilities (facilities/list-facilities service dataset-id)]
       (is (= 2 (count facilities)))
       (is (= #{:id :name :lat :lon} (-> facilities first keys set))))))
 
 (deftest insert-facility
-  (with-system (system)
-    (let [service (:facilities system)]
-      (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/facilities system)]
+      (test-system/execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
       (is (= [100] (map :id (facilities/insert-facilities! service dataset-id new-facilities))))
       (is (= 3 (count (facilities/list-facilities service dataset-id)))))))
 
 (deftest destroy-facilities
-  (with-system (system)
-    (let [service (:facilities system)]
-      (facilities/destroy-facilities! service dataset-id)
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/facilities system)]
+      (facilities/destroy-facilities! service dataset-id {})
       (is (= 0 (count (facilities/list-facilities service dataset-id)))))))
 
 (deftest list-isochrones-in-bbox
-  (with-system (system)
-    (let [service (:facilities system)
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/facilities system)
           facilities (facilities/isochrones-in-bbox service dataset-id {:threshold 900} {:bbox [0.0 0.0 2.0 2.0]})]
       (is (= 1 (count facilities)))
       (let [[facility] facilities]
@@ -72,8 +68,8 @@
         (is (:isochrone facility))))))
 
 (deftest list-isochrones-in-bbox-excluding-ids
-  (with-system (system)
-    (let [service (:facilities system)
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/facilities system)
           facilities (facilities/isochrones-in-bbox service dataset-id {:threshold 900} {:bbox [0.0 0.0 2.0 2.0], :excluding [1]})]
       (is (= 1 (count facilities)))
       (let [[facility] facilities]
@@ -116,8 +112,8 @@
      {:facility_polygon_id 1 :region_id 2}]]])
 
 (deftest polygons-in-region
-  (with-system (system multiple-facilities-fixture-data)
-    (let [service (:facilities system)
+  (test-system/with-system (test-config multiple-facilities-fixture-data)
+    (let [service (:planwise.component/facilities system)
           polygons (facilities/polygons-in-region service 1 {:threshold 900 :algorithm "alpha-shape"} {:region 1 :types [1]})]
       (is (= 1 (count polygons)))
       (let [[{:keys [facility-polygon-id facility-population facility-region-population capacity]}] polygons]
@@ -129,9 +125,9 @@
 (deftest insert-facility-types
   (let [new-types [{:name "General" :code "general"}
                    {:name "Hospital" :code "hospital"}]]
-    (with-system (system multiple-facilities-fixture-data)
-      (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
-      (let [service        (:facilities system)
+    (test-system/with-system (test-config multiple-facilities-fixture-data)
+      (test-system/execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+      (let [service        (:planwise.component/facilities system)
             result         (facilities/insert-types! service 1 new-types)
             all-types      (facilities/list-types service 1)]
         (is (= result
@@ -141,18 +137,18 @@
                #{{:id 1,   :name "Hospital", :code "hospital"}
                  {:id 2,   :name "Rural",    :code "rural"}
                  {:id 100, :name "General",  :code "general"}}))))
-    (with-system (system multiple-facilities-fixture-data)
-      (execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
-      (let [service        (:facilities system)
+    (test-system/with-system (test-config multiple-facilities-fixture-data)
+      (test-system/execute-sql system "ALTER SEQUENCE facility_types_id_seq RESTART WITH 100")
+      (let [service        (:planwise.component/facilities system)
             reverse-result (facilities/insert-types! service 1 (reverse new-types))]
         (is (= reverse-result
                [{:id 1,   :name "Hospital", :code "hospital"}
                 {:id 100, :name "General",  :code "general"}]))))))
 
 (deftest upsert-facilities
-  (with-system (system multiple-facilities-fixture-data)
-    (execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
-    (let [service (:facilities system)
+  (test-system/with-system (test-config multiple-facilities-fixture-data)
+    (test-system/execute-sql system "ALTER SEQUENCE facilities_id_seq RESTART WITH 100")
+    (let [service (:planwise.component/facilities system)
           data    [{:site-id 1 :name "Facility A" :type-id 1 :capacity 500 :lat 0.5 :lon 0.5}  ; existing
                    {:site-id 2 :name "Facility B" :type-id 1 :capacity 0   :lat 0.5 :lon 0.5}  ; new
                    {:site-id 3 :name "Updated C"  :type-id 2 :capacity 100 :lat 0.5 :lon 0.5}  ; updated
@@ -179,3 +175,5 @@
                (select-attrs updated)))
         (is (= {:id 4   :site-id 4 :name "Updated D"  :type-id 2 :lat 1.5 :lon 1.5 :capacity 0   :processing-status nil}
                (select-attrs moved)))))))
+
+;; (facilities/list-facilities (:planwise.component/facilities integrant.repl.state/system) 1 {})

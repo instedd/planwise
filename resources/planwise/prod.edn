@@ -1,0 +1,13 @@
+{:duct.core/include ["planwise/config"]
+
+ :duct.compiler/cljs
+ {:builds [{:source-paths  ["src"]
+            :build-options
+            {:main            planwise.client.core
+             :output-to       "target/resources/planwise/public/js/main.js"
+             :output-dir      "target/resources/planwise/public/js"
+             :asset-path      "/js"
+             :closure-defines {goog.DEBUG false}
+             :externs         ["resources/planwise/externs.js"]
+             :verbose         true
+             :optimizations   :advanced}}]}}

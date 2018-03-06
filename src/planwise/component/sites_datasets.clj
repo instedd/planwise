@@ -1,5 +1,5 @@
 (ns planwise.component.sites-datasets
-  (:require [com.stuartsierra.component :as component]
+  (:require [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.data.csv :as csv]
             [clojure.java.jdbc :as jdbc]
@@ -74,3 +74,7 @@
 (defn get-dataset-version
   [store dataset-id]
   (:last-version (first (find-dataset (get-db store) {:id dataset-id}))))
+
+(defmethod ig/init-key :planwise.component/sites-datasets
+  [_ config]
+  (map->SitesDatasetsStore config))

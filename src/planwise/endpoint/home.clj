@@ -1,13 +1,15 @@
 (ns planwise.endpoint.home
   (:require [compojure.core :refer :all]
-            [ring.util.anti-forgery :refer [anti-forgery-field]]
             [planwise.boundary.maps :as maps]
+            [planwise.boundary.auth :as auth]
+            [planwise.util.ring :as util]
+            [planwise.config :as config]
+            [integrant.core :as ig]
             [cheshire.core :as json]
             [hiccup.form :refer [hidden-field]]
             [hiccup.page :refer [include-js include-css html5]]
             [buddy.auth :refer [authenticated? throw-unauthorized]]
-            [planwise.util.ring :as util]
-            [planwise.component.auth :refer [create-jwe-token]]
+            [ring.util.anti-forgery :refer [anti-forgery-field]]
             [clojure.java.io :as io]))
 
 (def inline-svg
@@ -39,8 +41,8 @@
         calculate-demand (maps/calculate-demand? maps)
         ident (util/request-ident request)
         email (util/request-user-email request)
-        token (create-jwe-token auth ident)
-        app-version (or (:app-version globals) "unspecified")
+        token (auth/create-jwe-token auth ident)
+        app-version config/app-version
         config {:resourcemap-url resmap-url
                 :identity email
                 :jwe-token token
@@ -73,6 +75,7 @@
   (let [loading-page (partial loading-page endpoint)]
     (routes
      (GET "/" [] loading-page)
+     #_(GET "/crash" [] (throw (RuntimeException. "Crash")))
      (GET "/datasets" [] loading-page)
      (context "/projects/:id" []
        (GET "/" [] loading-page)
@@ -80,3 +83,7 @@
        (GET "/transport" [] loading-page)
        (GET "/scenarios" [] loading-page)
        (GET "/access/:token" [] loading-page)))))
+
+(defmethod ig/init-key :planwise.endpoint/home
+  [_ config]
+  (home-endpoint config))

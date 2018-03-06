@@ -1,5 +1,6 @@
 (ns planwise.component.mailer
-  (:require [com.stuartsierra.component :as component]
+  (:require [planwise.boundary.mailer :as boundary]
+            [integrant.core :as ig]
             [postal.core :as postal]
             [taoensso.timbre :as timbre]))
 
@@ -29,9 +30,14 @@
         (= :SUCCESS (:error result)))
       true)))
 
-(defrecord MailerService [config])
+(defrecord MailerService [config]
 
-(defn mailer-service
-  "Construct a Mailer Service component from config"
-  [config]
-  (map->MailerService {:config config}))
+  ;; Reference implementation
+
+  boundary/Mailer
+  (send-mail [service args]
+    (send-mail service args)))
+
+(defmethod ig/init-key :planwise.component/mailer
+  [_ config]
+  (map->MailerService config))

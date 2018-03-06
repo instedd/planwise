@@ -1,5 +1,9 @@
 (ns planwise.component.auth
-  (:require [com.stuartsierra.component :as component]
+  (:require [planwise.boundary.auth :as boundary]
+            [planwise.boundary.users :as users]
+            [planwise.model.ident :as ident]
+            [planwise.auth.guisso :as guisso]
+            [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [ring.util.request :refer [request-url]]
             [ring.util.response :as resp]
@@ -8,44 +12,12 @@
             [buddy.sign.jwt :as jwt]
             [oauthentic.core :as oauth]
             [slingshot.slingshot :refer [try+ throw+]]
-            [planwise.util.ring :refer [absolute-url]]
-            [planwise.model.ident :as ident]
-            [planwise.component.users :as users]
-            [planwise.auth.guisso :as guisso]))
+            [planwise.util.ring :refer [absolute-url]]))
 
 (timbre/refer-timbre)
 
-;; Service definition
-
-(defrecord AuthService [;; Guisso configuration
-                        guisso-url
-                        guisso-client-id
-                        guisso-client-secret
-
-                        ;; OpenID realm
-                        realm
-
-                        ;; Secret and options for generating JWT tokens
-                        jwe-secret
-                        jwe-options
-
-                        ;; Runtime state: OpenID consumer manager
-                        manager
-
-                        ;; Component dependencies
-                        users-store]
-  component/Lifecycle
-  (start [component]
-    (if-not (:manager component)
-      (assoc component :manager (guisso/openid-manager))
-      component))
-
-  (stop [component]
-    (assoc component :manager nil)))
-
-(defn auth-service
-  [config]
-  (map->AuthService config))
+;; ----------------------------------------------------------------------
+;; Service implementation
 
 (defn guisso-url
   ([service]
@@ -193,21 +165,34 @@
               (save-auth-token! service scope user-ident new-token))))
       token)))
 
-(defn wrap-check-guisso-cookie
-  "Ring middleware to check that the Guisso cookie value matches the currently
-  authenticated user, usually from the session. This middleware needs to be
-  placed after the authentication middleware but before the authorization. It's
-  essentially authentication post-processing."
-  [handler]
-  (fn [request]
-    (let [guisso-cookie (get-in request [:cookies "guisso"])
-          ident (:identity request)
-          user-email (some-> ident ident/user-email)]
-      (if (and (some? guisso-cookie)
-               (some? user-email)
-               (not= user-email (:value guisso-cookie)))
-        (do
-          (info "Found Guisso cookie but is not equal to current session user")
-          ;; Remove the identity from the request
-          (handler (dissoc request :identity)))
-        (handler request)))))
+
+;; ----------------------------------------------------------------------
+;; Service definition
+
+(defrecord AuthService [;; Guisso configuration
+                        guisso-url
+                        guisso-client-id
+                        guisso-client-secret
+
+                        ;; OpenID realm
+                        realm
+
+                        ;; Secret and options for generating JWT tokens
+                        jwe-secret
+                        jwe-options
+
+                        ;; Runtime state: OpenID consumer manager
+                        manager
+
+                        ;; Component dependencies
+                        users-store]
+  boundary/Auth
+  (find-auth-token [service scope user-ident]
+    (find-auth-token service scope user-ident))
+  (create-jwe-token [service user-ident]
+    (create-jwe-token service user-ident)))
+
+(defmethod ig/init-key :planwise.component/auth
+  [_ config]
+  (assoc (map->AuthService config)
+         :manager (guisso/openid-manager)))

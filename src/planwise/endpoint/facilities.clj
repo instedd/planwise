@@ -2,6 +2,7 @@
   (:require [planwise.boundary.facilities :as facilities]
             [planwise.boundary.maps :as maps]
             [compojure.core :refer :all]
+            [integrant.core :as ig]
             [clojure.string :as string]
             [buddy.auth.accessrules :refer [restrict]]
             [buddy.auth :refer [authenticated?]]
@@ -56,3 +57,7 @@
 (defn facilities-endpoint [{service :facilities, maps :maps}]
   (context "/api/facilities" []
     (restrict (endpoint-routes service maps) {:handler authenticated?})))
+
+(defmethod ig/init-key :planwise.endpoint/facilities
+  [_ config]
+  (facilities-endpoint config))

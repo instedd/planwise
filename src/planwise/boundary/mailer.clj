@@ -1,5 +1,4 @@
-(ns planwise.boundary.mailer
-  (:require [planwise.component.mailer :as service]))
+(ns planwise.boundary.mailer)
 
 (defprotocol Mailer
   "Mail sender"
@@ -9,9 +8,3 @@
      `:subject` and `:body`. Refer to https://github.com/drewr/postal
      fore more information."))
 
-;; Reference implementation
-
-(extend-protocol Mailer
-  planwise.component.mailer.MailerService
-  (send-mail [service args]
-    (service/send-mail service args)))

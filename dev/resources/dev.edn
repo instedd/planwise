@@ -1,0 +1,41 @@
+{:duct.core/environment :development
+ :duct.core/include ["planwise/config"]
+
+ :duct.module/cljs {:main cljs.user}
+
+ :duct.server/figwheel
+ {:reload-clj-files false
+  :builds [{:id "dev"
+            :source-paths ["dev/src" "src"]
+            :build-options {:main cljs.user
+                            :output-to "target/resources/planwise/public/js/main.js"
+                            :output-dir "target/resources/planwise/public/js"
+                            :asset-path "/js"
+                            :closure-defines {goog.DEBUG true
+                                              "re_frame.trace.trace_enabled_QMARK_" true}
+                            :verbose false
+                            :preloads [devtools.preload]
+                            :optimizations :none}}]}
+
+ :duct.compiler/sass
+ {:output-style :nested}
+
+ :duct.module/sql
+ {:database-url #duct/env ["DATABASE_URL" Str :or "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"]}
+
+ :planwise.auth/base-secret
+ "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+
+ :planwise.component/runner
+ {:bin #duct/env ["BIN_PATH" Str :or "cpp/"]}
+
+ :planwise.component/mailer
+ {:config {:mock? true}}
+
+ :planwise.component/maps
+ {:config {:facilities-capacity 1000000}}
+
+ ;; Make the importer depend on the migrator such that migrations are run before
+ ;; it, because it needs the datasets table to be present to start up
+ :planwise.component/importer
+ {:pre-dep #ig/ref :duct/migrator}}

@@ -10,3 +10,7 @@
    :description   s/Str
    :collection-id s/Int
    :mappings      {(s/optional-key :type) FieldTypeMapping}})
+
+(defn owned-by?
+  [dataset user-id]
+  (= user-id (:owner-id dataset)))
