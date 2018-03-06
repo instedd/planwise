@@ -3,7 +3,7 @@ version: '2'
 services:
   app:
     container_name: planwise-prod-app
-    image: instedd/planwise:ci_upgrade-server
+    image: instedd/planwise:latest
     environment:
       CALCULATE_DEMAND: 'true'
       DATABASE_URL: "jdbc:postgresql://db/planwise?user=planwise&password=planwise"
