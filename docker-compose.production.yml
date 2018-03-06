@@ -1,41 +1,49 @@
 version: '2'
 
 services:
-  db:
-    extends:
-      file: docker-compose.base.yml
-      service: db
-
-  web:
-    extends:
-      file: docker-compose.base.yml
-      service: app
+  app:
+    container_name: planwise-prod-app
+    image: instedd/planwise:ci_upgrade-server
+    environment:
+      CALCULATE_DEMAND: 'true'
+      DATABASE_URL: "jdbc:postgresql://db/planwise?user=planwise&password=planwise"
+      MAIL_SENDER: planwise-test@instedd.org
+      PORT: 3000
+      POSTGRES_DB: planwise
+      POSTGRES_HOST: db
+      POSTGRES_PASSWORD: planwise
+      POSTGRES_USER: planwise
+      RASTER_ISOCHRONES: 'true'
+    env_file: ".docker-env"
+    volumes:
+      - data:/data
     depends_on:
       - db
     ports:
       - "3000:3000"
 
-  migrate:
-    extends:
-      file: docker-compose.base.yml
-      service: app
-    depends_on:
-      - db
-    command: /app/scripts/migrate
+  db:
+    container_name: planwise-prod-db
+    image: starefossen/pgrouting:10.1-2.4-2.5
+    environment:
+      POSTGRES_PASSWORD: planwise
+      POSTGRES_USER: planwise
+      POSTGRES_DB: routing
+    volumes:
+      - db:/var/lib/postgresql/data
 
   mapcache:
+    container_name: planwise-prod-mapcache
     image: instedd/planwise-mapserver:kenya-mapcache
     pid: host
 
   mapserver:
+    container_name: planwise-prod-mapserver
     image: instedd/planwise-mapserver:kenya-mapserver
     pid: host
-    volumes_from:
-      - mapserver-data
-
-  mapserver-data:
-    image: instedd/planwise-mapserver:kenya-data
-    command: /bin/true
+    volumes:
+      - data:/data
 
 volumes:
   db:
+  data:

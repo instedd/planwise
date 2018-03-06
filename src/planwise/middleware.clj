@@ -72,7 +72,7 @@
                        :production [wrap-log-errors
                                     #(wrap-hide-errors % (json-response {:error "internal error"}))]
                        [])]
-      (apply comp (reverse (concat env-mw middleware))))))
+      (apply comp (reverse (concat middleware env-mw))))))
 
 (defmethod ig/init-key :planwise.middleware/app
   [_ {:keys [environment authz-backend authn-backends session-store]}]
@@ -92,4 +92,4 @@
                        :production [wrap-log-errors
                                     #(wrap-hide-errors % (html-response error-500))]
                        [])]
-      (apply comp (reverse (concat env-mw middleware))))))
+      (apply comp (reverse (concat middleware env-mw))))))

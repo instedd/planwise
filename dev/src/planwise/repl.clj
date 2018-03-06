@@ -9,7 +9,9 @@
             [ragtime.core :as ragtime]
             [ragtime.jdbc :as rag-jdbc]
             [duct.migrator.ragtime :as dmr]
-            [planwise.boundary.facilities :as facilities]))
+            [planwise.boundary.facilities :as facilities]
+            [buddy.core.nonce :as nonce])
+  (:import org.apache.commons.codec.binary.Hex))
 
 (defn db
   []
@@ -63,3 +65,9 @@
        :all         (facilities/clear-facilities-processed-status! service)
        (throw (IllegalArgumentException. "unknown filter for preprocess-facilities")))
      (facilities/preprocess-isochrones service))))
+
+(defn gen-base-secret
+  []
+  (-> (nonce/random-bytes 32)
+      Hex/encodeHex
+      String.))

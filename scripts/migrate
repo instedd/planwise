@@ -2,7 +2,7 @@
 if [[ -x $(command -v lein) ]]; then
   lein migrate
 elif [[ -e $JAR_PATH ]]; then
-  java -cp $JAR_PATH planwise.tasks.db migrate
+  java -jar $JAR_PATH :duct/migrator
 else
   echo "Not jar path '$JAR_PATH' nor lein command were found. Aborting."
 fi
