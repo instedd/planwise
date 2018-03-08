@@ -3,44 +3,73 @@ set -euo pipefail
 
 COUNTRY=$1
 LEVELS=${2:-2,4}
-echo "Importing $COUNTRY at levels $LEVELS"
+echo "   -> Importing $COUNTRY at levels $LEVELS"
+
+# TODO: get app folder from env
+cd /app
 
 export PGPASSWORD=$POSTGRES_PASSWORD;
 DATA_PATH=${DATA_PATH:-data}
 
 mkdir -p ${DATA_PATH}
 
-if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
-  curl -f -o ${DATA_PATH}/${COUNTRY}_geojson.tgz https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz
+# if file exists then extract content
+echo -n "   -> Searching for ./$DATA_PATH/$COUNTRY ..."
+if [ -e ${DATA_PATH}/${COUNTRY}_geojson.tgz ]; then
+  echo " found!"
   tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
+else
+  echo " not found!"
+fi
+
+# if the folder doesn't exist (after extracting content)
+# then download file and extract content
+if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
+  echo -n "   -> Trying to download: https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz ..."
+  if ! curl -f -o ${DATA_PATH}/${COUNTRY}_geojson.tgz https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz; then
+    echo " can't download file."
+    echo "   -> Exit with error"
+    exit 1
+  fi
+  echo " found!"
+  tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
+fi
+
+# if the folder (still) doesn't exist then exit with error
+if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
+  echo "   -> Folder not found for country $COUNTRY"
+  exit 1
 fi
 
 IFS=',';
 for i in $LEVELS; do
-FILE=${DATA_PATH}/${COUNTRY}/admin_level_${i}.geojson
-echo " Processing $FILE"
-psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+  FILE=${DATA_PATH}/${COUNTRY}/admin_level_${i}.geojson
+  echo -n "   -> Processing $FILE ... "
+  psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 
-  WITH data AS (SELECT \$$`cat $FILE`\$$::json AS fc)
-  INSERT INTO "regions" (country, name, admin_level, the_geom)
-  SELECT
-    '${COUNTRY}',
-    feat#>>'{properties,name}' AS name,
-    (feat#>>'{properties,admin_level}')::integer AS admin_level,
-    ST_SetSRID(ST_GeomFromGeoJSON(feat->>'geometry'), 4326) as the_geom
-  FROM (
-    SELECT json_array_elements(fc->'features') AS feat
-    FROM data
-  ) AS f;
+    WITH data AS (SELECT \$$`cat $FILE`\$$::json AS fc)
+    INSERT INTO "regions" (country, name, admin_level, the_geom)
+    SELECT
+      '${COUNTRY}',
+      feat#>>'{properties,name}' AS name,
+      (feat#>>'{properties,admin_level}')::integer AS admin_level,
+      ST_SetSRID(ST_GeomFromGeoJSON(feat->>'geometry'), 4326) as the_geom
+    FROM (
+      SELECT json_array_elements(fc->'features') AS feat
+      FROM data
+    ) AS f;
 
 SQL_SCRIPT
+  # TODO: print errors
+  echo " done!"
 done;
 
-echo
-echo "Calculating geometry previews"
-psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+echo -n "   -> Calculating geometry previews ... "
+psql -A -t -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
   SELECT calculate_regions_previews();
 SQL_SCRIPT
+# TODO: print errors
+echo "   -> done!"
 
 # $(dirname "${BASH_SOURCE}")/regions-population $COUNTRY
 

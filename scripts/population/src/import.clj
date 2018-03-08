@@ -19,22 +19,39 @@
 (def run-script
   #(let [sh-result (apply shell/sh %1)]
       (println (:out sh-result))
-      (println (:err sh-result))))
+      ; (println (:err sh-result))
+      ))
+
+(def in?
+  #(some (fn [el](= el %1)) %2))
 
 ;
+(defn build-cpp
+  []
+  (println (str "*****************************************************************"))
+  (println (str "* Building cpp "))
+  (println (str "***"))
+  (run-script ["./build-cpp"]))
+
 (defn add-population-source
   [name, filename]
   (sql-insert! :population_sources {:name name :tif_file filename}))
 
 (defn add-country-regions
   [country]
-  (println (str "Running script to add regions from: " country))
-  (run-script ["./load-regions" country]))
+  (println (str "*****************************************************************"))
+  (println (str "* Running script to add regions from: " country))
+  (println (str "***"))
+  (run-script ["./load-regions" country])
+  ; (println (:err (shell/sh "sh" "-c" (str "cd /app;" "./scripts/population/load-regions " country) )))
+  )
 
-(defn calculate-country-population
-  [country tif-filename]
-  (println (str "Running script to calculate population for: " country " with tif file id: " tif-filename))
-  (run-script ["./regions-population" country (str tif-filename)]))
+  (defn calculate-country-population
+    [country tif-filename-id]
+    (println (str "*****************************************************************"))
+    (println (str "* Running script to calculate population for: " country " with tif file id: " tif-filename-id))
+    (println (str "***"))
+    (run-script ["./regions-population" country (str tif-filename-id)]))
 
 ;
 (defn print-source
@@ -45,18 +62,27 @@
 
 ;
 (defn -main
-  [name filename country]
+  [name filename country & options]
 
-  (println (str "Name: " name))
-  (println (str "Filename: " filename))
-  (println (str "Country: " country))
+  (println (str "*****************************************************************"))
+  (println (str "* Parameters: "))
+  (println (str "***"))
+  (println (str "   -> Name: " name))
+  (println (str "   -> Filename: " filename))
+  (println (str "   -> Country: " country))
+  (println (str ""))
+
+  (when (in? "--build-cpp" options)
+    (build-cpp))
 
   (let [ result (add-population-source name filename) ]
     (doseq [r result]
-      (print-source r)
+      ; (print-source r)
       (add-country-regions country) ;load-regions
       (calculate-country-population country (:id r)) ;regions-population
       ; TODO: (rasterize-all-regions)
     ))
+
+  (println (str "All done!"))
 
   (System/exit 0)) ; https://stackoverflow.com/questions/1134770/how-to-end-force-a-close-to-a-program-in-clojure?rq=1
