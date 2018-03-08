@@ -142,6 +142,9 @@
   :jwe-options          #ig/ref :planwise.auth/jwe-options
   :jwe-secret           #ig/ref :planwise.auth/jwe-secret}
 
+ :planwise.component/coverage
+ {:db          #ig/ref :duct.database/sql}
+
  :planwise.component/datasets
  {:db          #ig/ref :duct.database/sql}
 
