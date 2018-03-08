@@ -52,7 +52,7 @@
     (let [store (:planwise.component/sites-datasets system)
           dataset-id (:id (sites-datasets/create-sites-dataset store "Initial" owner-id))
           datasets (sites-datasets/list-sites-datasets store owner-id)
-          version (sites-datasets/get-dataset-version store dataset-id)]
+          version (:last-version (sites-datasets/get-dataset store dataset-id))]
       (is (= (count datasets) 1))
       (is (= version 0)))))
 
@@ -65,8 +65,8 @@
           dataset1-id              (:id (sites-datasets/create-sites-dataset store "Initial" owner-id))
           dataset2-id              (:id (sites-datasets/create-sites-dataset store "Other" owner-id))
           facilities-dataset1      (sites-datasets/csv-to-facilities store dataset1-id "sites.csv")
-          version-dataset1         (sites-datasets/get-dataset-version store dataset1-id)
-          version-dataset2         (sites-datasets/get-dataset-version store dataset2-id)
+          version-dataset1         (:last-version (sites-datasets/get-dataset store dataset1-id))
+          version-dataset2         (:last-version (sites-datasets/get-dataset store dataset2-id))
           listed-sites-dataset1    (sites-datasets/find-sites-facilities store dataset1-id version-dataset1)
           listed-sites-dataset2    (sites-datasets/find-sites-facilities store dataset2-id version-dataset2)]
        (is (= (count listed-sites-dataset1) 4)
@@ -78,7 +78,7 @@
          dataset-id               (:id (sites-datasets/create-sites-dataset store "Initial" owner-id))
          sites                    (sites-datasets/csv-to-facilities store dataset-id "sites.csv")
          other-sites              (sites-datasets/csv-to-facilities store dataset-id "other-sites.csv")
-         last-version-dataset     (sites-datasets/get-dataset-version store dataset-id)
+         last-version-dataset     (:last-version (sites-datasets/get-dataset store dataset-id))
          listed-sites             (sites-datasets/find-sites-facilities store dataset-id last-version-dataset)]
       (is (= (count listed-sites) 2))
       (is (= last-version-dataset 2)))))

@@ -1,6 +1,7 @@
 (ns planwise.client.db
   (:require [planwise.client.datasets.db :as datasets]
             [planwise.client.projects.db :as projects]
+            [planwise.client.datasets2.db :as datasets2]
             [planwise.client.current-project.db :as current-project]))
 
 (def initial-db
@@ -17,6 +18,9 @@
 
    ;; Regions id => {:keys [id name admin-level & [geojson preview-geojson]]}
    :regions             {}
+
+   ;; Datasets2
+   :datasets2          datasets2/initial-db
 
    ;; Datasets
    :datasets            datasets/initial-db})

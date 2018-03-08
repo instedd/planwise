@@ -29,8 +29,8 @@
 
 (defn create-sites-dataset
   [store name owner-id]
-  (create-dataset! (get-db store) {:name name
-                                    :owner-id owner-id}))
+  (:id (create-dataset! (get-db store) {:name name
+                                        :owner-id owner-id})))
 
 (defn list-sites-datasets
   [store owner-id]
@@ -56,11 +56,11 @@
               :capacity (Integer. (:capacity csv-site-data))
               :tags (:tags csv-site-data)}]
      (create-site! (get-db store) data)))
-
+;change (io/reader (io/resource bla), cambiar test )
 (defn csv-to-facilities
   "Generates facilities from a dataset-id and a csv file"
-  [store dataset-id csv-name]
-  (let [reader          (io/reader (io/resource csv-name))
+  [store dataset-id csv-file]
+  (let [reader          (io/reader csv-file)
         facilities-data (csv-data->maps (csv/read-csv reader))
         version         (:last-version (create-dataset-version! (get-db store) {:id dataset-id}))]
     (doall (map #(import-site store dataset-id version %) facilities-data))))
@@ -71,9 +71,9 @@
   (find-sites (get-db store) {:dataset-id dataset-id
                               :version version}))
 
-(defn get-dataset-version
+(defn get-dataset
   [store dataset-id]
-  (:last-version (first (find-dataset (get-db store) {:id dataset-id}))))
+  (first (find-dataset (get-db store) {:id dataset-id})))
 
 (defmethod ig/init-key :planwise.component/sites-datasets
   [_ config]

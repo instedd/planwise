@@ -2,6 +2,7 @@
   (:require [re-frame.core :as rf]
             [planwise.client.projects.subs]
             [planwise.client.current-project.subs]
+            [planwise.client.datasets2.subs]
             [planwise.client.datasets.subs]
             [planwise.client.regions.subs]))
 

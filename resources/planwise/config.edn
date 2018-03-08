@@ -40,6 +40,7 @@
                #ig/ref :planwise.endpoint/regions
                #ig/ref :planwise.endpoint/projects
                #ig/ref :planwise.endpoint/routing
+               #ig/ref :planwise.endpoint/datasets2
                #ig/ref :planwise.endpoint/datasets]}
 
  :planwise.router/app
@@ -122,6 +123,9 @@
   :facilities #ig/ref :planwise.component/facilities
   :resmap     #ig/ref :planwise.component/resmap
   :importer   #ig/ref :planwise.component/importer}
+
+ :planwise.endpoint/datasets2
+ {:datasets2   #ig/ref :planwise.component/sites-datasets}
 
  :planwise.endpoint/resmap-auth
  {:auth   #ig/ref :planwise.component/auth

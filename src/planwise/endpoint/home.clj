@@ -77,6 +77,7 @@
      (GET "/" [] loading-page)
      #_(GET "/crash" [] (throw (RuntimeException. "Crash")))
      (GET "/datasets" [] loading-page)
+     (GET "/datasets2" [] loading-page)
      (context "/projects/:id" []
        (GET "/" [] loading-page)
        (GET "/facilities" [] loading-page)
