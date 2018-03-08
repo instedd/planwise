@@ -1,0 +1,89 @@
+#! /bin/bash
+set -euo pipefail
+export PGPASSWORD=$POSTGRES_PASSWORD;
+
+# Creates a byte-sized raster file data/regions/REGIONID.tif,
+# with a mask of each region, ie a value of 255 for the region.
+#
+# These masks will then be used to create masks for the facility
+# polygon regions, in raster-isochrone, that are used to calculate
+# demand.
+
+# function base-raster {
+#     case $1 in
+#         kenya)        echo KEN_popmap15_v2b.tif;;
+#         tanzania)     echo TZA_popmap15_v2b.tif;;
+#         ethiopia)     echo ETH15v5.tif;;
+#         nigeria)      echo NGA14adjv1.tif;;
+#         south-africa) echo ZAF15v4.tif;;
+#         niger)        echo NER15adjv4.tif;;
+#         uganda)       echo UGA_ppp_v2b_2015_UNadj.tif;;
+#         *)
+#             echo Unknown country $1
+#             exit 1
+#     esac
+# }
+
+function target_resolution {
+    raster_name=$1
+    gdalinfo $raster_name | grep "Pixel Size" | sed -E 's/.*\(([^)]*).*/\1/g' | tr ',' ' '
+}
+
+DATA_PATH=${DATA_PATH:-data}
+
+if [[ "${RASTER_ISOCHRONES}" = "false" ]]; then
+  echo "   -> Rasterizing no regions! Check global variable RASTER_ISOCHRONES (is set to false)"
+  exit 0
+fi
+
+echo "   -> Rasterizing regions"
+
+PARAM_COUNTRY=$1
+PARAM_ID_SOURCE=$2
+echo $PARAM_COUNTRY
+echo $PARAM_ID_SOURCE
+
+# TODO: get app folder from env
+cd /app
+
+REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, country FROM regions WHERE country = '$PARAM_COUNTRY';")
+echo "   -> Regions to process: $(echo $REGIONS | wc -w | tr -d '[[:space:]]')"
+
+SOURCE_ROW=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, name, tif_file FROM population_sources WHERE id = '$PARAM_ID_SOURCE';")
+RASTER_FILENAME=`echo $SOURCE_ROW | cut -d \| -f 3`
+echo -n "   -> Filename to process: $(echo $RASTER_FILENAME) ... "
+
+if [ ! -e ${DATA_PATH}/$RASTER_FILENAME ]; then
+  echo " not found."
+  exit 1
+fi
+echo " found!"
+
+mkdir -p ${DATA_PATH}/regions/
+REGIONS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c 'SELECT id, country FROM regions;')"
+
+for region in $REGIONS; do
+  id=`echo $region | cut -d \| -f 1`
+  country=`echo $region | cut -d \| -f 2`
+#   raster=${DATA_PATH}/`base-raster ${country}`
+  RASTER=$DATA_PATH/$RASTER_FILENAME
+
+  if [[ ! -e $RASTER ]]; then
+    echo "   -> Base country raster $RASTER not found to extract resolution. Aborting."
+    exit 1
+  fi
+
+  resolution=$(target_resolution $RASTER)
+
+  echo "   -> Rasterizing ${id}"
+  TARGET=${DATA_PATH}/regions/${id}.tif
+  if [[ ! -e $TARGET ]]; then
+    gdal_rasterize -q -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+      -ot byte -a_nodata 0 -burn 255 \
+      -sql "SELECT the_geom FROM regions WHERE id = ${id}" \
+      -co "NBITS=1" -co "COMPRESS=CCITTFAX4" \
+      -tr $resolution \
+      -tap \
+      PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" $TARGET
+  fi;
+done;

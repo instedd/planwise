@@ -49,7 +49,6 @@ if [ ! -e ${DATA_PATH}/$RASTER_FILENAME ]; then
   echo " not found."
   exit 1
 fi
-
 echo " found!"
 
 mkdir -p ${DATA_PATH}/populations/data
