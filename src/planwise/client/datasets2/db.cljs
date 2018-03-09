@@ -16,5 +16,4 @@
 
 (def initial-db
   {:new-dataset-data nil
-   :list             (asdf/new nil)
-   :sites            (asdf/new nil)})                                      
+   :list             (asdf/new nil)})                                      

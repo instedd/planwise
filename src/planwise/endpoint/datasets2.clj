@@ -26,17 +26,6 @@
            sets (datasets2/list-sites-datasets service user-id)]
        (response sets)))
 
-   (POST "/only-dataset" [name :as request]
-      (let [user-id (util/request-user-id request)
-            dataset-id (datasets2/create-sites-dataset service name user-id)]
-        (response (datasets2/get-dataset service dataset-id))))
-
-   (POST "/sites" request
-     (let [importing-file (:tempfile (get (:multipart-params request) "file"))
-           dataset-id 5]
-       (response (datasets2/csv-to-facilities service dataset-id importing-file))))
-
-
    (POST "/" request
      (let [user-id (util/request-user-id request)
            importing-file (:tempfile (get (:multipart-params request) "file"))

@@ -10,19 +10,11 @@
             [planwise.client.utils :refer [format-percentage]]
             [re-frame.utils :as c]))
 
-(defn new-dataset2-button
-  []
-  [:button.primary
-   {:on-click
-    #(dispatch [:datasets2/create-dataset2!])}
-   "New Dataset"])
 
 (defn no-datasets2-view []
-  [:div.empty-list
+  [:div
    [common/icon :box]
-   [:p "You have no datasets yet"]
-   [:div
-    [new-dataset2-button]]])
+   [:p "You have no datasets yet"]])
 
 (defn dataset2-card
   [dataset]

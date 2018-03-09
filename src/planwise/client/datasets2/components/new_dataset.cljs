@@ -25,4 +25,4 @@
                                   (-> (.-currentTarget %) .-files (aget 0)))}]
        [:button.primary
           {:on-click #(dispatch [:datasets2/create-load-dataset @name @js-file])}
-          "Create"]])))
+          "Create"]])))     
