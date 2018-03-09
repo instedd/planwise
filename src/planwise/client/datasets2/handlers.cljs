@@ -66,14 +66,14 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Creating dataset and uploading csv-file
-;
-; (rf/reg-event-fx
-;   :datasets2/create-load-dataset
-;   in-datasets2
-;   (fn [{:keys [db]} [_ name js-file]]
-;     (let [form-data (doto
-;                         (js/FormData.)
-;                         (.append "file" js-file))]
-;       {:api (doall (assoc (api/load-csv-file! form-data))
-;                    (assoc (api/create-dataset2! name)))
-;             :on-success [:datasets2/dataset-created]})))
+
+(rf/reg-event-fx
+  :datasets2/create-load-dataset
+  in-datasets2
+  (fn [{:keys [db]} [_ name js-file]]
+    (let [form-data (doto
+                        (js/FormData.)
+                        (.append "name" name)
+                        (.append "file" js-file))]
+      {:api (assoc (api/creating-dataset-with-uploaded-sites! form-data)
+                   :on-success [:datasets2/dataset-created])})))

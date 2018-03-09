@@ -23,5 +23,5 @@
   []
   [:article.datasets2
    [:div
-      [new-dataset-dialog]
-      [(listing-updated-datasets)]]])
+      [listing-updated-datasets]
+      [new-dataset-dialog]]])

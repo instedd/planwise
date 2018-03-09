@@ -29,8 +29,8 @@
 
 (defn create-sites-dataset
   [store name owner-id]
-  (:id (create-dataset! (get-db store) {:name name
-                                        :owner-id owner-id})))
+  (create-dataset! (get-db store) {:name name
+                                   :owner-id owner-id}))
 
 (defn list-sites-datasets
   [store owner-id]
@@ -56,7 +56,7 @@
               :capacity (Integer. (:capacity csv-site-data))
               :tags (:tags csv-site-data)}]
      (create-site! (get-db store) data)))
-;change (io/reader (io/resource bla), cambiar test )
+
 (defn csv-to-facilities
   "Generates facilities from a dataset-id and a csv file"
   [store dataset-id csv-file]

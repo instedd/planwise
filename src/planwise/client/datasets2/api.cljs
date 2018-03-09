@@ -20,8 +20,7 @@
    :body    form-data})
 
 (defn creating-dataset-with-uploaded-sites!
-  [name form-data]
+  [form-data]
   {:method    :post
-   :uri       "/api/datasets2/sites"
-   :params    {:name    name}
-   :body    form-data})
+   :uri       "/api/datasets2"
+   :body      form-data})

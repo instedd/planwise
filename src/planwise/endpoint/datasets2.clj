@@ -34,22 +34,23 @@
    (POST "/sites" request
      (let [importing-file (:tempfile (get (:multipart-params request) "file"))
            dataset-id 5]
-       (response (datasets2/csv-to-facilities service dataset-id importing-file)))
-    ;
-    ; (POST "/" [name :as request]
-    ;   (let [user-id (util/request-user-id request)
-    ;         importing-file (:tempfile (get (:multipart-params request) "file"))
-    ;         dataset-id (datasets2/create-sites-dataset service name user-id)]
-    ;     (response (doall  (datasets2/get-dataset service dataset-id)
-    ;                       (datasets2/csv-to-facilities service dataset-id importing-file))))))))
-    ;
+       (response (datasets2/csv-to-facilities service dataset-id importing-file))))
+
+
+   (POST "/" request
+     (let [user-id (util/request-user-id request)
+           importing-file (:tempfile (get (:multipart-params request) "file"))
+           name           (get (:multipart-params request) "name")
+           dataset-id (:id (datasets2/create-sites-dataset service name user-id))]
+       (response (do
+                    (datasets2/get-dataset service dataset-id)
+                    (datasets2/csv-to-facilities service dataset-id importing-file)))))))
 
 
 (defn datasets2-endpoint
   [{service :datasets2}]
   (context "/api/datasets2" []
     (restrict (datasets2-routes service) {:handler authenticated?})))
-
 
 (defmethod ig/init-key :planwise.endpoint/datasets2
   [_ config]

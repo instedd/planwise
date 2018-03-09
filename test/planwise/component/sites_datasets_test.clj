@@ -1,5 +1,6 @@
 (ns planwise.component.sites-datasets-test
   (:require [clojure.test :refer :all]
+            [clojure.java.io :as io]
             [planwise.component.sites-datasets :as sites-datasets]
             [planwise.test-system :as test-system]
             [clj-time.core :as time]
@@ -64,7 +65,7 @@
     (let [store                    (:planwise.component/sites-datasets system)
           dataset1-id              (:id (sites-datasets/create-sites-dataset store "Initial" owner-id))
           dataset2-id              (:id (sites-datasets/create-sites-dataset store "Other" owner-id))
-          facilities-dataset1      (sites-datasets/csv-to-facilities store dataset1-id "sites.csv")
+          facilities-dataset1      (sites-datasets/csv-to-facilities store dataset1-id (io/resource "sites.csv"))
           version-dataset1         (:last-version (sites-datasets/get-dataset store dataset1-id))
           version-dataset2         (:last-version (sites-datasets/get-dataset store dataset2-id))
           listed-sites-dataset1    (sites-datasets/find-sites-facilities store dataset1-id version-dataset1)
@@ -72,12 +73,14 @@
        (is (= (count listed-sites-dataset1) 4)
        (is (= (count listed-sites-dataset2) 0))))))
 
+(defn- pd [v] (do (println v) v))
+
 (deftest several-csv-to-dataset
  (test-system/with-system (test-config)
    (let [store                    (:planwise.component/sites-datasets system)
-         dataset-id               (:id (sites-datasets/create-sites-dataset store "Initial" owner-id))
-         sites                    (sites-datasets/csv-to-facilities store dataset-id "sites.csv")
-         other-sites              (sites-datasets/csv-to-facilities store dataset-id "other-sites.csv")
+         dataset-id               (pd (:id (sites-datasets/create-sites-dataset store "Initial" owner-id)))
+         sites                    (sites-datasets/csv-to-facilities store dataset-id (io/resource "sites.csv"))
+         other-sites              (sites-datasets/csv-to-facilities store dataset-id (io/resource "other-sites.csv"))
          last-version-dataset     (:last-version (sites-datasets/get-dataset store dataset-id))
          listed-sites             (sites-datasets/find-sites-facilities store dataset-id last-version-dataset)]
       (is (= (count listed-sites) 2))
