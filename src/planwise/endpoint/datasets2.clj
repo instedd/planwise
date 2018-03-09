@@ -5,11 +5,10 @@
             [ring.util.response :refer [response status not-found]]
             [planwise.util.ring :as util]
             [clojure.core.reducers :as r]
-            [ajax.core :as ajax] ;falta declarar algo?
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.model.ident :as ident]
-            [planwise.component.sites-datasets :as datasets2]))
+            [planwise.component.datasets2 :as datasets2]))
 
 (timbre/refer-timbre)
 
@@ -23,17 +22,17 @@
 
    (GET "/" request
      (let [user-id (util/request-user-id request)
-           sets (datasets2/list-sites-datasets service user-id)]
+           sets (datasets2/list-datasets service user-id)]
        (response sets)))
 
    (POST "/" request
      (let [user-id (util/request-user-id request)
            importing-file (:tempfile (get (:multipart-params request) "file"))
            name           (get (:multipart-params request) "name")
-           dataset-id (:id (datasets2/create-sites-dataset service name user-id))]
+           dataset-id (:id (datasets2/create-dataset service name user-id))]
        (response (do
                     (datasets2/get-dataset service dataset-id)
-                    (datasets2/csv-to-facilities service dataset-id importing-file)))))))
+                    (datasets2/csv-to-sites service dataset-id importing-file)))))))
 
 
 (defn datasets2-endpoint

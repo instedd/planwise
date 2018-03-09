@@ -125,7 +125,7 @@
   :importer   #ig/ref :planwise.component/importer}
 
  :planwise.endpoint/datasets2
- {:datasets2   #ig/ref :planwise.component/sites-datasets}
+ {:datasets2   #ig/ref :planwise.component/datasets2}
 
  :planwise.endpoint/resmap-auth
  {:auth   #ig/ref :planwise.component/auth
@@ -192,7 +192,7 @@
  {:bin         #duct/env ["BIN_PATH" Str :or "bin/"]
   :scripts     #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
 
- :planwise.component/sites-datasets
+ :planwise.component/datasets2
  {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/users

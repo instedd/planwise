@@ -15,5 +15,4 @@
    :new-dataset-data (s/maybe {:name s/Str})})
 
 (def initial-db
-  {:new-dataset-data nil
-   :list             (asdf/new nil)})                                      
+  {:list             (asdf/new nil)})                                      
