@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS sites2;
+
+DROP TABLE IF EXISTS datasets2;

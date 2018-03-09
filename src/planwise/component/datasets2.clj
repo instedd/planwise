@@ -1,4 +1,4 @@
-(ns planwise.component.sites-datasets
+(ns planwise.component.datasets2
   (:require [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.data.csv :as csv]
@@ -11,7 +11,7 @@
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
 
-(hugsql/def-db-fns "planwise/sql/sites_datasets.sql")
+(hugsql/def-db-fns "planwise/sql/datasets2.sql")
 
 (defn get-db
   [store]
@@ -22,19 +22,19 @@
 
 (defrecord SitesDatasetsStore [db])
 
-(defn sites-datasets-store
+(defn datasets2-store
   "Constructs a SitesDatasets Store component"
   []
   (map->SitesDatasetsStore {}))
 
-(defn create-sites-dataset
+(defn create-dataset
   [store name owner-id]
-  (create-dataset! (get-db store) {:name name
-                                    :owner-id owner-id}))
+  (db-create-dataset! (get-db store) {:name name
+                                      :owner-id owner-id}))
 
-(defn list-sites-datasets
+(defn list-datasets
   [store owner-id]
-  (list-datasets (get-db store) {:owner-id owner-id}))
+  (db-list-datasets (get-db store) {:owner-id owner-id}))
 
 (defn- csv-data->maps
   [csv-data]
@@ -55,26 +55,26 @@
               :lon  (Double. (:lon csv-site-data))
               :capacity (Integer. (:capacity csv-site-data))
               :tags (:tags csv-site-data)}]
-     (create-site! (get-db store) data)))
+     (db-create-site! (get-db store) data)))
 
-(defn csv-to-facilities
-  "Generates facilities from a dataset-id and a csv file"
-  [store dataset-id csv-name]
-  (let [reader          (io/reader (io/resource csv-name))
-        facilities-data (csv-data->maps (csv/read-csv reader))
-        version         (:last-version (create-dataset-version! (get-db store) {:id dataset-id}))]
-    (doall (map #(import-site store dataset-id version %) facilities-data))))
+(defn csv-to-sites
+  "Generates sites from a dataset-id and a csv file"
+  [store dataset-id csv-file]
+  (let [reader          (io/reader csv-file)
+        sites-data (csv-data->maps (csv/read-csv reader))
+        version         (:last-version (db-create-dataset-version! (get-db store) {:id dataset-id}))]
+    (doall (map #(import-site store dataset-id version %) sites-data))))
 
-(defn find-sites-facilities
+(defn sites-by-version
   "Returns sites associated to a dataset-id and version"
   [store dataset-id version]
-  (find-sites (get-db store) {:dataset-id dataset-id
-                              :version version}))
+  (db-find-sites (get-db store) {:dataset-id dataset-id
+                                 :version version}))
 
-(defn get-dataset-version
+(defn get-dataset
   [store dataset-id]
-  (:last-version (first (find-dataset (get-db store) {:id dataset-id}))))
+  (first (db-find-dataset (get-db store) {:id dataset-id})))
 
-(defmethod ig/init-key :planwise.component/sites-datasets
+(defmethod ig/init-key :planwise.component/datasets2
   [_ config]
   (map->SitesDatasetsStore config))

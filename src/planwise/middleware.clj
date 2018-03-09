@@ -60,7 +60,8 @@
   (let [app-defaults (duct/merge-configs api-defaults
                                          session-config
                                          {:session {:store session-store}
-                                          :params  {:nested true}})]
+                                          :params  {:nested true
+                                                    :multipart true}})]
     (let [middleware [#(wrap-authorization % authz-backend)
                       #(wrap-authentication-helper % authn-backends)
                       #(wrap-log-request % {:exclude-uris #"^/(js|css|images|assets)/.*"})

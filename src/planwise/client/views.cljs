@@ -5,13 +5,15 @@
             [planwise.client.components.nav :as nav]
             [planwise.client.components.common :refer [icon]]
             [planwise.client.projects.views :as projects]
+            [planwise.client.datasets2.views :as datasets2]
             [planwise.client.current-project.views :as current-project]
             [planwise.client.datasets.views :as datasets]))
 
 
 (def nav-items
   [{:item :home :href (routes/home) :title "Projects"}
-   {:item :datasets :href (routes/datasets) :title "Datasets"}])
+   {:item :datasets :href (routes/datasets) :title "Datasets"}
+   {:item :datasets :href (routes/datasets2) :title "Datasets*"}])
 
 (def current-user-email
   (atom config/user-email))
@@ -45,6 +47,9 @@
 
 (defmethod content-pane :datasets []
   [datasets/datasets-page])
+
+(defmethod content-pane :datasets2 []
+  [datasets2/datasets2-page])
 
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]
