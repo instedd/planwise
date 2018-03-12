@@ -1,17 +1,18 @@
 -- Computes the coverage polygon from a point using pgRouting and alpha shape
 -- Parameters:
 --   point: starting point
---   threshold: driving time in minutes
+--   max_time_minutes: driving time in minutes
 
 DROP FUNCTION IF EXISTS pgr_alpha_shape_coverage(geometry(point, 4326), INTEGER);
 
-CREATE OR REPLACE FUNCTION pgr_alpha_shape_coverage(point geometry(point, 4326), threshold INTEGER)
+CREATE OR REPLACE FUNCTION pgr_alpha_shape_coverage(point geometry(point, 4326), max_time_minutes INTEGER)
 RETURNS RECORD AS $$
 DECLARE
   closest_node INTEGER;
   closest_node_geom geometry(point, 4326);
   buffer_length INTEGER;
   bounding_radius_meters FLOAT;
+  threshold INTEGER;
   distance_threshold_meters FLOAT;
   polygon geometry(polygon, 4326);
   ret RECORD; -- (result_code, polygon?)
@@ -24,6 +25,7 @@ BEGIN
 
   closest_node := (SELECT closest_node(point));
   closest_node_geom := (SELECT the_geom FROM ways_vertices_pgr WHERE id = closest_node);
+  threshold := max_time_minutes * 60;
 
   -- Maximum distance from the closest node in the road network to discard a facility
   -- This number was adjusted manually such that the ~90% of current facility dataset from Kenya is not discarded
@@ -35,16 +37,17 @@ BEGIN
   END IF;
 
   -- Apply an upper bound to the reachable region to avoid retrieving all ways
-  -- bound = area that can be covered travelling in a straight line at 120 km/h
+  -- bound = area that can be covered traveling in a straight line at 120 km/h
   -- for the threshold time.
-  bounding_radius_meters := (threshold / 60.0) * 120 * 1000;
+  bounding_radius_meters := (threshold / 3600.0) * 120 * 1000;
 
   INSERT INTO edges_agg_cost (
     SELECT e.edge, e.agg_cost, e.node
     FROM pgr_drivingdistance(
       'SELECT gid AS id, source, target, cost_s AS cost FROM ways WHERE the_geom @ (SELECT ST_Buffer(ST_GeomFromEWKT(''' || (SELECT ST_AsEWKT(point)) || ''')::geography, ' || bounding_radius_meters || ')::geometry)',
+      -- 'SELECT gid AS id, source, target, cost_s AS cost FROM ways',
       closest_node,
-      threshold * 60,
+      threshold,
       FALSE) e
   );
 
@@ -58,7 +61,7 @@ BEGIN
     FROM ways w
     JOIN edges_agg_cost e_source ON e_source.node = w.source
     JOIN edges_agg_cost e_target ON e_target.node = w.target
-    WHERE w.cost + least(e_source.agg_cost, e_target.agg_cost) < threshold * 60
+    WHERE w.cost + least(e_source.agg_cost, e_target.agg_cost) < threshold
   );
 
   -- Buffer in meters to apply around the alpha shape polygon
