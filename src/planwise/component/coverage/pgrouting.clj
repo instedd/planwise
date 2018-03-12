@@ -1,14 +1,8 @@
 (ns planwise.component.coverage.pgrouting
-  (:require [hugsql.core :as hugsql])
-  (:import [org.postgis PGgeometry]))
+  (:require [hugsql.core :as hugsql]
+            [planwise.util.pg :as pg]))
 
 (hugsql/def-db-fns "planwise/sql/coverage/pgrouting.sql")
-
-(defn make-point
-  ([{:keys [lat lon]}]
-   (make-point lat lon))
-  ([lat lon]
-   (PGgeometry. (str "SRID=4326;POINT(" lon " " lat")"))))
 
 (defn compute-coverage
   [db-spec point threshold]
@@ -19,8 +13,7 @@
 
 (comment
   ;; Kilifi location
-  (compute-coverage (:spec (planwise.repl/db)) (make-point -3.0361 40.1333) 180)
+  (compute-coverage (:spec (planwise.repl/db)) (pg/make-point -3.0361 40.1333) 180)
 
   ;; Nairobi location
-  (compute-coverage (:spec (planwise.repl/db)) (make-point -1.2741 36.7931) 180))
-
+  (compute-coverage (:spec (planwise.repl/db)) (pg/make-point -1.2741 36.7931) 180))

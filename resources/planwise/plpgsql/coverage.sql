@@ -84,3 +84,21 @@ BEGIN
   RETURN ret;
 END;
 $$ LANGUAGE plpgsql;
+
+
+------------------------------------------------------------------------------
+-- Dummy coverage function using a simple buffer operation around the origin
+
+DROP FUNCTION IF EXISTS simple_buffer_coverage(GEOMETRY(point, 4326), INTEGER);
+
+CREATE OR REPLACE FUNCTION simple_buffer_coverage(point GEOMETRY(point, 4326), distance_meters INTEGER)
+RETURNS RECORD AS $$
+DECLARE
+  geom GEOMETRY;
+  ret RECORD;
+BEGIN
+  geom := (SELECT ST_Buffer(point::geography, distance_meters, 16)::geometry);
+  SELECT 'ok'::TEXT, geom INTO ret;
+  RETURN ret;
+END;
+$$ LANGUAGE plpgsql;
