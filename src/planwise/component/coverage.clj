@@ -17,15 +17,21 @@
                                            {:value 90  :label "1:30 hours"}
                                            {:value 120 :label "2 hours"}]}}}})
 
-(defn compute-coverage
+(defmulti compute-coverage (fn [service point criteria] (:algorithm criteria)))
+
+(defmethod compute-coverage :default
+  [service point criteria]
+  (throw (IllegalArgumentException. "Missing or invalid coverage algorithm")))
+
+(defmethod compute-coverage :pgrouting-alpha
   [{:keys [db]} point criteria]
-  (let [db-spec        (:spec db)
-        pg-point       (pgrouting/make-point point)
-        threshold      (:driving-time criteria)
-        [code polygon] (pgrouting/compute-coverage db-spec point threshold)]
-    (case code
-      "ok" polygon
-      (throw (RuntimeException. (str "pgRouting coverage computation failed: " code))))))
+  (let [db-spec   (:spec db)
+        pg-point  (pgrouting/make-point point)
+        threshold (:driving-time criteria)
+        result    (pgrouting/compute-coverage db-spec pg-point threshold)]
+    (case (:result result)
+      "ok" (:polygon result)
+      (throw (RuntimeException. (str "pgRouting coverage computation failed: " (:result result)))))))
 
 (defrecord CoverageService [db]
   boundary/CoverageService
@@ -41,6 +47,14 @@
 
 
 ;; REPL testing
+
 (comment
-  (let [[_ service] (ig/find-derived-1 integrant.repl.state/system :planwise.component/coverage)]
-    (boundary/supported-algorithms service)))
+
+  (def service (second (ig/find-derived-1 integrant.repl.state/system :planwise.component/coverage)))
+
+  (boundary/supported-algorithms service)
+
+  (boundary/compute-coverage service
+                             {:lat -3.0361 :lon 40.1333}
+                             {:algorithm :pgrouting-alpha
+                              :driving-time 60}))
