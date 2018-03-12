@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# TODO: get app folder from env
-cd /app/cpp
+source env-vars
 
+cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}/cpp
 make clean all

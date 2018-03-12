@@ -2,6 +2,8 @@
 set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
+source env-vars
+
 # Creates raster files data/populations/(data|maps)/REGIONID.tif with the population
 # values of each REGIONID in the regions table and those same values
 # scaled to byte for visualisation in mapserver respectively.
@@ -9,11 +11,6 @@ export PGPASSWORD=$POSTGRES_PASSWORD;
 BIN_PATH=${BIN_PATH:-cpp}
 SCRIPT_PATH=${SCRIPT_PATH:-scripts}
 DATA_PATH=${DATA_PATH:-data}
-
-# function raster-filename {
-#   psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A \
-#     -c "SELECT id, filename FROM population_sources WHERE country = '$1';" | cut -d \| -f 2
-# }
 
 function target_resolution {
     raster_name=$1
@@ -23,20 +20,11 @@ function target_resolution {
 ###############################################################################
 
 echo "   -> Precalculating population aggregates per region"
-# REGIONS_QUERY="SELECT id ,country FROM regions WHERE total_population IS NULL OR max_population IS NULL OR raster_pixel_area IS NULL;"
-# if [ $# -gt 1 ]; then
-#   if [ "all" == $2 ]; then
-#     REGIONS_QUERY="SELECT id, country FROM regions;"
-#   fi
-# fi
 
 PARAM_COUNTRY=$1
 PARAM_ID_SOURCE=$2
-# echo $PARAM_COUNTRY
-# echo $PARAM_ID_SOURCE
 
-# TODO: get app folder from env
-cd /app
+cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 
 REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, country FROM regions WHERE country = '$PARAM_COUNTRY';")
 echo "   -> Regions to process: $(echo $REGIONS | wc -w | tr -d '[[:space:]]')"

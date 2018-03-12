@@ -1,12 +1,13 @@
 #! /bin/bash
 set -euo pipefail
 
+source env-vars
+
 COUNTRY=$1
 LEVELS=${2:-2,4}
 echo "   -> Importing $COUNTRY at levels $LEVELS"
 
-# TODO: get app folder from env
-cd /app
+cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 
 export PGPASSWORD=$POSTGRES_PASSWORD;
 DATA_PATH=${DATA_PATH:-data}
@@ -70,8 +71,6 @@ psql -A -t -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT
 SQL_SCRIPT
 # TODO: print errors
 echo "   -> done!"
-
-# $(dirname "${BASH_SOURCE}")/regions-population $COUNTRY
 
 # TODO:
 # if [[ "${RASTER_ISOCHRONES}" != "false" ]]; then

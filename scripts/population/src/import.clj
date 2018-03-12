@@ -1,29 +1,28 @@
 (ns import
   (:gen-class)
-  (:require [ clojure.java.shell  :as shell ]
-            [ clojure.java.jdbc   :as jdbc  ]))
+  (:require [clojure.java.shell  :as shell]
+            [clojure.java.jdbc   :as jdbc]))
 
-(def pg-db  { :dbtype "postgresql"
-              :dbname "planwise"
-              :host "db"
-              :port "5432"
-              :user "planwise"
-              :password "planwise" })
+(def pg-db {:dbtype "postgresql"
+            :dbname "planwise"
+            :host "db"
+            :port "5432"
+            :user "planwise"
+            :password "planwise"})
 
-(def sql-query
-  #(jdbc/query pg-db %))
+(defn sql-insert!
+  [table values]
+  (jdbc/insert! pg-db table values))
 
-(def sql-insert! ; db-spec :table {:col1 42 :col2 "123"}
-  #(jdbc/insert! pg-db %1 %2))
+(defn run-script
+  [script-with-options]
+  (let [sh-result (apply shell/sh script-with-options)]
+    (println (:out sh-result))
+    (comment (println (:err sh-result)))))
 
-(def run-script
-  #(let [sh-result (apply shell/sh %1)]
-      (println (:out sh-result))
-      (println (:err sh-result))
-      ))
-
-(def in?
-  #(some (fn [el](= el %1)) %2))
+(defn in?
+  [elem coll]
+  (some (fn [el](= el elem)) coll))
 
 ;
 (defn build-cpp
@@ -43,8 +42,8 @@
   (println (str "* Running script to add regions from: " country))
   (println (str "***"))
   (run-script ["./load-regions" country])
-  ; (println (:err (shell/sh "sh" "-c" (str "cd /app;" "./scripts/population/load-regions " country) )))
-  )
+  (comment
+    (println (:err (shell/sh "sh" "-c" (str "cd /app;" "./scripts/population/load-regions " country) )))))
 
 (defn calculate-country-population
   [country tif-filename-id]
@@ -81,9 +80,9 @@
   (when (in? "--build-cpp" options)
     (build-cpp)) ;build programs in app/cpp/
 
-  (let [ result (add-population-source name filename) ]
+  (let [result (add-population-source name filename)]
     (doseq [ret result]
-      ; (print-source r)
+      (comment (print-source r))
       (add-country-regions country) ;load-regions
       (calculate-country-population country (:id ret)) ;regions-population
       (raster-all-regions country (:id ret)) ;raster-regions
