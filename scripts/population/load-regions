@@ -71,8 +71,3 @@ psql -A -t -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT
 SQL_SCRIPT
 # TODO: print errors
 echo "   -> done!"
-
-# TODO:
-# if [[ "${RASTER_ISOCHRONES}" != "false" ]]; then
-#   $(dirname "${BASH_SOURCE}")/raster-regions
-# fi
