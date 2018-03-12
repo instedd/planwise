@@ -23,7 +23,7 @@
 (defrecord SitesDatasetsStore [db])
 
 (defn datasets2-store
-  "Constructs a SitesDatasets Store component"
+  "Constructs a Datasets2 Store component"
   []
   (map->SitesDatasetsStore {}))
 

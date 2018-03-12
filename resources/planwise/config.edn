@@ -41,6 +41,7 @@
                #ig/ref :planwise.endpoint/facilities
                #ig/ref :planwise.endpoint/monitor
                #ig/ref :planwise.endpoint/projects
+               #ig/ref :planwise.endpoint/projects2
                #ig/ref :planwise.endpoint/regions
                #ig/ref :planwise.endpoint/routing]}
 
@@ -125,6 +126,9 @@
   :facilities #ig/ref :planwise.component/facilities
   :maps       #ig/ref :planwise.component/maps}
 
+ :planwise.endpoint/projects2
+ {:projects2  #ig/ref :planwise.component/projects2}
+ 
  :planwise.endpoint/regions
  {:regions    #ig/ref :planwise.component/regions}
 
@@ -184,6 +188,9 @@
  {:db          #ig/ref :duct.database/sql
   :facilities  #ig/ref :planwise.component/facilities
   :mailer      #ig/ref :planwise.component/mailer}
+
+ :planwise.component/projects2
+ {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/regions
  {:db          #ig/ref :duct.database/sql}
