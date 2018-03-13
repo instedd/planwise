@@ -69,6 +69,7 @@
                  [org.webjars/leaflet "0.7.7"]
 
                  ; Database access
+                 [org.clojure/java.jdbc "0.7.5"]
                  [org.postgresql/postgresql "42.2.1"]
                  [net.postgis/postgis-jdbc "2.2.1"
                   :exclusions [postgresql

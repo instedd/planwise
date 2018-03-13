@@ -4,8 +4,33 @@
             [planwise.component.coverage.simple :as simple]
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.util.pg :as pg]
-            [integrant.core :as ig]))
+            [integrant.core :as ig]
+            [clojure.spec.alpha :as s]))
 
+;; Specs
+
+(s/def ::algorithm keyword?)
+(s/def ::raster string?)
+
+(s/def ::base-criteria (s/keys :req-un [::algorithm]
+                               :opt-un [::rasterize/ref-coords ::rasterize/resolution]))
+
+(s/def ::driving-time #{30 60 90 120})
+(s/def ::pgrouting-alpha-criteria (s/keys :req-un [::driving-time]))
+
+(s/def ::distance pos?)
+(s/def ::simple-buffer-criteria (s/keys :req-un [::distance]))
+
+(defmulti criteria-algo :algorithm)
+(defmethod criteria-algo :pgrouting-alpha [_]
+  (s/merge ::base-criteria ::pgrouting-alpha-criteria))
+(defmethod criteria-algo :simple-buffer [_]
+  (s/merge ::base-criteria ::simple-buffer-criteria))
+
+(s/def ::criteria (s/multi-spec criteria-algo :algorithm))
+
+
+;; Supported algorithm description
 
 (def supported-algorithms
   {:pgrouting-alpha
@@ -26,16 +51,18 @@
     :criteria    {:distance {:label "Distance (meters)"
                              :type  :number}}}})
 
-(defmulti compute-coverage-polygon (fn [service point criteria] (:algorithm criteria)))
+;; Coverage computation
+
+(defmulti compute-coverage-polygon (fn [service coords criteria] (:algorithm criteria)))
 
 (defmethod compute-coverage-polygon :default
-  [service point criteria]
+  [service coords criteria]
   (throw (IllegalArgumentException. "Missing or invalid coverage algorithm")))
 
 (defmethod compute-coverage-polygon :pgrouting-alpha
-  [{:keys [db]} point criteria]
+  [{:keys [db]} coords criteria]
   (let [db-spec   (:spec db)
-        pg-point  (pg/make-point point)
+        pg-point  (pg/make-point coords)
         threshold (:driving-time criteria)
         result    (pgrouting/compute-coverage db-spec pg-point threshold)]
     (case (:result result)
@@ -43,24 +70,28 @@
       (throw (RuntimeException. (str "pgRouting coverage computation failed: " (:result result)))))))
 
 (defmethod compute-coverage-polygon :simple-buffer
-  [{:keys [db]} point criteria]
+  [{:keys [db]} coords criteria]
   (let [db-spec   (:spec db)
-        pg-point  (pg/make-point point)
+        pg-point  (pg/make-point coords)
         distance  (:distance criteria)
         result    (simple/compute-coverage db-spec pg-point distance)]
     (case (:result result)
       "ok" (:polygon result)
       (throw (RuntimeException. (str "Simple buffer coverage computation failed: " (:result result)))))))
 
+(def default-grid-align-options
+  {:ref-coords {:lat 0 :lon 0}
+   :resolution {:x-res 1/1200 :y-res 1/1200}})
+
 (defrecord CoverageService [db]
   boundary/CoverageService
   (supported-algorithms [this]
     supported-algorithms)
-  (compute-coverage [this point criteria]
-    (let [polygon (compute-coverage-polygon this point criteria)
-          raster-options (merge {:ref-coords {:lat 0 :lng 0}
-                                 :resolution {:x-res 1/1200 :y-res 1/1200}}
-                                criteria)]
+  (compute-coverage [this coords criteria]
+    (s/assert ::pg/coords coords)
+    (s/assert ::criteria criteria)
+    (let [polygon (compute-coverage-polygon this coords criteria)
+          raster-options (merge default-grid-align-options criteria)]
       (when-let [raster-path (:raster criteria)]
         (rasterize/rasterize polygon raster-path raster-options))
       polygon)))
@@ -75,19 +106,32 @@
 
 (comment
 
+  (s/check-asserts true)
+
   (def service (second (ig/find-derived-1 integrant.repl.state/system :planwise.component/coverage)))
 
   (boundary/supported-algorithms service)
 
-  (boundary/compute-coverage service
-                             {:lat -3.0361 :lon 40.1333}
-                             {:algorithm :pgrouting-alpha
-                              :driving-time 60
-                              :raster "/tmp/pgr.tif"})
+  (time
+   (boundary/compute-coverage service
+                              {:lat -3.0361 :lon 40.1333}
+                              {:algorithm :pgrouting-alpha
+                               :driving-time 60
+                               :raster "/tmp/pgr.tif"}))
 
-  (boundary/compute-coverage service
-                             {:lat -3.0361 :lon 40.1333}
-                             {:algorithm :simple-buffer
-                              :distance 30000
-                              :raster "/tmp/buffer.tif"})
+  (time
+   (boundary/compute-coverage service
+                              {:lat -3.0361 :lon 40.1333}
+                              {:algorithm :simple-buffer
+                               :distance 30000
+                               :raster "/tmp/buffer.tif"}))
+
+  (time
+   (boundary/compute-coverage service
+                              {:lat -1.2741 :lon 36.7931}
+                              {:algorithm :pgrouting-alpha
+                               :driving-time 60
+                               :raster "/tmp/nairobi.tif"
+                               :ref-coords {:lat 5.4706946 :lon 33.9126084}
+                               :resolution {:x-res 0.0008333 :y-res 0.0008333}}))
   )

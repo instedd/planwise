@@ -1,4 +1,6 @@
 (ns planwise.component.coverage.rasterize
+  (:require [clojure.spec.alpha :as s]
+            [planwise.util.pg :as pg])
   (:import [org.gdal.gdal gdal]
            [org.gdal.ogr ogr Feature FeatureDefn Geometry]
            [org.gdal.gdalconst gdalconst]
@@ -60,33 +62,43 @@
   [geom]
   (let [env (double-array 4)]
     (.GetEnvelope geom env)
-    (let [[min-lng max-lng min-lat max-lat] env]
-      {:min-lng min-lng
+    (let [[min-lon max-lon min-lat max-lat] env]
+      {:min-lon min-lon
        :min-lat min-lat
-       :max-lng max-lng
+       :max-lon max-lon
        :max-lat max-lat})))
 
 (defn compute-aligned-raster-extent
-  [{:keys [min-lng min-lat max-lng max-lat] :as envelope}
-   {ref-lat :lat ref-lng :lng}
+  [{:keys [min-lon min-lat max-lon max-lat] :as envelope}
+   {ref-lat :lat ref-lon :lon}
    {:keys [x-res y-res]}]
-  (let [off-lng    (- min-lng ref-lng)
+  (let [off-lon    (- min-lon ref-lon)
         off-lat    (- max-lat ref-lat)
-        off-width  (Math/floor (/ off-lng x-res))
+        off-width  (Math/floor (/ off-lon x-res))
         off-height (Math/ceil (/ off-lat y-res))
-        ul-lng     (+ ref-lng (* x-res off-width))
+        ul-lon     (+ ref-lon (* x-res off-width))
         ul-lat     (+ ref-lat (* y-res off-height))
-        env-width  (- max-lng ul-lng)
+        env-width  (- max-lon ul-lon)
         env-height (- ul-lat min-lat)
         width      (inc (int (Math/ceil (/ env-width x-res))))
         height     (inc (int (Math/ceil (/ env-height y-res))))]
     {:width        width
      :height       height
-     :geotransform [ul-lng x-res         0
+     :geotransform [ul-lon x-res         0
                     ul-lat     0 (- y-res)]}))
+
+(s/def ::ref-coords ::pg/coords)
+(s/def ::pixel-resolution number?)
+(s/def ::x-res ::pixel-resolution)
+(s/def ::y-res ::pixel-resolution)
+(s/def ::resolution (s/keys :req-un [::x-res ::y-res]))
+(s/def ::rasterize-options (s/keys :req-un [::ref-coords ::resolution]))
 
 (defn rasterize
   [polygon output-path {:keys [ref-coords resolution] :as options}]
+  {:pre [(s/valid? ::pg/polygon polygon)
+         (s/valid? string? output-path)
+         (s/valid? ::rasterize-options options)]}
   (let [srs            (srs-from-pg polygon)
         geometry       (pg->geometry polygon)
         envelope       (envelope geometry)
@@ -110,10 +122,10 @@
   (def pg (coverage/compute-coverage (:planwise.component/coverage integrant.repl.state/system)
                                      {:lat -3.0361 :lon 40.1333}
                                      {:algorithm :pgrouting-alpha
-                                      :driving-time 45}))
+                                      :driving-time 60}))
 
-  ;; (def ref-coords {:lat 5.470694601152364 :lng 33.912608425216725})
-  (def ref-coords {:lng 39.727577500000002 :lat -2.631561400000000})
+  ;; (def ref-coords {:lat 5.470694601152364 :lon 33.912608425216725})
+  (def ref-coords {:lon 39.727577500000002 :lat -2.631561400000000})
   ;; (def pixel-resolution {:x-res 8.333000000000001E-4 :y-res 8.333000000000001E-4})
   (def pixel-resolution {:x-res 1/1200 :y-res 1/1200})
 
