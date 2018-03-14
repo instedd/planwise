@@ -18,7 +18,7 @@
 (s/def ::driving-time #{30 60 90 120})
 (s/def ::pgrouting-alpha-criteria (s/keys :req-un [::driving-time]))
 
-(s/def ::distance pos?)
+(s/def ::distance #{5 10 20 50 100})
 (s/def ::simple-buffer-criteria (s/keys :req-un [::distance]))
 
 (defmulti criteria-algo :algorithm)
@@ -48,8 +48,13 @@
    :simple-buffer
    {:label       "Distance buffer"
     :description "Simple buffer around origin for testing purposes only"
-    :criteria    {:distance {:label "Distance (meters)"
-                             :type  :number}}}})
+    :criteria    {:distance {:label   "Distance"
+                             :type    :enum
+                             :options [{:value 5   :label "5 km"}
+                                       {:value 10  :label "10 km"}
+                                       {:value 20  :label "20 km"}
+                                       {:value 50  :label "50 km"}
+                                       {:value 100 :label "100 km"}]}}}})
 
 ;; Coverage computation
 
@@ -71,10 +76,10 @@
 
 (defmethod compute-coverage-polygon :simple-buffer
   [{:keys [db]} coords criteria]
-  (let [db-spec   (:spec db)
-        pg-point  (pg/make-point coords)
-        distance  (:distance criteria)
-        result    (simple/compute-coverage db-spec pg-point distance)]
+  (let [db-spec  (:spec db)
+        pg-point (pg/make-point coords)
+        distance (* 1000 (:distance criteria))
+        result   (simple/compute-coverage db-spec pg-point distance)]
     (case (:result result)
       "ok" (:polygon result)
       (throw (RuntimeException. (str "Simple buffer coverage computation failed: " (:result result)))))))
@@ -123,7 +128,7 @@
    (boundary/compute-coverage service
                               {:lat -3.0361 :lon 40.1333}
                               {:algorithm :simple-buffer
-                               :distance 30000
+                               :distance 20
                                :raster "/tmp/buffer.tif"}))
 
   (time
