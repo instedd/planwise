@@ -33,11 +33,16 @@ SOURCE_ROW=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGR
 RASTER_FILENAME=`echo $SOURCE_ROW | cut -d \| -f 3`
 echo -n "   -> Filename to process: $(echo $RASTER_FILENAME) ... "
 
-if [ ! -e ${DATA_PATH}/$RASTER_FILENAME ]; then
+RASTER=$DATA_PATH/$RASTER_FILENAME
+if [ ! -e $RASTER ]; then
   echo " not found."
   exit 1
 fi
 echo " found!"
+
+# Generate overviews file
+gdaladdo $RASTER -ro --config COMPRESS_OVERVIEW DEFLATE -r average 2 4 8 16 32 64
+
 #TODO:
   # gdaladdo $RASTER -r average 2 4 8 16 32 64
   # gdaladdo KEN_popmap15_v2b.tif -ro --config COMPRESS_OVERVIEW DEFLATE -r average 2 4 8 16 32 64
@@ -48,8 +53,8 @@ mkdir -p ${DATA_PATH}/populations/maps/${PARAM_ID_SOURCE}
 
 for region in $REGIONS; do
   ID=`echo $region | cut -d \| -f 1`
-  COUNTRY=`echo $region | cut -d \| -f 2`
-  RASTER=$DATA_PATH/$RASTER_FILENAME
+  # COUNTRY=`echo $region | cut -d \| -f 2`
+  # RASTER=$DATA_PATH/$RASTER_FILENAME
 
   DATA_TARGET=${DATA_PATH}/populations/data/${PARAM_ID_SOURCE}/${ID}.tif
   VIZ_TARGET=${DATA_PATH}/populations/maps/${PARAM_ID_SOURCE}/${ID}.tif

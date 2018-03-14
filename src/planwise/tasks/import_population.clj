@@ -17,9 +17,6 @@
 (defn run-script
   [script-with-options]
   (comment (println script-with-options))
-  ; (let [sh-result (apply shell/sh script-with-options)]
-  ;   (println (:out sh-result))
-  ;   (println (:err sh-result)))
   (apply shell/sh script-with-options)
   )
 
@@ -43,8 +40,6 @@
   [name filename]
   (sql-insert! :population_sources {:name name :tif_file filename}))
 
-
-
 (defn add-country-regions
   [country]
   (run-script [(add-script-path "load-regions") country]))
@@ -62,14 +57,6 @@
   (println (:id source))
   (println (:name source))
   (println (:tif_file source)))
-
-; (defn generate-print-header
-;   [verbose]
-;   (fn [script-result]
-;     (let [lines (if verbose [0 1 2] [1])]
-;       (doseq [line lines]
-;         (println (nth script-result line)))
-;       (identity script-result))))
 
 (defn print-add-country-regions-header
   [verbose country]
