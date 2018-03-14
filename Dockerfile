@@ -3,7 +3,7 @@ FROM openjdk:8-jre
 # Install package dependencies and add precompiled binary
 RUN for i in {1..5}; do \
        (apt-get update \
-        && apt-get -y install postgresql-client libboost-program-options-dev libpq-dev gdal-bin python-gdal osm2pgrouting \
+        && apt-get -y install postgresql-client libboost-program-options-dev libpq-dev gdal-bin python-gdal libgdal-java osm2pgrouting \
         && break) \
        || (sleep 5; false); done \
   && apt-get clean \
