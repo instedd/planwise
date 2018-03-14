@@ -35,9 +35,7 @@
 (def supported-algorithms
   {:pgrouting-alpha
    {:label       "Travel by car"
-    :description "Computes all reachable OSM nodes from the nearest to the
-                  starting point and then applies the alpha shape algorithm to
-                  the resulting points"
+    :description "Computes all reachable OSM nodes from the nearest to the starting point and then applies the alpha shape algorithm to the resulting points"
     :criteria    {:driving-time {:label   "Driving time"
                                  :type    :enum
                                  :options [{:value 30  :label "30 minutes"}
