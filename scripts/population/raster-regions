@@ -2,7 +2,7 @@
 set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
-source env-vars
+source $(dirname "${BASH_SOURCE}")/env-vars
 
 # Creates a byte-sized raster file data/regions/REGIONID.tif,
 # with a mask of each region, ie a value of 255 for the region.
@@ -27,8 +27,6 @@ echo "   -> Rasterizing regions"
 
 PARAM_COUNTRY=$1
 PARAM_ID_SOURCE=$2
-echo $PARAM_COUNTRY
-echo $PARAM_ID_SOURCE
 
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-source env-vars
+source $(dirname "${BASH_SOURCE}")/env-vars
 
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}/cpp
 make clean all

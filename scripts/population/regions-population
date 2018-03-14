@@ -2,7 +2,7 @@
 set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
-source env-vars
+source $(dirname "${BASH_SOURCE}")/env-vars
 
 # Creates raster files data/populations/(data|maps)/REGIONID.tif with the population
 # values of each REGIONID in the regions table and those same values
@@ -38,25 +38,21 @@ if [ ! -e ${DATA_PATH}/$RASTER_FILENAME ]; then
   exit 1
 fi
 echo " found!"
+#TODO:
+  # gdaladdo $RASTER -r average 2 4 8 16 32 64
+  # gdaladdo KEN_popmap15_v2b.tif -ro --config COMPRESS_OVERVIEW DEFLATE -r average 2 4 8 16 32 64
+#
 
-mkdir -p ${DATA_PATH}/populations/data
-mkdir -p ${DATA_PATH}/populations/maps
+mkdir -p ${DATA_PATH}/populations/data/${PARAM_ID_SOURCE}
+mkdir -p ${DATA_PATH}/populations/maps/${PARAM_ID_SOURCE}
 
 for region in $REGIONS; do
   ID=`echo $region | cut -d \| -f 1`
   COUNTRY=`echo $region | cut -d \| -f 2`
   RASTER=$DATA_PATH/$RASTER_FILENAME
-  DATA_URL="https://s3.amazonaws.com/planwise/data"
-  RASTER_URL=${DATA_URL}/$RASTER_FILENAME
 
-  if [[ ! -e $RASTER ]]; then
-    echo "   -> Downloading population file for $COUNTRY"
-    curl -f -o $RASTER $RASTER_URL || (curl -f ${RASTER_URL}.gz | gzip -d > $RASTER)
-    gdaladdo $RASTER -r average 2 4 8 16 32 64
-  fi
-
-  DATA_TARGET=${DATA_PATH}/populations/data/${ID}.tif
-  VIZ_TARGET=${DATA_PATH}/populations/maps/${ID}.tif
+  DATA_TARGET=${DATA_PATH}/populations/data/${PARAM_ID_SOURCE}/${ID}.tif
+  VIZ_TARGET=${DATA_PATH}/populations/maps/${PARAM_ID_SOURCE}/${ID}.tif
 
   if [[ ! -e $DATA_TARGET || ! -e $VIZ_TARGET || "`gdalinfo $DATA_TARGET | grep -e POPULATION_SUM -e POPULATION_MAX -e PIXEL_AREA_M2 | wc -l`" -ne 3 ]]; then
 
