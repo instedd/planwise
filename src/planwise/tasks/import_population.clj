@@ -89,12 +89,11 @@
   (println (str "* Running script to raster all regions from: " country))
   (when verbose (println (str "***"))))
 
-(defn generate-print-result
-  [verbose]
-  (fn [script-result]
-    (when verbose
-      (println (:out script-result))
-      (println (:err script-result)))))
+(defn print-script-result
+  [verbose script-result]
+  (when verbose
+    (println (:out script-result))
+    (println (:err script-result))))
 
 ;
 (defn -main
@@ -113,20 +112,23 @@
 
   (let [verbose (in? "--verbose" options)
         sql-result (add-population-source name filename)
-        print-result (generate-print-result verbose)]
+        print-result #(print-script-result verbose %)
+        print-header-add-country-regions #(print-add-country-regions-header verbose %)
+        print-header-calculate-country-population #(print-calculate-country-population-header verbose %1 %2)
+        print-header-raster-all-regions #(print-raster-all-regions-header verbose %)]
 
     (doseq [ret sql-result]
       (comment (print-source ret))
 
-      (print-add-country-regions-header verbose country)
+      (print-header-add-country-regions country)
       (-> (add-country-regions country) ;load-regions
           (print-result))
 
-      (print-calculate-country-population-header verbose country (:id ret))
+      (print-header-calculate-country-population country (:id ret))
       (-> (calculate-country-population country (:id ret)) ;regions-population
           (print-result))
 
-      (print-raster-all-regions-header verbose country)
+      (print-header-raster-all-regions country)
       (-> (raster-all-regions country (:id ret)) ;raster-regions
           (print-result))
     ))
