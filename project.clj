@@ -69,6 +69,7 @@
                  [org.webjars/leaflet "0.7.7"]
 
                  ; Database access
+                 [org.clojure/java.jdbc "0.7.5"]
                  [org.postgresql/postgresql "42.2.1"]
                  [net.postgis/postgis-jdbc "2.2.1"
                   :exclusions [postgresql
@@ -80,8 +81,8 @@
                  ; Misc
                  [org.clojure/data.csv "0.1.4"]
                  [com.draines/postal "2.0.0"]
-
-                 [funcool/cuerdas "2.0.3"]]
+                 [funcool/cuerdas "2.0.3"]
+                 [org.gdal/gdal "2.2.0"]]
 
   :plugins [[duct/lein-duct "0.10.6"]]
 

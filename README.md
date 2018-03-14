@@ -193,11 +193,25 @@ $ source ./env
 
 ### GDAL
 
-Certain processing scripts rely on GDAL binaries for processing, with PostgreSQL
-support. Install it with:
+The project needs GDAL 2.x with support for PostgreSQL and Java bindings. On Mac
+OSX you can use the osgeo4mac Homebrew tap to get it.
 
 ```bash
-$ brew install gdal --with-postgresql
+$ brew tap osgeo/osgeo4mac
+$ brew install gdal2 --with-swig-java --with-postgresql
+```
+
+Since `gdal2` is keg-only, you need to either force link it with `brew link
+--force gdal` or add `/usr/local/opt/gdal2/bin` to your PATH environment
+variable.
+
+You also need to add the make the JNI libraries discoverable by the JVM. For
+development, an easy and non-intrusive way of doing it is adding the
+`java.library.path` system property in your `profiles.clj`. Eg.
+
+```clojure
+;; Local profile overrides
+{:profiles/dev {:jvm-opts ["-Djava.library.path=/usr/local/opt/gdal2/lib"]}}
 ```
 
 ### Binaries

@@ -8,11 +8,11 @@
             [duct.core.repl :as duct-repl]
             [duct.repl.figwheel :refer [cljs-repl]]
             [eftest.runner :as eftest]
+            [clojure.spec.alpha :as s]
             [integrant.core :as ig]
             [integrant.repl :refer [clear halt go init prep reset]]
             [integrant.repl.state :refer [config system]]
             [taoensso.timbre :as timbre]
-            [schema.core :as s]
             [planwise.config]
             [planwise.repl :refer :all]))
 
@@ -24,9 +24,6 @@
                                       "org.apache.http.*"
                                       "org.eclipse.jetty.*"]})
 
-;; ;; Activate Schema validation for *all* functions
-;; (s/set-fn-validation! true)
-
 (defn read-config []
   (duct/read-config (io/resource "dev.edn")))
 
@@ -36,3 +33,5 @@
   (load "local"))
 
 (integrant.repl/set-prep! (comp duct/prep read-config))
+
+(s/check-asserts true)

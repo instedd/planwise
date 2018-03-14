@@ -35,13 +35,14 @@
 
  :planwise.router/api
  {:middleware [#ig/ref :planwise.middleware/api]
-  :handlers   [#ig/ref :planwise.endpoint/monitor
-               #ig/ref :planwise.endpoint/facilities
-               #ig/ref :planwise.endpoint/regions
-               #ig/ref :planwise.endpoint/projects
-               #ig/ref :planwise.endpoint/routing
+  :handlers   [#ig/ref :planwise.endpoint/coverage
+               #ig/ref :planwise.endpoint/datasets
                #ig/ref :planwise.endpoint/datasets2
-               #ig/ref :planwise.endpoint/datasets]}
+               #ig/ref :planwise.endpoint/facilities
+               #ig/ref :planwise.endpoint/monitor
+               #ig/ref :planwise.endpoint/projects
+               #ig/ref :planwise.endpoint/regions
+               #ig/ref :planwise.endpoint/routing]}
 
  :planwise.router/app
  {:middleware [#ig/ref :planwise.middleware/app]
@@ -95,28 +96,8 @@
  :planwise.endpoint/auth
  {:auth       #ig/ref :planwise.component/auth}
 
- :planwise.endpoint/home
- {:maps       #ig/ref :planwise.component/maps
-  :auth       #ig/ref :planwise.component/auth
-  :resmap     #ig/ref :planwise.component/resmap}
-
- :planwise.endpoint/monitor
- {}
-
- :planwise.endpoint/facilities
- {:facilities #ig/ref :planwise.component/facilities
-  :maps       #ig/ref :planwise.component/maps}
-
- :planwise.endpoint/regions
- {:regions    #ig/ref :planwise.component/regions}
-
- :planwise.endpoint/projects
- {:projects   #ig/ref :planwise.component/projects
-  :facilities #ig/ref :planwise.component/facilities
-  :maps       #ig/ref :planwise.component/maps}
-
- :planwise.endpoint/routing
- {:routing    #ig/ref :planwise.component/routing}
+ :planwise.endpoint/coverage
+ {:coverage   #ig/ref :planwise.component/coverage}
 
  :planwise.endpoint/datasets
  {:datasets   #ig/ref :planwise.component/datasets
@@ -127,9 +108,32 @@
  :planwise.endpoint/datasets2
  {:datasets2   #ig/ref :planwise.component/datasets2}
 
+ :planwise.endpoint/home
+ {:maps       #ig/ref :planwise.component/maps
+  :auth       #ig/ref :planwise.component/auth
+  :resmap     #ig/ref :planwise.component/resmap}
+
+ :planwise.endpoint/facilities
+ {:facilities #ig/ref :planwise.component/facilities
+  :maps       #ig/ref :planwise.component/maps}
+
+ :planwise.endpoint/monitor
+ {}
+
+ :planwise.endpoint/projects
+ {:projects   #ig/ref :planwise.component/projects
+  :facilities #ig/ref :planwise.component/facilities
+  :maps       #ig/ref :planwise.component/maps}
+
+ :planwise.endpoint/regions
+ {:regions    #ig/ref :planwise.component/regions}
+
  :planwise.endpoint/resmap-auth
- {:auth   #ig/ref :planwise.component/auth
-  :resmap #ig/ref :planwise.component/resmap}
+ {:auth       #ig/ref :planwise.component/auth
+  :resmap     #ig/ref :planwise.component/resmap}
+
+ :planwise.endpoint/routing
+ {:routing    #ig/ref :planwise.component/routing}
 
 
  ;; Components
@@ -141,6 +145,9 @@
   :guisso-client-secret #duct/env ["GUISSO_CLIENT_SECRET" Str]
   :jwe-options          #ig/ref :planwise.auth/jwe-options
   :jwe-secret           #ig/ref :planwise.auth/jwe-secret}
+
+ :planwise.component/coverage
+ {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/datasets
  {:db          #ig/ref :duct.database/sql}
