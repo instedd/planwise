@@ -26,3 +26,5 @@
   (dispatch [:navigate {:page :projects2, :section :index}]))
 (defroute projects2-show "/projects2/:id" [id]
   (dispatch [:navigate {:page :projects2, :id id, :section :show}]))
+(defroute design "/_design" []
+  (dispatch [:navigate {:page :design}]))

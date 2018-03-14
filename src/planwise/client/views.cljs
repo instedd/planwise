@@ -8,7 +8,8 @@
             [planwise.client.projects2.views :as projects2]
             [planwise.client.datasets2.views :as datasets2]
             [planwise.client.current-project.views :as current-project]
-            [planwise.client.datasets.views :as datasets]))
+            [planwise.client.datasets.views :as datasets]
+            [planwise.client.design.views :as design]))
 
 
 (def nav-items
@@ -59,8 +60,10 @@
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]
     (fn []
-      [:div
-       [nav-bar]
-       [content-pane @current-page]
-       [:footer
-        [:span.version (str "Version: " config/app-version)]]])))
+      (cond
+        (= @current-page :design) [design/app]
+        :else [:div
+                [nav-bar]
+                [content-pane @current-page]
+                [:footer
+                  [:span.version (str "Version: " config/app-version)]]]))))
