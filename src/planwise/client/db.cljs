@@ -27,4 +27,6 @@
    :datasets2           datasets2/initial-db
 
    ;; Datasets
-   :datasets            datasets/initial-db})
+   :datasets            datasets/initial-db
+
+   :coverage            {}})

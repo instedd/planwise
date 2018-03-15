@@ -7,3 +7,8 @@
  :datasets2/list
  (fn [db _]
    (get-in db [:datasets2 :list])))
+
+(rf/reg-sub
+ :datasets2/view-state
+ (fn [db _]
+   (get-in db [:datasets2 :view-state])))
