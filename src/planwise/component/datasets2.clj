@@ -1,5 +1,6 @@
 (ns planwise.component.datasets2
-  (:require [integrant.core :as ig]
+  (:require [planwise.boundary.datasets2 :as boundary]
+            [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.data.csv :as csv]
             [clojure.java.jdbc :as jdbc]
@@ -17,32 +18,13 @@
   [store]
   (get-in store [:db :spec]))
 
-;; ----------------------------------------------------------------------
-;; Service definition
-
-(defrecord SitesDatasetsStore [db])
-
-(defn datasets2-store
-  "Constructs a Datasets2 Store component"
-  []
-  (map->SitesDatasetsStore {}))
-
-(defn create-dataset
-  [store name owner-id]
-  (db-create-dataset! (get-db store) {:name name
-                                      :owner-id owner-id}))
-
-(defn list-datasets
-  [store owner-id]
-  (db-list-datasets (get-db store) {:owner-id owner-id}))
-
 (defn- csv-data->maps
   [csv-data]
   (map zipmap
        (->> (first csv-data)
             (map keyword)
             repeat)
-    (rest csv-data)))
+       (rest csv-data)))
 
 (defn- import-site
   [store dataset-id version csv-site-data]
@@ -71,9 +53,32 @@
   (db-find-sites (get-db store) {:dataset-id dataset-id
                                  :version version}))
 
+;; ----------------------------------------------------------------------
+;; Service definition
+
+(defn create-dataset
+  [store name owner-id]
+  (db-create-dataset! (get-db store) {:name name
+                                      :owner-id owner-id}))
+
+(defn list-datasets
+  [store owner-id]
+  (db-list-datasets (get-db store) {:owner-id owner-id}))
+
 (defn get-dataset
   [store dataset-id]
   (first (db-find-dataset (get-db store) {:id dataset-id})))
+
+(defrecord SitesDatasetsStore [db]
+  boundary/Datasets2
+  (list-datasets [store owner-id]
+    (list-datasets store owner-id))
+  (get-dataset [store dataset-id]
+    (get-dataset store dataset-id))
+  (create-dataset [store name owner-id]
+    (create-dataset store name owner-id))
+  (import-csv [store dataset-id csv-file]
+    (csv-to-sites store dataset-id csv-file)))
 
 (defmethod ig/init-key :planwise.component/datasets2
   [_ config]

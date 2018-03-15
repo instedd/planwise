@@ -1,14 +1,12 @@
 (ns planwise.endpoint.datasets2
-  (:require [compojure.core :refer :all]
+  (:require [planwise.boundary.datasets2 :as datasets2]
+            [compojure.core :refer :all]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [ring.util.response :refer [response status not-found]]
             [planwise.util.ring :as util]
-            [clojure.core.reducers :as r]
             [buddy.auth :refer [authenticated?]]
-            [buddy.auth.accessrules :refer [restrict]]
-            [planwise.model.ident :as ident]
-            [planwise.component.datasets2 :as datasets2]))
+            [buddy.auth.accessrules :refer [restrict]]))
 
 (timbre/refer-timbre)
 
@@ -28,7 +26,7 @@
            dataset-id (:id (datasets2/create-dataset service name user-id))]
        (response (do
                     (datasets2/get-dataset service dataset-id)
-                    (datasets2/csv-to-sites service dataset-id importing-file)))))))
+                    (datasets2/import-csv service dataset-id importing-file)))))))
 
 
 (defn datasets2-endpoint
