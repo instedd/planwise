@@ -11,7 +11,7 @@
    "New Dataset"])
 
 (defn no-datasets2-view []
-  [:div
+  [:div.empty-list
    [common/icon :box]
    [:p "You have no datasets yet"]
    [:div

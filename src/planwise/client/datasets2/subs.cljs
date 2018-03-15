@@ -12,3 +12,8 @@
  :datasets2/view-state
  (fn [db _]
    (get-in db [:datasets2 :view-state])))
+
+(rf/reg-sub
+ :datasets2/last-error
+ (fn [db _]
+   (get-in db [:datasets2 :last-error])))

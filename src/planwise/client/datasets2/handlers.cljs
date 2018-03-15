@@ -32,25 +32,30 @@
  :datasets2/begin-new-dataset
  in-datasets2
  (fn [db _]
-   (assoc db :view-state :create-dialog)))
+   (assoc db
+          :view-state :create-dialog
+          :last-error nil)))
 
 (rf/reg-event-db
  :datasets2/cancel-new-dataset
  in-datasets2
  (fn [db _]
-   (assoc db :view-state :list)))
+   (assoc db
+          :view-state :list
+          :last-error nil)))
 
 (rf/reg-event-fx
  :datasets2/create-load-dataset
  in-datasets2
- (fn [{:keys [db]} [_ {:keys [name csv-file coverage-alg]}]]
-   (let [form-data (doto (js/FormData.)
-                     (.append "name" name)
-                     (.append "file" csv-file)
-                     (.append "coverage-alg" coverage-alg))]
-     {:api (assoc (api/creating-dataset-with-uploaded-sites! form-data)
-                  :on-success [:datasets2/dataset-created])
-      :db  (assoc db :view-state :creating)})))
+ (fn [{:keys [db]} [_ {:keys [name csv-file coverage-algorithm]}]]
+   {:api (assoc (api/create-dataset-with-csv {:name name
+                                              :csv-file csv-file
+                                              :coverage-algorithm coverage-algorithm})
+                :on-success [:datasets2/dataset-created]
+                :on-failure [:datasets2/dataset-not-created])
+    :db  (assoc db
+                :view-state :creating
+                :last-error nil)}))
 
 (rf/reg-event-db
  :datasets2/dataset-created
@@ -59,3 +64,11 @@
    (-> db
        (assoc :view-state :list)
        (update :list asdf/swap! into [dataset]))))
+
+(rf/reg-event-db
+ :datasets2/dataset-not-created
+ in-datasets2
+ (fn [db [_ err]]
+   (assoc db
+          :view-state :create-dialog
+          :last-error (:status-text err))))

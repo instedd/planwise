@@ -4,6 +4,7 @@
 
 (def initial-db
   {:view-state   :list
+   :last-error   nil
    :list         (asdf/new nil)})
 
 (defn show-dialog?

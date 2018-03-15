@@ -24,7 +24,7 @@
                       #(rf/dispatch [:datasets2/create-load-dataset
                                      {:name @name
                                       :csv-file @js-file
-                                      :coverage-alg @coverage}]))}
+                                      :coverage-algorithm @coverage}]))}
          [:div.title
           [:h1 "New dataset"]
           [common/close-button {:on-click cancel-fn}]]
@@ -48,6 +48,10 @@
            :on-change #(reset! coverage %)
            :filter-box? false
            :model @coverage]]
+
+         (when-let [last-error @(rf/subscribe [:datasets2/last-error])]
+           [:div.error
+            (str last-error)])
 
          [:div.actions
           [:button.primary
