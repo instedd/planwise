@@ -5,6 +5,7 @@
             [planwise.client.projects.handlers :as projects]
             [planwise.client.current-project.handlers :as current-project]
             [planwise.client.datasets.handlers]
+            [planwise.client.projects2.handlers]
             [planwise.client.datasets2.handlers]
             [planwise.client.regions.handlers :as regions]
             [re-frame.core :as rf]))

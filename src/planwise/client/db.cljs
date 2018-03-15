@@ -1,6 +1,7 @@
 (ns planwise.client.db
   (:require [planwise.client.datasets.db :as datasets]
             [planwise.client.projects.db :as projects]
+            [planwise.client.projects2.db :as projects2]
             [planwise.client.datasets2.db :as datasets2]
             [planwise.client.current-project.db :as current-project]))
 
@@ -13,6 +14,9 @@
    ;; Projects
    :projects            projects/initial-db
 
+   ;; Projects2
+   :projects2           projects2/initial-db
+
    ;; Currently selected project
    :current-project     current-project/initial-db
 
@@ -20,7 +24,7 @@
    :regions             {}
 
    ;; Datasets2
-   :datasets2          datasets2/initial-db
+   :datasets2           datasets2/initial-db
 
    ;; Datasets
    :datasets            datasets/initial-db})

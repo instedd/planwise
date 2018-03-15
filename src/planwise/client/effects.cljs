@@ -119,3 +119,43 @@
   :key option is not supported."
   [request]
   (-> request request->options-callback ajax/ajax-request))
+
+(def deferred-actions (atom {}))
+
+(defn dispatch-debounce
+  [dispatch-map-or-seq]
+  (let [cancel-timeout (fn [id]
+                          (when-let [deferred (get @deferred-actions id)]
+                            (js/clearTimeout (:timer deferred))
+                            (swap! deferred-actions dissoc id)))
+        run-action (fn [action event]
+                      (cond
+                        (= :dispatch action) (rf/dispatch event)
+                        (= :dispatch-n action) (doseq [e event]
+                                                      (rf/dispatch e))))]
+    (doseq [{:keys [id timeout action event]}
+            (cond-> dispatch-map-or-seq
+              (not (sequential? dispatch-map-or-seq)) vector)]
+      (cond
+        (#{:dispatch :dispatch-n} action)
+        (do (cancel-timeout id)
+            (swap! deferred-actions assoc id
+                    {:timer (js/setTimeout (fn []
+                                            (cancel-timeout id)
+                                            (run-action action event))
+                                          timeout)}))
+
+        (= :cancel action)
+        (cancel-timeout id)
+
+        (= :flush action)
+        (when-let [{:keys [id action event]} (get @deferred-actions id)]
+          (cancel-timeout id)
+          (run-action action event))
+
+        :else
+        (throw (js/Error (str ":dispatch-debounce invalid action " action)))))))
+  
+(rf/reg-fx 
+  :dispatch-debounce 
+  dispatch-debounce)

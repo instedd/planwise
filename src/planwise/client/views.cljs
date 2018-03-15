@@ -5,6 +5,7 @@
             [planwise.client.components.nav :as nav]
             [planwise.client.components.common :refer [icon]]
             [planwise.client.projects.views :as projects]
+            [planwise.client.projects2.views :as projects2]
             [planwise.client.datasets2.views :as datasets2]
             [planwise.client.current-project.views :as current-project]
             [planwise.client.datasets.views :as datasets]))
@@ -12,6 +13,7 @@
 
 (def nav-items
   [{:item :home :href (routes/home) :title "Projects"}
+   {:item :projects2 :href (routes/projects2) :title "Projects*"}
    {:item :datasets :href (routes/datasets) :title "Datasets"}
    {:item :datasets :href (routes/datasets2) :title "Datasets*"}])
 
@@ -44,6 +46,9 @@
 
 (defmethod content-pane :projects []
   [current-project/project-page])
+
+(defmethod content-pane :projects2 []
+  [projects2/project2-view])
 
 (defmethod content-pane :datasets []
   [datasets/datasets-page])

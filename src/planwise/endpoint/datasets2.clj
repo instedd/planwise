@@ -12,10 +12,6 @@
 
 (timbre/refer-timbre)
 
-(defn- usable-field?
-  [field]
-  (#{"select_one"} (:kind field)))
-
 (defn- datasets2-routes
   [service]
   (routes
