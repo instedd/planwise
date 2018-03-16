@@ -8,6 +8,13 @@
   {:method    :post
    :section   :index
    :uri       "/api/projects2"})
+   
+(defn- list-projects 
+  []
+  {:method    :get
+   :section   :index
+   :uri       (str "/api/projects2")})
+
 
 (defn- update-project
   [project-id name]
@@ -21,3 +28,4 @@
   {:method    :get
    :params    {:id id}
    :uri       (str "/api/projects2/" id)})
+

@@ -17,20 +17,26 @@
   (routes
    (POST "/" request
      (let [user-id    (util/request-user-id request)
-           project-id (projects2/create-project service user-id)]
-      (response project-id)))
+           project-id (:id (projects2/create-project service user-id))
+           project    (first (projects2/get-project service (Integer. project-id)))]
+      (response project)))
 
    (PUT "/:id" [id name :as request]
      (let [user-id    (util/request-user-id request)
            project-id (Integer. id)]
-        (projects2/update-project service project-id name)))
+      (projects2/update-project service project-id name)))
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
            project (first (projects2/get-project service (Integer. id)))]
        (if (nil? project)
            (not-found project)
-           (response project))))))
+           (response project))))
+
+   (GET "/" request
+      (let [user-id          (util/request-user-id request)
+            list-of-projects (projects2/list-projects service user-id)]
+        (response list-of-projects)))))
 
 
 (defn projects2-endpoint

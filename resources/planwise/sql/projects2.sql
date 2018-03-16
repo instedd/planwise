@@ -12,3 +12,7 @@ UPDATE projects2
 -- :name db-get-project :?
 SELECT * FROM projects2
     WHERE id = :id;
+
+-- :name db-list-projects :?
+SELECT * FROM projects2
+    WHERE "owner-id" = :owner-id;
