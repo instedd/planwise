@@ -50,7 +50,7 @@
            :model @coverage]]
 
          (when-let [last-error @(rf/subscribe [:datasets2/last-error])]
-           [:div.error
+           [:div.error-message
             (str last-error)])
 
          [:div.actions

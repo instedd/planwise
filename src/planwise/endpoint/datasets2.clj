@@ -15,16 +15,15 @@
   (routes
 
    (GET "/" request
-     (let [user-id (util/request-user-id request)
-           sets (datasets2/list-datasets service user-id)]
-       (response sets)))
+        (let [user-id (util/request-user-id request)
+              sets    (datasets2/list-datasets service user-id)]
+          (response sets)))
 
    (POST "/" [name coverage-algorithm :as request]
-     (let [user-id  (util/request-user-id request)
-           csv-file (:tempfile (get (:multipart-params request) "file"))
-           dataset-id (:id (datasets2/create-dataset service name user-id))]
-       (datasets2/import-csv service dataset-id csv-file)
-       (response (datasets2/get-dataset service dataset-id))))))
+         (let [user-id  (util/request-user-id request)
+               csv-file (:tempfile (get (:multipart-params request) "file"))]
+           (let [result (datasets2/create-and-import-sites service name user-id csv-file)]
+             (response result))))))
 
 
 (defn datasets2-endpoint

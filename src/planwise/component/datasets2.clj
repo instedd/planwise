@@ -42,9 +42,9 @@
 (defn csv-to-sites
   "Generates sites from a dataset-id and a csv file"
   [store dataset-id csv-file]
-  (let [reader          (io/reader csv-file)
+  (let [reader     (io/reader csv-file)
         sites-data (csv-data->maps (csv/read-csv reader))
-        version         (:last-version (db-create-dataset-version! (get-db store) {:id dataset-id}))]
+        version    (:last-version (db-create-dataset-version! (get-db store) {:id dataset-id}))]
     (doall (map #(import-site store dataset-id version %) sites-data))))
 
 (defn sites-by-version
@@ -69,6 +69,15 @@
   [store dataset-id]
   (first (db-find-dataset (get-db store) {:id dataset-id})))
 
+(defn create-and-import-sites
+  [store name owner-id csv-file]
+  (jdbc/with-db-transaction [tx (get-db store)]
+    (let [tx-store (assoc-in store [:db :spec] tx)
+          create-result (create-dataset tx-store name owner-id)
+          dataset-id (:id create-result)]
+      (csv-to-sites tx-store dataset-id csv-file)
+      (get-dataset tx-store dataset-id))))
+
 (defrecord SitesDatasetsStore [db]
   boundary/Datasets2
   (list-datasets [store owner-id]
@@ -78,7 +87,9 @@
   (create-dataset [store name owner-id]
     (create-dataset store name owner-id))
   (import-csv [store dataset-id csv-file]
-    (csv-to-sites store dataset-id csv-file)))
+    (csv-to-sites store dataset-id csv-file))
+  (create-and-import-sites [store name owner-id csv-file]
+    (create-and-import-sites store name owner-id csv-file)))
 
 (defmethod ig/init-key :planwise.component/datasets2
   [_ config]

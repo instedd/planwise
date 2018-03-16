@@ -13,4 +13,7 @@
     "Creates a site dataset for the given owner with the name")
 
   (import-csv [this dataset-id csv-file]
-    "Import a CSV file and add the sites to the dataset"))
+    "Import a CSV file and add the sites to the dataset")
+
+  (create-and-import-sites [this name owner-id csv-file]
+    "Create and import a CSV file atomically"))

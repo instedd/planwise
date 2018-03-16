@@ -5,8 +5,9 @@
 
  :duct.server/figwheel
  {:reload-clj-files false
+  :css-dirs ["target/resources/planwise/public/css"]
   :builds [{:id "dev"
-            :source-paths ["dev/src" "src"]
+            :source-paths  ["dev/src" "src"]
             :build-options {:main cljs.user
                             :parallel-build true
                             :install-deps true
