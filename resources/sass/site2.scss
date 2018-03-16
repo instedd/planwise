@@ -1,5 +1,119 @@
-$mdc-theme-primary: #27b070;
-$mdc-theme-secondary: #0353ff;
-$mdc-theme-background: #fff;
+
+$mdc-theme-primary: #ff561c;
+$mdc-theme-secondary: #ff561c;
+$small-font-size: 0.81em;
 
 @import "material-components-web/material-components-web";
+@import "@material/theme/_color-palette";
+
+@mixin link-color($color, $hover-color: darken($color, 20%)) {
+  text-decoration: none;
+  color: $color;
+  &:hover, &:active, &:visited {
+    color: $hover-color;
+  }
+}
+
+// layout
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+}
+
+.layout.fixed-width {
+  height: 100vh;
+  font-size: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1180px 1fr;
+  grid-template-rows: min-content 40px auto 20px 40px;
+  grid-template-areas:
+    "header header header"
+    ".      .      .     "
+    ".      main   .     "
+    ".      .      .     "
+    "footer footer footer";
+}
+
+$margin-page: 90px;
+
+header {
+  grid-area: header;
+
+  .mdc-toolbar__row {
+    padding-left: $margin-page;
+    padding-right: $margin-page;
+  }
+
+  .mdc-toolbar__title,  {
+    margin: 0px;
+  }
+
+  #section-row {
+    min-height: 50px;
+    font-size: $small-font-size;
+  }
+
+  #title-row {
+    border-top: 1px solid #404040;
+  }
+
+  #tabs-row {
+    min-height: auto;
+    height: 49px;
+
+    .mdc-tab-bar {
+      margin: inherit;
+    }
+  }
+
+  #main-action {
+    position: absolute;
+    right: $margin-page;
+    bottom: -27px;
+  }
+}
+
+main {
+  grid-area: main;
+  display: flex;
+  flex: 1;
+}
+
+footer {
+  grid-area: footer;
+  padding: 14px 14px;
+  border-top: 1px solid $material-color-grey-300;
+  font-size: $small-font-size;
+}
+//
+
+
+// Colors overrides
+body {
+  background-color: #efefef;
+}
+
+header.mdc-toolbar {
+  background-color: #404040;
+}
+
+#account-menu {
+  @include link-color(#9a9a9a);
+}
+
+#section-row a {
+  @include link-color(#ffffff, #9e9e9e);
+}
+
+#tabs-row {
+  .mdc-tab {
+    color: white;
+  }
+
+  .mdc-tab-bar__indicator {
+    background-color: $mdc-theme-secondary;
+  }
+}
+//

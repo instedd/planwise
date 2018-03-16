@@ -6,6 +6,7 @@
     Checkbox
     Fab
     FormField
+    Icon
     List
     ListItem
     ListItemGraphic
@@ -16,13 +17,25 @@
     MenuAnchor
     MenuItem
     Radio
+    Ripple
     Select
     SimpleMenu
     Slider
     Switch
+    Tab
+    TabBar
+    TabIcon
+    TabIconText
+    TabBarScroller
     TextField
     TextFieldHelperText
-    TextFieldIcon])
+    TextFieldIcon
+    Theme
+    Toolbar
+    ToolbarRow
+    ToolbarSection
+    ToolbarTitle
+    Typography])
 
 (defn rmwc-ui-react-import [tname]
   `(def ~tname
