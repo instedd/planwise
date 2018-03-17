@@ -20,8 +20,8 @@
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
    [:datasets2
-    [{:id 1 :name "First" "\"owner-id\"" owner-id }
-     {:id 2 :name "Bar" "\"owner-id\"" owner-id}]]
+    [{:id 1 :name "First" "owner-id" owner-id }
+     {:id 2 :name "Bar" "owner-id" owner-id}]]
    [:sites2
      []]])
 

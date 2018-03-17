@@ -40,7 +40,7 @@
 
 (defn- load-table!
   [spec table records]
-  (jdbc/insert-multi! spec table records))
+  (jdbc/insert-multi! spec table records {:entities (jdbc/quoted :ansi)}))
 
 (defn- clear-table!
   [spec table]
