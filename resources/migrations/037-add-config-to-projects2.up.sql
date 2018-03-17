@@ -1,1 +1,1 @@
-ALTER TABLE projects2 ADD COLUMN config MULTISET;
+ALTER TABLE projects2 ADD COLUMN config TEXT;

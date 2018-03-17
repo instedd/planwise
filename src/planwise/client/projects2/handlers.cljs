@@ -22,9 +22,12 @@
   :projects2/project-created
   in-projects2
   (fn [{:keys [db]} [_ project]]
-    (let [project-id    (:id project)]
-      {:db        (do (assoc db :current-project nil)
-                      (assoc db :list (cons project (:list db))))
+    (let [project-id          (:id project)
+          {:keys [id name]}   project
+          new-list            (cons {:id id :name name} (:list db))]
+      {:db        (-> db
+                    (assoc :current-project nil)
+                    (assoc :list new-list))
        :navigate  (routes/projects2-show {:id project-id})})))
 
 ;;------------------------------------------------------------------------------
@@ -32,8 +35,9 @@
 
 (rf/reg-event-db
   :projects2/save-project-data
+  in-projects2
   (fn [db [_ current-project]]
-    (assoc-in db [:projects2 :current-project] current-project)))
+    (assoc db :current-project current-project)))
 
 (rf/reg-event-fx
   :projects2/project-not-found
@@ -52,45 +56,46 @@
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
 
-(rf/reg-event-fx 
-  :projects2/save-data
+(defn- new-list 
+  [list current-project id key data]
+  (let [projects-update         (remove (fn [project] (= (:id project) id)) list)
+        updated-project         (assoc-in current-project key data)]
+      (cons updated-project projects-update)))
+
+(rf/reg-event-fx
+  :projects2/save-key
   in-projects2
-  (fn [{:keys [db]} [_ key value]]
-    (let [id    (get-in db [:current-project :id])]
-      {:db                        (assoc-in db [:current-project key] value)
+  (fn [{:keys [db]} [_ key data]]
+    (let [{:keys [list current-project]}   db
+          {:keys [id name]}                current-project
+          new-key                   (if (vector? key) key [key])         
+          current-project-path      (into [] (cons :current-project new-key))
+          new-list                  (if (= key :name) (new-list list {:id id :name name} id new-key data))]
+      {:db                        (-> db
+                                   (assoc-in current-project-path data)
+                                   (assoc :list new-list))
+
        :dispatch-debounce         [{:id (str :projects2/save id)
                                     :timeout 250
                                     :action :dispatch
-                                    :event [:projects2/persist-data]}]})))
+                                    :event [:projects2/persist-current-project]}]})))
+ 
 
-(rf/reg-event-fx 
-  :projects2/persist-data
-  in-projects2 
-  (fn [{:keys [db]} _] 
-    (let [current-project   (:current-project db) 
-          id                (:id current-project) 
-          name              (:name current-project)] 
-      {:api  (assoc (api/update-project id name)
-                    :on-success [:projects2/save-in-list id])})))
-                    
+(rf/reg-event-fx
+  :projects2/persist-current-project
+  in-projects2
+  (fn [{:keys [db]} [_]]
+    (let [current-project   (:current-project db)
+          id                (:id current-project)]
+      {:api          (api/update-project id current-project)})))
 
 ;;------------------------------------------------------------------------------
 ;; Listing projects
 
-(rf/reg-event-db
-  :projects2/save-in-list
-  in-projects2
-  (fn [db [_ id]]
-    (let [projects                (:list db)
-          current-project         (:current-project db)
-          projects-update         (remove (fn [project] (= (:id project) id)) projects)]
-        (assoc db :list (cons current-project projects-update)))))
-
-
-(rf/reg-event-fx 
+(rf/reg-event-fx
   :projects2/projects-list
-  in-projects2 
-  (fn [{:keys [db]} _] 
+  in-projects2
+  (fn [{:keys [db]} _]
     {:api (assoc (api/list-projects)
           :on-success [:projects2/projects-listed])}))
 
