@@ -9,11 +9,5 @@
   (get-dataset [this dataset-id]
     "Finds a site dataset by id")
 
-  (create-dataset [this name owner-id]
-    "Creates a site dataset for the given owner with the name")
-
-  (import-csv [this dataset-id csv-file]
-    "Import a CSV file and add the sites to the dataset")
-
-  (create-and-import-sites [this name owner-id csv-file]
+  (create-and-import-sites [this options csv-file]
     "Create and import a CSV file atomically"))

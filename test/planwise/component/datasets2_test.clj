@@ -30,7 +30,7 @@
    (test-config fixture-user))
   ([data]
    (test-system/config
-    {:planwise.test/fixtures            {:fixtures data}
+    {:planwise.test/fixtures       {:fixtures data}
      :planwise.component/datasets2 {:db (ig/ref :duct.database/sql)}})))
 
 ;; ----------------------------------------------------------------------
@@ -51,7 +51,7 @@
 (deftest create-dataset
   (test-system/with-system (test-config)
     (let [store (:planwise.component/datasets2 system)
-          dataset-id (:id (datasets2/create-dataset store "Initial" owner-id))
+          dataset-id (:id (datasets2/create-dataset store "Initial" owner-id :none))
           datasets (datasets2/list-datasets store owner-id)
           version (:last-version (datasets2/get-dataset store dataset-id))]
       (is (= (count datasets) 1))
@@ -63,8 +63,8 @@
 (deftest csv-to-correct-dataset
   (test-system/with-system (test-config)
     (let [store                    (:planwise.component/datasets2 system)
-          dataset1-id              (:id (datasets2/create-dataset store "Initial" owner-id))
-          dataset2-id              (:id (datasets2/create-dataset store "Other" owner-id))
+          dataset1-id              (:id (datasets2/create-dataset store "Initial" owner-id :none))
+          dataset2-id              (:id (datasets2/create-dataset store "Other" owner-id :none))
           facilities-dataset1      (datasets2/csv-to-sites store dataset1-id (io/resource "sites.csv"))
           version-dataset1         (:last-version (datasets2/get-dataset store dataset1-id))
           version-dataset2         (:last-version (datasets2/get-dataset store dataset2-id))
@@ -78,7 +78,7 @@
 (deftest several-csv-to-dataset
  (test-system/with-system (test-config)
    (let [store                    (:planwise.component/datasets2 system)
-         dataset-id               (pd (:id (datasets2/create-dataset store "Initial" owner-id)))
+         dataset-id               (pd (:id (datasets2/create-dataset store "Initial" owner-id :none)))
          sites                    (datasets2/csv-to-sites store dataset-id (io/resource "sites.csv"))
          other-sites              (datasets2/csv-to-sites store dataset-id (io/resource "other-sites.csv"))
          last-version-dataset     (:last-version (datasets2/get-dataset store dataset-id))

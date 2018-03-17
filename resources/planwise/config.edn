@@ -158,6 +158,10 @@
  :planwise.component/datasets
  {:db          #ig/ref :duct.database/sql}
 
+ :planwise.component/datasets2
+ {:db          #ig/ref :duct.database/sql
+  :coverage    #ig/ref :planwise.component/coverage}
+
  :planwise.component/facilities
  {:db          #ig/ref :duct.database/sql
   :runner      #ig/ref :planwise.component/runner
@@ -207,9 +211,6 @@
  :planwise.component/runner
  {:bin         #duct/env ["BIN_PATH" Str :or "bin/"]
   :scripts     #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
-
- :planwise.component/datasets2
- {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/users
  {:db          #ig/ref :duct.database/sql}}

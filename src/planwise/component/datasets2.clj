@@ -57,9 +57,10 @@
 ;; Service definition
 
 (defn create-dataset
-  [store name owner-id]
+  [store name owner-id coverage-algorithm]
   (db-create-dataset! (get-db store) {:name name
-                                      :owner-id owner-id}))
+                                      :owner-id owner-id
+                                      :coverage-algorithm coverage-algorithm}))
 
 (defn list-datasets
   [store owner-id]
@@ -70,26 +71,22 @@
   (first (db-find-dataset (get-db store) {:id dataset-id})))
 
 (defn create-and-import-sites
-  [store name owner-id csv-file]
+  [store {:keys [name owner-id coverage-algorithm]} csv-file]
   (jdbc/with-db-transaction [tx (get-db store)]
     (let [tx-store (assoc-in store [:db :spec] tx)
-          create-result (create-dataset tx-store name owner-id)
+          create-result (create-dataset tx-store name owner-id coverage-algorithm)
           dataset-id (:id create-result)]
       (csv-to-sites tx-store dataset-id csv-file)
       (get-dataset tx-store dataset-id))))
 
-(defrecord SitesDatasetsStore [db]
+(defrecord SitesDatasetsStore [db coverage]
   boundary/Datasets2
   (list-datasets [store owner-id]
     (list-datasets store owner-id))
   (get-dataset [store dataset-id]
     (get-dataset store dataset-id))
-  (create-dataset [store name owner-id]
-    (create-dataset store name owner-id))
-  (import-csv [store dataset-id csv-file]
-    (csv-to-sites store dataset-id csv-file))
-  (create-and-import-sites [store name owner-id csv-file]
-    (create-and-import-sites store name owner-id csv-file)))
+  (create-and-import-sites [store options csv-file]
+    (create-and-import-sites store options csv-file)))
 
 (defmethod ig/init-key :planwise.component/datasets2
   [_ config]

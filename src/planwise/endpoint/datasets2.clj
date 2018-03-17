@@ -22,7 +22,10 @@
    (POST "/" [name coverage-algorithm :as request]
          (let [user-id  (util/request-user-id request)
                csv-file (:tempfile (get (:multipart-params request) "file"))]
-           (let [result (datasets2/create-and-import-sites service name user-id csv-file)]
+           (let [options {:name               name
+                          :owner-id           user-id
+                          :coverage-algorithm coverage-algorithm}
+                 result  (datasets2/create-and-import-sites service options csv-file)]
              (response result))))))
 
 
