@@ -117,3 +117,29 @@ header.mdc-toolbar {
   }
 }
 //
+
+.card-list {
+  width: 100%;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  justify-content: space-between;
+
+  .card-item {
+    align-self: flex-start;
+    background-color: #ffffff;
+    @include link-color(#000000);
+
+    @include mdc-elevation(2);
+    &:hover {
+      @include mdc-elevation(8);
+    }
+    @extend .mdc-elevation-transition;
+
+    .card-secondary {
+      padding: 1em;
+    }
+  }
+}

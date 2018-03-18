@@ -4,8 +4,16 @@
   '[
     Button
     Checkbox
+    Elevation
     Fab
     FormField
+    GridList
+    GridTile
+    GridTileIcon
+    GridTilePrimary
+    GridTilePrimaryContent
+    GridTileSecondary
+    GridTileTitle
     Icon
     List
     ListItem

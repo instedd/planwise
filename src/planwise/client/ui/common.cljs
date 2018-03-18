@@ -3,7 +3,7 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn fixed-width
-  [{:keys [sections account title tabs action footer]}]
+  [{:keys [sections account title tabs action footer]} & children]
   [:div.layout.fixed-width
     [m/Toolbar
       [m/ToolbarRow {:id "section-row"}
@@ -13,7 +13,8 @@
         [m/ToolbarTitle title]]
       (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
       action]
-    [:main (r/children (r/current-component))]
+    ; [:main (seq (r/children (r/current-component)))]
+    [:main children]
     footer])
 
 (defn footer
@@ -38,3 +39,12 @@
         [:a {:id "account-menu" :href "#" :onClick #(reset! open true)}
           name]])))
 
+; (defn panel-link
+;   [props & children]
+;   [:a {:class-name (str "mdc-elevation--z2")}
+;     (seq (r/children (r/current-component)))])
+
+(defn panel
+  [{:keys [z]}]
+  [m/Elevation {:z z}
+    (seq (r/children (r/current-component)))])
