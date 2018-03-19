@@ -51,8 +51,14 @@
 
 (defn demo-map
   []
-  [ui/fixed-width (merge {:tabs [project-tabs {:active 1}]} nav-params)
-    [:pre "TODO MAP"]])
+  [ui/full-screen (merge {:tabs [project-tabs {:active 1}]
+                          :main-prop {:style {:background "#c3e4c7"}}
+                          :main [:h1 {} "TODO MAP"]}
+                         nav-params)
+    [:h1 "Lorem ipsum"]
+    [:hr]
+    [:h2 "dolor sit amet"]
+    [:p 50000]])
 
 (defn app
   []

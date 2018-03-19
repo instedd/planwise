@@ -41,6 +41,20 @@ body {
     "footer footer footer";
 }
 
+.layout.full-screen {
+  height: 100vh;
+  font-size: 1rem;
+  display: grid;
+  grid-template-columns: 30px 370px auto;
+  grid-template-rows: min-content 30px auto 20px 40px;
+  grid-template-areas:
+    "header header header"
+    "main   main   main"
+    "main   main   main"
+    "main   main   main"
+    "footer footer footer";
+}
+
 $margin-page: 90px;
 
 header {
@@ -99,6 +113,14 @@ footer {
   padding: 14px 14px;
   border-top: 1px solid $material-color-grey-300;
   font-size: $small-font-size;
+}
+
+aside {
+  grid-column: 2;
+  grid-row: 3;
+  z-index: 20;
+  @include mdc-elevation(2);
+  background: #ffffff;
 }
 //
 

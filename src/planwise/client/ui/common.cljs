@@ -16,6 +16,21 @@
     (into [:main] children)
     footer])
 
+(defn full-screen
+  [{:keys [sections account title tabs action footer main-prop main]} & children]
+  [:div.layout.full-screen
+    [m/Toolbar
+      [m/ToolbarRow {:id "top-row"}
+        (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
+        [m/ToolbarSection {:alignEnd true} account]]
+      [m/ToolbarRow {:id "title-row"}
+        [m/ToolbarTitle title]]
+      (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
+      action]
+    [:main main-prop main]
+    (into [:aside] children)
+    footer])
+
 (defn footer
   []
   [:footer.mdc-theme--text-disabled-on-background "Version: X.Y.Z"])
