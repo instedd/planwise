@@ -13,7 +13,7 @@
 (s/def ::raster string?)
 
 (s/def ::base-criteria (s/keys :req-un [::algorithm]
-                               :opt-un [::rasterize/ref-coords ::rasterize/resolution]))
+                               :opt-un [::raster ::rasterize/ref-coords ::rasterize/resolution]))
 
 (s/def ::driving-time #{30 60 90 120})
 (s/def ::pgrouting-alpha-criteria (s/keys :req-un [::driving-time]))

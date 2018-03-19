@@ -10,7 +10,7 @@ UPDATE datasets2
     WHERE id = :id
     RETURNING "last-version";
 
--- :name db-find-dataset :?
+-- :name db-find-dataset :? :1
 SELECT * FROM datasets2
   WHERE id = :id
 
@@ -20,8 +20,8 @@ SELECT id, name, "last-version" FROM datasets2
 
 -- :name db-create-site! :<! :1
 INSERT INTO sites2
-    (id, type, version, "dataset-id", name, lat, lon, the_geom, capacity, tags)
-    VALUES (:id, :type, :version, :dataset-id, :name, :lat, :lon,
+    ("source-id", type, version, "dataset-id", name, lat, lon, the_geom, capacity, tags)
+    VALUES (:source-id, :type, :version, :dataset-id, :name, :lat, :lon,
             ST_SetSRID(ST_MakePoint(:lon, :lat), 4326), :capacity, :tags)
     RETURNING id;
 
@@ -29,3 +29,29 @@ INSERT INTO sites2
 SELECT * FROM sites2
     WHERE "dataset-id" = :dataset-id
     AND version = :version;
+
+-- :name db-enum-site-ids :?
+SELECT "id" FROM "sites2"
+       WHERE "dataset-id" = :dataset-id
+       AND "version" = :version;
+
+-- :name db-fetch-site-by-id :? :1
+SELECT "id", "source-id", "dataset-id", "version", "name", "lat", "lon", "processing-status"
+       FROM "sites2"
+       WHERE "id" = :id;
+
+-- :name db-update-site-processing-status! :! :n
+UPDATE "sites2"
+       SET "processing-status" = :processing-status
+       WHERE "id" = :id;
+
+-- :name db-delete-algorithm-coverages-by-site-id! :! :n
+DELETE FROM "sites2_coverage"
+       WHERE "site-id" = :site-id
+       AND "algorithm" = :algorithm;
+
+-- :name db-create-site-coverage! :<! :1
+INSERT INTO "sites2_coverage"
+       ("site-id", "algorithm", "options", "geom", "raster")
+       VALUES (:site-id, :algorithm, :options, :geom, :raster)
+       RETURNING "id";

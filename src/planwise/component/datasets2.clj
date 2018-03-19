@@ -1,13 +1,16 @@
 (ns planwise.component.datasets2
   (:require [planwise.boundary.datasets2 :as boundary]
+            [planwise.boundary.coverage :as coverage]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.data.csv :as csv]
             [clojure.java.jdbc :as jdbc]
+            [clojure.java.io :as io]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
-            [planwise.util.hash :refer [update-if]]
-            [clojure.java.io :as io]))
+            [clojure.string :as str]))
+
+(timbre/refer-timbre)
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -28,7 +31,7 @@
 
 (defn- import-site
   [store dataset-id version csv-site-data]
-  (let [data {:id (Integer. (:id csv-site-data))
+  (let [data {:source-id (Integer. (:id csv-site-data))
               :type (:type csv-site-data)
               :version version
               :dataset-id dataset-id
@@ -68,7 +71,7 @@
 
 (defn get-dataset
   [store dataset-id]
-  (first (db-find-dataset (get-db store) {:id dataset-id})))
+  (db-find-dataset (get-db store) {:id dataset-id}))
 
 (defn create-and-import-sites
   [store {:keys [name owner-id coverage-algorithm]} csv-file]
@@ -78,6 +81,71 @@
           dataset-id (:id create-result)]
       (csv-to-sites tx-store dataset-id csv-file)
       (get-dataset tx-store dataset-id))))
+
+(defn compute-site-coverage!
+  [store site {:keys [algorithm options raster-dir]}]
+  (try
+    (let [db-spec         (get-db store)
+          coverage        (:coverage store)
+          coords          (select-keys site [:lat :lon])
+          site-id         (:id site)
+          raster-basename (str/join "_" (flatten [site-id (name algorithm) (vals options)]))
+          raster-filename (str raster-basename ".tif")
+          raster-path     (str (io/file raster-dir raster-filename))
+          criteria        (merge {:algorithm algorithm
+                                  :raster    raster-path}
+                                 options)
+          polygon         (coverage/compute-coverage coverage coords criteria)
+          site-coverage   {:site-id   site-id
+                           :algorithm (name algorithm)
+                           :options   (pr-str options)
+                           :geom      polygon
+                           :raster    raster-basename}
+          result          (db-create-site-coverage! db-spec site-coverage)]
+      {:ok (:id result)})
+    (catch RuntimeException e
+      (warn "Error" (.getMessage e) "processing coverage for site" (:id site)
+            "using algorithm" algorithm "with options" (pr-str options))
+      {:error (.getMessage e)})))
+
+(defn preprocess-site!
+  [store site-id {:keys [algorithm options-list raster-dir]}]
+  {:pre [(some? algorithm)]}
+  (let [db-spec    (get-db store)
+        site       (db-fetch-site-by-id db-spec {:id site-id})]
+    (info "Pre-processing site" site-id)
+    ;; TODO: delete old raster as well as the database records
+    (db-delete-algorithm-coverages-by-site-id! db-spec {:site-id site-id :algorithm (name algorithm)})
+    (let [results (doall (for [options options-list]
+                           (compute-site-coverage! store site {:algorithm algorithm
+                                                               :options options
+                                                               :raster-dir raster-dir})))]
+      (let [total     (count options-list)
+            succeeded (count (filter (comp some? :ok) results))
+            result    (condp = succeeded
+                        total :ok
+                        0 :error
+                        :partial)]
+        (db-update-site-processing-status! db-spec {:id site-id
+                                                    :processing-status (str result)})))))
+
+(defn preprocess-dataset!
+  [store dataset-id]
+  (let [db-spec      (get-db store)
+        coverage     (:coverage store)
+        dataset      (db-find-dataset db-spec {:id dataset-id})
+        last-version (:last-version dataset)
+        algorithm    (keyword (:coverage-algorithm dataset))
+        sites        (db-enum-site-ids db-spec {:dataset-id dataset-id :version last-version})
+        options-list (coverage/enumerate-algorithm-options coverage algorithm)
+        raster-dir   (str (io/file "data/coverage" (str dataset-id)))]
+    (info "Pre-processing sites for dataset" dataset-id)
+    (if (some? algorithm)
+      (dorun (for [site-id (map :id sites)]
+               (preprocess-site! store site-id {:algorithm    algorithm
+                                                :options-list options-list
+                                                :raster-dir   raster-dir})))
+      (info "Coverage algorithm not set for dataset" dataset-id))))
 
 (defrecord SitesDatasetsStore [db coverage]
   boundary/Datasets2
@@ -91,3 +159,20 @@
 (defmethod ig/init-key :planwise.component/datasets2
   [_ config]
   (map->SitesDatasetsStore config))
+
+
+(comment
+  ;; REPL testing
+
+  (def store (:planwise.component/datasets2 integrant.repl.state/system))
+
+  (preprocess-site! store 1 {:algorithm :simple-buffer
+                             :options-list [{:distance 5} {:distance 10}]
+                             :raster-dir "data/coverage/11"})
+
+  (preprocess-site! store 1 {:algorithm :pgrouting-alpha
+                             :options-list [{:driving-time 30} {:driving-time 60}]
+                             :raster-dir "data/coverage/11"})
+
+  (preprocess-dataset! store 11)
+  )
