@@ -105,6 +105,7 @@
     (routes
      (GET "/" [] loading-page)
      (GET "/_design" [] loading-page2)
+     (GET "/_design/:section" [] loading-page2)
      #_(GET "/crash" [] (throw (RuntimeException. "Crash")))
      (GET "/datasets" [] loading-page)
      (GET "/datasets2" [] loading-page)

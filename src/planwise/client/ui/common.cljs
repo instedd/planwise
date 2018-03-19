@@ -6,8 +6,8 @@
   [{:keys [sections account title tabs action footer]} & children]
   [:div.layout.fixed-width
     [m/Toolbar
-      [m/ToolbarRow {:id "section-row"}
-        [m/ToolbarSection {:alignStart true} sections]
+      [m/ToolbarRow {:id "top-row"}
+        (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
         [m/ToolbarSection {:alignEnd true} account]]
       [m/ToolbarRow {:id "title-row"}
         [m/ToolbarTitle title]]
@@ -25,8 +25,8 @@
   [m/Fab {:id "main-action" :class "MyClass"} icon])
 
 (defn section
-  [props & children]
-  (into [:a (merge {:class-name "mdc-typography"} props)] children))
+  [props label]
+  [:a props label])
 
 (defn account
   [{:keys [name on-signout]}]
@@ -47,8 +47,8 @@
   (into [:section.card-list] children))
 
 (defn card
-  [{:keys [primary title subtitle status]}]
-  [:a {:className "card-item" :href "#"}
+  [{:keys [href primary title subtitle status]}]
+  [:a {:className "card-item" :href href}
     [:div.card-primary primary]
     [:div.card-secondary
       [:h1 {} title]

@@ -6,10 +6,15 @@ $small-font-size: 0.81em;
 @import "material-components-web/material-components-web";
 @import "@material/theme/_color-palette";
 
-@mixin link-color($color, $hover-color: darken($color, 20%)) {
+@mixin link-color($color, $hover-color: darken($color, 20%), $active-color: lighten($color, 20%)) {
   text-decoration: none;
-  color: $color;
-  &:hover, &:active, &:visited {
+  &, &:visited {
+    color: $color;
+  }
+  &:active, &.active {
+    color: $active-color;
+  }
+  &:hover {
     color: $hover-color;
   }
 }
@@ -50,9 +55,17 @@ header {
     margin: 0px;
   }
 
-  #section-row {
+  #top-row {
     min-height: 50px;
     font-size: $small-font-size;
+  }
+
+  #section-row {
+    display: flex;
+    justify-content: flex-start;
+    * {
+      margin-right: 10px;
+    }
   }
 
   #title-row {
@@ -103,8 +116,8 @@ header.mdc-toolbar {
   @include link-color(#9a9a9a);
 }
 
-#section-row a {
-  @include link-color(#ffffff, #9e9e9e);
+#top-row a {
+  @include link-color(#9a9a9a);
 }
 
 #tabs-row {
