@@ -18,9 +18,10 @@
         criteria    (:criteria description)
         options     (for [[key key-desc] criteria :when (#{:enum} (:type key-desc))]
                       (map (juxt (constantly key) :value) (:options key-desc)))]
-    (->> options
-         (apply combo/cartesian-product)
-         (map (partial into {})))))
+    (some->> options
+             seq
+             (apply combo/cartesian-product)
+             (map (partial into {})))))
 
 
 ;; REPL testing
