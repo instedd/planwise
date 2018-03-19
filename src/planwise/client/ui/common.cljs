@@ -39,8 +39,8 @@
           name]])))
 
 (defn panel
-  [{:keys [z]} & children]
-  (into [m/Elevation {:z z}] children))
+  [{:keys [z] :or {z 2}} & children]
+  (into [m/Elevation {:z z :className "panel"}] children))
 
 (defn card-list
   [props & children]

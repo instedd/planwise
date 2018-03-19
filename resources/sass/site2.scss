@@ -156,3 +156,18 @@ header.mdc-toolbar {
     }
   }
 }
+
+.panel {
+  background-color: #ffffff;
+  width: 100%;
+  height: min-content;
+}
+
+form.vertical {
+  display: flex;
+  flex-flow: column;
+}
+
+.form-actions {
+  text-align: right;
+}

@@ -35,9 +35,19 @@
 (defn demo-project
   []
   [ui/fixed-width (merge {:tabs [project-tabs {:active 1}]} nav-params)
-    [m/TextField {:label "Lorem"}]
-    [m/Fab {} "favorite"]
-    [m/Button {} "I'm a button"]])
+    [ui/panel {}
+      [m/Grid {}
+        [m/GridCell {:span 6}
+          [:form.vertical
+            [m/TextField {:label "Lorem"}]
+            [m/TextField {:label "Ipsum"}]
+            [m/Checkbox {} "dolor sit amet"]]]
+        [m/GridCell {:span 6}
+          [ui/panel {}
+            [:pre {} "MAP"]]]
+        [m/GridCell {:span 12}
+          [:div.form-actions
+            [m/Button {} "Continue"]]]]]])
 
 (defn demo-map
   []
