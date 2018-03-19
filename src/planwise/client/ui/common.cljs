@@ -13,8 +13,7 @@
         [m/ToolbarTitle title]]
       (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
       action]
-    ; [:main (seq (r/children (r/current-component)))]
-    [:main children]
+    (into [:main] children)
     footer])
 
 (defn footer
@@ -27,7 +26,7 @@
 
 (defn section
   [props & children]
-  [:a (merge {:class-name "mdc-typography"} props) children])
+  (into [:a (merge {:class-name "mdc-typography"} props)] children))
 
 (defn account
   [{:keys [name on-signout]}]
@@ -39,12 +38,19 @@
         [:a {:id "account-menu" :href "#" :onClick #(reset! open true)}
           name]])))
 
-; (defn panel-link
-;   [props & children]
-;   [:a {:class-name (str "mdc-elevation--z2")}
-;     (seq (r/children (r/current-component)))])
-
 (defn panel
-  [{:keys [z]}]
-  [m/Elevation {:z z}
-    (seq (r/children (r/current-component)))])
+  [{:keys [z]} & children]
+  (into [m/Elevation {:z z}] children))
+
+(defn card-list
+  [props & children]
+  (into [:section.card-list] children))
+
+(defn card
+  [{:keys [primary title subtitle status]}]
+  [:a {:className "card-item" :href "#"}
+    [:div.card-primary primary]
+    [:div.card-secondary
+      [:h1 {} title]
+      [:h2 {} subtitle]
+      [:div.status {} status]]])
