@@ -113,21 +113,25 @@
   {:pre [(some? algorithm)]}
   (let [db-spec    (get-db store)
         site       (db-fetch-site-by-id db-spec {:id site-id})]
-    (info "Pre-processing site" site-id)
-    ;; TODO: delete old raster as well as the database records
-    (db-delete-algorithm-coverages-by-site-id! db-spec {:site-id site-id :algorithm (name algorithm)})
-    (let [results (doall (for [options options-list]
-                           (compute-site-coverage! store site {:algorithm algorithm
-                                                               :options options
-                                                               :raster-dir raster-dir})))]
-      (let [total     (count options-list)
-            succeeded (count (filter (comp some? :ok) results))
-            result    (condp = succeeded
-                        total :ok
-                        0 :error
-                        :partial)]
-        (db-update-site-processing-status! db-spec {:id site-id
-                                                    :processing-status (str result)})))))
+    (if (nil? (:processing-status site))
+      (do
+        (info "Pre-processing site" site-id)
+        ;; TODO: delete old raster as well as the database records
+        (db-delete-algorithm-coverages-by-site-id! db-spec {:site-id site-id :algorithm (name algorithm)})
+        (let [results (doall (for [options options-list]
+                               (compute-site-coverage! store site {:algorithm algorithm
+                                                                   :options options
+                                                                   :raster-dir raster-dir})))]
+          (let [total     (count options-list)
+                succeeded (count (filter (comp some? :ok) results))
+                result    (condp = succeeded
+                            total :ok
+                            0 :error
+                            :partial)]
+            (db-update-site-processing-status! db-spec {:id site-id
+                                                        :processing-status (str result)}))))
+      (info "Skipping site" site-id
+            "since it's already processed with status" (:processing-status site)))))
 
 (defn preprocess-dataset!
   [store dataset-id]
