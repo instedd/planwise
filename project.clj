@@ -61,7 +61,7 @@
                  [cljs-ajax "0.7.3"
                   :exclusions [commons-codec]]
                  [secretary "1.2.3"]
-                 [venantius/accountant "0.1.7"
+                 [venantius/accountant "0.2.4"
                   :exclusions [org.clojure/tools.reader]]
 
                  ; Client assets and components

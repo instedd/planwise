@@ -4,14 +4,14 @@
 
 ;; Navigation components
 
-(defn- li-menu-item [{:keys [selected li-classes item href title reference]}]
+(defn- li-menu-item [{:keys [selected li-classes item href target title reference]}]
   (let [is-selected? (or (= selected item)
                          (item selected))
         li-all-classes (if is-selected?
                       (conj li-classes "active")
                       li-classes)]
     [:li {:class (string/join " " li-all-classes)}
-     [:a {:href href} reference title]]))
+     [:a {:href href :target target} reference title]]))
 
 (defn- li-wizard-menu-item [{:keys [wizard-state tab-number] :as item}]
   (let [li-classes [(if (some? wizard-state) (name wizard-state) "unvisited")]
