@@ -27,7 +27,7 @@
   [:div.layout.full-screen
     [header {:sections sections :account account :title title :tabs tabs :action action}]
     [:main main-prop main]
-    (into [:aside] children)
+    (into [:aside {:id "sidebar"}] children)
     footer])
 
 (defn footer
@@ -37,8 +37,8 @@
    [:footer.mdc-theme--text-disabled-on-background (str "Version: " version)]))
 
 (defn main-action
-  [{:keys [icon]}]
-  [m/Fab {:id "main-action" :class "MyClass"} icon])
+  [{:keys [icon on-click]}]
+  [m/Fab {:id "main-action" :class "MyClass" :on-click on-click} icon])
 
 (defn section
   [props label]

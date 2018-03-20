@@ -4,6 +4,14 @@
   '[
     Button
     Checkbox
+    Dialog
+    DialogSurface
+    DialogHeader
+    DialogHeaderTitle
+    DialogBody
+    DialogFooter
+    DialogFooterButton
+    DialogBackdrop
     Elevation
     Fab
     FormField
@@ -30,6 +38,7 @@
     Radio
     Ripple
     Select
+    SimpleDialog
     SimpleMenu
     Slider
     Switch

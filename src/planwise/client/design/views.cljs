@@ -4,6 +4,8 @@
             [planwise.client.ui.rmwc :as m]
             [planwise.client.ui.common :as ui]))
 
+(def dialog-open (r/atom false))
+
 (defn- project-tabs
   [{:keys [active] :or {active 0}}]
   [m/TabBar {:activeTabIndex active}
@@ -15,7 +17,7 @@
                [ui/section {:href "/_design/map"} "Map"]]
     :account [ui/account {:name "John Doe" :on-signout #(println "Sign out")}]
     :title "Planwise"
-    :action (ui/main-action {:icon "add"})
+    :action (ui/main-action {:icon "add" :on-click #(reset! dialog-open true)})
     :footer [ui/footer]})
 
 (defn project-card
@@ -30,7 +32,9 @@
     [ui/card-list {}
       [project-card {:title "Lorem ipsum" :href "/_design/project?id=1"}]
       [project-card {:title "Dolor sit"   :href "/_design/project?id=2"}]
-      [project-card {:title "Amet"        :href "/_design/project?id=3"}]]])
+      [project-card {:title "Amet"        :href "/_design/project?id=3"}]]
+    [m/SimpleDialog
+      {:title "The title" :body "The Body" :open @dialog-open :onClose #(reset! dialog-open false)}]])
 
 (defn demo-project
   []
