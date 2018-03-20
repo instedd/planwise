@@ -2,6 +2,7 @@
   (:require [compojure.core :refer :all]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
+            [clojure.spec.alpha :as s]
             [ring.util.response :refer [response status not-found]]
             [planwise.util.ring :as util]
             [clojure.core.reducers :as r]
@@ -12,25 +13,43 @@
 
 (timbre/refer-timbre)
 
+
+(s/def ::id number?)
+(s/def ::name string?)
+(s/def ::target (s/nilable number?))
+(s/def ::budget (s/nilable number?))
+(s/def ::demographics (s/keys :req-un [::target]))
+(s/def ::actions (s/keys :req-un [::budget]))
+(s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions])))
+(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config]))
+
 (defn- projects2-routes
   [service]
   (routes
+
    (POST "/" request
      (let [user-id    (util/request-user-id request)
-           project-id (projects2/create-project service user-id)]
-      (response project-id)))
+           project-id (:id (projects2/create-project service user-id))
+           project    (projects2/get-project service (Integer. project-id))]
+      (response project)))
 
-   (PUT "/:id" [id name :as request]
-     (let [user-id    (util/request-user-id request)
-           project-id (Integer. id)]
-        (projects2/update-project service project-id name)))
+   (PUT "/:id" [id project :as request]
+    (println project)
+     (assert (s/valid? ::project project) "invalid project-data")
+     (let [user-id    (util/request-user-id request)]
+       (projects2/update-project service id project)))
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
-           project (first (projects2/get-project service (Integer. id)))]
+           project (projects2/get-project service (Integer. id))]
        (if (nil? project)
            (not-found project)
-           (response project))))))
+           (response project))))
+
+   (GET "/" request
+      (let [user-id          (util/request-user-id request)
+            list-of-projects (projects2/list-projects service user-id)]
+        (response list-of-projects)))))
 
 
 (defn projects2-endpoint

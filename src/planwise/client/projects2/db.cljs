@@ -3,4 +3,5 @@
             [planwise.client.asdf :as asdf]))
 
 (def initial-db
-  {:current-project         nil})
+  {:current-project         nil
+   :list                    nil})
