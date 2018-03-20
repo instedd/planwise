@@ -16,7 +16,7 @@
         id   (:id  project)]
     [:div.project-card
       [:a
-        {:href (routes/projects2-show {:id id})} (str id "/ "name) ]]))
+        {:href (routes/projects2-show {:id id})} (str id "/ "name)]]))
 
 (defn- projects-list
   [projects]
@@ -39,7 +39,7 @@
       [:h1 "New Project"]]
     [:button.primary
      {:on-click #(dispatch [:projects2/new-project])}
-       "Create"]])
+     "Create"]])
 
 (defn- project-section-index []
   [:div
@@ -49,7 +49,7 @@
 ;;------------------------------------------------------------------------
 ;;Current Project updating
 
-(defn- valid-input 
+(defn- valid-input
   [inp]
   (let [value (js/parseInt inp)]
     (if (and (number? value) (not (js/isNaN value))) value nil)))
@@ -63,19 +63,19 @@
 
 (defn- update-config-component []
   (let [current-project   (subscribe [:projects2/current-project])]
-    [:div 
+    [:div
      [:input {:type "text"
               :placeholder "Target"
-              :on-change #(dispatch [:projects2/save-key [:config :demographics :target]  (valid-input (-> % .-target .-value))]) 
-              :value (get-in @current-project [:config :demographics :target])                    
-              }]
+              :on-change #(dispatch [:projects2/save-key [:config :demographics :target]  (valid-input (-> % .-target .-value))])
+              :value (get-in @current-project [:config :demographics :target])}]
 
-      [:input {:type "text"
-               :placeholder "Budget"
-               :on-change #(dispatch [:projects2/save-key [:config :actions :budget] (valid-input (-> % .-target .-value))])
-               :value (get-in  @current-project [:config :actions :budget])
-               }]]))
-    
+
+     [:input {:type "text"
+              :placeholder "Budget"
+              :on-change #(dispatch [:projects2/save-key [:config :actions :budget] (valid-input (-> % .-target .-value))])
+              :value (get-in  @current-project [:config :actions :budget])}]]))
+
+
 
 
 (defn- project-section-show []
