@@ -89,6 +89,7 @@
     (html5
      (head2)
      [:body {:class "mdc-typography"}
+      inline-svg
       mount-target
       (anti-forgery-field)
       (client-config (assoc endpoint :request request))

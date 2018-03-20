@@ -27,6 +27,10 @@ body {
   min-width: 320px;
 }
 
+.svg-hidden {
+  display: none;
+}
+
 .layout.fixed-width {
   height: 100vh;
   font-size: 1rem;
@@ -84,6 +88,14 @@ header {
 
   #title-row {
     border-top: 1px solid #404040;
+    height: 90px;
+
+    .icon {
+      width: 60px;
+      height: 60px;
+      position: absolute;
+      left: 15px;
+    }
   }
 
   #tabs-row {
@@ -124,6 +136,7 @@ aside {
 }
 //
 
+h1, h2, h3 { font-weight: 400; }
 
 // Colors overrides
 body {
@@ -193,3 +206,5 @@ form.vertical {
 .form-actions {
   text-align: right;
 }
+
+//

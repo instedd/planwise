@@ -1,32 +1,31 @@
 (ns planwise.client.ui.common
   (:require [reagent.core :as r]
+            [planwise.client.components.common :refer [icon]]
             [planwise.client.ui.rmwc :as m]))
+
+(defn- header
+  [{:keys [sections account title tabs action]}]
+  [m/Toolbar
+    [m/ToolbarRow {:id "top-row"}
+      (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
+      [m/ToolbarSection {:alignEnd true} account]]
+    [m/ToolbarRow {:id "title-row"}
+      [icon "logo2"]
+      [m/ToolbarTitle title]]
+    (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
+    action])
 
 (defn fixed-width
   [{:keys [sections account title tabs action footer]} & children]
   [:div.layout.fixed-width
-    [m/Toolbar
-      [m/ToolbarRow {:id "top-row"}
-        (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
-        [m/ToolbarSection {:alignEnd true} account]]
-      [m/ToolbarRow {:id "title-row"}
-        [m/ToolbarTitle title]]
-      (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
-      action]
+    [header {:sections sections :account account :title title :tabs tabs :action action}]
     (into [:main] children)
     footer])
 
 (defn full-screen
   [{:keys [sections account title tabs action footer main-prop main]} & children]
   [:div.layout.full-screen
-    [m/Toolbar
-      [m/ToolbarRow {:id "top-row"}
-        (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
-        [m/ToolbarSection {:alignEnd true} account]]
-      [m/ToolbarRow {:id "title-row"}
-        [m/ToolbarTitle title]]
-      (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
-      action]
+    [header {:sections sections :account account :title title :tabs tabs :action action}]
     [:main main-prop main]
     (into [:aside] children)
     footer])

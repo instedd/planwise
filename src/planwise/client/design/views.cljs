@@ -53,7 +53,7 @@
   []
   [ui/full-screen (merge {:tabs [project-tabs {:active 1}]
                           :main-prop {:style {:background "#c3e4c7"}}
-                          :main [:h1 {} "TODO MAP"]}
+                          :main [:h1 {:style {:margin "0 auto"}} "TODO MAP"]}
                          nav-params)
     [:h1 "Lorem ipsum"]
     [:hr]
