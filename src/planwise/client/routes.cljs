@@ -8,6 +8,8 @@
 
 (defroute home "/" []
   (dispatch [:navigate {:page :home}]))
+(defroute home-old "/old" []
+  (dispatch [:navigate {:page :home-old}]))
 (defroute project-demographics "/projects/:id" [id]
   (dispatch [:navigate {:page :projects, :id id, :section :demographics}]))
 (defroute project-facilities "/projects/:id/facilities" [id]

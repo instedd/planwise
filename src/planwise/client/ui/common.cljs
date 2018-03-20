@@ -31,8 +31,10 @@
     footer])
 
 (defn footer
-  []
-  [:footer.mdc-theme--text-disabled-on-background "Version: X.Y.Z"])
+  ([]
+   (footer "X.Y.Z"))
+  ([version]
+   [:footer.mdc-theme--text-disabled-on-background (str "Version: " version)]))
 
 (defn main-action
   [{:keys [icon]}]

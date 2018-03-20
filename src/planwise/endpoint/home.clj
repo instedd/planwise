@@ -22,6 +22,11 @@
     [:p "Please wait..."]
     [:img {:src "/images/logo-transparent.png"}]]])
 
+(def mount-target2
+  [:div#app
+    [:h3 "Loading Application"]
+    [:p "Please wait..."]])
+
 (defn head []
   [:head
    [:meta {:charset "utf-8"}]
@@ -90,7 +95,7 @@
      (head2)
      [:body {:class "mdc-typography"}
       inline-svg
-      mount-target
+      mount-target2
       (anti-forgery-field)
       (client-config (assoc endpoint :request request))
       (include-js "/assets/leaflet/leaflet.js")
@@ -104,15 +109,16 @@
   (let [loading-page (partial loading-page endpoint)
         loading-page2 (partial loading-page2 endpoint)]
     (routes
-     (GET "/" [] loading-page)
+     (GET "/" [] loading-page2)
+     (GET "/old" [] loading-page)
      (GET "/_design" [] loading-page2)
      (GET "/_design/:section" [] loading-page2)
      #_(GET "/crash" [] (throw (RuntimeException. "Crash")))
      (GET "/datasets" [] loading-page)
-     (GET "/datasets2" [] loading-page)
+     (GET "/datasets2" [] loading-page2)
      (context "/projects2" []
-       (GET "/" [] loading-page)
-       (GET "/:id" [] loading-page))
+       (GET "/" [] loading-page2)
+       (GET "/:id" [] loading-page2))
      (context "/projects/:id" []
        (GET "/" [] loading-page)
        (GET "/facilities" [] loading-page)
