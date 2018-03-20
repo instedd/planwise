@@ -52,7 +52,7 @@
 
                  ; Client infrastructure
                  [reagent "0.7.0"
-                  :exclusions [org.clojure/tools.reader]]
+                    :exclusions [org.clojure/tools.reader]]
                  [reagent-forms "0.5.36"]
                  [reagent-utils "0.3.0"]
                  [re-frame "0.10.5"]
@@ -61,7 +61,7 @@
                  [cljs-ajax "0.7.3"
                   :exclusions [commons-codec]]
                  [secretary "1.2.3"]
-                 [venantius/accountant "0.1.7"
+                 [venantius/accountant "0.2.4"
                   :exclusions [org.clojure/tools.reader]]
 
                  ; Client assets and components

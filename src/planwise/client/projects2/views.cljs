@@ -5,89 +5,85 @@
             [re-com.core :as rc]
             [planwise.client.projects2.db :as db]
             [planwise.client.routes :as routes]
-            [planwise.client.components.common :as common]))
+            [planwise.client.ui.common :as ui]
+            [planwise.client.components.common2 :as common2]
+            [planwise.client.ui.rmwc :as m]))
 
 ;;------------------------------------------------------------------------
 ;;Project listing and creation
 
+(defn- or-blank
+  [value fallback]
+  (cond
+    (nil? value) fallback
+    (= value "") fallback
+    :else value))
+
 (defn- project-card
-  [project]
+  [props project]
   (let [name (:name project)
         id   (:id  project)]
-    [:div.project-card
-      [:a
-        {:href (routes/projects2-show {:id id})} (str id "/ "name) ]]))
+    [ui/card {:href (routes/projects2-show {:id id})
+              :primary [:img {:src "http://via.placeholder.com/373x278"}]
+              :title (or-blank name [:i "Untitled"])}]))
 
 (defn- projects-list
   [projects]
-  [:ul.project-list
+  [ui/card-list {}
     (for [project projects]
-      [:li {:key (:id project)}
-        [project-card project]])])
+      [project-card {:key (:id project)} project])])
 
 (defn- listing-component []
    (let [projects   (subscribe [:projects2/list])]
     (if (nil? @projects)
       [:div
-        [common/icon :box]
         [:p "You have no projects..."]]
       [projects-list @projects])))
 
-(defn- create-new-project []
-  [:div
-    [:div.title
-      [:h1 "New Project"]]
-    [:button.primary
-     {:on-click #(dispatch [:projects2/new-project])}
-       "Create"]])
-
 (defn- project-section-index []
-  [:div
-    [create-new-project]
-    [listing-component]])
+  (let [create-project-button (ui/main-action {:icon "add" :on-click #(dispatch [:projects2/new-project])})]
+    [ui/fixed-width (merge {:action create-project-button} (common2/nav-params))
+      [listing-component]]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
 
-(defn- valid-input 
+(defn- valid-input
   [inp]
   (let [value (js/parseInt inp)]
     (if (and (number? value) (not (js/isNaN value))) value nil)))
 
-(defn- update-name-component []
+(defn- current-project-input
+  [label path transform]
   (let [current-project   (subscribe [:projects2/current-project])]
-      [:input  {:type "text"
-                :placeholder "Goal..."
-                :value (:name @current-project)
-                :on-change #(dispatch [:projects2/save-key :name (-> % .-target .-value)])}]))
+    [m/TextField {:type "text"
+                  :label label
+                  :on-change #(dispatch [:projects2/save-key path (transform (-> % .-target .-value))])
+                  :value (get-in @current-project path)}]))
 
-(defn- update-config-component []
+(defn edit-current-project
+  []
   (let [current-project   (subscribe [:projects2/current-project])]
-    [:div 
-     [:input {:type "text"
-              :placeholder "Target"
-              :on-change #(dispatch [:projects2/save-key [:config :demographics :target]  (valid-input (-> % .-target .-value))]) 
-              :value (get-in @current-project [:config :demographics :target])                    
-              }]
+    [ui/fixed-width (common2/nav-params)
+      [ui/panel {}
+        [m/Grid {}
+          [m/GridCell {:span 6}
+            [:form.vertical
+              [current-project-input "Goal" [:name] identity]
+              [current-project-input "Target" [:config :demographics :target] valid-input]
+              [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))
 
-      [:input {:type "text"
-               :placeholder "Budget"
-               :on-change #(dispatch [:projects2/save-key [:config :actions :budget] (valid-input (-> % .-target .-value))])
-               :value (get-in  @current-project [:config :actions :budget])
-               }]]))
-    
-
-
-(defn- project-section-show []
+(defn- project-section-show
+  []
   (let [page-params       (subscribe [:page-params])
         id                (:id @page-params)
         current-project   (subscribe [:projects2/current-project])]
     (fn []
       (cond
-        (= (:id @current-project) (js/parseInt id))[:div [update-name-component] [update-config-component]]
+        (= (:id @current-project) (js/parseInt id)) [edit-current-project]
         :else (do
                 (dispatch [:projects2/get-project-data id])
-                [common/loading-placeholder])))))
+                [common2/loading-placeholder])))))
 
 ;;------------------------------------------------------------------------
 ;;Projects view
@@ -101,8 +97,7 @@
         (when (nil? @projects-list)
               (dispatch [:projects2/projects-list]))
         (let [section      (:section @page-params)]
-          [:article
-            (cond
-              (= section :index) [project-section-index]
-              (= section :show) [project-section-show]
-              :else "...")])))))
+          (cond
+            (= section :index) [project-section-index]
+            (= section :show) [project-section-show]
+            :else "..."))))))

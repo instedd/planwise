@@ -8,6 +8,8 @@
 
 (defroute home "/" []
   (dispatch [:navigate {:page :home}]))
+(defroute home-old "/old" []
+  (dispatch [:navigate {:page :home-old}]))
 (defroute project-demographics "/projects/:id" [id]
   (dispatch [:navigate {:page :projects, :id id, :section :demographics}]))
 (defroute project-facilities "/projects/:id/facilities" [id]
@@ -26,3 +28,7 @@
   (dispatch [:navigate {:page :projects2, :section :index}]))
 (defroute projects2-show "/projects2/:id" [id]
   (dispatch [:navigate {:page :projects2, :id id, :section :show}]))
+(defroute design "/_design" []
+  (dispatch [:navigate {:page :design}]))
+(defroute design-section "/_design/:section" [section query-params]
+  (dispatch [:navigate {:page :design, :section (keyword section), :query-params query-params}]))

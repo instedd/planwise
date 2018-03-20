@@ -4,18 +4,19 @@
             [planwise.client.routes :as routes]
             [planwise.client.components.nav :as nav]
             [planwise.client.components.common :refer [icon]]
+            [planwise.client.components.common2 :as common2]
             [planwise.client.projects.views :as projects]
             [planwise.client.projects2.views :as projects2]
             [planwise.client.datasets2.views :as datasets2]
             [planwise.client.current-project.views :as current-project]
-            [planwise.client.datasets.views :as datasets]))
+            [planwise.client.datasets.views :as datasets]
+            [planwise.client.design.views :as design]))
 
 
 (def nav-items
-  [{:item :home :href (routes/home) :title "Projects"}
-   {:item :projects2 :href (routes/projects2) :title "Projects*"}
+  [{:item :home-old :href (routes/home-old) :title "Projects"}
    {:item :datasets :href (routes/datasets) :title "Datasets"}
-   {:item :datasets :href (routes/datasets2) :title "Datasets*"}])
+   {:item :home :href (routes/home) :target "_blank" :title "New version"}])
 
 (def current-user-email
   (atom config/user-email))
@@ -42,6 +43,12 @@
 (defmulti content-pane identity)
 
 (defmethod content-pane :home []
+  ;; :home is rendered on for all the routes initially
+  (if (= js/window.location.pathname "/")
+    [common2/redirect-to (routes/projects2)]
+    [common2/loading-placeholder]))
+
+(defmethod content-pane :home-old []
   [projects/project-list-page])
 
 (defmethod content-pane :projects []
@@ -56,11 +63,18 @@
 (defmethod content-pane :datasets2 []
   [datasets2/datasets2-page])
 
+(defmethod content-pane :design []
+  [design/app])
+
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]
     (fn []
-      [:div
-       [nav-bar]
-       [content-pane @current-page]
-       [:footer
-        [:span.version (str "Version: " config/app-version)]]])))
+      (cond
+        ; New design has full control of layout
+        (some #(= @current-page %) [:design :home :projects2 :datasets2]) [content-pane @current-page]
+        ; Old design with fixed layout
+        :else [:div
+                [nav-bar]
+                [content-pane @current-page]
+                [:footer
+                  [:span.version (str "Version: " config/app-version)]]]))))

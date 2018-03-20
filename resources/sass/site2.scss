@@ -1,0 +1,210 @@
+
+$mdc-theme-primary: #ff561c;
+$mdc-theme-secondary: #ff561c;
+$small-font-size: 0.81em;
+
+@import "material-components-web/material-components-web";
+@import "@material/theme/_color-palette";
+
+@mixin link-color($color, $hover-color: darken($color, 20%), $active-color: lighten($color, 20%)) {
+  text-decoration: none;
+  &, &:visited {
+    color: $color;
+  }
+  &:active, &.active {
+    color: $active-color;
+  }
+  &:hover {
+    color: $hover-color;
+  }
+}
+
+// layout
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+}
+
+.svg-hidden {
+  display: none;
+}
+
+.layout.fixed-width {
+  height: 100vh;
+  font-size: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1180px 1fr;
+  grid-template-rows: min-content 40px auto 20px 40px;
+  grid-template-areas:
+    "header header header"
+    ".      .      .     "
+    ".      main   .     "
+    ".      .      .     "
+    "footer footer footer";
+}
+
+.layout.full-screen {
+  height: 100vh;
+  font-size: 1rem;
+  display: grid;
+  grid-template-columns: 30px 370px auto;
+  grid-template-rows: min-content 30px auto 20px 40px;
+  grid-template-areas:
+    "header header header"
+    "main   main   main"
+    "main   main   main"
+    "main   main   main"
+    "footer footer footer";
+}
+
+$margin-page: 90px;
+
+header {
+  grid-area: header;
+
+  .mdc-toolbar__row {
+    padding-left: $margin-page;
+    padding-right: $margin-page;
+  }
+
+  .mdc-toolbar__title,  {
+    margin: 0px;
+  }
+
+  #top-row {
+    min-height: 50px;
+    font-size: $small-font-size;
+  }
+
+  #section-row {
+    display: flex;
+    justify-content: flex-start;
+    * {
+      margin-right: 10px;
+    }
+  }
+
+  #title-row {
+    border-top: 1px solid #404040;
+    height: 90px;
+
+    .icon {
+      width: 60px;
+      height: 60px;
+      position: absolute;
+      left: 15px;
+    }
+  }
+
+  #tabs-row {
+    min-height: auto;
+    height: 49px;
+
+    .mdc-tab-bar {
+      margin: inherit;
+    }
+  }
+
+  #main-action {
+    position: absolute;
+    right: $margin-page;
+    bottom: -27px;
+  }
+}
+
+main {
+  grid-area: main;
+  display: flex;
+  flex: 1;
+}
+
+footer {
+  grid-area: footer;
+  padding: 14px 14px;
+  border-top: 1px solid $material-color-grey-300;
+  font-size: $small-font-size;
+}
+
+.layout.full-screen aside#sidebar {
+  grid-column: 2;
+  grid-row: 3;
+  z-index: 20;
+  @include mdc-elevation(2);
+  background: #ffffff;
+}
+//
+
+h1, h2, h3 { font-weight: 400; }
+
+// Colors overrides
+body {
+  background-color: #efefef;
+}
+
+header.mdc-toolbar {
+  background-color: #404040;
+}
+
+#account-menu {
+  @include link-color(#9a9a9a);
+}
+
+#top-row a {
+  @include link-color(#9a9a9a);
+}
+
+#tabs-row {
+  .mdc-tab {
+    color: white;
+  }
+
+  .mdc-tab-bar__indicator {
+    background-color: $mdc-theme-secondary;
+  }
+}
+//
+
+.card-list {
+  width: 100%;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  justify-content: space-between;
+
+  .card-item {
+    align-self: flex-start;
+    background-color: #ffffff;
+    @include link-color(#000000);
+
+    @include mdc-elevation(2);
+    &:hover {
+      @include mdc-elevation(8);
+    }
+    @extend .mdc-elevation-transition;
+
+    .card-secondary {
+      padding: 1em;
+    }
+  }
+}
+
+.panel {
+  background-color: #ffffff;
+  width: 100%;
+  height: min-content;
+}
+
+form.vertical {
+  display: flex;
+  flex-flow: column;
+}
+
+.form-actions {
+  text-align: right;
+}
+
+//

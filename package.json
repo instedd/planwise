@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@cljs-oss/module-deps": "^1.1.1",
+    "create-react-class": "^15.6.3",
+    "material-components-web": "^0.32.0",
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4",
+    "rmwc": "^1.4.0",
+    "trim": "0.0.1"
+  }
+}
