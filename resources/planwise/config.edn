@@ -109,7 +109,8 @@
   :importer   #ig/ref :planwise.component/importer}
 
  :planwise.endpoint/datasets2
- {:datasets2   #ig/ref :planwise.component/datasets2}
+ {:datasets2   #ig/ref :planwise.component/datasets2
+  :jobrunner   #ig/ref :planwise.component/jobrunner}
 
  :planwise.endpoint/home
  {:maps       #ig/ref :planwise.component/maps
@@ -175,7 +176,7 @@
   :concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
 
  :planwise.component/jobrunner
- {}
+ {:concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
 
  :planwise.component/mailer
  {:config       {:sender #duct/env ["MAILER_SENDER" Str :or "planwise@instedd.org"]

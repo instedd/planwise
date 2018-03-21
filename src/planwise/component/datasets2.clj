@@ -1,6 +1,7 @@
 (ns planwise.component.datasets2
   (:require [planwise.boundary.datasets2 :as boundary]
             [planwise.boundary.coverage :as coverage]
+            [planwise.component.jobrunner :as jr]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.data.csv :as csv]
@@ -82,6 +83,11 @@
       (csv-to-sites tx-store dataset-id csv-file)
       (get-dataset tx-store dataset-id))))
 
+
+;;;
+;;; Pre-processing job implementation
+;;;
+
 (defn compute-site-coverage!
   [store site {:keys [algorithm options raster-dir]}]
   (try
@@ -133,7 +139,8 @@
       (info "Skipping site" site-id
             "since it's already processed with status" (:processing-status site)))))
 
-(defn preprocess-dataset!
+(defn new-processing-job
+  "Returns the initial job state to pre-process the datasets' sites"
   [store dataset-id]
   (let [db-spec      (get-db store)
         coverage     (:coverage store)
@@ -142,14 +149,43 @@
         algorithm    (keyword (:coverage-algorithm dataset))
         sites        (db-enum-site-ids db-spec {:dataset-id dataset-id :version last-version})
         options-list (coverage/enumerate-algorithm-options coverage algorithm)
+        ;; TODO: configure the raster-dir in the component
         raster-dir   (str (io/file "data/coverage" (str dataset-id)))]
-    (info "Pre-processing sites for dataset" dataset-id)
-    (if (some? algorithm)
-      (dorun (for [site-id (map :id sites)]
-               (preprocess-site! store site-id {:algorithm    algorithm
-                                                :options-list options-list
-                                                :raster-dir   raster-dir})))
-      (info "Coverage algorithm not set for dataset" dataset-id))))
+
+    (cond
+      (some? algorithm)
+      {:store   store
+       :options {:algorithm    algorithm
+                 :options-list options-list
+                 :raster-dir   raster-dir}
+       :sites   sites}
+
+      :else
+      (do
+        (warn "Coverage algorithm not set for dataset" dataset-id)
+        nil))))
+
+(defmethod jr/job-next-task ::preprocess-dataset
+  [[_ dataset-id] {:keys [store options sites] :as state}]
+  (let [next-site (first sites)
+        sites'    (next sites)
+        state'    (when sites' (assoc state :sites sites'))]
+    (if (some? next-site)
+      (let [site-id (:id next-site)]
+        {:state state'
+         :task-id site-id
+         :task-fn (fn [] (preprocess-site! store site-id options))})
+      {:state state'})))
+
+(defn preprocess-dataset!
+  "Manually trigger the synchronous pre-processing of a dataset"
+  [store dataset-id]
+  (info "Pre-processing sites for dataset" dataset-id)
+  (if-let [{:keys [sites options]} (new-processing-job store dataset-id)]
+    (dorun (for [site-id (map :id sites)]
+             (preprocess-site! store site-id options)))
+    (info "Coverage algorithm not set for dataset" dataset-id)))
+
 
 (defrecord SitesDatasetsStore [db coverage]
   boundary/Datasets2
@@ -163,7 +199,6 @@
 (defmethod ig/init-key :planwise.component/datasets2
   [_ config]
   (map->SitesDatasetsStore config))
-
 
 (comment
   ;; REPL testing
@@ -179,4 +214,5 @@
                              :raster-dir "data/coverage/11"})
 
   (preprocess-dataset! store 11)
+
   )

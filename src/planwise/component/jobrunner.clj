@@ -114,12 +114,13 @@
 (defn queue-job
   ([runner job]
    (queue-job runner job {}))
-  ([{:keys [state]} job job-state]
-   (let [state'     (swap! insert-job job job-state)
-         queue'     (:queue @state')
-         jobs'      (:jobs @state')
-         enqueued?  (contains? queue' job)
+  ([{:keys [taskmaster state]} job job-state]
+   (let [state'     (swap! state insert-job job job-state)
+         queue'     (:queue state')
+         jobs'      (:jobs state')
+         enqueued?  (some #{job} queue')
          job-state' (get jobs' job)]
+     (taskmaster/poll-dispatcher taskmaster)
      (cond
        (and enqueued? (= job-state job-state')) :enqueued
        enqueued? :duplicate
