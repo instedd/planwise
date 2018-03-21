@@ -10,4 +10,9 @@
     "Finds a site dataset by id")
 
   (create-and-import-sites [this options csv-file]
-    "Create and import a CSV file atomically"))
+    "Create and import a CSV file atomically")
+
+  (new-processing-job [this dataset-id]
+    "Creates a new job state for processing the dataset asynchronously"))
+
+;; Preprocessing dataset job type: ::preprocess-dataset

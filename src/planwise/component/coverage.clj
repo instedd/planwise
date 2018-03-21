@@ -5,7 +5,8 @@
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.util.pg :as pg]
             [integrant.core :as ig]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [clojure.java.io :as io]))
 
 ;; Specs
 
@@ -96,6 +97,7 @@
     (let [polygon (compute-coverage-polygon this coords criteria)
           raster-options (merge default-grid-align-options criteria)]
       (when-let [raster-path (:raster criteria)]
+        (io/make-parents raster-path)
         (rasterize/rasterize polygon raster-path raster-options))
       polygon)))
 

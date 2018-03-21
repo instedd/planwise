@@ -1,7 +1,7 @@
 -- :name db-create-dataset! :<! :1
 INSERT INTO datasets2
-    (name, "last-version", "owner-id")
-    VALUES (:name, 0, :owner-id)
+    (name, "last-version", "owner-id", "coverage-algorithm")
+    VALUES (:name, 0, :owner-id, :coverage-algorithm)
     RETURNING id;
 
 -- :name db-create-dataset-version! :<! :1

@@ -64,7 +64,7 @@
   [store name owner-id coverage-algorithm]
   (db-create-dataset! (get-db store) {:name name
                                       :owner-id owner-id
-                                      :coverage-algorithm coverage-algorithm}))
+                                      :coverage-algorithm (some-> coverage-algorithm clojure.core/name)}))
 
 (defn list-datasets
   [store owner-id]
@@ -165,7 +165,7 @@
         (warn "Coverage algorithm not set for dataset" dataset-id)
         nil))))
 
-(defmethod jr/job-next-task ::preprocess-dataset
+(defmethod jr/job-next-task ::boundary/preprocess-dataset
   [[_ dataset-id] {:keys [store options sites] :as state}]
   (let [next-site (first sites)
         sites'    (next sites)
@@ -194,7 +194,10 @@
   (get-dataset [store dataset-id]
     (get-dataset store dataset-id))
   (create-and-import-sites [store options csv-file]
-    (create-and-import-sites store options csv-file)))
+    (create-and-import-sites store options csv-file))
+  (new-processing-job [store dataset-id]
+    (new-processing-job store dataset-id)))
+
 
 (defmethod ig/init-key :planwise.component/datasets2
   [_ config]
