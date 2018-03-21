@@ -13,6 +13,18 @@
 
 (timbre/refer-timbre)
 
+(defn- default
+  [map path value-default]
+  (let [value (get-in map path)]
+      (if (nil? value)
+        (assoc-in map path value-default)
+        map)))
+
+(defn- apply-default
+  [config]
+  (-> config
+    (default [:demographics :target] nil)
+    (default [:actions :budget] nil)))
 
 (s/def ::id number?)
 (s/def ::name string?)
@@ -21,7 +33,7 @@
 (s/def ::demographics (s/keys :req-un [::target]))
 (s/def ::actions (s/keys :req-un [::budget]))
 (s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions])))
-(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config]))
+(s/def ::project (s/keys :req-un [::id ::owner-id ::name  ::config]))
 
 (defn- projects2-routes
   [service]
@@ -34,9 +46,9 @@
       (response project)))
 
    (PUT "/:id" [id project :as request]
-    (println project)
-     (assert (s/valid? ::project project) "invalid project-data")
-     (let [user-id    (util/request-user-id request)]
+     (let [user-id    (util/request-user-id request)
+           id         (:id project)]
+       (assert (s/valid? ::project project) "Invalid project")
        (projects2/update-project service id project)))
 
    (GET "/:id" [id :as request]
@@ -44,7 +56,7 @@
            project (projects2/get-project service (Integer. id))]
        (if (nil? project)
            (not-found project)
-           (response project))))
+           (response (assoc project :config (apply-default (:config project)))))))
 
    (GET "/" request
       (let [user-id          (util/request-user-id request)
