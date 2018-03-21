@@ -174,6 +174,9 @@
   :resmap             #ig/ref :planwise.component/resmap
   :concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
 
+ :planwise.component/jobrunner
+ {}
+
  :planwise.component/mailer
  {:config       {:sender #duct/env ["MAILER_SENDER" Str :or "planwise@instedd.org"]
                  :smtp   {:host #duct/env ["SMTP_HOST" Str]
