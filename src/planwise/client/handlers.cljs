@@ -7,6 +7,7 @@
             [planwise.client.datasets.handlers]
             [planwise.client.projects2.handlers]
             [planwise.client.datasets2.handlers]
+            [planwise.client.coverage]
             [planwise.client.regions.handlers :as regions]
             [re-frame.core :as rf]))
 
@@ -16,7 +17,8 @@
 (rf/reg-event-fx
  :initialise-db
  (fn [_ _]
-   {:dispatch [:regions/load-regions]
+   {:dispatch-n [[:regions/load-regions]
+                 [:coverage/load-algorithms]]
     :db db/initial-db}))
 
 (defmulti on-navigate (fn [page params] page))

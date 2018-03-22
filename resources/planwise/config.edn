@@ -109,7 +109,8 @@
   :importer   #ig/ref :planwise.component/importer}
 
  :planwise.endpoint/datasets2
- {:datasets2   #ig/ref :planwise.component/datasets2}
+ {:datasets2   #ig/ref :planwise.component/datasets2
+  :jobrunner   #ig/ref :planwise.component/jobrunner}
 
  :planwise.endpoint/home
  {:maps       #ig/ref :planwise.component/maps
@@ -158,6 +159,10 @@
  :planwise.component/datasets
  {:db          #ig/ref :duct.database/sql}
 
+ :planwise.component/datasets2
+ {:db          #ig/ref :duct.database/sql
+  :coverage    #ig/ref :planwise.component/coverage}
+
  :planwise.component/facilities
  {:db          #ig/ref :duct.database/sql
   :runner      #ig/ref :planwise.component/runner
@@ -169,6 +174,9 @@
   :projects           #ig/ref :planwise.component/projects
   :resmap             #ig/ref :planwise.component/resmap
   :concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
+
+ :planwise.component/jobrunner
+ {:concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
 
  :planwise.component/mailer
  {:config       {:sender #duct/env ["MAILER_SENDER" Str :or "planwise@instedd.org"]
@@ -207,9 +215,6 @@
  :planwise.component/runner
  {:bin         #duct/env ["BIN_PATH" Str :or "bin/"]
   :scripts     #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
-
- :planwise.component/datasets2
- {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/users
  {:db          #ig/ref :duct.database/sql}}

@@ -82,7 +82,8 @@
                  [org.clojure/data.csv "0.1.4"]
                  [com.draines/postal "2.0.0"]
                  [funcool/cuerdas "2.0.3"]
-                 [org.gdal/gdal "2.2.0"]]
+                 [org.gdal/gdal "2.2.0"]
+                 [org.clojure/math.combinatorics "0.1.4"]]
 
   :plugins [[duct/lein-duct "0.10.6"]]
 
@@ -124,6 +125,7 @@
                                    :exclusions [io.aviso/pretty]]
                                   [kerodon "0.9.0"]
                                   [ring/ring-mock "0.3.0"]
+                                  [com.gearswithingears/shrubbery "0.4.1"]
 
                                   ; Helpers
                                   [day8.re-frame/re-frame-10x "0.2.0"]

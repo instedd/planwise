@@ -5,7 +5,8 @@
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.util.pg :as pg]
             [integrant.core :as ig]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [clojure.java.io :as io]))
 
 ;; Specs
 
@@ -13,7 +14,7 @@
 (s/def ::raster string?)
 
 (s/def ::base-criteria (s/keys :req-un [::algorithm]
-                               :opt-un [::rasterize/ref-coords ::rasterize/resolution]))
+                               :opt-un [::raster ::rasterize/ref-coords ::rasterize/resolution]))
 
 (s/def ::driving-time #{30 60 90 120})
 (s/def ::pgrouting-alpha-criteria (s/keys :req-un [::driving-time]))
@@ -96,6 +97,7 @@
     (let [polygon (compute-coverage-polygon this coords criteria)
           raster-options (merge default-grid-align-options criteria)]
       (when-let [raster-path (:raster criteria)]
+        (io/make-parents raster-path)
         (rasterize/rasterize polygon raster-path raster-options))
       polygon)))
 

@@ -1,18 +1,14 @@
 (ns planwise.client.datasets2.db
-  (:require [schema.core :as s :include-macros true]
-            [planwise.client.asdf :as asdf]
+  (:require [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [remove-by-id]]))
 
-(s/defschema Dataset2
-  "Information pertaining a single dataset"
-  {:id          s/Int
-   :name        s/Str})
-
-
-(s/defschema Datasets2ViewModel
-  "Datasets related portion of the client database"
-  {:list             (asdf/Asdf (s/maybe [Dataset2]))
-   :new-dataset-data (s/maybe {:name s/Str})})
-
 (def initial-db
-  {:list             (asdf/new nil)})                                      
+  {:view-state   :list
+   :last-error   nil
+   :list         (asdf/new nil)})
+
+(defn show-dialog?
+  [state]
+  (case state
+    (:create-dialog :creating) true
+    false))

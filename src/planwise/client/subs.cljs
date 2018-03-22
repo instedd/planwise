@@ -1,5 +1,6 @@
 (ns planwise.client.subs
   (:require [re-frame.core :as rf]
+            [planwise.client.coverage]
             [planwise.client.projects.subs]
             [planwise.client.current-project.subs]
             [planwise.client.projects2.subs]
