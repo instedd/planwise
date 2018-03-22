@@ -1,6 +1,7 @@
 (ns planwise.client.datasets2.views
   (:require [re-frame.core :as rf]
             [planwise.client.asdf :as asdf]
+            [planwise.client.utils :as utils]
             [planwise.client.datasets2.db :as db]
             [planwise.client.datasets2.components.new-dataset :refer [new-dataset-dialog]]
             [planwise.client.ui.common :as ui]
@@ -18,13 +19,14 @@
 
 (defn dataset2-card
   [props dataset]
-  (let [name (:name dataset)]
-    [ui/card {:primary [:img {:src "http://via.placeholder.com/373x278"}]
-              :title name}]))
+  (let [name (:name dataset)
+        site-count (:site-count dataset 0)]
+    [ui/card {:title name
+              :subtitle (utils/pluralize site-count "site")}]))
 
 (defn datasets2-list
   [datasets]
-  [ui/card-list {}
+  [ui/card-list {:class "dataset-list"}
    (for [dataset datasets]
      [dataset2-card {:key (:id dataset)} dataset])])
 
