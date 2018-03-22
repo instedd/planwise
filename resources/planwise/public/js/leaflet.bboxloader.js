@@ -45,7 +45,7 @@ L.GeoJSON.include({
 
     if (options.filter && !options.filter(geojson)) { return; }
 
-    var layer = L.GeoJSON.geometryToLayer(geojson, options.pointToLayer, options.coordsToLatLng, options);
+    var layer = L.GeoJSON.geometryToLayer(geojson, options);
     layer.feature = L.GeoJSON.asFeature(geojson);
 
     layer.defaultOptions = layer.options;
@@ -64,7 +64,7 @@ L.GeoJSON.include({
  * Manages a layer by requesting features for it based on level and bounding box
  * @constructor
  */
-L.BBoxLoader = L.Class.extend({
+L.BBoxLoader = L.Layer.extend({
 
   initialize: function(options) {
     this._callback = options.callback || throwFn("'callback' is required");
