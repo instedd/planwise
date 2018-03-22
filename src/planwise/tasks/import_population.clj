@@ -4,11 +4,11 @@
             [clojure.java.jdbc   :as jdbc]))
 
 (def pg-db {:dbtype "postgresql"
-            :dbname "planwise"
-            :host "db"
-            :port "5432"
-            :user "planwise"
-            :password "planwise"})
+            :dbname (System/getenv "POSTGRES_DB")
+            :host (System/getenv "POSTGRES_HOST")
+            :port (System/getenv "POSTGRES_PORT")
+            :user (System/getenv "POSTGRES_USER")
+            :password (System/getenv "POSTGRES_PASSWORD")})
 
 (defn sql-insert!
   [table values]
@@ -17,8 +17,8 @@
 (defn run-script
   [script-with-options]
   (comment (println script-with-options))
-  (apply shell/sh script-with-options)
-  )
+  (apply shell/sh script-with-options))
+
 
 (defn add-script-path
   [script-name]
@@ -117,8 +117,8 @@
 
       (print-header-raster-all-regions country)
       (-> (raster-all-regions country (:id ret)) ;raster-regions
-          (print-result))
-    ))
+          (print-result))))
+
 
   (println (str "All done!"))
 
