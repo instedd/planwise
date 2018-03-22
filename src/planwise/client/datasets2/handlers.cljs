@@ -34,7 +34,14 @@
  (fn [db _]
    (assoc db
           :view-state :create-dialog
+          :new-dataset db/initial-new-dataset
           :last-error nil)))
+
+(rf/reg-event-db
+ :datasets2/new-dataset-update
+ in-datasets2
+ (fn [db [_ key value]]
+   (assoc-in db [:new-dataset key] value)))
 
 (rf/reg-event-db
  :datasets2/cancel-new-dataset
