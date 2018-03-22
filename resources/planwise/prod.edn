@@ -6,6 +6,9 @@
             {:main            planwise.client.core
              :output-to       "target/resources/planwise/public/js/main.js"
              :output-dir      "target/resources/planwise/public/js"
+             :install-deps    true
+             :npm-deps        {:material-components-web "0.32.0"
+                               :rmwc "1.4.0"}
              :asset-path      "/js"
              :closure-defines {goog.DEBUG false}
              :externs         ["resources/planwise/externs.js"]
