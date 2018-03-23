@@ -7,6 +7,15 @@ COUNTRY=$1
 LEVELS=${2:-2,4}
 echo "   -> Importing $COUNTRY at levels $LEVELS"
 
+# check if country was already imported
+REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, country FROM regions WHERE country = '$COUNTRY';")
+REGIONS_LEN=$(echo $REGIONS | wc -w | tr -d '[[:space:]]')
+
+if [ ${REGIONS_LEN} -gt 0 ]; then
+  echo "   -> Regions for country $COUNTRY already imported."
+  exit 1
+fi
+
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 
 export PGPASSWORD=$POSTGRES_PASSWORD;
