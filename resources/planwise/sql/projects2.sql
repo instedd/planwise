@@ -1,12 +1,12 @@
 -- :name db-create-project! :<! :1
 INSERT INTO projects2
-  ("owner-id", name, config)
-  VALUES (:owner-id, :name, NULL)
+  ("owner-id", name, config, "dataset-id")
+  VALUES (:owner-id, :name, NULL, NULL)
   RETURNING id;
 
 -- :name db-update-project :!
 UPDATE projects2
-  SET name = :name, config = :config
+  SET name = :name, config = :config, "dataset-id" = :dataset-id
   WHERE id = :id;
 
 -- :name db-get-project :?

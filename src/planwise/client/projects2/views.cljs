@@ -6,6 +6,7 @@
             [planwise.client.projects2.db :as db]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
+            [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]))
 
@@ -59,7 +60,7 @@
     [m/TextField {:type "text"
                   :label label
                   :on-change #(dispatch [:projects2/save-key path (transform (-> % .-target .-value))])
-                  :value (get-in @current-project path)}]))
+                  :value (let [val (get-in @current-project path)] (if (nil? val) "" val)) }]))
 
 (defn edit-current-project
   []
@@ -69,7 +70,11 @@
         [m/Grid {}
           [m/GridCell {:span 6}
             [:form.vertical
+              [:h2 "Goal"]
               [current-project-input "Goal" [:name] identity]
+              [:h2 "Sites"]
+              [datasets-dropdown-component]
+              [:h2 "Demographics"]
               [current-project-input "Target" [:config :demographics :target] valid-input]
               [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))
 

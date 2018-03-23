@@ -68,7 +68,7 @@
   (fn [{:keys [db]} [_ key data]]
     (let [{:keys [list current-project]}   db
           {:keys [id name]}                current-project
-          new-key                   (if (vector? key) key [key])         
+          new-key                   (if (vector? key) key [key])
           current-project-path      (into [] (cons :current-project new-key))
           new-list                  (if (= key :name) (new-list list {:id id :name name} id new-key data))]
       {:db                        (-> db

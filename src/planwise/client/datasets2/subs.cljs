@@ -3,10 +3,18 @@
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]))
 
+(defn f-aux
+  [dataset]
+  (let [{:keys [id name]} dataset]
+    (assoc {} (keyword (str id)) name)))
+
 (rf/reg-sub
  :datasets2/list
  (fn [db _]
-   (get-in db [:datasets2 :list])))
+   (let [list (get-in db [:datasets2 :list :value])
+         options (into [] (map f-aux list))]
+         options
+         (println (str "actual subs: " options)))))
 
 (rf/reg-sub
  :datasets2/view-state
