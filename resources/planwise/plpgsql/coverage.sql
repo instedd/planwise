@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pgrouting;
+
 -- Computes the coverage polygon from a point using pgRouting and alpha shape
 -- Parameters:
 --   point: starting point

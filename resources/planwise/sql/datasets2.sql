@@ -15,7 +15,11 @@ SELECT * FROM datasets2
   WHERE id = :id
 
 -- :name db-list-datasets :?
-SELECT id, name, "last-version" FROM datasets2
+SELECT id,
+       name,
+       "last-version",
+       (SELECT COUNT(*) FROM "sites2" WHERE "sites2"."dataset-id" = "datasets2"."id") AS "site-count"
+    FROM "datasets2"
     WHERE "owner-id" = :owner-id;
 
 -- :name db-create-site! :<! :1

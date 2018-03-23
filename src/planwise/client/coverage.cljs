@@ -22,6 +22,6 @@
  (fn [db _]
    (let [algorithms (get-in db [:coverage :algorithms])]
      (mapv (fn [[key algo-blurb]]
-             {:id key
+             {:value key
               :label (:label algo-blurb)})
            algorithms))))

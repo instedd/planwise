@@ -60,7 +60,7 @@
 
 (defn card-list
   [props & children]
-  (into [:section.card-list] children))
+  (into [:section.card-list props] children))
 
 (defn card
   [{:keys [href primary title subtitle status]}]

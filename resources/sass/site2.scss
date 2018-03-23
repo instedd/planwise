@@ -208,3 +208,40 @@ form.vertical {
 }
 
 //
+
+/* https://github.com/material-components/material-components-web/issues/719 */
+
+.mdc-dialog .mdc-select {
+  position: relative !important;
+}
+.mdc-dialog .mdc-select__menu {
+  top: inherit !important;
+  left: inherit !important;
+  max-height: calc(100vh - 64px)!important;
+  margin-top: 44px;
+}
+
+//
+
+.file-input-wrapper {
+  border: 1px solid #eee;
+  padding: 5px;
+  margin: 5px 0;
+  &:hover {
+    border: 1px dashed #ccc;
+    background-color: #eeeeee;
+  }
+}
+
+.dataset-list {
+  .card-item {
+    height: 120px;
+    width: 300px;
+    margin-bottom: 20px;
+
+    h2 {
+      font-size: 14px;
+      font-weight: normal;
+    }
+  }
+}
