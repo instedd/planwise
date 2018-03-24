@@ -3,18 +3,18 @@
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]))
 
-(defn f-aux
+(defn destructure-dataset
   [dataset]
   (let [{:keys [id name]} dataset]
-    (assoc {} (keyword (str id)) name)))
+    (vector (keyword (str id)) name)))
 
 (rf/reg-sub
  :datasets2/list
  (fn [db _]
    (let [list (get-in db [:datasets2 :list :value])
-         options (into [] (map f-aux list))]
-         options
-         (println (str "actual subs: " options)))))
+         col  (map destructure-dataset list)
+         options (reduce (fn [map [key val]] (assoc map key val)) {} col)]
+         options)))
 
 (rf/reg-sub
  :datasets2/view-state
