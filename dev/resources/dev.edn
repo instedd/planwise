@@ -11,8 +11,7 @@
             :build-options {:main cljs.user
                             :parallel-build true
                             :install-deps true
-                            :npm-deps { :material-components-web "0.32.0"
-                                        :rmwc "1.4.0"}
+                            :npm-deps #ig/ref :planwise.config/npm-deps
                             :output-to "target/resources/planwise/public/js/main.js"
                             :output-dir "target/resources/planwise/public/js"
                             :asset-path "/js"
