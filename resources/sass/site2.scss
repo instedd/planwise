@@ -63,6 +63,7 @@ $margin-page: 90px;
 
 header {
   grid-area: header;
+  z-index: 1;
 
   .mdc-toolbar__row {
     padding-left: $margin-page;
@@ -118,6 +119,7 @@ main {
   grid-area: main;
   display: flex;
   flex: 1;
+  z-index: 0;
 }
 
 footer {
@@ -243,5 +245,21 @@ form.vertical {
       font-size: 14px;
       font-weight: normal;
     }
+  }
+}
+
+.map-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+
+  > div {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
 }
