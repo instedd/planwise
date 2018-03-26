@@ -57,15 +57,25 @@
 
 (defn simple-map
   []
-  (let [position (r/atom mapping/map-preview-position)
-        zoom     (r/atom 3)]
+  (let [colors    [:red :blue :green :yellow :lime]
+        position  (r/atom mapping/map-preview-position)
+        zoom      (r/atom 3)
+        points    (r/atom [])
+        add-point (fn [lat lon] (swap! points conj {:lat lat
+                                                    :lon lon
+                                                    :weight 3
+                                                    :color (first (shuffle colors))
+                                                    :radius (+ 5 (rand-int 5))}))]
     (fn []
       [:div.map-container [l/map-widget {:zoom @zoom
                                          :position @position
                                          :on-position-changed #(reset! position %)
                                          :on-zoom-changed #(reset! zoom %)
+                                         :on-click add-point
                                          :controls []}
-                           mapping/default-base-tile-layer]])))
+                           mapping/default-base-tile-layer
+                           [:point-layer {:points @points
+                                          :style-fn #(select-keys % [:weight :radius :color])}]]])))
 
 (defn demo-map
   []
