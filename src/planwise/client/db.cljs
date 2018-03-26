@@ -29,4 +29,6 @@
    ;; Datasets
    :datasets            datasets/initial-db
 
-   :coverage            {}})
+   :coverage            {}
+
+   :population          {} })

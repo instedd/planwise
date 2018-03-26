@@ -3,6 +3,7 @@
             [planwise.client.asdf :as asdf]
             [reagent.core :as r]
             [re-com.core :as rc]
+            ;[planwise.client.population :refer [population/load-population-sources population/load-population-sources]]
             [planwise.client.projects2.db :as db]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
@@ -62,7 +63,20 @@
                   :on-change #(dispatch [:projects2/save-key path (transform (-> % .-target .-value))])
                   :value (or (get-in @current-project path) "")}]))
 
-(defn edit-current-project
+(defn- population-dropdown-component
+  []
+  (let [list (subscribe [:population/list])]
+    (fn []
+      (do
+        (dispatch [:population/load-population-sources]))
+        [m/Select {:label (if (empty? @list) "No sources available" "Source")
+                   :disabled (empty? @list)
+                   :options @list
+                   :onChange #(dispatch [:projects2/save-key [:config :demographics :source-population-id] (js/parseInt (-> % .-target .-value)) list])
+                    }])))
+
+
+  (defn edit-current-project
   []
   (let [current-project   (subscribe [:projects2/current-project])]
     [ui/fixed-width (common2/nav-params)
@@ -72,12 +86,15 @@
             [:form.vertical
               [:h2 "Goal"]
               [current-project-input "Goal" [:name] identity]
+              [:h2 "Demand"]
+              [population-dropdown-component]
+              [current-project-input "Target" [:config :demographics :target] valid-input]
+              [current-project-input "Unit" [:config :demographics :unit-name] identity]
               [:h2 "Sites"]
               [datasets-dropdown-component {:label "Dataset"
                                             :value (:dataset-id @current-project)
                                             :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
-              [:h2 "Demographics"]
-              [current-project-input "Target" [:config :demographics :target] valid-input]
+              [:h2 "Actions"]
               [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))
 
 (defn- project-section-show
