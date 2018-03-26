@@ -16,7 +16,7 @@
           (dispatch [:datasets2/load-datasets2])
           [m/Select {:label (if (empty? @datasets-list) "This projects has no datasets yet." "Sites")
                      :disabled (empty? @datasets-list)
-                     :options @datasets-list
+                     :options (sort-by :label @datasets-list)
                      :on-change #(dispatch [:projects2/save-key :dataset-id (js/parseInt (-> % .-target .-value))])
                      }]
                      ))))
