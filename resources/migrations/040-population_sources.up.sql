@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS population_sources (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  tif_file VARCHAR(255) NOT NULL
+);
