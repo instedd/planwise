@@ -60,7 +60,7 @@
     [m/TextField {:type "text"
                   :label label
                   :on-change #(dispatch [:projects2/save-key path (transform (-> % .-target .-value))])
-                  :value (let [val (get-in @current-project path)] (if (nil? val) "" val))}]))
+                  :value (or (get-in @current-project path) "")}]))
 
 (defn edit-current-project
   []
