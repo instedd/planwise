@@ -36,7 +36,7 @@ jobs:
             - ~/cache/.m2
 
   deploy:
-    <<: *environment
+    machine: true
     steps:
       - run:
           <<: *install-docker-compose

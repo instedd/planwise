@@ -3,7 +3,9 @@ FROM clojure:lein-2.8.1
 RUN apt update && \
     apt install -y build-essential libboost-program-options-dev libpq-dev \
                    libgdal-dev postgresql-client libpq-dev gdal-bin python-gdal libgdal-java \
-                   osm2pgrouting
+                   osm2pgrouting && \
+    curl -sL https://deb.nodesource.com/setup_9.x | bash - && \
+    apt-get install -y nodejs
 
 WORKDIR /app
 

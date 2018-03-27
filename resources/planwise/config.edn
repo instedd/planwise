@@ -14,6 +14,10 @@
   :output-style  :compressed
   :build-order   #ig/ref :duct.compiler/cljs}
 
+ :planwise.config/npm-deps
+ {:material-components-web "0.32.0"
+  :rmwc "1.4.0"}
+
  ;; Database
 
  :planwise.database/migrations
