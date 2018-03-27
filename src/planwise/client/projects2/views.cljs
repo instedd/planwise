@@ -77,6 +77,12 @@
                   :on-change change-fn
                   :value value}]))
 
+(defn- current-project-start
+  []
+  [m/Button {:id "start-project"
+             :href "#"
+             :on-click #(dispatch [:projects2/start-project])} "Start"])
+
 (defn edit-current-project
   []
   (let [current-project (subscribe [:projects2/current-project])]
@@ -106,7 +112,8 @@
                                              :on-change #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
                                              :empty [:div "First choose dataset."]}]
          [:h2 "Actions"]
-         [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))
+         [current-project-input "Budget" [:config :actions :budget] valid-input]
+         [current-project-start]]]]]]))
 
 (defn- project-section-show
   []
