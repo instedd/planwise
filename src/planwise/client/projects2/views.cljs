@@ -57,7 +57,7 @@
 
 (defn- current-project-input
   [label path transform]
-  (let [current-project   (subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])]
     [m/TextField {:type "text"
                   :label label
                   :on-change #(dispatch [:projects2/save-key path (transform (-> % .-target .-value))])
