@@ -6,10 +6,11 @@
             {:main            planwise.client.core
              :output-to       "target/resources/planwise/public/js/main.js"
              :output-dir      "target/resources/planwise/public/js"
+             :language-in     :es-2016
              :install-deps    true
              :npm-deps        #ig/ref :planwise.config/npm-deps
              :asset-path      "/js"
              :closure-defines {goog.DEBUG false}
              :externs         ["resources/planwise/externs.js"]
              :verbose         true
-             :optimizations   :advanced}}]}}
+             :optimizations   :simple}}]}}

@@ -11,6 +11,7 @@
             :build-options {:main cljs.user
                             :parallel-build true
                             :install-deps true
+                            :language-in :es-2016
                             :npm-deps #ig/ref :planwise.config/npm-deps
                             :output-to "target/resources/planwise/public/js/main.js"
                             :output-dir "target/resources/planwise/public/js"
