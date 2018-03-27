@@ -80,9 +80,10 @@
 
 (defn- current-project-start
   []
-  [m/Button {:id "start-project"
-             :on-click (utils/prevent-default #(dispatch [:projects2/start-project]))}
-            "Start"])
+  (let [current-project (subscribe [:projects2/current-project])]
+    [m/Button {:id "start-project"
+               :on-click (utils/prevent-default #(dispatch [:projects2/start-project (:id @current-project)]))}
+              "Start"]))
 
 (defn edit-current-project
   []

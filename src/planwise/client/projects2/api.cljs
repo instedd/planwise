@@ -26,3 +26,9 @@
   [project-id]
   {:method    :get
    :uri       (str "/api/projects2/" project-id)})
+
+(defn- start-project!
+  [project-id]
+  {:method    :put
+   :section   :show
+   :uri       (str "api/projects2/" project-id)})

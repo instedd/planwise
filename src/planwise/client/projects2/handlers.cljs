@@ -57,8 +57,10 @@
 (rf/reg-event-fx
   :projects2/start-project
   in-projects2
-  (fn [_ _]
-    {:navigate (routes/projects2)}))
+  (fn [cofx [_ id]]
+    {:api (assoc (api/start-project! id)
+                 :on-success [:projects2/save-project-data]
+                 :on-failure [:projects2/project-not-found])}))
 
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
