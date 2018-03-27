@@ -6,7 +6,8 @@
 (rf/reg-sub
  :datasets2/list
  (fn [db _]
-   (get-in db [:datasets2 :list])))
+   (let [list (get-in db [:datasets2 :list :value])]
+        (mapv (fn [dataset] (let [{:keys [id name]} dataset] {:value (str id) :label name})) list))))
 
 (rf/reg-sub
  :datasets2/view-state
