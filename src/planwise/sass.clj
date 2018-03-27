@@ -74,3 +74,5 @@
     (doseq [[in out] in->out]
       (compile-sass in out opts))
     (mapv (comp str val) in->out)))
+
+(derive :planwise/sass :duct/compiler)

@@ -3,6 +3,7 @@
             [integrant.core :as ig]
             ;; Force load SASS compiler component for key derivation declaration
             [duct.compiler.sass]
+            [planwise.sass]
             [clojure.java.io :as io]
             [clojure.string :as str]))
 
