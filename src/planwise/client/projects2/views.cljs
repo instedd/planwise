@@ -11,7 +11,8 @@
             [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]
-            [planwise.client.ui.filter-select :as filter-select]))
+            [planwise.client.ui.filter-select :as filter-select]
+            [planwise.client.utils :as utils]))
 
 ;;------------------------------------------------------------------------
 ;;Project listing and creation
@@ -80,7 +81,7 @@
 (defn- current-project-start
   []
   [m/Button {:id "start-project"
-             :on-click #(dispatch [:projects2/start-project])}
+             :on-click (utils/prevent-default #(dispatch [:projects2/start-project]))}
             "Start"])
 
 (defn edit-current-project
