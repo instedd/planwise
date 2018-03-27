@@ -60,7 +60,7 @@
     [m/TextField {:type "text"
                   :label label
                   :on-change #(dispatch [:projects2/save-key path (transform (-> % .-target .-value))])
-                  :value (let [val (get-in @current-project path)] (if (nil? val) "" val)) }]))
+                  :value (let [val (get-in @current-project path)] (if (nil? val) "" val))}]))
 
 (defn edit-current-project
   []
@@ -73,7 +73,9 @@
               [:h2 "Goal"]
               [current-project-input "Goal" [:name] identity]
               [:h2 "Sites"]
-              [datasets-dropdown-component]
+              [datasets-dropdown-component {:label "Dataset"
+                                            :value (:dataset-id @current-project)
+                                            :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
               [:h2 "Demographics"]
               [current-project-input "Target" [:config :demographics :target] valid-input]
               [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))

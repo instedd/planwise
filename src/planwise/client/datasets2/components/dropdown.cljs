@@ -9,16 +9,17 @@
               [re-frame.utils :as c]))
 
 (defn datasets-dropdown-component
-  []
+  [{:keys [label value on-change]}]
   (let [datasets-list (subscribe [:datasets2/list])]
     (fn []
         (do
           (dispatch [:datasets2/load-datasets2])
-          [m/Select {:label (if (empty? @datasets-list) "This projects has no datasets yet." "Sites")
+          [m/Select {:label (if (empty? @datasets-list) "There are no datasets defined." label)
                      :disabled (empty? @datasets-list)
+                     :value (str value)
                      :options (sort-by :label @datasets-list)
-                     :on-change #(dispatch [:projects2/save-key :dataset-id (js/parseInt (-> % .-target .-value))])
-                     }]
-                     ))))
+                     :on-change #(on-change (js/parseInt (-> % .-target .-value)))}]))))
+
+
 
 
