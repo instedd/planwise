@@ -26,11 +26,13 @@
 
 (defn- project-card
   [props project]
-  (let [name (:name project)
-        id   (:id  project)]
+  (let [name  (:name project)
+        id    (:id  project)
+        state (:state project)]
     [ui/card {:href (routes/projects2-show {:id id})
               :primary [:img {:src "http://via.placeholder.com/373x278"}]
-              :title (or-blank name [:i "Untitled"])}]))
+              :title (or-blank name [:i "Untitled"])
+              :status (or-blank state [:i "status unknown"])}]))
 
 (defn- projects-list
   [projects]
