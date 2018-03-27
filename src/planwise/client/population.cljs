@@ -1,5 +1,6 @@
 (ns planwise.client.population
-  (:require [re-frame.core :as rf]))
+  (:require [re-frame.core :as rf]
+            [planwise.client.ui.rmwc :as m]))
 
 (def load-population-sources
   {:method    :get
@@ -23,3 +24,14 @@
    (let [list (get-in db [:population :list])]
      (mapv (fn [source] (let [{:keys [id name]} source]{:value id :label name})) list))))
 
+(defn population-dropdown-component
+  [{:keys [label value on-change]}]
+    (let [list (subscribe [:population/list])]
+    (fn []
+      (do
+        (dispatch [:population/load-population-sources]))
+        [m/Select {:label (if (empty? @list) "No sources available" label)
+                   :disabled (empty? @list)
+                   :value (str value)
+                   :options @list
+                   :onChange #(on-change (js/parseInt (-> % .-target .-value)))}])))
