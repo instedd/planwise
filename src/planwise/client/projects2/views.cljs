@@ -1,5 +1,5 @@
 (ns planwise.client.projects2.views
-  (:require [re-frame.core :refer [subscribe dispatch]]
+  (:require [re-frame.core :refer [subscribe dispatch] :as rf]
             [planwise.client.asdf :as asdf]
             [reagent.core :as r]
             [re-com.core :as rc]
@@ -57,15 +57,17 @@
 
 (defn- current-project-input
   [label path transform]
-  (let [current-project (subscribe [:projects2/current-project])]
+  (let [current-project (rf/subscribe [:projects2/current-project])
+        value           (or (get-in @current-project path) "")
+        change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value transform)])]
     [m/TextField {:type "text"
                   :label label
-                  :on-change #(dispatch [:projects2/save-key path (transform (-> % .-target .-value))])
-                  :value (or (get-in @current-project path) "")}]))
+                  :on-change change-fn
+                  :value value}]))
 
 (defn edit-current-project
   []
-  (let [current-project   (subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])]
     [ui/fixed-width (common2/nav-params)
       [ui/panel {}
         [m/Grid {}

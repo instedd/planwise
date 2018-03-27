@@ -12,14 +12,8 @@
   [{:keys [label value on-change]}]
   (let [datasets-list (subscribe [:datasets2/dropdown-options])]
     (fn []
-        (do
-          (dispatch [:datasets2/load-datasets2])
-          [m/Select {:label (if (empty? @datasets-list) "There are no datasets defined." label)
-                     :disabled (empty? @datasets-list)
-                     :value (str value)
-                     :options (sort-by :label @datasets-list)
-                     :on-change #(on-change (js/parseInt (-> % .-target .-value)))}]))))
-
-
-
-
+      [m/Select {:label (if (empty? @datasets-list) "There are no datasets defined." label)
+                 :disabled (empty? @datasets-list)
+                 :value (str value)
+                 :options (sort-by :label @datasets-list)
+                 :on-change #(on-change (js/parseInt (-> % .-target .-value)))}])))
