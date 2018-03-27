@@ -16,7 +16,7 @@
 
  :planwise.config/npm-deps
  {:material-components-web "0.32.0"
-  :rmwc "1.4.0"}
+  :rmwc "1.4.1"}
 
  ;; Database
 
