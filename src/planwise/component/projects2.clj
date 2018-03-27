@@ -45,6 +45,12 @@
   [store owner-id]
   (db-list-projects (get-db store) {:owner-id owner-id}))
 
+(defn start-project
+  [store project-id]
+  (let [project (db-get-project (get-db store) {:id project-id})]
+    (db-update-state-project (get-db store) {:id project-id
+                                             :state (name :started)})))
+
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]
   (map->SitesProjectsStore config))

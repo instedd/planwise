@@ -21,3 +21,8 @@ SELECT projects2.*, datasets2."coverage-algorithm"
 -- :name db-list-projects :?
 SELECT id, name FROM projects2
     WHERE "owner-id" = :owner-id;
+
+-- :name db-update-state-project :!
+UPDATE projects2
+  SET state = :state
+  WHERE id = :id;
