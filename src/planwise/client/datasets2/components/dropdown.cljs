@@ -10,7 +10,7 @@
 
 (defn datasets-dropdown-component
   [{:keys [label value on-change]}]
-  (let [datasets-list (subscribe [:datasets2/list])]
+  (let [datasets-list (subscribe [:datasets2/dropdown-options])]
     (fn []
         (do
           (dispatch [:datasets2/load-datasets2])

@@ -26,29 +26,25 @@
 
 (defn datasets2-list
   [datasets]
-  [ui/card-list {:class "dataset-list"}
-   (for [dataset datasets]
-     [dataset2-card {:key (:id dataset)} dataset])])
-
-(defn- listing-updated-datasets
-  []
-  (let [datasets (rf/subscribe [:datasets2/list])
-        sets (asdf/value @datasets)]
-    (when (asdf/should-reload? @datasets)
-      (rf/dispatch [:datasets2/load-datasets2]))
-    [:div
-     (cond
-       (nil? sets) [common2/loading-placeholder]
-       (empty? sets) [no-datasets2-view]
-       :else [datasets2-list sets])]))
-
+  (cond
+    (empty? datasets) [no-datasets2-view]
+    :else
+      [ui/card-list {:class "dataset-list"}
+        (for [dataset datasets]
+          [dataset2-card {:key (:id dataset)} dataset])]))
 
 (defn datasets2-page
   []
-  (let [create-dataset-button (ui/main-action
-                               {:icon "add"
-                                :on-click #(rf/dispatch [:datasets2/begin-new-dataset])})]
-    [ui/fixed-width (assoc (common2/nav-params)
-                           :action create-dataset-button)
-     [listing-updated-datasets]
-     [new-dataset-dialog]]))
+  (let [datasets (rf/subscribe [:datasets2/list])
+        sets (asdf/value @datasets)
+        create-dataset-button (ui/main-action {:icon "add"
+                                               :on-click #(rf/dispatch [:datasets2/begin-new-dataset])})]
+    (when (asdf/should-reload? @datasets)
+      (rf/dispatch [:datasets2/load-datasets2]))
+    (cond
+      (nil? sets) [common2/loading-placeholder]
+      :else
+        [ui/fixed-width (assoc (common2/nav-params)
+                              :action create-dataset-button)
+          [datasets2-list sets]
+          [new-dataset-dialog]])))
