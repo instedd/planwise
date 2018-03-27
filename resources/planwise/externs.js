@@ -742,11 +742,9 @@ var L = {
     "eachLayer": function () {},
     "clearLayers": function () {},
     "toGeoJSON": function () {},
-    "withPathGroup": function () {},
     "prototype": function () {},
     "onAdd": function () {},
     "onRemove": function () {},
-    "setPathGroupStyle": function () {}
    },
   "FeatureGroup": function () {},
   "featureGroup": function () {},
@@ -758,15 +756,6 @@ var L = {
     "bringToBack": function() {},
     "onAdd": function() {},
     "onRemove": function() {},
-  },
-  "PathGroup": function() {},
-  "pathGroup": {
-    "bringToFront": function() {},
-    "bringToBack": function() {},
-    "onAdd": function() {},
-    "onRemove": function() {},
-    "setStyle": function() {},
-    "_updateStyle": function() {},
   },
   "LineUtil": {
     "simplify": function () {},
@@ -805,13 +794,6 @@ var L = {
   "geoJson": {
     "addTo": function() {},
     "addData": function() {},
-    "group": {
-      "onAdd": function() {},
-      "onRemove": function() {},
-      "setPathGroupStyle": function() {},
-      "bringToBack": function() {},
-      "bringToFront": function() {},
-    }
   },
   "BBoxLoader": function() {},
   "bboxLoader": {
@@ -869,7 +851,10 @@ var L = {
     },
     "legend": function () {}
   },
-  "PosAnimation": function () {}
+  "PosAnimation": function () {},
+  "SVG": {
+    "groupRenderer": function() {}
+  }
 };
 
 L.circleMarker.prototype = function () {};

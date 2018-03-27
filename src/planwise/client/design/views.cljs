@@ -1,6 +1,8 @@
 (ns planwise.client.design.views
   (:require [re-frame.core :refer [subscribe]]
             [reagent.core :as r]
+            [leaflet.core :as l]
+            [planwise.client.mapping :as mapping]
             [planwise.client.ui.rmwc :as m]
             [planwise.client.ui.common :as ui]))
 
@@ -53,16 +55,38 @@
           [:div.form-actions
             [m/Button {} "Continue"]]]]]])
 
+(defn simple-map
+  []
+  (let [colors    [:red :blue :green :yellow :lime]
+        position  (r/atom mapping/map-preview-position)
+        zoom      (r/atom 3)
+        points    (r/atom [])
+        add-point (fn [lat lon] (swap! points conj {:lat lat
+                                                    :lon lon
+                                                    :weight 3
+                                                    :color (first (shuffle colors))
+                                                    :radius (+ 5 (rand-int 5))}))]
+    (fn []
+      [:div.map-container [l/map-widget {:zoom @zoom
+                                         :position @position
+                                         :on-position-changed #(reset! position %)
+                                         :on-zoom-changed #(reset! zoom %)
+                                         :on-click add-point
+                                         :controls []}
+                           mapping/default-base-tile-layer
+                           [:point-layer {:points @points
+                                          :style-fn #(select-keys % [:weight :radius :color])}]]])))
+
 (defn demo-map
   []
   [ui/full-screen (merge {:tabs [project-tabs {:active 1}]
-                          :main-prop {:style {:background "#c3e4c7"}}
-                          :main [:h1 {:style {:margin "0 auto"}} "TODO MAP"]}
+                          :main-prop {:style {:position :relative}}
+                          :main [simple-map]}
                          nav-params)
-    [:h1 "Lorem ipsum"]
-    [:hr]
-    [:h2 "dolor sit amet"]
-    [:p 50000]])
+   [:h1 "Lorem ipsum"]
+   [:hr]
+   [:h2 "dolor sit amet"]
+   [:p 50000]])
 
 (defn app
   []

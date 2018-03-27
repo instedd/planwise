@@ -83,10 +83,11 @@
 
 (defn geojson-layer [props]
   (let [attrs (dissoc props :data :fit-bounds)
-        group-attrs (:group props)]
-    (.group js/L.geoJson nil #js {:clickable false
-                                  :pathGroup (clj->js group-attrs)
-                                  :style (constantly (clj->js attrs))})))
+        group-attrs (:group props)
+        renderer (.groupRenderer js/L.SVG (clj->js group-attrs))]
+    (.geoJson js/L nil #js {:clickable false
+                            :renderer renderer
+                            :style (constantly (clj->js attrs))})))
 
 (defmulti leaflet-layer layer-type)
 
@@ -101,7 +102,7 @@
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]
-  (let [layer  (.withPathGroup js/L.layerGroup)
+  (let [layer  (.layerGroup js/L)
         points (:points props)
         attrs  (dissoc props :points)]
     (doseq [point points] (.addLayer layer (create-point point attrs)))
