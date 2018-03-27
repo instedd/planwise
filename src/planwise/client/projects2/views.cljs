@@ -80,8 +80,8 @@
 (defn- current-project-start
   []
   [m/Button {:id "start-project"
-             :href "#"
-             :on-click #(dispatch [:projects2/start-project])} "Start"])
+             :on-click #(dispatch [:projects2/start-project])}
+            "Start"])
 
 (defn edit-current-project
   []

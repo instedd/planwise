@@ -54,6 +54,12 @@
                 :on-failure [:projects2/project-not-found])}))
 
 
+(rf/reg-event-fx
+  :projects2/start-project
+  in-projects2
+  (fn [_ _]
+    {:navigate (routes/projects2)}))
+
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
 
