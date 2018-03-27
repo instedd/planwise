@@ -48,8 +48,10 @@
 (defn start-project
   [store project-id]
   (let [project (db-get-project (get-db store) {:id project-id})]
-    (db-update-state-project (get-db store) {:id project-id
-                                             :state (name :started)})))
+    (do
+      (db-update-state-project (get-db store) {:id project-id
+                                               :state (name :started)})
+      (db-get-project (get-db store) {:id project-id}))))
 
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]
