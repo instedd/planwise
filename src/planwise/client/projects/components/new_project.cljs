@@ -9,7 +9,7 @@
                                              map-preview-position]]
             [planwise.client.asdf :as asdf]
             [planwise.client.components.common :as common]
-            [planwise.client.components.dropdown :as dropdown]
+            [re-com.dropdown :as dropdown]
             [planwise.client.utils :as utils]
             [planwise.client.styles :as styles]
             [planwise.client.datasets.db :refer [dataset->status]]
