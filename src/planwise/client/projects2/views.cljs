@@ -75,8 +75,8 @@
               [current-project-input "Goal" [:name] identity]
               [:h2 "Demand"]
               [population-dropdown-component {:label "Sources"
-                                              :value (get-in @current-project [:config :demographics :source-population-id])
-                                              :on-change  #(dispatch [:projects2/save-key [:config :demographics :source-population-id] %])}]
+                                              :value (:population-source-id @current-project)
+                                              :on-change  #(dispatch [:projects2/save-key :population-source-id %])}]
               [current-project-input "Target" [:config :demographics :target] valid-input]
               [current-project-input "Unit" [:config :demographics :unit-name] identity]
               [:h2 "Sites"]
