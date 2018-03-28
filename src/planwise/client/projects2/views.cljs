@@ -56,6 +56,17 @@
   (let [value (js/parseInt inp)]
     (if (and (number? value) (not (js/isNaN value))) value nil)))
 
+(defn- regions-dropdown-component
+  [attrs]
+  (let [props (merge {:choices @(rf/subscribe [:regions/list])
+                      :label-fn :name
+                      :render-fn (fn [region] [:div
+                                               [:span (:name region)]
+                                               [:span.option-context (:country-name region)]])
+                      :filter-box? true}
+                     attrs)]
+    (into [filter-select/single-dropdown] (mapcat identity props))))
+
 (defn- current-project-input
   [label path transform]
   (let [current-project (rf/subscribe [:projects2/current-project])
@@ -68,8 +79,7 @@
 
 (defn edit-current-project
   []
-  (let [current-project (subscribe [:projects2/current-project])
-        region-id       (r/atom nil)]
+  (let [current-project (subscribe [:projects2/current-project])]
     [ui/fixed-width (common2/nav-params)
      [ui/panel {}
       [m/Grid {}
@@ -77,16 +87,9 @@
         [:form.vertical
          [:h2 "Goal"]
          [current-project-input "Goal" [:name] identity]
-         [filter-select/single-dropdown
-          :placeholder "Region"
-          :choices @(subscribe [:regions/list])
-          :label-fn :name
-          :render-fn (fn [region] [:div
-                                   [:span (:name region)]
-                                   [:span.option-context (:country-name region)]])
-          :filter-box? true
-          :on-change #(when % (reset! region-id %))
-          :model region-id]
+         [regions-dropdown-component {:placeholder "Region"
+                                      :on-change #(dispatch [:projects2/save-key :region-id %])
+                                      :model (:region-id @current-project)}]
          [:h2 "Demand"]
          [population-dropdown-component {:label "Sources"
                                          :value (:population-source-id @current-project)
