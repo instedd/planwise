@@ -63,7 +63,7 @@
                   :on-change #(dispatch [:projects2/save-key path (transform (-> % .-target .-value))])
                   :value (or (get-in @current-project path) "")}]))
 
-  (defn edit-current-project
+(defn edit-current-project
   []
   (let [current-project   (subscribe [:projects2/current-project])]
     [ui/fixed-width (common2/nav-params)
@@ -76,7 +76,7 @@
               [:h2 "Demand"]
               [population-dropdown-component {:label "Sources"
                                               :value (:population-source-id @current-project)
-                                              :on-change  #(dispatch [:projects2/save-key :population-source-id %])}]
+                                              :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
               [current-project-input "Target" [:config :demographics :target] valid-input]
               [current-project-input "Unit" [:config :demographics :unit-name] identity]
               [:h2 "Sites"]

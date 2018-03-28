@@ -17,10 +17,6 @@
 
 (defrecord PopulationStore [db])
 
-(defn projects2-store
-  "Constructs a Projects2 Store component"
-  []
-  (map->PopulationStore {}))
 (defn list-population-sources
   [store]
   (db-list-population-sources (get-db store)))
@@ -28,4 +24,3 @@
 (defmethod ig/init-key :planwise.component/population
   [_ config]
   (map->PopulationStore config))
-

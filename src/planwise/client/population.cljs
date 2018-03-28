@@ -28,7 +28,7 @@
 ;; Subs
 
 (rf/reg-sub
- :population/list
+ :population/dropdown-options
  (fn [db _]
    (let [list (get-in db [:population :list])]
      (mapv (fn [source] (let [{:keys [id name]} source]{:value id :label name})) list))))
@@ -38,10 +38,10 @@
 
 (defn population-dropdown-component
   [{:keys [label value on-change]}]
-  (let [list (subscribe [:population/list])]
+  (let [list (subscribe [:population/dropdown-options])]
       (dispatch [:population/load-population-sources])
     (fn []
-      [m/Select {:label (if (empty? @list) "No sources available." label)
+      [m/Select {:label (if (empty? @list) "No population layer available." label)
                  :disabled (empty? @list)
                  :value (str value)
                  :options @list
