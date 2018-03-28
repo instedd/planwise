@@ -175,10 +175,18 @@ header.mdc-toolbar {
   flex-wrap: wrap;
   align-items: flex-start;
   align-content: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
 
   .card-item {
     align-self: flex-start;
+    margin: 10px;
+
+    $card-radius: 4px;
+    border-radius: $card-radius;
+    img {
+      border-radius: $card-radius $card-radius 0px 0px;
+    }
+
     background-color: #ffffff;
     @include link-color(#000000);
 
