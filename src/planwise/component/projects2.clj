@@ -30,7 +30,8 @@
 (defn create-project
   [store owner-id]
   (db-create-project! (get-db store) {:owner-id owner-id
-                                      :name ""}))
+                                      :name ""
+                                      :state "draft"}))
 
 (defn update-project
   [store project]
