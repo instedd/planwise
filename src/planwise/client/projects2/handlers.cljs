@@ -56,30 +56,31 @@
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
 
-(defn- new-list 
+(defn- new-list
   [list current-project id key data]
   (let [projects-update         (remove (fn [project] (= (:id project) id)) list)
         updated-project         (assoc-in current-project key data)]
-      (cons updated-project projects-update)))
+     (cons updated-project projects-update)))
 
 (rf/reg-event-fx
   :projects2/save-key
   in-projects2
-  (fn [{:keys [db]} [_ key data]]
+  (fn [{:keys [db]} [_ path data]]
     (let [{:keys [list current-project]}   db
           {:keys [id name]}                current-project
-          new-key                   (if (vector? key) key [key])
-          current-project-path      (into [] (cons :current-project new-key))
-          new-list                  (if (= key :name) (new-list list {:id id :name name} id new-key data))]
-      {:db                        (-> db
-                                   (assoc-in current-project-path data)
-                                   (assoc :list new-list))
+          path                      (if (vector? path) path [path])
+          current-project-path      (into [:current-project] path)
+          new-list                  (if (= path [:name]) (new-list list {:id id :name name} id path data) list)]
+
+      {:db                       (-> db
+                                  (assoc-in current-project-path data)
+                                  (assoc :list new-list))
 
        :dispatch-debounce         [{:id (str :projects2/save id)
                                     :timeout 250
                                     :action :dispatch
                                     :event [:projects2/persist-current-project]}]})))
- 
+
 
 (rf/reg-event-fx
   :projects2/persist-current-project
