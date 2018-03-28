@@ -8,6 +8,7 @@
             [planwise.client.projects2.handlers]
             [planwise.client.datasets2.handlers]
             [planwise.client.coverage]
+            [planwise.client.population]
             [planwise.client.regions.handlers :as regions]
             [re-frame.core :as rf]))
 
