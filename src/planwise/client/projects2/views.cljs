@@ -9,7 +9,8 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
             [planwise.client.components.common2 :as common2]
-            [planwise.client.ui.rmwc :as m]))
+            [planwise.client.ui.rmwc :as m]
+            [planwise.client.ui.filter-select :as filter-select]))
 
 ;;------------------------------------------------------------------------
 ;;Project listing and creation
@@ -67,26 +68,37 @@
 
 (defn edit-current-project
   []
-  (let [current-project (subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])
+        region-id       (r/atom nil)]
     [ui/fixed-width (common2/nav-params)
-      [ui/panel {}
-        [m/Grid {}
-          [m/GridCell {:span 6}
-            [:form.vertical
-              [:h2 "Goal"]
-              [current-project-input "Goal" [:name] identity]
-              [:h2 "Demand"]
-              [population-dropdown-component {:label "Sources"
-                                              :value (:population-source-id @current-project)
-                                              :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
-              [current-project-input "Target" [:config :demographics :target] valid-input]
-              [current-project-input "Unit" [:config :demographics :unit-name] identity]
-              [:h2 "Sites"]
-              [datasets-dropdown-component {:label "Dataset"
-                                            :value (:dataset-id @current-project)
-                                            :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
-              [:h2 "Actions"]
-              [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))
+     [ui/panel {}
+      [m/Grid {}
+       [m/GridCell {:span 6}
+        [:form.vertical
+         [:h2 "Goal"]
+         [current-project-input "Goal" [:name] identity]
+         [filter-select/single-dropdown
+          :placeholder "Region"
+          :choices @(subscribe [:regions/list])
+          :label-fn :name
+          :render-fn (fn [region] [:div
+                                   [:span (:name region)]
+                                   [:span.option-context (:country-name region)]])
+          :filter-box? true
+          :on-change #(when % (reset! region-id %))
+          :model region-id]
+         [:h2 "Demand"]
+         [population-dropdown-component {:label "Sources"
+                                         :value (:population-source-id @current-project)
+                                         :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
+         [current-project-input "Target" [:config :demographics :target] valid-input]
+         [current-project-input "Unit" [:config :demographics :unit-name] identity]
+         [:h2 "Sites"]
+         [datasets-dropdown-component {:label "Dataset"
+                                       :value (:dataset-id @current-project)
+                                       :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
+         [:h2 "Actions"]
+         [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))
 
 (defn- project-section-show
   []
