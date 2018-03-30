@@ -84,12 +84,13 @@
 
 
 (rf/reg-event-fx
- :projects2/persist-current-project
- in-projects2
- (fn [{:keys [db]} [_]]
-   (let [current-project   (:current-project db)
-         id                (:id current-project)]
-     {:api          (api/update-project id current-project)})))
+  :projects2/persist-current-project
+  in-projects2
+  (fn [{:keys [db]} [_]]
+    (let [current-project   (:current-project db)
+          id                (:id current-project)]
+      {:api          (api/update-project id current-project)
+                       :on-success [:projects2/save-project-data]})))
 
 ;;------------------------------------------------------------------------------
 ;; Listing projects

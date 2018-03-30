@@ -30,13 +30,14 @@
 (s/def ::dataset-id (s/nilable number?))
 (s/def ::region-id (s/nilable number?))
 (s/def ::population-source-id (s/nilable number?))
+(s/def ::coverage-algorithm (s/nilable string?))
 (s/def ::name string?)
 (s/def ::target (s/nilable number?))
 (s/def ::budget (s/nilable number?))
 (s/def ::demographics (s/keys :req-un [::target]))
 (s/def ::actions (s/keys :req-un [::budget]))
 (s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions])))
-(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::region-id ::dataset-id ::population-source-id]))
+(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::region-id ::dataset-id ::population-source-id ::coverage-algorithm]))
 
 (defn- projects2-routes
   [service]
@@ -57,6 +58,7 @@
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
            project (projects2/get-project service (Integer. id))]
+       (println project)
        (if (nil? project)
          (not-found project)
          (response (assoc project :config (apply-default (:config project)))))))

@@ -1,6 +1,7 @@
 (ns planwise.component.datasets2
   (:require [planwise.boundary.datasets2 :as boundary]
             [planwise.boundary.coverage :as coverage]
+            [planwise.component.coverage :refer [supported-algorithms]]
             [planwise.component.jobrunner :as jr]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
