@@ -21,4 +21,4 @@ SELECT id, name FROM projects2
 -- :name db-coverage-algorithm :<! :1
 SELECT datasets2."coverage-algorithm"
     FROM datasets2, projects2
-    WHERE projects2."dataset-id" = datasets2.id;
+    WHERE datasets2.id = :dataset-id AND projects2."dataset-id" = :dataset-id;

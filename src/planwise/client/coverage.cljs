@@ -1,5 +1,6 @@
 (ns planwise.client.coverage
-  (:require [re-frame.core :as rf]))
+  (:require [re-frame.core :as rf]
+            [planwise.client.ui.rmwc :as m]))
 
 ;; ----------------------------------------------------------------------------
 ;; API methods
@@ -34,14 +35,13 @@
            algorithms))))
 
 (rf/reg-sub
- :coverage/algorithms
+ :coverage/supported-algorithms
  (fn [db _]
  (get-in db [:coverage :algorithms])))
 
 ;; ----------------------------------------------------------------------------
 ;; Views
 ; (defn filter-options-slider
-;
 ;     [:div
 ;       [:h3 label]
 ;       [:h5 description]
@@ -52,17 +52,22 @@
 ;                  :step 30
 ;                  :max 120 }]])
 
-(defn coverage-filter-dropdown-component
-  [{:keys [name list on-change]}]
-  (let [list (rf/subscribe [:coverage/algorithms])]
-    (println "coverage algo here!! "  @list)))
-        ; {:keys [label description criteria]} ((keyword name) list)
-        ; options (:options critera)]
-    ; (fn []
 
-      ; [m/Select {:label label
-      ;            :disabled (empty? options)
-      ;            :value value
-      ;            :options options
-      ;            :onChange #(on-change (js/parseInt (-> % .-target .-value)))}
+(defn coverage-filter-dropdown-component
+  [{:keys [name value on-change]}]
+  (let [list (rf/subscribe [:coverage/supported-algorithms])
+        current-project (rf/subscribe [:projects2/current-project])]
+    (cond
+      (nil? (:dataset-id @current-project)) [:div "First choose dataset."]
+      (nil? name) (rf/dispatch [:projects2/get-project-data])
+      :else
+      (fn []
+         (let [{:keys[label criteria]} ((keyword name) @list)
+                first-key   (first (keys criteria))
+                options     (get-in criteria [first-key :options])]
+          [m/Select {:label label
+                      :disabled (empty? options)
+                      :value value
+                      :options options
+                      :onChange #(on-change (js/parseInt (-> % .-target .-value)))}])))))
 

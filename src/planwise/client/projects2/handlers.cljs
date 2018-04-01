@@ -1,5 +1,5 @@
 (ns planwise.client.projects2.handlers
-  (:require [re-frame.core :refer [register-handler subscribe] :as rf]
+  (:require [re-frame.core :refer [register-handler subscribe dispatch] :as rf]
             [planwise.client.asdf :as asdf]
             [planwise.client.projects2.api :as api]
             [planwise.client.routes :as routes]
@@ -53,6 +53,19 @@
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
+(rf/reg-event-fx
+  :projects2/current-save
+  (fn [{:keys [db]} [_ path]]
+    (println path)
+    (let [current-project   (:current-project db)
+          dataset-id  (if (= path '[:dataset-id]) (:dataset-id current-project) nil)
+          id                (:id current-project)]
+      (if (nil? dataset-id)
+        {}
+        {:api        (assoc (api/update-project id current-project)
+                           :on-success [:projects2/get-project-data id])}))))
+
+
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
 
@@ -80,17 +93,17 @@
       :dispatch-debounce [{:id (str :projects2/save id)
                            :timeout 250
                            :action :dispatch
-                           :event [:projects2/persist-current-project]}]})))
+                           :event [:projects2/persist-current-project path]}]})))
 
 
 (rf/reg-event-fx
   :projects2/persist-current-project
   in-projects2
-  (fn [{:keys [db]} [_]]
+  (fn [{:keys [db]} [_ path]]
     (let [current-project   (:current-project db)
           id                (:id current-project)]
-      {:api          (api/update-project id current-project)
-                       :on-success [:projects2/save-project-data]})))
+      {:api         (assoc (api/update-project id current-project)
+                           :on-success [:projects2/current-save path])})))
 
 ;;------------------------------------------------------------------------------
 ;; Listing projects
