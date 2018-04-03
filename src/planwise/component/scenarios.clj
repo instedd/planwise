@@ -1,11 +1,13 @@
 (ns planwise.component.scenarios
   (:require [planwise.boundary.scenarios :as boundary]
+            [planwise.model.scenarios :as model]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [schema.core :as s]))
 
 (timbre/refer-timbre)
 
@@ -17,6 +19,10 @@
 (defn get-db
   [store]
   (get-in store [:db :spec]))
+
+(defn- sum-investments
+  [changeset]
+  (apply +' (map :investment changeset)))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -44,24 +50,22 @@
 
 (defn create-scenario
   [store project-id {:keys [name changeset]}]
-  ;; TODO compute investment from sum
-  ;; TODO validate changeset schema
   ;; TODO schedule demand computation
+  (s/validate model/ChangeSet changeset)
   (db-create-scenario! (get-db store)
     {:name name
      :project-id project-id
-     :investment nil
+     :investment (sum-investments changeset)
      :changeset (pr-str changeset)}))
 
 (defn update-scenario
   [store scenario-id {:keys [name changeset]}]
-  ;; TODO compute investment from sum
-  ;; TODO validate changeset schema
   ;; TODO schedule demand computation
+  (s/validate model/ChangeSet changeset)
   (db-update-scenario! (get-db store)
     {:name name
      :id scenario-id
-     :investment nil
+     :investment (sum-investments changeset)
      :changeset (pr-str changeset)}))
 
 (defrecord ScenariosStore [db]
