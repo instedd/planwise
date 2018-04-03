@@ -97,8 +97,8 @@
   :prep-tasks         ["javac"
                        "compile"
                        ["run" ":duct/compiler"]]
-  :jar-exclusions     [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
-  :uberjar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$"]
+  :jar-exclusions     [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$" #"^planwise/public/js/.*/.*"]
+  :uberjar-exclusions [#"^svg/icons/.*" #"^sass/.*" #".*DS_Store$" #"^planwise/public/js/.*/.*"]
   :uberjar-name       "planwise-standalone.jar"
 
   :aliases {"migrate"               ["with-profile" "+repl" "run" ":duct/migrator"]
