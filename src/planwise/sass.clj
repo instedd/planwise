@@ -60,14 +60,24 @@
     (.setIncludePaths (java.util.ArrayList. (map io/file (:include-paths opts))))
     (.setSourceMapFile (if (:source-map? opts) (source-map-uri out)))))
 
+(defn- file-contents-changed? [path contents]
+  (let [file (io/as-file path)]
+    (if (.exists file)
+      (let [old-contents (slurp file)]
+        (not (= old-contents contents)))
+      true)))
+
 (defn- compile-sass [in out {:keys [logger] :as opts}]
   (log/log logger :info ::compiling {:in (str in) :out (str out)})
   (let [context (FileContext. (.toURI in) (.toURI out) (make-options in out opts))
         result  (.compile compiler context)]
     (.mkdirs (.getParentFile out))
-    (spit out (.getCss result))
-    (when-let [source-map (.getSourceMap result)]
-      (spit (source-map-uri out) source-map))))
+    (let [css (.getCss result)
+          changed? (file-contents-changed? out css)]
+      (when changed?
+        (spit out css)
+        (when-let [source-map (.getSourceMap result)]
+          (spit (source-map-uri out) source-map))))))
 
 (defmethod ig/init-key :planwise/sass [_ opts]
   (let [in->out (file-mapping opts)]
