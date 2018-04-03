@@ -4,6 +4,7 @@
             [planwise.component.scenarios :as scenarios]
             [planwise.model.scenarios :as model]
             [planwise.test-system :as test-system]
+            [planwise.util.collections :refer [find-by]]
             [clj-time.core :as time]
             [integrant.core :as ig]
             [schema.core :as s]))
@@ -18,6 +19,24 @@
     [{:id project-id :owner-id owner-id :name "" :config nil :dataset-id nil}]]
    [:scenarios
     []]])
+
+(def initial-scenario-id 30)
+(def sub-optimal-scenario-id 31)
+(def optimal-scenario-id 32)
+(def best-scenario-id 33)
+(def other-scenario-id 34)
+
+(def fixture-with-scenarios
+  [[:users
+    [{:id owner-id :email "jdoe@example.org"}]]
+   [:projects2
+    [{:id project-id :owner-id owner-id :name "" :config nil :dataset-id nil}]]
+   [:scenarios
+    [{:investment 0    :demand-coverage 100 :id initial-scenario-id     :name "Initial" :project-id project-id :changeset "[]"}
+     {:investment 500  :demand-coverage 120 :id sub-optimal-scenario-id :name "S1"      :project-id project-id :changeset "[]"}
+     {:investment 500  :demand-coverage 150 :id best-scenario-id        :name "S2"      :project-id project-id :changeset "[]"}
+     {:investment 1000 :demand-coverage 150 :id optimal-scenario-id     :name "S3"      :project-id project-id :changeset "[]"}
+     {:investment 1000 :demand-coverage 120 :id other-scenario-id       :name "S4"      :project-id project-id :changeset "[]"}]]])
 
 (defn test-config
   ([]
@@ -59,6 +78,16 @@
 
       ;; computes sum of investments of actions
       (is (= (:investment scenario) 15000M)))))
+
+(deftest list-scenarios-order
+  (test-system/with-system (test-config fixture-with-scenarios)
+    (let [store        (:planwise.component/scenarios system)
+          scenarios    (scenarios/list-scenarios store project-id)
+          scenario-ids (map :id scenarios)]
+      (is (= (take 3 scenario-ids) [initial-scenario-id best-scenario-id optimal-scenario-id]))
+      (is (= (:label (find-by scenarios :id initial-scenario-id)) "initial"))
+      (is (= (:label (find-by scenarios :id best-scenario-id)) "best"))
+      (is (= (:label (find-by scenarios :id optimal-scenario-id)) "optimal")))))
 
 (deftest valid-changeset
   (let [t #(is (nil? (s/check model/ChangeSet %)))]

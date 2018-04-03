@@ -29,7 +29,6 @@
 
 (defn list-scenarios
   [store project-id]
-  ;; TODO sort by order, compute optimal
   ;; TODO compute % coverage from initial scenario/project
   (db-list-scenarios (get-db store) {:project-id project-id}))
 
