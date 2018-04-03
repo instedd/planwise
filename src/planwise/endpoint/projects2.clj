@@ -48,7 +48,7 @@
      (let [user-id    (util/request-user-id request)
            project-id (:id (projects2/create-project service user-id))
            project    (projects2/get-project service (Integer. project-id))]
-       (response project)))
+      (response project)))
 
    (PUT "/:id" [id project :as request]
      (let [user-id    (util/request-user-id request)

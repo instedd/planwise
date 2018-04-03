@@ -1,5 +1,5 @@
 (ns planwise.client.projects2.handlers
-  (:require [re-frame.core :refer [register-handler subscribe dispatch] :as rf]
+  (:require [re-frame.core :refer [register-handler subscribe] :as rf]
             [planwise.client.asdf :as asdf]
             [planwise.client.projects2.api :as api]
             [planwise.client.routes :as routes]
@@ -86,11 +86,20 @@
 (rf/reg-event-fx
   :projects2/persist-current-project
   in-projects2
-  (fn [{:keys [db]} [_ ]]
+  (fn [{:keys [db]} [_]]
     (let [current-project   (:current-project db)
           id                (:id current-project)]
       {:api         (assoc (api/update-project id current-project)
-                           :on-success [:projects2/save-project-data])})))
+                           :on-success [:projects2/save-project-if-necesarry])})))
+
+(rf/reg-event-fx
+  :projects2/save-project-if-necesarry
+  in-projects2
+  (fn [{:keys [db]} [_ project]]
+    (if (= project (:current-project db))
+      {}
+      {:dispatch [:projects2/save-project-data project]})))
+
 
 ;;------------------------------------------------------------------------------
 ;; Listing projects

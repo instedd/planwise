@@ -17,8 +17,8 @@
   (get-in store [:db :spec]))
 
 (defn project-config->edn
-  [project-data]
-  (prn-str project-data))
+  [project-config]
+  (prn-str project-config))
 
 (defn edn->project-config
   [edn-data]

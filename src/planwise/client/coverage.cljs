@@ -49,10 +49,10 @@
         name (:coverage-algorithm @current-project)]
       (cond
         (nil? (:dataset-id @current-project)) [:div "First choose dataset."]
-        :else
+        (not (nil? name))
           (let [{:keys[label criteria]} ((keyword name) @list)
-                  first-key   (first (keys criteria))
-                  options     (get-in criteria [first-key :options])]
+                 first-key   (first (keys criteria))
+                 options     (get-in criteria [first-key :options])]
             [m/Select {:label label
                         :disabled (empty? options)
                         :value (str value)
