@@ -32,11 +32,11 @@
    [:projects2
     [{:id project-id :owner-id owner-id :name "" :config nil :dataset-id nil}]]
    [:scenarios
-    [{:investment 0    :demand-coverage 100 :id initial-scenario-id     :name "Initial" :project-id project-id :changeset "[]"}
-     {:investment 500  :demand-coverage 120 :id sub-optimal-scenario-id :name "S1"      :project-id project-id :changeset "[]"}
-     {:investment 500  :demand-coverage 150 :id best-scenario-id        :name "S2"      :project-id project-id :changeset "[]"}
-     {:investment 1000 :demand-coverage 150 :id optimal-scenario-id     :name "S3"      :project-id project-id :changeset "[]"}
-     {:investment 1000 :demand-coverage 120 :id other-scenario-id       :name "S4"      :project-id project-id :changeset "[]"}]]])
+    [{:investment 0    :demand-coverage 100 :id initial-scenario-id     :label "initial" :name "Initial" :project-id project-id :changeset "[]"}
+     {:investment 500  :demand-coverage 120 :id sub-optimal-scenario-id :label nil       :name "S1"      :project-id project-id :changeset "[]"}
+     {:investment 500  :demand-coverage 150 :id best-scenario-id        :label nil       :name "S2"      :project-id project-id :changeset "[]"}
+     {:investment 1000 :demand-coverage 150 :id optimal-scenario-id     :label nil       :name "S3"      :project-id project-id :changeset "[]"}
+     {:investment 1000 :demand-coverage 120 :id other-scenario-id       :label nil       :name "S4"      :project-id project-id :changeset "[]"}]]])
 
 (defn test-config
   ([]
@@ -82,6 +82,7 @@
 (deftest list-scenarios-order
   (test-system/with-system (test-config fixture-with-scenarios)
     (let [store        (:planwise.component/scenarios system)
+          _            (scenarios/db-update-scenarios-label! (scenarios/get-db store) {:project-id project-id})
           scenarios    (scenarios/list-scenarios store project-id)
           scenario-ids (map :id scenarios)]
       (is (= (take 3 scenario-ids) [initial-scenario-id best-scenario-id optimal-scenario-id]))
