@@ -7,7 +7,7 @@
             [planwise.client.projects2.db :as db]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
-            [planwise.client.coverage :refer [coverage-filter-dropdown-component]]
+            [planwise.client.coverage :refer [filter-coverage-algorithm-dropdown ]]
             [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]
@@ -101,10 +101,8 @@
                                        :value (:dataset-id @current-project)
                                        :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
          [:h2 "Coverage"]
-         [coverage-filter-dropdown-component {:name (:coverage-algorithm @current-project)
-                                              :value (get-in @current-project [:config :coverage :filter-options])
+         [filter-coverage-algorithm-dropdown {:value (get-in @current-project [:config :coverage :filter-options ])
                                               :on-change #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])}]
-
          [:h2 "Actions"]
          [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))
 

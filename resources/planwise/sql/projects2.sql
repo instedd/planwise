@@ -6,8 +6,10 @@ INSERT INTO projects2
 
 -- :name db-update-project :!
 UPDATE projects2
-  SET name = :name, config = :config, "dataset-id" = :dataset-id,
-      "region-id" = :region-id, "coverage-algorithm" = :coverage-algorithm
+  SET name = :name, config = :config,
+      "dataset-id" = :dataset-id,
+      "region-id" = :region-id,
+      "population-source-id" = :population-source-id
   WHERE id = :id;
 
 -- :name db-get-project :?
@@ -17,8 +19,3 @@ SELECT * FROM projects2
 -- :name db-list-projects :?
 SELECT id, name FROM projects2
     WHERE "owner-id" = :owner-id;
-
--- :name db-coverage-algorithm :<! :1
-SELECT datasets2."coverage-algorithm"
-    FROM datasets2, projects2
-    WHERE datasets2.id = :dataset-id AND projects2."dataset-id" = :dataset-id;

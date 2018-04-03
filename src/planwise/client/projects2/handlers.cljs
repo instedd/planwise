@@ -53,18 +53,6 @@
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
-(rf/reg-event-fx
-  :projects2/current-save
-  (fn [{:keys [db]} [_ path]]
-    (println path)
-    (let [current-project   (:current-project db)
-          dataset-id  (if (= path '[:dataset-id]) (:dataset-id current-project) nil)
-          id                (:id current-project)]
-      (if (nil? dataset-id)
-        {}
-        {:api        (assoc (api/update-project id current-project)
-                           :on-success [:projects2/get-project-data id])}))))
-
 
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
@@ -93,27 +81,26 @@
       :dispatch-debounce [{:id (str :projects2/save id)
                            :timeout 250
                            :action :dispatch
-                           :event [:projects2/persist-current-project path]}]})))
-
+                           :event [:projects2/persist-current-project]}]})))
 
 (rf/reg-event-fx
   :projects2/persist-current-project
   in-projects2
-  (fn [{:keys [db]} [_ path]]
+  (fn [{:keys [db]} [_ ]]
     (let [current-project   (:current-project db)
           id                (:id current-project)]
       {:api         (assoc (api/update-project id current-project)
-                           :on-success [:projects2/current-save path])})))
+                           :on-success [:projects2/save-project-data])})))
 
 ;;------------------------------------------------------------------------------
 ;; Listing projects
 
 (rf/reg-event-fx
- :projects2/projects-list
- in-projects2
- (fn [{:keys [db]} _]
-   {:api (assoc (api/list-projects)
-                :on-success [:projects2/projects-listed])}))
+  :projects2/projects-list
+  in-projects2
+  (fn [{:keys [db]} _]
+    {:api (assoc (api/list-projects)
+                 :on-success [:projects2/projects-listed])}))
 
 (rf/reg-event-db
  :projects2/projects-listed

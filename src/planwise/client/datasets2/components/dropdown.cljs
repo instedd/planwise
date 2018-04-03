@@ -11,6 +11,7 @@
 (defn datasets-dropdown-component
   [{:keys [label value on-change]}]
   (let [datasets-list (subscribe [:datasets2/dropdown-options])]
+      (dispatch [:datasets2/load-datasets2])
     (fn []
       [m/Select {:label (if (empty? @datasets-list) "There are no datasets defined." label)
                  :disabled (empty? @datasets-list)

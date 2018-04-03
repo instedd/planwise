@@ -41,33 +41,21 @@
 
 ;; ----------------------------------------------------------------------------
 ;; Views
-; (defn filter-options-slider
-;     [:div
-;       [:h3 label]
-;       [:h5 description]
-;       [m/Slider {:discrete true
-;                  :displayMarkers true
-;                  :value (js/parseInt (-> % .-target .-value))
-;                  :on-change #(dispatch [:projects2/save-key [:config :coverage :target] ])
-;                  :step 30
-;                  :max 120 }]])
 
-
-(defn coverage-filter-dropdown-component
-  [{:keys [name value on-change]}]
+(defn filter-coverage-algorithm-dropdown
+  [{:keys [value on-change]}]
   (let [list (rf/subscribe [:coverage/supported-algorithms])
-        current-project (rf/subscribe [:projects2/current-project])]
-    (cond
-      (nil? (:dataset-id @current-project)) [:div "First choose dataset."]
-      (nil? name) (rf/dispatch [:projects2/get-project-data])
-      :else
-      (fn []
-         (let [{:keys[label criteria]} ((keyword name) @list)
-                first-key   (first (keys criteria))
-                options     (get-in criteria [first-key :options])]
-          [m/Select {:label label
-                      :disabled (empty? options)
-                      :value value
-                      :options options
-                      :onChange #(on-change (js/parseInt (-> % .-target .-value)))}])))))
+        current-project (rf/subscribe [:projects2/current-project])
+        name (:coverage-algorithm @current-project)]
+      (cond
+        (nil? (:dataset-id @current-project)) [:div "First choose dataset."]
+        :else
+          (let [{:keys[label criteria]} ((keyword name) @list)
+                  first-key   (first (keys criteria))
+                  options     (get-in criteria [first-key :options])]
+            [m/Select {:label label
+                        :disabled (empty? options)
+                        :value (str value)
+                        :options options
+                        :onChange #(on-change (js/parseInt (-> % .-target .-value)))}]))))
 

@@ -9,6 +9,7 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.model.ident :as ident]
+            [planwise.component.datasets2 :as datasets2]
             [planwise.component.projects2 :as projects2]))
 
 (timbre/refer-timbre)
@@ -51,17 +52,20 @@
 
    (PUT "/:id" [id project :as request]
      (let [user-id    (util/request-user-id request)
-           id         (:id project)]
+          {:keys[id dataset-id]} project
+           coverage-algorithm (:coverage-algorithm (datasets2/get-dataset service dataset-id))]
        (assert (s/valid? ::project project) "Invalid project")
-       (projects2/update-project service id project)))
+       (projects2/update-project service id (dissoc project :coverage-algorithm))
+       (response (assoc project :coverage-algorithm coverage-algorithm))))
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
-           project (projects2/get-project service (Integer. id))]
-       (println project)
+           project (projects2/get-project service (Integer. id))
+           coverage-algorithm (:coverage-algorithm (datasets2/get-dataset service (:dataset-id project)))]
        (if (nil? project)
-         (not-found project)
-         (response (assoc project :config (apply-default (:config project)))))))
+           (not-found project)
+           (response (-> project (assoc :config (apply-default (:config project)))
+                                 (assoc :coverage-algorithm coverage-algorithm))))))
 
    (GET "/" request
      (let [user-id          (util/request-user-id request)

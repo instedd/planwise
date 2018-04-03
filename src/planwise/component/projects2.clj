@@ -38,23 +38,17 @@
   [store owner-id]
   (db-create-project! (get-db store) {:owner-id owner-id
                                       :name ""}))
-(defn get-coverage-algorithm
-  [store dataset-id]
-  (db-coverage-algorithm (get-db store) {:dataset-id dataset-id}))
 
 (defn update-project
   [store project-id data]
-  (let [edn-config (project-config->edn (:config data))
-        dataset-id  (:dataset-id data)
-        coverage-algorithm (:coverage-algorithm (get-coverage-algorithm store dataset-id))]
-      (db-update-project (get-db store) (-> data (assoc :config edn-config)
-                                                 (assoc :coverage-algorithm coverage-algorithm)))))
+  (let [edn-config (project-config->edn (:config data))]
+      (db-update-project (get-db store) (assoc data :config edn-config))))
 
 (defn get-project
   [store project-id]
   (let [project (first (db-get-project (get-db store) {:id project-id}))
         config  (edn->project-config (:config project))]
-    (-> project (assoc :config config))))
+     (assoc project :config config)))
 
 (defn list-projects
   [store owner-id]
