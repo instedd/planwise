@@ -4,7 +4,14 @@
 
 (defn -main
   [name]
-  (let [timestamp (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmss") (new java.util.Date))]
-    (with-open [wrtr (io/writer (str "./resources/migrations/" timestamp "_" name ".sql"))]
+  (let [timestamp (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmss") (new java.util.Date))
+        path (str "./resources/migrations/")
+        filename (str timestamp "_" name ".sql")]
+    (with-open [wrtr (io/writer (str path filename))]
       (println timestamp)
-      (.write wrtr (str "Line to be written")))))
+      (.write wrtr (str "
+-- CREATE TABLE IF NOT EXISTS foo (
+--   id BIGSERIAL PRIMARY KEY,
+--   bar_id BIGINT NOT NULL REFERENCES bar(id),
+--   name VARCHAR(255) NOT NULL
+-- );")))))
