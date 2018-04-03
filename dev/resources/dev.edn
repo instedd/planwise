@@ -10,7 +10,7 @@
             :source-paths  ["dev/src" "src"]
             :build-options {:main cljs.user
                             :parallel-build true
-                            :install-deps true
+                            :install-deps false
                             :language-in :es-2016
                             :npm-deps #ig/ref :planwise.config/npm-deps
                             :output-to "target/resources/planwise/public/js/main.js"

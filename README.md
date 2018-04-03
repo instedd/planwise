@@ -224,6 +224,14 @@ $ cd cpp
 $ make clean all
 ```
 
+### Node modules
+
+Install NPM dependencies before firing up the REPL:
+
+```sh
+$ npm install
+```
+
 ## Development workflow with the REPL
 
 Connect to the running REPL inside the Docker container from your editor/IDE or
