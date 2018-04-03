@@ -134,17 +134,13 @@
 
 (defn- filter-text-box-base
   "Base function (before lifecycle metadata) to render a filter text box"
-  [filter-box? filter-text key-handler drop-showing? set-filter-text]
+  [filter-text key-handler drop-showing? set-filter-text]
   [:div.mdc-text-field.mdc-text-field--outlined
    {:style {:width "100%"}}
    [:input.mdc-text-field__input
     {:type          "text"
      :auto-complete "off"
-     :placeholder   "Filter regions..."
-     :style         (when-not filter-box? {:position "absolute" ;; When no filter box required, use it but hide it off screen
-                                           :width    "0px"      ;; The rest of these styles make the textbox invisible
-                                           :padding  "0px"
-                                           :border   "none"})
+     :placeholder   "Filter choices..."
      :value         @filter-text
      :on-change     (handler-fn (set-filter-text (-> event .-target .-value)))
      :on-key-down   (handler-fn (when-not (key-handler event)
@@ -169,9 +165,8 @@
   []
   (let [ignore-click (atom false)]
     (fn
-      [internal-model choices id-fn label-fn tab-index placeholder dropdown-click key-handler filter-box? drop-showing? title?]
-      (let [_    (reagent/set-state (reagent/current-component) {:filter-box? filter-box?})
-            text (if @internal-model
+      [internal-model choices id-fn label-fn tab-index label dropdown-click key-handler drop-showing? title?]
+      (let [text (if @internal-model
                    (label-fn (item-for-id @internal-model choices :id-fn id-fn)))
             float-label? (some? text)]
         [:div.mdc-select__surface
@@ -188,7 +183,7 @@
                            (when (= (.-which event) 13)     ;; Pressing enter on an anchor also triggers click event, which we don't want
                              (reset! ignore-click true)))}  ;; TODO: Hmmm, have a look at calling preventDefault (and stopProp?) and removing the ignore-click stuff
          [:div {:class (str "mdc-select__label " (when float-label? "mdc-select__label--float-above"))}
-          placeholder]
+          label]
          [:div.mdc-select__selected-text (when title? {:title text})
           text]
          [:div.mdc-select__bottom-line]]))))
@@ -242,12 +237,9 @@
    {:name :group-fn      :required false :default :group  :type "choice -> anything"            :validate-fn ifn?              :description [:span "given an element of " [:code ":choices"] ", returns its group identifier"]}
    {:name :render-fn     :required false                  :type "choice -> string | hiccup"     :validate-fn ifn?              :description [:span "given an element of " [:code ":choices"] ", returns the markup that will be rendered for that choice. Defaults to the label if no custom markup is required."]}
    {:name :disabled?     :required false :default false   :type "boolean | atom"                                               :description "if true, no user selection is allowed"}
-   {:name :filter-box?   :required false :default false   :type "boolean"                                                      :description "if true, a filter text field is placed at the top of the dropdown"}
    {:name :regex-filter? :required false :default false   :type "boolean | atom"                                               :description "if true, the filter text field will support JavaScript regular expressions. If false, just plain text"}
-   {:name :placeholder   :required false                  :type "string"                        :validate-fn string?           :description "background text when no selection"}
+   {:name :label         :required false                  :type "string"                        :validate-fn string?           :description "label for the select field"}
    {:name :title?        :required false :default false   :type "boolean"                                                      :description "if true, allows the title for the selected dropdown to be displayed via a mouse over. Handy when dropdown width is small and text is truncated"}
-   {:name :width         :required false :default "100%"  :type "string"                        :validate-fn string?           :description "the CSS width. e.g.: \"500px\" or \"20em\""}
-   {:name :max-height    :required false :default "240px" :type "string"                        :validate-fn string?           :description "the maximum height of the dropdown part"}
    {:name :tab-index     :required false                  :type "integer | string"              :validate-fn number-or-string? :description "component's tabindex. A value of -1 removes from order"}
    {:name :debounce-delay :required false                 :type "integer"                       :validate-fn number?           :description [:span "delay to debounce loading requests when using callback " [:code ":choices"]]}
    {:name :class         :required false                  :type "string"                        :validate-fn string?           :description "CSS class names, space separated (applies to the outer container)"}
@@ -291,7 +283,7 @@
     (reagent/create-class
      {:component-did-mount update-position-fn
       :reagent-render
-      (fn [& {:keys [choices model on-change id-fn label-fn group-fn render-fn disabled? filter-box? regex-filter? placeholder title? width max-height tab-index debounce-delay class style attr]
+      (fn [& {:keys [choices model on-change id-fn label-fn group-fn render-fn disabled? regex-filter? label title? tab-index debounce-delay class style attr]
               :or {id-fn :id label-fn :label group-fn :group render-fn label-fn}
               :as args}]
         {:pre [(validate-args-macro single-dropdown-args-desc args "single-dropdown")]}
@@ -363,7 +355,7 @@
                                     40 (press-down)
                                     36 (press-home)
                                     35 (press-end)
-                                    filter-box?)) ;; Use this boolean to allow/prevent the key from being processed by the text box
+                                    true)) ;; Use this boolean to allow/prevent the key from being processed by the text box
               filter-box-height 80
               menu-style-fn    (fn []
                                  (let [{:keys [top left width]} @position
@@ -379,14 +371,13 @@
            (merge
             {:class (str "mdc-select " (when @drop-showing? "mdc-select--open ") class)
              :role  "listbox"
-             :style (merge {:width width}
-                           style)}
+             :style style}
             attr)          ;; Prevent user text selection
-           [dropdown-top internal-model choices id-fn label-fn tab-index placeholder dropdown-click key-handler filter-box? drop-showing? title?]
+           [dropdown-top internal-model choices id-fn label-fn tab-index label dropdown-click key-handler drop-showing? title?]
            [:div
             {:class (str "mdc-menu mdc-select__menu " (when @drop-showing? "mdc-menu--open "))
              :style (select-keys menu-style [:top :left :width])}
-            [filter-text-box filter-box? filter-text key-handler drop-showing? #(set-filter-text % args true)]
+            [filter-text-box filter-text key-handler drop-showing? #(set-filter-text % args true)]
             [:ul.mdc-list.mdc-menu__items
              {:style {:max-height (:height menu-style)}}
              (cond

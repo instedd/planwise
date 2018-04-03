@@ -62,8 +62,7 @@
                       :label-fn :name
                       :render-fn (fn [region] [:div
                                                [:span (:name region)]
-                                               [:span.option-context (:country-name region)]])
-                      :filter-box? true}
+                                               [:span.option-context (:country-name region)]])}
                      attrs)]
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
@@ -87,7 +86,7 @@
         [:form.vertical
          [:h2 "Goal"]
          [current-project-input "Goal" [:name] identity]
-         [regions-dropdown-component {:placeholder "Region"
+         [regions-dropdown-component {:label "Region"
                                       :on-change #(dispatch [:projects2/save-key :region-id %])
                                       :model (:region-id @current-project)}]
          [:h2 "Demand"]
