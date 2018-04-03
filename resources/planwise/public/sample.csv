@@ -1,0 +1,5 @@
+id,type,name,lat,lon,capacity,tags
+1,hospital,Nanyuki Cottage Hospital,-19.983333,23.416667,50,private laboratory radiography pharmacy
+2,hospital,Karen Hospital,-1.336063,36.72609,102,private general-wards pediatric-ward 24hs-pharmacy  
+3,hospital,The Nairobi Women's Hospital,-1.293856,36.796071,356,private obstetrics gynecology-service 
+4,hospital,Kenyatta National Hospital,-1.3017,36.80772,1800,public surgical-services general-medicine
