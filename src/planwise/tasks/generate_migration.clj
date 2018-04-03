@@ -6,7 +6,7 @@
   [name]
   (let [timestamp (.format (java.text.SimpleDateFormat. "yyyyMMddHHmmss") (new java.util.Date))
         path (str "./resources/migrations/")
-        filename (str timestamp "_" name ".sql")]
+        filename (str timestamp "-" name ".sql")]
     (with-open [wrtr (io/writer (str path filename))]
       (println timestamp)
       (.write wrtr (str "
