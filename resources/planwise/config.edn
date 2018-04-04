@@ -227,5 +227,8 @@
  {:bin         #duct/env ["BIN_PATH" Str :or "bin/"]
   :scripts     #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
 
+ :planwise.component/scenarios
+ {:db          #ig/ref :duct.database/sql}
+
  :planwise.component/users
  {:db          #ig/ref :duct.database/sql}}
