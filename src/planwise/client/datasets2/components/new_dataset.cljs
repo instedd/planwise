@@ -4,6 +4,7 @@
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
             [planwise.client.datasets2.db :as db]
+            [planwise.client.routes :as routes]
             [clojure.string :as str]
             [planwise.client.ui.rmwc :as m]))
 
@@ -44,6 +45,8 @@
                   :type "file"
                   :on-change  #(rf/dispatch [:datasets2/new-dataset-update
                                              :js-file (-> (.-currentTarget %) .-files (aget 0))])}]]
+        [:a {:href (routes/download-sample)
+             :data-trigger "false"} "Download samples sites"]
         [m/Select {:label "Coverage algorithm"
                    :value @coverage
                    :options @algorithms

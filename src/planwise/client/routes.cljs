@@ -32,3 +32,4 @@
   (dispatch [:navigate {:page :design}]))
 (defroute design-section "/_design/:section" [section query-params]
   (dispatch [:navigate {:page :design, :section (keyword section), :query-params query-params}]))
+(defroute download-sample "/sample.csv" [])
