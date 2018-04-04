@@ -24,8 +24,9 @@
 (defn- apply-default
   [config]
   (-> config
-      (default [:demographics :target] nil)
-      (default [:actions :budget] nil)))
+    (default [:demographics :target] nil)
+    (default [:actions :budget] nil)
+    (default [:coverage :filter-options] {})))
 
 (s/def ::id number?)
 (s/def ::dataset-id (s/nilable number?))
@@ -36,7 +37,9 @@
 (s/def ::budget (s/nilable number?))
 (s/def ::demographics (s/keys :req-un [::target]))
 (s/def ::actions (s/keys :req-un [::budget]))
-(s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions])))
+(s/def ::filter-options map?)
+(s/def ::coverage (s/keys :req-un [::filter-options]))
+(s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions ::coverage])))
 (s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::region-id ::dataset-id ::population-source-id]))
 
 (defn- projects2-routes

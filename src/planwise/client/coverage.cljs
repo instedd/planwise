@@ -37,25 +37,31 @@
 (rf/reg-sub
  :coverage/supported-algorithms
  (fn [db _]
- (get-in db [:coverage :algorithms])))
+  (get-in db [:coverage :algorithms])))
 
 ;; ----------------------------------------------------------------------------
 ;; Views
 
-(defn filter-coverage-algorithm-dropdown
-  [{:keys [value on-change]}]
-  (let [list (rf/subscribe [:coverage/supported-algorithms])
-        current-project (rf/subscribe [:projects2/current-project])
-        name (:coverage-algorithm @current-project)]
-      (cond
-        (nil? (:dataset-id @current-project)) [:div "First choose dataset."]
-        (not (nil? name))
-          (let [{:keys[label criteria]} ((keyword name) @list)
-                 first-key   (first (keys criteria))
-                 options     (get-in criteria [first-key :options])]
-            [m/Select {:label label
-                        :disabled (empty? options)
-                        :value (str value)
-                        :options options
-                        :onChange #(on-change (js/parseInt (-> % .-target .-value)))}]))))
+(defn- criteria-option
+  [{:keys [config value on-change]}]
+  (let [options (map #(update % :value str) (:options config))]
+    [m/Select {:label (:label config)
+               :disabled (empty? options)
+               :value (str value)
+               :options options
+               :onChange #(on-change (js/parseInt (-> % .-target .-value)))}]))
 
+(defn coverage-algorithm-filter-options
+  [{:keys [coverage-algorithm value on-change empty]}]
+  (let [list (rf/subscribe [:coverage/supported-algorithms])
+        criteria (get-in @list [(keyword coverage-algorithm) :criteria])]
+    (cond
+      (nil? criteria) empty
+      :else
+      [:div {:class-name "fields-vertical"}
+        (map (fn [[key config]]
+              [criteria-option {:key key
+                                :config config
+                                :value (get value key)
+                                :on-change #(on-change (assoc value key %))}])
+            criteria)])))
