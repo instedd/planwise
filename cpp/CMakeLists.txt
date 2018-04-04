@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 project(planwise)
 
 include(FindBoost)
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS timer)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
