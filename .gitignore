@@ -24,8 +24,7 @@ resources/planwise/public/data/
 
 /cpp/*.dSYM
 /cpp/*.o
-/cpp/aggregate-population
-/cpp/calculate-demand
+/cpp/build-*/
 
 /docker-compose.override.yml
 
@@ -34,4 +33,3 @@ node_modules
 /scripts/population/data
 
 /node_modules
-/cpp/build-*/
