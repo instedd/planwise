@@ -71,18 +71,17 @@
                        (update* :config apply-default))))))
 
    (GET "/" request
-      (let [user-id          (util/request-user-id request)
-            list-of-projects (projects2/list-projects service user-id)]
-        (response list-of-projects)))
+     (let [user-id          (util/request-user-id request)
+           list-of-projects (projects2/list-projects service user-id)]
+       (response list-of-projects)))
 
    (POST "/:id/start" [id :as request]
-      (let [user-id       (util/request-user-id request)
-            project       (projects2/get-project service (Integer. id))
-            start-project (projects2/start-project service (Integer. id))]
-        (if (nil? project)
-            (not-found project)
-            (response start-project))))
-))
+     (let [user-id       (util/request-user-id request)
+           project       (projects2/get-project service (Integer. id))
+           start-project (projects2/start-project service (Integer. id))]
+       (if (nil? project)
+         (not-found project)
+         (response start-project))))))
 
 
 (defn projects2-endpoint
