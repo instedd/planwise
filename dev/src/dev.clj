@@ -10,7 +10,7 @@
             [eftest.runner :as eftest]
             [clojure.spec.alpha :as s]
             [integrant.core :as ig]
-            [integrant.repl :refer [clear halt go init prep reset]]
+            [integrant.repl :refer [clear halt init prep reset]]
             [integrant.repl.state :refer [config system]]
             [taoensso.timbre :as timbre]
             [planwise.config]

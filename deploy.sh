@@ -9,6 +9,7 @@ if [ $# -lt 1 ]; then
 fi
 
 git describe --always > resources/planwise/version
+docker-compose run --rm app npm install
 docker-compose run --rm app lein uberjar
 docker-compose run --rm app make -C cpp release
 

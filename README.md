@@ -224,6 +224,19 @@ $ cd cpp
 $ make clean all
 ```
 
+### Node modules
+
+NPM dependencies are handled by `npm` and updated via the `package.json` file.
+
+Install NPM dependencies before firing up the REPL or compiling the project:
+
+```sh
+$ npm install
+```
+
+NB: `npm install` is ran automatically when executing `(go)` from the REPL.
+
+
 ## Development workflow with the REPL
 
 Connect to the running REPL inside the Docker container from your editor/IDE or
