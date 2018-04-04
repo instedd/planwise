@@ -208,7 +208,7 @@ header.mdc-toolbar {
   height: min-content;
 }
 
-form.vertical {
+form.vertical, .fields-vertical {
   display: flex;
   flex-flow: column;
 }

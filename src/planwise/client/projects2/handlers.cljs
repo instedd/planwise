@@ -53,6 +53,7 @@
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
+
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
 
@@ -82,14 +83,26 @@
                            :action :dispatch
                            :event [:projects2/persist-current-project]}]})))
 
-
 (rf/reg-event-fx
  :projects2/persist-current-project
  in-projects2
  (fn [{:keys [db]} [_]]
    (let [current-project   (:current-project db)
          id                (:id current-project)]
-     {:api          (api/update-project id current-project)})))
+     {:api         (assoc (api/update-project id current-project)
+                          :on-success [:projects2/update-current-project-from-server])})))
+
+(rf/reg-event-fx
+ :projects2/update-current-project-from-server
+ in-projects2
+ (fn [{:keys [db]} [_ project]]
+   (let [current-project (:current-project db)]
+     (if (= (:id project) (:id current-project))
+        ;; keep current values of current-project except the once that could be updated from server
+       (let [updated-project (-> current-project
+                                 (assoc :coverage-algorithm (:coverage-algorithm project)))]
+         {:dispatch [:projects2/save-project-data updated-project]})))))
+
 
 ;;------------------------------------------------------------------------------
 ;; Listing projects

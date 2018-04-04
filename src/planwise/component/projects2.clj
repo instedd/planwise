@@ -5,7 +5,8 @@
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [planwise.util.hash :refer [update*]]))
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -15,14 +16,6 @@
 (defn get-db
   [store]
   (get-in store [:db :spec]))
-
-(defn project-config->edn
-  [project-config]
-  (prn-str project-config))
-
-(defn edn->project-config
-  [edn-data]
-  (edn/read-string edn-data))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -38,16 +31,15 @@
   [store owner-id]
   (db-create-project! (get-db store) {:owner-id owner-id
                                       :name ""}))
+
 (defn update-project
-  [store project-id data]
-  (let [edn-config (project-config->edn (:config data))]
-    (db-update-project (get-db store) (assoc data :config edn-config))))
+  [store project]
+  (db-update-project (get-db store) (update project :config pr-str)))
 
 (defn get-project
   [store project-id]
-  (let [project (db-get-project (get-db store) {:id project-id})
-        config  (edn->project-config (:config (first project)))]
-    (assoc (first project) :config config)))
+  (-> (db-get-project (get-db store) {:id project-id})
+      (update* :config edn/read-string)))
 
 (defn list-projects
   [store owner-id]

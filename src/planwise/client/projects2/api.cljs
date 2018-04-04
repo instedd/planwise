@@ -25,5 +25,4 @@
 (defn- get-project
   [project-id]
   {:method    :get
-   :params    {:id project-id}
    :uri       (str "/api/projects2/" project-id)})

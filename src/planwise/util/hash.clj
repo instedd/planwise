@@ -11,3 +11,9 @@
   (if-not (nil? (get hash key))
     (apply update hash key fun args)
     hash))
+
+(defn update*
+  [hash key fun & args]
+  (if-not (nil? hash)
+    (apply update hash key fun args)
+    hash))
