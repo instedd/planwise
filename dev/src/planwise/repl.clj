@@ -1,6 +1,7 @@
 (ns planwise.repl
   (:refer-clojure :exclude [test])
   (:require [integrant.core :as ig]
+            [integrant.repl :as igr]
             [integrant.repl.state :refer [config system]]
             [duct.server.figwheel :as figwheel]
             [eftest.runner :as eftest]
@@ -10,7 +11,8 @@
             [ragtime.jdbc :as rag-jdbc]
             [duct.migrator.ragtime :as dmr]
             [planwise.boundary.facilities :as facilities]
-            [buddy.core.nonce :as nonce])
+            [buddy.core.nonce :as nonce]
+            [clojure.java.shell :as shell])
   (:import org.apache.commons.codec.binary.Hex))
 
 (defn db
@@ -71,3 +73,18 @@
   (-> (nonce/random-bytes 32)
       Hex/encodeHex
       String.))
+
+(defn npm-install
+  []
+  (println "Running npm install...")
+  (let [{:keys [exit out err]} (shell/sh "npm" "install")]
+    (cond (zero? exit) (println out)
+          :else (do
+                  (println "Error running npm install - exit code" exit)
+                  (print err)))))
+
+(defn go
+  []
+  (npm-install)
+  (igr/prep)
+  (igr/init))
