@@ -22,7 +22,7 @@
   (test-system/with-system (test-config)
     (let [service (:planwise.component/regions system)
           [kenya & rest] (regions/list-regions service)]
-     (is (= 1000 (:total-population kenya))))))
+      (is (= 1000 (:total-population kenya))))))
 
 (deftest total-population-is-retrieved-with-list-regions-with-preview
   (test-system/with-system (test-config)

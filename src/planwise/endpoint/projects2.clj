@@ -16,15 +16,15 @@
 (defn- default
   [map path value-default]
   (let [value (get-in map path)]
-      (if (nil? value)
-        (assoc-in map path value-default)
-        map)))
+    (if (nil? value)
+      (assoc-in map path value-default)
+      map)))
 
 (defn- apply-default
   [config]
   (-> config
-    (default [:demographics :target] nil)
-    (default [:actions :budget] nil)))
+      (default [:demographics :target] nil)
+      (default [:actions :budget] nil)))
 
 (s/def ::id number?)
 (s/def ::dataset-id (s/nilable number?))
@@ -46,7 +46,7 @@
      (let [user-id    (util/request-user-id request)
            project-id (:id (projects2/create-project service user-id))
            project    (projects2/get-project service (Integer. project-id))]
-      (response project)))
+       (response project)))
 
    (PUT "/:id" [id project :as request]
      (let [user-id    (util/request-user-id request)
@@ -58,13 +58,13 @@
      (let [user-id (util/request-user-id request)
            project (projects2/get-project service (Integer. id))]
        (if (nil? project)
-           (not-found project)
-           (response (assoc project :config (apply-default (:config project)))))))
+         (not-found project)
+         (response (assoc project :config (apply-default (:config project)))))))
 
    (GET "/" request
-      (let [user-id          (util/request-user-id request)
-            list-of-projects (projects2/list-projects service user-id)]
-        (response list-of-projects)))))
+     (let [user-id          (util/request-user-id request)
+           list-of-projects (projects2/list-projects service user-id)]
+       (response list-of-projects)))))
 
 
 (defn projects2-endpoint

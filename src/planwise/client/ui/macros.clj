@@ -1,8 +1,7 @@
 (ns planwise.client.ui.macros)
 
 (def rmwc-tags
-  '[
-    Button
+  '[Button
     Checkbox
     Dialog
     DialogSurface

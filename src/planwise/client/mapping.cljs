@@ -46,19 +46,19 @@
 (defn simplify->geojson-level
   [simplify]
   (->> geojson-levels
-    (filter (fn [[level {s :simplify}]] (= s simplify)))
-    (map first)
-    first))
+       (filter (fn [[level {s :simplify}]] (= s simplify)))
+       (map first)
+       first))
 
 ;; only "classic" mapbox styles can be used with this static API.
 ;; the new API does not allow defining an overlay as a query parameter.
 (defn static-image [geojson]
   (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/%dx%d.png?access_token=%s"
-    emerald-mapbox-mapid
-    (js/encodeURIComponent geojson)
-    (:width map-preview-size)
-    (:height map-preview-size)
-    mapbox-access-token))
+              emerald-mapbox-mapid
+              (js/encodeURIComponent geojson)
+              (:width map-preview-size)
+              (:height map-preview-size)
+              mapbox-access-token))
 
 (defn bbox-center [[[s w] [n e]]]
   [(/ (+ s n) 2.0) (/ (+ e w) 2.0)])
@@ -68,14 +68,14 @@
    given a demand map key obtained from planwise.component.maps/demand-map-key"
   [map-key]
   (some->> map-key
-    (str "demands/")))
+           (str "demands/")))
 
 (defn region-map
   "Returns the full DATAFILE value to provide to mapserver to render a population region map,
    given the id of the region"
   [region-id]
   (some->> region-id
-    (str "populations/maps/")))
+           (str "populations/maps/")))
 
 (defn calculate-demand-for-admin-level?
   [admin-level]

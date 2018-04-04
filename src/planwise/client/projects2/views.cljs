@@ -33,20 +33,20 @@
 (defn- projects-list
   [projects]
   [ui/card-list {}
-    (for [project projects]
-      [project-card {:key (:id project)} project])])
+   (for [project projects]
+     [project-card {:key (:id project)} project])])
 
 (defn- listing-component []
-   (let [projects   (subscribe [:projects2/list])]
+  (let [projects   (subscribe [:projects2/list])]
     (if (nil? @projects)
       [:div
-        [:p "You have no projects..."]]
+       [:p "You have no projects..."]]
       [projects-list @projects])))
 
 (defn- project-section-index []
   (let [create-project-button (ui/main-action {:icon "add" :on-click #(dispatch [:projects2/new-project])})]
     [ui/fixed-width (merge {:action create-project-button} (common2/nav-params))
-      [listing-component]]))
+     [listing-component]]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
@@ -124,7 +124,7 @@
     (fn []
       (do
         (when (nil? @projects-list)
-              (dispatch [:projects2/projects-list]))
+          (dispatch [:projects2/projects-list]))
         (let [section      (:section @page-params)]
           (cond
             (= section :index) [project-section-index]

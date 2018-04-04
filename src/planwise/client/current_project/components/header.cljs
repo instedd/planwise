@@ -65,14 +65,14 @@
       [:div
        [:button.delete
         {:on-click (utils/with-confirm
-                    #(dispatch [:current-project/leave-project])
-                    "Are you sure you want to leave this shared project?")}
+                     #(dispatch [:current-project/leave-project])
+                     "Are you sure you want to leave this shared project?")}
         (common/icon :exit "icon-small")
         "Leave project"]]
       [:div
        [:button.secondary
         {:on-click (utils/prevent-default
-                     #(dispatch [:current-project/open-share-dialog]))}
+                    #(dispatch [:current-project/open-share-dialog]))}
         (common/icon :share "icon-small")
         (if (pos? share-count)
           (str "Shared with " (utils/pluralize share-count "user"))

@@ -51,8 +51,8 @@
   (if (or (nil? requester-user-id) (model/owned-by? project requester-user-id))
     project
     (-> project
-      (dissoc :share-token)
-      (assoc :read-only true))))
+        (dissoc :share-token)
+        (assoc :read-only true))))
 
 
 ;; ----------------------------------------------------------------------
@@ -69,12 +69,12 @@
        (map #(view-for-user % user-id))))
 
 (defn get-project
- ([service id]
-  (get-project service id nil))
- ([service id user-id]
-  (some-> (select-project (get-db service) {:id id, :user-id user-id})
-          (db->project)
-          (view-for-user user-id))))
+  ([service id]
+   (get-project service id nil))
+  ([service id user-id]
+   (some-> (select-project (get-db service) {:id id, :user-id user-id})
+           (db->project)
+           (view-for-user user-id))))
 
 (defn- facilities-criteria
   [project]
@@ -164,8 +164,8 @@
         mailer  (:mailer service)
         subject (str "Access to PlanWise project " (:goal project))]
     (doall
-      (for [email emails]
-        (let [body (<<- (<< "Greetings,
+     (for [email emails]
+       (let [body (<<- (<< "Greetings,
 
                              ~(:owner-email project) has shared the PlanWise
                              project \"~(:goal project)\" with you. Click on the
@@ -179,7 +179,7 @@
 
                              PlanWise
                              "))]
-          (mailer/send-mail mailer {:to email, :subject subject, :body body}))))
+         (mailer/send-mail mailer {:to email, :subject subject, :body body}))))
     true))
 
 

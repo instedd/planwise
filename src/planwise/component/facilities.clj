@@ -43,45 +43,45 @@
           site-ids (map :site-id facilities)
           existing-facilities (when (seq site-ids)
                                 (facilities-in-dataset-by-criteria tx
-                                  {:dataset-id dataset-id
-                                   :criteria (criteria-snip {:site-ids site-ids})}))]
+                                                                   {:dataset-id dataset-id
+                                                                    :criteria (criteria-snip {:site-ids site-ids})}))]
       (->> facilities
-        (mapv (fn [facility]
-                (let [{id :id, :as existing} (find-by existing-facilities :site-id (:site-id facility))
-                      position-unchanged?    (and (seq existing)
-                                               (float= (:lat existing) (:lat facility))
-                                               (float= (:lon existing) (:lon facility)))]
+           (mapv (fn [facility]
+                   (let [{id :id, :as existing} (find-by existing-facilities :site-id (:site-id facility))
+                         position-unchanged?    (and (seq existing)
+                                                     (float= (:lat existing) (:lat facility))
+                                                     (float= (:lon existing) (:lon facility)))]
 
-                  (cond
+                     (cond
                     ; Insert new record if no existing facility with the site id was found
-                    (nil? existing)
-                    (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
-                      (-> facility
-                        (assoc :dataset-id dataset-id
-                               :id (:id result)
-                               :insertion-status :new)
-                        (update :processing-status identity)))
+                       (nil? existing)
+                       (let [result (insert-facility! tx (assoc facility :dataset-id dataset-id))]
+                         (-> facility
+                             (assoc :dataset-id dataset-id
+                                    :id (:id result)
+                                    :insertion-status :new)
+                             (update :processing-status identity)))
 
                     ; Check if we need to update any attribute
-                    (and position-unchanged?
-                      (= (select-keys existing updateable-keys)
-                         (select-keys facility updateable-keys)))
-                    (assoc existing :insertion-status :existing)
+                       (and position-unchanged?
+                            (= (select-keys existing updateable-keys)
+                               (select-keys facility updateable-keys)))
+                       (assoc existing :insertion-status :existing)
 
                     ; Check if the position did not change
-                    position-unchanged?
-                    (let [merged-facility (merge existing
-                                                 (select-keys facility updateable-keys))]
-                      (update-facility* tx merged-facility)
-                      (assoc merged-facility :insertion-status :updated))
+                       position-unchanged?
+                       (let [merged-facility (merge existing
+                                                    (select-keys facility updateable-keys))]
+                         (update-facility* tx merged-facility)
+                         (assoc merged-facility :insertion-status :updated))
 
                     ; If the position changed, clear processing status
-                    :else
-                    (let [merged-facility (merge existing
-                                                 (select-keys facility updateable-keys-with-pos)
-                                                 {:processing-status nil})]
-                      (update-facility* tx merged-facility)
-                      (assoc merged-facility :insertion-status :moved))))))))))
+                       :else
+                       (let [merged-facility (merge existing
+                                                    (select-keys facility updateable-keys-with-pos)
+                                                    {:processing-status nil})]
+                         (update-facility* tx merged-facility)
+                         (assoc merged-facility :insertion-status :moved))))))))))
 
 (defn destroy-facilities! [service dataset-id & [{except-ids :except-ids}]]
   (delete-facilities-in-dataset! (get-db service) {:dataset-id dataset-id
@@ -92,9 +92,9 @@
    (select-facilities-in-dataset (get-db service) {:dataset-id dataset-id}))
   ([service dataset-id criteria]
    (facilities-in-dataset-by-criteria
-     (get-db service)
-     {:dataset-id dataset-id
-      :criteria (criteria-snip criteria)})))
+    (get-db service)
+    {:dataset-id dataset-id
+     :criteria (criteria-snip criteria)})))
 
 (defn count-facilities
   ([service dataset-id]
@@ -109,10 +109,10 @@
 (defn isochrones-in-bbox
   ([service dataset-id isochrone-opts criteria]
    (isochrones-for-dataset-in-bbox* (get-db service)
-     (-> (isochrone-params isochrone-opts)
-         (merge (select-keys criteria [:bbox :excluding]))
-         (assoc :dataset-id dataset-id
-                :criteria (criteria-snip criteria))))))
+                                    (-> (isochrone-params isochrone-opts)
+                                        (merge (select-keys criteria [:bbox :excluding]))
+                                        (assoc :dataset-id dataset-id
+                                               :criteria (criteria-snip criteria))))))
 
 (defn polygons-in-region
   [service dataset-id isochrone-options criteria]
@@ -135,25 +135,25 @@
   (jdbc/with-db-transaction [tx (get-db service)]
     (let [current-types (select-types-in-dataset tx {:dataset-id dataset-id})]
       (->> types
-        (mapv (fn [type]
-                (let [existing-type (find-by current-types :code (:code type))]
-                  (cond
+           (mapv (fn [type]
+                   (let [existing-type (find-by current-types :code (:code type))]
+                     (cond
                     ; No previous facility type with that code exists, create a new one
-                    (nil? existing-type)
-                    (let [type-id (insert-type! tx (assoc type :dataset-id dataset-id))]
-                      (merge type type-id))
+                       (nil? existing-type)
+                       (let [type-id (insert-type! tx (assoc type :dataset-id dataset-id))]
+                         (merge type type-id))
 
                     ; Facility type has not changed, do nothing
-                    (= (:name existing-type)
-                       (:name type))
-                    existing-type
+                       (= (:name existing-type)
+                          (:name type))
+                       existing-type
 
                     ; The name has changed, update it
-                    :else
-                    (do
-                      (update-type! tx {:id (:id existing-type)
-                                        :name (:name type)})
-                      (merge existing-type type))))))))))
+                       :else
+                       (do
+                         (update-type! tx {:id (:id existing-type)
+                                           :name (:name type)})
+                         (merge existing-type type))))))))))
 
 
 (defn raster-isochrones! [service facility-id]
@@ -165,8 +165,8 @@
                                                   [(str region-id) (str facility-polygon-id) (str scale-resolution)])
                              (trim-to-int))]
           (set-facility-polygon-region-population!
-            (get-db service)
-            (assoc fpr :population population)))
+           (get-db service)
+           (assoc fpr :population population)))
         (catch Exception e
           (error e "Error on raster-isochrone for facility" facility-id "polygon" facility-polygon-id "region" region-id)
           nil)))))
@@ -179,32 +179,32 @@
                                                   [(str facility-polygon-id) country])
                              (trim-to-int))]
           (set-facility-polygon-population!
-            (get-db service)
-            (assoc fp :population population)))
+           (get-db service)
+           (assoc fp :population population)))
         (catch Exception e
           (error e "Error on calculate-isochrones-population for facility" facility-id "polygon" facility-polygon-id)
           nil)))))
 
 (defn preprocess-isochrones
- ([service]
-  (let [ids (map :id (select-unprocessed-facilities-ids (get-db service)))]
-    (doall (mapv (partial preprocess-isochrones service) ids))))
- ([service facility-id]
-  (let [[{code :code country :country}] (calculate-facility-isochrones! (get-db service)
-                                                           {:id facility-id
-                                                            :method "alpha-shape"
-                                                            :start 30
-                                                            :end 180
-                                                            :step 15})
-        success? (= "ok" code)
-        raster-isochrones? (get-in service [:config :raster-isochrones])]
+  ([service]
+   (let [ids (map :id (select-unprocessed-facilities-ids (get-db service)))]
+     (doall (mapv (partial preprocess-isochrones service) ids))))
+  ([service facility-id]
+   (let [[{code :code country :country}] (calculate-facility-isochrones! (get-db service)
+                                                                         {:id facility-id
+                                                                          :method "alpha-shape"
+                                                                          :start 30
+                                                                          :end 180
+                                                                          :step 15})
+         success? (= "ok" code)
+         raster-isochrones? (get-in service [:config :raster-isochrones])]
 
-    (debug (str "Facility " facility-id " isochrone processed with result: " (str code)))
-    (when (and success? raster-isochrones?)
-      (calculate-isochrones-population! service facility-id country)
-      (raster-isochrones! service facility-id))
+     (debug (str "Facility " facility-id " isochrone processed with result: " (str code)))
+     (when (and success? raster-isochrones?)
+       (calculate-isochrones-population! service facility-id country)
+       (raster-isochrones! service facility-id))
 
-    (keyword code))))
+     (keyword code))))
 
 (defn clear-facilities-processed-status!
   [service]

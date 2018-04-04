@@ -77,8 +77,8 @@
           result    (job-next-task job state)
           state'    (:state result)
           next-task (when-let [task-id (:task-id result)]
-                       {:task-id [job task-id]
-                        :task-fn (:task-fn result)})
+                      {:task-id [job task-id]
+                       :task-fn (:task-fn result)})
           jobs'     (if (some? state') (assoc jobs job state') (dissoc jobs job))
           idles'    (if (some? state') (conj (vec idles) job) idles)]
       (if (some? next-task)

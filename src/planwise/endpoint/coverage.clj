@@ -10,9 +10,9 @@
   [service]
   (routes
    (GET "/algorithms" req
-        (response (coverage/supported-algorithms service)))))
+     (response (coverage/supported-algorithms service)))))
 
 (defmethod ig/init-key :planwise.endpoint/coverage
   [_ {:keys [coverage]}]
   (context "/api/coverage" []
-           (restrict (endpoint-routes coverage) {:handler authenticated?})))
+    (restrict (endpoint-routes coverage) {:handler authenticated?})))

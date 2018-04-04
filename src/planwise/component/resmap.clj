@@ -68,8 +68,8 @@
       (->> (json/parse-string (:body response) true)
            (mapcat (fn [layer] (:fields layer)))
            (map (fn [field] (-> field
-                              (select-keys [:id :name :code :kind :config :metadata])
-                              (update :metadata vals)))))
+                                (select-keys [:id :name :code :kind :config :metadata])
+                                (update :metadata vals)))))
       (do
         (warn "Failure retrieving fields for Resourcemap collection" coll-id
               (get-in response [:headers "status"]))

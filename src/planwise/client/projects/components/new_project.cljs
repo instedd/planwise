@@ -63,9 +63,9 @@
            :on-change #(reset! new-project-dataset-id %)
            :model new-project-dataset-id]
           (when-let [warning (dataset->warning-text @new-project-dataset)]
-           [:p.notice.dataset-status
-            {:class (dataset->status-class @new-project-dataset)}
-            warning])]
+            [:p.notice.dataset-status
+             {:class (dataset->status-class @new-project-dataset)}
+             warning])]
          [:div.form-control
           [:label "Location"]
           [dropdown/single-dropdown
@@ -76,14 +76,14 @@
            :on-change #(when %
                          (dispatch [:regions/load-regions-with-geo [%]])
                          (reset! new-project-region-id %))
-            :model new-project-region-id]
-          [map-widget { :position @map-preview-position
-                        :zoom @map-preview-zoom
-                        :on-position-changed #(reset! map-preview-position %)
-                        :on-zoom-changed #(reset! map-preview-zoom %)
-                        :width 500
-                        :height 300
-                        :controls []}
+           :model new-project-region-id]
+          [map-widget {:position @map-preview-position
+                       :zoom @map-preview-zoom
+                       :on-position-changed #(reset! map-preview-position %)
+                       :on-zoom-changed #(reset! map-preview-zoom %)
+                       :width 500
+                       :height 300
+                       :controls []}
            default-base-tile-layer
            (if @selected-region-geojson
              [:geojson-layer {:data @selected-region-geojson

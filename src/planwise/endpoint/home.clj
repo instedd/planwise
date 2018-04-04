@@ -24,8 +24,8 @@
 
 (def mount-target2
   [:div#app
-    [:h3 "Loading Application"]
-    [:p "Please wait..."]])
+   [:h3 "Loading Application"]
+   [:p "Please wait..."]])
 
 (defn head []
   [:head

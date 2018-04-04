@@ -85,7 +85,10 @@
                  [org.gdal/gdal "2.2.0"]
                  [org.clojure/math.combinatorics "0.1.4"]]
 
-  :plugins [[duct/lein-duct "0.10.6"]]
+  :plugins [[duct/lein-duct "0.10.6"]
+            [lein-cljfmt "0.5.7"]]
+
+  :cljfmt {:remove-consecutive-blank-lines? false}
 
   :resource-paths     ["resources" "target/resources"]
   :target-path        "target/%s/"

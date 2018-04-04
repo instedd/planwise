@@ -35,14 +35,14 @@
         back (last (take-while #(not= tab-name %) tabs))]
     ;; TODO: change these navigations to re-frame events
     [:div.nav-buttons
-      (when has-back?
-        [:button.secondary {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
-         (icon :key-arrow-left "icon-small")
-         "Prev"])
-      (when has-next?
-        [:button.primary {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
-         "Next"
-         (icon :key-arrow-right "icon-small")])]))
+     (when has-back?
+       [:button.secondary {:on-click #(accountant/navigate! (route-by-tab-name back project-id))}
+        (icon :key-arrow-left "icon-small")
+        "Prev"])
+     (when has-next?
+       [:button.primary {:on-click #(accountant/navigate! (route-by-tab-name next project-id))}
+        "Next"
+        (icon :key-arrow-right "icon-small")])]))
 
 (defn- demographics-filters []
   (let [current-project (subscribe [:current-project/current-data])]
@@ -79,14 +79,14 @@
         [:div.sidebar-filters
          [:div.filter-info
           (if @read-only?
-           [:p "Facilities used to calculate the existing coverage."]
-           [:p "Select the types of facility to include in your analysis. We will use those to calculate the existing coverage."])
+            [:p "Facilities used to calculate the existing coverage."]
+            [:p "Select the types of facility to include in your analysis. We will use those to calculate the existing coverage."])
           [:div
            [:div.small "Target / Total Facilities"]
            [:div (str filter-count " / " filter-total)]
            [progress-bar/progress-bar filter-count filter-total]]
           [:div.small.facilities-stats (when-let [dataset (asdf/value @dataset-sub)]
-                                         (str "Facilities from dataset "(:name dataset)))]]
+                                         (str "Facilities from dataset " (:name dataset)))]]
 
          [:fieldset
           [:legend "Type"]
@@ -125,19 +125,19 @@
       [:div.sidebar-filters
        [:div.filter-info
         (if @read-only?
-         [:p "Acceptable one-way travel time to facilities, used to calculate who
+          [:p "Acceptable one-way travel time to facilities, used to calculate who
          already has access to the services being analyzed."]
-         [:p "Indicate here the acceptable one-way travel time to facilities. We will
+          [:p "Indicate here the acceptable one-way travel time to facilities. We will
          use that to calculate who already has access to the services that you
          are analyzing."])
         (when (calculate-demand-for-admin-level? (:region-admin-level @current-project))
-         (let [satisfied (or @satisfied-demand 0)
-               total (:region-population @current-project)]
-          [:div
-           [:div.small "With access / Total Population"]
-           [:div (str (utils/format-number satisfied) " / " (utils/format-number total))]
-           [progress-bar/progress-bar satisfied total]
-           [:div.small.facilities-stats (str "Assuming that each facility can provide coverage for a population of " (utils/format-number facilities-capacity))]]))]
+          (let [satisfied (or @satisfied-demand 0)
+                total (:region-population @current-project)]
+            [:div
+             [:div.small "With access / Total Population"]
+             [:div (str (utils/format-number satisfied) " / " (utils/format-number total))]
+             [progress-bar/progress-bar satisfied total]
+             [:div.small.facilities-stats (str "Assuming that each facility can provide coverage for a population of " (utils/format-number facilities-capacity))]]))]
 
        [:fieldset
         [:legend "By car"]

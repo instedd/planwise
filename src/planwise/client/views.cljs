@@ -74,7 +74,7 @@
         (some #(= @current-page %) [:design :home :projects2 :datasets2]) [content-pane @current-page]
         ; Old design with fixed layout
         :else [:div
-                [nav-bar]
-                [content-pane @current-page]
-                [:footer
-                  [:span.version (str "Version: " config/app-version)]]]))))
+               [nav-bar]
+               [content-pane @current-page]
+               [:footer
+                [:span.version (str "Version: " config/app-version)]]]))))

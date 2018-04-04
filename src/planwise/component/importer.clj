@@ -33,9 +33,9 @@
   "Extracts capacity from field metadata for the given code"
   [code metadata]
   (some-> metadata
-    (find-by :key (str code "-capacity"))
-    (:value)
-    (try-trim-to-int)))
+          (find-by :key (str code "-capacity"))
+          (:value)
+          (try-trim-to-int)))
 
 (defn import-types
   "Import the facility types from a Resourcemap 'select-one' field definition."
@@ -84,8 +84,8 @@
     (fn [site]
       (let [f_type (get-in site type-path)]
         (or
-          (get capacities f_type)
-          default-capacity)))))
+         (get capacities f_type)
+         default-capacity)))))
 
 (defn site->facility-ctor
   "Returns a function to transform a Resourcemap site into a valid Facility
@@ -136,11 +136,11 @@
 (defn process-facilities
   [facilities facility-ids]
   (doall
-    (map
-      (fn [id]
-        (info "Processing facility" id)
-        (facilities/preprocess-isochrones facilities id))
-      facility-ids)))
+   (map
+    (fn [id]
+      (info "Processing facility" id)
+      (facilities/preprocess-isochrones facilities id))
+    facility-ids)))
 
 (defn update-projects
   [projects dataset-id]
@@ -152,17 +152,17 @@
 (defn delete-old-facilities
   [facilities-service dataset-id facility-ids]
   (facilities/destroy-facilities!
-    facilities-service
-    dataset-id
-    {:except-ids facility-ids}))
+   facilities-service
+   dataset-id
+   {:except-ids facility-ids}))
 
 (defn delete-old-types
   [facilities-service dataset-id type-field]
   (let [type-ids (vals (:options type-field))]
     (facilities/destroy-types!
-      facilities-service
-      dataset-id
-      {:except-ids type-ids})))
+     facilities-service
+     dataset-id
+     {:except-ids type-ids})))
 
 ;; ----------------------------------------------------------------------------
 ;; Job control
@@ -258,9 +258,9 @@
   [component]
   (let [datasets (datasets/list-datasets-with-import-jobs (:datasets component))]
     (into {}
-      (map
-        (juxt :id (comp import-job/restore-job :import-job))
-        datasets))))
+          (map
+           (juxt :id (comp import-job/restore-job :import-job))
+           datasets))))
 
 ;; ----------------------------------------------------------------------------
 ;; Service definition

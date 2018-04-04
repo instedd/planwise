@@ -51,18 +51,18 @@
   (let [region-geo (subscribe [:regions/preview-geojson region-id])]
     (fn [{:keys [id goal region-id region-name stats] :as project}]
       [:a {:href (routes/project-demographics project)}
-        [:div.project-card
-          [:div.project-card-content
-           [:h1 goal]
-           [:h2 (str "at " region-name)]
-           [project-stats stats region-population]
-           (when read-only
-            [:div.project-card-footer
-             (common/icon :share "icon-small")
-             (str "Shared by " owner-email)])]
-          (if-not (str/blank? @region-geo)
-            [:img.map-preview {:style map-preview-size
-                               :src (static-image @region-geo)}])]])))
+       [:div.project-card
+        [:div.project-card-content
+         [:h1 goal]
+         [:h2 (str "at " region-name)]
+         [project-stats stats region-population]
+         (when read-only
+           [:div.project-card-footer
+            (common/icon :share "icon-small")
+            (str "Shared by " owner-email)])]
+        (if-not (str/blank? @region-geo)
+          [:img.map-preview {:style map-preview-size
+                             :src (static-image @region-geo)}])]])))
 
 (defn projects-list [projects]
   [:div

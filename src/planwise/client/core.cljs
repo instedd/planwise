@@ -32,20 +32,20 @@
     (letfn [(timeout-fn [] (.setTimeout
                             js/window
                             #(do
-                              (rf/dispatch [:tick (swap! time + interval)])
-                              (timeout-fn))
+                               (rf/dispatch [:tick (swap! time + interval)])
+                               (timeout-fn))
                             interval))]
       (timeout-fn))))
 
 (defn- ^:export main []
   (rf/dispatch-sync [:initialise-db])
   (accountant/configure-navigation!
-    {:nav-handler
-     (fn [path]
-       (secretary/dispatch! path))
-     :path-exists?
-     (fn [path]
-       (secretary/locate-route path))})
+   {:nav-handler
+    (fn [path]
+      (secretary/dispatch! path))
+    :path-exists?
+    (fn [path]
+      (secretary/locate-route path))})
   (accountant/dispatch-current!)
   (install-message-handler!)
   (install-ticker!)

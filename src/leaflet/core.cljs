@@ -64,9 +64,9 @@
         attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         clickable (boolean popup-fn)
         style     (merge
-                    {:clickable clickable :radius 5}
-                    attrs
-                    (when style-fn (style-fn point)))
+                   {:clickable clickable :radius 5}
+                   attrs
+                   (when style-fn (style-fn point)))
         marker    (.circleMarker js/L latLng (clj->js style))]
     (if popup-fn
       (.bindPopup marker (popup-fn point))

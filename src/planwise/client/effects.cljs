@@ -29,9 +29,9 @@
    (set! (.-location js/window) url)))
 
 (def default-xhrio-options
-	{:timeout         10000
-	 :format          (ajax/json-request-format)
-	 :response-format (ajax/json-response-format {:keywords? true})})
+  {:timeout         10000
+   :format          (ajax/json-request-format)
+   :response-format (ajax/json-response-format {:keywords? true})})
 
 ;; API effect - based on code from https://github.com/Day8/re-frame-http-fx
 ;; Original license notice follows:
@@ -125,14 +125,14 @@
 (defn dispatch-debounce
   [dispatch-map-or-seq]
   (let [cancel-timeout (fn [id]
-                          (when-let [deferred (get @deferred-actions id)]
-                            (js/clearTimeout (:timer deferred))
-                            (swap! deferred-actions dissoc id)))
+                         (when-let [deferred (get @deferred-actions id)]
+                           (js/clearTimeout (:timer deferred))
+                           (swap! deferred-actions dissoc id)))
         run-action (fn [action event]
-                      (cond
-                        (= :dispatch action) (rf/dispatch event)
-                        (= :dispatch-n action) (doseq [e event]
-                                                      (rf/dispatch e))))]
+                     (cond
+                       (= :dispatch action) (rf/dispatch event)
+                       (= :dispatch-n action) (doseq [e event]
+                                                (rf/dispatch e))))]
     (doseq [{:keys [id timeout action event]}
             (cond-> dispatch-map-or-seq
               (not (sequential? dispatch-map-or-seq)) vector)]
@@ -140,7 +140,7 @@
         (#{:dispatch :dispatch-n} action)
         (do (cancel-timeout id)
             (swap! deferred-actions assoc id
-                    {:timer (js/setTimeout (fn []
+                   {:timer (js/setTimeout (fn []
                                             (cancel-timeout id)
                                             (run-action action event))
                                           timeout)}))
@@ -155,7 +155,7 @@
 
         :else
         (throw (js/Error (str ":dispatch-debounce invalid action " action)))))))
-  
-(rf/reg-fx 
-  :dispatch-debounce 
-  dispatch-debounce)
+
+(rf/reg-fx
+ :dispatch-debounce
+ dispatch-debounce)

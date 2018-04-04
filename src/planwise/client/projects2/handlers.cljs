@@ -12,46 +12,46 @@
 ;; Creating New Project
 
 (rf/reg-event-fx
-  :projects2/new-project
-  in-projects2
-  (fn [_ [_ ]]
+ :projects2/new-project
+ in-projects2
+ (fn [_ [_]]
    {:api (assoc (api/create-project!)
                 :on-success [:projects2/project-created])}))
 
 (rf/reg-event-fx
-  :projects2/project-created
-  in-projects2
-  (fn [{:keys [db]} [_ project]]
-    (let [project-id          (:id project)
-          {:keys [id name]}   project
-          new-list            (cons {:id id :name name} (:list db))]
-      {:db        (-> db
-                    (assoc :current-project nil)
-                    (assoc :list new-list))
-       :navigate  (routes/projects2-show {:id project-id})})))
+ :projects2/project-created
+ in-projects2
+ (fn [{:keys [db]} [_ project]]
+   (let [project-id          (:id project)
+         {:keys [id name]}   project
+         new-list            (cons {:id id :name name} (:list db))]
+     {:db        (-> db
+                     (assoc :current-project nil)
+                     (assoc :list new-list))
+      :navigate  (routes/projects2-show {:id project-id})})))
 
 ;;------------------------------------------------------------------------------
 ;; Updating db
 
 (rf/reg-event-db
-  :projects2/save-project-data
-  in-projects2
-  (fn [db [_ current-project]]
-    (assoc db :current-project current-project)))
+ :projects2/save-project-data
+ in-projects2
+ (fn [db [_ current-project]]
+   (assoc db :current-project current-project)))
 
 (rf/reg-event-fx
-  :projects2/project-not-found
-  in-projects2
-  (fn [_ _]
-    {:navigate (routes/projects2)}))
+ :projects2/project-not-found
+ in-projects2
+ (fn [_ _]
+   {:navigate (routes/projects2)}))
 
 (rf/reg-event-fx
-  :projects2/get-project-data
-  in-projects2
-  (fn [{:keys [db]} [_ id]]
-    {:api (assoc (api/get-project id)
-                 :on-success [:projects2/save-project-data]
-                 :on-failure [:projects2/project-not-found])}))
+ :projects2/get-project-data
+ in-projects2
+ (fn [{:keys [db]} [_ id]]
+   {:api (assoc (api/get-project id)
+                :on-success [:projects2/save-project-data]
+                :on-failure [:projects2/project-not-found])}))
 
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
@@ -84,25 +84,25 @@
 
 
 (rf/reg-event-fx
-  :projects2/persist-current-project
-  in-projects2
-  (fn [{:keys [db]} [_]]
-    (let [current-project   (:current-project db)
-          id                (:id current-project)]
-      {:api          (api/update-project id current-project)})))
+ :projects2/persist-current-project
+ in-projects2
+ (fn [{:keys [db]} [_]]
+   (let [current-project   (:current-project db)
+         id                (:id current-project)]
+     {:api          (api/update-project id current-project)})))
 
 ;;------------------------------------------------------------------------------
 ;; Listing projects
 
 (rf/reg-event-fx
-  :projects2/projects-list
-  in-projects2
-  (fn [{:keys [db]} _]
-    {:api (assoc (api/list-projects)
-          :on-success [:projects2/projects-listed])}))
+ :projects2/projects-list
+ in-projects2
+ (fn [{:keys [db]} _]
+   {:api (assoc (api/list-projects)
+                :on-success [:projects2/projects-listed])}))
 
 (rf/reg-event-db
-  :projects2/projects-listed
-  in-projects2
-  (fn [db [_ projects-list]]
-    (assoc db :list projects-list)))
+ :projects2/projects-listed
+ in-projects2
+ (fn [db [_ projects-list]]
+   (assoc db :list projects-list)))

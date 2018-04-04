@@ -22,14 +22,14 @@
         with-extra-data (letfn [(project-facilities []
                                   (facilities/list-facilities facilities dataset-id criteria))
                                 (demand []
-                                  (when-let [time (get-in project [:filters :transport :time])]
-                                    (let [polygons (facilities/polygons-in-region facilities dataset-id {:threshold time} criteria)]
-                                      (some->> polygons
-                                        (seq)
-                                        (map #(rename-keys % {:facility-polygon-id :polygon-id
-                                                              :facility-population :population
-                                                              :facility-region-population :population-in-region}))
-                                        (maps/demand-map maps (:region-id project))))))]
+                                        (when-let [time (get-in project [:filters :transport :time])]
+                                          (let [polygons (facilities/polygons-in-region facilities dataset-id {:threshold time} criteria)]
+                                            (some->> polygons
+                                                     (seq)
+                                                     (map #(rename-keys % {:facility-polygon-id :polygon-id
+                                                                           :facility-population :population
+                                                                           :facility-region-population :population-in-region}))
+                                                     (maps/demand-map maps (:region-id project))))))]
                           (case with
                             :facilities
                             (assoc project :facilities (project-facilities))
@@ -39,8 +39,8 @@
 
                             :facilities-with-demand
                             (-> project
-                              (merge (demand))
-                              (assoc :facilities (project-facilities)))
+                                (merge (demand))
+                                (assoc :facilities (project-facilities)))
 
                             project))]
 

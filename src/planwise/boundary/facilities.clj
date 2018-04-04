@@ -16,8 +16,8 @@
      yet their id will still be returned.")
 
   (polygons-in-region
-   [this dataset-id isochrone-options criteria]
-   "Returns the facilities polygons in the criteria's :region, for the facilities
+    [this dataset-id isochrone-options criteria]
+    "Returns the facilities polygons in the criteria's :region, for the facilities
     that satisfy the specified criteria. Includes fields :facility-polygon-id,
     :facility-population, :facility-region-population and :capacity.")
 

@@ -16,22 +16,22 @@
   (routes
 
    (GET "/" request
-        (let [user-id (util/request-user-id request)
-              sets    (datasets2/list-datasets service user-id)]
-          (response sets)))
+     (let [user-id (util/request-user-id request)
+           sets    (datasets2/list-datasets service user-id)]
+       (response sets)))
 
    (POST "/" [name coverage-algorithm :as request]
-         (let [user-id  (util/request-user-id request)
-               csv-file (:tempfile (get (:multipart-params request) "file"))]
-           (let [options    {:name               name
-                             :owner-id           user-id
-                             :coverage-algorithm coverage-algorithm}
-                 result     (datasets2/create-and-import-sites service options csv-file)
-                 dataset-id (:id result)]
-             (jobrunner/queue-job jobrunner
-                                  [::datasets2/preprocess-dataset dataset-id]
-                                  (datasets2/new-processing-job service dataset-id))
-             (response result))))))
+     (let [user-id  (util/request-user-id request)
+           csv-file (:tempfile (get (:multipart-params request) "file"))]
+       (let [options    {:name               name
+                         :owner-id           user-id
+                         :coverage-algorithm coverage-algorithm}
+             result     (datasets2/create-and-import-sites service options csv-file)
+             dataset-id (:id result)]
+         (jobrunner/queue-job jobrunner
+                              [::datasets2/preprocess-dataset dataset-id]
+                              (datasets2/new-processing-job service dataset-id))
+         (response result))))))
 
 
 (defn datasets2-endpoint

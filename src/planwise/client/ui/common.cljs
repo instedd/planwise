@@ -6,29 +6,29 @@
 (defn- header
   [{:keys [sections account title tabs action]}]
   [m/Toolbar
-    [m/ToolbarRow {:id "top-row"}
-      (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
-      [m/ToolbarSection {:alignEnd true} account]]
-    [m/ToolbarRow {:id "title-row"}
-      [icon "logo2"]
-      [m/ToolbarTitle title]]
-    (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
-    action])
+   [m/ToolbarRow {:id "top-row"}
+    (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
+    [m/ToolbarSection {:alignEnd true} account]]
+   [m/ToolbarRow {:id "title-row"}
+    [icon "logo2"]
+    [m/ToolbarTitle title]]
+   (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
+   action])
 
 (defn fixed-width
   [{:keys [sections account title tabs action footer]} & children]
   [:div.layout.fixed-width
-    [header {:sections sections :account account :title title :tabs tabs :action action}]
-    (into [:main] children)
-    footer])
+   [header {:sections sections :account account :title title :tabs tabs :action action}]
+   (into [:main] children)
+   footer])
 
 (defn full-screen
   [{:keys [sections account title tabs action footer main-prop main]} & children]
   [:div.layout.full-screen
-    [header {:sections sections :account account :title title :tabs tabs :action action}]
-    [:main main-prop main]
-    (into [:aside {:id "sidebar"}] children)
-    footer])
+   [header {:sections sections :account account :title title :tabs tabs :action action}]
+   [:main main-prop main]
+   (into [:aside {:id "sidebar"}] children)
+   footer])
 
 (defn footer
   ([]
@@ -49,10 +49,10 @@
   (let [open (r/atom false)]
     (fn []
       [m/MenuAnchor
-        [m/Menu {:anchorCorner "bottomStart" :open @open :onClose #(reset! open false)}
-          [m/MenuItem {:on-click on-signout} "Sign out"]]
-        [:a {:id "account-menu" :href "#" :onClick #(reset! open true)}
-          name]])))
+       [m/Menu {:anchorCorner "bottomStart" :open @open :onClose #(reset! open false)}
+        [m/MenuItem {:on-click on-signout} "Sign out"]]
+       [:a {:id "account-menu" :href "#" :onClick #(reset! open true)}
+        name]])))
 
 (defn panel
   [{:keys [z] :or {z 2}} & children]
@@ -65,8 +65,8 @@
 (defn card
   [{:keys [href primary title subtitle status]}]
   [:a {:className "card-item" :href href}
-    [:div.card-primary primary]
-    [:div.card-secondary
-      [:h1 {} title]
-      [:h2 {} subtitle]
-      [:div.status {} status]]])
+   [:div.card-primary primary]
+   [:div.card-secondary
+    [:h1 {} title]
+    [:h2 {} subtitle]
+    [:div.status {} status]]])

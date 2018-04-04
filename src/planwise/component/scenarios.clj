@@ -42,24 +42,24 @@
   [store project-id]
   ;; TODO schedule demand computation
   (db-create-scenario! (get-db store)
-    {:name "Initial"
-     :project-id project-id
-     :investment 0
-     :demand-coverage nil
-     :changeset "[]"
-     :label "initial"}))
+                       {:name "Initial"
+                        :project-id project-id
+                        :investment 0
+                        :demand-coverage nil
+                        :changeset "[]"
+                        :label "initial"}))
 
 (defn create-scenario
   [store project-id {:keys [name changeset]}]
   ;; TODO schedule demand computation
   (assert (s/valid? ::model/change-set changeset))
   (db-create-scenario! (get-db store)
-    {:name name
-     :project-id project-id
-     :investment (sum-investments changeset)
-     :demand-coverage nil
-     :changeset (pr-str changeset)
-     :label nil}))
+                       {:name name
+                        :project-id project-id
+                        :investment (sum-investments changeset)
+                        :demand-coverage nil
+                        :changeset (pr-str changeset)
+                        :label nil}))
 
 (defn update-scenario
   [store scenario-id {:keys [name changeset]}]
@@ -69,12 +69,12 @@
   (let [db (get-db store)
         project-id (:project-id (db-find-scenario db scenario-id))]
     (db-update-scenario! db
-      {:name name
-       :id scenario-id
-       :investment (sum-investments changeset)
-       :demand-coverage nil
-       :changeset (pr-str changeset)
-       :label nil})
+                         {:name name
+                          :id scenario-id
+                          :investment (sum-investments changeset)
+                          :demand-coverage nil
+                          :changeset (pr-str changeset)
+                          :label nil})
     ;; Current label is removed so we need to search for the new optimal
     (db-update-scenarios-label! db {:project-id project-id})))
 
@@ -86,8 +86,8 @@
         scenario   (-> (db-find-scenario db scenario-id)
                        (update :demand-coverage demand-coverage))
         project-id (:project-id scenario)]
-   (db-update-scenario! db scenario)
-   (db-update-scenarios-label! db {:project-id project-id})))
+    (db-update-scenario! db scenario)
+    (db-update-scenarios-label! db {:project-id project-id})))
 
 (defrecord ScenariosStore [db]
   boundary/Scenarios

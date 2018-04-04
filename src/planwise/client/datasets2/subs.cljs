@@ -6,13 +6,13 @@
 (rf/reg-sub
  :datasets2/list
  (fn [db _]
-  (get-in db [:datasets2 :list])))
+   (get-in db [:datasets2 :list])))
 
 (rf/reg-sub
  :datasets2/dropdown-options
  (fn [db _]
    (let [list (get-in db [:datasets2 :list :value])]
-        (mapv (fn [dataset] (let [{:keys [id name]} dataset] {:value (str id) :label name})) list))))
+     (mapv (fn [dataset] (let [{:keys [id name]} dataset] {:value (str id) :label name})) list))))
 
 (rf/reg-sub
  :datasets2/view-state

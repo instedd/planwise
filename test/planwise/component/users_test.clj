@@ -64,17 +64,17 @@
 ;; change it so now is read from the database, or to update the database with a
 ;; given timestamp
 #_(deftest update-last-login-test
-  (test-system/with-system (test-config)
-    (let [store (:planwise.component/users system)
-          start-time (time/now)
-          user-before (users/find-user store test-user-id)
-          result (users/update-user-last-login! store test-user-id)
-          user-after (users/find-user store test-user-id)]
-      (is (nil? (:last-login user-before)))
-      (is (true? result))
-      (is (some? (:last-login user-after)))
-      (is (time/after? (:last-login user-after) start-time))
-      (is (time/before? (:last-login user-after) (time/now))))))
+    (test-system/with-system (test-config)
+      (let [store (:planwise.component/users system)
+            start-time (time/now)
+            user-before (users/find-user store test-user-id)
+            result (users/update-user-last-login! store test-user-id)
+            user-after (users/find-user store test-user-id)]
+        (is (nil? (:last-login user-before)))
+        (is (true? result))
+        (is (some? (:last-login user-after)))
+        (is (time/after? (:last-login user-after) start-time))
+        (is (time/before? (:last-login user-after) (time/now))))))
 
 (deftest find-latest-token-test
   (test-system/with-system (test-config)

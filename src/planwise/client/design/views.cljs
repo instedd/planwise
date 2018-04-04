@@ -11,16 +11,16 @@
 (defn- project-tabs
   [{:keys [active] :or {active 0}}]
   [m/TabBar {:activeTabIndex active}
-    [m/Tab "Lorem"]
-    [m/Tab "Ipsum"]])
+   [m/Tab "Lorem"]
+   [m/Tab "Ipsum"]])
 
 (def nav-params
-  { :sections [[ui/section {:href "/_design" :className "active"} "Design"]
-               [ui/section {:href "/_design/map"} "Map"]]
-    :account [ui/account {:name "John Doe" :on-signout #(println "Sign out")}]
-    :title "Planwise"
-    :action (ui/main-action {:icon "add" :on-click #(reset! dialog-open true)})
-    :footer [ui/footer]})
+  {:sections [[ui/section {:href "/_design" :className "active"} "Design"]
+              [ui/section {:href "/_design/map"} "Map"]]
+   :account [ui/account {:name "John Doe" :on-signout #(println "Sign out")}]
+   :title "Planwise"
+   :action (ui/main-action {:icon "add" :on-click #(reset! dialog-open true)})
+   :footer [ui/footer]})
 
 (defn project-card
   [{:keys [title href]}]
@@ -31,29 +31,29 @@
 (defn demo-list
   []
   [ui/fixed-width nav-params
-    [ui/card-list {}
-      [project-card {:title "Lorem ipsum" :href "/_design/project?id=1"}]
-      [project-card {:title "Dolor sit"   :href "/_design/project?id=2"}]
-      [project-card {:title "Amet"        :href "/_design/project?id=3"}]]
-    [m/SimpleDialog
-      {:title "The title" :body "The Body" :open @dialog-open :onClose #(reset! dialog-open false)}]])
+   [ui/card-list {}
+    [project-card {:title "Lorem ipsum" :href "/_design/project?id=1"}]
+    [project-card {:title "Dolor sit"   :href "/_design/project?id=2"}]
+    [project-card {:title "Amet"        :href "/_design/project?id=3"}]]
+   [m/SimpleDialog
+    {:title "The title" :body "The Body" :open @dialog-open :onClose #(reset! dialog-open false)}]])
 
 (defn demo-project
   []
   [ui/fixed-width (merge {:tabs [project-tabs {:active 1}]} nav-params)
-    [ui/panel {}
-      [m/Grid {}
-        [m/GridCell {:span 6}
-          [:form.vertical
-            [m/TextField {:label "Lorem"}]
-            [m/TextField {:label "Ipsum"}]
-            [m/Checkbox {} "dolor sit amet"]]]
-        [m/GridCell {:span 6}
-          [ui/panel {}
-            [:pre {} "MAP"]]]
-        [m/GridCell {:span 12}
-          [:div.form-actions
-            [m/Button {} "Continue"]]]]]])
+   [ui/panel {}
+    [m/Grid {}
+     [m/GridCell {:span 6}
+      [:form.vertical
+       [m/TextField {:label "Lorem"}]
+       [m/TextField {:label "Ipsum"}]
+       [m/Checkbox {} "dolor sit amet"]]]
+     [m/GridCell {:span 6}
+      [ui/panel {}
+       [:pre {} "MAP"]]]
+     [m/GridCell {:span 12}
+      [:div.form-actions
+       [m/Button {} "Continue"]]]]]])
 
 (defn simple-map
   []

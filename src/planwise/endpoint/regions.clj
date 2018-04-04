@@ -43,7 +43,7 @@
 
 (defn regions-endpoint [{service :regions}]
   (context "/api/regions" []
-           (restrict (endpoint-routes service) {:handler authenticated?})))
+    (restrict (endpoint-routes service) {:handler authenticated?})))
 
 (defmethod ig/init-key :planwise.endpoint/regions
   [_ config]

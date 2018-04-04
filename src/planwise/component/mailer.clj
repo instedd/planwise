@@ -25,8 +25,8 @@
     (info "Sending email: " mail-params)
     (if-not (mock? service)
       (let [result (if-let [conn (connection-params service)]
-                      (postal/send-message conn mail-params)
-                      (postal/send-message mail-params))]
+                     (postal/send-message conn mail-params)
+                     (postal/send-message mail-params))]
         (= :SUCCESS (:error result)))
       true)))
 
