@@ -1,10 +1,13 @@
 #include <iostream>
 #include <string>
 #include <math.h>
+#include <cassert>
 #include <stdio.h>
 
 #include "gdal_priv.h"
 #include "cpl_conv.h"
+
+#define UNUSED(x) (void)(x)
 
 GDALDataset* openRaster(std::string filename) {
   GDALDataset* poDataset = (GDALDataset*) GDALOpen(filename.c_str(), GA_ReadOnly);
@@ -46,6 +49,9 @@ int main(int argc, char *argv[]) {
   float max = 0;
   double sum = 0;
 
+  CPLErr err;
+  UNUSED(err);  // error checking disabled in release build
+
   for (int iYBlock = 0; iYBlock < nYBlocks; ++iYBlock) {
     yOffset = iYBlock*yBlockSize;
     nYValid = yBlockSize;
@@ -56,7 +62,8 @@ int main(int argc, char *argv[]) {
       nXValid = xBlockSize;
       if (iXBlock == nXBlocks-1) nXValid = xSize - xOffset;
 
-      band->ReadBlock(iXBlock, iYBlock, buffer);
+      err = band->ReadBlock(iXBlock, iYBlock, buffer);
+      assert(err == CE_None);
 
       for (int iY = 0; iY < nYValid; ++iY) {
         for (int iX = 0; iX < nXValid; ++iX) {
