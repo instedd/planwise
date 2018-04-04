@@ -37,7 +37,7 @@
 (rf/reg-sub
  :coverage/supported-algorithms
  (fn [db _]
-  (get-in db [:coverage :algorithms])))
+   (get-in db [:coverage :algorithms])))
 
 ;; ----------------------------------------------------------------------------
 ;; Views
@@ -59,7 +59,7 @@
       (nil? criteria) empty
       :else
       [:div {:class-name "fields-vertical"}
-        (map (fn [[key config]]
+       (map (fn [[key config]]
               [criteria-option {:key key
                                 :config config
                                 :value (get value key)

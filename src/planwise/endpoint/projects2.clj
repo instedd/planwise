@@ -25,9 +25,9 @@
 (defn- apply-default
   [config]
   (-> config
-    (default [:demographics :target] nil)
-    (default [:actions :budget] nil)
-    (default [:coverage :filter-options] {})))
+      (default [:demographics :target] nil)
+      (default [:actions :budget] nil)
+      (default [:coverage :filter-options] {})))
 
 (s/def ::id number?)
 (s/def ::dataset-id (s/nilable number?))
@@ -51,7 +51,7 @@
      (let [user-id    (util/request-user-id request)
            project-id (:id (projects2/create-project service user-id))
            project    (projects2/get-project service project-id)]
-      (response project)))
+       (response project)))
 
    (PUT "/:id" [id project :as request]
      (let [user-id  (util/request-user-id request)
@@ -66,9 +66,9 @@
      (let [user-id (util/request-user-id request)
            project (projects2/get-project service (Integer. id))]
        (if (nil? project)
-           (not-found {:error "Project not found"})
-           (response (-> project
-                         (update* :config apply-default))))))
+         (not-found {:error "Project not found"})
+         (response (-> project
+                       (update* :config apply-default))))))
 
    (GET "/" request
      (let [user-id          (util/request-user-id request)
