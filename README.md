@@ -217,11 +217,12 @@ development, an easy and non-intrusive way of doing it is adding the
 ### Binaries
 
 The application has some C++ binaries which are run in the context of the
-application. You'll need to compile these:
+application. If running the application outside Docker, you'll need to compile
+these. Otherwise, these are automatically built by `bootstrap-dev.sh`.
 
 ```sh
-$ cd cpp
-$ make clean all
+$ brew install cmake boost
+$ scripts/build-binaries
 ```
 
 ### Node modules
