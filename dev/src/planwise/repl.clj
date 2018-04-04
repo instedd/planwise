@@ -4,6 +4,7 @@
             [integrant.repl :as igr]
             [integrant.repl.state :refer [config system]]
             [duct.server.figwheel :as figwheel]
+            [figwheel-sidecar.utils :as fig-utils]
             [eftest.runner :as eftest]
             [planwise.database :as database]
             [planwise.tasks.build-icons :as build-icons]
@@ -24,6 +25,14 @@
   []
   (let [figwheel (:duct.server/figwheel system)]
     (figwheel/rebuild-cljs figwheel)))
+
+(defn clean-cljs
+  []
+  (let [builds (get-in config [:duct.server/figwheel :builds])]
+    (dorun (for [{:keys [build-options]} builds]
+             (do
+               (println "Cleaning CLJS in" (:output-dir build-options))
+               (fig-utils/clean-cljs-build* build-options))))))
 
 (defn run-tests
   [tests]
