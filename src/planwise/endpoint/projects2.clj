@@ -31,14 +31,13 @@
 (s/def ::dataset-id (s/nilable number?))
 (s/def ::region-id (s/nilable number?))
 (s/def ::population-source-id (s/nilable number?))
-(s/def ::coverage-algorithm (s/nilable string?))
 (s/def ::name string?)
 (s/def ::target (s/nilable number?))
 (s/def ::budget (s/nilable number?))
 (s/def ::demographics (s/keys :req-un [::target]))
 (s/def ::actions (s/keys :req-un [::budget]))
 (s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions])))
-(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::region-id ::dataset-id ::population-source-id ::coverage-algorithm]))
+(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::region-id ::dataset-id ::population-source-id]))
 
 (defn- projects2-routes
   [service]
@@ -52,10 +51,10 @@
 
    (PUT "/:id" [id project :as request]
      (let [user-id    (util/request-user-id request)
-          {:keys[id dataset-id]} project
+           {:keys [id dataset-id]} project
            coverage-algorithm (:coverage-algorithm (datasets2/get-dataset service dataset-id))]
        (assert (s/valid? ::project project) "Invalid project")
-       (projects2/update-project service id (dissoc project :coverage-algorithm))
+       (projects2/update-project service id project)
        (response (assoc project :coverage-algorithm coverage-algorithm))))
 
    (GET "/:id" [id :as request]
