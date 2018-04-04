@@ -6,7 +6,7 @@ INSERT INTO projects2
 
 -- :name db-update-project :!
 UPDATE projects2
-  SET name = :name, config = :config, "dataset-id" = :dataset-id
+  SET name = :name, config = :config, "dataset-id" = :dataset-id, "region-id" = :region-id
   WHERE id = :id;
 
 -- :name db-get-project :?

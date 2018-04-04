@@ -28,6 +28,7 @@
 
 (s/def ::id number?)
 (s/def ::dataset-id (s/nilable number?))
+(s/def ::region-id (s/nilable number?))
 (s/def ::population-source-id (s/nilable number?))
 (s/def ::name string?)
 (s/def ::target (s/nilable number?))
@@ -35,7 +36,7 @@
 (s/def ::demographics (s/keys :req-un [::target]))
 (s/def ::actions (s/keys :req-un [::budget]))
 (s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions])))
-(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::dataset-id ::population-source-id]))
+(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::region-id ::dataset-id ::population-source-id]))
 
 (defn- projects2-routes
   [service]
