@@ -34,3 +34,4 @@ node_modules
 /scripts/population/data
 
 /node_modules
+/cpp/build-*/

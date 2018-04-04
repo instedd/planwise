@@ -1,13 +1,13 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.7)
 project(planwise)
 
-include(FindGDAL)
 include(FindBoost)
 find_package(Boost COMPONENTS timer)
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost not found")
 endif()
 
+include(FindGDAL)
 if(NOT GDAL_FOUND)
   message(FATAL_ERROR "GDAL not found")
 endif()
@@ -18,6 +18,7 @@ if(BENCHMARK)
   add_definitions(-DBENCHMARK)
 endif()
 
+include_directories(${GDAL_INCLUDE_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
