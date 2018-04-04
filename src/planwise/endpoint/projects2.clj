@@ -75,7 +75,7 @@
             list-of-projects (projects2/list-projects service user-id)]
         (response list-of-projects)))
 
-   (POST "/start/:id" [id :as request]
+   (POST "/:id/start" [id :as request]
       (let [user-id       (util/request-user-id request)
             project       (projects2/get-project service (Integer. id))
             start-project (projects2/start-project service (Integer. id))]

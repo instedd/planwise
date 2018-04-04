@@ -30,4 +30,4 @@
 (defn- start-project!
   [project-id]
   {:method    :post
-   :uri       (str "/api/projects2/start/" project-id)})
+   :uri       (str "/api/projects2/" project-id "/start" )})
