@@ -1,11 +1,14 @@
 (ns planwise.model.scenarios
-  (:require [schema.core :as s]))
+  (:require [clojure.spec.alpha :as s]))
 
-(def CreateSiteChange
-  {:action (s/enum "create-site")
-   :investment s/Int
-   :capacity s/Int
-   :site-id s/Str})
+(s/def ::investment int?)
+(s/def ::capacity int?)
+(s/def ::site-id string?)
 
-(def ChangeSet
-  [CreateSiteChange])
+(s/def :create-site/action #{"create-site"})
+
+(s/def ::create-site-change
+  (s/keys :req-un [:create-site/action ::investment ::capacity ::site-id]))
+
+(s/def ::change-set
+  (s/coll-of ::create-site-change))

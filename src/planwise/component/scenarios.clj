@@ -7,7 +7,7 @@
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
             [clojure.string :as str]
-            [schema.core :as s]))
+            [clojure.spec.alpha :as s]))
 
 (timbre/refer-timbre)
 
@@ -52,7 +52,7 @@
 (defn create-scenario
   [store project-id {:keys [name changeset]}]
   ;; TODO schedule demand computation
-  (s/validate model/ChangeSet changeset)
+  (assert (s/valid? ::model/change-set changeset))
   (db-create-scenario! (get-db store)
     {:name name
      :project-id project-id
@@ -65,7 +65,7 @@
   [store scenario-id {:keys [name changeset]}]
   ;; TODO schedule demand computation
   ;; TODO fail if updating initial. initial scenario should be readonly
-  (s/validate model/ChangeSet changeset)
+  (assert (s/valid? ::model/change-set changeset))
   (let [db (get-db store)
         project-id (:project-id (db-find-scenario db scenario-id))]
     (db-update-scenario! db

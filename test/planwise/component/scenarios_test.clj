@@ -7,7 +7,7 @@
             [planwise.util.collections :refer [find-by]]
             [clj-time.core :as time]
             [integrant.core :as ig]
-            [schema.core :as s]))
+            [clojure.spec.alpha :as s]))
 
 (def owner-id 10)
 (def project-id 20)
@@ -91,13 +91,13 @@
       (is (= (:label (find-by scenarios :id optimal-scenario-id)) "optimal")))))
 
 (deftest valid-changeset
-  (let [t #(is (nil? (s/check model/ChangeSet %)))]
-    (t [])
-    (t [{:action "create-site" :site-id "new.1" :investment 10000 :capacity 50}])))
+  (are [x] (s/valid? ::model/change-set x)
+    []
+    [{:action "create-site" :site-id "new.1" :investment 10000 :capacity 50}]))
 
 (deftest invalid-changeset
-  (let [t #(is (some? (s/check model/ChangeSet %)))]
-    (t [{:action "unknown-action" :site-id "new.1" :investment 10000 :capacity 50}])
-    (t [{:action "create-site" :site-id "new.1" :investment nil :capacity nil}])
-    (t [{:action "create-site" :site-id "new.1" :investment "" :capacity ""}])
-    (t [{:action "create-site" :site-id "new.1"}])))
+  (are [x] (not (s/valid? ::model/change-set x))
+    [{:action "unknown-action" :site-id "new.1" :investment 10000 :capacity 50}]
+    [{:action "create-site" :site-id "new.1" :investment nil :capacity nil}]
+    [{:action "create-site" :site-id "new.1" :investment "" :capacity ""}]
+    [{:action "create-site" :site-id "new.1"}]))
