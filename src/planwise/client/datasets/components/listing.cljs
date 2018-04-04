@@ -67,15 +67,15 @@
 (defn- import-result->string
   [result warnings-count]
   (let [text (case result
-              :success "Ready to use"
-              :cancelled "Import cancelled"
-              :import-types-failed "Import failed, error while importing facility types"
-              :import-sites-failed "Import failed, error while importing sites from ResourceMap"
-              :delete-old-facilities-failed "Import failed, error while deleting facilities for removed sites"
-              :delete-old-types-failed "Import failed, error while deleting stale facility types"
-              :update-projects-failed "Import failed, error while updating related projects"
-              :unexpected-event "Import failed"
-              nil)]
+               :success "Ready to use"
+               :cancelled "Import cancelled"
+               :import-types-failed "Import failed, error while importing facility types"
+               :import-sites-failed "Import failed, error while importing sites from ResourceMap"
+               :delete-old-facilities-failed "Import failed, error while deleting facilities for removed sites"
+               :delete-old-types-failed "Import failed, error while deleting stale facility types"
+               :update-projects-failed "Import failed, error while updating related projects"
+               :unexpected-event "Import failed"
+               nil)]
     (case result
       (:success :cancelled)
       (if (pos? warnings-count)
@@ -118,7 +118,7 @@
                    [common/icon (dataset->status-icon dataset) "icon-small"]
                    (utils/pluralize (or facility-count 0) "facility" "facilities")
                    (when-let [status (status-string server-status result warnings-count)]
-                    (str " (" status ")"))]
+                     (str " (" status ")"))]
           :popover [popover/popover-content-wrapper
                     :showing? showing-warnings?
                     :position :below-right
@@ -138,7 +138,7 @@
            [progress-bar/progress-bar (db/import-progress server-status)])
 
          [:div.bottom-right
-           (if importing?
+          (if importing?
             [:button.danger
              {:type :button
               :on-click #(dispatch [:datasets/cancel-import! id])
@@ -150,12 +150,12 @@
               (common/icon :refresh "icon-small")
               "Update"]
              (when (zero? project-count)
-              [:button.delete
-               {:on-click (utils/with-confirm
-                            #(dispatch [:datasets/delete-dataset id])
-                            "Are you sure you want to delete this dataset?")}
-               (common/icon :delete "icon-small")
-               "Delete"])])]]))))
+               [:button.delete
+                {:on-click (utils/with-confirm
+                             #(dispatch [:datasets/delete-dataset id])
+                             "Are you sure you want to delete this dataset?")}
+                (common/icon :delete "icon-small")
+                "Delete"])])]]))))
 
 
 (defn datasets-list

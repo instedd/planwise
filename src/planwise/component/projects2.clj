@@ -41,7 +41,7 @@
 (defn update-project
   [store project-id data]
   (let [edn-config (project-config->edn (:config data))]
-      (db-update-project (get-db store) (assoc data :config edn-config))))
+    (db-update-project (get-db store) (assoc data :config edn-config))))
 
 (defn get-project
   [store project-id]

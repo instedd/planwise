@@ -8,8 +8,8 @@
   (let [is-selected? (or (= selected item)
                          (item selected))
         li-all-classes (if is-selected?
-                      (conj li-classes "active")
-                      li-classes)]
+                         (conj li-classes "active")
+                         li-classes)]
     [:li {:class (string/join " " li-all-classes)}
      [:a {:href href :target target} reference title]]))
 

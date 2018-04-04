@@ -29,9 +29,9 @@
   (cond
     (empty? datasets) [no-datasets2-view]
     :else
-      [ui/card-list {:class "dataset-list"}
-        (for [dataset datasets]
-          [dataset2-card {:key (:id dataset)} dataset])]))
+    [ui/card-list {:class "dataset-list"}
+     (for [dataset datasets]
+       [dataset2-card {:key (:id dataset)} dataset])]))
 
 (defn datasets2-page
   []
@@ -44,7 +44,7 @@
     (cond
       (nil? sets) [common2/loading-placeholder]
       :else
-        [ui/fixed-width (assoc (common2/nav-params)
-                              :action create-dataset-button)
-          [datasets2-list sets]
-          [new-dataset-dialog]])))
+      [ui/fixed-width (assoc (common2/nav-params)
+                             :action create-dataset-button)
+       [datasets2-list sets]
+       [new-dataset-dialog]])))

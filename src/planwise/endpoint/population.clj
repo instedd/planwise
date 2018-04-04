@@ -9,8 +9,8 @@
 (defn- population-routes
   [service]
   (routes
-    (GET "/" [request]
-      (response (population/list-population-sources service)))))
+   (GET "/" [request]
+     (response (population/list-population-sources service)))))
 
 (defn population-endpoint
   [{service :population}]

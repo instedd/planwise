@@ -30,7 +30,7 @@
          [:button.secondary  {:title "Reset the sharing link"
                               :on-click reset-share-token-fn
                               :disabled (not (asdf/valid? @share-link))}
-           (common/icon :refresh "icon-medium")]]))))
+          (common/icon :refresh "icon-medium")]]))))
 
 (defn- search-box []
   (let [search-string (subscribe [:current-project/shares-search-string])]
@@ -49,19 +49,19 @@
       (let [shares (asdf/value @project-shares)
             shares-valid? (asdf/valid? @project-shares)]
         (when (asdf/should-reload? @project-shares)
-         (dispatch [:current-project/load-project-shares]))
+          (dispatch [:current-project/load-project-shares]))
         (when (seq shares)
-         [:div.shares
-          [:p (str (utils/pluralize (count shares) "user has" "users have") " access to this project")]
-          [search-box]
-          [:ul
-           (for [{:keys [user-id user-email]} @filtered-shares]
-            [:li {:key user-id}
-             [:span user-email]
-             (when shares-valid?
-              [:button.secondary  {:title "Remove access for this user"
-                                   :on-click #(dispatch [:current-project/delete-share user-id])}
-                (common/icon :close "icon-small")])])]])))))
+          [:div.shares
+           [:p (str (utils/pluralize (count shares) "user has" "users have") " access to this project")]
+           [search-box]
+           [:ul
+            (for [{:keys [user-id user-email]} @filtered-shares]
+              [:li {:key user-id}
+               [:span user-email]
+               (when shares-valid?
+                 [:button.secondary  {:title "Remove access for this user"
+                                      :on-click #(dispatch [:current-project/delete-share user-id])}
+                  (common/icon :close "icon-small")])])]])))))
 
 (defn- send-emails-form []
   (let [emails-text-sub  (subscribe [:current-project/sharing-emails-text])
@@ -73,20 +73,20 @@
             valid-emails   (filter utils/is-valid-email? emails-list)
             invalid-emails (filter (complement utils/is-valid-email?) emails-list)
             button-title   (cond
-                            (= :sending emails-state) "Sending..."
-                            (= :sent emails-state)    "Emails successfully sent"
-                            (empty? emails-list)      "Enter one or more email addresses"
-                            (seq invalid-emails)      (str
+                             (= :sending emails-state) "Sending..."
+                             (= :sent emails-state)    "Emails successfully sent"
+                             (empty? emails-list)      "Enter one or more email addresses"
+                             (seq invalid-emails)      (str
                                                         (str/join ", " invalid-emails) " "
                                                         (if (= 1 (count invalid-emails))
                                                           "is an invalid email address"
                                                           "are invalid email addresses"))
-                            :else                     "Send this project sharing link to the emails above")
+                             :else                     "Send this project sharing link to the emails above")
             button-label   (cond
-                            (= :sending emails-state) "Sending..."
-                            (= :sent emails-state)    "Sent"
-                            (seq valid-emails)        (str "Send to " (utils/pluralize (count valid-emails) "user"))
-                            :else                     "Send")]
+                             (= :sending emails-state) "Sending..."
+                             (= :sent emails-state)    "Sent"
+                             (seq valid-emails)        (str "Send to " (utils/pluralize (count valid-emails) "user"))
+                             :else                     "Send")]
 
 
         [:form {:on-submit (utils/prevent-default #(dispatch [:current-project/send-sharing-emails]))}
@@ -99,14 +99,14 @@
                                         :on-change (utils/dispatch-value-fn :current-project/reset-sharing-emails-text)}]]
          [:div.actions
           [:button.primary
-            {:type "submit"
-             :disabled (or (#{:sending :sent} emails-state) (empty? emails-list) (seq invalid-emails))
-             :title button-title}
-            button-label]
+           {:type "submit"
+            :disabled (or (#{:sending :sent} emails-state) (empty? emails-list) (seq invalid-emails))
+            :title button-title}
+           button-label]
           [:button.cancel
-            {:type "button"
-             :on-click close-fn}
-            "Close"]]]))))
+           {:type "button"
+            :on-click close-fn}
+           "Close"]]]))))
 
 (defn share-dialog []
   (let [view-state (subscribe [:current-project/view-state])]

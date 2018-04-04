@@ -25,9 +25,9 @@
     (case (:exit response)
       0 (:out response)
       (throw
-        (ex-info
-          (str "Error running external " kind ": " (:err response))
-          {:args args, :code (:exit response), :err (:err response)})))))
+       (ex-info
+        (str "Error running external " kind ": " (:err response))
+        {:args args, :code (:exit response), :err (:err response)})))))
 
 (defrecord RunnerService [config]
   boundary/Runner

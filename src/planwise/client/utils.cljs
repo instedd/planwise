@@ -30,8 +30,8 @@
 
 (defn with-confirm [f confirm-msg]
   (prevent-default
-    #(when (.confirm js/window confirm-msg)
-       (f))))
+   #(when (.confirm js/window confirm-msg)
+      (f))))
 
 (defn reset-fn [atom]
   (fn [evt]

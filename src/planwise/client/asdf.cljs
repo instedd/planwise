@@ -5,8 +5,8 @@
 (s/defschema AsdfState (s/enum :invalid :reloading :valid))
 
 (s/defrecord AsdfBase
-    [state :- AsdfState
-     value :- s/Any])
+             [state :- AsdfState
+              value :- s/Any])
 
 (defn Asdf
   [value-schema]

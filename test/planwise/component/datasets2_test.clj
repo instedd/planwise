@@ -20,10 +20,10 @@
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
    [:datasets2
-    [{:id 1 :name "First" "owner-id" owner-id }
+    [{:id 1 :name "First" "owner-id" owner-id}
      {:id 2 :name "Bar" "owner-id" owner-id}]]
    [:sites2
-     []]])
+    []]])
 
 (defn test-config
   ([]
@@ -70,18 +70,18 @@
           version-dataset2         (:last-version (datasets2/get-dataset store dataset2-id))
           listed-sites-dataset1    (datasets2/sites-by-version store dataset1-id version-dataset1)
           listed-sites-dataset2    (datasets2/sites-by-version store dataset2-id version-dataset2)]
-       (is (= (count listed-sites-dataset1) 4)
-       (is (= (count listed-sites-dataset2) 0))))))
+      (is (= (count listed-sites-dataset1) 4)
+          (is (= (count listed-sites-dataset2) 0))))))
 
 (defn- pd [v] (do (println v) v))
 
 (deftest several-csv-to-dataset
- (test-system/with-system (test-config)
-   (let [store                    (:planwise.component/datasets2 system)
-         dataset-id               (pd (:id (datasets2/create-dataset store "Initial" owner-id :none)))
-         sites                    (datasets2/csv-to-sites store dataset-id (io/resource "sites.csv"))
-         other-sites              (datasets2/csv-to-sites store dataset-id (io/resource "other-sites.csv"))
-         last-version-dataset     (:last-version (datasets2/get-dataset store dataset-id))
-         listed-sites             (datasets2/sites-by-version store dataset-id last-version-dataset)]
+  (test-system/with-system (test-config)
+    (let [store                    (:planwise.component/datasets2 system)
+          dataset-id               (pd (:id (datasets2/create-dataset store "Initial" owner-id :none)))
+          sites                    (datasets2/csv-to-sites store dataset-id (io/resource "sites.csv"))
+          other-sites              (datasets2/csv-to-sites store dataset-id (io/resource "other-sites.csv"))
+          last-version-dataset     (:last-version (datasets2/get-dataset store dataset-id))
+          listed-sites             (datasets2/sites-by-version store dataset-id last-version-dataset)]
       (is (= (count listed-sites) 2))
       (is (= last-version-dataset 2)))))

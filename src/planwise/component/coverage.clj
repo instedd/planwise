@@ -138,5 +138,4 @@
                                :driving-time 60
                                :raster "/tmp/nairobi.tif"
                                :ref-coords {:lat 5.4706946 :lon 33.9126084}
-                               :resolution {:x-res 0.0008333 :y-res 0.0008333}}))
-  )
+                               :resolution {:x-res 0.0008333 :y-res 0.0008333}})))

@@ -41,7 +41,7 @@
               :lon  (Double. (:lon csv-site-data))
               :capacity (Integer. (:capacity csv-site-data))
               :tags (:tags csv-site-data)}]
-     (db-create-site! (get-db store) data)))
+    (db-create-site! (get-db store) data)))
 
 (defn csv-to-sites
   "Generates sites from a dataset-id and a csv file"
@@ -216,6 +216,4 @@
                              :options-list [{:driving-time 30} {:driving-time 60}]
                              :raster-dir "data/coverage/11"})
 
-  (preprocess-dataset! store 11)
-
-  )
+  (preprocess-dataset! store 11))

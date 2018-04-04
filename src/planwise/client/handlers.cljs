@@ -37,8 +37,8 @@
  :navigate
  (fn [{:keys [db]} [_ {page :page, :as params}]]
    (let [new-db (assoc db
-                 :current-page page
-                 :page-params params)]
+                       :current-page page
+                       :page-params params)]
      (merge {:db new-db}
             (on-navigate page params)))))
 

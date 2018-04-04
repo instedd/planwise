@@ -133,7 +133,7 @@
   (let [[_ _ error] event]
     (-> (complete-task job event)
         (assoc :result :delete-old-facilities-failed
-                       :error-info error))))
+               :error-info error))))
 
 (defn dispatch-delete-old-types
   [job & _]
@@ -148,7 +148,7 @@
   (let [[_ _ error] event]
     (-> (complete-task job event)
         (assoc :result :delete-old-types-failed
-                       :error-info error))))
+               :error-info error))))
 
 (defn dispatch-process-facilities
   [job & _]
@@ -179,20 +179,20 @@
   (let [[_ _ results] event
         results-counts (frequencies results)]
     (-> job
-      (update :facilities-without-road-network-count + (get results-counts :no-road-network 0))
-      (update :facilities-outside-regions-count + (get results-counts :outside-regions 0)))))
+        (update :facilities-without-road-network-count + (get results-counts :no-road-network 0))
+        (update :facilities-outside-regions-count + (get results-counts :outside-regions 0)))))
 
 (defn complete-processing
   [job event & _]
   (-> job
-    (update-facilities-counts event)
-    (complete-task event)))
+      (update-facilities-counts event)
+      (complete-task event)))
 
 (defn last-complete-processing
   [job event & _]
   (-> job
-    (complete-processing event)
-    (assoc :result :success)))
+      (complete-processing event)
+      (assoc :result :success)))
 
 (defn nothing-to-process
   [job event & _]
@@ -439,8 +439,8 @@
          :stats (job-stats job)}
 
         (:request-sites :importing-sites
-         :delete-old-facilities :deleting-old-facilities
-         :delete-old-types :deleting-old-types)
+                        :delete-old-facilities :deleting-old-facilities
+                        :delete-old-types :deleting-old-types)
         {:status :importing
          :state state
          :progress (import-progress (:value job))}
@@ -470,8 +470,8 @@
 (defn restore-job
   [{:keys [state value], :as job}]
   (import-job
-    state
-    (assoc value :pending-tasks (:tasks value))))
+   state
+   (assoc value :pending-tasks (:tasks value))))
 
 (defn serialize-job
   [job]
@@ -487,8 +487,8 @@
   (when job
     (if-let [pending-tasks (seq (get-in job [:value :pending-tasks]))]
       (-> job
-        (assoc-in [:value :next-task] (first pending-tasks))
-        (update-in [:value :pending-tasks] rest))
+          (assoc-in [:value :next-task] (first pending-tasks))
+          (update-in [:value :pending-tasks] rest))
       (fsm/fsm-event job :next))))
 
 (defn report-task-success

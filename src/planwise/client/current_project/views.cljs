@@ -46,13 +46,13 @@
 
 (defn marker-popup [{:keys [name type processing-status], :as marker}]
   (str
-    "<b>" (utils/escape-html name) "</b>"
-    "<br/>"
-    (utils/escape-html type)
-    (when (= "no-road-network" processing-status)
-      (str
-        "<br/>" "<br/>"
-        "<i>" "This facility is too far from the closest road and it is not being evaluated for coverage." "</i>"))))
+   "<b>" (utils/escape-html name) "</b>"
+   "<br/>"
+   (utils/escape-html type)
+   (when (= "no-road-network" processing-status)
+     (str
+      "<br/>" "<br/>"
+      "<i>" "This facility is too far from the closest road and it is not being evaluated for coverage." "</i>"))))
 
 (def loading-wheel
   [:svg.circular {:viewBox "25 25 50 50"}
@@ -92,9 +92,9 @@
             [:div.loading-wheel loading-wheel]
             [:div.loading-legend
              (case selected-tab
-              :demographics "Loading demographics"
-              :facilities "Retrieving facilities"
-              :transport "Calculating coverage")]])
+               :demographics "Loading demographics"
+               :facilities "Retrieving facilities"
+               :transport "Calculating coverage")]])
          [:div.map-container
           (let [map-props   {:position @map-position
                              :zoom @map-zoom
@@ -121,11 +121,11 @@
                                                               (mapping/demand-map key)
                                                               population-map))
                                                           population-map)]
-                                      [:wms-tile-layer {:url config/mapserver-url
-                                                        :transparent true
-                                                        :layers (when map-datafile mapping/layer-name)
-                                                        :DATAFILE map-datafile
-                                                        :opacity 0.6}])
+                                     [:wms-tile-layer {:url config/mapserver-url
+                                                       :transparent true
+                                                       :layers (when map-datafile mapping/layer-name)
+                                                       :DATAFILE map-datafile
+                                                       :opacity 0.6}])
 
                 layers-facilities  (when (#{:facilities :transport} selected-tab)
                                      (for [[type facilities] @facilities-by-type]
@@ -138,13 +138,13 @@
                                                       :fillOpacity 1}]))
 
                 layer-isochrones   (when (= :transport selected-tab)
-                                      [:geojson-bbox-layer {:levels mapping/geojson-levels
-                                                            :fillOpacity 1
-                                                            :weight 2
-                                                            :color styles/black
-                                                            :group {:opacity 0.2}
-                                                            :featureFn feature-fn
-                                                            :callback @callback-fn}])
+                                     [:geojson-bbox-layer {:levels mapping/geojson-levels
+                                                           :fillOpacity 1
+                                                           :weight 2
+                                                           :color styles/black
+                                                           :group {:opacity 0.2}
+                                                           :featureFn feature-fn
+                                                           :callback @callback-fn}])
 
                 map-layers (concat [mapping/bright-base-tile-layer
                                     layer-region-boundaries
@@ -182,7 +182,7 @@
          (when (db/show-share-dialog? @view-state)
            [common/modal-dialog {:on-backdrop-click
                                  #(dispatch [:current-project/close-share-dialog])}
-             [share-dialog]])]))))
+            [share-dialog]])]))))
 
 
 (defn project-page []

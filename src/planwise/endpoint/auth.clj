@@ -35,23 +35,23 @@
        (throw-unauthorized)
        (let [ident (util/request-ident req)
              token (auth/create-jwe-token service ident)]
-        (html5
-         [:body
-          [:p (str "Current identity: " (util/request-user-email req)
-                   " id=" (util/request-user-id req))]
-          [:p
-           "API Token:"
-           [:br]
-           [:code {:style "white-space: normal; word-wrap: break-word;"}
-            token]]
-          [:p
-           "Example usage:"
-           [:br]
-           [:code {:style "white-space: normal; word-wrap: break-word;"}
-            "$ curl -H 'Authorization: Token " token "' "
-            (util/absolute-url "/api/whoami" req)]]
-          [:p
-           [:a {:href "/logout"} "Logout"]]]))))
+         (html5
+          [:body
+           [:p (str "Current identity: " (util/request-user-email req)
+                    " id=" (util/request-user-id req))]
+           [:p
+            "API Token:"
+            [:br]
+            [:code {:style "white-space: normal; word-wrap: break-word;"}
+             token]]
+           [:p
+            "Example usage:"
+            [:br]
+            [:code {:style "white-space: normal; word-wrap: break-word;"}
+             "$ curl -H 'Authorization: Token " token "' "
+             (util/absolute-url "/api/whoami" req)]]
+           [:p
+            [:a {:href "/logout"} "Logout"]]]))))
 
    (GET "/login" req
      (let [next-url (-> req :params :next)]
@@ -60,7 +60,7 @@
    (GET "/openidcallback" req
      (if-let [identity (auth/openid-validate service req)]
        (as-> (redirect (next-url req)) $
-           (auth/login service $ req identity))
+         (auth/login service $ req identity))
        (-> (response failure-page)
            (content-type "text/html"))))
 

@@ -14,10 +14,10 @@
           title-tag   (filter #(= :title (:tag %)) (xml-seq xml-tree))
           name        (-> title-tag first :content first)
           updated-xml (-> xml-tree
-                        (assoc-in [:attrs :id] (str "icon-" name))
-                        (assoc-in [:attrs :data-name] (str "icon-" name))
-                        (update-in [:attrs] dissoc :xmlns)
-                        (assoc :tag :symbol))]
+                          (assoc-in [:attrs :id] (str "icon-" name))
+                          (assoc-in [:attrs :data-name] (str "icon-" name))
+                          (update-in [:attrs] dissoc :xmlns)
+                          (assoc :tag :symbol))]
       updated-xml)))
 
 (defn wrap-in-svg [symbols]
@@ -32,15 +32,15 @@
   (let [target    "resources/svg/icons.svg"
         dirname   "resources/svg/icons"
         svg       (->> dirname
-                    (io/file)
-                    (file-seq)
-                    (filter #(string/ends-with? % ".svg"))
-                    (map process-svg)
-                    (wrap-in-svg))]
+                       (io/file)
+                       (file-seq)
+                       (filter #(string/ends-with? % ".svg"))
+                       (map process-svg)
+                       (wrap-in-svg))]
     (spit target
           (str
-            "<!-- Auto-generated - DO NOT EDIT -->\n"
-            (with-out-str (xml/emit-element svg))))))
+           "<!-- Auto-generated - DO NOT EDIT -->\n"
+           (with-out-str (xml/emit-element svg))))))
 
 (defn -main [& args]
   (timbre/set-level! :info)

@@ -104,73 +104,73 @@
                [:importing-sites [:import-sites 2] nil]))
         ;; second page of sites is imported
         (is (= (reduce-job job [:next [:success [:import-sites 1] [:continue (page-result {:page-facilities new-facilities :total-pages 1})]]
-                                    :next [:success [:import-sites 2] [nil []]]])
+                                :next [:success [:import-sites 2] [nil []]]])
                [:delete-old-facilities nil nil]))
 
        ;;
        ;; Delete old facilities and types stage (facilities 1,2 to process)
        ;;
-       (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil (page-result {:page-facilities (mapv (fn [i] {:id (inc i) :insertion-status :new}) (range 2)) :total-pages 1})]]])]
-         (is (= (reduce-job job [:next])
-                [:deleting-old-facilities :delete-old-facilities nil]))
-         (is (= (reduce-job job [:next [:success :delete-old-facilities nil]])
-                [:delete-old-types nil nil]))
-         (is (= (reduce-job job [:next [:success :delete-old-facilities nil] :next])
-                [:deleting-old-types :delete-old-types nil]))
-         (is (= (reduce-job job [:next [:success :delete-old-facilities nil] :next [:success :delete-old-types nil]])
-                [:update-projects nil nil]))
+        (let [job (reduce fsm/fsm-event job [:next [:success [:import-sites 1] [nil (page-result {:page-facilities (mapv (fn [i] {:id (inc i) :insertion-status :new}) (range 2)) :total-pages 1})]]])]
+          (is (= (reduce-job job [:next])
+                 [:deleting-old-facilities :delete-old-facilities nil]))
+          (is (= (reduce-job job [:next [:success :delete-old-facilities nil]])
+                 [:delete-old-types nil nil]))
+          (is (= (reduce-job job [:next [:success :delete-old-facilities nil] :next])
+                 [:deleting-old-types :delete-old-types nil]))
+          (is (= (reduce-job job [:next [:success :delete-old-facilities nil] :next [:success :delete-old-types nil]])
+                 [:update-projects nil nil]))
 
         ;;
         ;; Update projects stage (facilities 1,2 to process)
         ;;
-        (let [job (reduce fsm/fsm-event job [:next [:success :delete-old-facilities nil] :next [:success :delete-old-types nil]])]
-          (is (= (reduce-job job [:next])
-                 [:updating-projects :update-projects nil]))
-          (is (= (reduce-job job [:next [:success :update-projects nil]])
-                 [:processing-facilities nil nil]))
+          (let [job (reduce fsm/fsm-event job [:next [:success :delete-old-facilities nil] :next [:success :delete-old-types nil]])]
+            (is (= (reduce-job job [:next])
+                   [:updating-projects :update-projects nil]))
+            (is (= (reduce-job job [:next [:success :update-projects nil]])
+                   [:processing-facilities nil nil]))
 
           ;;
           ;; Process facilities stage (facilities 1,2 to process)
           ;;
-          (let [job (reduce fsm/fsm-event job [:next [:success :update-projects nil]])]
-            (is (= (reduce-job job [:next])
-                   [:processing-facilities [:process-facilities [1]] nil]))
-            (is (= (reduce-job job [:next :next])
-                   [:processing-facilities [:process-facilities [2]] nil]))
-            (is (= (reduce-job job [:next :next :next])
-                   [:processing-facilities nil nil]))
+            (let [job (reduce fsm/fsm-event job [:next [:success :update-projects nil]])]
+              (is (= (reduce-job job [:next])
+                     [:processing-facilities [:process-facilities [1]] nil]))
+              (is (= (reduce-job job [:next :next])
+                     [:processing-facilities [:process-facilities [2]] nil]))
+              (is (= (reduce-job job [:next :next :next])
+                     [:processing-facilities nil nil]))
 
 
-            (is (= (reduce-job job [:next [:success [:process-facilities [1]] nil]])
-                   [:processing-facilities nil nil]))
-            (is (= (reduce-job job [:next [:success [:process-facilities [1]] nil] :next])
-                   [:processing-facilities [:process-facilities [2]] nil]))
-            (is (= (reduce-job job [:next :next [:success [:process-facilities [1]] nil]])
-                   [:processing-facilities nil nil]))
-            (is (= (reduce-job job [:next :next
-                                    [:success [:process-facilities [1]] nil]
-                                    [:success [:process-facilities [2]] nil]])
-                   [:done nil :success]))
+              (is (= (reduce-job job [:next [:success [:process-facilities [1]] nil]])
+                     [:processing-facilities nil nil]))
+              (is (= (reduce-job job [:next [:success [:process-facilities [1]] nil] :next])
+                     [:processing-facilities [:process-facilities [2]] nil]))
+              (is (= (reduce-job job [:next :next [:success [:process-facilities [1]] nil]])
+                     [:processing-facilities nil nil]))
+              (is (= (reduce-job job [:next :next
+                                      [:success [:process-facilities [1]] nil]
+                                      [:success [:process-facilities [2]] nil]])
+                     [:done nil :success]))
 
             ;; cancellations during this stage
-            (is (= (reduce-job job [:cancel])
-                   [:error nil :cancelled]))
-            (is (= (reduce-job job [:next :cancel])
-                   [:clean-up-wait nil :cancelled]))
-            (is (= (reduce-job job [:next :cancel [:success [:process-facilities [1]] nil]])
-                   [:error nil :cancelled])))))
+              (is (= (reduce-job job [:cancel])
+                     [:error nil :cancelled]))
+              (is (= (reduce-job job [:next :cancel])
+                     [:clean-up-wait nil :cancelled]))
+              (is (= (reduce-job job [:next :cancel [:success [:process-facilities [1]] nil]])
+                     [:error nil :cancelled])))))
 
        ;; Alternate path: no facilities were imported
-       (let [job (reduce fsm/fsm-event job [:next
-                                            [:success [:import-sites 1] [nil (page-result {:page-facilities {} :total-pages 1})]]
-                                            :next
-                                            [:success :delete-old-facilities nil]
-                                            :next
-                                            [:success :delete-old-types nil]
-                                            :next
-                                            [:success :update-projects nil]])]
-         (is (= (reduce-job job [:next])
-                [:done nil :success])))))))
+        (let [job (reduce fsm/fsm-event job [:next
+                                             [:success [:import-sites 1] [nil (page-result {:page-facilities {} :total-pages 1})]]
+                                             :next
+                                             [:success :delete-old-facilities nil]
+                                             :next
+                                             [:success :delete-old-types nil]
+                                             :next
+                                             [:success :update-projects nil]])]
+          (is (= (reduce-job job [:next])
+                 [:done nil :success])))))))
 
     ;; TODO: test error conditions in all stages
     ;; TODO: test cancellation in all stages

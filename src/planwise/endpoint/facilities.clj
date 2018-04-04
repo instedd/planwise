@@ -12,18 +12,18 @@
   {:region (some-> region Integer.)
    :types (when type
             (map
-              #(Integer. %)
-              (if (map? type)
-                (vals type)
-                type)))
+             #(Integer. %)
+             (if (map? type)
+               (vals type)
+               type)))
    :bbox (when bbox
            (map
             #(Float. %)
             (string/split bbox #",")))
    :excluding (when-not (string/blank? excluding)
                 (map
-                  #(Integer. %)
-                  (string/split excluding #",")))})
+                 #(Integer. %)
+                 (string/split excluding #",")))})
 
 (defn- isochrone-criteria [{:keys [threshold algorithm simplify]}]
   {:threshold (some-> threshold Integer.)

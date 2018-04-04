@@ -47,8 +47,8 @@
                             (let [group (if (nil? (group-fn opt)) "" (group-fn opt))
                                   label (str (label-fn opt))]
                               (or
-                                (>= (.indexOf (string/lower-case group) lower-filter-text) 0)
-                                (>= (.indexOf (string/lower-case label) lower-filter-text) 0))))]
+                               (>= (.indexOf (string/lower-case group) lower-filter-text) 0)
+                               (>= (.indexOf (string/lower-case label) lower-filter-text) 0))))]
     (filter filter-fn choices)))
 
 
@@ -99,30 +99,30 @@
   [id label on-click internal-model]
   (let [mouse-over? (reagent/atom false)]
     (reagent/create-class
-      {:component-did-mount
-       (fn [this]
-         (let [node (reagent/dom-node this)
-               selected (= @internal-model id)]
-           (when selected (show-selected-item node))))
+     {:component-did-mount
+      (fn [this]
+        (let [node (reagent/dom-node this)
+              selected (= @internal-model id)]
+          (when selected (show-selected-item node))))
 
-       :component-did-update
-       (fn [this]
-         (let [node (reagent/dom-node this)
-               selected (= @internal-model id)]
-           (when selected (show-selected-item node))))
+      :component-did-update
+      (fn [this]
+        (let [node (reagent/dom-node this)
+              selected (= @internal-model id)]
+          (when selected (show-selected-item node))))
 
-       :display-name "choice-item"
+      :display-name "choice-item"
 
-       :reagent-render
-       (fn
-         [id label on-click internal-model]
-         (let [selected (= @internal-model id)]
-           [:li.mdc-list-item
-            (merge {:class         (when selected "mdc-list-item--selected")
-                    :tab-index     -1
-                    :on-mouse-down (handler-fn (on-click id))}
-                   (when selected {:aria-selected true}))
-            label]))})))
+      :reagent-render
+      (fn
+        [id label on-click internal-model]
+        (let [selected (= @internal-model id)]
+          [:li.mdc-list-item
+           (merge {:class         (when selected "mdc-list-item--selected")
+                   :tab-index     -1
+                   :on-mouse-down (handler-fn (on-click id))}
+                  (when selected {:aria-selected true}))
+           label]))})))
 
 
 (defn make-choice-item
@@ -155,10 +155,10 @@
 (def ^:private filter-text-box
   "Render a filter text box"
   (with-meta filter-text-box-base
-             {:component-did-mount #(let [node (.-firstChild (reagent/dom-node %))]
-                                     (.focus node))
-              :component-did-update #(let [node (.-firstChild (reagent/dom-node %))]
-                                      (.focus node))}))
+    {:component-did-mount #(let [node (.-firstChild (reagent/dom-node %))]
+                             (.focus node))
+     :component-did-update #(let [node (.-firstChild (reagent/dom-node %))]
+                              (.focus node))}))
 
 (defn- dropdown-top
   "Render the top part of the dropdown, with the clickable area and the up/down arrow"
@@ -172,16 +172,16 @@
         [:div.mdc-select__surface
          {:tab-index     (or tab-index 0)
           :on-click      (handler-fn
-                           (if @ignore-click
-                             (reset! ignore-click false)
-                             (dropdown-click)))
+                          (if @ignore-click
+                            (reset! ignore-click false)
+                            (dropdown-click)))
           :on-mouse-down (handler-fn
-                           (when @drop-showing?
-                             (reset! ignore-click true)))   ;; TODO: Hmmm, have a look at calling preventDefault (and stopProp?) and removing the ignore-click stuff
+                          (when @drop-showing?
+                            (reset! ignore-click true)))   ;; TODO: Hmmm, have a look at calling preventDefault (and stopProp?) and removing the ignore-click stuff
           :on-key-down   (handler-fn
-                           (key-handler event)
-                           (when (= (.-which event) 13)     ;; Pressing enter on an anchor also triggers click event, which we don't want
-                             (reset! ignore-click true)))}  ;; TODO: Hmmm, have a look at calling preventDefault (and stopProp?) and removing the ignore-click stuff
+                          (key-handler event)
+                          (when (= (.-which event) 13)     ;; Pressing enter on an anchor also triggers click event, which we don't want
+                            (reset! ignore-click true)))}  ;; TODO: Hmmm, have a look at calling preventDefault (and stopProp?) and removing the ignore-click stuff
          [:div {:class (str "mdc-select__label " (when float-label? "mdc-select__label--float-above"))}
           label]
          [:div.mdc-select__selected-text (when title? {:title text})
@@ -231,7 +231,7 @@
 (def single-dropdown-args-desc
   [{:name :choices       :required true                   :type "vector of choices | atom | (opts, done, fail) -> nil" :validate-fn fn-or-vector-of-maps? :description [:span "Each is expected to have an id, label and, optionally, a group, provided by " [:code ":id-fn"] ", " [:code ":label-fn"] " & " [:code ":group-fn"] ". May also be a callback " [:code "(opts, done, fail)"] " where opts is map of " [:code ":filter-text"] " and " [:code ":regex-filter?."]]}
    {:name :model         :required true                   :type "the id of a choice | atom"                                    :description [:span "the id of the selected choice. If nil, " [:code ":placeholder"] " text is shown"]}
-   {:name :on-change     :required true                   :type "id -> nil"                     :validate-fn fn?               :description [:span "called when a new choice is selected. Passed the id of new choice"] }
+   {:name :on-change     :required true                   :type "id -> nil"                     :validate-fn fn?               :description [:span "called when a new choice is selected. Passed the id of new choice"]}
    {:name :id-fn         :required false :default :id     :type "choice -> anything"            :validate-fn ifn?              :description [:span "given an element of " [:code ":choices"] ", returns its unique identifier (aka id)"]}
    {:name :label-fn      :required false :default :label  :type "choice -> string"              :validate-fn ifn?              :description [:span "given an element of " [:code ":choices"] ", returns its displayable label."]}
    {:name :group-fn      :required false :default :group  :type "choice -> anything"            :validate-fn ifn?              :description [:span "given an element of " [:code ":choices"] ", returns its group identifier"]}

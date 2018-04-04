@@ -26,7 +26,7 @@
 
 (defn in?
   [elem coll]
-  (some (fn [el](= el elem)) coll))
+  (some (fn [el] (= el elem)) coll))
 
 ;
 (defn build-cpp

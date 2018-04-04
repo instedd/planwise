@@ -137,8 +137,8 @@
 (rf/reg-event-fx
  :current-project/project-loaded
  in-current-project
-  (fn [{:keys [db]} [_ project-data]]
-    (project-loaded db project-data)))
+ (fn [{:keys [db]} [_ project-data]]
+   (project-loaded db project-data)))
 
 (rf/reg-event-fx
  :current-project/not-found
@@ -314,8 +314,8 @@
  (fn [db [_]]
    ; Invalidate the list of shares when opening the share dialog to force a reload
    (-> db
-     (assoc :view-state :share-dialog)
-     (update :shares asdf/invalidate!))))
+       (assoc :view-state :share-dialog)
+       (update :shares asdf/invalidate!))))
 
 (rf/reg-event-db
  :current-project/close-share-dialog

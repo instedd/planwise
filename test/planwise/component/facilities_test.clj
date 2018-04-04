@@ -157,9 +157,9 @@
           list    (facilities/list-facilities service dataset-id {})
           {[existing] 1, [new] 100, [updated] 3, [moved] 4} (group-by :id list)]
       (letfn [(select-attrs [f] (-> f
-                                  (select-keys [:id :name :site-id :type-id :lat :lon :processing-status :capacity])
-                                  (update :lat float)
-                                  (update :lon float)))]
+                                    (select-keys [:id :name :site-id :type-id :lat :lon :processing-status :capacity])
+                                    (update :lat float)
+                                    (update :lon float)))]
         ; Check that the result from insertion yields the same data as the result from a select
         (is (= (map select-attrs (sort-by :id result))
                (map select-attrs (sort-by :id list))))

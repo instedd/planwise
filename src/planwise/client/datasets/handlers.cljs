@@ -30,12 +30,12 @@
  :datasets/refresh-datasets
  in-datasets
  (fn [db [_ time]]
-	 (let [sets								(asdf/value (:list db))
-				 statuses           (map :server-status sets)
-				 any-running?       (some some? statuses)
-				 refresh-interval   (if any-running? 1000 10000)
-				 last-refresh       (or (:last-refresh db) 0)
-				 since-last-refresh (- time last-refresh)]
+   (let [sets								(asdf/value (:list db))
+         statuses           (map :server-status sets)
+         any-running?       (some some? statuses)
+         refresh-interval   (if any-running? 1000 10000)
+         last-refresh       (or (:last-refresh db) 0)
+         since-last-refresh (- time last-refresh)]
      (if (< refresh-interval since-last-refresh)
        (-> db
            (update :list asdf/invalidate!)

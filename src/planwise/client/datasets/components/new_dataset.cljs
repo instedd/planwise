@@ -102,8 +102,7 @@
                [:p.warning
                 "This is a time consuming process and "
                 [:b "can take several hours to complete"]
-                ", depending on the number of imported facilities."]
-               ])]
+                ", depending on the number of imported facilities."]])]
            [:div.actions
             [:button.primary
              {:type "submit"

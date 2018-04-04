@@ -16,8 +16,8 @@
 (rf/reg-event-fx
  :population/load-population-sources
  (fn [{:keys [db]} [_]]
-    {:api (assoc load-population-sources
-              :on-success [:population/sources-loaded])}))
+   {:api (assoc load-population-sources
+                :on-success [:population/sources-loaded])}))
 
 (rf/reg-event-db
  :population/sources-loaded
@@ -31,7 +31,7 @@
  :population/dropdown-options
  (fn [db _]
    (let [list (get-in db [:population :list])]
-     (mapv (fn [source] (let [{:keys [id name]} source]{:value id :label name})) list))))
+     (mapv (fn [source] (let [{:keys [id name]} source] {:value id :label name})) list))))
 
 ;; ----------------------------------------------------------------------------
 ;; Views
@@ -39,7 +39,7 @@
 (defn population-dropdown-component
   [{:keys [label value on-change]}]
   (let [list (subscribe [:population/dropdown-options])]
-      (dispatch [:population/load-population-sources])
+    (dispatch [:population/load-population-sources])
     (fn []
       [m/Select {:label (if (empty? @list) "No population layer available." label)
                  :disabled (empty? @list)

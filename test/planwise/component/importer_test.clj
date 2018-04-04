@@ -82,15 +82,15 @@
     channel))
 
 (defn run-tasks
- ([dispatcher]
-  (run-tasks dispatcher nil))
- ([dispatcher until-state]
-  (loop []
-    (when-let [{:keys [task-id task-fn]} (taskmaster/next-task dispatcher)]
-      (let [result (task-fn)
-            jobs (taskmaster/task-completed dispatcher task-id result)]
-        (when-not (and until-state (= until-state (:state (get jobs 1))))
-          (recur)))))))
+  ([dispatcher]
+   (run-tasks dispatcher nil))
+  ([dispatcher until-state]
+   (loop []
+     (when-let [{:keys [task-id task-fn]} (taskmaster/next-task dispatcher)]
+       (let [result (task-fn)
+             jobs (taskmaster/task-completed dispatcher task-id result)]
+         (when-not (and until-state (= until-state (:state (get jobs 1))))
+           (recur)))))))
 
 
 (defmethod ig/init-key :planwise.test/resmap
@@ -222,13 +222,13 @@
       (let [importer (importer-service system)
             job (import-job/restore-job {:state :processing-facilities
                                          :value (merge import-job/default-job-value
-                                                  {:page-count 1, :collection-id 1, :dataset-id 1,
-                                                   :type-field {:code "type", :options {}},
-                                                   :page 1, :user-ident user-ident,
-                                                   :process-ids [1 2 3 4 5 6],
-                                                   :process-count 6,
-                                                   :facility-ids [1 2 3 4 5 6],
-                                                   :facility-count 6})})]
+                                                       {:page-count 1, :collection-id 1, :dataset-id 1,
+                                                        :type-field {:code "type", :options {}},
+                                                        :page 1, :user-ident user-ident,
+                                                        :process-ids [1 2 3 4 5 6],
+                                                        :process-count 6,
+                                                        :facility-ids [1 2 3 4 5 6],
+                                                        :facility-count 6})})]
         (swap! (:jobs importer) assoc 1 job)
 
         ; Fire 4 concurrent process facility tasks
@@ -253,11 +253,11 @@
             actual-ids (map :task-id tasks)]
 
           ; Check that the tasks are restored with the job as pending-tasks
-          (is (= 3 (count pending-tasks)))
+        (is (= 3 (count pending-tasks)))
           ; Check that the pending tasks are re-run, and then the following ones are dispatched
-          (is (= expected-ids actual-ids))
+        (is (= expected-ids actual-ids))
 
-          (ig/halt-key! :planwise.component/importer importer)))))
+        (ig/halt-key! :planwise.component/importer importer)))))
 
 (deftest update-cancelled-dataset
   (timbre/with-level :warn
