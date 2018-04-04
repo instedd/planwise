@@ -10,7 +10,8 @@
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.model.ident :as ident]
             [planwise.component.datasets2 :as datasets2]
-            [planwise.component.projects2 :as projects2]))
+            [planwise.component.projects2 :as projects2]
+            [planwise.util.hash :refer [update*]]))
 
 (timbre/refer-timbre)
 
@@ -49,31 +50,30 @@
    (POST "/" request
      (let [user-id    (util/request-user-id request)
            project-id (:id (projects2/create-project service user-id))
-           project    (projects2/get-project service (Integer. project-id))]
+           project    (projects2/get-project service project-id)]
       (response project)))
 
    (PUT "/:id" [id project :as request]
-     (let [user-id    (util/request-user-id request)
-           {:keys [id dataset-id]} project
-           coverage-algorithm (:coverage-algorithm (datasets2/get-dataset service dataset-id))]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           project  (assoc project :id id)] ;; honor id of route
+       ;; TODO validate permission
        (assert (s/valid? ::project project) "Invalid project")
-       (projects2/update-project service id project)
-       (response (assoc project :coverage-algorithm coverage-algorithm))))
+       (projects2/update-project service project)
+       (response (projects2/get-project service id))))
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
-           project (projects2/get-project service (Integer. id))
-           coverage-algorithm (:coverage-algorithm (datasets2/get-dataset service (:dataset-id project)))]
+           project (projects2/get-project service (Integer. id))]
        (if (nil? project)
-           (not-found project)
-           (response (-> project (assoc :config (apply-default (:config project)))
-                                 (assoc :coverage-algorithm coverage-algorithm))))))
+           (not-found {:error "Project not found"})
+           (response (-> project
+                         (update* :config apply-default))))))
 
    (GET "/" request
      (let [user-id          (util/request-user-id request)
            list-of-projects (projects2/list-projects service user-id)]
        (response list-of-projects)))))
-
 
 (defn projects2-endpoint
   [{service :projects2}]

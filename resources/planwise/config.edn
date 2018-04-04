@@ -132,8 +132,7 @@
   :maps       #ig/ref :planwise.component/maps}
 
  :planwise.endpoint/projects2
- {:projects2  #ig/ref :planwise.component/projects2
-  :datasets2  #ig/ref :planwise.component/datasets2}
+ {:projects2  #ig/ref :planwise.component/projects2}
 
  :planwise.endpoint/regions
  {:regions    #ig/ref :planwise.component/regions}
