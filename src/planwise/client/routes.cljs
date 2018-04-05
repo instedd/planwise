@@ -33,3 +33,5 @@
 (defroute design-section "/_design/:section" [section query-params]
   (dispatch [:navigate {:page :design, :section (keyword section), :query-params query-params}]))
 (defroute download-sample "/sample.csv" [])
+(defroute scenario "/projects2/:project-id/scenarios/:id" [project-id id]
+  (dispatch [:navigate {:page :scenario, :id id, :project-id project-id}]))
