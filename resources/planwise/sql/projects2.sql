@@ -19,7 +19,7 @@ SELECT projects2.*, datasets2."coverage-algorithm"
   WHERE projects2.id = :id
 
 -- :name db-list-projects :?
-SELECT id, name, state FROM projects2
+SELECT id, name, "region-id", state FROM projects2
     WHERE "owner-id" = :owner-id;
 
 -- :name db-update-state-project :!

@@ -12,7 +12,10 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]
             [planwise.client.ui.filter-select :as filter-select]
-            [planwise.client.utils :as utils]))
+            [planwise.client.utils :as utils]
+            [planwise.client.mapping :refer [static-image fullmap-region-geo]]))
+
+(def map-preview-size {:width 373 :height 278})
 
 ;;------------------------------------------------------------------------
 ;;Project listing and creation
@@ -26,13 +29,17 @@
 
 (defn- project-card
   [props project]
-  (let [name  (:name project)
-        id    (:id  project)
-        state (:state project)]
+  (let [id              (:id project)
+        region-id       (:region-id project)
+        region-geo      (subscribe [:regions/preview-geojson region-id])
+        preview-map-url (if region-id
+                            (static-image @region-geo map-preview-size)
+                            (static-image fullmap-region-geo map-preview-size))]
+    (when region-id (dispatch [:regions/load-regions-with-preview [region-id]]))
     [ui/card {:href (routes/projects2-show {:id id})
-              :primary [:img {:src "http://via.placeholder.com/373x278"}]
-              :title (or-blank name [:i "Untitled"])
-              :status (or-blank state [:i "status: unknown"])}]))
+              :primary [:img {:style map-preview-size :src preview-map-url}]
+              :title (or-blank (:name project) [:i "Untitled"])
+              :status (or-blank (:state project) [:i "status: unknown"])}]))
 
 (defn- projects-list
   [projects]

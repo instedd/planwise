@@ -46,7 +46,8 @@
                  (utils/update-by-id list (:id current-project)
                                      #(-> %
                                           (assoc :state (:state current-project))
-                                          (assoc :name (:name current-project)))))))))
+                                          (assoc :name (:name current-project))
+                                          (assoc :region-id (:region-id current-project)))))))))
 
 
 (rf/reg-event-fx

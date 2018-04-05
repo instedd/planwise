@@ -52,13 +52,16 @@
 
 ;; only "classic" mapbox styles can be used with this static API.
 ;; the new API does not allow defining an overlay as a query parameter.
-(defn static-image [geojson]
-  (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/%dx%d.png?access_token=%s"
-              emerald-mapbox-mapid
-              (js/encodeURIComponent geojson)
-              (:width map-preview-size)
-              (:height map-preview-size)
-              mapbox-access-token))
+(defn static-image
+  ([geojson]
+   (static-image geojson map-preview-size))
+  ([geojson options]
+   (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/%dx%d.png?access_token=%s"
+                emerald-mapbox-mapid
+                (js/encodeURIComponent geojson)
+                (:width options)
+                (:height options)
+                mapbox-access-token)))
 
 (defn bbox-center [[[s w] [n e]]]
   [(/ (+ s n) 2.0) (/ (+ e w) 2.0)])
@@ -81,3 +84,47 @@
   [admin-level]
   (and config/calculate-demand
        (> admin-level 2)))
+
+(def fullmap-region-geo
+  "{
+      \"type\": \"FeatureCollection\",
+      \"features\": [
+        {
+          \"type\": \"Feature\",
+          \"properties\": {
+            \"stroke\": \"#555555\",
+            \"stroke-width\": 2,
+            \"stroke-opacity\": 0,
+            \"fill\": \"#555555\",
+            \"fill-opacity\": 0
+          },
+          \"geometry\": {
+            \"type\": \"Polygon\",
+            \"coordinates\": [
+              [
+                [
+                  -72.0703125,
+                  -50.51342652633955
+                ],
+                [
+                  123.04687499999999,
+                  -50.51342652633955
+                ],
+                [
+                  123.04687499999999,
+                  71.85622888185527
+                ],
+                [
+                  -72.0703125,
+                  71.85622888185527
+                ],
+                [
+                  -72.0703125,
+                  -50.51342652633955
+                ]
+              ]
+            ]
+          }
+        }
+      ]
+    }")
