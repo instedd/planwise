@@ -1,5 +1,6 @@
 (ns planwise.client.db
   (:require [planwise.client.datasets.db :as datasets]
+            [planwise.client.population :as population]
             [planwise.client.projects.db :as projects]
             [planwise.client.projects2.db :as projects2]
             [planwise.client.datasets2.db :as datasets2]
@@ -31,4 +32,4 @@
 
    :coverage            {}
 
-   :population          {}})
+   :population          population/initial-db})
