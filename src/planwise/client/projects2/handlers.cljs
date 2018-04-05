@@ -4,7 +4,8 @@
             [planwise.client.projects2.api :as api]
             [planwise.client.routes :as routes]
             [planwise.client.effects :as effects]
-            [planwise.client.projects2.db :as db]))
+            [planwise.client.projects2.db :as db]
+            [planwise.client.utils :as utils]))
 
 (def in-projects2 (rf/path [:projects2]))
 
@@ -22,9 +23,9 @@
  :projects2/project-created
  in-projects2
  (fn [{:keys [db]} [_ project]]
-   (let [project-id          (:id project)
-         {:keys [id name]}   project
-         new-list            (cons {:id id :name name} (:list db))]
+   (let [project-id   (:id project)
+         project-item (select-keys project [:id :name :state])
+         new-list     (cons project-item (:list db))]
      {:db        (-> db
                      (assoc :current-project nil)
                      (assoc :list new-list))
@@ -57,20 +58,16 @@
 (rf/reg-event-fx
  :projects2/start-project
  in-projects2
- (fn [cofx [_ id]]
-   {:api (assoc (api/start-project! id)
+ (fn [{:keys [db]} [_ id]]
+   {;; Optimistic update for project status
+    :db  (-> db
+             (update :list (fn [list] (utils/update-by-id list id #(assoc % :state "started")))))
+    :api (assoc (api/start-project! id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
-
-(defn- new-list
-  [list current-project id key data]
-  (let [projects-update (remove (fn [project] (= (:id project) id)) list)
-        updated-project (assoc-in current-project key data)]
-    (cons updated-project projects-update)))
-
 
 (rf/reg-event-fx
  :projects2/save-key
@@ -81,7 +78,7 @@
          path                           (if (vector? path) path [path])
          current-project-path           (into [:current-project] path)
          new-list                       (if (= path [:name])
-                                          (new-list list {:id id :name name} id path data)
+                                          (utils/update-by-id list id #(assoc % :name name))
                                           list)]
      {:db                (-> db
                              (assoc-in current-project-path data)
