@@ -16,14 +16,14 @@
   [service]
   (routes
    (GET "/:id" [id as request]
-    (let [user-id          (util/request-user-id request)
-          scenario         (scenarios/get-scenario service (Integer. id))]
-        (response scenario)))))
+     (let [user-id          (util/request-user-id request)
+           scenario         (scenarios/get-scenario service (Integer. id))]
+       (response scenario)))))
 
 (defn scenarios-endpoint
   [{service :scenarios}]
   (context "/api/scenarios" []
-   (restrict (scenarios-routes service) {:handler authenticated?})))
+    (restrict (scenarios-routes service) {:handler authenticated?})))
 
 (defmethod ig/init-key :planwise.endpoint/scenarios
   [_ config]

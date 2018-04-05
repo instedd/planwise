@@ -35,5 +35,5 @@
 
    :population          population/initial-db
 
-   :scenarios           scenarios/inital-db})
+   :scenarios           scenarios/initial-db})
 

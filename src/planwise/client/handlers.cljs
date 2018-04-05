@@ -7,6 +7,7 @@
             [planwise.client.datasets.handlers]
             [planwise.client.projects2.handlers]
             [planwise.client.datasets2.handlers]
+            [planwise.client.scenarios.handlers]
             [planwise.client.coverage]
             [planwise.client.population]
             [planwise.client.regions.handlers :as regions]

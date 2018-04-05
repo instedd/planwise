@@ -6,7 +6,8 @@
             [planwise.client.projects2.subs]
             [planwise.client.datasets2.subs]
             [planwise.client.datasets.subs]
-            [planwise.client.regions.subs]))
+            [planwise.client.regions.subs]
+            [planwise.client.scenarios.subs]))
 
 
 ;; Subscriptions

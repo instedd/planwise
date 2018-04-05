@@ -11,6 +11,7 @@
 (defn nav-params
   []
   {:sections [[ui/section {:href (routes/projects2) :className "active"} "Projects"]
+              [ui/section {:href (routes/scenarios)} "Scenarios"]
               [ui/section {:href (routes/datasets2)} "Datasets"]
               [ui/section {:href "/old" :target "_blank"} "Old version"]]
 
