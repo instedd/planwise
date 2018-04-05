@@ -116,8 +116,8 @@
                                              :on-change #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
                                              :empty [:div "First choose dataset."]}]
          [:h2 "Actions"]
-         [current-project-input "Budget" [:config :actions :budget] valid-input]
-         [current-project-start]]]]]]))
+         [current-project-input "Budget" [:config :actions :budget] valid-input]]
+        [current-project-start]]]]]))
 
 (defn- project-section-show
   []
