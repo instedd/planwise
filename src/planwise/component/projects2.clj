@@ -30,11 +30,14 @@
 (defn create-project
   [store owner-id]
   (db-create-project! (get-db store) {:owner-id owner-id
-                                      :name ""}))
+                                      :name ""
+                                      :state "draft"}))
 
 (defn update-project
   [store project]
-  (db-update-project (get-db store) (update project :config pr-str)))
+  (db-update-project (get-db store) (-> project
+                                        (update :config pr-str)
+                                        (dissoc :state))))
 
 (defn get-project
   [store project-id]
@@ -44,6 +47,11 @@
 (defn list-projects
   [store owner-id]
   (db-list-projects (get-db store) {:owner-id owner-id}))
+
+(defn start-project
+  [store project-id]
+  (db-update-state-project (get-db store) {:id project-id
+                                           :state "started"}))
 
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]

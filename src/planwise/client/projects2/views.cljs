@@ -11,7 +11,8 @@
             [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]
-            [planwise.client.ui.filter-select :as filter-select]))
+            [planwise.client.ui.filter-select :as filter-select]
+            [planwise.client.utils :as utils]))
 
 ;;------------------------------------------------------------------------
 ;;Project listing and creation
@@ -25,11 +26,13 @@
 
 (defn- project-card
   [props project]
-  (let [name (:name project)
-        id   (:id  project)]
+  (let [name  (:name project)
+        id    (:id  project)
+        state (:state project)]
     [ui/card {:href (routes/projects2-show {:id id})
               :primary [:img {:src "http://via.placeholder.com/373x278"}]
-              :title (or-blank name [:i "Untitled"])}]))
+              :title (or-blank name [:i "Untitled"])
+              :status (or-blank state [:i "status: unknown"])}]))
 
 (defn- projects-list
   [projects]
@@ -77,6 +80,13 @@
                   :on-change change-fn
                   :value value}]))
 
+(defn- current-project-start
+  []
+  (let [current-project (subscribe [:projects2/current-project])]
+    [m/Button {:id "start-project"
+               :on-click (utils/prevent-default #(dispatch [:projects2/start-project (:id @current-project)]))}
+     (if (= (keyword (:state @current-project)) :started) "Started ..." "Start")]))
+
 (defn edit-current-project
   []
   (let [current-project (subscribe [:projects2/current-project])]
@@ -106,7 +116,8 @@
                                              :on-change #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
                                              :empty [:div "First choose dataset."]}]
          [:h2 "Actions"]
-         [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]]))
+         [current-project-input "Budget" [:config :actions :budget] valid-input]]
+        [current-project-start]]]]]))
 
 (defn- project-section-show
   []

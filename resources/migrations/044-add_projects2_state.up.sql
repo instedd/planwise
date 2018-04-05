@@ -1,0 +1,2 @@
+ALTER TABLE projects2
+ADD COLUMN state VARCHAR(255);
