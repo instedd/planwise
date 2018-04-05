@@ -38,7 +38,16 @@
  :projects2/save-project-data
  in-projects2
  (fn [db [_ current-project]]
-   (assoc db :current-project current-project)))
+   (-> db
+       (assoc :current-project current-project)
+    ;; Keep list in sync with current project
+       (update :list
+               (fn [list]
+                 (utils/update-by-id list (:id current-project)
+                                     #(-> %
+                                          (assoc :state (:state current-project))
+                                          (assoc :name (:name current-project)))))))))
+
 
 (rf/reg-event-fx
  :projects2/project-not-found
@@ -59,10 +68,7 @@
  :projects2/start-project
  in-projects2
  (fn [{:keys [db]} [_ id]]
-   {;; Optimistic update for project status
-    :db  (-> db
-             (update :list (fn [list] (utils/update-by-id list id #(assoc % :state "started")))))
-    :api (assoc (api/start-project! id)
+   {:api (assoc (api/start-project! id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
@@ -76,13 +82,9 @@
    (let [{:keys [list current-project]} db
          {:keys [id name]}              current-project
          path                           (if (vector? path) path [path])
-         current-project-path           (into [:current-project] path)
-         new-list                       (if (= path [:name])
-                                          (utils/update-by-id list id #(assoc % :name name))
-                                          list)]
+         current-project-path           (into [:current-project] path)]
      {:db                (-> db
-                             (assoc-in current-project-path data)
-                             (assoc :list new-list))
+                             (assoc-in current-project-path data))
       :dispatch-debounce [{:id (str :projects2/save id)
                            :timeout 250
                            :action :dispatch
