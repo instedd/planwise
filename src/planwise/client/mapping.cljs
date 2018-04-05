@@ -57,11 +57,11 @@
    (static-image geojson map-preview-size))
   ([geojson options]
    (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/%dx%d.png?access_token=%s"
-                emerald-mapbox-mapid
-                (js/encodeURIComponent geojson)
-                (:width options)
-                (:height options)
-                mapbox-access-token)))
+               emerald-mapbox-mapid
+               (js/encodeURIComponent geojson)
+               (:width options)
+               (:height options)
+               mapbox-access-token)))
 
 (defn bbox-center [[[s w] [n e]]]
   [(/ (+ s n) 2.0) (/ (+ e w) 2.0)])
