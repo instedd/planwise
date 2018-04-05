@@ -35,7 +35,9 @@
 
 (defn update-project
   [store project]
-  (db-update-project (get-db store) (update project :config pr-str)))
+  (db-update-project (get-db store) (-> project
+                                        (update :config pr-str)
+                                        (dissoc :state))))
 
 (defn get-project
   [store project-id]
@@ -48,11 +50,8 @@
 
 (defn start-project
   [store project-id]
-  (let [project (db-get-project (get-db store) {:id project-id})]
-    (do
-      (db-update-state-project (get-db store) {:id project-id
-                                               :state (name :started)})
-      (db-get-project (get-db store) {:id project-id}))))
+  (db-update-state-project (get-db store) {:id project-id
+                                           :state "started"}))
 
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]

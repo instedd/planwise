@@ -77,11 +77,14 @@
 
    (POST "/:id/start" [id :as request]
      (let [user-id       (util/request-user-id request)
-           project       (projects2/get-project service (Integer. id))
-           start-project (projects2/start-project service (Integer. id))]
+           id            (Integer. id)
+           project       (projects2/get-project service id)]
+       ;; TODO validate permission
        (if (nil? project)
-         (not-found project)
-         (response start-project))))))
+         (not-found {:error "Project not found"})
+         (do
+           (projects2/start-project service id)
+           (response (projects2/get-project service id))))))))
 
 
 (defn projects2-endpoint
