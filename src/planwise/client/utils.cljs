@@ -44,6 +44,12 @@
 
 ;; String functions
 
+(defn- or-blank
+  [value fallback]
+  (cond
+    (or (nil? value) (= value "")) fallback
+    :else value))
+
 (defn pluralize
   ([count singular]
    (pluralize count singular (str singular "s")))

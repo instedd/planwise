@@ -64,7 +64,8 @@
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
-
+;; NOTE: the start-project only works for the current project since
+;; upon callback we are updating the local db current-project
 (rf/reg-event-fx
  :projects2/start-project
  in-projects2
