@@ -20,6 +20,9 @@
 #include <boost/timer/timer.hpp>
 #endif
 
+#define UNUSED(x) (void)(x)
+#define EPSILON 0.01
+
 typedef unsigned char BYTE;
 
 const char* DEMAND_METADATA_KEY = "UNSATISFIED_DEMAND";
@@ -76,6 +79,10 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
   double facilityProjection[6];
   float nodata;
   std::string demoProjectionWKT;
+  CPLErr err;
+
+  // some error checking is disabled in release builds
+  UNUSED(err);
 
   /****************************************************************************
    * Read demographics raster into memory buffer
@@ -101,7 +108,7 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     for (int iYBlock = 0; iYBlock < targetNYBlocks; ++iYBlock) {
       for (int iXBlock = 0; iXBlock < targetNXBlocks; ++iXBlock) {
         dataOffset = (targetNXBlocks * iYBlock + iXBlock) * (xBlockSize * yBlockSize);
-        CPLErr err = demoBand->ReadBlock(iXBlock, iYBlock, data + dataOffset);
+        err = demoBand->ReadBlock(iXBlock, iYBlock, data + dataOffset);
         assert(err == CE_None);
       }
     }
@@ -144,26 +151,23 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
     // set blocks offsets
     facilityDataset->GetGeoTransform(facilityProjection);
 
-    double epsilon = 0.01;
     double facilityMaxY = facilityProjection[3];
     double demoMaxY = demoProjection[3];
-    double facilityYRes = facilityProjection[5];
     double demoYRes = demoProjection[5];
-    assert(std::abs(facilityYRes - demoYRes) < epsilon);
-    assert(facilityMaxY <= (demoMaxY + epsilon));
+    assert(std::abs(facilityProjection[5] /* facilityYRes */ - demoYRes) < EPSILON);
+    assert(facilityMaxY <= (demoMaxY + EPSILON));
     double blocksY = (facilityMaxY - demoMaxY)/(128 * demoYRes);
     int blocksYOffset = round(blocksY);
-    assert(std::abs(blocksY - blocksYOffset) < epsilon);
+    assert(std::abs(blocksY - blocksYOffset) < EPSILON);
 
     double facilityMinX = facilityProjection[0];
     double demoMinX = demoProjection[0];
-    double facilityXRes = facilityProjection[1];
     double demoXRes = demoProjection[1];
-    assert(std::abs(facilityXRes - demoXRes) < epsilon);
-    assert(demoMinX <= (facilityMinX + epsilon));
+    assert(std::abs(facilityProjection[1] /* facilityXRes */ - demoXRes) < EPSILON);
+    assert(demoMinX <= (facilityMinX + EPSILON));
     double blocksX = (facilityMinX - demoMinX)/(128 * demoXRes);
     int blocksXOffset = round(blocksX);
-    assert(std::abs(blocksX - blocksXOffset) < epsilon);
+    assert(std::abs(blocksX - blocksXOffset) < EPSILON);
 
     int facilityXSize = facilityDataset->GetRasterXSize();
     int facilityYSize = facilityDataset->GetRasterYSize();
@@ -196,7 +200,8 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
 
           dataOffset = (targetNXBlocks * (blocksYOffset + iYBlock) + (blocksXOffset + iXBlock)) * (xBlockSize * yBlockSize);
           buffer = data + dataOffset;
-          facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
+          err = facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
+          assert(err = CE_None);
 
           for (int iY = 0; iY < nYValid; ++iY) {
             for (int iX = 0; iX < nXValid; ++iX) {
@@ -239,7 +244,8 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
 
           dataOffset = (targetNXBlocks * (blocksYOffset + iYBlock) + (blocksXOffset + iXBlock)) * (xBlockSize * yBlockSize);
           buffer = data + dataOffset;
-          facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
+          err = facilityBand->ReadBlock(iXBlock, iYBlock, facilityBuffer);
+          assert(err == CE_None);
 
           for (int iY = 0; iY < nYValid; ++iY) {
             for (int iX = 0; iX < nXValid; ++iX) {
@@ -338,7 +344,8 @@ long calculateUnsatisfiedDemand(std::string targetFilename, std::string demoFile
           }
         }
 
-        targetBand->WriteBlock(iXBlock, iYBlock, byteBuffer);
+        err = targetBand->WriteBlock(iXBlock, iYBlock, byteBuffer);
+        assert(err == CE_None);
       }
     }
 

@@ -201,8 +201,8 @@ $ brew tap osgeo/osgeo4mac
 $ brew install gdal2 --with-swig-java --with-postgresql
 ```
 
-Since `gdal2` is keg-only, you need to either force link it with `brew link
---force gdal` or add `/usr/local/opt/gdal2/bin` to your PATH environment
+Since `gdal2` is keg-only, you need to force link it with `brew link
+--force gdal2` and add `/usr/local/opt/gdal2/bin` to your PATH environment
 variable.
 
 You also need to add the make the JNI libraries discoverable by the JVM. For
@@ -217,11 +217,12 @@ development, an easy and non-intrusive way of doing it is adding the
 ### Binaries
 
 The application has some C++ binaries which are run in the context of the
-application. You'll need to compile these:
+application. If running the application outside Docker, you'll need to compile
+these. Otherwise, these are automatically built by `bootstrap-dev.sh`.
 
 ```sh
-$ cd cpp
-$ make clean all
+$ brew install cmake boost
+$ scripts/build-binaries
 ```
 
 ### Node modules
@@ -301,7 +302,7 @@ rebased automatically on each reset. The expected workflow is:
  - modify the migration
  - run `(reset)` again, to rollback the old version and apply the modified
    migration
-   
+
 The function `(rollback-1)` can be used to manually rollback until a specific
 migration. This would be needed if switching the development branch *and*
 restarting the REPL at the same time. Otherwise the system should be able to

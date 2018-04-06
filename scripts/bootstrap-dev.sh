@@ -9,10 +9,7 @@ fi
 
 cd $(dirname $0)/..
 
-cd cpp
-make clean all
-
-cd ..
+scripts/build-binaries
 scripts/migrate
 scripts/import-osm $(which osm2pgrouting) kenya
 scripts/load-regions kenya

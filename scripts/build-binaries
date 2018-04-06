@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ "$1" == "-r" -o "$1" == "--release" ]; then
+    build_type=Release
+else
+    build_type=Debug
+fi
+echo "Building binaries in ${build_type} mode"
+
+arch=`uname -s | tr '[A-Z]' '[a-z]'`-`uname -m`
+cd $(dirname $0)/../cpp
+mkdir build-${arch}
+cd build-${arch}
+
+cmake -DCMAKE_BUILD_TYPE=$build_type ..
+make clean all
