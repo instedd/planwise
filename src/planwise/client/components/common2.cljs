@@ -14,9 +14,6 @@
               [ui/section {:href (routes/datasets2)} "Datasets"]
               [ui/section {:href "/old" :target "_blank"} "Old version"]]
 
-                 ;;  {:item :projects2 :href (routes/projects2) :title "Projects*"}
-                 ;;  {:item :datasets :href  :title "Datasets*"}])
-
    :account [ui/account {:name @current-user-email :on-signout #(dispatch [:signout])}]
    :title "Planwise"
    :footer [ui/footer config/app-version]})

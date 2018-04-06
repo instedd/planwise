@@ -27,7 +27,7 @@
 (defroute projects2 "/projects2" []
   (dispatch [:navigate {:page :projects2, :section :index}]))
 (defroute projects2-show "/projects2/:id" [id]
-  (dispatch [:navigate {:page :projects2, :id id, :section :show}]))
+  (dispatch [:navigate {:page :projects2, :id (js/parseInt id), :section :show}]))
 (defroute design "/_design" []
   (dispatch [:navigate {:page :design}]))
 (defroute design-section "/_design/:section" [section query-params]
