@@ -5,8 +5,7 @@
   {:method    :get
    :uri       (str "/api/scenarios/" id)})
 
-(defn- create-scenario
-  [current-scenario]
+(defn- copy-scenario
+  [id]
   {:method    :post
-   :params    {:current-scenario current-scenario}
-   :uri       (str "/api/scenarios/" (:id current-scenario))})
+   :uri       (str "/api/scenarios/" id "/copy")})

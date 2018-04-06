@@ -23,9 +23,9 @@
 
 (defn- create-new-scenario
   [current-scenario]
-    [m/Button {:id "create-new-scenario"
-               :on-click #(dispatch [:scenarios/create-new-scenario current-scenario])}
-      "Create new scenario from here"])
+  [m/Button {:id "create-new-scenario"
+             :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
+   "Create new scenario from here"])
 
 (defn display-current-scenario
   [current-scenario]
@@ -41,18 +41,17 @@
      [:p "INVESTMENT REQUIRED"]
      [:h2 "K " investment]
      [:hr]
-     [create-new-scenario current-scenario]
-     ]))
-
-
-
+     [create-new-scenario current-scenario]]))
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])
-        {:keys [id]} @page-params
-        current-scenario (subscribe [:scenarios/current-scenario])]
+        current-scenario (subscribe [:scenarios/current-scenario])
+        current-project  (subscribe [:projects2/current-project])]
     (fn []
-      (cond (nil? @current-scenario)
-            (dispatch [:scenarios/load-scenario id])
-            :else
-            [display-current-scenario  @current-scenario]))))
+      (let [{:keys [id project-id]} @page-params]
+        (cond
+          (not= id (:id @current-scenario)) (dispatch [:scenarios/get-scenario id])
+          (not= project-id (:id @current-project)) (dispatch [:projects2/get-project project-id])
+          (not= project-id (:project-id @current-scenario)) (dispatch [:scenarios/scenario-not-found])
+          :else
+          [display-current-scenario  @current-scenario])))))
