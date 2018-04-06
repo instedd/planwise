@@ -14,6 +14,8 @@
       <sourceFolder url="file://$MODULE_DIR$/target/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/dev/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/target/base+system+user+dev+dev" />
+      <excludeFolder url="file://$MODULE_DIR$/target/cljsbuild/planwise/public/js" />
       <excludeFolder url="file://$MODULE_DIR$/target/default" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -206,7 +208,7 @@
     <orderEntry type="library" name="Leiningen: ragtime/core:0.7.2" level="project" />
     <orderEntry type="library" name="Leiningen: ragtime/jdbc:0.7.2" level="project" />
     <orderEntry type="library" name="Leiningen: ragtime:0.7.2" level="project" />
-    <orderEntry type="library" name="Leiningen: re-com:2.1.0" level="project" />
+    <orderEntry type="library" name="Leiningen: re-com:0.9.0" level="project" />
     <orderEntry type="library" name="Leiningen: re-frame:0.10.5" level="project" />
     <orderEntry type="library" name="Leiningen: reagent-forms:0.5.36" level="project" />
     <orderEntry type="library" name="Leiningen: reagent-utils:0.3.0" level="project" />
