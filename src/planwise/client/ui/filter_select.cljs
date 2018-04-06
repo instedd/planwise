@@ -146,9 +146,6 @@
      :on-key-down   (handler-fn (when-not (key-handler event)
                                   (.preventDefault event))) ;; When key-handler returns false, preventDefault
      :on-blur       (handler-fn (reset! drop-showing? false))}]
-   [:div.mdc-text-field__outline
-    [:svg
-     [:path.mdc-test-field__outline-path]]]
    [:div.mdc-text-field__idle-outline]])
 
 
@@ -184,7 +181,7 @@
                             (reset! ignore-click true)))}  ;; TODO: Hmmm, have a look at calling preventDefault (and stopProp?) and removing the ignore-click stuff
          [:div {:class (str "mdc-select__label " (when float-label? "mdc-select__label--float-above"))}
           label]
-         [:div.mdc-select__selected-text (when title? {:title text})
+         [:div.mdc-select__native-control (when title? {:title text})
           text]
          [:div.mdc-select__bottom-line]]))))
 
@@ -362,8 +359,8 @@
                                        page-top    (.-pageYOffset js/window)
                                        page-left   (.-pageXOffset js/window)
                                        page-height (.-innerHeight js/window)]
-                                   {:top    (str (- top page-top) "px")
-                                    :left   (str (- left page-left) "px")
+                                   {:top    (str 0 "px")
+                                    :left   (str 0 "px")
                                     :width  (str width "px")
                                     :height (str (- page-height (- top page-top) filter-box-height) "px")}))
               menu-style        (menu-style-fn)]

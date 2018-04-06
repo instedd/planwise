@@ -219,18 +219,27 @@ form.vertical, .fields-vertical {
 
 //
 
-/* https://github.com/material-components/material-components-web/issues/719 */
+.mdc-select {
+  select {
+    font-size: inherit;
+  }
 
-.mdc-dialog .mdc-select {
-  position: relative !important;
-}
-.mdc-dialog .mdc-select__menu {
-  top: inherit !important;
-  left: inherit !important;
-  max-height: calc(100vh - 64px)!important;
-  margin-top: 44px;
+  .mdc-select__native-control {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+  }
 }
 
+.mdc-select {
+  &.mdc-select--open {
+    overflow: visible;
+  }
+
+  .mdc-select__surface {
+    width: 100%;
+    position: relative;
+  }
+}
 //
 
 .file-input-wrapper {
