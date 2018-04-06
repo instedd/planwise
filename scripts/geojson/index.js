@@ -10,14 +10,13 @@ const fs = require('fs'),
       { URL } = require('url');
 
 (function main(argv) {
-  console.log("Starting ...")
 
   const countryCode = argv._[0]
-  console.info(countryCode)
+  console.info(`# Starting ... ${countryCode}`)
 
   const config = {
     path: {
-      out: path.join(argv._[1] || '/output', countryCode),
+      out: argv._[1] || '/output',
       tmp: argv._[2] || '/tmp'
     },
     url: {
@@ -29,7 +28,7 @@ const fs = require('fs'),
     .then(() => processCountry(countryCode, 0, config))
     .then(() => processCountry(countryCode, 1, config))
     .then(function() {
-      console.log("All done!!")
+      console.log("# All done!!")
     })
     .catch(function(err) {
       console.error(`ERROR: ${err}`)
@@ -115,7 +114,7 @@ const download = function(url, dest, cbSuccess, cbError) {
 }
 
 const processCountry = function(code, level, config) {
-  console.info(`Processing country ${code} with level ${level}`)
+  console.info(`- Processing country ${code} with level ${level}`)
 
   const filename = `${code}_adm${level}`
   const kmzFilename = `${filename}.kmz`
@@ -124,11 +123,12 @@ const processCountry = function(code, level, config) {
 
   const url = new URL(kmzFilename, config.url.base)
   const downloadPath = path.join(config.path.tmp, kmzFilename)
+  const outPath = path.join(config.path.out, code)
 
   return download(url.href, downloadPath)
           .then(extractZipContentAt(kmlFilename, config.path.tmp))
-          .then(toGeoJsonAt(geojsonFilename, config.path.out))
-          .then((geojsonFile) => console.info(`GeoJson file successfuly created at: ${geojsonFile}`))
+          .then(toGeoJsonAt(geojsonFilename, outPath))
+          .then((geojsonFile) => console.info(`  -> GeoJson file successfuly created at: ${geojsonFile}`))
 }
 
 
