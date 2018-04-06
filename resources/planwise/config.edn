@@ -44,7 +44,8 @@
                #ig/ref :planwise.endpoint/projects
                #ig/ref :planwise.endpoint/projects2
                #ig/ref :planwise.endpoint/regions
-               #ig/ref :planwise.endpoint/routing]}
+               #ig/ref :planwise.endpoint/routing
+               #ig/ref :planwise.endpoint/scenarios]}
 
  :planwise.router/app
  {:middleware [#ig/ref :planwise.middleware/app]
@@ -143,6 +144,9 @@
 
  :planwise.endpoint/routing
  {:routing    #ig/ref :planwise.component/routing}
+
+ :planwise.endpoint/scenarios
+ {:scenarios   #ig/ref :planwise.component/scenarios}
 
 
  ;; Components

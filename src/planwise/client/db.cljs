@@ -3,6 +3,7 @@
             [planwise.client.population :as population]
             [planwise.client.projects.db :as projects]
             [planwise.client.projects2.db :as projects2]
+            [planwise.client.scenarios.db :as scenarios]
             [planwise.client.datasets2.db :as datasets2]
             [planwise.client.current-project.db :as current-project]))
 
@@ -32,4 +33,7 @@
 
    :coverage            {}
 
-   :population          population/initial-db})
+   :population          population/initial-db
+
+   :scenarios           scenarios/initial-db})
+

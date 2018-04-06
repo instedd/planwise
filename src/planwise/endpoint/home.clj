@@ -118,7 +118,8 @@
      (GET "/datasets2" [] loading-page2)
      (context "/projects2" []
        (GET "/" [] loading-page2)
-       (GET "/:id" [] loading-page2))
+       (GET "/:id" [] loading-page2)
+       (GET "/:project-id/scenarios/:id" [] loading-page2))
      (context "/projects/:id" []
        (GET "/" [] loading-page)
        (GET "/facilities" [] loading-page)
