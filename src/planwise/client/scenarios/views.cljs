@@ -21,6 +21,12 @@
                                          :controls []}
                            mapping/default-base-tile-layer]])))
 
+(defn- create-new-scenario
+  [current-scenario]
+    [m/Button {:id "create-new-scenario"
+               :on-click #(dispatch [:scenarios/create-new-scenario current-scenario])}
+      "Create new scenario from here"])
+
 (defn display-current-scenario
   [current-scenario]
   (let [{:keys [name investment demand-coverage]} current-scenario]
@@ -34,7 +40,11 @@
      [:h "to a total of " demand-coverage]
      [:p "INVESTMENT REQUIRED"]
      [:h2 "K " investment]
-     [:hr]]))
+     [:hr]
+     [create-new-scenario current-scenario]
+     ]))
+
+
 
 
 (defn scenarios-page []
@@ -45,4 +55,4 @@
       (cond (nil? @current-scenario)
             (dispatch [:scenarios/load-scenario id])
             :else
-            [display-current-scenario @current-scenario]))))
+            [display-current-scenario  @current-scenario]))))

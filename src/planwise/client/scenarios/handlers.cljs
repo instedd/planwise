@@ -18,3 +18,10 @@
  (fn [{:keys [db]} [_ id]]
    {:api (assoc (api/load-scenario id)
                 :on-success [:scenarios/save-current-scenario])}))
+
+(rf/reg-event-fx
+ :scenarios/create-new-scenario
+ in-scenarios
+ (fn [{:keys [db]} [_ current-scenario]]
+  {:api  (assoc (api/create-scenario current-scenario)
+                :on-success [:scenarios/load-scenario])}))
