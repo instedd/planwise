@@ -16,4 +16,7 @@
     "Creates an scenario the given project. Deferred computation will occur.")
 
   (update-scenario [this scenario-id props]
-    "Updates the given scenario. Deferred computation will occur."))
+    "Updates the given scenario. Deferred computation will occur.")
+
+  (next-scenario-name [this project-id name]
+    "Returns a name for the following scenario to be created based on name"))

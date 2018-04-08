@@ -21,8 +21,9 @@
        (if (nil? (:id scenario)) (not-found) (response scenario))))
 
    (POST "/:id/copy" [id as request]
-     (let [{:keys [name project-id changeset]} (scenarios/get-scenario service (Integer. id))]
-       (response (scenarios/create-scenario service  project-id {:name (str name "-copy")
+     (let [{:keys [name project-id changeset]} (scenarios/get-scenario service (Integer. id))
+           next-name (scenarios/next-scenario-name service project-id name)]
+       (response (scenarios/create-scenario service  project-id {:name next-name
                                                                  :changeset changeset}))))))
 
 (defn scenarios-endpoint
