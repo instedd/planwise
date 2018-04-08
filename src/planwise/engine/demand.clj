@@ -101,26 +101,41 @@
     [offset-x offset-y]))
 
 (defn grid-clipped-coordinates
-  "Computes the bounds raster2 in raster1 and returns the result in pixel
-  coordinates (top, left, right, bottom); returns nil if there is no overlap
-  between the two rasters"
-  [raster1 raster2]
-  (let [[left top]     (grid-offset (:geotransform raster1) (:geotransform raster2))
-        [right bottom] [(+ left (dec (:xsize raster2))) (+ top (dec (:ysize raster2)))]
-        left           (max 0 left)
-        right          (min right (:xsize raster1))
-        top            (max 0 top)
-        bottom         (min bottom (:ysize raster1))]
-    (when (and (< left right)
-               (< top bottom))
-      {:left left :right right :top top :bottom bottom})))
+  "Computes the bounds src in dst and returns the result in pixel coordinates
+  (left, top, right, bottom), assuming compatible rasters; returns nil if there
+  is no overlap between the two rasters"
+  [dst src]
+  (let [[dst-width dst-height] ((juxt :xsize :ysize) dst)
+        [src-width src-height] ((juxt :xsize :ysize) src)
+        [dst-left dst-top]     (grid-offset (:geotransform dst) (:geotransform src))
+        [src-left src-top]     [0 0]
+        [dst-right dst-bottom] [(+ dst-left src-width) (+ dst-top src-height)]
+        [src-right src-bottom] [src-width src-height]
+        clip-left              (if (< 0 dst-left) 0 (- dst-left))
+        clip-right             (if (< dst-right dst-width) 0 (- dst-right dst-width))
+        clip-top               (if (< 0 dst-top) 0 (- dst-top))
+        clip-bottom            (if (< dst-bottom dst-height) 0 (- dst-bottom dst-height))
+        src-left               (+ src-left clip-left)
+        src-right              (- src-right clip-right)
+        src-top                (+ src-top clip-top)
+        src-bottom             (- src-bottom clip-bottom)
+        dst-left               (+ dst-left clip-left)
+        dst-right              (- dst-right clip-right)
+        dst-top                (+ dst-top clip-top)
+        dst-bottom             (- dst-bottom clip-bottom)]
+    (when (and (< dst-left dst-right)
+               (< dst-top dst-bottom))
+      {:dst [dst-left dst-top (dec dst-right) (dec dst-bottom)]
+       :src [src-left src-top (dec src-right) (dec src-bottom)]})))
 
 (defprotocol RasterOps
   (compatible? [r1 r2]
     "Returns true if both rasters are compatible, as in having equivalent
     projections and 'equal' pixel resolutions")
   (aligned? [r1 r2]
-    "Returns true if both rasters are grid-aligned"))
+    "Returns true if both rasters are grid-aligned")
+  (clipped-coordinates [r1 r2]
+    "Returns the grid bounds of r2 in r1 buffer coordinate space"))
 
 (extend-type Raster
   RasterOps
@@ -152,5 +167,5 @@
   (aligned? raster1 raster2)    ;; => false
 
   (grid-offset (:geotransform raster1) (:geotransform raster2))
-  (grid-clipped-coordinates raster1 raster1)
+  (grid-clipped-coordinates raster1 raster2)
 )
