@@ -5,7 +5,7 @@
             [planwise.util.str :refer [trim-to-int]]
             [planwise.util.collections :refer [find-by]]
             [planwise.util.hash :refer [update-if]]
-            [planwise.util.numbers :refer [float=]]
+            [planwise.util.numbers :refer [nilable-float=]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [taoensso.timbre :as timbre]
@@ -49,8 +49,8 @@
            (mapv (fn [facility]
                    (let [{id :id, :as existing} (find-by existing-facilities :site-id (:site-id facility))
                          position-unchanged?    (and (seq existing)
-                                                     (float= (:lat existing) (:lat facility))
-                                                     (float= (:lon existing) (:lon facility)))]
+                                                     (nilable-float= (:lat existing) (:lat facility))
+                                                     (nilable-float= (:lon existing) (:lon facility)))]
 
                      (cond
                     ; Insert new record if no existing facility with the site id was found
