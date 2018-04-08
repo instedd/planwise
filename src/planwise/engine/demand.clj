@@ -167,5 +167,4 @@
   (aligned? raster1 raster2)    ;; => false
 
   (grid-offset (:geotransform raster1) (:geotransform raster2))
-  (grid-clipped-coordinates raster1 raster2)
-)
+  (grid-clipped-coordinates raster1 raster2))
