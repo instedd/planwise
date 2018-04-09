@@ -123,7 +123,9 @@
                                   [ring/ring-devel "1.6.3"]
 
                                   ; REPL tools
+                                  [org.clojure/tools.namespace "0.3.0-alpha4"]
                                   [integrant/repl "0.2.0"]
+                                  [virgil "0.1.8"]
 
                                   ; Testing libraries
                                   [eftest "0.4.3"

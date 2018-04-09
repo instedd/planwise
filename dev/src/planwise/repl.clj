@@ -13,7 +13,8 @@
             [duct.migrator.ragtime :as dmr]
             [planwise.boundary.facilities :as facilities]
             [buddy.core.nonce :as nonce]
-            [clojure.java.shell :as shell])
+            [clojure.java.shell :as shell]
+            [planwise.virgil])
   (:import org.apache.commons.codec.binary.Hex))
 
 (defn db
@@ -97,3 +98,12 @@
   (npm-install)
   (igr/prep)
   (igr/init))
+
+(defn compile-java
+  []
+  (planwise.virgil/recompile-all-java))
+
+(defn reset
+  []
+  (planwise.virgil/refresh)
+  (igr/reset))
