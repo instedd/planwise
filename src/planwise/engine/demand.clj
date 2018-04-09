@@ -129,6 +129,20 @@
       {:dst [dst-left dst-top (dec dst-right) (dec dst-bottom)]
        :src [src-left src-top (dec src-right) (dec src-bottom)]})))
 
+(defn count-under-coverage
+  [population coverage]
+  (let [{src-bounds :src dst-bounds :dst}       (grid-clipped-coordinates population coverage)
+        {src-buffer :data src-nodata :nodata}   coverage
+        {dst-buffer :data dst-nodata :nodata}   population
+        [dst-left dst-top dst-right dst-bottom] dst-bounds
+        [src-left src-top _ _]                  src-bounds
+        dst-stride                              (:xsize population)
+        src-stride                              (:xsize coverage)]
+    (Algorithm/countPopulationUnderCoverage dst-buffer dst-stride dst-nodata
+                                            src-buffer src-stride src-nodata
+                                            dst-left dst-top dst-right dst-bottom
+                                            src-left src-top)))
+
 (defprotocol RasterOps
   (compatible? [r1 r2]
     "Returns true if both rasters are compatible, as in having equivalent
@@ -164,10 +178,10 @@
   (def raster1 (read-raster "data/populations/data/17/42.tif"))
   (def raster2 (read-raster "data/coverage/11/1_pgrouting-alpha_60.tif"))
 
-  (Algorithm/test 42)
-
   (compatible? raster1 raster2) ;; => true
   (aligned? raster1 raster2)    ;; => false
 
   (grid-offset (:geotransform raster1) (:geotransform raster2))
-  (grid-clipped-coordinates raster1 raster2))
+  (grid-clipped-coordinates raster1 raster2)
+
+  (time (count-under-coverage raster1 raster2)))
