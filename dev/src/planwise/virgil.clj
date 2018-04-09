@@ -7,9 +7,13 @@
             [clojure.tools.namespace.find :as ctn-find]
             [clojure.tools.namespace.parse :as ctn-parse]
             [clojure.tools.namespace.repl :as ctn-repl]
-            [virgil.compile :refer [compile-all-java]])
+            [clojure.java.io :as io]
+            [virgil.compile :as vc]
+            [virgil.watch :as watch]
+            [clojure.string :as str])
   (:import java.io.File
-           java.util.Arrays))
+           java.util.Arrays
+           javax.tools.DiagnosticCollector))
 
 ;; TODO: only recompile java files that have changed since last compile? (how does
 ;; this affect java classes that depend on each other? do dependents need to be
@@ -33,6 +37,21 @@
                  ^bytes b2 (m2 k)]
            :when (not (and b1 b2 (Arrays/equals b1 b2)))]
        (symbol k)))))
+
+;; patched version of virgil.compile/compile-all-java
+(defn- compile-all-java [directories]
+  (let [diag (DiagnosticCollector.)
+        name->source (->> directories
+                          (mapcat
+                           (fn [d]
+                             (->> d
+                                  io/file
+                                  watch/all-files
+                                  (map #(vector (vc/file->class d %) %)))))
+                          (remove #(-> % first nil?))
+                          (map (fn [[c f]] [c (slurp f)]))
+                          (into {}))]
+    (vc/compile-java nil diag name->source)))
 
 ;; returns set of classes that have changed since last compile
 (defn recompile-all-java []
