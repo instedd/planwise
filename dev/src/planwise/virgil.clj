@@ -10,6 +10,7 @@
             [clojure.java.io :as io]
             [virgil.compile :as vc]
             [virgil.watch :as watch]
+            [virgil.util :as vu]
             [clojure.string :as str])
   (:import java.io.File
            java.util.Arrays
@@ -19,7 +20,7 @@
 ;; this affect java classes that depend on each other? do dependents need to be
 ;; recompiled also?)
 
-(defonce ^:private java-source-dirs (atom ["src-java"]))
+(defonce ^:private java-source-dirs (atom ["java"]))
 (defonce ^:private last-javac-result (atom []))
 
 (defn set-java-source-dirs! [dirs]
@@ -39,7 +40,7 @@
        (symbol k)))))
 
 ;; patched version of virgil.compile/compile-all-java
-(defn- compile-all-java [directories]
+(defn compile-all-java [directories]
   (let [diag (DiagnosticCollector.)
         name->source (->> directories
                           (mapcat
@@ -51,7 +52,9 @@
                           (remove #(-> % first nil?))
                           (map (fn [[c f]] [c (slurp f)]))
                           (into {}))]
-    (vc/compile-java nil diag name->source)))
+    (let [result (vc/compile-java nil diag name->source)]
+      (vu/print-diagnostics diag)
+      result)))
 
 ;; returns set of classes that have changed since last compile
 (defn recompile-all-java []
