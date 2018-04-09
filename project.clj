@@ -91,6 +91,7 @@
   :cljfmt {:remove-consecutive-blank-lines? false}
 
   :resource-paths     ["resources" "target/resources"]
+  :java-source-paths  ["java"]
   :target-path        "target/%s/"
   :main               ^:skip-aot planwise.main
 

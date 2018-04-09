@@ -3,7 +3,8 @@
             [planwise.util.numbers :refer [float=]])
   (:import [org.gdal.gdal gdal]
            [org.gdal.gdalconst gdalconst]
-           [org.gdal.osr SpatialReference]))
+           [org.gdal.osr SpatialReference]
+           [planwise.engine Algorithm]))
 
 (gdal/AllRegister)
 
@@ -162,6 +163,8 @@
 (comment
   (def raster1 (read-raster "data/populations/data/17/42.tif"))
   (def raster2 (read-raster "data/coverage/11/1_pgrouting-alpha_60.tif"))
+
+  (Algorithm/test 42)
 
   (compatible? raster1 raster2) ;; => true
   (aligned? raster1 raster2)    ;; => false
