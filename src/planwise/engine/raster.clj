@@ -71,6 +71,29 @@
      (throw (ex-info "Failed to open raster file"
                      {:filename path})))))
 
+(defn write-raster-file
+  [{:keys [xsize ysize data-type nodata data projection geotransform] :as raster} output-path]
+  (let [block-xsize 128
+        block-ysize 128
+        driver      (gdal/GetDriverByName "GTiff")
+        options     (into-array String ["TILED=YES"
+                                        (str "BLOCKXSIZE=" block-xsize)
+                                        (str "BLOCKYSIZE=" block-ysize)
+                                        ;; TODO: vary compression options according to data-type
+                                        "COMPRESS=LZW"
+                                        "PREDICTOR=3"])
+        dataset     (.Create driver output-path xsize ysize 1 data-type options)]
+    (doto dataset
+      (.SetProjection projection)
+      (.SetGeoTransform geotransform))
+    (doto (.GetRasterBand dataset 1)
+      (.SetNoDataValue nodata)
+      (.WriteRaster 0 0 xsize ysize data))
+    (doto dataset
+      (.FlushCache)
+      (.delete))
+    nil))
+
 (defn- equal-resolution?
   [geoxform1 geoxform2]
   (let [[_ xres1 _ _ _ yres1] geoxform1
@@ -135,7 +158,9 @@
   (aligned? [r1 r2]
     "Returns true if both rasters are grid-aligned")
   (clipped-coordinates [r1 r2]
-    "Returns the grid bounds of r2 in r1 buffer coordinate space"))
+    "Returns the grid bounds of r2 in r1 buffer coordinate space")
+  (write-raster [r path]
+    "Writes the raster into a TIF file"))
 
 (extend-type Raster
   RasterOps
@@ -160,7 +185,10 @@
       (grids-aligned? geoxform1 geoxform2)))
 
   (clipped-coordinates [r1 r2]
-    (grid-clipped-coordinates r1 r2)))
+    (grid-clipped-coordinates r1 r2))
+
+  (write-raster [r path]
+    (write-raster-file r path)))
 
 (comment
   (def raster1 (read-raster "data/populations/data/17/42.tif"))
@@ -169,4 +197,6 @@
   (compatible? raster1 raster2) ;; => true
   (aligned? raster1 raster2)    ;; => false
 
-  (clipped-coordinates raster1 raster2))
+  (clipped-coordinates raster1 raster2)
+
+  (write-raster raster1 "/tmp/output.tif"))
