@@ -1,11 +1,12 @@
-#! /bin/bash
+#!/bin/bash
 set -euo pipefail
 
 source $(dirname "${BASH_SOURCE}")/env-vars
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
 COUNTRY=$1
-LEVELS=${2:-2,4}
+#LEVELS=${2:-2,4}
+LEVELS=(0,1)
 echo "   -> Importing $COUNTRY at levels $LEVELS"
 
 # check if country was already imported
@@ -19,31 +20,32 @@ fi
 
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 
-DATA_PATH=${DATA_PATH:-data}
+#DATA_PATH=${DATA_PATH:-data}
+DATA_PATH=${DATA_PATH:-data/geojson}
 
 mkdir -p ${DATA_PATH}
 
-# if file exists then extract content
-echo -n "   -> Searching for ./$DATA_PATH/$COUNTRY ..."
-if [ -e ${DATA_PATH}/${COUNTRY}_geojson.tgz ]; then
-  echo " found!"
-  tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
-else
-  echo " not found!"
-fi
+## if file exists then extract content
+#echo -n "   -> Searching for ./$DATA_PATH/$COUNTRY ..."
+#if [ -e ${DATA_PATH}/${COUNTRY}_geojson.tgz ]; then
+#  echo " found!"
+#  tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
+#else
+#  echo " not found!"
+#fi
 
-# if the folder doesn't exist (after extracting content)
-# then download file and extract content
-if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
-  echo -n "   -> Trying to download: https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz ..."
-  if ! curl -f -o ${DATA_PATH}/${COUNTRY}_geojson.tgz https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz; then
-    echo " can't download file."
-    echo "   -> Exit with error"
-    exit 1
-  fi
-  echo " found!"
-  tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
-fi
+## if the folder doesn't exist (after extracting content)
+## then download file and extract content
+#if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
+#  echo -n "   -> Trying to download: https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz ..."
+#  if ! curl -f -o ${DATA_PATH}/${COUNTRY}_geojson.tgz https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz; then
+#    echo " can't download file."
+#    echo "   -> Exit with error"
+#    exit 1
+#  fi
+#  echo " found!"
+#  tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
+#fi
 
 # if the folder (still) doesn't exist then exit with error
 if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
@@ -53,7 +55,8 @@ fi
 
 IFS=',';
 for i in $LEVELS; do
-  FILE=${DATA_PATH}/${COUNTRY}/admin_level_${i}.geojson
+#  FILE=${DATA_PATH}/${COUNTRY}/admin_level_${i}.geojson
+  FILE=${DATA_PATH}/${COUNTRY}/${COUNTRY}_adm${i}.geojson
   echo -n "   -> Processing $FILE ... "
   psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 
@@ -63,7 +66,7 @@ for i in $LEVELS; do
       '${COUNTRY}',
       feat#>>'{properties,name}' AS name,
       (feat#>>'{properties,admin_level}')::integer AS admin_level,
-      ST_SetSRID(ST_GeomFromGeoJSON(feat->>'geometry'), 4326) as the_geom
+      ST_SetSRID(ST_CollectionExtract(ST_GeomFromGeoJSON(feat->>'geometry'), 3), 4326) as the_geom
     FROM (
       SELECT json_array_elements(fc->'features') AS feat
       FROM data
