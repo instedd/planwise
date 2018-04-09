@@ -37,3 +37,33 @@
  (fn [{:keys [db]} [_ id]]
    {:api  (assoc (api/copy-scenario id)
                  :on-success [:scenarios/load-scenario])}))
+
+;; Editing scenario
+
+(rf/reg-event-db
+ :scenarios/open-dialog
+ in-scenarios
+ (fn [db _]
+   (let [name (get-in db [:current-scenario :name])]
+     (assoc db
+            :view-state :rename-dialog
+            :rename-dialog {:value name}))))
+
+(rf/reg-event-db
+ :scenarios/cancel-dialog
+ (fn [db _]
+   (assoc db
+          :view-state :current-scenario
+          :rename-dialog nil)))
+
+(rf/reg-event-db
+ :scenarios/save-key
+ in-scenarios
+ (fn [db [_ path value]]
+   (assoc-in db path value)))
+
+(rf/reg-event-fx
+ :scenarios/update-scenario
+ (fn [{:keys [db]} [_ algo]]
+ ;; TODO
+   ))
