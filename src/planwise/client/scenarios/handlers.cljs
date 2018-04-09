@@ -27,7 +27,7 @@
 (rf/reg-event-fx
  :scenarios/get-scenario
  (fn [_ [_ id]]
-   {:api (assoc (:id (api/load-scenario id))
+   {:api (assoc (api/load-scenario id)
                 :on-success [:scenarios/save-current-scenario]
                 :on-failure [:scenarios/scenario-not-found])}))
 
