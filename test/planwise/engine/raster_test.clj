@@ -1,5 +1,5 @@
-(ns planwise.engine.demand-test
-  (:require [planwise.engine.demand :as sut]
+(ns planwise.engine.raster-test
+  (:require [planwise.engine.raster :as sut]
             [clojure.test :refer :all]))
 
 (def identity-xf (double-array [0 1 0 0 0 1]))
