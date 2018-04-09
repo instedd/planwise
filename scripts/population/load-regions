@@ -20,32 +20,9 @@ fi
 
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 
-#DATA_PATH=${DATA_PATH:-data}
 DATA_PATH=${DATA_PATH:-data/geojson}
 
 mkdir -p ${DATA_PATH}
-
-## if file exists then extract content
-#echo -n "   -> Searching for ./$DATA_PATH/$COUNTRY ..."
-#if [ -e ${DATA_PATH}/${COUNTRY}_geojson.tgz ]; then
-#  echo " found!"
-#  tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
-#else
-#  echo " not found!"
-#fi
-
-## if the folder doesn't exist (after extracting content)
-## then download file and extract content
-#if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
-#  echo -n "   -> Trying to download: https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz ..."
-#  if ! curl -f -o ${DATA_PATH}/${COUNTRY}_geojson.tgz https://s3.amazonaws.com/osm-polygons.mapzen.com/${COUNTRY}_geojson.tgz; then
-#    echo " can't download file."
-#    echo "   -> Exit with error"
-#    exit 1
-#  fi
-#  echo " found!"
-#  tar -xzf ${DATA_PATH}/${COUNTRY}_geojson.tgz -C ${DATA_PATH}
-#fi
 
 # if the folder (still) doesn't exist then exit with error
 if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
