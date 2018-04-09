@@ -2,7 +2,6 @@
   (:require [planwise.boundary.projects2 :as boundary]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
-            [clojure.data.csv :as csv]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
@@ -51,21 +50,16 @@
 
 (defrecord SitesProjectsStore [db]
   boundary/Projects2
-  (create-project [this user-id]
-    (create-project this user-id))
-  (list-projects [this user-id]
-    (list-projects this user-id))
-  (get-project [this project-id]
-    (get-project [this project-id]))
-  (update-project [this project]
-    (update-project [this project]))
-  (start-project [this project-id]
-    (start-project this project-id)))
-
-(defn projects2-store
-  "Constructs a Projects2 Store component"
-  []
-  (map->SitesProjectsStore {}))
+  (create-project [store owner-id]
+    (create-project store owner-id))
+  (list-projects [store owner-id]
+    (list-projects store owner-id))
+  (get-project [store project-id]
+    (get-project store project-id))
+  (update-project [store project]
+    (update-project store project))
+  (start-project [store project-id]
+    (start-project store project-id)))
 
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]

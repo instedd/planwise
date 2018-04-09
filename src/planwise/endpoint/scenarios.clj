@@ -8,14 +8,13 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [clojure.core.reducers :as r]
-            [planwise.component.scenarios :as scenarios]))
+            [planwise.boundary.scenarios :as scenarios]))
 
 (timbre/refer-timbre)
 
 (defn- scenarios-routes
   [service]
   (routes
-
    (GET "/:id" [id as request]
      (let [scenario (scenarios/get-scenario service (Integer. id))]
        (if (nil? (:id scenario)) (not-found) (response scenario))))

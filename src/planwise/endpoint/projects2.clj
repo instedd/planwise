@@ -5,18 +5,16 @@
             [clojure.spec.alpha :as s]
             [ring.util.response :refer [response status not-found]]
             [planwise.util.ring :as util]
-            [clojure.core.reducers :as r]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
-            [planwise.model.ident :as ident]
             [planwise.model.projects2 :as model]
-            [planwise.component.datasets2 :as datasets2]
-            [planwise.component.projects2 :as projects2]))
+            [planwise.boundary.datasets2 :as datasets2]
+            [planwise.boundary.projects2 :as projects2]))
 
 (timbre/refer-timbre)
 
 (defn- projects2-routes
-  [service]
+  [{service :projects2}]
   (routes
 
    (POST "/" request
@@ -59,9 +57,9 @@
 
 
 (defn projects2-endpoint
-  [{service :projects2}]
+  [config]
   (context "/api/projects2" []
-    (restrict (projects2-routes service) {:handler authenticated?})))
+    (restrict (projects2-routes config) {:handler authenticated?})))
 
 (defmethod ig/init-key :planwise.endpoint/projects2
   [_ config]
