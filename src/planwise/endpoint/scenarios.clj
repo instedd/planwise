@@ -8,7 +8,7 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [clojure.core.reducers :as r]
-            [planwise.component.scenarios :as scenarios]))
+            [planwise.boundary.scenarios :as scenarios]))
 
 (timbre/refer-timbre)
 
@@ -16,9 +16,14 @@
   [service]
   (routes
    (GET "/:id" [id as request]
-     (let [user-id          (util/request-user-id request)
-           scenario         (scenarios/get-scenario service (Integer. id))]
-       (response scenario)))))
+     (let [scenario (scenarios/get-scenario service (Integer. id))]
+       (if (nil? (:id scenario)) (not-found) (response scenario))))
+
+   (POST "/:id/copy" [id as request]
+     (let [{:keys [name project-id changeset]} (scenarios/get-scenario service (Integer. id))
+           next-name (scenarios/next-scenario-name service project-id name)]
+       (response (scenarios/create-scenario service  project-id {:name next-name
+                                                                 :changeset changeset}))))))
 
 (defn scenarios-endpoint
   [{service :scenarios}]

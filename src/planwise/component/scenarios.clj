@@ -1,6 +1,7 @@
 (ns planwise.component.scenarios
   (:require [planwise.boundary.scenarios :as boundary]
             [planwise.model.scenarios :as model]
+            [planwise.util.str :as util-str]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
@@ -89,6 +90,13 @@
     (db-update-scenario! db scenario)
     (db-update-scenarios-label! db {:project-id project-id})))
 
+(defn next-scenario-name
+  [store project-id name]
+  (->> (db-list-scenarios-names (get-db store) {:project-id project-id :name name})
+       (map :name)
+       (cons name)
+       (util-str/next-name)))
+
 (defrecord ScenariosStore [db]
   boundary/Scenarios
   (list-scenarios [store project-id]
@@ -100,7 +108,9 @@
   (create-scenario [store project-id props]
     (create-scenario store project-id props))
   (update-scenario [store scenario-id props]
-    (update-scenario store scenario-id props)))
+    (update-scenario store scenario-id props))
+  (next-scenario-name [store project-id name]
+    (next-scenario-name store project-id name)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]

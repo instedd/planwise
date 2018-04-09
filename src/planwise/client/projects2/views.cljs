@@ -18,7 +18,7 @@
     (fn []
       (cond
         (not= (:id @current-project) id) (do
-                                           (dispatch [:projects2/get-project-data id])
+                                           (dispatch [:projects2/get-project id])
                                            [common2/loading-placeholder])
         (= "draft" (:state @current-project)) [settings/edit-current-project]
         :else [dashboard/view-current-project]))))

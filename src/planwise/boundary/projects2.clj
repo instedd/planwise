@@ -3,10 +3,10 @@
 (defprotocol Projects2
   "API for manipulating projects"
 
-  (create-project [this user-id]
+  (create-project [this owner-id]
     "Creates a project. Returns a map with the database generated id.")
 
-  (list-projects [this user-id]
+  (list-projects [this owner-id]
     "Returns projects accessible by the user.")
 
   (get-project [this project-id]
@@ -16,4 +16,4 @@
     "Updates project's attributes. Returns the updated project.")
 
   (start-project [this project-id]
-    "Set project's state started "))
+    "Starts project."))

@@ -57,7 +57,7 @@
    {:navigate (routes/projects2)}))
 
 (rf/reg-event-fx
- :projects2/get-project-data
+ :projects2/get-project
  in-projects2
  (fn [{:keys [db]} [_ id]]
    {:api (assoc (api/get-project id)

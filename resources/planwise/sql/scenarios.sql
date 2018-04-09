@@ -45,3 +45,9 @@ UPDATE scenarios
   "demand-coverage" = :demand-coverage, changeset = :changeset
 WHERE
   id = :id
+
+-- :name db-list-scenarios-names :?
+SELECT name
+FROM scenarios
+WHERE "project-id" = :project-id
+  AND name ILIKE (:name || '%')
