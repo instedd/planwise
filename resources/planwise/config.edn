@@ -170,7 +170,8 @@
   :coverage    #ig/ref :planwise.component/coverage}
 
  :planwise.component/engine
- {:projects2   #ig/ref :planwise.component/projects2}
+ {:datasets2   #ig/ref :planwise.component/datasets2
+  :projects2   #ig/ref :planwise.component/projects2}
 
  :planwise.component/facilities
  {:db          #ig/ref :duct.database/sql

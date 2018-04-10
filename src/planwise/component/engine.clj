@@ -1,9 +1,13 @@
 (ns planwise.component.engine
   (:require [planwise.boundary.engine :as boundary]
             [planwise.boundary.projects2 :as projects2]
-            [integrant.core :as ig]
+            [planwise.boundary.datasets2 :as datasets2]
             [planwise.engine.raster :as raster]
-            [planwise.engine.demand :as demand]))
+            [planwise.engine.demand :as demand]
+            [integrant.core :as ig]
+            [taoensso.timbre :as timbre]))
+
+(timbre/refer-timbre)
 
 ;; Computing a scenario:
 ;; - compute the initial scenario or retrieve a cached version
@@ -30,19 +34,42 @@
       (demand/multiply-population! (float target-factor)))))
 
 (defn- project-sites
-  [project]
-  [])
+  [{:keys [datasets2]} {:keys [dataset-id dataset-version region-id coverage-algorithm config]}]
+  (let [version          (or dataset-version (:last-version (datasets2/get-dataset datasets2 dataset-id)))
+        coverage-options (get-in config [:coverage :filter-options])
+        filter-options   {:region-id          region-id
+                          :coverage-algorithm coverage-algorithm
+                          :coverage-options   coverage-options}
+        sites            (datasets2/get-sites-with-coverage-in-region datasets2 dataset-id version filter-options)]
+    (->> sites
+         (map #(select-keys % [:id :capacity :raster]))
+         (sort-by :capacity)
+         reverse)))
 
 (defn compute-initial-scenario
   [engine project]
-  (let [demand-raster (project-base-demand project)]
+  (let [demand-raster (project-base-demand project)
+        sites         (project-sites engine project)
+        dataset-id    (:dataset-id project)]
+    (let [initial-demand (demand/count-population demand-raster)]
+      (debug "Initial demand:" initial-demand))
+    (dorun (for [site sites]
+             (let [capacity             (:capacity site)
+                   coverage-name        (:raster site)
+                   coverage-path        (str "data/coverage/" dataset-id "/" coverage-name ".tif")
+                   coverage-raster      (raster/read-raster coverage-path)
+                   population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)]
+               (debug "Subtracting" capacity "of site" (:id site) "reaching" population-reachable "people")
+               (when-not (zero? population-reachable)
+                 (let [factor (- 1 (min 1 (/ capacity population-reachable)))]
+                   (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
     demand-raster))
 
 (defn compute-scenario
   [scenario]
   scenario)
 
-(defrecord Engine [projects2]
+(defrecord Engine [projects2 datasets2]
   boundary/Engine
   (compute-initial-scenario [engine project]
     (compute-initial-scenario engine project)))
@@ -51,16 +78,20 @@
   [_ config]
   (map->Engine config))
 
-;; REPL testing
 (comment
+  ;; REPL testing
+
   (def projects2 (:planwise.component/projects2 integrant.repl.state/system))
+  (def datasets2 (:planwise.component/datasets2 integrant.repl.state/system))
 
   (defn new-engine []
-    (map->Engine {:projects2 projects2}))
+    (map->Engine {:projects2 projects2 :datasets2 datasets2}))
 
   (projects2/get-project projects2 5)
 
   (new-engine)
+
+  (project-sites (new-engine) (projects2/get-project projects2 5))
 
   (-> (compute-initial-scenario (new-engine) (projects2/get-project projects2 5))
       (demand/count-population)))
