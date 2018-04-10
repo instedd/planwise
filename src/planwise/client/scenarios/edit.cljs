@@ -10,10 +10,8 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn new-dialog
-  [{:keys [title content accept-fn cancel-fn]}]
-  (let [view-state (subscribe [:scenarios/view-state])
-        current-scenario (subscribe [:scenarios/current-scenario])
-        open?      (db/show-dialog? @view-state)]
+  [{:keys [open? title content accept-fn cancel-fn]}]
+  (let [current-scenario (subscribe [:scenarios/current-scenario])]
     [m/Dialog {:open open?
                :on-accept accept-fn
                :on-close cancel-fn}
@@ -38,8 +36,10 @@
 
 (defn rename-scenario-dialog
   []
-  (let [rename-dialog (subscribe [:scenarios/rename-dialog])]
-    (new-dialog {:title "Rename scenario"
+  (let [rename-dialog (subscribe [:scenarios/rename-dialog])
+        view-state (subscribe [:scenarios/view-state])]
+    (new-dialog {:open? (and (some? @rename-dialog) (= @view-state :rename-dialog))
+                 :title "Rename scenario"
                  :content  [m/TextField {:label "Name"
                                          :value (str (:value @rename-dialog))
                                          :on-change #(dispatch [:scenarios/save-key
