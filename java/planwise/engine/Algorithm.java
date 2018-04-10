@@ -1,14 +1,14 @@
 package planwise.engine;
 
 public class Algorithm {
-    public static float countPopulation(float[] popData,
-                                        float popNodata) {
+    public static long countPopulation(float[] popData,
+                                       float popNodata) {
         float sum = 0.0f;
         for (int i = 0; i < popData.length; i++) {
             if (popData[i] != popNodata)
                 sum += popData[i];
         }
-        return sum;
+        return (long) sum;
     }
 
     public static void multiplyPopulation(float[] popData,
@@ -20,18 +20,18 @@ public class Algorithm {
         }
     }
 
-    public static float countPopulationUnderCoverage(float[] popData,
-                                                     int popStride,
-                                                     float popNodata,
-                                                     byte[] covData,
-                                                     int covStride,
-                                                     byte covNodata,
-                                                     int popLeft,
-                                                     int popTop,
-                                                     int popRight,
-                                                     int popBottom,
-                                                     int covLeft,
-                                                     int covTop) {
+    public static long countPopulationUnderCoverage(float[] popData,
+                                                    int popStride,
+                                                    float popNodata,
+                                                    byte[] covData,
+                                                    int covStride,
+                                                    byte covNodata,
+                                                    int popLeft,
+                                                    int popTop,
+                                                    int popRight,
+                                                    int popBottom,
+                                                    int covLeft,
+                                                    int covTop) {
         float sum = 0.0f;
         int width = popRight - popLeft + 1;
         int popSkip = popStride - width;
@@ -50,7 +50,7 @@ public class Algorithm {
             popIdx += popSkip;
             covIdx += covSkip;
         }
-        return sum;
+        return (long) sum;
     }
 
     public static void multiplyPopulationUnderCoverage(float[] popData,
