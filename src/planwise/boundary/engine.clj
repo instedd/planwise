@@ -1,3 +1,5 @@
 (ns planwise.boundary.engine)
 
-(defprotocol Engine)
+(defprotocol Engine
+  (compute-initial-scenario [this project]
+    "Computes the initial scenario for a project"))
