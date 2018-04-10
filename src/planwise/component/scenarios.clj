@@ -68,7 +68,7 @@
   ;; TODO fail if updating initial. initial scenario should be readonly
   (assert (s/valid? ::model/change-set changeset))
   (let [db (get-db store)
-        project-id (:project-id (db-find-scenario db scenario-id))]
+        project-id (:project-id (db-find-scenario db {:id scenario-id}))]
     (db-update-scenario! db
                          {:name name
                           :id scenario-id

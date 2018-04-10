@@ -2,7 +2,7 @@
 
 (def initial-db
   {:view-state :current-scenario
-   :rename-dialog nil
+   :rename-dialog            nil
    :current-scenario         nil})
 
 (def initial-rename-dialog

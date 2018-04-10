@@ -19,6 +19,13 @@
      (let [scenario (scenarios/get-scenario service (Integer. id))]
        (if (nil? (:id scenario)) (not-found) (response scenario))))
 
+   (PUT "/:id" [id scenario as request]
+     (println "SCENARIO" scenario)
+     (let [id (Integer. id)
+           scenario  (assoc scenario :id id)]
+       (scenarios/update-scenario service id scenario)
+       (response (scenarios/get-scenario service id))))
+
    (POST "/:id/copy" [id as request]
      (let [{:keys [name project-id changeset]} (scenarios/get-scenario service (Integer. id))
            next-name (scenarios/next-scenario-name service project-id name)]

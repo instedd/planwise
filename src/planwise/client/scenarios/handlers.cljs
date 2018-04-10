@@ -64,6 +64,13 @@
 
 (rf/reg-event-fx
  :scenarios/update-scenario
- (fn [{:keys [db]} [_ algo]]
- ;; TODO
-   ))
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   (let [name (get-in db [:rename-dialog :value])
+         current-scenario (assoc (:current-scenario db) :name name)]
+
+     {:api  (api/update-scenario (:id current-scenario) current-scenario)
+      :db   (-> db
+                (assoc-in [:current-scenario :name] name)
+
+                (assoc-in [:view-state] :current-scenario))})))
