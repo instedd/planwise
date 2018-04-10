@@ -35,7 +35,7 @@
     [ui/full-screen (merge {:main-prop {:style {:position :relative}}
                             :main [simple-map]}
                            (common2/nav-params))
-     [:div [:h1 "Scenario " name] [edit/rename-button]]
+     [:div [:h1 name] [edit/rename-button]]
      [:hr]
      [:p "INCREASE IN PREAGNANCIES COVERAGE"]
      [:h2 "0 " "(0%)"]

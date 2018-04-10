@@ -75,5 +75,6 @@
          current-scenario (assoc (:current-scenario db) :name name)]
      {:api  (api/update-scenario (:id current-scenario) current-scenario)
       :db   (-> db
+                ;; do not reset rename-dialog to nil or dialog animation after <enter> will fail
                 (assoc-in [:current-scenario :name] name)
                 (assoc-in [:view-state] :current-scenario))})))
