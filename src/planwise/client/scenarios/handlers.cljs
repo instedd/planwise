@@ -7,11 +7,21 @@
 
 (def in-scenarios (rf/path [:scenarios]))
 
+;; Db events
+
 (rf/reg-event-db
  :scenarios/save-current-scenario
  in-scenarios
  (fn [db [_ scenario]]
    (assoc db :current-scenario scenario)))
+
+(rf/reg-event-db
+ :scenarios/save-key
+ in-scenarios
+ (fn [db [_ path value]]
+   (assoc-in db path value)))
+
+;; Loading scenario view
 
 (rf/reg-event-fx
  :scenarios/scenario-not-found
@@ -41,36 +51,29 @@
 ;; Editing scenario
 
 (rf/reg-event-db
- :scenarios/open-dialog
+ :scenarios/open-rename-dialog
  in-scenarios
- (fn [db _]
+ (fn [db [_]]
    (let [name (get-in db [:current-scenario :name])]
      (assoc db
             :view-state :rename-dialog
             :rename-dialog {:value name}))))
 
 (rf/reg-event-db
- :scenarios/cancel-dialog
- (fn [db _]
+ :scenarios/cancel-rename-dialog
+ in-scenarios
+ (fn [db [_]]
    (assoc db
           :view-state :current-scenario
           :rename-dialog nil)))
 
-(rf/reg-event-db
- :scenarios/save-key
- in-scenarios
- (fn [db [_ path value]]
-   (assoc-in db path value)))
-
 (rf/reg-event-fx
- :scenarios/update-scenario
+ :scenarios/accept-rename-dialog
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [name (get-in db [:rename-dialog :value])
          current-scenario (assoc (:current-scenario db) :name name)]
-
      {:api  (api/update-scenario (:id current-scenario) current-scenario)
       :db   (-> db
                 (assoc-in [:current-scenario :name] name)
-
                 (assoc-in [:view-state] :current-scenario))})))

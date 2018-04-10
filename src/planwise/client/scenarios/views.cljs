@@ -7,7 +7,7 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.routes :as routes]
             [planwise.client.mapping :as mapping]
-            [planwise.client.scenarios.dialog :refer [new-dialog]]
+            [planwise.client.scenarios.edit :as edit]
             [planwise.client.components.common :as common]
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]))
@@ -29,20 +29,13 @@
              :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
    "Create new scenario from here"])
 
-(defn- update-name-button
-  []
-  [m/Button {:id "edit-name-dialog"
-             :on-click #(dispatch [:scenarios/open-dialog])}
-   "Edit name"])
-
-
 (defn display-current-scenario
   [current-scenario]
   (let [{:keys [name investment demand-coverage]} current-scenario]
     [ui/full-screen (merge {:main-prop {:style {:position :relative}}
                             :main [simple-map]}
                            (common2/nav-params))
-     [:div [:h1 "Scenario " name] [update-name-button]]
+     [:div [:h1 "Scenario " name] [edit/rename-button]]
      [:hr]
      [:p "INCREASE IN PREAGNANCIES COVERAGE"]
      [:h2 "0 " "(0%)"]
@@ -51,7 +44,7 @@
      [:h2 "K " investment]
      [:hr]
      [create-new-scenario current-scenario]
-     [new-dialog]]))
+     [edit/rename-scenario-dialog]]))
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])

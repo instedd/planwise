@@ -42,7 +42,7 @@ RETURNING id;
 -- :name db-update-scenario! :! :1
 UPDATE scenarios
   SET name = :name, investment = :investment,
-  "demand-coverage" = :demand-coverage, changeset = :changeset
+  "demand-coverage" = :demand-coverage, changeset = :changeset, label = :label
 WHERE
   id = :id
 

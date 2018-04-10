@@ -63,15 +63,15 @@
                         :label nil}))
 
 (defn update-scenario
-  [store scenario-id {:keys [name changeset]}]
+  [store {:keys [id name changeset]}]
   ;; TODO schedule demand computation
   ;; TODO fail if updating initial. initial scenario should be readonly
   (assert (s/valid? ::model/change-set changeset))
   (let [db (get-db store)
-        project-id (:project-id (db-find-scenario db {:id scenario-id}))]
+        project-id (:project-id (db-find-scenario db {:id id}))]
     (db-update-scenario! db
                          {:name name
-                          :id scenario-id
+                          :id id
                           :investment (sum-investments changeset)
                           :demand-coverage nil
                           :changeset (pr-str changeset)
@@ -107,8 +107,8 @@
     (create-initial-scenario store project-id))
   (create-scenario [store project-id props]
     (create-scenario store project-id props))
-  (update-scenario [store scenario-id props]
-    (update-scenario store scenario-id props))
+  (update-scenario [store props]
+    (update-scenario store props))
   (next-scenario-name [store project-id name]
     (next-scenario-name store project-id name)))
 

@@ -20,10 +20,9 @@
        (if (nil? (:id scenario)) (not-found) (response scenario))))
 
    (PUT "/:id" [id scenario as request]
-     (println "SCENARIO" scenario)
      (let [id (Integer. id)
            scenario  (assoc scenario :id id)]
-       (scenarios/update-scenario service id scenario)
+       (scenarios/update-scenario service scenario)
        (response (scenarios/get-scenario service id))))
 
    (POST "/:id/copy" [id as request]
