@@ -25,7 +25,8 @@
 (defmulti job-next-task
   "Retrieve the next task to execute for this job. Must return a map with a
   :state key containing the next state, :task-id with an internal task
-  identifier and :task-fn with the task implementation itself."
+  identifier and :task-fn with the task implementation itself. A nil state
+  signals a finished job."
   (fn [job state] (job-type job)))
 
 (defmethod job-next-task :default
