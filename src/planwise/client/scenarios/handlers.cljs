@@ -78,3 +78,23 @@
                 ;; do not reset rename-dialog to nil or dialog animation after <enter> will fail
                 (assoc-in [:current-scenario :name] name)
                 (assoc-in [:view-state] :current-scenario))})))
+
+;;Creating new-sites
+
+(rf/reg-event-db
+ :scenarios/adding-new-site
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :view-state :new-site)))
+
+(rf/reg-event-fx
+ :scenarios/create-site
+ in-scenarios
+ (fn [{:keys [db]} [_ {:keys [lat lon]}]]
+   (let [{:keys [current-scenario]} db
+         new-site  (assoc db/initial-new-site :location {:lat lat :lon lon})
+         current-scenario (update current-scenario  :changeset #(conj % new-site))]
+     {:api  (api/update-scenario (:id current-scenario) current-scenario)
+      :db   (-> db
+                (update-in [:current-scenario :changeset] #(conj % new-site))
+                (assoc-in [:view-state] :current-scenario))})))

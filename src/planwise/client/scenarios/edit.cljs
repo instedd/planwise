@@ -3,6 +3,7 @@
             [reagent.core :as r]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
+            [planwise.client.ui.common :as ui]
             [planwise.client.scenarios.db :as db]
             [planwise.client.utils :as utils]
             [planwise.client.routes :as routes]
@@ -46,3 +47,8 @@
                                                                   [:rename-dialog :value] (-> % .-target .-value)])}]
                    :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
                    :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
+
+(defn add-site-button []
+  [m/Fab {:id "add-site"
+          :class "MyClass"
+          :on-click #(dispatch [:scenarios/adding-new-site])} "star"])

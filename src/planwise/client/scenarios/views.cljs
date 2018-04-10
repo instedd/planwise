@@ -12,16 +12,28 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]))
 
-(defn simple-map []
-  (let [position  (r/atom mapping/map-preview-position)
-        zoom      (r/atom 3)]
+(defn simple-map
+  []
+  (let [state    (subscribe [:scenarios/view-state])
+        colors   [:red :blue :green :yellow :lime]
+        position (r/atom mapping/map-preview-position)
+        zoom     (r/atom 3)
+        point    (r/atom [])
+        add-point (fn [lat lon] (do (swap! point conj {:lat lat
+                                                       :lon lon
+                                                       :color (first (shuffle colors))})
+                                    (dispatch [:scenarios/create-site {:lat lat
+                                                                       :lon lon}])))]
     (fn []
       [:div.map-container [l/map-widget {:zoom @zoom
                                          :position @position
                                          :on-position-changed #(reset! position %)
                                          :on-zoom-changed #(reset! zoom %)
+                                         :on-click (cond  (= @state :new-site) add-point)
                                          :controls []}
-                           mapping/default-base-tile-layer]])))
+                           mapping/default-base-tile-layer
+                           [:point-layer {:points @point
+                                          :style-fn #(select-keys % [:weight :radius :color])}]]])))
 
 (defn- create-new-scenario
   [current-scenario]
@@ -42,6 +54,7 @@
      [:h "to a total of " demand-coverage]
      [:p "INVESTMENT REQUIRED"]
      [:h2 "K " investment]
+     [edit/add-site-button]
      [:hr]
      [create-new-scenario current-scenario]
      [edit/rename-scenario-dialog]]))
