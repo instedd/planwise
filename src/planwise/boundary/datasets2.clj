@@ -13,6 +13,9 @@
     "Create and import a CSV file atomically")
 
   (new-processing-job [this dataset-id]
-    "Creates a new job state for processing the dataset asynchronously"))
+    "Creates a new job state for processing the dataset asynchronously")
+
+  (get-sites-with-coverage-in-region [this dataset-id version filter-options]
+    "Retrieves the sites for a version of a dataset located inside the region"))
 
 ;; Preprocessing dataset job type: ::preprocess-dataset
