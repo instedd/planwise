@@ -42,8 +42,8 @@ for i in $LEVELS; do
     SELECT
       '${COUNTRY}',
       feat#>>'{properties,name}' AS name,
-      (feat#>>'{properties,admin_level}')::integer AS admin_level,
-      ST_SetSRID(ST_CollectionExtract(ST_GeomFromGeoJSON(feat->>'geometry'), 3), 4326) as the_geom
+      ${i},
+      ST_SetSRID(ST_CollectionExtract(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 3), 4326) as the_geom
     FROM (
       SELECT json_array_elements(fc->'features') AS feat
       FROM data
