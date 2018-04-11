@@ -52,11 +52,17 @@
                                                :demand-coverage nil
                                                :changeset       "[]"
                                                :label           "initial"}))]
-    (jr/queue-job (:jobrunner store) [::boundary/compute-initial-scenario scenario-id] nil)))
+    (jr/queue-job (:jobrunner store)
+                  [::boundary/compute-initial-scenario scenario-id]
+                  {:store store
+                   :project project})))
 
 (defmethod jr/job-next-task ::boundary/compute-initial-scenario
-  [[_ scenario-id] {:keys [store] :as state}]
+  [[_ scenario-id] {:keys [store project] :as state}]
   (info "computing initial scenario for" scenario-id)
+  (let [engine (:engine store)
+        result (engine/compute-initial-scenario engine project)]
+    (info "intial scenario computed" result))
   {:state nil})
 
 (defn create-scenario

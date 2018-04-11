@@ -5,6 +5,7 @@
             [planwise.engine.raster :as raster]
             [planwise.engine.demand :as demand]
             [integrant.core :as ig]
+            [clojure.java.io :as io]
             [taoensso.timbre :as timbre]))
 
 (timbre/refer-timbre)
@@ -50,9 +51,11 @@
   [engine project]
   (let [demand-raster (project-base-demand project)
         sites         (project-sites engine project)
-        dataset-id    (:dataset-id project)]
-    (let [initial-demand (demand/count-population demand-raster)]
-      (debug "Initial demand:" initial-demand))
+        dataset-id    (:dataset-id project)
+        project-id    (:id project)
+        source-demand (demand/count-population demand-raster)
+        raster-path   (str "data/scenarios/" project-id "/initial.tif")]
+    (debug "Source population demand:" source-demand)
     (dorun (for [site sites]
              (let [capacity             (:capacity site)
                    coverage-name        (:raster site)
@@ -63,7 +66,13 @@
                (when-not (zero? population-reachable)
                  (let [factor (- 1 (min 1 (/ capacity population-reachable)))]
                    (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
-    demand-raster))
+    (.mkdirs (.getParentFile (io/file raster-path)))
+    (raster/write-raster demand-raster raster-path)
+    (let [initial-demand (demand/count-population demand-raster)]
+      {:raster-path    raster-path
+       :source-demand  source-demand
+       :pending-demand initial-demand
+       :covered-demand (- source-demand initial-demand)})))
 
 (defn compute-scenario
   [scenario]
@@ -93,5 +102,4 @@
 
   (project-sites (new-engine) (projects2/get-project projects2 5))
 
-  (-> (compute-initial-scenario (new-engine) (projects2/get-project projects2 5))
-      (demand/count-population)))
+  (compute-initial-scenario (new-engine) (projects2/get-project projects2 5)))
