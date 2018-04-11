@@ -13,7 +13,8 @@
   (-> config
       (default [:demographics :target] nil)
       (default [:actions :budget] nil)
-      (default [:coverage :filter-options] {})))
+      (default [:coverage :filter-options] {})
+      (default [:sites :capacity] 1)))
 
 (s/def ::target (s/nilable number?))
 (s/def ::budget (s/nilable number?))
@@ -22,8 +23,9 @@
 (s/def ::demographics (s/keys :req-un [::target]))
 (s/def ::actions (s/keys :req-un [::budget]))
 (s/def ::coverage (s/keys :req-un [::filter-options]))
+(s/def ::sites (s/keys :req-un [::capacity]))
 
-(s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions ::coverage])))
+(s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions ::coverage ::sites])))
 (s/def ::id number?)
 (s/def ::name string?)
 (s/def ::dataset-id (s/nilable number?))

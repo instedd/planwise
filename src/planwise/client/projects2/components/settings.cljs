@@ -67,12 +67,16 @@
            [population-dropdown-component {:label "Sources"
                                            :value (:population-source-id @current-project)
                                            :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
-           [current-project-input "Target" [:config :demographics :target] valid-input]
            [current-project-input "Unit" [:config :demographics :unit-name] identity]
+           [current-project-input "Target" [:config :demographics :target] valid-input]
+           [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]
+
            [:h2 "Sites"]
            [datasets-dropdown-component {:label "Dataset"
                                          :value (:dataset-id @current-project)
                                          :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
+           [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
+           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
            [:h2 "Coverage"]
            [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
                                                :value (get-in @current-project [:config :coverage :filter-options])
