@@ -49,15 +49,17 @@
 
 (defn compute-initial-scenario
   [engine project]
-  (let [demand-raster (project-base-demand project)
-        sites         (project-sites engine project)
-        dataset-id    (:dataset-id project)
-        project-id    (:id project)
-        source-demand (demand/count-population demand-raster)
-        raster-path   (str "scenarios/" project-id "/initial.tif")]
+  (let [demand-raster  (project-base-demand project)
+        sites          (project-sites engine project)
+        dataset-id     (:dataset-id project)
+        project-id     (:id project)
+        project-config (:config project)
+        capacity       (get-in project-config [:sites :capacity] 1)
+        source-demand  (demand/count-population demand-raster)
+        raster-path    (str "scenarios/" project-id "/initial.tif")]
     (debug "Source population demand:" source-demand)
     (dorun (for [site sites]
-             (let [capacity             (:capacity site)
+             (let [capacity             (* capacity (:capacity site))
                    coverage-name        (:raster site)
                    coverage-path        (str "data/coverage/" dataset-id "/" coverage-name ".tif")
                    coverage-raster      (raster/read-raster coverage-path)
