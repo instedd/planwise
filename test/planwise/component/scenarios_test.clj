@@ -2,12 +2,14 @@
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io]
             [planwise.component.scenarios :as scenarios]
+            [planwise.boundary.projects2 :as projects2]
             [planwise.model.scenarios :as model]
             [planwise.test-system :as test-system]
             [planwise.util.collections :refer [find-by]]
             [clj-time.core :as time]
             [integrant.core :as ig]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [planwise.boundary.projects2 :as projects2]))
 
 (def owner-id 10)
 (def project-id 20)
@@ -44,6 +46,7 @@
   ([data]
    (test-system/config
     {:planwise.test/fixtures       {:fixtures data}
+     :planwise.component/projects2 {:db (ig/ref :duct.database/sql)}
      :planwise.component/scenarios {:db (ig/ref :duct.database/sql)}})))
 
 ;; ----------------------------------------------------------------------
@@ -58,7 +61,9 @@
 (deftest initial-scenario-has-empty-changeset
   (test-system/with-system (test-config)
     (let [store       (:planwise.component/scenarios system)
-          scenario-id (:id (scenarios/create-initial-scenario store project-id))
+          projects2   (:planwise.component/projects2 system)
+          project     (projects2/get-project projects2 project-id)
+          scenario-id (:id (scenarios/create-initial-scenario store project))
           scenario    (scenarios/get-scenario store scenario-id)]
       (is (= (:name scenario) "Initial"))
       (is (= (:project-id scenario) project-id))

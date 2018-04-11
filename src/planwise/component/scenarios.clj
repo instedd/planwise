@@ -42,15 +42,16 @@
       (update :changeset edn/read-string)))
 
 (defn create-initial-scenario
-  [store project-id]
+  [store project]
   ;; TODO schedule demand computation
-  (db-create-scenario! (get-db store)
-                       {:name "Initial"
-                        :project-id project-id
-                        :investment 0
-                        :demand-coverage nil
-                        :changeset "[]"
-                        :label "initial"}))
+  (let [project-id (:id project)]
+    (db-create-scenario! (get-db store)
+                         {:name "Initial"
+                          :project-id project-id
+                          :investment 0
+                          :demand-coverage nil
+                          :changeset "[]"
+                          :label "initial"})))
 
 (defn create-scenario
   [store project-id {:keys [name changeset]}]
@@ -105,8 +106,8 @@
     (list-scenarios store project-id))
   (get-scenario [store scenario-id]
     (get-scenario store scenario-id))
-  (create-initial-scenario [store project-id]
-    (create-initial-scenario store project-id))
+  (create-initial-scenario [store project]
+    (create-initial-scenario store project))
   (create-scenario [store project-id props]
     (create-scenario store project-id props))
   (update-scenario [store props]
