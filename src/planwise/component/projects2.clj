@@ -46,7 +46,9 @@
 
 (defn start-project
   [store project-id]
-  (db-start-project! (get-db store) {:id project-id}))
+  (db-start-project! (get-db store) {:id project-id})
+  (let [project (get-project store project-id)]
+    (scenarios/create-initial-scenario (:scenarios store) project)))
 
 (defrecord SitesProjectsStore [db scenarios]
   boundary/Projects2
@@ -68,4 +70,5 @@
 (comment
   ;; REPL testing
 
-  (start-project (map->SitesProjectsStore {:db (planwise.repl/db)}) 5))
+  (def store (:planwise.component/projects2 integrant.repl.state/system))
+  (start-project store 5))
