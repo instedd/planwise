@@ -1,23 +1,54 @@
 const fs = require('fs'),
-      argv = require('minimist')(process.argv.slice(2)),
       request = require('request'),
-      //extract = require('extract-zip'),
       AdmZip = require('adm-zip'),
       xmldom = new (require('xmldom').DOMParser)(),
       tj = require('togeojson'),
       mkdirp = require('mkdirp'),
       path = require('path'),
-      { URL } = require('url');
+      { URL } = require('url'),
+      commander = require('commander');
 
 (function main(argv) {
 
-  const countryCode = argv._[0]
-  console.info(`# Starting ... ${countryCode}`)
+  let countryCode
+  let outputPath
+  let tmpPath
+
+  commander
+    .usage('<country-code> [output-path] [tmp-path]')
+    .arguments('<country-code> [output-path] [tmp-path]')
+    .action((code, output, tmp) => {
+      countryCode = code
+      outputPath = output
+      tmpPath = tmp
+    })
+
+  commander.on('--help', () => {
+    console.log('')
+    console.log('  Examples:')
+    console.log('')
+    console.log('    $ gadm2geojson ARG ../../data/geojson')
+    console.log('    $ gadm2geojson ARG ../../data/geojson /tmp/geojson')
+    console.log('')
+  })
+
+  commander.parse(argv)
+
+  if(countryCode === undefined) {
+    commander.outputHelp()
+    process.exit(1)
+  }
+
+  console.log(`> Country code: ${countryCode}`)
+  console.log(`> Output path: ${outputPath}`)
+  console.log(`> Temporary path: ${tmpPath}`)
+
+  console.info(`> Starting ... ${countryCode}`)
 
   const config = {
     path: {
-      out: argv._[1] || '/output',
-      tmp: argv._[2] || '/tmp'
+      out: outputPath || '/output',
+      tmp: tmpPath || '/tmp'
     },
     url: {
       base: 'http://biogeo.ucdavis.edu/data/gadm2.8/kmz/'
@@ -27,13 +58,9 @@ const fs = require('fs'),
   Promise.resolve()
     .then(() => processCountry(countryCode, 0, config))
     .then(() => processCountry(countryCode, 1, config))
-    .then(function() {
-      console.log("# All done!!")
-    })
-    .catch(function(err) {
-      console.error(`ERROR: ${err}`)
-    })
-})(argv)
+    .then(() => console.log("> All done!!"))
+    .catch((err) => console.error(`> ERROR: ${err}`))
+})(process.argv)
 
 /******************************************************************************
  * Aux functions
@@ -83,32 +110,40 @@ const toGeoJsonAt = function(geojsonFilename, outPath) {
   }
 }
 
-const download = function(url, dest, cbSuccess, cbError) {
+const downloadAt = function(url, kmzFilename, outPath) {
   return new Promise(function(resolve, reject) {
-    const file = fs.createWriteStream(dest)
 
-    request
-      .get(url)
-      .on('response', function(response) {
-        if (response.statusCode !== 200) {
-          return reject('Response status was ' + response.statusCode)
-        }
-      })
-      .on('error', function (err) {
-        fs.unlink(dest);
+    mkdirp(outPath, function(err) {
+      if(err) {
+        return reject(err)
+      }
+
+      const outPathFile = path.join(outPath, kmzFilename)
+      const file = fs.createWriteStream(outPathFile)
+
+      request
+        .get(url)
+        .on('response', function(response) {
+          if (response.statusCode !== 200) {
+            return reject('Response status was ' + response.statusCode)
+          }
+        })
+        .on('error', function (err) {
+          fs.unlink(outPathFile);
+          return reject(err.message)
+        })
+        .pipe(file)
+
+      file.on('finish', function() {
+        file.close(function() {
+          resolve(outPathFile)
+        })
+      });
+
+      file.on('error', function(err) {
+        fs.unlink(outPathFile)
         return reject(err.message)
       })
-      .pipe(file)
-
-    file.on('finish', function() {
-      file.close(function() {
-        resolve(dest)
-      })
-    });
-
-    file.on('error', function(err) {
-      fs.unlink(dest)
-      return reject(err.message)
     })
   })
 }
@@ -122,10 +157,9 @@ const processCountry = function(code, level, config) {
   const geojsonFilename = `${filename}.geojson`
 
   const url = new URL(kmzFilename, config.url.base)
-  const downloadPath = path.join(config.path.tmp, kmzFilename)
   const outPath = path.join(config.path.out, code)
 
-  return download(url.href, downloadPath)
+  return downloadAt(url.href, kmzFilename, config.path.tmp)
           .then(extractZipContentAt(kmlFilename, config.path.tmp))
           .then(toGeoJsonAt(geojsonFilename, outPath))
           .then((geojsonFile) => console.info(`  -> GeoJson file successfuly created at: ${geojsonFile}`))
