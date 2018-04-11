@@ -7,7 +7,12 @@
 ```
 $ cd scripts/geojson
 $ npm install
-$ node index.js ARG ../../data/geojson
+$ ./gadm2geojson ARG ../../data/geojson
+```
+
+__Note:__ If you prefer to run the script directly with Node.js, you could replace the last line with:
+```
+$ node gadm2geojson.js ARG ../../data/geojson
 ```
 
 ### To use docker:

@@ -5,33 +5,19 @@
 
 ### Regions file
 
-__Update Fix #285:__
-
 See script at `/scripts/geojson` to download KMZ files from [GADM](https://gadm.org/) and convert them to geojson.
-
-__Before:__
-
-~~Download former MapZen boundary information and store it as ./data/uruguay_geojson.tgz~~
-~~$ curl -L https://github.com/instedd/planwise/files/1803300/uruguay_geojson.tar.gz -o ./data/uruguay_geojson.tgz~~
 
 ### Population file
 * Download file `URY_ppp_v2b_2015.tif` from [worldpop.org.ok - Uruguay 100m Population](http://www.worldpop.org.uk/data/summary/?id=29) (click in "Browse Individual Files" and then "Switch to file view")
 * Move file to folder: `./data`
 
 ## Run Script
-__Update Fix #285:__
 
 Instead of using the country name as 3rd parameter. Now we use the country code: [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) 
  
 ```diff
 $ docker-compose exec app bash
 /app$ lein import-population "ury_2015" "URY_ppp_v2b_2015.tif" "URY"
-```
-
-__Before:__
-```diff
-$ docker-compose exec app bash
-/app$ lein import-population "ury_2015" "URY_ppp_v2b_2015.tif" "uruguay"
 ```
 
 ### Verbose option
