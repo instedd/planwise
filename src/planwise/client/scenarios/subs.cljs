@@ -6,3 +6,12 @@
  (fn [db _]
    (get-in db [:scenarios :current-scenario])))
 
+(rf/reg-sub
+ :scenarios/view-state
+ (fn [db _]
+   (get-in db [:scenarios :view-state])))
+
+(rf/reg-sub
+ :scenarios/rename-dialog
+ (fn [db _]
+   (get-in db [:scenarios :rename-dialog])))

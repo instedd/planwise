@@ -1,4 +1,6 @@
 (ns planwise.client.scenarios.db)
 
 (def initial-db
-  {:current-scenario         nil})
+  {:view-state :current-scenario
+   :rename-dialog            nil
+   :current-scenario         nil})

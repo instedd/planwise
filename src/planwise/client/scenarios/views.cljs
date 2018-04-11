@@ -7,6 +7,8 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.routes :as routes]
             [planwise.client.mapping :as mapping]
+            [planwise.client.scenarios.edit :as edit]
+            [planwise.client.components.common :as common]
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]))
 
@@ -33,7 +35,7 @@
     [ui/full-screen (merge {:main-prop {:style {:position :relative}}
                             :main [simple-map]}
                            (common2/nav-params))
-     [:h1 "Scenario " name]
+     [:div [:h1 name] [edit/rename-button]]
      [:hr]
      [:p "INCREASE IN PREAGNANCIES COVERAGE"]
      [:h2 "0 " "(0%)"]
@@ -41,10 +43,12 @@
      [:p "INVESTMENT REQUIRED"]
      [:h2 "K " investment]
      [:hr]
-     [create-new-scenario current-scenario]]))
+     [create-new-scenario current-scenario]
+     [edit/rename-scenario-dialog]]))
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])
+        state (subscribe [:scenarios/view-state])
         current-scenario (subscribe [:scenarios/current-scenario])
         current-project  (subscribe [:projects2/current-project])]
     (fn []

@@ -9,3 +9,9 @@
   [id]
   {:method    :post
    :uri       (str "/api/scenarios/" id "/copy")})
+
+(defn- update-scenario
+  [id scenario]
+  {:method    :put
+   :params    {:scenario scenario}
+   :uri       (str "/api/scenarios/" id)})
