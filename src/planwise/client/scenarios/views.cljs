@@ -8,6 +8,7 @@
             [planwise.client.routes :as routes]
             [planwise.client.mapping :as mapping]
             [planwise.client.scenarios.edit :as edit]
+            [planwise.client.scenarios.changeset :as changeset]
             [planwise.client.components.common :as common]
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]))
@@ -55,9 +56,11 @@
      [:p "INVESTMENT REQUIRED"]
      [:h2 "K " investment]
      [edit/add-site-button]
+     [changeset/listing-component current-scenario]
      [:hr]
      [create-new-scenario current-scenario]
-     [edit/rename-scenario-dialog]]))
+     [edit/rename-scenario-dialog]
+     [edit/site-dialog]]))
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])

@@ -92,9 +92,35 @@
  in-scenarios
  (fn [{:keys [db]} [_ {:keys [lat lon]}]]
    (let [{:keys [current-scenario]} db
-         new-site  (assoc db/initial-new-site :location {:lat lat :lon lon})
+         new-site  (assoc db/initial-site :location {:lat lat :lon lon})
          current-scenario (update current-scenario  :changeset #(conj % new-site))]
      {:api  (api/update-scenario (:id current-scenario) current-scenario)
       :db   (-> db
                 (update-in [:current-scenario :changeset] #(conj % new-site))
                 (assoc-in [:view-state] :current-scenario))})))
+
+(rf/reg-event-db
+ :scenarios/open-site-dialog
+ in-scenarios
+ (fn [db [_ site]]
+   (assoc db
+          :view-state :edit-site
+          :edit-site site)))
+
+(rf/reg-event-db
+ :scenarios/accept-site-dialog
+ in-scenarios
+ (fn [{:keys [site]} [_]]
+   (let [current-scenario (update current-scenario  :changeset #(conj % site))]
+     {:api  (api/update-scenario (:id current-scenario) current-scenario)
+      :db   (-> db
+                (update-in [:current-scenario :changeset] #(conj % site))
+                (assoc-in [:view-state] :current-scenario))})))
+
+(rf/reg-event-db
+ :scenarios/cancel-site-dialog
+ in-scenarios
+ (fn [db [_]]
+   (assoc db
+          :view-state :current-scenario
+          :edit-site nil)))

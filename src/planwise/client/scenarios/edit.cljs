@@ -52,3 +52,37 @@
   [m/Fab {:id "add-site"
           :class "MyClass"
           :on-click #(dispatch [:scenarios/adding-new-site])} "star"])
+
+(defn site-button
+  [site]
+  [m/Button {:id "edit-site-dialog"
+             :on-click #(dispatch [:scenarios/open-site-dialog site])}
+   "Edit Site"])
+
+(defn input
+  [{:keys [value change-fn]}]
+  [m/TextField {:type "text"
+                :on-change  #(-> % .-target .-value change-fn)
+                :value value}])
+
+(defn site-dialog-content
+  [{:keys [investment capacity]}]
+  [:div
+   [:h2 "Investment"]
+   [input {:value investment
+           :on-change #(dispatch [:scenarios/save-key [:site :investment] %])}]
+   [:h2 "Capacity"]
+   [input {:value investment
+           :on-change #(dispatch [:scenarios/save-key [:site :capacity] %])}]])
+
+(defn site-dialog
+  []
+  (let [site (subscribe [:scenarios/edit-site])
+        view-state (subscribe [:scenarios/view-state])]
+    (fn []
+      (new-dialog {:open? (= @view-state :edit-site)
+                   :title (str "Edit site " (:id @site))
+                   :content (site-dialog-content @site)
+                   :accept-fn  #(dispatch [:scenarios/accept-site-dialog])
+                   :cancel-fn  #(dispatch [:scenarios/cancel-site-dialog])}))))
+

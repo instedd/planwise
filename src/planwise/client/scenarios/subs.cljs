@@ -15,3 +15,8 @@
  :scenarios/rename-dialog
  (fn [db _]
    (get-in db [:scenarios :rename-dialog])))
+
+(rf/reg-sub
+ :scenarios/edit-site
+ (fn [db _]
+   (get-in db [:scenarios :edit-site])))
