@@ -46,6 +46,14 @@ UPDATE scenarios
 WHERE
   id = :id
 
+-- :name db-update-scenario-state! :! :1
+UPDATE "scenarios"
+  SET "raster" = :raster,
+      "demand-coverage" = :demand-coverage,
+      "state" = :state,
+      "updated-at" = NOW()
+  WHERE "id" = :id;
+
 -- :name db-list-scenarios-names :?
 SELECT name
 FROM scenarios

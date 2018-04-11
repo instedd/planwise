@@ -54,7 +54,7 @@
         dataset-id    (:dataset-id project)
         project-id    (:id project)
         source-demand (demand/count-population demand-raster)
-        raster-path   (str "data/scenarios/" project-id "/initial.tif")]
+        raster-path   (str "scenarios/" project-id "/initial.tif")]
     (debug "Source population demand:" source-demand)
     (dorun (for [site sites]
              (let [capacity             (:capacity site)
@@ -67,7 +67,7 @@
                  (let [factor (- 1 (min 1 (/ capacity population-reachable)))]
                    (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
     (.mkdirs (.getParentFile (io/file raster-path)))
-    (raster/write-raster demand-raster raster-path)
+    (raster/write-raster demand-raster (str "data/" raster-path))
     (let [initial-demand (demand/count-population demand-raster)]
       {:raster-path    raster-path
        :source-demand  source-demand

@@ -59,10 +59,15 @@
 
 (defmethod jr/job-next-task ::boundary/compute-initial-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
-  (info "computing initial scenario for" scenario-id)
+  (info "Computing initial scenario" scenario-id)
   (let [engine (:engine store)
         result (engine/compute-initial-scenario engine project)]
-    (info "intial scenario computed" result))
+    (info "Intial scenario computed" result)
+    (db-update-scenario-state! (get-db store)
+                               {:id              scenario-id
+                                :raster          (:raster-path result)
+                                :demand-coverage (:covered-demand result)
+                                :state           "done"}))
   {:state nil})
 
 (defn create-scenario
