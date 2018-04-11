@@ -45,8 +45,7 @@
 
 (defn start-project
   [store project-id]
-  (db-update-state-project (get-db store) {:id project-id
-                                           :state "started"}))
+  (db-start-project! (get-db store) {:id project-id}))
 
 (defrecord SitesProjectsStore [db]
   boundary/Projects2
@@ -64,3 +63,8 @@
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]
   (map->SitesProjectsStore config))
+
+(comment
+  ;; REPL testing
+
+  (start-project (map->SitesProjectsStore {:db (planwise.repl/db)}) 5))
