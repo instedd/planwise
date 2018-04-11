@@ -170,8 +170,7 @@
   :coverage    #ig/ref :planwise.component/coverage}
 
  :planwise.component/engine
- {:datasets2   #ig/ref :planwise.component/datasets2
-  :projects2   #ig/ref :planwise.component/projects2}
+ {:datasets2   #ig/ref :planwise.component/datasets2}
 
  :planwise.component/facilities
  {:db          #ig/ref :duct.database/sql
@@ -213,7 +212,8 @@
   :mailer      #ig/ref :planwise.component/mailer}
 
  :planwise.component/projects2
- {:db          #ig/ref :duct.database/sql}
+ {:db          #ig/ref :duct.database/sql
+  :scenarios   #ig/ref :planwise.component/scenarios}
 
  :planwise.component/regions
  {:db          #ig/ref :duct.database/sql}
@@ -230,7 +230,9 @@
   :scripts     #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
 
  :planwise.component/scenarios
- {:db          #ig/ref :duct.database/sql}
+ {:db          #ig/ref :duct.database/sql
+  :engine      #ig/ref :planwise.component/engine
+  :jobrunner   #ig/ref :planwise.component/jobrunner}
 
  :planwise.component/users
  {:db          #ig/ref :duct.database/sql}}

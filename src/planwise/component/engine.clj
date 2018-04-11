@@ -69,7 +69,7 @@
   [scenario]
   scenario)
 
-(defrecord Engine [projects2 datasets2]
+(defrecord Engine [datasets2]
   boundary/Engine
   (compute-initial-scenario [engine project]
     (compute-initial-scenario engine project)))
@@ -85,7 +85,7 @@
   (def datasets2 (:planwise.component/datasets2 integrant.repl.state/system))
 
   (defn new-engine []
-    (map->Engine {:projects2 projects2 :datasets2 datasets2}))
+    (map->Engine {:datasets2 datasets2}))
 
   (projects2/get-project projects2 5)
 

@@ -1,5 +1,7 @@
 (ns planwise.component.scenarios
   (:require [planwise.boundary.scenarios :as boundary]
+            [planwise.boundary.engine :as engine]
+            [planwise.component.jobrunner :as jobrunner]
             [planwise.model.scenarios :as model]
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
@@ -97,7 +99,7 @@
        (cons name)
        (util-str/next-name)))
 
-(defrecord ScenariosStore [db]
+(defrecord ScenariosStore [db engine jobrunner]
   boundary/Scenarios
   (list-scenarios [store project-id]
     (list-scenarios store project-id))

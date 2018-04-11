@@ -1,5 +1,6 @@
 (ns planwise.component.projects2
   (:require [planwise.boundary.projects2 :as boundary]
+            [planwise.boundary.scenarios :as scenarios]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
@@ -47,7 +48,7 @@
   [store project-id]
   (db-start-project! (get-db store) {:id project-id}))
 
-(defrecord SitesProjectsStore [db]
+(defrecord SitesProjectsStore [db scenarios]
   boundary/Projects2
   (create-project [store owner-id]
     (create-project store owner-id))
