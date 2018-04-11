@@ -1,8 +1,10 @@
 (ns planwise.component.scenarios-test
   (:require [clojure.test :refer :all]
+            [shrubbery.core :refer :all]
             [clojure.java.io :as io]
             [planwise.component.scenarios :as scenarios]
             [planwise.boundary.projects2 :as projects2]
+            [planwise.boundary.jobrunner :as jobrunner]
             [planwise.model.scenarios :as model]
             [planwise.test-system :as test-system]
             [planwise.util.collections :refer [find-by]]
@@ -47,7 +49,9 @@
    (test-system/config
     {:planwise.test/fixtures       {:fixtures data}
      :planwise.component/projects2 {:db (ig/ref :duct.database/sql)}
-     :planwise.component/scenarios {:db (ig/ref :duct.database/sql)}})))
+     :planwise.component/scenarios {:db (ig/ref :duct.database/sql)
+                                    :jobrunner (stub jobrunner/JobRunner
+                                                     {:queue-job :enqueued})}})))
 
 ;; ----------------------------------------------------------------------
 ;; Testing scenario's creation
@@ -63,7 +67,7 @@
     (let [store       (:planwise.component/scenarios system)
           projects2   (:planwise.component/projects2 system)
           project     (projects2/get-project projects2 project-id)
-          scenario-id (:id (scenarios/create-initial-scenario store project))
+          scenario-id (scenarios/create-initial-scenario store project)
           scenario    (scenarios/get-scenario store scenario-id)]
       (is (= (:name scenario) "Initial"))
       (is (= (:project-id scenario) project-id))

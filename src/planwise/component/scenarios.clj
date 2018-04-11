@@ -1,7 +1,7 @@
 (ns planwise.component.scenarios
   (:require [planwise.boundary.scenarios :as boundary]
             [planwise.boundary.engine :as engine]
-            [planwise.component.jobrunner :as jr]
+            [planwise.boundary.jobrunner :as jr]
             [planwise.model.scenarios :as model]
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
@@ -43,7 +43,6 @@
 
 (defn create-initial-scenario
   [store project]
-  ;; TODO schedule demand computation
   (let [project-id  (:id project)
         scenario-id (:id (db-create-scenario! (get-db store)
                                               {:name            "Initial"
@@ -55,7 +54,8 @@
     (jr/queue-job (:jobrunner store)
                   [::boundary/compute-initial-scenario scenario-id]
                   {:store store
-                   :project project})))
+                   :project project})
+    scenario-id))
 
 (defmethod jr/job-next-task ::boundary/compute-initial-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
@@ -140,6 +140,4 @@
 
   (def project (planwise.boundary.projects2/get-project (:planwise.component/projects2 integrant.repl.state/system) 5))
 
-  (create-initial-scenario store project)
-
-  )
+  (create-initial-scenario store project))

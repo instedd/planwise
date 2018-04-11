@@ -1,17 +1,18 @@
 (ns planwise.component.jobrunner-test
   (:require [clojure.test :refer :all]
+            [planwise.boundary.jobrunner :as boundary]
             [planwise.component.jobrunner :as sut]))
 
 
-(defmethod sut/job-next-task ::idler
+(defmethod boundary/job-next-task ::idler
   [_ state]
   {:state state})
 
-(defmethod sut/job-next-task ::finished
+(defmethod boundary/job-next-task ::finished
   [_ _]
   nil)
 
-(defmethod sut/job-next-task ::busy
+(defmethod boundary/job-next-task ::busy
   [_ value]
   {:state (inc value)
    :task-id (inc value)
