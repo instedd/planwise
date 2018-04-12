@@ -1,0 +1,3 @@
+#!/bin/bash
+
+node gadm2geojson.js "$@"

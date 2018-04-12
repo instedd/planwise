@@ -1,0 +1,21 @@
+{
+  "name": "gadm2geojson",
+  "version": "1.0.0",
+  "description": "Tool to create country administrative boundaries data (in geojson format) from GADM data.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mapbox/togeojson": "^0.16.0",
+    "adm-zip": "^0.4.7",
+    "commander": "^2.15.1",
+    "countryinfo": "^1.0.2",
+    "minimist": "^1.2.0",
+    "mkdirp": "^0.5.1",
+    "request": "^2.85.0",
+    "togeojson": "^0.16.0"
+  }
+}
