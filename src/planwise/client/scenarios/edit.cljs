@@ -29,6 +29,11 @@
       {:accept true}
       "OK"]]]])
 
+(defn- valid-input
+  [inp]
+  (let [value (js/parseInt inp)]
+    (if (and (number? value) (not (js/isNaN value))) value nil)))
+
 (defn rename-button []
   [m/Button {:id "edit-name-dialog"
              :on-click #(dispatch [:scenarios/open-rename-dialog])}
@@ -48,41 +53,30 @@
                    :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
                    :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
 
-(defn add-site-button []
-  [m/Fab {:id "add-site"
-          :class "MyClass"
-          :on-click #(dispatch [:scenarios/adding-new-site])} "star"])
-
-(defn site-button
-  [site]
-  [m/Button {:id "edit-site-dialog"
-             :on-click #(dispatch [:scenarios/open-site-dialog site])}
-   "Edit Site"])
-
 (defn input
-  [{:keys [value change-fn]}]
+  [{:keys [value onchange-path]}]
   [m/TextField {:type "text"
-                :on-change  #(-> % .-target .-value change-fn)
+                :on-change  #(dispatch [:scenarios/save-key onchange-path (valid-input (-> % .-target .-value))])
                 :value value}])
 
-(defn site-dialog-content
+(defn changeset-dialog-content
   [{:keys [investment capacity]}]
   [:div
    [:h2 "Investment"]
-   [input {:value investment
-           :on-change #(dispatch [:scenarios/save-key [:site :investment] %])}]
+   [input {:value (or investment "")
+           :onchange-path [:changeset-dialog :investment]}]
    [:h2 "Capacity"]
-   [input {:value investment
-           :on-change #(dispatch [:scenarios/save-key [:site :capacity] %])}]])
+   [input {:value (or capacity "")
+           :onchange-path [:changeset-dialog :capacity]}]])
 
-(defn site-dialog
+(defn changeset-dialog
   []
-  (let [site (subscribe [:scenarios/edit-site])
+  (let [site       (subscribe [:scenarios/changeset-dialog])
         view-state (subscribe [:scenarios/view-state])]
     (fn []
-      (new-dialog {:open? (= @view-state :edit-site)
-                   :title (str "Edit site " (:id @site))
-                   :content (site-dialog-content @site)
-                   :accept-fn  #(dispatch [:scenarios/accept-site-dialog])
-                   :cancel-fn  #(dispatch [:scenarios/cancel-site-dialog])}))))
+      (new-dialog {:open? (= @view-state :changeset-dialog)
+                   :title "Edit Site"
+                   :content (changeset-dialog-content @site)
+                   :accept-fn  #(dispatch [:scenarios/accept-changeset-dialog])
+                   :cancel-fn  #(dispatch [:scenarios/cancel-changeset-dialog])}))))
 

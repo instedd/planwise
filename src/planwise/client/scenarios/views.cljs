@@ -55,12 +55,12 @@
      [:h "to a total of " demand-coverage]
      [:p "INVESTMENT REQUIRED"]
      [:h2 "K " investment]
-     [edit/add-site-button]
+     [m/Fab {:on-click #(dispatch [:scenarios/adding-new-site])} "star"]
      [changeset/listing-component current-scenario]
      [:hr]
      [create-new-scenario current-scenario]
      [edit/rename-scenario-dialog]
-     [edit/site-dialog]]))
+     [edit/changeset-dialog]]))
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])

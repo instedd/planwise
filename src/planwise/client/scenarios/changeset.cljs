@@ -12,19 +12,15 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn- site-card
-  [site]
+  [props index site]
   [:div
-   [edit/site-button site]
-   [ui/card {:title (:create-site/action site)
-             :subtitle (str "K " (:investment site))}]])
-
-(defn- sites-list
-  [changeset]
-  [ui/card-list {}
-   (for [site changeset]
-     [site-card site])])
+   [m/Button {:on-click #(dispatch [:scenarios/open-changeset-dialog index])}
+    "Edit Site"]
+   [:div [:h1 "Create new site"]
+    [:h2 (str "K " (:investment site))]]])
 
 (defn- listing-component
-  []
-  (let [current-scenario (subscribe [:scenarios/current-scenario])]
-    [sites-list (:changeset @current-scenario)]))
+  [scenario]
+  [:div {}
+   (map-indexed (fn [i site] [site-card {:key i} i site])
+                (:changeset scenario))])

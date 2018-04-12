@@ -92,35 +92,40 @@
  in-scenarios
  (fn [{:keys [db]} [_ {:keys [lat lon]}]]
    (let [{:keys [current-scenario]} db
-         new-site  (assoc db/initial-site :location {:lat lat :lon lon})
-         current-scenario (update current-scenario  :changeset #(conj % new-site))]
-     {:api  (api/update-scenario (:id current-scenario) current-scenario)
+         new-site  (db/initial-site {:location {:lat lat :lon lon}})
+         updated-scenario (update current-scenario :changeset #(conj % new-site))
+         new-site-index (dec (count (:changeset updated-scenario)))]
+     {:api  (api/update-scenario (:id current-scenario) updated-scenario)
       :db   (-> db
-                (update-in [:current-scenario :changeset] #(conj % new-site))
-                (assoc-in [:view-state] :current-scenario))})))
+                (assoc :current-scenario updated-scenario))
+      :dispatch [:scenarios/open-changeset-dialog new-site-index]})))
 
 (rf/reg-event-db
- :scenarios/open-site-dialog
+ :scenarios/open-changeset-dialog
  in-scenarios
- (fn [db [_ site]]
+ (fn [db [_ changeset-index]]
    (assoc db
-          :view-state :edit-site
-          :edit-site site)))
+          :view-state        :changeset-dialog
+          :view-state-params {:changeset-index changeset-index}
+          :changeset-dialog  (get-in db [:current-scenario :changeset changeset-index]))))
 
-(rf/reg-event-db
- :scenarios/accept-site-dialog
+(rf/reg-event-fx
+ :scenarios/accept-changeset-dialog
  in-scenarios
- (fn [{:keys [site]} [_]]
-   (let [current-scenario (update current-scenario  :changeset #(conj % site))]
-     {:api  (api/update-scenario (:id current-scenario) current-scenario)
+ (fn [{:keys [db]} [_]]
+   (let [current-scenario  (get-in db [:current-scenario])
+         changeset-index   (get-in db [:view-state-params :changeset-index])
+         updated-changeset (get-in db [:changeset-dialog])
+         updated-scenario  (assoc-in current-scenario [:changeset changeset-index] updated-changeset)]
+     {:api  (api/update-scenario (:id current-scenario) updated-scenario)
       :db   (-> db
-                (update-in [:current-scenario :changeset] #(conj % site))
+                (assoc-in [:current-scenario] updated-scenario)
                 (assoc-in [:view-state] :current-scenario))})))
 
 (rf/reg-event-db
- :scenarios/cancel-site-dialog
+ :scenarios/cancel-changeset-dialog
  in-scenarios
  (fn [db [_]]
    (assoc db
           :view-state :current-scenario
-          :edit-site nil)))
+          :changeset-dialog nil)))
