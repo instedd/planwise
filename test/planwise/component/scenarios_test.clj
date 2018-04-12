@@ -71,6 +71,7 @@
           scenario    (scenarios/get-scenario store scenario-id)]
       (is (= (:name scenario) "Initial"))
       (is (= (:project-id scenario) project-id))
+      (is (= (:state scenario) "pending"))
       (is (= (:changeset scenario) [])))))
 
 (deftest create-scenario-with-new-sites
@@ -83,6 +84,7 @@
           scenario    (scenarios/get-scenario store scenario-id)]
       (is (= (:name scenario) (:name props)))
       (is (= (:project-id scenario) project-id))
+      (is (= (:state scenario) "pending"))
       (is (= (:changeset scenario) (:changeset props)))
 
       ;; computes sum of investments of actions
