@@ -49,6 +49,7 @@
         driver (gdal/GetDriverByName "GTiff")
         options (into-array String ["NBITS=1"
                                     "COMPRESS=CCITTFAX4"
+                                    "TILED=YES"
                                     (str "BLOCKXSIZE=" block-size-x)
                                     (str "BLOCKYSIZE=" block-size-y)])
         dataset (.Create driver name width height 1 gdalconst/GDT_Byte options)]

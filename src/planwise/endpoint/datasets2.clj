@@ -1,6 +1,6 @@
 (ns planwise.endpoint.datasets2
   (:require [planwise.boundary.datasets2 :as datasets2]
-            [planwise.component.jobrunner :as jobrunner]
+            [planwise.boundary.jobrunner :as jobrunner]
             [compojure.core :refer :all]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]

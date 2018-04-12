@@ -34,17 +34,25 @@ WHERE id = :id
 
 -- :name db-create-scenario! :<! :1
 INSERT INTO scenarios
-  (name, "project-id", investment, "demand-coverage", changeset, label)
+  (name, "project-id", investment, "demand-coverage", changeset, label, "state", "updated-at")
 VALUES
-  (:name, :project-id, :investment, NULL, :changeset, :label)
+  (:name, :project-id, :investment, NULL, :changeset, :label, 'pending', NOW())
 RETURNING id;
 
 -- :name db-update-scenario! :! :1
 UPDATE scenarios
   SET name = :name, investment = :investment,
-  "demand-coverage" = :demand-coverage, changeset = :changeset, label = :label
+  "demand-coverage" = :demand-coverage, changeset = :changeset, label = :label,
+  "updated-at" = NOW()
 WHERE
   id = :id
+
+-- :name db-update-scenario-state! :! :1
+UPDATE "scenarios"
+  SET "raster" = :raster,
+      "demand-coverage" = :demand-coverage,
+      "state" = :state
+  WHERE "id" = :id;
 
 -- :name db-list-scenarios-names :?
 SELECT name

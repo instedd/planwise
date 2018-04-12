@@ -1,5 +1,7 @@
 (ns planwise.component.scenarios
   (:require [planwise.boundary.scenarios :as boundary]
+            [planwise.boundary.engine :as engine]
+            [planwise.boundary.jobrunner :as jr]
             [planwise.model.scenarios :as model]
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
@@ -40,15 +42,33 @@
       (update :changeset edn/read-string)))
 
 (defn create-initial-scenario
-  [store project-id]
-  ;; TODO schedule demand computation
-  (db-create-scenario! (get-db store)
-                       {:name "Initial"
-                        :project-id project-id
-                        :investment 0
-                        :demand-coverage nil
-                        :changeset "[]"
-                        :label "initial"}))
+  [store project]
+  (let [project-id  (:id project)
+        scenario-id (:id (db-create-scenario! (get-db store)
+                                              {:name            "Initial"
+                                               :project-id      project-id
+                                               :investment      0
+                                               :demand-coverage nil
+                                               :changeset       "[]"
+                                               :label           "initial"}))]
+    (jr/queue-job (:jobrunner store)
+                  [::boundary/compute-initial-scenario scenario-id]
+                  {:store store
+                   :project project})
+    scenario-id))
+
+(defmethod jr/job-next-task ::boundary/compute-initial-scenario
+  [[_ scenario-id] {:keys [store project] :as state}]
+  (info "Computing initial scenario" scenario-id)
+  (let [engine (:engine store)
+        result (engine/compute-initial-scenario engine project)]
+    (info "Intial scenario computed" result)
+    (db-update-scenario-state! (get-db store)
+                               {:id              scenario-id
+                                :raster          (:raster-path result)
+                                :demand-coverage (:covered-demand result)
+                                :state           "done"}))
+  {:state nil})
 
 (defn create-scenario
   [store project-id {:keys [name changeset]}]
@@ -97,14 +117,14 @@
        (cons name)
        (util-str/next-name)))
 
-(defrecord ScenariosStore [db]
+(defrecord ScenariosStore [db engine jobrunner]
   boundary/Scenarios
   (list-scenarios [store project-id]
     (list-scenarios store project-id))
   (get-scenario [store scenario-id]
     (get-scenario store scenario-id))
-  (create-initial-scenario [store project-id]
-    (create-initial-scenario store project-id))
+  (create-initial-scenario [store project]
+    (create-initial-scenario store project))
   (create-scenario [store project-id props]
     (create-scenario store project-id props))
   (update-scenario [store props]
@@ -121,4 +141,8 @@
   (def store (:planwise.component/scenarios integrant.repl.state/system))
 
   (list-scenarios store 1) ; project-id: 1
-  (get-scenario store 2)) ; scenario-id 2
+  (get-scenario store 2) ; scenario-id 2
+
+  (def project (planwise.boundary.projects2/get-project (:planwise.component/projects2 integrant.repl.state/system) 5))
+
+  (create-initial-scenario store project))

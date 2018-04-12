@@ -9,7 +9,7 @@
   (get-scenario [this scenario-id]
     "Finds a scenario by id")
 
-  (create-initial-scenario [this project-id]
+  (create-initial-scenario [this project]
     "Creates the initial scenario for the given project. Deferred computation will occur.")
 
   (create-scenario [this project-id props]

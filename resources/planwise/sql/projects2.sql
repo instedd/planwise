@@ -26,3 +26,9 @@ SELECT id, name, "region-id", state FROM projects2
 UPDATE projects2
   SET state = :state
   WHERE id = :id;
+
+-- :name db-start-project! :!
+UPDATE "projects2" AS p2
+  SET "state" = 'started',
+      "dataset-version" = (SELECT "last-version" FROM "datasets2" d2 WHERE d2."id" = p2."dataset-id")
+  WHERE "id" = :id;

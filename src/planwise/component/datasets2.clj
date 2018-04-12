@@ -1,7 +1,7 @@
 (ns planwise.component.datasets2
   (:require [planwise.boundary.datasets2 :as boundary]
             [planwise.boundary.coverage :as coverage]
-            [planwise.component.jobrunner :as jr]
+            [planwise.boundary.jobrunner :as jr]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.data.csv :as csv]
@@ -186,6 +186,18 @@
              (preprocess-site! store site-id options)))
     (info "Coverage algorithm not set for dataset" dataset-id)))
 
+(defn get-sites-with-coverage-in-region
+  [store dataset-id version filter-options]
+  (let [db-spec   (get-db store)
+        region-id (:region-id filter-options)
+        algorithm (:coverage-algorithm filter-options)
+        options   (:coverage-options filter-options)]
+    (db-find-sites-with-coverage-in-region db-spec {:dataset-id dataset-id
+                                                    :version    version
+                                                    :region-id  region-id
+                                                    :algorithm  algorithm
+                                                    :options    (some-> options pr-str)})))
+
 
 (defrecord SitesDatasetsStore [db coverage]
   boundary/Datasets2
@@ -196,7 +208,9 @@
   (create-and-import-sites [store options csv-file]
     (create-and-import-sites store options csv-file))
   (new-processing-job [store dataset-id]
-    (new-processing-job store dataset-id)))
+    (new-processing-job store dataset-id))
+  (get-sites-with-coverage-in-region [store dataset-id version filter-options]
+    (get-sites-with-coverage-in-region store dataset-id version filter-options)))
 
 
 (defmethod ig/init-key :planwise.component/datasets2
@@ -207,6 +221,10 @@
   ;; REPL testing
 
   (def store (:planwise.component/datasets2 integrant.repl.state/system))
+
+  (get-sites-with-coverage-in-region store 19 1 {:region-id 42
+                                                 :coverage-algorithm "pgrouting-alpha"
+                                                 :coverage-options {:driving-time 60}})
 
   (preprocess-site! store 1 {:algorithm :simple-buffer
                              :options-list [{:distance 5} {:distance 10}]

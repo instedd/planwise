@@ -1,5 +1,6 @@
 (ns planwise.component.projects2
   (:require [planwise.boundary.projects2 :as boundary]
+            [planwise.boundary.scenarios :as scenarios]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
@@ -45,10 +46,11 @@
 
 (defn start-project
   [store project-id]
-  (db-update-state-project (get-db store) {:id project-id
-                                           :state "started"}))
+  (db-start-project! (get-db store) {:id project-id})
+  (let [project (get-project store project-id)]
+    (scenarios/create-initial-scenario (:scenarios store) project)))
 
-(defrecord SitesProjectsStore [db]
+(defrecord SitesProjectsStore [db scenarios]
   boundary/Projects2
   (create-project [store owner-id]
     (create-project store owner-id))
@@ -64,3 +66,9 @@
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]
   (map->SitesProjectsStore config))
+
+(comment
+  ;; REPL testing
+
+  (def store (:planwise.component/projects2 integrant.repl.state/system))
+  (start-project store 5))

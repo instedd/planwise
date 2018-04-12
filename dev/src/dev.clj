@@ -10,11 +10,12 @@
             [eftest.runner :as eftest]
             [clojure.spec.alpha :as s]
             [integrant.core :as ig]
-            [integrant.repl :refer [clear halt init prep reset]]
+            [integrant.repl :refer [clear halt init prep]]
             [integrant.repl.state :refer [config system]]
             [taoensso.timbre :as timbre]
             [planwise.config]
-            [planwise.repl :refer :all]))
+            [planwise.repl :refer :all]
+            [planwise.virgil]))
 
 (duct/load-hierarchy)
 
@@ -28,6 +29,7 @@
   (duct/read-config (io/resource "dev.edn")))
 
 (clojure.tools.namespace.repl/set-refresh-dirs "dev/src" "src" "test")
+(planwise.virgil/set-java-source-dirs! ["java"])
 
 (when (io/resource "local.clj")
   (load "local"))
