@@ -31,7 +31,7 @@
 (rf/reg-event-fx
  :scenarios/load-scenario
  (fn [{:keys [db]} [_ {:keys [id]}]]
-   (let [project-id    (get-in db [:page-params :project-id])]
+   (let [project-id    (get-in db [:projects2 :current-project :id])]
      {:navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
@@ -183,3 +183,21 @@
                    :on-success [:scenarios/update-demand-information])
       :db   (assoc db :current-scenario updated-scenario)
       :dispatch [:scenarios/cancel-changeset-dialog]})))
+
+;; ----------------------------------------------------------------------------
+;; Scenarios listing
+
+(rf/reg-event-fx
+ :scenarios/load-scenarios
+ ;in-scenarios
+ (fn [{:keys [db]} [_]]
+   (let [project-id (get-in db [:projects2 :current-project :id])]
+     {:api (assoc (api/load-scenarios project-id)
+                  :on-success [:scenarios/scenarios-loaded])
+      :db  (update-in db [:scenarios :list] asdf/reload!)})))
+
+(rf/reg-event-db
+ :scenarios/scenarios-loaded
+ in-scenarios
+ (fn [db [_ scenarios]]
+   (update db :list asdf/reset! scenarios)))
