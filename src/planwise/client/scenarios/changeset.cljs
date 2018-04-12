@@ -17,7 +17,9 @@
    [m/Button {:on-click #(dispatch [:scenarios/open-changeset-dialog index])}
     "Edit Site"]
    [:div [:h1 "Create new site"]
-    [:h2 (str "K " (:investment site))]]])
+    [:h2 (str "K " (:investment site))]]
+   [m/Button {:on-click #(dispatch [:scenarios/delete-site index])}
+    "Delete"]])
 
 (defn- listing-component
   [scenario]

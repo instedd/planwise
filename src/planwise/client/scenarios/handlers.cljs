@@ -129,3 +129,13 @@
    (assoc db
           :view-state :current-scenario
           :changeset-dialog nil)))
+
+(rf/reg-event-fx
+ :scenarios/delete-site
+ in-scenarios
+ (fn [{:keys [db]} [_ index]]
+   (let [current-scenario (:current-scenario db)
+         deleted-changeset (keep-indexed #(if (not= %1 index) %2) (:changeset current-scenario))
+         updated-scenario (assoc current-scenario :changeset deleted-changeset)]
+     {:api  (api/update-scenario (:id current-scenario) updated-scenario)
+      :db   (assoc db :current-scenario updated-scenario)})))
