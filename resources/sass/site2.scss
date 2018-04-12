@@ -276,6 +276,7 @@ form.vertical, .fields-vertical {
   }
 }
 
+
 .option-context {
   color: #ddd;
   float: right;
@@ -283,3 +284,110 @@ form.vertical, .fields-vertical {
   margin-left: 5px;
   margin-right: 5px;
 }
+
+
+
+
+/* ============= MAP PANEL ================ */
+
+.grey-text {
+  color: #9a9a9a;
+}
+
+
+#sidebar {
+  position: relative;
+  padding-bottom: 3rem;
+  .section {
+    padding: 1rem;
+  }
+  h1 {
+    margin: 0;
+
+    &.large {
+      font-size: 2.5rem;
+    }
+    small {
+      font-size: .7rem;
+      text-transform: uppercase;
+      display: block;
+    }
+    &.title-icon {
+      position: relative;
+      padding-right: 3rem;
+      a {
+        position: absolute;
+        right: .8rem;
+      }
+    }
+  }
+  p {
+    margin: 0;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #e6e6e6;
+  }
+  .btn-floating {
+    position: absolute;
+    right: 1rem;
+    margin-top: -2.4rem;
+    z-index: 2;
+  }
+  .scroll-list {
+    max-height: 280px;
+    width: 100%;
+    margin-top: 2rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  .fade {
+    height: 1rem;
+    width: 100%;
+    position: absolute;
+    margin-top: 1.5rem;
+    z-index: 1;
+
+    background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 20%, rgba(255,255,255,0) 99%, rgba(255,255,255,0) 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 20%,rgba(255,255,255,0) 99%,rgba(255,255,255,0) 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 20%,rgba(255,255,255,0) 99%,rgba(255,255,255,0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#00ffffff',GradientType=0 ); /* IE6-9 */
+    &.inverted {
+      transform: rotateX(180deg);
+      margin-top: -1rem;
+    }
+  }
+  .btn-create {
+    font-size: 1rem;
+    line-height: 0;
+    color: #FF5722;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 2rem 0;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+  }
+}
+
+
+.icon-list {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  .material-icons {
+    margin-right: 1rem;
+    align-self: flex-start;
+  }
+  .icon-list-text {
+    flex: 1;
+  }
+}
+
+
+
+
+
+

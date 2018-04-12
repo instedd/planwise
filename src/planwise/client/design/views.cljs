@@ -16,7 +16,8 @@
 
 (def nav-params
   {:sections [[ui/section {:href "/_design" :className "active"} "Design"]
-              [ui/section {:href "/_design/map"} "Map"]]
+              [ui/section {:href "/_design/map"} "Map"]
+              [ui/section {:href "/_design/scenario"} "Scenario"]]
    :account [ui/account {:name "John Doe" :on-signout #(println "Sign out")}]
    :title "Planwise"
    :action (ui/main-action {:icon "add" :on-click #(reset! dialog-open true)})
@@ -90,6 +91,59 @@
    [:h2 "dolor sit amet"]
    [:p 50000]])
 
+(defn demo-scenario
+  []
+  [ui/full-screen (merge {:tabs [project-tabs {:active 1}]
+                          :secondary-actions [[ui/secondary-action {:on-click #(println "clicked lorem!")} "Lorem"]
+                                              [ui/secondary-action {:on-click #(println "clicked ipsum!")} "Ipsum"]]
+                          :main-prop {:style {:position :relative}}
+                          :main [simple-map]}
+                         nav-params)
+
+   [:div {:class-name "section"}
+    [:h1 {:class-name "title-icon"} "Scenario C"
+     [:a
+      [m/Icon {} "favorite"]]]]
+   [:hr]
+   [:div {:class-name "section"}
+    [:h1 {:class-name "large"}
+     [:small "Increase in pregnancies coverage"]
+     "25,238 (11.96%)"]
+    [:p {:class-name "grey-text"} "to a total of 253,208(53.95%"]]
+   [:div {:class-name "section"}
+    [:h1 {:class-name "large"}
+     [:small "Investment required"]
+     "K 25,000,000"]]
+   [:hr]
+   [m/Fab {:class-name "btn-floating"} "domain"]
+   [:div {:class-name "fade"}]
+   [:div {:class-name "scroll-list"}
+    [:div {:class-name "section"}
+     [:div {:class-name "icon-list"}
+      [m/Icon {} "domain"]
+      [:div {:class-name "icon-list-text"}
+       [:p {:class-name "strong"} "Build site with capacity on 50 pregnancies"]
+       [:p {:class-name "grey-text"}  "K22,000,000"]
+       [:p {:class-name "grey-text"}  "1,834 State House Rd, Nairobi, Kenya"]]]]
+    [:hr]
+    [:div {:class-name "section"}
+     [:div {:class-name "icon-list"}
+      [m/Icon {} "add"]
+      [:div {:class-name "icon-list-text"}
+       [:p {:class-name "strong"} "Increase capacity on 50 pregnancies"]
+       [:p {:class-name "grey-text"}  "K1,200,000"]
+       [:p {:class-name "grey-text"}  "Abdisamad Dispensary 725 Mara Rd, Nairobi, Kenya"]]]]
+    [:hr]
+    [:div {:class-name "section"}
+     [:div {:class-name "icon-list"}
+      [m/Icon {} "arrow_upward"]
+      [:div {:class-name "icon-list-text"}
+       [:p {:class-name "strong"} "Upgrade and increase capacity on 50 pregnancies"]
+       [:p {:class-name "grey-text"}  "K1,800,000"]
+       [:p {:class-name "grey-text"}  "348 Mbwara St, Nairobi, Kenya"]]]]]
+   [:div {:class-name "fade inverted"}]
+   [m/Button {:class-name "btn-create"} "Create new scenario from here"]])
+
 (defn app
   []
   (let [page-params (subscribe [:page-params])]
@@ -98,4 +152,5 @@
         (cond
           (= section :project) [demo-project]
           (= section :map) [demo-map]
+          (= section :scenario) [demo-scenario]
           :else [demo-list])))))
