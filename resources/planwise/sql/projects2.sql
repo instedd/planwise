@@ -32,3 +32,8 @@ UPDATE "projects2" AS p2
   SET "state" = 'started',
       "dataset-version" = (SELECT "last-version" FROM "datasets2" d2 WHERE d2."id" = p2."dataset-id")
   WHERE "id" = :id;
+
+-- :name db-reset-project! :!
+UPDATE "projects2" AS p2
+  SET "state" = 'draft'
+  WHERE "id" = :id;

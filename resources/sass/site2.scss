@@ -157,6 +157,10 @@ header.mdc-toolbar {
   @include link-color(#9a9a9a);
 }
 
+#secondary-actions-handle {
+  @include link-color(#9a9a9a);
+}
+
 #tabs-row {
   .mdc-tab {
     color: white;

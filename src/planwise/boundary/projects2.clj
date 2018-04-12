@@ -16,4 +16,7 @@
     "Updates project's attributes. Returns the updated project.")
 
   (start-project [this project-id]
-    "Starts project."))
+    "Starts project.")
+
+  (reset-project [this project-id]
+    "Resets project to draft."))

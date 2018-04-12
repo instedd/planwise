@@ -3,8 +3,17 @@
             [planwise.client.components.common :refer [icon]]
             [planwise.client.ui.rmwc :as m]))
 
+(defn- secondary-actions-menu
+  [_ secondary-actions]
+  (let [open (r/atom false)]
+    (fn [_ secondary-actions]
+      [m/MenuAnchor
+       (into [m/Menu {:anchorCorner "bottomStart" :open @open :onClose #(reset! open false)}]
+             secondary-actions)
+       [:a {:id "secondary-actions-handle" :href "#" :onClick #(reset! open true)} [m/Icon {} "more_vert"]]])))
+
 (defn- header
-  [{:keys [sections account title tabs action]}]
+  [{:keys [sections account title tabs action secondary-actions]}]
   [m/Toolbar
    [m/ToolbarRow {:id "top-row"}
     (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
@@ -12,20 +21,23 @@
    [m/ToolbarRow {:id "title-row"}
     [icon "logo2"]
     [m/ToolbarTitle title]]
-   (if tabs [m/ToolbarRow {:id "tabs-row"} tabs])
+   (if (or tabs secondary-actions)
+     [m/ToolbarRow {:id "tabs-row"}
+      tabs
+      (if secondary-actions [secondary-actions-menu {} secondary-actions])])
    action])
 
 (defn fixed-width
-  [{:keys [sections account title tabs action footer]} & children]
+  [{:keys [sections account title tabs action footer secondary-actions]} & children]
   [:div.layout.fixed-width
-   [header {:sections sections :account account :title title :tabs tabs :action action}]
+   [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]
    (into [:main] children)
    footer])
 
 (defn full-screen
-  [{:keys [sections account title tabs action footer main-prop main]} & children]
+  [{:keys [sections account title tabs action footer main-prop main secondary-actions]} & children]
   [:div.layout.full-screen
-   [header {:sections sections :account account :title title :tabs tabs :action action}]
+   [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]
    [:main main-prop main]
    (into [:aside {:id "sidebar"}] children)
    footer])
@@ -38,7 +50,11 @@
 
 (defn main-action
   [{:keys [icon on-click]}]
-  [m/Fab {:id "main-action" :class "MyClass" :on-click on-click} icon])
+  [m/Fab {:id "main-action" :on-click on-click} icon])
+
+(defn secondary-action
+  [{:keys [on-click]} content]
+  [m/MenuItem {:on-click on-click} content])
 
 (defn section
   [props label]

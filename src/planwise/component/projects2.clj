@@ -50,6 +50,11 @@
   (let [project (get-project store project-id)]
     (scenarios/create-initial-scenario (:scenarios store) project)))
 
+(defn reset-project
+  [store project-id]
+  (db-reset-project! (get-db store) {:id project-id}))
+  ;; TODO should increment some incarnation to dismiss ongoing deferred jobs
+
 (defrecord SitesProjectsStore [db scenarios]
   boundary/Projects2
   (create-project [store owner-id]
@@ -61,7 +66,9 @@
   (update-project [store project]
     (update-project store project))
   (start-project [store project-id]
-    (start-project store project-id)))
+    (start-project store project-id))
+  (reset-project [store project-id]
+    (reset-project store project-id)))
 
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]

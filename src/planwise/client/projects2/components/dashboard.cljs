@@ -15,12 +15,17 @@
    [m/Tab "Scenarios"]
    [m/Tab "Settings"]])
 
+(defn- project-secondary-actions
+  [project]
+  [[ui/secondary-action {:on-click #(dispatch [:projects2/reset-project (:id project)])} "Back to draft"]])
+
 (defn view-current-project
   []
   (let [current-project (subscribe [:projects2/current-project])]
     (fn []
       [ui/fixed-width (merge (common2/nav-params)
                              {:title (:name @current-project)
-                              :tabs [project-tabs {:active 0}]})
+                              :tabs [project-tabs {:active 0}]
+                              :secondary-actions (project-secondary-actions @current-project)})
        [ui/panel {}
         [:div {} "TBD"]]])))

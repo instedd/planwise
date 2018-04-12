@@ -80,6 +80,8 @@
 (defn demo-map
   []
   [ui/full-screen (merge {:tabs [project-tabs {:active 1}]
+                          :secondary-actions [[ui/secondary-action {:on-click #(println "clicked lorem!")} "Lorem"]
+                                              [ui/secondary-action {:on-click #(println "clicked ipsum!")} "Ipsum"]]
                           :main-prop {:style {:position :relative}}
                           :main [simple-map]}
                          nav-params)

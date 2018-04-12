@@ -53,6 +53,17 @@
          (not-found {:error "Project not found"})
          (do
            (projects2/start-project service id)
+           (response (projects2/get-project service id))))))
+
+   (POST "/:id/reset" [id :as request]
+     (let [user-id       (util/request-user-id request)
+           id            (Integer. id)
+           project       (projects2/get-project service id)]
+       ;; TODO validate permission
+       (if (nil? project)
+         (not-found {:error "Project not found"})
+         (do
+           (projects2/reset-project service id)
            (response (projects2/get-project service id))))))))
 
 

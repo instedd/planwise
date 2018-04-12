@@ -75,6 +75,16 @@
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
+;; NOTE: the reset-project only works for the current project since
+;; upon callback we are updating the local db current-project
+(rf/reg-event-fx
+ :projects2/reset-project
+ in-projects2
+ (fn [{:keys [db]} [_ id]]
+   {:api (assoc (api/reset-project! id)
+                :on-success [:projects2/save-project-data]
+                :on-failure [:projects2/project-not-found])}))
+
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
 
