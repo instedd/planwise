@@ -4,6 +4,7 @@
             [leaflet.core :as l]
             [planwise.client.config :as config]
             [planwise.client.mapping :as mapping]
+            [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]
             [planwise.client.ui.common :as ui]))
 
@@ -68,7 +69,7 @@
                                                     :weight 3
                                                     :color (first (shuffle colors))
                                                     :radius (+ 5 (rand-int 5))}))]
-    (fn [{:keys [layer-name map-datafile]}]
+    (fn [{:keys [layer-name map-datafile] :as opts}]
       [:div.map-container [l/map-widget {:zoom @zoom
                                          :position @position
                                          :on-position-changed #(reset! position %)
@@ -76,36 +77,40 @@
                                          :on-click add-point
                                          :controls []}
                            mapping/default-base-tile-layer
-                           [:wms-tile-layer {:url config/mapserver-url
-                                             :transparent true
-                                             :layers layer-name
-                                             :DATAFILE map-datafile
-                                             :format "image/png"
-                                             :opacity 0.6}]
+                           (when opts
+                             [:wms-tile-layer {:url config/mapserver-url
+                                               :transparent true
+                                               :layers layer-name
+                                               :DATAFILE map-datafile
+                                               :format "image/png"
+                                               :opacity 0.6}])
                            [:point-layer {:points @points
                                           :style-fn #(select-keys % [:weight :radius :color])}]]])))
 
 (defn demo-map
   []
-  (let [layer-name   (r/atom "population")
-        map-datafile (r/atom "populations/maps/20/1")]
+  (let [layer-name    (r/atom "population")
+        map-datafile  (r/atom "populations/maps/20/1")
+        build-options (fn [] {:layer-name   @layer-name
+                              :map-datafile @map-datafile})
+        map-options   (r/atom (build-options))]
     (fn []
       [ui/full-screen (merge {:tabs              [project-tabs {:active 1}]
                               :secondary-actions [[ui/secondary-action {:on-click #(println "clicked lorem!")} "Lorem"]
                                                   [ui/secondary-action {:on-click #(println "clicked ipsum!")} "Ipsum"]]
                               :main-prop         {:style {:position :relative}}
-                              :main              [simple-map {:layer-name   @layer-name
-                                                              :map-datafile @map-datafile}]}
+                              :main              [simple-map @map-options]}
                              nav-params)
        [:div {:style {:padding "0 15px"}}
         [:h1 "Demo Map"]
-        [:form.vertical
+        [:form.vertical {:on-submit (utils/prevent-default (fn [_] (reset! map-options (build-options))))}
          [m/TextField {:label     "Layer name"
                        :value     @layer-name
                        :on-change #(reset! layer-name (-> % .-target .-value))}]
          [m/TextField {:label     "Map DATAFILE"
                        :value     @map-datafile
-                       :on-change #(reset! map-datafile (-> % .-target .-value))}]]]])))
+                       :on-change #(reset! map-datafile (-> % .-target .-value))}]
+         [m/Button "Apply"]]]])))
 
 (defn demo-scenario
   []
