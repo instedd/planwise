@@ -138,4 +138,5 @@
          deleted-changeset (keep-indexed #(if (not= %1 index) %2) (:changeset current-scenario))
          updated-scenario (assoc current-scenario :changeset deleted-changeset)]
      {:api  (api/update-scenario (:id current-scenario) updated-scenario)
-      :db   (assoc db :current-scenario updated-scenario)})))
+      :db   (assoc db :current-scenario updated-scenario)
+      :dispatch [:scenarios/cancel-changeset-dialog]})))

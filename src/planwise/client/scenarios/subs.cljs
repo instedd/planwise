@@ -20,3 +20,8 @@
  :scenarios/changeset-dialog
  (fn [db _]
    (get-in db [:scenarios :changeset-dialog])))
+
+(rf/reg-sub
+ :scenarios/changeset-index
+ (fn [db _]
+   (get-in db [:scenarios :view-state-params :changeset-index])))

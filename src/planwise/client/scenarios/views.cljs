@@ -61,7 +61,7 @@
      [:hr]
      [create-new-scenario current-scenario]
      [edit/rename-scenario-dialog]
-     [edit/changeset-dialog]]))
+     [edit/changeset-dialog current-scenario]]))
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])
