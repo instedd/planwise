@@ -53,8 +53,10 @@
   [population quartiles]
   (let [pixel-count (count (:data population))
         pixels      (byte-array pixel-count)
-        nodata      -127]
-    (Algorithm/mapDataForRender (:data population) (:nodata population) pixels nodata quartiles)
+        ;; Java bytes are signed, so this should be -1, but we write 255 for
+        ;; consistency with Mapserver style definition
+        nodata      (unchecked-byte 255)]
+    (Algorithm/mapDataForRender (:data population) (:nodata population) pixels nodata (float-array quartiles))
     (raster/map->Raster (assoc population
                                :data pixels
                                :nodata nodata
@@ -73,4 +75,4 @@
   (def quartiles (compute-population-quartiles raster1))
   (def renderable (build-renderable-population raster1 quartiles))
 
-  (raster/write-raster renderable "/tmp/render.tif"))
+  (raster/write-raster renderable "data/test_scenario.tif"))

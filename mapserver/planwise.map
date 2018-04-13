@@ -143,7 +143,7 @@ MAP
 
   LAYER
     VALIDATION
-      "DATAFILE" "^[A-Za-z0-9_/]+$"
+      "DATAFILE" "^[A-Za-z0-9_/.-]+$"
       "default_DATAFILE" "no_datafile"
     END
 
@@ -178,12 +178,9 @@ MAP
     # Opacity is handled directly by leaflet, hence is left out here
     # OPACITY 50
 
-    # The NODATA value of the raster is negative, therefore after the scaling it's mapped to 0.
-    # This class will catch the NODATA values and the pixels that have less than 0.03 habitants because
-    # the that's the range of each unit (8/255).
     CLASS
       NAME "nodata"
-      EXPRESSION ([pixel] = 129)
+      EXPRESSION ([pixel] = 255)
       STYLE
         OPACITY 0
         COLOR 0 0 0
