@@ -2,6 +2,7 @@
   (:require [planwise.boundary.engine :as boundary]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.datasets2 :as datasets2]
+            [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
@@ -80,6 +81,19 @@
        :covered-demand   (- source-demand initial-demand)
        :demand-quartiles quartiles})))
 
+(defn compute-scenario
+  [engine project scenario]
+  (let [coverage  (:coverage engine)
+        algorithm (keyword (:coverage-algorithm project))
+        filter-options (get-in project [:config :coverage :filter-options])
+        criteria (merge {:algorithm algorithm} filter-options)]
+    (doseq [change (:changeset scenario)]
+      ;; TODO use cache if exist
+      (let [lat (get-in change [:location :lat])
+            lon (get-in change [:location :lon])
+            raster (str "data/scenarios/coverage-cache/" (:site-id change) ".tiff")]
+        (coverage/compute-coverage coverage {:lat lat :lon lon} (merge criteria {:raster raster}))))))
+
 (defn clear-project-cache
   [this project-id]
   (let [scenarios-path (str "data/scenarios/" project-id)]
@@ -89,12 +103,14 @@
   [scenario]
   scenario)
 
-(defrecord Engine [datasets2]
+(defrecord Engine [datasets2 coverage]
   boundary/Engine
   (compute-initial-scenario [engine project]
     (compute-initial-scenario engine project))
   (clear-project-cache [engine project]
-    (clear-project-cache engine project)))
+    (clear-project-cache engine project))
+  (compute-scenario [engine project scenario]
+    (compute-scenario engine project scenario)))
 
 (defmethod ig/init-key :planwise.component/engine
   [_ config]
