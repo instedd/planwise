@@ -68,7 +68,7 @@
                (when-not (zero? population-reachable)
                  (let [factor (- 1 (min 1 (/ capacity population-reachable)))]
                    (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
-    (.mkdirs (.getParentFile (io/file raster-path)))
+    (.mkdirs (.getParentFile (io/file (str "data/" raster-path))))
     (raster/write-raster demand-raster (str "data/" raster-path))
     (let [initial-demand (demand/count-population demand-raster)]
       {:raster-path    raster-path
