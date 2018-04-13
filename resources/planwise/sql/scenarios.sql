@@ -59,3 +59,7 @@ SELECT name
 FROM scenarios
 WHERE "project-id" = :project-id
   AND name ILIKE (:name || '%')
+
+-- :name db-delete-scenarios! :!
+DELETE FROM "scenarios"
+  WHERE "project-id" = :project-id;

@@ -52,7 +52,8 @@
 
 (defn reset-project
   [store project-id]
-  (db-reset-project! (get-db store) {:id project-id}))
+  (db-reset-project! (get-db store) {:id project-id})
+  (scenarios/reset-scenarios (:scenarios store) project-id))
   ;; TODO should increment some incarnation to dismiss ongoing deferred jobs
 
 (defrecord SitesProjectsStore [db scenarios]

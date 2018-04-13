@@ -4,6 +4,7 @@
             [planwise.boundary.datasets2 :as datasets2]
             [planwise.engine.raster :as raster]
             [planwise.engine.demand :as demand]
+            [planwise.util.files :as files]
             [integrant.core :as ig]
             [clojure.java.io :as io]
             [taoensso.timbre :as timbre]))
@@ -76,6 +77,11 @@
        :pending-demand initial-demand
        :covered-demand (- source-demand initial-demand)})))
 
+(defn clear-project-cache
+  [this project-id]
+  (let [scenarios-path (str "data/scenarios/" project-id)]
+    (files/delete-files-recursively scenarios-path)))
+
 (defn compute-scenario
   [scenario]
   scenario)
@@ -83,7 +89,9 @@
 (defrecord Engine [datasets2]
   boundary/Engine
   (compute-initial-scenario [engine project]
-    (compute-initial-scenario engine project)))
+    (compute-initial-scenario engine project))
+  (clear-project-cache [engine project]
+    (clear-project-cache engine project)))
 
 (defmethod ig/init-key :planwise.component/engine
   [_ config]

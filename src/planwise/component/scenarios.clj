@@ -117,6 +117,11 @@
        (cons name)
        (util-str/next-name)))
 
+(defn reset-scenarios
+  [store project-id]
+  (db-delete-scenarios! (get-db store) {:project-id project-id})
+  (engine/clear-project-cache (:engine store) project-id))
+
 (defrecord ScenariosStore [db engine jobrunner]
   boundary/Scenarios
   (list-scenarios [store project-id]
@@ -130,7 +135,9 @@
   (update-scenario [store props]
     (update-scenario store props))
   (next-scenario-name [store project-id name]
-    (next-scenario-name store project-id name)))
+    (next-scenario-name store project-id name))
+  (reset-scenarios [store project-id]
+    (reset-scenarios store project-id)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
