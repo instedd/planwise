@@ -39,9 +39,7 @@ services:
       - "5433:5432"
 
   mapcache:
-    image: instedd/planwise-mapserver:mapcache
-    # build: .
-    # dockerfile: Dockerfile.mapcache
+    image: camptocamp/mapcache:1.4
     volumes:
       - "./mapserver/mapcache.xml:/mapcache/mapcache.xml:ro"
     links:
@@ -50,9 +48,7 @@ services:
       - "5002:80"
 
   mapserver:
-    image: instedd/planwise-mapserver:mapserver
-    # build: .
-    # dockerfile: Dockerfile.mapserver
+    image: camptocamp/mapserver:7.0
     volumes:
       - "./data:/data:ro"
       - "./mapserver/planwise.map:/etc/mapserver/planwise.map:ro"
