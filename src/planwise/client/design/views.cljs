@@ -80,6 +80,7 @@
                                              :transparent true
                                              :layers layer-name
                                              :DATAFILE map-datafile
+                                             :format "image/png"
                                              :opacity 0.6}]
                            [:point-layer {:points @points
                                           :style-fn #(select-keys % [:weight :radius :color])}]]])))

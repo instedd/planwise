@@ -55,7 +55,7 @@ services:
     # dockerfile: Dockerfile.mapserver
     volumes:
       - "./data:/data:ro"
-      - "./mapserver/planwise.map:/etc/mapserver/mapserver.map:ro"
+      - "./mapserver/planwise.map:/etc/mapserver/planwise.map:ro"
     ports:
       - "5001:80"
 
