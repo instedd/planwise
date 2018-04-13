@@ -17,13 +17,13 @@
   (routes
    (GET "/:id" [id as request]
      (let [scenario (scenarios/get-scenario service (Integer. id))]
-       (if (nil? (:id scenario)) (not-found) (response scenario))))
+       (if (nil? (:id scenario)) (not-found) (response (dissoc scenario :updated-at)))))
 
    (PUT "/:id" [id scenario as request]
      (let [id (Integer. id)
            scenario  (assoc scenario :id id)]
        (scenarios/update-scenario service scenario)
-       (response (scenarios/get-scenario service id))))
+       (response (dissoc (scenarios/get-scenario service id) scenario :updated-at))))
 
    (POST "/:id/copy" [id as request]
      (let [{:keys [name project-id changeset]} (scenarios/get-scenario service (Integer. id))

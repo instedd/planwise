@@ -77,8 +77,8 @@
 (deftest create-scenario-with-new-sites
   (test-system/with-system (test-config)
     (let [store       (:planwise.component/scenarios system)
-          first-action {:action "create-site" :site-id "new.1" :investment 10000 :capacity 50}
-          second-action {:action "create-site" :site-id "new.2" :investment 5000 :capacity 20}
+          first-action {:action "create-site" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
+          second-action {:action "create-site" :site-id "new.2" :investment 5000 :capacity 20 :location {:lat 0 :lon 0}}
           props       {:name "Foo" :changeset [first-action second-action]}
           scenario-id (:id (scenarios/create-scenario store project-id props))
           scenario    (scenarios/get-scenario store scenario-id)]
@@ -104,11 +104,11 @@
 (deftest valid-changeset
   (are [x] (s/valid? ::model/change-set x)
     []
-    [{:action "create-site" :site-id "new.1" :investment 10000 :capacity 50}]))
+    [{:action "create-site" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]))
 
 (deftest invalid-changeset
   (are [x] (not (s/valid? ::model/change-set x))
-    [{:action "unknown-action" :site-id "new.1" :investment 10000 :capacity 50}]
+    [{:action "unknown-action" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
     [{:action "create-site" :site-id "new.1" :investment nil :capacity nil}]
     [{:action "create-site" :site-id "new.1" :investment "" :capacity ""}]
     [{:action "create-site" :site-id "new.1"}]))
