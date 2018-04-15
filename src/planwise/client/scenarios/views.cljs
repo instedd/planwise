@@ -14,28 +14,42 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]))
 
+(defn- find-index-by-location
+  [loc changeset]
+  (.indexOf changeset (first (filter #(= (:location %) loc) changeset))))
+
+(defn- get-location
+  [object]
+  (let [data (:latlng (js->clj object :keywordize-keys true))
+        {:keys [lat lng]} data]
+    {:lat lat :lon lng}))
+
 (defn simple-map
   [{:keys [changeset]}]
   (let [state    (subscribe [:scenarios/view-state])
+        index    (subscribe [:scenarios/changeset-index])
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-site {:lat lat
                                                                    :lon lon}]))]
     (fn [{:keys [changeset]}]
-      [:div.map-container [l/map-widget {:zoom @zoom
-                                         :position @position
-                                         :on-position-changed #(reset! position %)
-                                         :on-zoom-changed #(reset! zoom %)
-                                         :on-click (cond  (= @state :new-site) add-point)
-                                         :controls []}
-                           mapping/default-base-tile-layer
-                           [:point-layer {:points changeset
-                                          :lat-fn #(get-in % [:location :lat])
-                                          :lon-fn #(get-in % [:location :lon])
-                                          :radius 4
-                                          :fillColor styles/orange
-                                          :stroke false
-                                          :fillOpacity 1}]]])))
+      (let [indexed-changeset   (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)]
+        [:div.map-container [l/map-widget {:zoom @zoom
+                                           :position @position
+                                           :on-position-changed #(reset! position %)
+                                           :on-zoom-changed #(reset! zoom %)
+                                           :on-click (cond  (= @state :new-site) add-point)
+                                           :controls []}
+                             mapping/default-base-tile-layer
+                             [:marker-layer {:points indexed-changeset
+                                             :lat-fn #(get-in % [:elem :location :lat])
+                                             :lon-fn #(get-in % [:elem :location :lon])
+                                             :radius 4
+                                             :fillColor styles/orange
+                                             :stroke false
+                                             :fillOpacity 1
+                                             :event-fn #(let [index  (find-index-by-location (get-location %) changeset)]
+                                                          (dispatch [:scenarios/open-changeset-dialog index]))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]

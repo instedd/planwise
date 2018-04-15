@@ -95,10 +95,12 @@
   (throw (str "Unknown layer type " (first layer-def))))
 
 (defmethod leaflet-layer :marker-layer [[_ props & children]]
-  (let [layer (.layerGroup js/L)
+  (let [layer (.featureGroup js/L)
         points (:points props)
+        event-fn (:event-fn props)
         attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn])]
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
+    (.on layer "click" event-fn)
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]
