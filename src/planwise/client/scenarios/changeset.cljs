@@ -14,13 +14,20 @@
 (defn- site-card
   [props index site]
   [:div
-   [m/Button {:on-click #(dispatch [:scenarios/open-changeset-dialog index])}
-    "Edit Site"]
-   [:div [:h1 "Create new site"]
-    [:h2 (str "K " (:investment site))]]])
+   [:div {:class-name "section"}
+    [:div {:class-name "icon-list"}
+     [m/Icon {} "domain"]
+     [:div
+      [:div {:class-name "icon-list-text"}
+       [:p {:class-name "strong"} "Create new site"]
+       [:p {:class-name "grey-text"}  (str "K " (:investment site))]
+       [:p {:class-name "grey-text"}  "1,834 State House Rd, Nairobi, Kenya"]]
+      [m/Button {:on-click #(dispatch [:scenarios/open-changeset-dialog index])}
+       "Edit Site"]]]]
+   [:hr]])
 
 (defn- listing-component
   [scenario]
-  [:div {}
+  [:div {:class-name "scroll-list"}
    (map-indexed (fn [i site] [site-card {:key i} i site])
                 (:changeset scenario))])

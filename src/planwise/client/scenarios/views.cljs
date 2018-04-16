@@ -53,7 +53,7 @@
 
 (defn- create-new-scenario
   [current-scenario]
-  [m/Button {:id "create-new-scenario"
+  [m/Button {:class-name "btn-create"
              :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
    "Create new scenario from here"])
 
@@ -63,16 +63,25 @@
     [ui/full-screen (merge {:main-prop {:style {:position :relative}}
                             :main [simple-map current-scenario]}
                            (common2/nav-params))
-     [:div [:h1 name] [edit/rename-button]]
+     [:div {:class-name "section"}
+      [:h1 {:class-name "title-icon"} name] [edit/rename-button]]
      [:hr]
-     [:p "INCREASE IN PREAGNANCIES COVERAGE"]
-     [:h2 "0 " "(0%)"]
-     [:h "to a total of " demand-coverage]
-     [:p "INVESTMENT REQUIRED"]
-     [:h2 "K " investment]
-     (cond (not= (:label current-scenario) "initial") [m/Fab {:on-click #(dispatch [:scenarios/adding-new-site])} "star"])
+     [:div {:class-name "section"}
+      [:h1 {:class-name "large"}
+       [:small "Increase in pregnancies coverage"]
+       "25,238 (11.96%)"]
+      [:p {:class-name "grey-text"} (str "to a total of" (or demand-coverage 0) "(0%)")]]
+     [:div {:class-name "section"}
+      [:h1 {:class-name "large"}
+       [:small "Investment required"]
+       "K " investment]]
+     [:hr]
+     (cond (not= (:label current-scenario) "initial")
+           [m/Fab {:class-name "btn-floating"
+                   :on-click #(dispatch [:scenarios/adding-new-site])} "domain"])
+     [:div {:class-name "fade"}]
      [changeset/listing-component current-scenario]
-     [:hr]
+     [:div {:class-name "fade inverted"}]
      [create-new-scenario current-scenario]
      [edit/rename-scenario-dialog]
      [edit/changeset-dialog current-scenario]]))
