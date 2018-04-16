@@ -47,14 +47,16 @@
                    (conj new-objects new-object)
                    (rest new-decls))))))))
 
-(defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn], :or {lat-fn :lat lon-fn :lon}}]
+(defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn options-fn], :or {lat-fn :lat lon-fn :lon}}]
   (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
         icon   (if icon-fn
                  (.divIcon js/L #js {:className (icon-fn point)})
                  (js/L.Icon.Default.))
-        marker (.marker js/L latLng #js {:clickable true
-                                         :keyboard false
-                                         :icon icon})]
+        attrs {:clickable true
+               :keyboard false
+               :icon icon}
+        new-attrs (if (some? options-fn) (merge  attrs (options-fn point)) attrs)
+        marker   (.marker js/L latLng (clj->js new-attrs))]
     (if popup-fn
       (.bindPopup marker (popup-fn point))
       marker)))
@@ -95,10 +97,12 @@
   (throw (str "Unknown layer type " (first layer-def))))
 
 (defmethod leaflet-layer :marker-layer [[_ props & children]]
-  (let [layer (.layerGroup js/L)
+  (let [layer (.featureGroup js/L)
         points (:points props)
-        attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn])]
+        onclick-fn (:onclick-fn props)
+        attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
+    (.on layer "click" onclick-fn)
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]

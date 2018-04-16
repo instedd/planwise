@@ -11,7 +11,7 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn new-dialog
-  [{:keys [open? title content accept-fn cancel-fn]}]
+  [{:keys [open? title content accept-fn cancel-fn delete-fn]}]
   [m/Dialog {:open open?
              :on-accept accept-fn
              :on-close cancel-fn}
@@ -22,6 +22,7 @@
      [:form.vertical {:on-submit (utils/prevent-default accept-fn)}
       content]]
     [m/DialogFooter
+     (when (some? delete-fn) [m/Button {:on-click delete-fn} "Delete"])
      [m/DialogFooterButton
       {:cancel true}
       "Cancel"]
@@ -33,11 +34,6 @@
   [inp]
   (let [value (js/parseInt inp)]
     (if (and (number? value) (not (js/isNaN value))) value nil)))
-
-(defn rename-button []
-  [m/Button {:id "edit-name-dialog"
-             :on-click #(dispatch [:scenarios/open-rename-dialog])}
-   "Edit name"])
 
 (defn rename-scenario-dialog
   []
@@ -72,11 +68,13 @@
 (defn changeset-dialog
   []
   (let [site       (subscribe [:scenarios/changeset-dialog])
-        view-state (subscribe [:scenarios/view-state])]
+        view-state (subscribe [:scenarios/view-state])
+        site-index (subscribe [:scenarios/changeset-index])]
     (fn []
       (new-dialog {:open? (= @view-state :changeset-dialog)
                    :title "Edit Site"
                    :content (changeset-dialog-content @site)
+                   :delete-fn #(dispatch [:scenarios/delete-site @site-index])
                    :accept-fn  #(dispatch [:scenarios/accept-changeset-dialog])
                    :cancel-fn  #(dispatch [:scenarios/cancel-changeset-dialog])}))))
 

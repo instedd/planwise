@@ -17,29 +17,33 @@
 (defn simple-map
   [{:keys [changeset]}]
   (let [state    (subscribe [:scenarios/view-state])
+        index    (subscribe [:scenarios/changeset-index])
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-site {:lat lat
                                                                    :lon lon}]))]
     (fn [{:keys [changeset]}]
-      [:div.map-container [l/map-widget {:zoom @zoom
-                                         :position @position
-                                         :on-position-changed #(reset! position %)
-                                         :on-zoom-changed #(reset! zoom %)
-                                         :on-click (cond  (= @state :new-site) add-point)
-                                         :controls []}
-                           mapping/default-base-tile-layer
-                           [:point-layer {:points changeset
-                                          :lat-fn #(get-in % [:location :lat])
-                                          :lon-fn #(get-in % [:location :lon])
-                                          :radius 4
-                                          :fillColor styles/orange
-                                          :stroke false
-                                          :fillOpacity 1}]]])))
+      (let [indexed-changeset   (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)]
+        [:div.map-container [l/map-widget {:zoom @zoom
+                                           :position @position
+                                           :on-position-changed #(reset! position %)
+                                           :on-zoom-changed #(reset! zoom %)
+                                           :on-click (cond  (= @state :new-site) add-point)
+                                           :controls []}
+                             mapping/default-base-tile-layer
+                             [:marker-layer {:points indexed-changeset
+                                             :lat-fn #(get-in % [:elem :location :lat])
+                                             :lon-fn #(get-in % [:elem :location :lon])
+                                             :options-fn #(select-keys % [:index])
+                                             :radius 4
+                                             :fillColor styles/orange
+                                             :stroke false
+                                             :fillOpacity 1
+                                             :onclick-fn #(dispatch [:scenarios/open-changeset-dialog (-> % .-layer .-options .-index)])}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
-  [m/Button {:id "create-new-scenario"
+  [m/Button {:class-name "btn-create"
              :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
    "Create new scenario from here"])
 
@@ -49,19 +53,29 @@
     [ui/full-screen (merge {:main-prop {:style {:position :relative}}
                             :main [simple-map current-scenario]}
                            (common2/nav-params))
-     [:div [:h1 name] [edit/rename-button]]
+     [:div {:class-name "section"
+            :on-click #(dispatch [:scenarios/open-rename-dialog])}
+      [:h1 {:class-name "title-icon"} name]]
      [:hr]
-     [:p "INCREASE IN PREAGNANCIES COVERAGE"]
-     [:h2 "0 " "(0%)"]
-     [:h "to a total of " demand-coverage]
-     [:p "INVESTMENT REQUIRED"]
-     [:h2 "K " investment]
-     (cond (not= (:label current-scenario) "initial") [m/Fab {:on-click #(dispatch [:scenarios/adding-new-site])} "star"])
+     [:div {:class-name "section"}
+      [:h1 {:class-name "large"}
+       [:small "Increase in pregnancies coverage"]
+       "25,238 (11.96%)"]
+      [:p {:class-name "grey-text"} (str "to a total of" (or demand-coverage " calculating..."))]]
+     [:div {:class-name "section"}
+      [:h1 {:class-name "large"}
+       [:small "Investment required"]
+       "K " investment]]
+     [:hr]
+     (cond (not= (:label current-scenario) "initial")
+           [m/Fab {:class-name "btn-floating"
+                   :on-click #(dispatch [:scenarios/adding-new-site])} "domain"])
+     [:div {:class-name "fade"}]
      [changeset/listing-component current-scenario]
-     [:hr]
+     [:div {:class-name "fade inverted"}]
      [create-new-scenario current-scenario]
      [edit/rename-scenario-dialog]
-     [edit/changeset-dialog]]))
+     [edit/changeset-dialog current-scenario]]))
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])

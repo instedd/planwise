@@ -11,18 +11,21 @@
             [clojure.string :as str]
             [planwise.client.ui.rmwc :as m]))
 
-(defn- site-card
+(defn- changeset-row
   [props index site]
   [:div
-   [m/Button {:on-click #(dispatch [:scenarios/open-changeset-dialog index])}
-    "Edit Site"]
-   [:div [:h1 "Create new site"]
-    [:h2 (str "K " (:investment site))]]
-   [m/Button {:on-click #(dispatch [:scenarios/delete-site index])}
-    "Delete"]])
+   [:div {:class-name "section changeset-row"
+          :on-click #(dispatch [:scenarios/open-changeset-dialog index])}
+    [:div {:class-name "icon-list"}
+     [m/Icon {} "domain"]
+     [:div {:class-name "icon-list-text"}
+      [:p {:class-name "strong"} "Create new site"]
+      [:p {:class-name "grey-text"}  (str "K " (:investment site))]
+      [:p {:class-name "grey-text"}  "1,834 State House Rd, Nairobi, Kenya"]]]]
+   [:hr]])
 
 (defn- listing-component
   [scenario]
-  [:div {}
-   (map-indexed (fn [i site] [site-card {:key i} i site])
+  [:div {:class-name "scroll-list"}
+   (map-indexed (fn [i site] [changeset-row {:key i} i site])
                 (:changeset scenario))])
