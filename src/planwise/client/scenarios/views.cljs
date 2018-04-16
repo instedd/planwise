@@ -14,16 +14,6 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.ui.rmwc :as m]))
 
-(defn- find-index-by-location
-  [loc changeset]
-  (.indexOf changeset (first (filter #(= (:location %) loc) changeset))))
-
-(defn- get-location
-  [object]
-  (let [data (:latlng (js->clj object :keywordize-keys true))
-        {:keys [lat lng]} data]
-    {:lat lat :lon lng}))
-
 (defn simple-map
   [{:keys [changeset]}]
   (let [state    (subscribe [:scenarios/view-state])
@@ -44,12 +34,12 @@
                              [:marker-layer {:points indexed-changeset
                                              :lat-fn #(get-in % [:elem :location :lat])
                                              :lon-fn #(get-in % [:elem :location :lon])
+                                             :options-fn #(select-keys % [:index])
                                              :radius 4
                                              :fillColor styles/orange
                                              :stroke false
                                              :fillOpacity 1
-                                             :event-fn #(let [index  (find-index-by-location (get-location %) changeset)]
-                                                          (dispatch [:scenarios/open-changeset-dialog index]))}]]]))))
+                                             :onclick-fn #(dispatch [:scenarios/open-changeset-dialog (-> % .-layer .-options .-index)])}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
@@ -70,7 +60,7 @@
       [:h1 {:class-name "large"}
        [:small "Increase in pregnancies coverage"]
        "25,238 (11.96%)"]
-      [:p {:class-name "grey-text"} (str "to a total of" (or demand-coverage 0) "(0%)")]]
+      [:p {:class-name "grey-text"} (str "to a total of" (or demand-coverage " calculating..."))]]
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
        [:small "Investment required"]
