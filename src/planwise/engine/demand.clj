@@ -1,7 +1,8 @@
 (ns planwise.engine.demand
   (:require [clojure.spec.alpha :as s]
             [planwise.engine.raster :as raster])
-  (:import [planwise.engine Algorithm]))
+  (:import [planwise.engine Algorithm]
+           [org.gdal.gdalconst gdalconst]))
 
 (defn count-population
   [population]
@@ -44,12 +45,34 @@
                                                dst-left dst-top dst-right dst-bottom
                                                src-left src-top)))
 
+(defn compute-population-quartiles
+  [population]
+  (Algorithm/computeExactQuartiles (:data population) (:nodata population)))
+
+(defn build-renderable-population
+  [population quartiles]
+  (let [pixel-count (count (:data population))
+        pixels      (byte-array pixel-count)
+        ;; Java bytes are signed, so this should be -1, but we write 255 for
+        ;; consistency with Mapserver style definition
+        nodata      (unchecked-byte 255)]
+    (Algorithm/mapDataForRender (:data population) (:nodata population) pixels nodata (float-array quartiles))
+    (raster/map->Raster (assoc population
+                               :data pixels
+                               :nodata nodata
+                               :data-type gdalconst/GDT_Byte))))
+
 (comment
-  (def raster1 (raster/read-raster "data/populations/data/17/42.tif"))
+  (def raster1 (raster/read-raster "data/populations/data/20/42.tif"))
   (def raster2 (raster/read-raster "data/coverage/11/1_pgrouting-alpha_60.tif"))
 
   (time (count-population raster1))
   (time (multiply-population! raster1 0.5))
 
   (time (count-population-under-coverage raster1 raster2))
-  (time (multiply-population-under-coverage! raster1 raster2 0.9)))
+  (time (multiply-population-under-coverage! raster1 raster2 0.9))
+
+  (def quartiles (compute-population-quartiles raster1))
+  (def renderable (build-renderable-population raster1 quartiles))
+
+  (raster/write-raster renderable "data/test_scenario.tif"))

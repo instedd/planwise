@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mapcache mode="split_mirror">
+<mapcache>
 
   <!-- Store data on container's disk -->
   <cache name="disk" type="disk">
@@ -8,14 +8,27 @@
   </cache>
 
   <!-- Retrieve data from local mapserver instance via WMS-->
-  <source name="planwisesource" type="wms">
+  <source name="planwise-population" type="wms">
     <http>
       <url>http://mapserver/mapserv</url>
     </http>
     <getmap>
       <params>
-        <map>/etc/mapserver/mapserver.map</map>
+        <map>/etc/mapserver/planwise.map</map>
         <layers>Population</layers>
+        <format>image/png</format>
+      </params>
+    </getmap>
+  </source>
+
+  <source name="planwise-scenario" type="wms">
+    <http>
+      <url>http://mapserver/mapserv</url>
+    </http>
+    <getmap>
+      <params>
+        <map>/etc/mapserver/planwise.map</map>
+        <layers>Scenario</layers>
         <format>image/png</format>
       </params>
     </getmap>
@@ -23,7 +36,7 @@
 
   <!-- Define dynamic demand dataset to be consumed via WMS endpoint -->
   <tileset name="population">
-    <source>planwisesource</source>
+    <source>planwise-population</source>
     <cache>disk</cache>
     <grid>GoogleMapsCompatible</grid> <!-- EPSG:3857 -->
     <format>PNG</format>
@@ -32,6 +45,19 @@
     <expire>86400</expire><!-- Expire in 1 day -->
     <dimensions>
       <dimension type="regex" name="DATAFILE" default="no_datafile">^[A-Za-z0-9_/]*$</dimension>
+    </dimensions>
+  </tileset>
+
+  <tileset name="scenario">
+    <source>planwise-scenario</source>
+    <cache>disk</cache>
+    <grid>GoogleMapsCompatible</grid> <!-- EPSG:3857 -->
+    <format>PNG</format>
+    <metatile>5 5</metatile>
+    <metabuffer>10</metabuffer>
+    <expire>86400</expire><!-- Expire in 1 day -->
+    <dimensions>
+      <dimension type="regex" name="DATAFILE" default="no_datafile">^[A-Za-z0-9_/.-]*$</dimension>
     </dimensions>
   </tileset>
 

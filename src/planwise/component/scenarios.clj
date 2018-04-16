@@ -67,7 +67,10 @@
                                {:id              scenario-id
                                 :raster          (:raster-path result)
                                 :demand-coverage (:covered-demand result)
-                                :state           "done"}))
+                                :state           "done"})
+    (db-update-project-engine-config! (get-db store)
+                                      {:project-id    (:id project)
+                                       :engine-config (pr-str {:quartiles (:demand-quartiles result)})}))
   {:state nil})
 
 (defn create-scenario

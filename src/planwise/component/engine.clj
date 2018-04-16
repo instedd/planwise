@@ -57,7 +57,7 @@
         project-config (:config project)
         capacity       (get-in project-config [:sites :capacity] 1)
         source-demand  (demand/count-population demand-raster)
-        raster-path    (str "scenarios/" project-id "/initial.tif")]
+        raster-path    (str "scenarios/" project-id "/initial")]
     (debug "Source population demand:" source-demand)
     (dorun (for [site sites]
              (let [capacity             (* capacity (:capacity site))
@@ -69,13 +69,16 @@
                (when-not (zero? population-reachable)
                  (let [factor (- 1 (min 1 (/ capacity population-reachable)))]
                    (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
-    (.mkdirs (.getParentFile (io/file (str "data/" raster-path))))
-    (raster/write-raster demand-raster (str "data/" raster-path))
-    (let [initial-demand (demand/count-population demand-raster)]
-      {:raster-path    raster-path
-       :source-demand  source-demand
-       :pending-demand initial-demand
-       :covered-demand (- source-demand initial-demand)})))
+    (let [initial-demand (demand/count-population demand-raster)
+          quartiles      (vec (demand/compute-population-quartiles demand-raster))]
+      (io/make-parents (io/as-file (str "data/" raster-path)))
+      (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
+      (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
+      {:raster-path      raster-path
+       :source-demand    source-demand
+       :pending-demand   initial-demand
+       :covered-demand   (- source-demand initial-demand)
+       :demand-quartiles quartiles})))
 
 (defn clear-project-cache
   [this project-id]

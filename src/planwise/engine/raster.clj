@@ -9,6 +9,28 @@
 
 (defrecord Raster [projection geotransform xsize ysize data-type nodata data])
 
+(defn- cast-value
+  [data-type value]
+  (condp = data-type
+    gdalconst/GDT_Byte    (byte value)
+    gdalconst/GDT_Int16   (short value)
+    gdalconst/GDT_Int32   (int value)
+    gdalconst/GDT_Float32 (float value)
+    gdalconst/GDT_Float64 (double value)
+    (throw (ex-info "Unsupported data type"
+                    {:data-type data-type}))))
+
+(defn- alloc-array
+  [data-type length]
+  (condp = data-type
+    gdalconst/GDT_Byte    (byte-array length)
+    gdalconst/GDT_Int16   (short-array length)
+    gdalconst/GDT_Int32   (int-array length)
+    gdalconst/GDT_Float32 (float-array length)
+    gdalconst/GDT_Float64 (double-array length)
+    (throw (ex-info "Unsupported data type"
+                    {:data-type data-type}))))
+
 (defn- read-nodata-value
   "Reads the NODATA value from a raster band and returns it casted to the
   appropriate raster data type, or nil if the band doesn't have NODATA value"
@@ -17,12 +39,7 @@
         data-type (.GetRasterDataType band)]
     (.GetNoDataValue band buffer)
     (when-let [value (aget buffer 0)]
-      (condp = data-type
-        gdalconst/GDT_Byte    (byte value)
-        gdalconst/GDT_Float32 (float value)
-        gdalconst/GDT_Float64 (double value)
-        (throw (ex-info "Unsupported raster data type"
-                        {:data-type data-type}))))))
+      (cast-value data-type value))))
 
 (defn- read-band-data
   "Reads the data slice from the raster band and returns a Java array of a type
@@ -30,12 +47,7 @@
   [band xoff yoff xsize ysize]
   (let [data-type (.GetRasterDataType band)
         length    (* xsize ysize)
-        buffer    (condp = data-type
-                    gdalconst/GDT_Byte    (byte-array length)
-                    gdalconst/GDT_Float32 (float-array length)
-                    gdalconst/GDT_Float64 (double-array length)
-                    (throw (ex-info "Unsupported raster data type"
-                                    {:data-type data-type})))
+        buffer    (alloc-array data-type length)
         err       (.ReadRaster band xoff yoff xsize ysize data-type buffer)]
     (if (= gdalconst/CE_None err)
       buffer
@@ -44,14 +56,23 @@
                        :size      [xsize ysize]
                        :data-type data-type})))))
 
+(defn- with-open-raster
+  [path f]
+  (if-let [dataset (gdal/Open path gdalconst/GA_ReadOnly)]
+    (try
+      (f dataset)
+      (finally (.delete dataset)))
+    (throw (ex-info "Failed to open raster file"
+                    {:filename path}))))
+
 (defn read-raster
   "Reads a raster file and returns a Raster record with the data from the
   specified band number (defaults to 1)"
   ([path]
    (read-raster path 1))
   ([path band-number]
-   (if-let [dataset (gdal/Open path gdalconst/GA_ReadOnly)]
-     (try
+   (with-open-raster path
+     (fn [dataset]
        (let [projection   (.GetProjection dataset)
              geotransform (.GetGeoTransform dataset)
              raster-count (.GetRasterCount dataset)]
@@ -66,22 +87,55 @@
            (throw (ex-info "Invalid band number"
                            {:filename   path
                             :band       band-number
-                            :band-count raster-count}))))
-       (finally (.delete dataset)))
-     (throw (ex-info "Failed to open raster file"
-                     {:filename path})))))
+                            :band-count raster-count}))))))))
+
+(defn- compute-band-histogram
+  [band num-buckets]
+  (let [data-type (.GetRasterDataType band)
+        min-max   (double-array 2)
+        _         (.ComputeRasterMinMax band min-max)
+        buckets   (int-array num-buckets)
+        min-value (aget min-max 0)
+        max-value (aget min-max 1)
+        err       (.GetHistogram band min-value max-value buckets true false)]
+    (if (= gdalconst/CE_None err)
+      {:min      (cast-value data-type min-value)
+       :max      (cast-value data-type max-value)
+       :buckets  buckets})))
+
+(defn compute-raster-histogram
+  ([path]
+   (compute-raster-histogram path 1))
+  ([path band-number]
+   (with-open-raster path
+     (fn [dataset]
+       (let [raster-count (.GetRasterCount dataset)]
+         (if (<= 1 band-number raster-count)
+           (let [band (.GetRasterBand dataset band-number)]
+             (compute-band-histogram band 256))
+           (throw (ex-info "Invalid band number"
+                           {:filename   path
+                            :band       band-number
+                            :band-count raster-count}))))))))
+
+(defn- raster-options
+  [data-type]
+  (let [block-xsize   128
+        block-ysize   128
+        base-options  ["TILED=YES"
+                       (str "BLOCKXSIZE=" block-xsize)
+                       (str "BLOCKYSIZE=" block-ysize)]
+        extra-options (condp = data-type
+                        gdalconst/GDT_Byte    ["COMPRESS=LZW"
+                                               "PREDICTOR=2"]
+                        gdalconst/GDT_Float32 ["COMPRESS=LZW"
+                                               "PREDICTOR=3"])]
+    (concat base-options extra-options)))
 
 (defn write-raster-file
   [{:keys [xsize ysize data-type nodata data projection geotransform] :as raster} output-path]
-  (let [block-xsize 128
-        block-ysize 128
-        driver      (gdal/GetDriverByName "GTiff")
-        options     (into-array String ["TILED=YES"
-                                        (str "BLOCKXSIZE=" block-xsize)
-                                        (str "BLOCKYSIZE=" block-ysize)
-                                        ;; TODO: vary compression options according to data-type
-                                        "COMPRESS=LZW"
-                                        "PREDICTOR=3"])
+  (let [driver      (gdal/GetDriverByName "GTiff")
+        options     (into-array String (raster-options data-type))
         dataset     (.Create driver output-path xsize ysize 1 data-type options)]
     (doto dataset
       (.SetProjection projection)
@@ -191,8 +245,10 @@
     (write-raster-file r path)))
 
 (comment
-  (def raster1 (read-raster "data/populations/data/17/42.tif"))
+  (def raster1 (time (read-raster "data/populations/data/20/42.tif")))
   (def raster2 (read-raster "data/coverage/11/1_pgrouting-alpha_60.tif"))
+
+  (def hist1 (time (compute-raster-histogram "data/populations/data/20/1.tif")))
 
   (compatible? raster1 raster2) ;; => true
   (aligned? raster1 raster2)    ;; => false

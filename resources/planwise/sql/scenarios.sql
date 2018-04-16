@@ -54,6 +54,11 @@ UPDATE "scenarios"
       "state" = :state
   WHERE "id" = :id;
 
+-- :name db-update-project-engine-config! :! :1
+UPDATE "projects2"
+  SET "engine-config" = :engine-config
+  WHERE "id" = :project-id;
+
 -- :name db-list-scenarios-names :?
 SELECT name
 FROM scenarios
