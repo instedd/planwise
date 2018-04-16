@@ -53,8 +53,9 @@
     [ui/full-screen (merge {:main-prop {:style {:position :relative}}
                             :main [simple-map current-scenario]}
                            (common2/nav-params))
-     [:div {:class-name "section"}
-      [:h1 {:class-name "title-icon"} name] [edit/rename-button]]
+     [:div {:class-name "section"
+            :on-click #(dispatch [:scenarios/open-rename-dialog])}
+      [:h1 {:class-name "title-icon"} name]]
      [:hr]
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}

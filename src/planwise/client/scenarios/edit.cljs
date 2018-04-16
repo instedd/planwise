@@ -35,11 +35,6 @@
   (let [value (js/parseInt inp)]
     (if (and (number? value) (not (js/isNaN value))) value nil)))
 
-(defn rename-button []
-  [m/Button {:id "edit-name-dialog"
-             :on-click #(dispatch [:scenarios/open-rename-dialog])}
-   "Edit name"])
-
 (defn rename-scenario-dialog
   []
   (let [rename-dialog (subscribe [:scenarios/rename-dialog])
