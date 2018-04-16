@@ -52,11 +52,11 @@
         icon   (if icon-fn
                  (.divIcon js/L #js {:className (icon-fn point)})
                  (js/L.Icon.Default.))
-        atrs {:clickable true
-              :keyboard false
-              :icon icon}
-        new-atrs (if (some? options-fn) (merge  atrs (options-fn point)) atrs)
-        marker   (.marker js/L latLng (clj->js new-atrs))]
+        attrs {:clickable true
+               :keyboard false
+               :icon icon}
+        new-attrs (if (some? options-fn) (merge  attrs (options-fn point)) attrs)
+        marker   (.marker js/L latLng (clj->js new-attrs))]
     (if popup-fn
       (.bindPopup marker (popup-fn point))
       marker)))
