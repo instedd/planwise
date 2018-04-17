@@ -13,7 +13,9 @@ UPDATE projects2
   WHERE id = :id;
 
 -- :name db-get-project :? :1
-SELECT projects2.id, projects2."owner-id", projects2.name, projects2.config, projects2."dataset-id", projects2.state ,datasets2."coverage-algorithm"
+SELECT projects2.id, projects2."owner-id", projects2.name, projects2.config,
+       projects2."dataset-id", projects2."dataset-version", projects2.state, projects2."population-source-id",
+       projects2."engine-config", projects2."region-id", datasets2."coverage-algorithm"
   FROM projects2
   LEFT JOIN datasets2 ON projects2."dataset-id" = datasets2.id
   WHERE projects2.id = :id;

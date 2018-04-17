@@ -67,7 +67,7 @@
            (response (projects2/get-project service id))))))
 
    (DELETE "/:id" [id :as request]
-    ;TODO authenticate user-id
+    ;TODO authorizate user-id
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)]
        (projects2/delete-project service id)))))

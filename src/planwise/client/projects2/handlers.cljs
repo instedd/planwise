@@ -93,7 +93,7 @@
     :navigate  (routes/projects2)
     :db   (-> db
               (assoc :current-project nil)
-              (update :list (fn [list] (remove #(= (:id %) id) list))))}))
+              (update :list (fn [list] (seq (remove #(= (:id %) id) list)))))}))
 
 
 ;;------------------------------------------------------------------------------
