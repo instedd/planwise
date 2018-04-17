@@ -12,10 +12,10 @@
   (create-initial-scenario [this project]
     "Creates the initial scenario for the given project. Deferred computation will occur.")
 
-  (create-scenario [this project-id props]
+  (create-scenario [this project props]
     "Creates an scenario the given project. Deferred computation will occur.")
 
-  (update-scenario [this props]
+  (update-scenario [this project props]
     "Updates the given scenario. Deferred computation will occur.")
 
   (next-scenario-name [this project-id name]

@@ -77,10 +77,12 @@
 (deftest create-scenario-with-new-sites
   (test-system/with-system (test-config)
     (let [store       (:planwise.component/scenarios system)
+          projects2   (:planwise.component/projects2 system)
           first-action {:action "create-site" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
           second-action {:action "create-site" :site-id "new.2" :investment 5000 :capacity 20 :location {:lat 0 :lon 0}}
           props       {:name "Foo" :changeset [first-action second-action]}
-          scenario-id (:id (scenarios/create-scenario store project-id props))
+          project     (projects2/get-project projects2 project-id)
+          scenario-id (:id (scenarios/create-scenario store project props))
           scenario    (scenarios/get-scenario store scenario-id)]
       (is (= (:name scenario) (:name props)))
       (is (= (:project-id scenario) project-id))
