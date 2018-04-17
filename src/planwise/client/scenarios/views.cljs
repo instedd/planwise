@@ -58,7 +58,7 @@
 
 (defn display-current-scenario
   [current-scenario]
-  (let [{:keys [name investment demand-coverage]} current-scenario]
+  (let [{:keys [name investment demand-coverage increase-coverage]} current-scenario]
     [ui/full-screen (merge {:main-prop {:style {:position :relative}}
                             :main [simple-map current-scenario]}
                            (common2/nav-params))
@@ -71,7 +71,7 @@
        [:small "Increase in pregnancies coverage"]
        (cond
          (= "pending" (:state current-scenario)) "loading..."
-         :else "25238 (11.96%)")]
+         :else (str increase-coverage))]
       [:p {:class-name "grey-text"}
        (cond
          (= "pending" (:state current-scenario)) "to a total of"
@@ -103,4 +103,4 @@
           (not= project-id (:id @current-project)) (dispatch [:projects2/get-project project-id])
           (not= project-id (:project-id @current-scenario)) (dispatch [:scenarios/scenario-not-found])
           :else
-          [display-current-scenario  @current-scenario])))))
+          [display-current-scenario @current-scenario])))))

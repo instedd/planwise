@@ -28,9 +28,10 @@ FROM (
 WHERE scenarios.id = computed.id
 
 -- :name db-find-scenario :? :1
-SELECT *
+SELECT scenarios.*, scenarios."demand-coverage" - initial_scenario."demand-coverage" AS "increase-coverage"
 FROM scenarios
-WHERE id = :id
+LEFT JOIN scenarios AS initial_scenario ON initial_scenario."project-id" = scenarios."project-id" AND initial_scenario.label = 'initial'
+WHERE scenarios.id = :id
 
 -- :name db-create-scenario! :<! :1
 INSERT INTO scenarios
