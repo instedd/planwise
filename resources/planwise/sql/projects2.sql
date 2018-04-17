@@ -37,3 +37,8 @@ UPDATE "projects2" AS p2
 UPDATE "projects2" AS p2
   SET "state" = 'draft'
   WHERE "id" = :id;
+
+-- :name db-delete-project! :!
+UPDATE projects2
+  SET "deleted-at" = NOW()
+  WHERE id = :id;
