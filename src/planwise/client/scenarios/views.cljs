@@ -3,6 +3,7 @@
             [reagent.core :as r]
             [re-com.core :as rc]
             [leaflet.core :as l]
+            [planwise.client.config :as config]
             [planwise.client.scenarios.db :as db]
             [planwise.client.ui.common :as ui]
             [planwise.client.routes :as routes]
@@ -15,7 +16,7 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn simple-map
-  [{:keys [changeset]}]
+  [{:keys [changeset raster]}]
   (let [state    (subscribe [:scenarios/view-state])
         index    (subscribe [:scenarios/changeset-index])
         position (r/atom mapping/map-preview-position)
@@ -23,7 +24,8 @@
         add-point (fn [lat lon] (dispatch [:scenarios/create-site {:lat lat
                                                                    :lon lon}]))]
     (fn [{:keys [changeset]}]
-      (let [indexed-changeset   (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)]
+      (let [indexed-changeset     (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)
+            pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
                                            :on-position-changed #(reset! position %)
@@ -31,6 +33,13 @@
                                            :on-click (cond  (= @state :new-site) add-point)
                                            :controls []}
                              mapping/default-base-tile-layer
+                             (when pending-demand-raster
+                               [:wms-tile-layer {:url config/mapserver-url
+                                                 :transparent true
+                                                 :layers "scenario"
+                                                 :DATAFILE (str pending-demand-raster ".map")
+                                                 :format "image/png"
+                                                 :opacity 0.6}])
                              [:marker-layer {:points indexed-changeset
                                              :lat-fn #(get-in % [:elem :location :lat])
                                              :lon-fn #(get-in % [:elem :location :lon])
@@ -61,7 +70,7 @@
       [:h1 {:class-name "large"}
        [:small "Increase in pregnancies coverage"]
        "25,238 (11.96%)"]
-      [:p {:class-name "grey-text"} (str "to a total of" (or demand-coverage " calculating..."))]]
+      [:p {:class-name "grey-text"} (str "to a total of " (or demand-coverage "calculating..."))]]
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
        [:small "Investment required"]
