@@ -97,13 +97,13 @@
         demand-raster (raster/read-raster (str "data/scenarios/" project-id "/initial.tif"))
         raster-path   (str "scenarios/" project-id "/" scenario-id)]
 
-    ;; Compute coverage of sites
+    ;; Compute coverage of sites that are not yet computed
     (doseq [change (:changeset scenario)]
       (let [lat      (get-in change [:location :lat])
             lon      (get-in change [:location :lon])
             coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:site-id change) ".tif")]
-        ;; TODO use cache if exist
-        (coverage/compute-coverage coverage {:lat lat :lon lon} (merge criteria {:raster coverage-path}))))
+        (if (not (.exists (io/as-file coverage-path)))
+          (coverage/compute-coverage coverage {:lat lat :lon lon} (merge criteria {:raster coverage-path})))))
 
     ;; Compute demand from initial scenario
     ;; TODO refactor with initial-scenario loop
