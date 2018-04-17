@@ -70,8 +70,7 @@
     ;TODO authenticate user-id
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)]
-       (response (projects2/delete-project service id))))))
-
+       (projects2/delete-project service id)))))
 
 (defn projects2-endpoint
   [config]
