@@ -36,3 +36,8 @@
   [project-id]
   {:method    :post
    :uri       (str "/api/projects2/" project-id "/reset")})
+
+(defn- delete-project!
+  [project-id]
+  {:method    :delete
+   :uri  (str "/api/projects2/" project-id)})

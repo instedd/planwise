@@ -64,7 +64,13 @@
          (not-found {:error "Project not found"})
          (do
            (projects2/reset-project service id)
-           (response (projects2/get-project service id))))))))
+           (response (projects2/get-project service id))))))
+
+   (DELETE "/:id" [id :as request]
+    ;TODO authenticate user-id
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)]
+       (response (projects2/delete-project service id))))))
 
 
 (defn projects2-endpoint

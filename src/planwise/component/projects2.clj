@@ -59,7 +59,7 @@
 
 (defn delete-project
   [store project-id]
-  (db-delete-project (get-db store) {:owner-id owner-id}))
+  (db-delete-project! (get-db store) {:id project-id}))
 
 (defrecord SitesProjectsStore [db scenarios]
   boundary/Projects2

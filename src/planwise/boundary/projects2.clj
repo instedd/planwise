@@ -19,7 +19,7 @@
     "Starts project.")
 
   (delete-project [this project-id]
-    "Registers when project is deleted.")
+    "Registers when project is deleted. Returns a map of project-id.")
 
   (reset-project [this project-id]
     "Resets project to draft."))
