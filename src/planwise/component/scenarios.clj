@@ -62,7 +62,7 @@
   (info "Computing initial scenario" scenario-id)
   (let [engine (:engine store)
         result (engine/compute-initial-scenario engine project)]
-    (info "Intial scenario computed" result)
+    (info "Initial scenario computed" result)
     (db-update-scenario-state! (get-db store)
                                {:id              scenario-id
                                 :raster          (:raster-path result)
@@ -70,7 +70,8 @@
                                 :state           "done"})
     (db-update-project-engine-config! (get-db store)
                                       {:project-id    (:id project)
-                                       :engine-config (pr-str {:quartiles (:demand-quartiles result)})}))
+                                       :engine-config (pr-str {:demand-quartiles (:demand-quartiles result)
+                                                               :source-demand    (:source-demand result)})}))
   {:state nil})
 
 (defn create-scenario

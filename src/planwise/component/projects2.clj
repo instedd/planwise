@@ -37,6 +37,7 @@
 (defn get-project
   [store project-id]
   (-> (db-get-project (get-db store) {:id project-id})
+      (update* :engine-config edn/read-string)
       (update* :config edn/read-string)
       (update* :config model/apply-default)))
 

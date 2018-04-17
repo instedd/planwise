@@ -56,7 +56,7 @@
         dataset-id     (:dataset-id project)
         project-id     (:id project)
         project-config (:config project)
-        capacity       (get-in project-config [:sites :capacity] 1)
+        capacity       (get-in project-config [:sites :capacity])
         source-demand  (demand/count-population demand-raster)
         raster-path    (str "scenarios/" project-id "/initial")]
     (debug "Source population demand:" source-demand)
@@ -84,24 +84,50 @@
 (defn compute-scenario
   [engine project scenario]
   (let [coverage  (:coverage engine)
+        project-id (:id project)
+        project-config (:config project)
+        scenario-id (:id scenario)
         algorithm (keyword (:coverage-algorithm project))
         filter-options (get-in project [:config :coverage :filter-options])
-        criteria (merge {:algorithm algorithm} filter-options)]
+        criteria (merge {:algorithm algorithm} filter-options)
+        capacity (get-in project-config [:sites :capacity])
+        quartiles (get-in project [:engine-config :demand-quartiles])
+        source-demand (get-in project [:engine-config :source-demand])
+        ;; demand-raster starts with the initial-pending-demand
+        demand-raster (raster/read-raster (str "data/scenarios/" project-id "/initial.tif"))
+        raster-path   (str "scenarios/" project-id "/" scenario-id)]
+
+    ;; Compute coverage of sites
     (doseq [change (:changeset scenario)]
-      ;; TODO use cache if exist
-      (let [lat (get-in change [:location :lat])
-            lon (get-in change [:location :lon])
-            raster (str "data/scenarios/coverage-cache/" (:site-id change) ".tiff")]
-        (coverage/compute-coverage coverage {:lat lat :lon lon} (merge criteria {:raster raster}))))))
+      (let [lat      (get-in change [:location :lat])
+            lon      (get-in change [:location :lon])
+            coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:site-id change) ".tif")]
+        ;; TODO use cache if exist
+        (coverage/compute-coverage coverage {:lat lat :lon lon} (merge criteria {:raster coverage-path}))))
+
+    ;; Compute demand from initial scenario
+    ;; TODO refactor with initial-scenario loop
+    (dorun (for [change (:changeset scenario)]
+             (let [capacity             (* capacity (:capacity change))
+                   coverage-path        (str "data/scenarios/" project-id "/coverage-cache/" (:site-id change) ".tif")
+                   coverage-raster      (raster/read-raster coverage-path)
+                   population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)]
+               (debug "Subtracting" capacity "of site" (:site-id change) "reaching" population-reachable "people")
+               (when-not (zero? population-reachable)
+                 (let [factor (- 1 (min 1 (/ capacity population-reachable)))]
+                   (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
+
+    (let [pending-demand (demand/count-population demand-raster)]
+      (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
+      (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
+      {:raster-path      raster-path
+       :pending-demand   pending-demand
+       :covered-demand   (- source-demand pending-demand)})))
 
 (defn clear-project-cache
   [this project-id]
   (let [scenarios-path (str "data/scenarios/" project-id)]
     (files/delete-files-recursively scenarios-path)))
-
-(defn compute-scenario
-  [scenario]
-  scenario)
 
 (defrecord Engine [datasets2 coverage]
   boundary/Engine
@@ -120,10 +146,12 @@
   ;; REPL testing
 
   (def projects2 (:planwise.component/projects2 integrant.repl.state/system))
+  (def scenarios (:planwise.component/scenarios integrant.repl.state/system))
   (def datasets2 (:planwise.component/datasets2 integrant.repl.state/system))
+  (def coverage (:planwise.component/coverage integrant.repl.state/system))
 
   (defn new-engine []
-    (map->Engine {:datasets2 datasets2}))
+    (map->Engine {:datasets2 datasets2 :coverage coverage}))
 
   (projects2/get-project projects2 5)
 
@@ -131,4 +159,7 @@
 
   (project-sites (new-engine) (projects2/get-project projects2 5))
 
-  (compute-initial-scenario (new-engine) (projects2/get-project projects2 5)))
+  (compute-initial-scenario (new-engine) (projects2/get-project projects2 5))
+  (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 24))
+
+  nil)
