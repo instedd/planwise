@@ -83,19 +83,20 @@
 
 (defn compute-scenario
   [engine project scenario]
-  (let [coverage  (:coverage engine)
-        project-id (:id project)
+  (let [coverage       (:coverage engine)
+        project-id     (:id project)
         project-config (:config project)
-        scenario-id (:id scenario)
-        algorithm (keyword (:coverage-algorithm project))
+        scenario-id    (:id scenario)
+        algorithm      (keyword (:coverage-algorithm project))
         filter-options (get-in project [:config :coverage :filter-options])
-        criteria (merge {:algorithm algorithm} filter-options)
-        capacity (get-in project-config [:sites :capacity])
-        quartiles (get-in project [:engine-config :demand-quartiles])
+        criteria       (merge {:algorithm algorithm} filter-options)
+        capacity       (get-in project-config [:sites :capacity])
+        quartiles      (get-in project [:engine-config :demand-quartiles])
         source-demand (get-in project [:engine-config :source-demand])
         ;; demand-raster starts with the initial-pending-demand
-        demand-raster (raster/read-raster (str "data/scenarios/" project-id "/initial.tif"))
-        raster-path   (str "scenarios/" project-id "/" scenario-id)]
+        demand-raster    (raster/read-raster (str "data/scenarios/" project-id "/initial.tif"))
+        raster-full-path (files/create-temp-file (str "data/scenarios/" project-id) (format "%03d-" scenario-id) ".tif")
+        raster-path      (get (re-find (re-pattern "^data/(.*)\\.tif$") raster-full-path) 1)]
 
     ;; Compute coverage of sites that are not yet computed
     (doseq [change (:changeset scenario)]

@@ -7,3 +7,7 @@
                 (delete-f child-file)))
             (clojure.java.io/delete-file file silently))]
     (delete-f (clojure.java.io/file fname))))
+
+(defn create-temp-file
+  [parent prefix suffix]
+  (str (java.io.File/createTempFile prefix suffix (clojure.java.io/file parent))))
