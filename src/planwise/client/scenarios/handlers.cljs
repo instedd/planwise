@@ -34,11 +34,51 @@
    (let [project-id    (get-in db [:page-params :project-id])]
      {:navigate (routes/scenarios {:project-id project-id :id id})})))
 
+;; fields that may change when the deferred computation of demand finishes
+(def demand-fields [:state :demand-coverage :investment :raster :label])
+
+(defn- dispatch-track-demand-information-if-needed
+  [scenario]
+  (let [should-track (= (:state scenario) "pending")]
+    (cond
+      should-track {:delayed-dispatch {:ms 1000
+                                       :key [:track-demand-information]
+                                       :dispatch [:scenarios/track-demand-information (:id scenario)]}}
+      :else {})))
+
+;; Updates the current scenario (if it's still the same one passed by the argument)
+;; and if the scenario is still in pending, schedule a next dispatch for tracking
+;; the processing status
+(rf/reg-event-fx
+ :scenarios/update-demand-information
+ (fn [{:keys [db]} [_ scenario]]
+   (let [current-scenario (get-in db [:scenarios :current-scenario])
+         should-update    (= (:id current-scenario) (:id scenario))]
+     (merge (cond
+              should-update {:db (-> db
+                                     (assoc-in [:scenarios :current-scenario]
+                                               (merge current-scenario (select-keys scenario demand-fields))))}
+              :else {})
+            (dispatch-track-demand-information-if-needed scenario)))))
+
+(rf/reg-event-fx
+ :scenarios/track-demand-information
+ (fn [_ [_ id]]
+   {:api (assoc (api/load-scenario id)
+                :on-success [:scenarios/update-demand-information])}))
+
+(rf/reg-event-fx
+ :scenarios/save-current-scenario-and-track
+ (fn [_ [_ scenario]]
+   (merge
+    {:dispatch [:scenarios/save-current-scenario scenario]}
+    (dispatch-track-demand-information-if-needed scenario))))
+
 (rf/reg-event-fx
  :scenarios/get-scenario
  (fn [_ [_ id]]
    {:api (assoc (api/load-scenario id)
-                :on-success [:scenarios/save-current-scenario]
+                :on-success [:scenarios/save-current-scenario-and-track]
                 :on-failure [:scenarios/scenario-not-found])}))
 
 (rf/reg-event-fx
@@ -95,7 +135,8 @@
          new-site  (db/initial-site {:location {:lat lat :lon lon}})
          updated-scenario (update current-scenario :changeset #(conj % new-site))
          new-site-index (dec (count (:changeset updated-scenario)))]
-     {:api  (api/update-scenario (:id current-scenario) updated-scenario)
+     {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
+                   :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc :current-scenario updated-scenario))
       :dispatch [:scenarios/open-changeset-dialog new-site-index]})))
@@ -117,7 +158,8 @@
          changeset-index   (get-in db [:view-state-params :changeset-index])
          updated-changeset (get-in db [:changeset-dialog])
          updated-scenario  (assoc-in current-scenario [:changeset changeset-index] updated-changeset)]
-     {:api  (api/update-scenario (:id current-scenario) updated-scenario)
+     {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
+                   :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc-in [:current-scenario] updated-scenario)
                 (assoc-in [:view-state] :current-scenario))})))
@@ -137,6 +179,7 @@
    (let [current-scenario (:current-scenario db)
          deleted-changeset (vec (keep-indexed #(if (not= %1 index) %2) (:changeset current-scenario)))
          updated-scenario (assoc current-scenario :changeset deleted-changeset)]
-     {:api  (api/update-scenario (:id current-scenario) updated-scenario)
+     {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
+                   :on-success [:scenarios/update-demand-information])
       :db   (assoc db :current-scenario updated-scenario)
       :dispatch [:scenarios/cancel-changeset-dialog]})))

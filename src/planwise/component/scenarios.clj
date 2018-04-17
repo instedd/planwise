@@ -122,6 +122,7 @@
         result (engine/compute-scenario engine project scenario)]
     (info "Scenario computed" result)
     ;; TODO check if scenario didn't change from result. If did, discard result.
+    ;; TODO remove previous raster files
     (db-update-scenario-state! (get-db store)
                                {:id              scenario-id
                                 :raster          (:raster-path result)

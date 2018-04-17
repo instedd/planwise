@@ -23,7 +23,7 @@
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-site {:lat lat
                                                                    :lon lon}]))]
-    (fn [{:keys [changeset]}]
+    (fn [{:keys [changeset raster]}]
       (let [indexed-changeset     (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)
             pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
@@ -69,8 +69,13 @@
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
        [:small "Increase in pregnancies coverage"]
-       "25,238 (11.96%)"]
-      [:p {:class-name "grey-text"} (str "to a total of " (or demand-coverage "calculating..."))]]
+       (cond
+         (= "pending" (:state current-scenario)) "loading..."
+         :else "25238 (11.96%)")]
+      [:p {:class-name "grey-text"}
+       (cond
+         (= "pending" (:state current-scenario)) "to a total of"
+         :else (str "to a total of " demand-coverage))]]
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
        [:small "Investment required"]
