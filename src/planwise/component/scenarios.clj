@@ -70,8 +70,9 @@
                                 :state           "done"})
     (db-update-project-engine-config! (get-db store)
                                       {:project-id    (:id project)
-                                       :engine-config (pr-str {:demand-quartiles (:demand-quartiles result)
-                                                               :source-demand    (:source-demand result)})}))
+                                       :engine-config (pr-str {:demand-quartiles           (:demand-quartiles result)
+                                                               :source-demand              (:source-demand result)
+                                                               :pending-demand-raster-path (:raster-path result)})}))
   {:state nil})
 
 (defn create-scenario

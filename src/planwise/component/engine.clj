@@ -58,7 +58,8 @@
         project-config (:config project)
         capacity       (get-in project-config [:sites :capacity])
         source-demand  (demand/count-population demand-raster)
-        raster-path    (str "scenarios/" project-id "/initial")]
+        raster-full-path (files/create-temp-file (str "data/scenarios/" project-id) "initial-" ".tif")
+        raster-path      (get (re-find (re-pattern "^data/(.*)\\.tif$") raster-full-path) 1)]
     (debug "Source population demand:" source-demand)
     (dorun (for [site sites]
              (let [capacity             (* capacity (:capacity site))
@@ -72,7 +73,6 @@
                    (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
     (let [initial-demand (demand/count-population demand-raster)
           quartiles      (vec (demand/compute-population-quartiles demand-raster))]
-      (io/make-parents (io/as-file (str "data/" raster-path)))
       (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
       (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
       {:raster-path      raster-path
@@ -92,9 +92,9 @@
         criteria       (merge {:algorithm algorithm} filter-options)
         capacity       (get-in project-config [:sites :capacity])
         quartiles      (get-in project [:engine-config :demand-quartiles])
-        source-demand (get-in project [:engine-config :source-demand])
+        source-demand  (get-in project [:engine-config :source-demand])
         ;; demand-raster starts with the initial-pending-demand
-        demand-raster    (raster/read-raster (str "data/scenarios/" project-id "/initial.tif"))
+        demand-raster    (raster/read-raster (str "data/" (get-in project [:engine-config :pending-demand-raster-path]) ".tif"))
         raster-full-path (files/create-temp-file (str "data/scenarios/" project-id) (format "%03d-" scenario-id) ".tif")
         raster-path      (get (re-find (re-pattern "^data/(.*)\\.tif$") raster-full-path) 1)]
 
@@ -161,6 +161,6 @@
   (project-sites (new-engine) (projects2/get-project projects2 5))
 
   (compute-initial-scenario (new-engine) (projects2/get-project projects2 5))
-  (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 24))
+  (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 30))
 
   nil)

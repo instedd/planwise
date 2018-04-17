@@ -1,4 +1,5 @@
-(ns planwise.util.files)
+(ns planwise.util.files
+  (:require [clojure.java.io :as io]))
 
 (defn delete-files-recursively [fname & [silently]]
   (letfn [(delete-f [file]
@@ -10,4 +11,7 @@
 
 (defn create-temp-file
   [parent prefix suffix]
-  (str (java.io.File/createTempFile prefix suffix (clojure.java.io/file parent))))
+  (let [parent (io/as-file parent)]
+    (io/make-parents parent)
+    (.mkdir parent)
+    (str (java.io.File/createTempFile prefix suffix parent))))
