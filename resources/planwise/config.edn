@@ -146,8 +146,8 @@
  {:routing    #ig/ref :planwise.component/routing}
 
  :planwise.endpoint/scenarios
- {:scenarios   #ig/ref :planwise.component/scenarios}
-
+ {:scenarios   #ig/ref :planwise.component/scenarios
+  :projects2   #ig/ref :planwise.component/projects2}
 
  ;; Components
 

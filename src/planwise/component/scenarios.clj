@@ -63,6 +63,7 @@
   (let [engine (:engine store)
         result (engine/compute-initial-scenario engine project)]
     (info "Initial scenario computed" result)
+    ;; TODO check if scenario didn't change from result
     (db-update-scenario-state! (get-db store)
                                {:id              scenario-id
                                 :raster          (:raster-path result)
@@ -76,24 +77,28 @@
   {:state nil})
 
 (defn create-scenario
-  [store project-id {:keys [name changeset]}]
-  ;; TODO schedule demand computation
+  [store project {:keys [name changeset]}]
   (assert (s/valid? ::model/change-set changeset))
-  (db-create-scenario! (get-db store)
-                       {:name name
-                        :project-id project-id
-                        :investment (sum-investments changeset)
-                        :demand-coverage nil
-                        :changeset (pr-str changeset)
-                        :label nil}))
+  (let [result (db-create-scenario! (get-db store)
+                                    {:name name
+                                     :project-id (:id project)
+                                     :investment (sum-investments changeset)
+                                     :demand-coverage nil
+                                     :changeset (pr-str changeset)
+                                     :label nil})]
+    (jr/queue-job (:jobrunner store)
+                  [::boundary/compute-scenario (:id result)]
+                  {:store store
+                   :project project})
+    result))
 
 (defn update-scenario
-  [store {:keys [id name changeset]}]
-  ;; TODO schedule demand computation
+  [store project {:keys [id name changeset]}]
   ;; TODO fail if updating initial. initial scenario should be readonly
+  ;; TODO assert scenario belongs to project
   (assert (s/valid? ::model/change-set changeset))
   (let [db (get-db store)
-        project-id (:project-id (db-find-scenario db {:id id}))]
+        project-id (:id project)]
     (db-update-scenario! db
                          {:name name
                           :id id
@@ -102,7 +107,28 @@
                           :changeset (pr-str changeset)
                           :label nil})
     ;; Current label is removed so we need to search for the new optimal
-    (db-update-scenarios-label! db {:project-id project-id})))
+    (db-update-scenarios-label! db {:project-id project-id})
+    (jr/queue-job (:jobrunner store)
+                  [::boundary/compute-scenario id]
+                  {:store store
+                   :project project})))
+
+
+(defmethod jr/job-next-task ::boundary/compute-scenario
+  [[_ scenario-id] {:keys [store project] :as state}]
+  (info "Computing scenario" scenario-id)
+  (let [engine (:engine store)
+        scenario (get-scenario store scenario-id)
+        result (engine/compute-scenario engine project scenario)]
+    (info "Scenario computed" result)
+    ;; TODO check if scenario didn't change from result. If did, discard result.
+    (db-update-scenario-state! (get-db store)
+                               {:id              scenario-id
+                                :raster          (:raster-path result)
+                                :demand-coverage (:covered-demand result)
+                                :state           "done"})
+    (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
+  {:state nil})
 
 ;; private function to update the label based on investments and demand-coverage
 ;; will label of all scenarios of the project
@@ -135,10 +161,10 @@
     (get-scenario store scenario-id))
   (create-initial-scenario [store project]
     (create-initial-scenario store project))
-  (create-scenario [store project-id props]
-    (create-scenario store project-id props))
-  (update-scenario [store props]
-    (update-scenario store props))
+  (create-scenario [store project props]
+    (create-scenario store project props))
+  (update-scenario [store project props]
+    (update-scenario store project props))
   (next-scenario-name [store project-id name]
     (next-scenario-name store project-id name))
   (reset-scenarios [store project-id]

@@ -8,11 +8,13 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [clojure.core.reducers :as r]
-            [planwise.boundary.scenarios :as scenarios]))
+            [planwise.boundary.scenarios :as scenarios]
+            [planwise.boundary.projects2 :as projects2]))
 
 (timbre/refer-timbre)
 
 (defn- scenarios-routes
+  [{service :scenarios projects2 :projects2}]
   [service]
   (routes
    (GET "/:id" [id as request]
@@ -21,20 +23,26 @@
 
    (PUT "/:id" [id scenario as request]
      (let [id (Integer. id)
-           scenario  (assoc scenario :id id)]
-       (scenarios/update-scenario service scenario)
+           scenario   (assoc scenario :id id)
+           project-id (:project-id (scenarios/get-scenario service id))
+           project    (projects2/get-project projects2 project-id)]
+       (scenarios/update-scenario service project scenario)
        (response (dissoc (scenarios/get-scenario service id) scenario :updated-at))))
 
    (POST "/:id/copy" [id as request]
-     (let [{:keys [name project-id changeset]} (scenarios/get-scenario service (Integer. id))
-           next-name (scenarios/next-scenario-name service project-id name)]
-       (response (scenarios/create-scenario service  project-id {:name next-name
-                                                                 :changeset changeset}))))))
+     (let [id         (Integer. id)
+           scenario   (scenarios/get-scenario service id)
+           project-id (:project-id scenario)
+           project    (projects2/get-project projects2 project-id)
+           {:keys [name changeset]} scenario
+           next-name  (scenarios/next-scenario-name service project-id name)]
+       (response (scenarios/create-scenario service project {:name next-name
+                                                             :changeset changeset}))))))
 
 (defn scenarios-endpoint
-  [{service :scenarios}]
+  [config]
   (context "/api/scenarios" []
-    (restrict (scenarios-routes service) {:handler authenticated?})))
+    (restrict (scenarios-routes config) {:handler authenticated?})))
 
 (defmethod ig/init-key :planwise.endpoint/scenarios
   [_ config]

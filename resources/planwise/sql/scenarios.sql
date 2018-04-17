@@ -43,7 +43,7 @@ RETURNING id;
 UPDATE scenarios
   SET name = :name, investment = :investment,
   "demand-coverage" = :demand-coverage, changeset = :changeset, label = :label,
-  "updated-at" = NOW()
+  state = 'pending', "updated-at" = NOW()
 WHERE
   id = :id
 
