@@ -17,7 +17,8 @@
 
 (defn- project-secondary-actions
   [project]
-  [[ui/secondary-action {:on-click #(dispatch [:projects2/reset-project (:id project)])} "Back to draft"]])
+  [[ui/secondary-action {:on-click #(dispatch [:projects2/reset-project (:id project)])} "Back to draft"]
+   [ui/secondary-action {:on-click #(dispatch [:projects2/delete-project (:id project)])} "Delete Project"]])
 
 (defn view-current-project
   []

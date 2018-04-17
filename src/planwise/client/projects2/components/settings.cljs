@@ -49,6 +49,13 @@
              :on-click (utils/prevent-default #(dispatch [:projects2/start-project (:id project)]))}
    (if (= (keyword (:state project)) :started) "Started ..." "Start")])
 
+(defn- project-delete-button
+  [_ {:keys [id]}]
+  [m/Button {:id "delete-project"
+             :type "button"
+             :on-click (utils/with-confirm  #(dispatch [:projects2/delete-project id]) "Do you want to delete this project?")}
+   "Delete"])
+
 (defn edit-current-project
   []
   (let [current-project (subscribe [:projects2/current-project])]
@@ -84,4 +91,6 @@
                                                :empty [:div "First choose dataset."]}]
            [:h2 "Actions"]
            [current-project-input "Budget" [:config :actions :budget] valid-input]]
-          [project-start-button {} @current-project]]]]])))
+          [:div
+           [project-start-button {} @current-project]
+           [project-delete-button {} @current-project]]]]]])))

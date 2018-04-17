@@ -13,15 +13,15 @@ UPDATE projects2
   WHERE id = :id;
 
 -- :name db-get-project :? :1
-SELECT projects2.id projects2."owner-id", projects2.name, projects2.config, projects2."dataset-id", projects2.state
-      ,datasets2."coverage-algorithm"
+SELECT projects2.id, projects2."owner-id", projects2.name, projects2.config, projects2."dataset-id", projects2.state ,datasets2."coverage-algorithm"
   FROM projects2
   LEFT JOIN datasets2 ON projects2."dataset-id" = datasets2.id
-  WHERE projects2.id = :id
+  WHERE projects2.id = :id;
 
 -- :name db-list-projects :?
 SELECT id, name, "region-id", state FROM projects2
-    WHERE "owner-id" = :owner-id;
+    WHERE "deleted-at" is NULL
+    AND "owner-id" = :owner-id;
 
 -- :name db-update-state-project :!
 UPDATE projects2
@@ -42,5 +42,4 @@ UPDATE "projects2" AS p2
 -- :name db-delete-project! :!
 UPDATE projects2
   SET "deleted-at" = NOW()
-  WHERE id = :id
-  RETURNING id;
+  WHERE id = :id;
