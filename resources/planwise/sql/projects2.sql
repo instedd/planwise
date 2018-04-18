@@ -21,7 +21,8 @@ SELECT projects2.*, datasets2."coverage-algorithm"
 -- :name db-list-projects :?
 SELECT id, name, "region-id", state FROM projects2
     WHERE "deleted-at" is NULL
-    AND "owner-id" = :owner-id;
+    AND "owner-id" = :owner-id
+    ORDER BY name;
 
 -- :name db-update-state-project :!
 UPDATE projects2
