@@ -390,7 +390,60 @@ form.vertical, .fields-vertical {
   cursor: pointer;
 }
 
+.scenarios-content {
+  padding: 0px;
 
+  table {
+    border-spacing: 0;
+    font-size: 18px;
+    margin: 0;
+    padding: 0;
+    width: 100%;
 
+    thead {
 
+      tr > th {
+        border-bottom: 1px solid #ccc;
+      }
 
+      th {
+        color: #bbb;
+        font-weight: 500;
+        padding: 35px 30px;
+      }
+    }
+
+    tbody tr {
+      cursor: pointer;
+
+      &:hover {
+        background-color: #f5f5f5;
+      }
+    }
+
+    tr > td {
+      border-bottom: 1px solid #eee;
+      padding: 30px;
+    }
+
+    .col1 {
+      text-align: left;
+      width: 150px;
+    }
+
+    .col2 {
+      text-align: right;
+      width: 280px;
+    }
+
+    .col3 {
+      text-align: right;
+      width: 120px;
+    }
+
+    .col4 {
+      text-align: left;
+    }
+
+  }
+}

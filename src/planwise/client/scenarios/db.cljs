@@ -1,10 +1,13 @@
-(ns planwise.client.scenarios.db)
+(ns planwise.client.scenarios.db
+  (:require [planwise.client.asdf :as asdf]))
 
 (def initial-db
   {:view-state :current-scenario
    :rename-dialog            nil
    :current-scenario         nil
-   :changeset-dialog         nil})
+   :changeset-dialog         nil
+   :list-scope               nil
+   :list                     (asdf/new nil)})
 
 (defn initial-site
   [props]

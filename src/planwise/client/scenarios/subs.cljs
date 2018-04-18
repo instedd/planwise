@@ -25,3 +25,13 @@
  :scenarios/changeset-index
  (fn [db _]
    (get-in db [:scenarios :view-state-params :changeset-index])))
+
+(rf/reg-sub
+ :scenarios/list
+ (fn [db _]
+   (get-in db [:scenarios :list])))
+
+(rf/reg-sub
+ :scenarios/list-is-invalid
+ (fn [db _]
+   (not= (get-in db [:scenarios :list-scope]) {:project-id (get-in db [:projects2 :current-project :id])})))

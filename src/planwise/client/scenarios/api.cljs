@@ -15,3 +15,8 @@
   {:method    :put
    :params    {:scenario scenario}
    :uri       (str "/api/scenarios/" id)})
+
+(defn- load-scenarios
+  [id]
+  {:method    :get
+   :uri       (str "/api/projects2/" id "/scenarios")})

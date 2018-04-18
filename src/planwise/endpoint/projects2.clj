@@ -9,7 +9,8 @@
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.model.projects2 :as model]
             [planwise.boundary.datasets2 :as datasets2]
-            [planwise.boundary.projects2 :as projects2]))
+            [planwise.boundary.projects2 :as projects2]
+            [planwise.boundary.scenarios :as scenarios]))
 
 (timbre/refer-timbre)
 
@@ -18,7 +19,7 @@
   (dissoc project :deleted-at))
 
 (defn- projects2-routes
-  [{service :projects2}]
+  [{service :projects2 service-scenarios :scenarios}]
   (routes
 
    (POST "/" request
@@ -74,7 +75,13 @@
      ;; TODO authorize user-id
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)]
-       (projects2/delete-project service id)))))
+       (projects2/delete-project service id)))
+
+   (GET "/:id/scenarios" [id :as request]
+     (let [user-id       (util/request-user-id request)
+           id            (Integer. id)
+           scenarios     (scenarios/list-scenarios service-scenarios id)]
+       (response scenarios)))))
 
 (defn projects2-endpoint
   [config]
