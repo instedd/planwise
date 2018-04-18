@@ -2,7 +2,6 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
-            [planwise.client.projects2.components.settings :as settings]
             [planwise.client.asdf :as asdf]
             [planwise.client.dialog :refer [new-dialog]]
             [planwise.client.components.common2 :as common2]
@@ -20,7 +19,7 @@
 (defn- project-secondary-actions
   [project delete?]
   [[ui/secondary-action {:on-click #(dispatch [:projects2/reset-project (:id project)])} "Back to draft"]
-   [ui/secondary-action {:on-click #(reset! delete? true)} "Delete Project"]])
+   [ui/secondary-action {:on-click #(reset! delete? true)} "Delete project"]])
 
 (defn view-current-project
   []
