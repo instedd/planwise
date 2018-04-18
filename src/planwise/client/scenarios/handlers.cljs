@@ -189,12 +189,13 @@
 
 (rf/reg-event-fx
  :scenarios/load-scenarios
- ;in-scenarios
  (fn [{:keys [db]} [_]]
    (let [project-id (get-in db [:projects2 :current-project :id])]
      {:api (assoc (api/load-scenarios project-id)
                   :on-success [:scenarios/scenarios-loaded])
-      :db  (update-in db [:scenarios :list] asdf/reload!)})))
+      :db  (-> db
+               (update-in [:scenarios :list] asdf/reload!)
+               (assoc-in [:scenarios :list-scope] {:project-id project-id}))})))
 
 (rf/reg-event-db
  :scenarios/scenarios-loaded

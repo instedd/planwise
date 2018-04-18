@@ -6,6 +6,7 @@
    :rename-dialog            nil
    :current-scenario         nil
    :changeset-dialog         nil
+   :list-scope               nil
    :list                     (asdf/new nil)})
 
 (defn initial-site

@@ -13,15 +13,15 @@
 (defn- project-section-show
   []
   (let [page-params       (subscribe [:page-params])
-        id                (:id @page-params)
         current-project   (subscribe [:projects2/current-project])]
     (fn []
-      (cond
-        (not= (:id @current-project) id) (do
-                                           (dispatch [:projects2/get-project id])
-                                           [common2/loading-placeholder])
-        (= "draft" (:state @current-project)) [settings/edit-current-project]
-        :else [dashboard/view-current-project]))))
+      (let [id (:id @page-params)]
+        (cond
+          (not= (:id @current-project) id) (do
+                                             (dispatch [:projects2/get-project id])
+                                             [common2/loading-placeholder])
+          (= "draft" (:state @current-project)) [settings/edit-current-project]
+          :else [dashboard/view-current-project])))))
 
 ;;------------------------------------------------------------------------
 ;;Projects view
