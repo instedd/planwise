@@ -424,6 +424,10 @@ form.vertical, .fields-vertical {
     tr > td {
       border-bottom: 1px solid #eee;
       padding: 30px;
+
+      .badge-scenario-label {
+        display: inline-block;
+      }
     }
 
     .col1 {
@@ -444,6 +448,8 @@ form.vertical, .fields-vertical {
     .col4 {
       text-align: left;
     }
+
+
 
   }
 }

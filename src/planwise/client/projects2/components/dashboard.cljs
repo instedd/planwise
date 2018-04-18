@@ -21,10 +21,22 @@
   [[ui/secondary-action {:on-click #(dispatch [:projects2/reset-project (:id project)])} "Back to draft"]
    [ui/secondary-action {:on-click #(reset! delete? true)} "Delete project"]])
 
+(defn- create-chip
+  [{:keys [valid-fn input]}]
+  (when (-> input valid-fn) [m/ChipSet {:class "badge-scenario-label"} [m/Chip [m/ChipText input]]]))
+
+(defn- badge-scenario-label
+  [{:keys [label state]}]
+  [:div
+   [create-chip {:input label
+                 :valid-fn #(not= % "initial")}]
+   [create-chip {:input state
+                 :valid-fn #(= % "pending")}]])
+
 (defn- scenarios-list-item
   [scenario]
   [:tr {:key (:id scenario) :on-click #(dispatch [:scenarios/load-scenario {:id (:id scenario)}])}
-   [:td {:class "col1"} (:name scenario)]
+   [:td {:class "col1"} (:name scenario) (badge-scenario-label scenario)]
    [:td {:class "col2"} (:demand-coverage scenario)]
    [:td {:class "col3"} (:investment scenario)]
    [:td {:class "col4"} ""]])
