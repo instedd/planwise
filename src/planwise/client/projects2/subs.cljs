@@ -12,5 +12,6 @@
 (rf/reg-sub
  :projects2/list
  (fn [db _]
-   (sort-by (comp string/lower-case :name) (get-in db [:projects2 :list]))))
+   (some->> (get-in db [:projects2 :list])
+            (sort-by (comp string/lower-case :name)))))
 
