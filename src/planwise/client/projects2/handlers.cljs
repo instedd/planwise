@@ -85,6 +85,16 @@
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
+(rf/reg-event-fx
+ :projects2/delete-project
+ in-projects2
+ (fn [{:keys [db]} [_ id]]
+   {:api       (api/delete-project! id)
+    :navigate  (routes/projects2)
+    :db   (-> db
+              (assoc :current-project nil)
+              (update :list #(seq (utils/remove-by-id % id))))}))
+
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
 
@@ -139,3 +149,4 @@
  in-projects2
  (fn [db [_ projects-list]]
    (assoc db :list projects-list)))
+

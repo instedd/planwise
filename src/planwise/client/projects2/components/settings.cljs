@@ -3,6 +3,7 @@
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
             [planwise.client.asdf :as asdf]
+            [planwise.client.dialog :refer [new-dialog]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]
             [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
@@ -49,9 +50,15 @@
              :on-click (utils/prevent-default #(dispatch [:projects2/start-project (:id project)]))}
    (if (= (keyword (:state project)) :started) "Started ..." "Start")])
 
+(defn- project-delete-button
+  [state]
+  [m/Button {:type "button"
+             :on-click #(reset! state true)} "Delete"])
+
 (defn edit-current-project
   []
-  (let [current-project (subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])
+        delete?         (r/atom false)]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
@@ -84,4 +91,11 @@
                                                :empty [:div "First choose dataset."]}]
            [:h2 "Actions"]
            [current-project-input "Budget" [:config :actions :budget] valid-input]]
-          [project-start-button {} @current-project]]]]])))
+          [:div
+           [project-start-button {} @current-project]
+           [project-delete-button delete?]]
+          [new-dialog {:open? @delete?
+                       :title "Delete Project"
+                       :accept-fn #(dispatch [:projects2/delete-project (:id @current-project)])
+                       :cancel-fn #(reset! delete? false)
+                       :content [:p "Do you want to delete this project?"]}]]]]])))

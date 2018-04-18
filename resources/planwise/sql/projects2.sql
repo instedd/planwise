@@ -1,7 +1,7 @@
 -- :name db-create-project! :<! :1
 INSERT INTO projects2
-  ("owner-id", name, config, "dataset-id", state)
-  VALUES (:owner-id, :name, NULL, NULL, :state)
+  ("owner-id", name, config, "dataset-id", state, "deleted-at")
+  VALUES (:owner-id, :name, NULL, NULL, :state, NULL)
   RETURNING id;
 
 -- :name db-update-project :!
@@ -16,11 +16,12 @@ UPDATE projects2
 SELECT projects2.*, datasets2."coverage-algorithm"
   FROM projects2
   LEFT JOIN datasets2 ON projects2."dataset-id" = datasets2.id
-  WHERE projects2.id = :id
+  WHERE projects2.id = :id;
 
 -- :name db-list-projects :?
 SELECT id, name, "region-id", state FROM projects2
-    WHERE "owner-id" = :owner-id;
+    WHERE "deleted-at" is NULL
+    AND "owner-id" = :owner-id;
 
 -- :name db-update-state-project :!
 UPDATE projects2
@@ -37,3 +38,8 @@ UPDATE "projects2" AS p2
 UPDATE "projects2" AS p2
   SET "state" = 'draft'
   WHERE "id" = :id;
+
+-- :name db-delete-project! :!
+UPDATE projects2
+  SET "deleted-at" = NOW()
+  WHERE id = :id;

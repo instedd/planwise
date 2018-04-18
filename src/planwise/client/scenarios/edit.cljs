@@ -3,32 +3,13 @@
             [reagent.core :as r]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
+            [planwise.client.dialog :refer [new-dialog]]
             [planwise.client.ui.common :as ui]
             [planwise.client.scenarios.db :as db]
             [planwise.client.utils :as utils]
             [planwise.client.routes :as routes]
             [clojure.string :as str]
             [planwise.client.ui.rmwc :as m]))
-
-(defn new-dialog
-  [{:keys [open? title content accept-fn cancel-fn delete-fn]}]
-  [m/Dialog {:open open?
-             :on-accept accept-fn
-             :on-close cancel-fn}
-   [m/DialogSurface
-    [m/DialogHeader
-     [m/DialogHeaderTitle title]]
-    [m/DialogBody
-     [:form.vertical {:on-submit (utils/prevent-default accept-fn)}
-      content]]
-    [m/DialogFooter
-     (when (some? delete-fn) [m/Button {:on-click delete-fn} "Delete"])
-     [m/DialogFooterButton
-      {:cancel true}
-      "Cancel"]
-     [m/DialogFooterButton
-      {:accept true}
-      "OK"]]]])
 
 (defn- valid-input
   [inp]

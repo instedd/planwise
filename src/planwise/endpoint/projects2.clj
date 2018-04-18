@@ -13,6 +13,10 @@
 
 (timbre/refer-timbre)
 
+(defn- api-project
+  [project]
+  (dissoc project :deleted-at))
+
 (defn- projects2-routes
   [{service :projects2}]
   (routes
@@ -30,14 +34,14 @@
        ;; TODO validate permission
        (assert (s/valid? ::model/project project) "Invalid project")
        (projects2/update-project service project)
-       (response (projects2/get-project service id))))
+       (response (api-project (projects2/get-project service id)))))
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
            project (projects2/get-project service (Integer. id))]
        (if (nil? project)
          (not-found {:error "Project not found"})
-         (response project))))
+         (response (api-project project)))))
 
    (GET "/" request
      (let [user-id          (util/request-user-id request)
@@ -53,7 +57,7 @@
          (not-found {:error "Project not found"})
          (do
            (projects2/start-project service id)
-           (response (projects2/get-project service id))))))
+           (response (api-project (projects2/get-project service id)))))))
 
    (POST "/:id/reset" [id :as request]
      (let [user-id       (util/request-user-id request)
@@ -64,8 +68,13 @@
          (not-found {:error "Project not found"})
          (do
            (projects2/reset-project service id)
-           (response (projects2/get-project service id))))))))
+           (response (api-project (projects2/get-project service id)))))))
 
+   (DELETE "/:id" [id :as request]
+     ;; TODO authorize user-id
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)]
+       (projects2/delete-project service id)))))
 
 (defn projects2-endpoint
   [config]

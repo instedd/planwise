@@ -18,5 +18,8 @@
   (start-project [this project-id]
     "Starts project.")
 
+  (delete-project [this project-id]
+    "Registers when project is deleted.")
+
   (reset-project [this project-id]
     "Resets project to draft."))
