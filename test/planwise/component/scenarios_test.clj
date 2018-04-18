@@ -114,3 +114,20 @@
     [{:action "create-site" :site-id "new.1" :investment nil :capacity nil}]
     [{:action "create-site" :site-id "new.1" :investment "" :capacity ""}]
     [{:action "create-site" :site-id "new.1"}]))
+
+(deftest initial-scenario-read-only
+  (test-system/with-system (test-config)
+    (let [store       (:planwise.component/scenarios system)
+          projects2   (:planwise.component/projects2 system)
+          project     (projects2/get-project projects2 project-id)
+          scenario-id (scenarios/create-initial-scenario store project)
+          scenario    (scenarios/get-scenario store scenario-id)
+          new-scenario (assoc scenario
+                              :changeset [{:action "create-site" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
+                              :label "sub-optimal"
+                              :investment 10000)]
+      (do
+        (is (thrown? java.lang.AssertionError (scenarios/update-scenario store project new-scenario)))
+        (let [updated-scenario (scenarios/get-scenario store scenario-id)
+              check-key (fn [key] (= (-> updated-scenario key) (-> scenario key)))]
+          (is (map check-key [:id :changeset :investment :state])))))))

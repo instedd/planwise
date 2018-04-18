@@ -57,40 +57,62 @@
              :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
    "Create new scenario from here"])
 
+(defn initial-scenario-panel
+  [{:keys [name demand-coverage]} unit-name source-demand]
+  [:div
+   [:div {:class-name "section"}
+    [:h1 {:class-name "title-icon"} name]]
+   [:hr]
+   [:div {:class-name "section"}
+    [:div {:class-name "large"} [:p (str unit-name " coverage")]
+     (str demand-coverage "(" (* (/ demand-coverage source-demand) 100) "%)")]
+    [:p {:class-name "grey-text"}
+     (str "to a total of " source-demand)]]])
+
+(defn side-panel-view
+  [{:keys [name label investment demand-coverage increase-coverage state]} unit-name]
+  [:div
+   [:div {:class-name "section"
+          :on-click  #(dispatch [:scenarios/open-rename-dialog])}
+    [:h1 {:class-name "title-icon"} name]]
+   [:hr]
+   [:div {:class-name "section"}
+    [:h1 {:class-name "large"}
+     [:small (str "Increase in " unit-name " coverage")]
+     (cond
+       (= "pending" state) "loading..."
+       :else (str increase-coverage))]
+    [:p {:class-name "grey-text"}
+     (cond
+       (= "pending" state) "to a total of"
+       :else (str "to a total of " demand-coverage))]]
+   [:div {:class-name "section"}
+    [:h1 {:class-name "large"}
+     [:small "Investment required"]
+     "K " investment]]
+   [:hr]
+   [m/Fab {:class-name "btn-floating"
+           :on-click #(dispatch [:scenarios/adding-new-site])} "domain"]])
+
 (defn display-current-scenario
   [current-project current-scenario]
-  (let [{:keys [name investment demand-coverage increase-coverage]} current-scenario]
-    [ui/full-screen (merge {:main-prop {:style {:position :relative}}
-                            :main [simple-map current-project current-scenario]}
-                           (common2/nav-params))
-     [:div {:class-name "section"
-            :on-click #(dispatch [:scenarios/open-rename-dialog])}
-      [:h1 {:class-name "title-icon"} name]]
-     [:hr]
-     [:div {:class-name "section"}
-      [:h1 {:class-name "large"}
-       [:small "Increase in pregnancies coverage"]
-       (cond
-         (= "pending" (:state current-scenario)) "loading..."
-         :else (str increase-coverage))]
-      [:p {:class-name "grey-text"}
-       (cond
-         (= "pending" (:state current-scenario)) "to a total of"
-         :else (str "to a total of " demand-coverage))]]
-     [:div {:class-name "section"}
-      [:h1 {:class-name "large"}
-       [:small "Investment required"]
-       "K " investment]]
-     [:hr]
-     (cond (not= (:label current-scenario) "initial")
-           [m/Fab {:class-name "btn-floating"
-                   :on-click #(dispatch [:scenarios/adding-new-site])} "domain"])
-     [:div {:class-name "fade"}]
-     [changeset/listing-component current-scenario]
-     [:div {:class-name "fade inverted"}]
-     [create-new-scenario current-scenario]
-     [edit/rename-scenario-dialog]
-     [edit/changeset-dialog current-scenario]]))
+  (let [read-only? (subscribe [:scenarios/read-only?])
+        source-demand (get-in current-project [:engine-config :source-demand])
+        unit-name  (get-in current-project [:config :demographics :unit-name])]
+    (fn [current-project current-scenario]
+      [ui/full-screen (merge {:main-prop {:style {:position :relative}}
+                              :main [simple-map current-project current-scenario]}
+                             (common2/nav-params))
+       (if @read-only?
+         [initial-scenario-panel current-scenario unit-name source-demand]
+         [side-panel-view current-scenario unit-name])
+       [:div {:class-name "fade"}]
+       [changeset/listing-component current-scenario]
+       [:div {:class-name "fade inverted"}]
+       [create-new-scenario current-scenario]
+       [edit/rename-scenario-dialog]
+       [edit/changeset-dialog current-scenario]])))
+
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])
