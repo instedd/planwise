@@ -27,19 +27,42 @@
   [changeset]
   (apply +' (map :investment changeset)))
 
+(defn- action-resume
+  [action changeset]
+  (let [filtered-changeset (seq (filter #(not= (:action %) "create-site") [(pr-str changeset)]))
+        sites              (count filtered-changeset)
+        capacity           (apply +' (mapv #(-> % (read-string) :capacity) filtered-changeset))]
+    {(keyword action) {:capacity capacity :sites sites}}))
+
+
 ;; ----------------------------------------------------------------------
 ;; Service definition
-
-(defn list-scenarios
-  [store project-id]
-  ;; TODO compute % coverage from initial scenario/project
-  (db-list-scenarios (get-db store) {:project-id project-id}))
 
 (defn get-scenario
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
   (-> (db-find-scenario (get-db store) {:id scenario-id})
       (update :changeset edn/read-string)))
+
+(defn- get-scenario-state
+  [store scenario-id]
+  (:state (get-scenario store scenario-id)))
+
+(defn- get-changeset-resume
+  [store scenario-id]
+  (let [{:keys [changeset]} (get-scenario store scenario-id)
+        action ["create-site"]]
+    (first (map action-resume action changeset))))
+
+(defn list-scenarios
+  [store project-id]
+  ;; TODO compute % coverage from initial scenario/project
+  (let [list (db-list-scenarios (get-db store) {:project-id project-id})]
+    (map (fn [scenario] (-> scenario
+                            (assoc :state (get-scenario-state store (:id scenario)))
+                            (assoc :changeset-resume (get-changeset-resume store (:id scenario)))))
+         list)))
+
 
 (defn create-initial-scenario
   [store project]
