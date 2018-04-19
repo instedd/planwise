@@ -1,5 +1,6 @@
 (ns planwise.client.projects2.components.dashboard
   (:require [reagent.core :as r]
+            [clojure.string :refer [join replace]]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
             [planwise.client.asdf :as asdf]
@@ -21,25 +22,30 @@
   [[ui/secondary-action {:on-click #(dispatch [:projects2/reset-project (:id project)])} "Back to draft"]
    [ui/secondary-action {:on-click #(reset! delete? true)} "Delete project"]])
 
-(defn- create-chip
+(defn- create-badge
   [{:keys [valid-fn input]}]
-  (when (-> input valid-fn) [m/ChipSet {:class "badge-scenario-label"} [m/Chip [m/ChipText input]]]))
+  (when (and (-> input valid-fn) (some? input))
+    [m/ChipSet {:class "badge-scenario-label"} [m/Chip [m/ChipText input]]]))
 
-(defn- badge-scenario-label
-  [{:keys [label state]}]
-  [:div
-   [create-chip {:input label
-                 :valid-fn #(not= % "initial")}]
-   [create-chip {:input state
-                 :valid-fn #(= % "pending")}]])
+(defn- create-action-description
+  [{:keys [sites capacity]}]
+  (println sites capacity)
+  (let [text-default  ["Create replace sites." "Increase overall capacity in replace."]]
+    (join " "
+          (map (fn [data message] (when (pos? data) (replace message #"replace" (str data))))
+               [sites capacity] text-default))))
 
 (defn- scenarios-list-item
-  [scenario]
-  [:tr {:key (:id scenario) :on-click #(dispatch [:scenarios/load-scenario {:id (:id scenario)}])}
-   [:td {:class "col1"} (:name scenario) (badge-scenario-label scenario)]
-   [:td {:class "col2"} (:demand-coverage scenario)]
-   [:td {:class "col3"} (:investment scenario)]
-   [:td {:class "col4"} ""]])
+  [{:keys [id name label state demand-coverage investment changeset-resume] :as scenario}]
+  [:tr {:key id :on-click #(dispatch [:scenarios/load-scenario {:id id}])}
+   [:td {:class "col1"} name
+    [create-badge {:input label
+                   :valid-fn #(not= % "initial")}]
+    [create-badge {:input state
+                   :valid-fn #(= % "pending")}]]
+   [:td {:class "col2"} demand-coverage]
+   [:td {:class "col3"} investment]
+   [:td {:class "col4"} (create-action-description (:create-site changeset-resume))]])
 
 (defn- scenarios-list
   [scenarios current-project]
