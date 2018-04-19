@@ -12,9 +12,21 @@ UPDATE projects2
       "population-source-id" = :population-source-id
   WHERE id = :id;
 
+---- :name db-get-project :? :1
+--SELECT projects2.*, datasets2."coverage-algorithm"
+--  FROM projects2
+--  LEFT JOIN datasets2 ON projects2."dataset-id" = datasets2.id
+--  WHERE projects2.id = :id;
+
 -- :name db-get-project :? :1
-SELECT projects2.*, datasets2."coverage-algorithm"
-  FROM projects2
+SELECT projects2.*, datasets2."coverage-algorithm", inner_select.as_geojson
+  FROM (
+	SELECT projects2.id, ST_AsGeoJSON(ST_Extent(regions."preview_geom")) AS as_geojson
+		FROM regions
+			LEFT JOIN projects2 ON projects2."region-id" = regions.id
+		WHERE projects2.id = :id
+		GROUP BY projects2.id) AS inner_select
+  LEFT JOIN projects2 ON projects2.id = inner_select.id
   LEFT JOIN datasets2 ON projects2."dataset-id" = datasets2.id
   WHERE projects2.id = :id;
 
