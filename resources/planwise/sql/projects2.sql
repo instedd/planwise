@@ -23,7 +23,7 @@ SELECT projects2.*, datasets2."coverage-algorithm", regions_bbox.bbox
   FROM (
     SELECT projects2.id, ST_AsGeoJSON(ST_Extent(regions."preview_geom")) AS bbox
       FROM regions
-        LEFT JOIN projects2 ON projects2."region-id" = regions.id
+        RIGHT JOIN projects2 ON projects2."region-id" = regions.id
       WHERE projects2.id = :id
       GROUP BY projects2.id) AS regions_bbox
   LEFT JOIN projects2 ON projects2.id = regions_bbox.id
