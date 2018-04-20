@@ -1,6 +1,7 @@
 (ns planwise.component.projects2
   (:require [planwise.boundary.projects2 :as boundary]
             [planwise.boundary.scenarios :as scenarios]
+            [planwise.component.regions :as regions]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
@@ -36,10 +37,11 @@
 
 (defn get-project
   [store project-id]
-  (-> (db-get-project (get-db store) {:id project-id})
-      (update* :engine-config edn/read-string)
-      (update* :config edn/read-string)
-      (update* :config model/apply-default)))
+  (regions/db->region
+   (-> (db-get-project (get-db store) {:id project-id})
+       (update* :engine-config edn/read-string)
+       (update* :config edn/read-string)
+       (update* :config model/apply-default))))
 
 (defn list-projects
   [store owner-id]
