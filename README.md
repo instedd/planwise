@@ -94,6 +94,8 @@ $ docker-compose up
 This will start the PostgreSQL/PostGIS database, the MapServer/MapCache
 containers and a headless nREPL container.
 
+Some scripts might require a bit more than 2gb of memory. Increase the default docker limit
+if import-osm is run inside a container.
 
 ### Mapserver
 
