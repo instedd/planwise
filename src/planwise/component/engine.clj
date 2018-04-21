@@ -128,7 +128,7 @@
 (defn clear-project-cache
   [this project-id]
   (let [scenarios-path (str "data/scenarios/" project-id)]
-    (files/delete-files-recursively scenarios-path)))
+    (files/delete-files-recursively scenarios-path true)))
 
 (defrecord Engine [datasets2 coverage]
   boundary/Engine
