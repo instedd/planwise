@@ -273,8 +273,7 @@
                       #js {:zoomControl false
                            :attributionControl false
                            :minZoom (:min-zoom props)})
-        [[s w] [n e]] (:initial-bbox props)
-        lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
+        initial-bbox (:initial-bbox props)]
 
     (reagent/set-state this {:map leaflet})
 
@@ -293,7 +292,9 @@
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))
 
-    (.fitBounds leaflet lat-lng-bounds)))
+    (let [[[s w] [n e]] (if (nil? initial-bbox) [[-58 -73] [58 73]] initial-bbox)
+          lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
+      (.fitBounds leaflet lat-lng-bounds))))
 
 (defn leaflet-will-unmount [this]
   (let [state (reagent/state this)
