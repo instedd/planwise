@@ -10,18 +10,18 @@
     (trim-to-int s)
     (catch Exception e nil)))
 
-(defn alphabet
-  [position]
-  (let [alphabet (map char (range 97 123))]
-    (str/upper-case (nth alphabet position))))
+(defn next-char [letter]
+  (-> letter int inc char))
 
-(defn generate-alpha-name
-  [copy]
-  (loop [res ""
-         num copy]
-    (if (< num 26)
-      (str (alphabet num) res)
-      (recur (str res (alphabet (mod num 26))) (dec (int (/ num 26.0)))))))
+(defn next-alpha-name
+  [name]
+  (loop [prefix name
+         sufix   ""]
+    (let [prefix* (apply str (drop-last prefix))
+          last    (last prefix)]
+      (cond (empty? prefix) (str \A sufix)
+            (not= last \Z) (str prefix* (next-char last) sufix)
+            :else (recur prefix* (str \A sufix))))))
 
 (defn extract-name-and-copy-number
   [s]
@@ -31,7 +31,7 @@
     (cond
       (nil? match)      {:name s :copy 0}
       (nil? copy-group) {:name name-group :copy 1}
-      :else             {:name name-group :copy (Integer. copy-group)}))) ()
+      :else             {:name name-group :copy (Integer. copy-group)})))
 
 (defn next-name
   [col]
