@@ -455,10 +455,16 @@ form.vertical, .fields-vertical {
 
     li {
       display: inline;
+
+      a {
+        color: #9e9e9e;
+        text-decoration: none;
+      }
     }
 
     li+li:before {
       padding: 10px;
+      color: #9e9e9e;
       content: ">";
     }
   }
