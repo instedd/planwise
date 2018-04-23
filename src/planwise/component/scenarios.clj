@@ -94,11 +94,12 @@
 
 (defn update-scenario
   [store project {:keys [id name changeset]}]
-  ;; TODO fail if updating initial. initial scenario should be readonly
   ;; TODO assert scenario belongs to project
-  (assert (s/valid? ::model/change-set changeset))
   (let [db (get-db store)
-        project-id (:id project)]
+        project-id (:id project)
+        label (:label (get-scenario store id))]
+    (assert (s/valid? ::model/change-set changeset))
+    (assert (not= label "initial"))
     (db-update-scenario! db
                          {:name name
                           :id id
@@ -106,7 +107,7 @@
                           :demand-coverage nil
                           :changeset (pr-str changeset)
                           :label nil})
-    ;; Current label is removed so we need to search for the new optimal
+        ;; Current label is removed so we need to search for the new optimal
     (db-update-scenarios-label! db {:project-id project-id})
     (jr/queue-job (:jobrunner store)
                   [::boundary/compute-scenario id]
