@@ -16,14 +16,14 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn simple-map
-  [{:keys [changeset raster]}]
+  [{:keys [bbox]} {:keys [changeset raster]}]
   (let [state    (subscribe [:scenarios/view-state])
         index    (subscribe [:scenarios/changeset-index])
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-site {:lat lat
                                                                    :lon lon}]))]
-    (fn [{:keys [changeset raster]}]
+    (fn [{:keys [bbox]} {:keys [changeset raster]}]
       (let [indexed-changeset     (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)
             pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
@@ -31,7 +31,8 @@
                                            :on-position-changed #(reset! position %)
                                            :on-zoom-changed #(reset! zoom %)
                                            :on-click (cond  (= @state :new-site) add-point)
-                                           :controls []}
+                                           :controls []
+                                           :initial-bbox bbox}
                              mapping/default-base-tile-layer
                              (when pending-demand-raster
                                [:wms-tile-layer {:url config/mapserver-url
@@ -57,10 +58,10 @@
    "Create new scenario from here"])
 
 (defn display-current-scenario
-  [current-scenario]
+  [current-project current-scenario]
   (let [{:keys [name investment demand-coverage increase-coverage]} current-scenario]
     [ui/full-screen (merge {:main-prop {:style {:position :relative}}
-                            :main [simple-map current-scenario]}
+                            :main [simple-map current-project current-scenario]}
                            (common2/nav-params))
      [:div {:class-name "section"
             :on-click #(dispatch [:scenarios/open-rename-dialog])}
@@ -103,4 +104,4 @@
           (not= project-id (:id @current-project)) (dispatch [:projects2/get-project project-id])
           (not= project-id (:project-id @current-scenario)) (dispatch [:scenarios/scenario-not-found])
           :else
-          [display-current-scenario @current-scenario])))))
+          [display-current-scenario @current-project @current-scenario])))))

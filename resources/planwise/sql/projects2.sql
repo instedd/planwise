@@ -13,8 +13,14 @@ UPDATE projects2
   WHERE id = :id;
 
 -- :name db-get-project :? :1
-SELECT projects2.*, datasets2."coverage-algorithm"
-  FROM projects2
+SELECT projects2.*, datasets2."coverage-algorithm", regions_bbox.bbox
+  FROM (
+    SELECT projects2.id, ST_AsGeoJSON(ST_Extent(regions."preview_geom")) AS bbox
+      FROM regions
+        RIGHT JOIN projects2 ON projects2."region-id" = regions.id
+      WHERE projects2.id = :id
+      GROUP BY projects2.id) AS regions_bbox
+  LEFT JOIN projects2 ON projects2.id = regions_bbox.id
   LEFT JOIN datasets2 ON projects2."dataset-id" = datasets2.id
   WHERE projects2.id = :id;
 
