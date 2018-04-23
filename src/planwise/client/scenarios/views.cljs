@@ -13,6 +13,7 @@
             [planwise.client.scenarios.changeset :as changeset]
             [planwise.client.components.common :as common]
             [planwise.client.components.common2 :as common2]
+            [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
 (defn simple-map
@@ -57,20 +58,27 @@
              :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
    "Create new scenario from here"])
 
+(defn- format-percentage
+  [num denom]
+  (utils/format-percentage (/ num denom) 2))
+
 (defn initial-scenario-panel
-  [{:keys [name demand-coverage]} unit-name source-demand]
+  [{:keys [name demand-coverage state]} unit-name source-demand]
   [:div
    [:div {:class-name "section"}
     [:h1 {:class-name "title-icon"} name]]
    [:hr]
    [:div {:class-name "section"}
-    [:div {:class-name "large"} [:p (str unit-name " coverage")]
-     (str demand-coverage "(" (* (/ demand-coverage source-demand) 100) "%)")]
+    [:h1 {:class-name "large"}
+     [:small (str "Initial " unit-name " coverage")]
+     (cond
+       (= "pending" state) "loading..."
+       :else (str demand-coverage " (" (format-percentage demand-coverage source-demand) ")"))]
     [:p {:class-name "grey-text"}
-     (str "to a total of " source-demand)]]])
+     (str "of a total of " source-demand)]]])
 
 (defn side-panel-view
-  [{:keys [name label investment demand-coverage increase-coverage state]} unit-name]
+  [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
   [:div
    [:div {:class-name "section"
           :on-click  #(dispatch [:scenarios/open-rename-dialog])}
@@ -81,11 +89,11 @@
      [:small (str "Increase in " unit-name " coverage")]
      (cond
        (= "pending" state) "loading..."
-       :else (str increase-coverage))]
+       :else (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
     [:p {:class-name "grey-text"}
      (cond
        (= "pending" state) "to a total of"
-       :else (str "to a total of " demand-coverage))]]
+       :else (str "to a total of " demand-coverage " (" (format-percentage demand-coverage source-demand) ")"))]]
    [:div {:class-name "section"}
     [:h1 {:class-name "large"}
      [:small "Investment required"]
@@ -105,7 +113,7 @@
                              (common2/nav-params))
        (if @read-only?
          [initial-scenario-panel current-scenario unit-name source-demand]
-         [side-panel-view current-scenario unit-name])
+         [side-panel-view current-scenario unit-name source-demand])
        [:div {:class-name "fade"}]
        [changeset/listing-component current-scenario]
        [:div {:class-name "fade inverted"}]
