@@ -10,14 +10,26 @@
     (trim-to-int s)
     (catch Exception e nil)))
 
+(defn next-char [letter]
+  (-> letter int inc char))
+
+(defn next-alpha-name
+  [name]
+  (loop [prefix name
+         sufix   ""]
+    (let [prefix* (apply str (drop-last prefix))
+          last    (last prefix)]
+      (cond (empty? prefix) (str \A sufix)
+            (not= last \Z) (str prefix* (next-char last) sufix)
+            :else (recur prefix* (str \A sufix))))))
+
 (defn extract-name-and-copy-number
   [s]
-  (let [match      (re-matches #"\A(?<name>.*)( copy( (?<copy>\d+))?)\Z" s)
+  (let [match      (re-matches #"\A(?<name>.*)(?<copy>\d+?)\Z" s)
         name-group (get match 1)
         copy-group (last match)]
     (cond
       (nil? match)      {:name s :copy 0}
-      (nil? copy-group) {:name name-group :copy 1}
       :else             {:name name-group :copy (Integer. copy-group)})))
 
 (defn next-name
@@ -29,6 +41,4 @@
                         (map :copy)
                         (apply max)
                         (inc))]
-    (cond
-      (= next-copy 1) (str first-name " copy")
-      :else (str first-name " copy " next-copy))))
+    (str first-name next-copy)))

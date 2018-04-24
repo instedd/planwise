@@ -143,12 +143,18 @@
     (db-update-scenario! db scenario)
     (db-update-scenarios-label! db {:project-id project-id})))
 
+(defn next-name-from-initial
+  [store project-id]
+  (util-str/next-alpha-name (:name (db-last-scenario-name (get-db store) {:project-id project-id}))))
+
 (defn next-scenario-name
   [store project-id name]
-  (->> (db-list-scenarios-names (get-db store) {:project-id project-id :name name})
-       (map :name)
-       (cons name)
-       (util-str/next-name)))
+  ;; Relies that initial scenario's name is "Initial"
+  (if (= name "Initial") (next-name-from-initial store project-id)
+      (->> (db-list-scenarios-names (get-db store) {:project-id project-id :name name})
+           (map :name)
+           (cons name)
+           (util-str/next-name))))
 
 (defn reset-scenarios
   [store project-id]
