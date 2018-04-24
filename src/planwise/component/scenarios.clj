@@ -148,6 +148,7 @@
 
 (defn next-scenario-name
   [store project-id name]
+  ;; Relies that initial scenario's name is "Initial"
   (if (= name "Initial") (next-name-from-initial store project-id)
       (->> (db-list-scenarios-names (get-db store) {:project-id project-id :name name})
            (map :name)

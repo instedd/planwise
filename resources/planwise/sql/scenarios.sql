@@ -72,7 +72,7 @@ DELETE FROM "scenarios"
 
 -- :name db-last-scenario-name :? :1
 SELECT upper(name) AS name FROM scenarios
-  WHERE name similar to '\w+'
+  WHERE name similar to '[A-Za-z]+'
   AND label <> 'initial' OR label IS NULL
   AND "project-id" = :project-id
   ORDER BY upper(name) DESC
