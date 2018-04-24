@@ -65,32 +65,53 @@
         [m/Grid {}
          [m/GridCell {:span 6}
           [:form.vertical
-           [:h2 "Goal"]
-           [current-project-input "Goal" [:name] identity]
-           [regions-dropdown-component {:label "Region"
-                                        :on-change #(dispatch [:projects2/save-key :region-id %])
-                                        :model (:region-id @current-project)}]
-           [:h2 "Demand"]
-           [population-dropdown-component {:label "Sources"
-                                           :value (:population-source-id @current-project)
-                                           :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
-           [current-project-input "Unit" [:config :demographics :unit-name] identity]
-           [current-project-input "Target" [:config :demographics :target] valid-input]
-           [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]
+           [:section {:class-name "project-settings-section"}
+            [:div {:class-name "step-header"}
+             [:div {:class-name "step-number"} "1"]
+             [:h2 [:span "Goal"]]]
+            [current-project-input "Goal" [:name] identity]
+            [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
+            [regions-dropdown-component {:label "Region"
+                                         :on-change #(dispatch [:projects2/save-key :region-id %])
+                                         :model (:region-id @current-project)}]]
 
-           [:h2 "Sites"]
-           [datasets-dropdown-component {:label "Dataset"
-                                         :value (:dataset-id @current-project)
-                                         :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
-           [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
-           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
-           [:h2 "Coverage"]
-           [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
-                                               :value (get-in @current-project [:config :coverage :filter-options])
-                                               :on-change #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-                                               :empty [:div "First choose dataset."]}]
-           [:h2 "Actions"]
-           [current-project-input "Budget" [:config :actions :budget] valid-input]]
+           [:section {:class-name "project-settings-section"}
+            [:div {:class-name "step-header"}
+             [:div {:class-name "step-number"} "2"]
+             [:h2 [:span "Demand"]]]
+             [population-dropdown-component {:label "Sources"
+                                             :value (:population-source-id @current-project)
+                                             :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
+             [current-project-input "Unit" [:config :demographics :unit-name] identity]
+             [current-project-input "Target" [:config :demographics :target] valid-input]
+             [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
+
+           [:section {:class-name "project-settings-section"}
+            [:div {:class-name "step-header"}
+             [:div {:class-name "step-number"} "3"]
+             [:h2 [:span "Sites"]]]
+             [datasets-dropdown-component {:label "Dataset"
+                                           :value (:dataset-id @current-project)
+                                           :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
+             [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
+             [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]]
+
+
+           [:section {:class-name "project-settings-section"}
+            [:div {:class-name "step-header"}
+             [:div {:class-name "step-number"} "4"]
+             [:h2 [:span "Coverage"]]]
+             [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
+                                                 :value (get-in @current-project [:config :coverage :filter-options])
+                                                 :on-change #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
+                                                 :empty [:div {:class-name " no-dataset-selected"} "First choose dataset."]}]]
+
+           [:section {:class-name "project-settings-section"}
+            [:div {:class-name "step-header"}
+             [:div {:class-name "step-number"} "5"]
+             [:h2 [:span "Actions"]]]
+             [current-project-input "Budget" [:config :actions :budget] valid-input]]]
+
           [:div
            [project-start-button {} @current-project]
            [project-delete-button delete?]]

@@ -473,3 +473,48 @@ form.vertical, .fields-vertical {
     }
   }
 }
+
+.project-settings-section {
+  display: inherit;
+  flex-flow: inherit;
+  margin: 0 0 50px;
+
+  .step-header {
+    display: grid;
+    grid-template-columns: max-content auto;
+    grid-template-rows: auto;
+    grid-template-areas: "step-number step-title";
+
+    .step-number {
+      grid-area: step-number;
+
+      background: $mdc-theme-primary;
+      border-radius: 25px;
+      color: #FFF;
+      font-size: 18px;
+      font-weight: 200;
+      height: 20px;
+      padding: 10px;
+      text-align: center;
+      width: 20px;
+    }
+
+    h2 {
+      grid-area: step-title;
+
+      border-bottom: 1px solid #9e9e9e;
+      line-height:0.1em;
+      margin-left: 10px;
+
+      span {
+        background: #FFF;
+        padding: 0 7px 0 ;
+      }
+    }
+  }
+
+  .no-dataset-selected {
+    color: rgba(0, 0, 0, 0.6);
+    margin: 25px 0 0;
+  }
+}
