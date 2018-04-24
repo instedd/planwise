@@ -108,9 +108,13 @@
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])]
     (fn [current-project current-scenario]
-      [ui/full-screen (merge {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario]}
-                             (common2/nav-params))
+      [ui/full-screen (merge (common2/nav-params)
+                             {:main-prop {:style {:position :relative}}
+                              :main [simple-map current-project current-scenario]
+                              :title [:ul {:class-name "breadcrumb-menu"}
+                                      [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
+                                      [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
+                                      [:li (:name current-scenario)]]})
        (if @read-only?
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])
@@ -120,7 +124,6 @@
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
        [edit/changeset-dialog current-scenario]])))
-
 
 (defn scenarios-page []
   (let [page-params (subscribe [:page-params])
