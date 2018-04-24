@@ -70,7 +70,7 @@
                                   :secondary-actions (project-secondary-actions @current-project delete?)})
            [new-dialog {:open? @delete?
                         :title "Delete Project"
-                        :accept-fn #(dispatch [:projects2/delete-project (:id @current-project)])
+                        :accept-fn #(dispatch [:dialog/prevent-scrolling-block [:projects2/delete-project (:id @current-project)]])
                         :cancel-fn #(reset! delete? false)
                         :content [:p "Do you want to delete this project?"]}]
            [ui/panel {}

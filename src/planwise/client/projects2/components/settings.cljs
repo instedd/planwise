@@ -80,6 +80,7 @@
                                          :on-change #(dispatch [:projects2/save-key :region-id %])
                                          :model     (:region-id @current-project)}]]
 
+           [:h2 "Sites"]
            [:section {:class-name "project-settings-section"}
             [section-header 2 "Demand"]
             [population-dropdown-component {:label     "Sources"
