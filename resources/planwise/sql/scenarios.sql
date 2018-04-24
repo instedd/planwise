@@ -1,5 +1,5 @@
 -- :name db-list-scenarios :?
-SELECT id, name, investment, "demand-coverage", label
+SELECT id, name, investment, "demand-coverage", changeset, label, state
 FROM scenarios
 WHERE "project-id" = :project-id
 ORDER BY

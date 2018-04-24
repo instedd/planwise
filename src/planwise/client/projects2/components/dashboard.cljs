@@ -26,14 +26,14 @@
   [m/ChipSet [m/Chip [m/ChipText input]]])
 
 (defn- scenarios-list-item
-  [{:keys [id name label state demand-coverage investment changeset-resume] :as scenario}]
+  [{:keys [id name label state demand-coverage investment changeset-summary] :as scenario}]
   [:tr {:key id :on-click #(dispatch [:scenarios/load-scenario {:id id}])}
    [:td {:class "col1"} (cond (-> state (some?) (not= "initial")) [create-chip state]
                               (-> label (some?) (= "pending")) [create-chip label])]
    [:td {:class "col2"} name]
    [:td {:class "col3"} demand-coverage]
    [:td {:class "col4"} investment]
-   [:td {:class "col5"} changeset-resume]])
+   [:td {:class "col5"} changeset-summary]])
 
 (defn- scenarios-list
   [scenarios current-project]

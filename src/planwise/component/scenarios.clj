@@ -28,15 +28,13 @@
   [changeset]
   (apply +' (map :investment changeset)))
 
-(defn- create-text-description
+(defn- build-changeset-summary
   [changeset]
-  (let [sites         (count changeset)
-        capacity      (apply +' (mapv #(-> % (read-string) :capacity) changeset))
-        text-default  ["Create replace site." "Increase overall capacity in replace."]]
-    (str/join " "
-              (map (fn [data message] (cond (pos? data) (str/replace message #"replace" (str data))))
-                   [sites capacity] (if (= sites 1) text-default (assoc text-default 0 "Create replace sites."))))))
-
+  (let [sites (count changeset)
+        capacity (apply +' (mapv :capacity changeset))
+        u (if (= sites 1) "site" "sites")]
+    (if (zero? sites) ""
+        (format "Create %d %s. Increase overall capacity in %d." sites u capacity))))
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
@@ -46,22 +44,14 @@
   (-> (db-find-scenario (get-db store) {:id scenario-id})
       (update :changeset edn/read-string)))
 
-(defn- get-scenario-state
-  [store scenario-id]
-  (:state (get-scenario store scenario-id)))
-
-(defn get-changeset-resume
-  [store scenario-id]
-  (let [{:keys [changeset]} (get-scenario store scenario-id)]
-    (create-text-description (map pr-str changeset))))
-
 (defn list-scenarios
   [store project-id]
   ;; TODO compute % coverage from initial scenario/project
   (let [list (db-list-scenarios (get-db store) {:project-id project-id})]
-    (map (fn [scenario] (-> scenario
-                            (assoc :state (get-scenario-state store (:id scenario)))
-                            (assoc :changeset-resume (get-changeset-resume store (:id scenario)))))
+    (map (fn [{:keys [changeset] :as scenario}]
+           (-> scenario
+               (assoc  :changeset-summary (build-changeset-summary (read-string changeset)))
+               (dissoc :changeset)))
          list)))
 
 
