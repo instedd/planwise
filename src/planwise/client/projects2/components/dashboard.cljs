@@ -59,10 +59,10 @@
                                  {:title (:name @current-project)
                                   :tabs [project-tabs {:active 0}]
                                   :secondary-actions (project-secondary-actions @current-project delete?)})
-           [new-dialog {:open? @delete?}
-            :title "Delete Project"
-            :accept-fn #(dispatch [:projects2/delete-project (:id @current-project)])
-            :cancel-fn #(reset! delete? false)
-            :content [:p "Do you want to delete this project?"]]
+           [new-dialog {:open? @delete?
+                        :title "Delete Project"
+                        :accept-fn #(dispatch [:projects2/delete-project (:id @current-project)])
+                        :cancel-fn #(reset! delete? false)
+                        :content [:p "Do you want to delete this project?"]}]
            [ui/panel {}
             (scenarios-list scenarios @current-project)]])))))
