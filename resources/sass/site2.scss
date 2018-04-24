@@ -1,6 +1,6 @@
 
 $mdc-theme-primary: #ff561c;
-$mdc-theme-secondary: #ff561c;
+$mdc-theme-secondary: #9E9E9E;
 $small-font-size: 0.81em;
 
 @import "material-components-web/material-components-web";
@@ -497,18 +497,16 @@ form.vertical, .fields-vertical {
       padding: 10px;
       text-align: center;
       width: 20px;
+      margin-right: 10px;
     }
 
     h2 {
       grid-area: step-title;
-
-      border-bottom: 1px solid #9e9e9e;
       line-height:0.1em;
-      margin-left: 10px;
 
       span {
         background: #FFF;
-        padding: 0 7px 0 ;
+        padding: 0 7px 0 0;
       }
     }
   }
@@ -517,4 +515,9 @@ form.vertical, .fields-vertical {
     color: rgba(0, 0, 0, 0.6);
     margin: 25px 0 0;
   }
+}
+
+.project-settings-actions {
+  display: flex;
+  justify-content: flex-end;
 }
