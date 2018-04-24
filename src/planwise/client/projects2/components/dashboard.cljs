@@ -1,6 +1,5 @@
 (ns planwise.client.projects2.components.dashboard
   (:require [reagent.core :as r]
-            [clojure.string :refer [join replace]]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
             [planwise.client.asdf :as asdf]
@@ -22,30 +21,19 @@
   [[ui/secondary-action {:on-click #(dispatch [:projects2/reset-project (:id project)])} "Back to draft"]
    [ui/secondary-action {:on-click #(reset! delete? true)} "Delete project"]])
 
-(defn- create-badge
-  [{:keys [valid-fn input]}]
-  (when (and (-> input valid-fn) (some? input))
-    [m/ChipSet {:class "badge-scenario-label"} [m/Chip [m/ChipText input]]]))
-
-(defn- create-action-description
-  [{:keys [sites capacity]}]
-  (println sites capacity)
-  (let [text-default  ["Create replace sites." "Increase overall capacity in replace."]]
-    (join " "
-          (map (fn [data message] (when (pos? data) (replace message #"replace" (str data))))
-               [sites capacity] text-default))))
+(defn- create-chip
+  [input]
+  [m/ChipSet [m/Chip [m/ChipText input]]])
 
 (defn- scenarios-list-item
   [{:keys [id name label state demand-coverage investment changeset-resume] :as scenario}]
   [:tr {:key id :on-click #(dispatch [:scenarios/load-scenario {:id id}])}
-   [:td {:class "col1"} name
-    [create-badge {:input label
-                   :valid-fn #(not= % "initial")}]
-    [create-badge {:input state
-                   :valid-fn #(= % "pending")}]]
-   [:td {:class "col2"} demand-coverage]
-   [:td {:class "col3"} investment]
-   [:td {:class "col4"} (create-action-description (:create-site changeset-resume))]])
+   [:td {:class "col1"} (cond (-> state (some?) (not= "initial")) [create-chip state]
+                              (-> label (some?) (= "pending")) [create-chip label])]
+   [:td {:class "col2"} name]
+   [:td {:class "col3"} demand-coverage]
+   [:td {:class "col4"} investment]
+   [:td {:class "col5"} changeset-resume]])
 
 (defn- scenarios-list
   [scenarios current-project]
@@ -53,10 +41,11 @@
    [:table
     [:thead
      [:tr
-      [:th {:class "col1"} "Name"]
-      [:th {:class "col2"} (str "Demand coverage (" (get-in current-project [:config :demographics :unit-name]) ")")]
-      [:th {:class "col3"} "Investment"]
-      [:th {:class "col4"} "Actions"]]]
+      [:th {:class "col1"} ""]
+      [:th {:class "col2"} "Name"]
+      [:th {:class "col3"} (str (get-in current-project [:config :demographics :unit-name]) " coverage")]
+      [:th {:class "col4"} "Investment"]
+      [:th {:class "col5"} "Actions"]]]
 
     (into [:tbody] (map scenarios-list-item scenarios))]])
 

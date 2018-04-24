@@ -404,6 +404,7 @@ form.vertical, .fields-vertical {
 
       tr > th {
         border-bottom: 1px solid #ccc;
+        white-space: nowrap;
       }
 
       th {
@@ -424,33 +425,31 @@ form.vertical, .fields-vertical {
     tr > td {
       border-bottom: 1px solid #eee;
       padding: 30px;
-
-      .badge-scenario-label {
-        display: inline-block;
-      }
     }
 
     .col1 {
       text-align: left;
-      width: 150px;
+      width: 105px;
     }
 
     .col2 {
-      text-align: right;
-      width: 280px;
+      text-align: left;
+      width: 150px;
     }
 
     .col3 {
       text-align: right;
-      width: 120px;
+      width: 170px;
     }
 
     .col4 {
-      text-align: left;
+      text-align: right;
+      width: 120px;
     }
 
-
-
+    .col5 {
+      text-align: left;
+    }
   }
 }
 
