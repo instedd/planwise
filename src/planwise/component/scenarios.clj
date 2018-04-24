@@ -3,6 +3,7 @@
             [planwise.boundary.engine :as engine]
             [planwise.boundary.jobrunner :as jr]
             [planwise.model.scenarios :as model]
+            [clojure.string :as str]
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
@@ -27,13 +28,14 @@
   [changeset]
   (apply +' (map :investment changeset)))
 
-(defn- action-resume
-  [action changeset]
-  (let [filtered-changeset (seq (filter #(not= (:action %) "create-site") [(pr-str changeset)]))
-        sites              (count filtered-changeset)
-        capacity           (apply +' (mapv #(-> % (read-string) :capacity) filtered-changeset))]
-    {(keyword action) {:capacity capacity :sites sites}}))
-
+(defn- create-text-description
+  [changeset]
+  (let [sites         (count changeset)
+        capacity      (apply +' (mapv #(-> % (read-string) :capacity) changeset))
+        text-default  ["Create replace site." "Increase overall capacity in replace."]]
+    (str/join " "
+              (map (fn [data message] (cond (pos? data) (str/replace message #"replace" (str data))))
+                   [sites capacity] (if (= sites 1) text-default (assoc text-default 0 "Create replace sites."))))))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -48,11 +50,10 @@
   [store scenario-id]
   (:state (get-scenario store scenario-id)))
 
-(defn- get-changeset-resume
+(defn get-changeset-resume
   [store scenario-id]
-  (let [{:keys [changeset]} (get-scenario store scenario-id)
-        action ["create-site"]]
-    (first (map action-resume action changeset))))
+  (let [{:keys [changeset]} (get-scenario store scenario-id)]
+    (create-text-description (map pr-str changeset))))
 
 (defn list-scenarios
   [store project-id]
