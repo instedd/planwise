@@ -19,6 +19,7 @@
 (def nav-params
   {:sections [[ui/section {:href "/_design" :className "active"} "Design"]
               [ui/section {:href "/_design/map"} "Map"]
+              [ui/section {:href "/_design/project"} "Project"]
               [ui/section {:href "/_design/scenario"} "Scenario"]]
    :account [ui/account {:name "John Doe" :on-signout #(println "Sign out")}]
    :title "Planwise"
@@ -48,9 +49,13 @@
     [m/Grid {}
      [m/GridCell {:span 6}
       [:form.vertical
+       [:h2 "Goal"]
        [m/TextField {:label "Lorem"}]
+       [m/TextFieldHelperText {} "Enter the goal for this project"]
        [m/TextField {:label "Ipsum"}]
-       [m/Checkbox {} "dolor sit amet"]]]
+       [m/Checkbox {} "dolor sit amet"]
+       [m/Select {:label "Foo"
+                  :options ["bar" "baz" "qux"]}]]]
      [m/GridCell {:span 6}
       [ui/panel {}
        [:pre {} "MAP"]]]
