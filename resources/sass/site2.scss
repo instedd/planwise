@@ -447,3 +447,24 @@ form.vertical, .fields-vertical {
 
   }
 }
+
+.mdc-toolbar__title {
+  .breadcrumb-menu {
+    margin: -5px 0 0;
+    padding: 0;
+
+    li {
+      display: inline;
+
+      a {
+        @include link-color(#9a9a9a);
+      }
+
+      i {
+        color: #9e9e9e;
+        transform: translateY(5px);
+        transform: translateY(5px);
+      }
+    }
+  }
+}
