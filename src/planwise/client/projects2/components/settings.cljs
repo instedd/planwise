@@ -60,7 +60,6 @@
 (defn- section-header
   [number title]
   [:div {:class-name "step-header"}
-   [:div {:class-name "step-number"} number]
    [:h2 [:span title]]])
 
 (defn edit-current-project

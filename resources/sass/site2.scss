@@ -480,35 +480,14 @@ form.vertical, .fields-vertical {
   margin: 0 0 50px;
 
   .step-header {
-    display: grid;
-    grid-template-columns: max-content auto;
-    grid-template-rows: auto;
-    grid-template-areas: "step-number step-title";
-
-    .step-number {
-      grid-area: step-number;
-
-      background: $mdc-theme-primary;
-      border-radius: 25px;
-      color: #FFF;
-      font-size: 18px;
-      font-weight: 200;
-      height: 20px;
-      padding: 10px;
-      text-align: center;
-      width: 20px;
-      margin-right: 10px;
-    }
-
     h2 {
-      grid-area: step-title;
-      line-height:0.1em;
-
-      span {
-        background: #FFF;
-        padding: 0 7px 0 0;
-      }
+      margin-bottom: 0;
     }
+  }
+
+  .mdc-select {
+    margin-top: 16px;
+    margin-bottom: 10px;
   }
 
   .no-dataset-selected {
