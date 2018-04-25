@@ -57,8 +57,9 @@
   [m/MenuItem {:on-click on-click} content])
 
 (defn section
-  [props label]
-  [:a props label])
+  [{:keys [active] :as props} label]
+  (if active [:a (-> props (dissoc :active) (merge {:class-name "active"})) label]
+      [:a props label]))
 
 (defn account
   [{:keys [name on-signout]}]
