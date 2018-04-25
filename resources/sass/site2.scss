@@ -1,6 +1,6 @@
 
 $mdc-theme-primary: #ff561c;
-$mdc-theme-secondary: #9E9E9E;
+/*$mdc-theme-secondary: #ff561c;*/
 $small-font-size: 0.81em;
 
 @import "material-components-web/material-components-web";
@@ -167,7 +167,7 @@ header.mdc-toolbar {
   }
 
   .mdc-tab-bar__indicator {
-    background-color: $mdc-theme-secondary;
+    background-color: $mdc-theme-primary;
   }
 }
 //

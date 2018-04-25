@@ -47,13 +47,14 @@
   [_ project]
   [m/Button {:id "start-project"
              :type "button"
+             :unelevated "unelevated"
              :on-click (utils/prevent-default #(dispatch [:projects2/start-project (:id project)]))}
    (if (= (keyword (:state project)) :started) "Started ..." "Start")])
 
 (defn- project-delete-button
   [state]
   [m/Button {:type "button"
-             :class-name "mdc-theme--secondary"
+             :theme ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
 (defn- section-header
