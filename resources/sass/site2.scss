@@ -11,11 +11,11 @@ $small-font-size: 0.81em;
   &, &:visited {
     color: $color;
   }
-  &:active, &.active {
-    color: $active-color;
-  }
   &:hover {
     color: $hover-color;
+  }
+  &:active, &.active {
+    color: $active-color;
   }
 }
 
