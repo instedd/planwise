@@ -1,11 +1,12 @@
 (ns planwise.client.dialog
   (:require [planwise.client.ui.rmwc :as m]
+            [re-frame.core :refer [dispatch]]
             [planwise.client.utils :as utils]))
 
 (defn new-dialog
-  [{:keys [open? title content accept-fn cancel-fn delete-fn]}]
+  [{:keys [open? title content delete-dispatch accept-fn cancel-fn delete-fn]}]
   [m/Dialog {:open open?
-             :on-accept accept-fn
+             :on-accept (or  accept-fn #(dispatch [:dialog/delay-dispatch delete-dispatch]))
              :on-close cancel-fn}
    [m/DialogSurface
     [m/DialogHeader

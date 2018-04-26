@@ -78,6 +78,6 @@
      {:dispatch [:datasets/refresh-datasets time]})))
 
 (rf/reg-event-fx
- :dialog/prevent-scrolling-block
+ :dialog/delay-dispatch
  (fn [_ [_ event-vector]]
-   {:dispatch-later [{:ms 250 :dispatch event-vector}]}))
+   {:dispatch-later [{:ms 150 :dispatch event-vector}]}))
