@@ -497,6 +497,8 @@ form.vertical, .fields-vertical {
 }
 
 .project-settings-actions {
-  display: flex;
-  justify-content: flex-end;
+  text-align: right;
+
+  padding: 25px 35px;
+  border-top: 1px solid #E0E0E0;
 }
