@@ -85,7 +85,8 @@
  :scenarios/copy-scenario
  in-scenarios
  (fn [{:keys [db]} [_ id]]
-   {:api  (assoc (api/copy-scenario id)
+   {:db   (assoc db :list-scope nil)
+    :api  (assoc (api/copy-scenario id)
                  :on-success [:scenarios/load-scenario])}))
 
 ;; Editing scenario
