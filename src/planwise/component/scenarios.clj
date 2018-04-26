@@ -3,6 +3,7 @@
             [planwise.boundary.engine :as engine]
             [planwise.boundary.jobrunner :as jr]
             [planwise.model.scenarios :as model]
+            [clojure.string :as str]
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
@@ -27,19 +28,32 @@
   [changeset]
   (apply +' (map :investment changeset)))
 
+(defn- build-changeset-summary
+  [changeset]
+  (let [sites (count changeset)
+        capacity (apply +' (mapv :capacity changeset))
+        u (if (= sites 1) "site" "sites")]
+    (if (zero? sites) ""
+        (format "Create %d %s. Increase overall capacity in %d." sites u capacity))))
 ;; ----------------------------------------------------------------------
 ;; Service definition
-
-(defn list-scenarios
-  [store project-id]
-  ;; TODO compute % coverage from initial scenario/project
-  (db-list-scenarios (get-db store) {:project-id project-id}))
 
 (defn get-scenario
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
   (-> (db-find-scenario (get-db store) {:id scenario-id})
       (update :changeset edn/read-string)))
+
+(defn list-scenarios
+  [store project-id]
+  ;; TODO compute % coverage from initial scenario/project
+  (let [list (db-list-scenarios (get-db store) {:project-id project-id})]
+    (map (fn [{:keys [changeset] :as scenario}]
+           (-> scenario
+               (assoc  :changeset-summary (build-changeset-summary (read-string changeset)))
+               (dissoc :changeset)))
+         list)))
+
 
 (defn create-initial-scenario
   [store project]

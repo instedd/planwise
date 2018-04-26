@@ -3,6 +3,9 @@
 (def rmwc-tags
   '[Button
     Checkbox
+    Chip
+    ChipSet
+    ChipText
     Dialog
     DialogSurface
     DialogHeader
