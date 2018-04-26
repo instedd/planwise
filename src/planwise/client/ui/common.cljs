@@ -58,8 +58,10 @@
 
 (defn section
   [{:keys [active] :as props} label]
-  (if active [:a (-> props (dissoc :active) (merge {:class-name "active"})) label]
-      [:a props label]))
+  (let [props (dissoc props :active)]
+    [:a
+     (merge props {:class-name (if active "active")})
+     label]))
 
 (defn account
   [{:keys [name on-signout]}]

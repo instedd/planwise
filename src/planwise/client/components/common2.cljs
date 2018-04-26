@@ -11,9 +11,9 @@
 (defn nav-params
   []
   (let [page (subscribe [:current-page])
-        active? (map #(contains? % @page) [#{:projects2 :scenario} #{:datasets2}])]
-    {:sections [[ui/section {:href (routes/projects2) :active (first active?)}  "Projects"]
-                [ui/section {:href (routes/datasets2) :active (second active?)} "Datasets"]
+        active? (fn [pages] (contains? pages @page))]
+    {:sections [[ui/section {:href (routes/projects2) :active (active? #{:projects2 :scenario})} "Projects"]
+                [ui/section {:href (routes/datasets2) :active (active? #{:datasets2})} "Datasets"]
                 [ui/section {:href "/old" :target "_blank"} "Old version"]]
 
      :account [ui/account {:name @current-user-email :on-signout #(dispatch [:signout])}]
