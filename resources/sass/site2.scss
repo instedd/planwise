@@ -1,6 +1,6 @@
 
 $mdc-theme-primary: #ff561c;
-/*$mdc-theme-secondary: #ff561c;*/
+$mdc-theme-secondary: #ff561c;
 $small-font-size: 0.81em;
 
 @import "material-components-web/material-components-web";
@@ -500,5 +500,9 @@ form.vertical, .fields-vertical {
   text-align: right;
 
   padding: 25px 35px;
-  border-top: 1px solid #E0E0E0;
+  border-top: 1px solid #e0e0e0;
+
+  button {
+    margin-left: 25px;
+  }
 }
