@@ -36,8 +36,8 @@
 (defn- current-project-input
   [label path transform]
   (let [current-project (rf/subscribe [:projects2/current-project])
-        value (or (get-in @current-project path) "")
-        change-fn #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value transform)])]
+        value           (or (get-in @current-project path) "")
+        change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value transform)])]
     [m/TextField {:type      "text"
                   :label     label
                   :on-change change-fn
@@ -65,7 +65,7 @@
 (defn edit-current-project
   []
   (let [current-project (subscribe [:projects2/current-project])
-        delete? (r/atom false)]
+        delete?         (r/atom false)]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
@@ -73,7 +73,7 @@
          [m/GridCell {:span 6}
           [:form.vertical
            [:section {:class-name "project-settings-section"}
-            (section-header 1 "Goal")
+            [section-header 1 "Goal"]
             [current-project-input "Goal" [:name] identity]
             [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
             [regions-dropdown-component {:label     "Region"
@@ -81,7 +81,7 @@
                                          :model     (:region-id @current-project)}]]
 
            [:section {:class-name "project-settings-section"}
-            (section-header 2 "Demand")
+            [section-header 2 "Demand"]
             [population-dropdown-component {:label     "Sources"
                                             :value     (:population-source-id @current-project)
                                             :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
@@ -91,7 +91,7 @@
             [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
 
            [:section {:class-name "project-settings-section"}
-            (section-header 3 "Sites")
+            [section-header 3 "Sites"]
             [datasets-dropdown-component {:label     "Dataset"
                                           :value     (:dataset-id @current-project)
                                           :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
@@ -99,13 +99,13 @@
             [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]]
 
            [:section {:class-name "project-settings-section"}
-            (section-header 4 "Coverage")
+            [section-header 4 "Coverage"]
             [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
                                                 :value              (get-in @current-project [:config :coverage :filter-options])
                                                 :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
                                                 :empty              [:div {:class-name " no-dataset-selected"} "First choose dataset."]}]]
            [:section {:class-name "project-settings-section"}
-            (section-header 5 "Actions")
+            [section-header 5 "Actions"]
             [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]
 
         [:div {:class-name "project-settings-actions"}
