@@ -41,10 +41,11 @@
                                                 :name (-> % .-target .-value)])}]
         [:label.file-input-wrapper
          [:div "Import sites from CSV"]
-         [:input {:id "file-upload"
-                  :type "file"
-                  :on-change  #(rf/dispatch [:datasets2/new-dataset-update
-                                             :js-file (-> (.-currentTarget %) .-files (aget 0))])}]]
+         (when (= @view-state open?)
+           [:input {:id "file-upload"
+                    :type "file"
+                    :on-change  #(rf/dispatch [:datasets2/new-dataset-update
+                                               :js-file (-> (.-currentTarget %) .-files (aget 0))])}])]
         [:a {:href (routes/download-sample)
              :data-trigger "false"} "Download samples sites"]
         [m/Select {:label "Coverage algorithm"
