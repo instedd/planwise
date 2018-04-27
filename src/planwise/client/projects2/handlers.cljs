@@ -69,9 +69,10 @@
 ;; upon callback we are updating the local db current-project
 (rf/reg-event-fx
  :projects2/start-project
- in-projects2
+ ;in-projects2
  (fn [{:keys [db]} [_ id]]
-   {:api (assoc (api/start-project! id)
+   {:db (assoc-in db [:scenarios :list-scope] nil)
+    :api (assoc (api/start-project! id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
