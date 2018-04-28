@@ -3,6 +3,7 @@
             [planwise.boundary.coverage :as coverage]
             [planwise.boundary.jobrunner :as jr]
             [integrant.core :as ig]
+            [clojure.string :refer [includes?]]
             [taoensso.timbre :as timbre]
             [clojure.data.csv :as csv]
             [clojure.java.jdbc :as jdbc]
@@ -56,6 +57,11 @@
   [store dataset-id version]
   (db-find-sites (get-db store) {:dataset-id dataset-id
                                  :version version}))
+
+(defn filter-sites-by-tags
+  [sites tags]
+  (reduce
+   (fn [sites tag] (let [fil-sites  (filter #(-> % :tags (includes? tag)) sites)] fil-sites)) sites tags))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
