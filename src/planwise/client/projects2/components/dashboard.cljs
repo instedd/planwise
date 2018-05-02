@@ -26,8 +26,11 @@
   [m/ChipSet [m/Chip [m/ChipText input]]])
 
 (defn- scenarios-list-item
-  [{:keys [id name label state demand-coverage investment changeset-summary] :as scenario}]
-  [:tr {:key id :on-click #(dispatch [:scenarios/load-scenario {:id id}])}
+  [project-id {:keys [id name label state demand-coverage investment changeset-summary] :as scenario}]
+  [:tr {:key id :on-click (fn [evt]
+                            (cond
+                              (or (.-shiftKey evt) (.-metaKey evt)) (.open js/window (routes/scenarios {:project-id project-id :id id}))
+                              :else (dispatch [:scenarios/load-scenario {:id id}])))}
    [:td {:class "col1"} (cond (= state "pending") [create-chip state]
                               (not= label "initial") [create-chip label])]
    [:td {:class "col2"} name]
@@ -47,7 +50,7 @@
       [:th {:class "col4"} "Investment"]
       [:th {:class "col5"} "Actions"]]]
 
-    (into [:tbody] (map scenarios-list-item scenarios))]])
+    (into [:tbody] (map #(scenarios-list-item (:id current-project) %) scenarios))]])
 
 (defn view-current-project
   []
