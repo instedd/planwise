@@ -1,6 +1,6 @@
-FROM camptocamp/mapserver:latest
+FROM camptocamp/mapserver:7.0
 
-ADD planwise.map /etc/mapserver/mapserver.map
+ADD planwise.map /etc/mapserver/planwise.map
 
 VOLUME /data
 
