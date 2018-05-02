@@ -203,7 +203,7 @@
    (update db :list asdf/reset! scenarios)))
 
 (rf/reg-event-db
-  :scenarios/invalidate-scenarios
-  in-scenarios
-  (fn [db [_]]
-    (update db :list asdf/invalidate!)))
+ :scenarios/invalidate-scenarios
+ in-scenarios
+ (fn [db [_]]
+   (update db :list asdf/invalidate!)))
