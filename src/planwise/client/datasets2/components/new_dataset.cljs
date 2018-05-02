@@ -44,8 +44,12 @@
          (when (= @view-state open?)
            [:input {:id "file-upload"
                     :type "file"
+                    :value ""
                     :on-change  #(rf/dispatch [:datasets2/new-dataset-update
-                                               :js-file (-> (.-currentTarget %) .-files (aget 0))])}])]
+                                               :js-file (-> (.-currentTarget %) .-files (aget 0))])}])
+           (when (some? @js-file)
+              ;(println (-> @js-file .getName))
+              [:span (.-name @js-file)])]
         [:a {:href (routes/download-sample)
              :data-trigger "false"} "Download samples sites"]
         [m/Select {:label "Coverage algorithm"
