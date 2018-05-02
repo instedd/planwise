@@ -10,7 +10,7 @@ RUN for i in {1..5}; do \
   && rm -rf /var/lib/apt/lists/*
 
 # Add scripts
-ADD scripts/* /app/scripts/
+ADD scripts/ /app/scripts/
 ENV SCRIPTS_PATH /app/scripts/
 
 # Add project compiled binaries

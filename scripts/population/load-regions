@@ -20,7 +20,7 @@ fi
 
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 
-DATA_PATH=${DATA_PATH:-data/geojson}
+DATA_PATH=${DATA_PATH:-data}/geojson
 
 mkdir -p ${DATA_PATH}
 
