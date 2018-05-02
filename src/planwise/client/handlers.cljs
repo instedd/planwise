@@ -76,8 +76,3 @@
  (fn [_ [_ time]]
    (when (= 0 (mod time 1000))
      {:dispatch [:datasets/refresh-datasets time]})))
-
-(rf/reg-event-fx
- :dialog/delay-dispatch
- (fn [_ [_ event-vector]]
-   {:dispatch-later [{:ms 150 :dispatch event-vector}]}))

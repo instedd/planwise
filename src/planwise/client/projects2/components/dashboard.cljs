@@ -68,6 +68,9 @@
                                  {:title (:name @current-project)
                                   :tabs [project-tabs {:active 0}]
                                   :secondary-actions (project-secondary-actions @current-project delete?)})
-           [delete-project-dialog delete? (:id @current-project)]
-           [ui/panel {}
-            (scenarios-list scenarios @current-project)]])))))
+           [delete-project-dialog {:open? @delete?
+                                   :cancel-fn hide-dialog
+                                   :delete-fn (fn []
+                                                (hide-dialog)
+                                                (rf/dispatch [:projects2/delete-project id]))}]
+           (scenarios-list scenarios @current-project)])))))
