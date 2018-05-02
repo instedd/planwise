@@ -100,7 +100,7 @@ DECLARE
   geom GEOMETRY;
   ret RECORD;
 BEGIN
-  geom := (SELECT ST_Buffer(point::geography, distance_meters, 16)::geometry);
+  geom := (SELECT ST_Buffer(point::geography, distance_meters::FLOAT, 16)::geometry);
   SELECT 'ok'::TEXT, geom INTO ret;
   RETURN ret;
 END;
