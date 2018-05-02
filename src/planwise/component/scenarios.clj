@@ -73,22 +73,25 @@
 
 (defmethod jr/job-next-task ::boundary/compute-initial-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
-  (info "Computing initial scenario" scenario-id)
-  (let [engine (:engine store)
-        result (engine/compute-initial-scenario engine project)]
-    (info "Initial scenario computed" result)
-    ;; TODO check if scenario didn't change from result
-    (db-update-scenario-state! (get-db store)
-                               {:id              scenario-id
-                                :raster          (:raster-path result)
-                                :demand-coverage (:covered-demand result)
-                                :state           "done"})
-    (db-update-project-engine-config! (get-db store)
-                                      {:project-id    (:id project)
-                                       :engine-config (pr-str {:demand-quartiles           (:demand-quartiles result)
-                                                               :source-demand              (:source-demand result)
-                                                               :pending-demand-raster-path (:raster-path result)})}))
-  {:state nil})
+  (letfn [(task-fn []
+            (info "Computing initial scenario" scenario-id)
+            (let [engine (:engine store)
+                  result (engine/compute-initial-scenario engine project)]
+              (info "Initial scenario computed" result)
+              ;; TODO check if scenario didn't change from result
+              (db-update-scenario-state! (get-db store)
+                                         {:id              scenario-id
+                                          :raster          (:raster-path result)
+                                          :demand-coverage (:covered-demand result)
+                                          :state           "done"})
+              (db-update-project-engine-config! (get-db store)
+                                                {:project-id    (:id project)
+                                                 :engine-config (pr-str {:demand-quartiles           (:demand-quartiles result)
+                                                                         :source-demand              (:source-demand result)
+                                                                         :pending-demand-raster-path (:raster-path result)})})))]
+    {:task-id :initial
+     :task-fn task-fn
+     :state   nil}))
 
 (defn create-scenario
   [store project {:keys [name changeset]}]
@@ -131,20 +134,23 @@
 
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
-  (info "Computing scenario" scenario-id)
-  (let [engine (:engine store)
-        scenario (get-scenario store scenario-id)
-        result (engine/compute-scenario engine project scenario)]
-    (info "Scenario computed" result)
-    ;; TODO check if scenario didn't change from result. If did, discard result.
-    ;; TODO remove previous raster files
-    (db-update-scenario-state! (get-db store)
-                               {:id              scenario-id
-                                :raster          (:raster-path result)
-                                :demand-coverage (:covered-demand result)
-                                :state           "done"})
-    (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
-  {:state nil})
+  (letfn [(task-fn []
+            (info "Computing scenario" scenario-id)
+            (let [engine   (:engine store)
+                  scenario (get-scenario store scenario-id)
+                  result   (engine/compute-scenario engine project scenario)]
+              (info "Scenario computed" result)
+              ;; TODO check if scenario didn't change from result. If did, discard result.
+              ;; TODO remove previous raster files
+              (db-update-scenario-state! (get-db store)
+                                         {:id              scenario-id
+                                          :raster          (:raster-path result)
+                                          :demand-coverage (:covered-demand result)
+                                          :state           "done"})
+              (db-update-scenarios-label! (get-db store) {:project-id (:id project)})))]
+    {:task-id scenario-id
+     :task-fn task-fn
+     :state   nil}))
 
 ;; private function to update the label based on investments and demand-coverage
 ;; will label of all scenarios of the project
