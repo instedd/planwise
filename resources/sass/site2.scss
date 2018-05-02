@@ -167,7 +167,7 @@ header.mdc-toolbar {
   }
 
   .mdc-tab-bar__indicator {
-    background-color: $mdc-theme-secondary;
+    background-color: $mdc-theme-primary;
   }
 }
 //
@@ -471,5 +471,38 @@ form.vertical, .fields-vertical {
         transform: translateY(5px);
       }
     }
+  }
+}
+
+.project-settings-section {
+  display: inherit;
+  flex-flow: inherit;
+  margin: 0 0 50px;
+
+  .step-header {
+    h2 {
+      margin-bottom: 0;
+    }
+  }
+
+  .mdc-select {
+    margin-top: 16px;
+    margin-bottom: 10px;
+  }
+
+  .no-dataset-selected {
+    color: rgba(0, 0, 0, 0.6);
+    margin: 25px 0 0;
+  }
+}
+
+.project-settings-actions {
+  text-align: right;
+
+  padding: 25px 35px;
+  border-top: 1px solid #e0e0e0;
+
+  button {
+    margin-left: 25px;
   }
 }
