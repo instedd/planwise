@@ -19,7 +19,9 @@
   (routes
    (GET "/:id" [id as request]
      (let [scenario (scenarios/get-scenario service (Integer. id))]
-       (if (nil? (:id scenario)) (not-found) (response (dissoc scenario :updated-at)))))
+       (if (nil? (:id scenario))
+         (not-found {:error "Scenario not found"})
+         (response (dissoc scenario :updated-at)))))
 
    (PUT "/:id" [id scenario as request]
      (let [id (Integer. id)
