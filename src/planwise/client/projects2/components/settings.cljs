@@ -58,6 +58,25 @@
              :theme    ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
+(defn- create-chip
+  [props input]
+  [m/Chip props [m/ChipText input]])
+
+(defn- tag-set
+  [tags]
+  [m/ChipSet {}
+   (for [tag (map-indexed vector tags)]
+     [create-chip {:id (first tag)} (second tag)])])
+
+(defn generate-tags []
+  (let [value (r/atom "")]
+    (fn []
+      [m/TextField {:type "text"
+                    :placeholder "Type tag for filtering sites"
+                    :on-key-press #(when (= (.-charCode %) 13) (reset! value ""))
+                    :on-change #(reset! value (-> % .-target .-value))
+                    :value @value}])))
+
 (defn- section-header
   [number title]
   [:div {:class-name "step-header"}
@@ -97,7 +116,9 @@
                                           :value     (:dataset-id @current-project)
                                           :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
             [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
-            [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]]
+            [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
+            [generate-tags]
+            [tag-set ["foo" "bar"]]]
 
            [:section {:class-name "project-settings-section"}
             [section-header 4 "Coverage"]
