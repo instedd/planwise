@@ -37,7 +37,7 @@
         (let [section      (:section @page-params)]
           (cond
             (= section :index) [listings/project-section-index]
-            (= section :show) [project-section-show]
+            (= section :show) [project-section-show :scenarios]
             (= section :project-scenarios) [project-section-show :scenarios]
             (= section :project-settings) [project-section-show :settings]
             :else [common2/loading-placeholder]))))))

@@ -36,14 +36,17 @@
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
 (defn- current-project-input
-  [label path transform]
-  (let [current-project (rf/subscribe [:projects2/current-project])
-        value           (or (get-in @current-project path) "")
-        change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value transform)])]
-    [m/TextField {:type      "text"
-                  :label     label
-                  :on-change change-fn
-                  :value     value}]))
+  ([label path transform]
+   (current-project-input label path transform {:disabled false}))
+  ([label path transform {:keys [disabled]}]
+   (let [current-project (rf/subscribe [:projects2/current-project])
+         value           (or (get-in @current-project path) "")
+         change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value transform)])]
+     [m/TextField {:type      "text"
+                   :label     label
+                   :on-change change-fn
+                   :value     value
+                   :disabled  disabled}])))
 
 (defn- project-start-button
   [_ project]
@@ -87,11 +90,11 @@
   [:div {:class-name "step-header"}
    [:h2 [:span title]]])
 
-(defn edit-current-project-view
-  []
+(defn current-project-settings-view
+  [{:keys [read-only]}]
   (let [current-project (subscribe [:projects2/current-project])
         tags            (subscribe [:projects2/tags])]
-    (fn []
+    (fn [{:keys [read-only]}]
       [m/Grid {}
        [m/GridCell {:span 6}
         [:form.vertical
@@ -99,9 +102,11 @@
           [section-header 1 "Goal"]
           [current-project-input "Goal" [:name] identity]
           [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
+
           [regions-dropdown-component {:label     "Region"
                                        :on-change #(dispatch [:projects2/save-key :region-id %])
-                                       :model     (:region-id @current-project)}]]
+                                       :model     (:region-id @current-project)
+                                       :disabled? read-only}]]
 
          [:section {:class-name "project-settings-section"}
           [section-header 2 "Demand"]
@@ -109,16 +114,17 @@
                                           :value     (:population-source-id @current-project)
                                           :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
 
-          [current-project-input "Unit" [:config :demographics :unit-name] identity]
-          [current-project-input "Target" [:config :demographics :target] valid-input]
+          [current-project-input "Unit" [:config :demographics :unit-name] identity {:disabled read-only}]
+          [current-project-input "Target" [:config :demographics :target] valid-input {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
 
          [:section {:class-name "project-settings-section"}
           [section-header 3 "Sites"]
           [datasets-dropdown-component {:label     "Dataset"
                                         :value     (:dataset-id @current-project)
-                                        :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
-          [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
+                                        :on-change #(dispatch [:projects2/save-key :dataset-id %])
+                                        :disabled? read-only}]
+          [current-project-input "Capacity workload" [:config :sites :capacity] valid-input {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
           [tag-input]
           [:label "Tags: " [tag-set @tags]]]
@@ -132,7 +138,7 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 5 "Actions"]
-          [current-project-input "Budget" [:config :actions :budget] valid-input]]]]])))
+          [current-project-input "Budget" [:config :actions :budget] valid-input {:disabled read-only}]]]]])))
 
 (defn edit-current-project
   []
@@ -143,7 +149,7 @@
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
 
-        [edit-current-project-view]
+        [current-project-settings-view {:read-only false}]
 
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]

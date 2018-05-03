@@ -62,7 +62,7 @@
 
 (defn- project-settings
   []
-  [settings/edit-current-project-view])
+  [settings/current-project-settings-view {:read-only true}])
 
 (defn view-current-project
   [active-tab]
