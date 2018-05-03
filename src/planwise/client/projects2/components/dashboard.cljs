@@ -56,14 +56,13 @@
   []
   (let [current-project (rf/subscribe [:projects2/current-project])
         delete?  (r/atom false)
-        scenarios-sub (rf/subscribe [:scenarios/list])
-        scenarios-invalid (rf/subscribe [:scenarios/list-is-invalid])]
+        scenarios-sub (rf/subscribe [:scenarios/list])]
     (fn []
       (let [scenarios (asdf/value @scenarios-sub)]
-        (when (or (asdf/should-reload? @scenarios-sub) @scenarios-invalid)
+        (when (asdf/should-reload? @scenarios-sub)
           (rf/dispatch [:scenarios/load-scenarios]))
         (cond
-          (or @scenarios-invalid (nil? scenarios)) [common2/loading-placeholder]
+          (asdf/reloading? scenarios) [common2/loading-placeholder]
           :else
           [ui/fixed-width (merge (common2/nav-params)
                                  {:title (:name @current-project)

@@ -85,7 +85,8 @@
  :scenarios/copy-scenario
  in-scenarios
  (fn [{:keys [db]} [_ id]]
-   {:api  (assoc (api/copy-scenario id)
+   {:dispatch [:scenarios/invalidate-scenarios]
+    :api  (assoc (api/copy-scenario id)
                  :on-success [:scenarios/load-scenario])}))
 
 ;; Editing scenario
@@ -193,12 +194,16 @@
    (let [project-id (get-in db [:projects2 :current-project :id])]
      {:api (assoc (api/load-scenarios project-id)
                   :on-success [:scenarios/scenarios-loaded])
-      :db  (-> db
-               (update-in [:scenarios :list] asdf/reload!)
-               (assoc-in [:scenarios :list-scope] {:project-id project-id}))})))
+      :db  (update-in db [:scenarios :list] asdf/reload!)})))
 
 (rf/reg-event-db
  :scenarios/scenarios-loaded
  in-scenarios
  (fn [db [_ scenarios]]
    (update db :list asdf/reset! scenarios)))
+
+(rf/reg-event-db
+ :scenarios/invalidate-scenarios
+ in-scenarios
+ (fn [db [_]]
+   (update db :list asdf/invalidate!)))
