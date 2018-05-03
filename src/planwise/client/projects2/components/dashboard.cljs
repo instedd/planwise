@@ -56,6 +56,8 @@
   []
   (let [current-project (rf/subscribe [:projects2/current-project])
         delete?  (r/atom false)
+        hide-dialog (fn [] (reset! delete? false))
+        id (:id @current-project)
         scenarios-sub (rf/subscribe [:scenarios/list])]
     (fn []
       (let [scenarios (asdf/value @scenarios-sub)]
@@ -70,7 +72,6 @@
                                   :secondary-actions (project-secondary-actions @current-project delete?)})
            [delete-project-dialog {:open? @delete?
                                    :cancel-fn hide-dialog
-                                   :delete-fn (fn []
-                                                (hide-dialog)
-                                                (rf/dispatch [:projects2/delete-project id]))}]
-           (scenarios-list scenarios @current-project)])))))
+                                   :delete-fn #(rf/dispatch [:projects2/delete-project id])}]])))))
+
+

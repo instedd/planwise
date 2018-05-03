@@ -56,6 +56,6 @@
                :title "Edit Site"
                :content (changeset-dialog-content @site)
                :delete-fn #(dispatch [:scenarios/delete-site @site-index])
-               :accept-fn  #(dispatch [:scenarios/accept-changeset-dialog])
-               :cancel-fn  #(dispatch [:scenarios/cancel-changeset-dialog])}))))
+               :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
+               :cancel-fn #(dispatch [:scenarios/cancel-changeset-dialog])}))))
 
