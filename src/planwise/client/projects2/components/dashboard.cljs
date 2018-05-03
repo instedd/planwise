@@ -18,8 +18,8 @@
              :on-change (fn [evt]
                           (let [tab-index (.-value (.-target evt))]
                             (cond
-                              (= tab-index 0) (println "Load scenarios!!")
-                              (= tab-index 1) (println "Load settings!!"))))}
+                              (= tab-index 0) (dispatch [:projects2/project-scenarios])
+                              (= tab-index 1) (dispatch [:projects2/project-settings]))))}
    [m/Tab "Scenarios"]
    [m/Tab "Settings"]])
 
@@ -70,7 +70,7 @@
         hide-dialog (fn [] (reset! delete? false))
         id (:id @current-project)
         scenarios-sub (rf/subscribe [:scenarios/list])]
-    (fn []
+    (fn [active-tab]
       (let [scenarios (asdf/value @scenarios-sub)]
         (when (asdf/should-reload? @scenarios-sub)
           (rf/dispatch [:scenarios/load-scenarios]))

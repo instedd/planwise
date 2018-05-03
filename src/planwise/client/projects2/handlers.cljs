@@ -172,3 +172,20 @@
          tags* (utils/remove-by-index (get-in db path) index)]
      {:db       (assoc-in db path tags*)
       :dispatch [:projects2/persist-current-project]})))
+
+;;------------------------------------------------------------------------------
+;; Tab actions
+
+(rf/reg-event-fx
+ :projects2/project-scenarios
+ in-projects2
+ (fn [{:keys [db]} _]
+   (println "Navegando a scenarios")
+   {:navigate (routes/projects2-scenarios {:id (get-in db [:current-project :id])})}))
+
+(rf/reg-event-fx
+ :projects2/project-settings
+ in-projects2
+ (fn [{:keys [db]} _]
+   (println "Navegando a settings")
+   {:navigate (routes/projects2-settings {:id (get-in db [:current-project :id])})}))

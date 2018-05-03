@@ -14,7 +14,7 @@
   [section]
   (let [page-params       (subscribe [:page-params])
         current-project   (subscribe [:projects2/current-project])]
-    (fn []
+    (fn [section]
       (let [id (:id @page-params)]
         (cond
           (not= (:id @current-project) id) (do
