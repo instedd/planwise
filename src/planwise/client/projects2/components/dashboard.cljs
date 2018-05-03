@@ -59,8 +59,12 @@
 
     (into [:tbody] (map #(scenarios-list-item (:id current-project) %) scenarios))]])
 
+(defn- project-settings
+  []
+  [:div "Project settings"])
+
 (defn view-current-project
-  [tab]
+  [active-tab]
   (let [current-project (rf/subscribe [:projects2/current-project])
         delete?  (r/atom false)
         hide-dialog (fn [] (reset! delete? false))
@@ -75,12 +79,14 @@
           :else
           [ui/fixed-width (merge (common2/nav-params)
                                  {:title (:name @current-project)
-                                  :tabs [project-tabs {:active tab}]
+                                  :tabs [project-tabs {:active active-tab}]
                                   :secondary-actions (project-secondary-actions @current-project delete?)})
            [delete-project-dialog {:open? @delete?
                                    :cancel-fn hide-dialog
                                    :delete-fn #(rf/dispatch [:projects2/delete-project id])}]
            [ui/panel {}
-            [scenarios-list scenarios @current-project]]])))))
+            (cond
+              (= active-tab :scenarios) [scenarios-list scenarios @current-project]
+              (= active-tab :settings) [project-settings])]])))))
 
 
