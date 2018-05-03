@@ -87,54 +87,64 @@
   [:div {:class-name "step-header"}
    [:h2 [:span title]]])
 
+(defn edit-current-project-view
+  []
+  (let [current-project (subscribe [:projects2/current-project])
+        tags            (subscribe [:projects2/tags])]
+    (fn []
+      [m/Grid {}
+       [m/GridCell {:span 6}
+        [:form.vertical
+         [:section {:class-name "project-settings-section"}
+          [section-header 1 "Goal"]
+          [current-project-input "Goal" [:name] identity]
+          [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
+          [regions-dropdown-component {:label     "Region"
+                                       :on-change #(dispatch [:projects2/save-key :region-id %])
+                                       :model     (:region-id @current-project)}]]
+
+         [:section {:class-name "project-settings-section"}
+          [section-header 2 "Demand"]
+          [population-dropdown-component {:label     "Sources"
+                                          :value     (:population-source-id @current-project)
+                                          :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
+
+          [current-project-input "Unit" [:config :demographics :unit-name] identity]
+          [current-project-input "Target" [:config :demographics :target] valid-input]
+          [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
+
+         [:section {:class-name "project-settings-section"}
+          [section-header 3 "Sites"]
+          [datasets-dropdown-component {:label     "Dataset"
+                                        :value     (:dataset-id @current-project)
+                                        :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
+          [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
+          [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
+          [tag-input]
+          [:label "Tags: " [tag-set @tags]]]
+
+         [:section {:class-name "project-settings-section"}
+          [section-header 4 "Coverage"]
+          [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
+                                              :value              (get-in @current-project [:config :coverage :filter-options])
+                                              :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
+                                              :empty              [:div {:class-name " no-dataset-selected"} "First choose dataset."]}]]
+
+         [:section {:class-name "project-settings-section"}
+          [section-header 5 "Actions"]
+          [current-project-input "Budget" [:config :actions :budget] valid-input]]]]])))
+
 (defn edit-current-project
   []
-  (let [tags (subscribe [:projects2/tags])
-        current-project (subscribe [:projects2/current-project])
+  (let [current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
         hide-dialog     (fn [] (reset! delete? false))]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
-        [m/Grid {}
-         [m/GridCell {:span 6}
-          [:form.vertical
-           [:section {:class-name "project-settings-section"}
-            [section-header 1 "Goal"]
-            [current-project-input "Goal" [:name] identity]
-            [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
-            [regions-dropdown-component {:label     "Region"
-                                         :on-change #(dispatch [:projects2/save-key :region-id %])
-                                         :model     (:region-id @current-project)}]]
-           [:section {:class-name "project-settings-section"}
-            [section-header 2 "Demand"]
-            [population-dropdown-component {:label     "Sources"
-                                            :value     (:population-source-id @current-project)
-                                            :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
 
-            [current-project-input "Unit" [:config :demographics :unit-name] identity]
-            [current-project-input "Target" [:config :demographics :target] valid-input]
-            [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
+        [edit-current-project-view]
 
-           [:section {:class-name "project-settings-section"}
-            [section-header 3 "Sites"]
-            [datasets-dropdown-component {:label     "Dataset"
-                                          :value     (:dataset-id @current-project)
-                                          :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
-            [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
-            [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
-            [tag-input]
-            [:label "Tags: " [tag-set @tags]]]
-
-           [:section {:class-name "project-settings-section"}
-            [section-header 4 "Coverage"]
-            [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
-                                                :value              (get-in @current-project [:config :coverage :filter-options])
-                                                :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-                                                :empty              [:div {:class-name " no-dataset-selected"} "First choose dataset."]}]]
-           [:section {:class-name "project-settings-section"}
-            [section-header 5 "Actions"]
-            [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]
          [project-start-button {} @current-project]]]

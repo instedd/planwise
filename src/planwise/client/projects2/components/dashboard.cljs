@@ -8,7 +8,8 @@
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.rmwc :as m]
-            [planwise.client.utils :as utils]))
+            [planwise.client.utils :as utils]
+            [planwise.client.projects2.components.settings :as settings]))
 
 (defn- project-tabs
   [{:keys [active] :or {active :scenarios}}]
@@ -61,7 +62,7 @@
 
 (defn- project-settings
   []
-  [:div "Project settings"])
+  [settings/edit-current-project-view])
 
 (defn view-current-project
   [active-tab]
