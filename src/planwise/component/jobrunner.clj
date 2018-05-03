@@ -6,6 +6,15 @@
 
 (timbre/refer-timbre)
 
+(defn- try-job-next-task
+  [job state]
+  (try
+    (boundary/job-next-task job state)
+    (catch Throwable e
+      (error (str "Exception fetching next task from job "
+                  (pr-str job) " with state " (pr-str state)))
+      {:state nil})))
+
 (defn fetch-next-task
   "Recursively polls jobs taken from queue in order for a next task, updating
   job states and accumulating idle jobs, until a job returns a next task to
@@ -18,7 +27,7 @@
     (let [job       (first queue)
           queue'    (vec (rest queue))
           state     (get jobs job)
-          result    (boundary/job-next-task job state)
+          result    (try-job-next-task job state)
           state'    (:state result)
           next-task (when-let [task-id (:task-id result)]
                       {:task-id [job task-id]
