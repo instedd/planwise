@@ -11,8 +11,15 @@
             [planwise.client.utils :as utils]))
 
 (defn- project-tabs
-  [{:keys [active] :or {active 0}}]
-  [m/TabBar {:activeTabIndex active}
+  [{:keys [active] :or {active :scenarios}}]
+  [m/TabBar {:activeTabIndex (cond
+                               (= active :scenarios) 0
+                               (= active :settings) 1)
+             :on-change (fn [evt]
+                          (let [tab-index (.-value (.-target evt))]
+                            (cond
+                              (= tab-index 0) (println "Load scenarios!!")
+                              (= tab-index 1) (println "Load settings!!"))))}
    [m/Tab "Scenarios"]
    [m/Tab "Settings"]])
 
@@ -53,7 +60,7 @@
     (into [:tbody] (map #(scenarios-list-item (:id current-project) %) scenarios))]])
 
 (defn view-current-project
-  []
+  [tab]
   (let [current-project (rf/subscribe [:projects2/current-project])
         delete?  (r/atom false)
         hide-dialog (fn [] (reset! delete? false))
@@ -68,10 +75,12 @@
           :else
           [ui/fixed-width (merge (common2/nav-params)
                                  {:title (:name @current-project)
-                                  :tabs [project-tabs {:active 0}]
+                                  :tabs [project-tabs {:active tab}]
                                   :secondary-actions (project-secondary-actions @current-project delete?)})
            [delete-project-dialog {:open? @delete?
                                    :cancel-fn hide-dialog
-                                   :delete-fn #(rf/dispatch [:projects2/delete-project id])}]])))))
+                                   :delete-fn #(rf/dispatch [:projects2/delete-project id])}]
+           [ui/panel {}
+            [scenarios-list scenarios @current-project]]])))))
 
 

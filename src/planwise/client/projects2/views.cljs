@@ -11,7 +11,7 @@
             [planwise.client.ui.common :as ui]))
 
 (defn- project-section-show
-  []
+  [section]
   (let [page-params       (subscribe [:page-params])
         current-project   (subscribe [:projects2/current-project])]
     (fn []
@@ -21,7 +21,7 @@
                                              (dispatch [:projects2/get-project id])
                                              [common2/loading-placeholder])
           (= "draft" (:state @current-project)) [settings/edit-current-project]
-          :else [dashboard/view-current-project])))))
+          :else [dashboard/view-current-project section])))))
 
 ;;------------------------------------------------------------------------
 ;;Projects view
@@ -38,4 +38,6 @@
           (cond
             (= section :index) [listings/project-section-index]
             (= section :show) [project-section-show]
+            (= section :project-scenarios) [project-section-show :scenarios]
+            (= section :project-settings) [project-section-show :settings]
             :else [common2/loading-placeholder]))))))
