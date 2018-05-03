@@ -13,6 +13,7 @@ COUNTRIES="
   south-africa-and-lesotho-20160827
   niger-20170601
   uganda-20170601
+  argentina-YYYYMMDD
 "
 
 if [[ -z $COUNTRY ]]; then
