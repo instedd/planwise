@@ -61,7 +61,7 @@
 (defn filter-sites-by-tags
   [sites tags]
   (reduce
-   (fn [sites tag] (let [fil-sites  (filter #(-> % :tags (includes? tag)) sites)] fil-sites)) sites tags))
+   (fn [sites tag] (let [filtered-sites  (filter #(-> % :tags (includes? tag)) sites)] filtered-sites)) sites tags))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -216,7 +216,9 @@
   (new-processing-job [store dataset-id]
     (new-processing-job store dataset-id))
   (get-sites-with-coverage-in-region [store dataset-id version filter-options]
-    (get-sites-with-coverage-in-region store dataset-id version filter-options)))
+    (get-sites-with-coverage-in-region store dataset-id version filter-options))
+  (filter-sites-by-tags [sites tags]
+    (filter-sites-by-tags sites tags)))
 
 
 (defmethod ig/init-key :planwise.component/datasets2

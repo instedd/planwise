@@ -16,6 +16,9 @@
     "Creates a new job state for processing the dataset asynchronously")
 
   (get-sites-with-coverage-in-region [this dataset-id version filter-options]
-    "Retrieves the sites for a version of a dataset located inside the region"))
+    "Retrieves the sites for a version of a dataset located inside the region")
+
+  (filter-sites-by-tags [sites tags]
+    "Returns sites filtered by every tag in tags."))
 
 ;; Preprocessing dataset job type: ::preprocess-dataset

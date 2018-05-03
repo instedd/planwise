@@ -40,11 +40,13 @@
   [{:keys [datasets2]} {:keys [dataset-id dataset-version region-id coverage-algorithm config]}]
   (let [version          (or dataset-version (:last-version (datasets2/get-dataset datasets2 dataset-id)))
         coverage-options (get-in config [:coverage :filter-options])
+        tags             (get-in config [:sites :tags])
         filter-options   {:region-id          region-id
                           :coverage-algorithm coverage-algorithm
                           :coverage-options   coverage-options}
         sites            (datasets2/get-sites-with-coverage-in-region datasets2 dataset-id version filter-options)]
     (->> sites
+         (datasets2/filter-sites-by-tags tags)
          (map #(select-keys % [:id :capacity :raster]))
          (sort-by :capacity)
          reverse)))
