@@ -60,21 +60,23 @@
              :on-click #(reset! state true)} "Delete"])
 
 (defn- create-chip
-  [props input]
-  [m/Chip props [m/ChipText input]])
+  [props index input]
+  [m/Chip props [m/ChipText input]
+   [m/ChipIcon {:use "close"
+                :on-click #(dispatch [:projects2/delete-tag index])}]])
 
 (defn- tag-set
   [tags]
   [m/ChipSet {:class "tags"}
-   (for [tag (map-indexed vector tags)]
-     [create-chip {:key (first tag)} (second tag)])])
+   (for [[index tag] (map-indexed vector tags)]
+     [create-chip {:key index} index tag])])
 
 (defn generate-tag []
   (let [value (r/atom "")]
     (fn []
       [m/TextField {:type "text"
                     :placeholder "Type tag for filtering sites"
-                    :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (-> @value (blank?) not))
+                    :on-key-press (fn [e] (when (and  (-> @value (blank?) not) (= (.-charCode e) 13))
                                             (do (dispatch [:projects2/save-tag @value])
                                                 (reset! value ""))))
                     :on-change #(reset! value (-> % .-target .-value))
@@ -97,7 +99,6 @@
         [m/Grid {}
          [m/GridCell {:span 6}
           [:form.vertical
-           <<<<<<< master
            [:section {:class-name "project-settings-section"}
             [section-header 1 "Goal"]
             [current-project-input "Goal" [:name] identity]
