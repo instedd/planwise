@@ -122,6 +122,7 @@
     (let [store                    (:planwise.component/datasets2 system)
           sites-dataset-id1        (datasets2/sites-by-version store 1 2)
           sites-dataset-id2        (datasets2/sites-by-version store 2 2)]
+      (is (= (datasets2/filter-sites-by-tags sites-dataset-id1 []) sites-dataset-id1))
       (is (empty? (datasets2/filter-sites-by-tags sites-dataset-id1 ["inexistent"])))
       (is (= (count (datasets2/filter-sites-by-tags sites-dataset-id1 ["private"])) 2))
       (is (empty? (datasets2/filter-sites-by-tags sites-dataset-id2 ["private"])))
