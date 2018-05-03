@@ -18,6 +18,10 @@
    :task-id (inc value)
    :task-fn (constantly :busy)})
 
+(defmethod boundary/job-next-task ::crasher
+  [job state]
+  (throw (ex-info "I crashed in job-next-task" {:job job :state state})))
+
 (deftest fetch-next-task-test
   (let [state {:jobs {::idler    :idle
                       ::finished :foo
@@ -80,4 +84,10 @@
     (let [state' (sut/fetch-next-task (assoc state :queue [[::busy :b] [::busy :a]]))]
       (is (= {[::busy :a] 100 [::busy :b] 201} (:jobs state')))
       (is (= [[::busy :a] [::busy :b]] (:queue state')))
-      (is (= [[::busy :b] 201] (get-in state' [:next-task :task-id]))))))
+      (is (= [[::busy :b] 201] (get-in state' [:next-task :task-id])))))
+
+  ;; handles exceptions by removing the jobs
+  (let [state {:jobs {::crasher :some-job-state}}]
+    (let [state' (sut/fetch-next-task (assoc state :queue [::crasher]))]
+      (is (= {} (:jobs state')))
+      (is (= [] (:queue state'))))))
