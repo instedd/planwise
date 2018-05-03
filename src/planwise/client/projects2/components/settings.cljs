@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
+            [clojure.string :refer [blank?]]
             [planwise.client.asdf :as asdf]
             [planwise.client.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
@@ -64,16 +65,18 @@
 
 (defn- tag-set
   [tags]
-  [m/ChipSet {}
+  [m/ChipSet {:class "tags"}
    (for [tag (map-indexed vector tags)]
-     [create-chip {:id (first tag)} (second tag)])])
+     [create-chip {:key (first tag)} (second tag)])])
 
-(defn generate-tags []
+(defn generate-tag []
   (let [value (r/atom "")]
     (fn []
       [m/TextField {:type "text"
                     :placeholder "Type tag for filtering sites"
-                    :on-key-press #(when (= (.-charCode %) 13) (reset! value ""))
+                    :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (-> @value (blank?) not))
+                                            (do (dispatch [:projects2/save-tag @value])
+                                                (reset! value ""))))
                     :on-change #(reset! value (-> % .-target .-value))
                     :value @value}])))
 
@@ -84,7 +87,8 @@
 
 (defn edit-current-project
   []
-  (let [current-project (subscribe [:projects2/current-project])
+  (let [tags (subscribe [:projects2/tags])
+        current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
         hide-dialog     (fn [] (reset! delete? false))]
     (fn []
@@ -93,6 +97,7 @@
         [m/Grid {}
          [m/GridCell {:span 6}
           [:form.vertical
+           <<<<<<< master
            [:section {:class-name "project-settings-section"}
             [section-header 1 "Goal"]
             [current-project-input "Goal" [:name] identity]
@@ -117,8 +122,8 @@
                                           :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
             [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
             [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
-            [generate-tags]
-            [tag-set ["foo" "bar"]]]
+            [generate-tag]
+            [:label "Tags: " [tag-set @tags]]]
 
            [:section {:class-name "project-settings-section"}
             [section-header 4 "Coverage"]
