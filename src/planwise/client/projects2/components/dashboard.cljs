@@ -57,8 +57,8 @@
       [:th {:class "col3"} (str (get-in current-project [:config :demographics :unit-name]) " coverage")]
       [:th {:class "col4"} "Investment"]
       [:th {:class "col5"} "Actions"]]]
-
-    (into [:tbody] (map #(scenarios-list-item (:id current-project) %) scenarios))]])
+    [:tbody
+     (map #(scenarios-list-item (:id current-project) %) scenarios)]]])
 
 (defn- project-settings
   []

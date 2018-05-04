@@ -10,7 +10,7 @@
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]
             [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
             [planwise.client.mapping :refer [static-image fullmap-region-geo]]
-            [planwise.client.population :refer [population-dropdown-component]]
+            [planwise.client.population :refer [population-dropdown-component population-disabled-input-component]]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.filter-select :as filter-select]
@@ -110,9 +110,13 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 2 "Demand"]
-          [population-dropdown-component {:label     "Sources"
-                                          :value     (:population-source-id @current-project)
-                                          :on-change #(dispatch [:projects2/save-key :population-source-id %])}]
+          (cond
+            (true? read-only) [population-disabled-input-component {:label "Sources"
+                                                                    :value (:population-source-id @current-project)}]
+            :else [population-dropdown-component {:label     "Sources"
+                                                  :value     (:population-source-id @current-project)
+                                                  :on-change #(dispatch [:projects2/save-key :population-source-id %])
+                                                  :disabled  read-only}])
 
           [current-project-input "Unit" [:config :demographics :unit-name] identity {:disabled read-only}]
           [current-project-input "Target" [:config :demographics :target] valid-input {:disabled read-only}]

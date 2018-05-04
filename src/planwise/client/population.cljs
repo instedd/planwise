@@ -62,3 +62,15 @@
                :value (str value)
                :options @options
                :onChange #(on-change (js/parseInt (-> % .-target .-value)))}]))
+
+(defn population-disabled-input-component
+  [{:keys [label value]}]
+  (let [list        (subscribe [:population/list])
+        options     (subscribe [:population/dropdown-options])
+        filtered    (filter (fn[el](= (:value el) value)) @options)]
+    (when (asdf/should-reload? @list)
+      (dispatch [:population/load-population-sources]))
+    [m/TextField {:type     "text"
+                  :label    label
+                  :value    (if (empty? filtered) "" (:label (first filtered)))
+                  :disabled true}]))
