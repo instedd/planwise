@@ -67,7 +67,7 @@
   [{:keys [label value]}]
   (let [list        (subscribe [:population/list])
         options     (subscribe [:population/dropdown-options])
-        filtered    (filter (fn[el](= (:value el) value)) @options)]
+        filtered    (filter (fn [el] (= (:value el) value)) @options)]
     (when (asdf/should-reload? @list)
       (dispatch [:population/load-population-sources]))
     [m/TextField {:type     "text"
