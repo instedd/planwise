@@ -4,7 +4,7 @@
   :min-lein-version "2.0.0"
   :dependencies [; Base infrastructure
                  [org.clojure/clojure "1.9.0"]
-                 [org.clojure/clojurescript "1.9.946"]
+                 [org.clojure/clojurescript "1.10.238"]
                  [org.clojure/core.async "0.4.474"]
                  [prismatic/schema "1.1.7"]
 

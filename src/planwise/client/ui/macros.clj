@@ -61,7 +61,7 @@
 
 (defn rmwc-ui-react-import [tname]
   `(def ~tname
-     (reagent/adapt-react-class (aget js/rmwc ~(name tname)))))
+     (reagent/adapt-react-class ~(symbol (str "rmwc/" (name tname))))))
 
 (defmacro export-rmwc []
   `(do
