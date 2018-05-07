@@ -161,18 +161,14 @@
  (fn [{:keys [db]} [_ tag]]
    (let [path [:current-project :config :sites :tags]
          n (count (get-in db path))]
-     {:db          (if (pos? n)
-                     (assoc-in db (into path [n]) tag)
-                     (assoc-in db path [tag]))
+     {:db          (update-in db path (comp vec conj) tag)
       :dispatch [:projects2/persist-current-project]})))
 
 (rf/reg-event-fx
  :projects2/delete-tag
  in-projects2
  (fn [{:keys [db]} [_ index]]
-   (let [path [:current-project :config :sites :tags]
-         tags* (vec (keep-indexed #(if (not= %1 index) %2) (get-in db path)))]
+   (let [path  [:current-project :config :sites :tags]
+         tags* (utils/remove-by-index (get-in db path) index)]
      {:db       (assoc-in db path tags*)
       :dispatch [:projects2/persist-current-project]})))
-
-

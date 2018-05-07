@@ -59,7 +59,7 @@
              :theme    ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
-(defn- create-chip
+(defn- tag-chip
   [props index input]
   [m/Chip props [m/ChipText input]
    [m/ChipIcon {:use "close"
@@ -69,16 +69,16 @@
   [tags]
   [m/ChipSet {:class "tags"}
    (for [[index tag] (map-indexed vector tags)]
-     [create-chip {:key index} index tag])])
+     [tag-chip {:key index} index tag])])
 
-(defn generate-tag []
+(defn tag-input []
   (let [value (r/atom "")]
     (fn []
       [m/TextField {:type "text"
                     :placeholder "Type tag for filtering sites"
-                    :on-key-press (fn [e] (when (and  (-> @value (blank?) not) (= (.-charCode e) 13))
-                                            (do (dispatch [:projects2/save-tag @value])
-                                                (reset! value ""))))
+                    :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (not (blank? @value)))
+                                            (dispatch [:projects2/save-tag @value])
+                                            (reset! value "")))
                     :on-change #(reset! value (-> % .-target .-value))
                     :value @value}])))
 
@@ -123,7 +123,7 @@
                                           :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
             [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
             [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
-            [generate-tag]
+            [tag-input]
             [:label "Tags: " [tag-set @tags]]]
 
            [:section {:class-name "project-settings-section"}
