@@ -29,6 +29,8 @@ jobs:
       - run: sleep 10
       - run: docker-compose exec db createdb planwise-test -Uplanwise
       - run: docker-compose run --rm app lein test
+      - run: docker-compose run --rm app npm install
+      - run: docker-compose run --rm app lein test-cljs once
       - run: docker-compose run --rm app lein cljfmt check
 
       - save_cache:

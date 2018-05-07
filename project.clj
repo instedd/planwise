@@ -115,7 +115,7 @@
                         :source-paths ["src" "test"]
                         :compiler {:output-to     "target/cljsbuild/test/main.js"
                                    :output-dir    "target/cljsbuild/test"
-                                   :main          planwise.client.runner
+                                   :main          planwise.client.test-runner
                                    :verbose       false
                                    :optimizations :none}}
                        {:id "test-nodejs"
@@ -123,7 +123,7 @@
                         :compiler {:output-to     "target/cljsbuild/test/main.js"
                                    :output-dir    "target/cljsbuild/test"
                                    :target        :nodejs
-                                   :main          planwise.client.runner
+                                   :main          planwise.client.test-runner
                                    :verbose       false
                                    :optimizations :none}}]}
 
