@@ -88,6 +88,10 @@
   [coll id]
   (remove #(= id (:id %)) coll))
 
+(defn remove-by-index
+  [coll index]
+  (vec (keep-indexed #(if (not= %1 index) %2) coll)))
+
 (defn update-by-id
   [coll id update-fn & args]
   (map (fn [item]

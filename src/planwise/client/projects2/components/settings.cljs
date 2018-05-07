@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
+            [clojure.string :refer [blank?]]
             [planwise.client.asdf :as asdf]
             [planwise.client.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
@@ -58,6 +59,29 @@
              :theme    ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
+(defn- tag-chip
+  [props index input]
+  [m/Chip props [m/ChipText input]
+   [m/ChipIcon {:use "close"
+                :on-click #(dispatch [:projects2/delete-tag index])}]])
+
+(defn- tag-set
+  [tags]
+  [m/ChipSet {:class "tags"}
+   (for [[index tag] (map-indexed vector tags)]
+     [tag-chip {:key index} index tag])])
+
+(defn tag-input []
+  (let [value (r/atom "")]
+    (fn []
+      [m/TextField {:type "text"
+                    :placeholder "Type tag for filtering sites"
+                    :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (not (blank? @value)))
+                                            (dispatch [:projects2/save-tag @value])
+                                            (reset! value "")))
+                    :on-change #(reset! value (-> % .-target .-value))
+                    :value @value}])))
+
 (defn- section-header
   [number title]
   [:div {:class-name "step-header"}
@@ -65,7 +89,8 @@
 
 (defn edit-current-project
   []
-  (let [current-project (subscribe [:projects2/current-project])
+  (let [tags (subscribe [:projects2/tags])
+        current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
         hide-dialog     (fn [] (reset! delete? false))]
     (fn []
@@ -97,7 +122,9 @@
                                           :value     (:dataset-id @current-project)
                                           :on-change #(dispatch [:projects2/save-key :dataset-id %])}]
             [current-project-input "Capacity workload" [:config :sites :capacity] valid-input]
-            [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]]
+            [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
+            [tag-input]
+            [:label "Tags: " [tag-set @tags]]]
 
            [:section {:class-name "project-settings-section"}
             [section-header 4 "Coverage"]

@@ -4,6 +4,7 @@
   '[Button
     Checkbox
     Chip
+    ChipIcon
     ChipSet
     ChipText
     Dialog

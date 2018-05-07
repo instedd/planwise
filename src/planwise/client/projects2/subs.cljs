@@ -15,3 +15,8 @@
    (some->> (get-in db [:projects2 :list])
             (sort-by (comp string/lower-case :name)))))
 
+(rf/reg-sub
+ :projects2/tags
+ (fn [db _]
+   (get-in db [:projects2 :current-project :config :sites :tags])))
+

@@ -152,3 +152,23 @@
  (fn [db [_ projects-list]]
    (assoc db :list projects-list)))
 
+;;------------------------------------------------------------------------------
+;; Filtering by tags
+
+(rf/reg-event-fx
+ :projects2/save-tag
+ in-projects2
+ (fn [{:keys [db]} [_ tag]]
+   (let [path [:current-project :config :sites :tags]
+         n (count (get-in db path))]
+     {:db          (update-in db path (comp vec conj) tag)
+      :dispatch [:projects2/persist-current-project]})))
+
+(rf/reg-event-fx
+ :projects2/delete-tag
+ in-projects2
+ (fn [{:keys [db]} [_ index]]
+   (let [path  [:current-project :config :sites :tags]
+         tags* (utils/remove-by-index (get-in db path) index)]
+     {:db       (assoc-in db path tags*)
+      :dispatch [:projects2/persist-current-project]})))
