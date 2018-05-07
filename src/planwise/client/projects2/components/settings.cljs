@@ -3,8 +3,9 @@
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
             [planwise.client.asdf :as asdf]
-            [planwise.client.dialog :refer [new-dialog]]
+            [planwise.client.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
+            [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]
             [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
             [planwise.client.mapping :refer [static-image fullmap-region-geo]]
@@ -65,7 +66,8 @@
 (defn edit-current-project
   []
   (let [current-project (subscribe [:projects2/current-project])
-        delete?         (r/atom false)]
+        delete?         (r/atom false)
+        hide-dialog     (fn [] (reset! delete? false))]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
@@ -79,7 +81,6 @@
             [regions-dropdown-component {:label     "Region"
                                          :on-change #(dispatch [:projects2/save-key :region-id %])
                                          :model     (:region-id @current-project)}]]
-
            [:section {:class-name "project-settings-section"}
             [section-header 2 "Demand"]
             [population-dropdown-component {:label     "Sources"
@@ -107,13 +108,9 @@
            [:section {:class-name "project-settings-section"}
             [section-header 5 "Actions"]
             [current-project-input "Budget" [:config :actions :budget] valid-input]]]]]
-
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]
          [project-start-button {} @current-project]]]
-
-       [new-dialog {:open?     @delete?
-                    :title     "Delete Project"
-                    :accept-fn #(dispatch [:projects2/delete-project (:id @current-project)])
-                    :cancel-fn #(reset! delete? false)
-                    :content   [:p "Do you want to delete this project?"]}]])))
+       [delete-project-dialog {:open? @delete?
+                               :cancel-fn hide-dialog
+                               :delete-fn #(dispatch [:projects2/delete-project (:id @current-project)])}]])))

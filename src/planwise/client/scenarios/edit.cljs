@@ -3,7 +3,7 @@
             [reagent.core :as r]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
-            [planwise.client.dialog :refer [new-dialog]]
+            [planwise.client.dialog :refer [dialog]]
             [planwise.client.ui.common :as ui]
             [planwise.client.scenarios.db :as db]
             [planwise.client.utils :as utils]
@@ -21,14 +21,14 @@
   (let [rename-dialog (subscribe [:scenarios/rename-dialog])
         view-state (subscribe [:scenarios/view-state])]
     (fn []
-      (new-dialog {:open? (= @view-state :rename-dialog)
-                   :title "Rename scenario"
-                   :content  [m/TextField {:label "Name"
-                                           :value (str (:value @rename-dialog))
-                                           :on-change #(dispatch [:scenarios/save-key
-                                                                  [:rename-dialog :value] (-> % .-target .-value)])}]
-                   :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
-                   :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
+      (dialog {:open? (= @view-state :rename-dialog)
+               :title "Rename scenario"
+               :content  [m/TextField {:label "Name"
+                                       :value (str (:value @rename-dialog))
+                                       :on-change #(dispatch [:scenarios/save-key
+                                                              [:rename-dialog :value] (-> % .-target .-value)])}]
+               :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
+               :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
 
 (defn input
   [{:keys [value onchange-path]}]
@@ -52,10 +52,10 @@
         view-state (subscribe [:scenarios/view-state])
         site-index (subscribe [:scenarios/changeset-index])]
     (fn []
-      (new-dialog {:open? (= @view-state :changeset-dialog)
-                   :title "Edit Site"
-                   :content (changeset-dialog-content @site)
-                   :delete-fn #(dispatch [:scenarios/delete-site @site-index])
-                   :accept-fn  #(dispatch [:scenarios/accept-changeset-dialog])
-                   :cancel-fn  #(dispatch [:scenarios/cancel-changeset-dialog])}))))
+      (dialog {:open? (= @view-state :changeset-dialog)
+               :title "Edit Site"
+               :content (changeset-dialog-content @site)
+               :delete-fn #(dispatch [:scenarios/delete-site @site-index])
+               :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
+               :cancel-fn #(dispatch [:scenarios/cancel-changeset-dialog])}))))
 

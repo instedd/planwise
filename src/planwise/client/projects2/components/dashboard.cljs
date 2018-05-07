@@ -3,7 +3,7 @@
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
             [planwise.client.asdf :as asdf]
-            [planwise.client.dialog :refer [new-dialog]]
+            [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
@@ -56,6 +56,8 @@
   []
   (let [current-project (rf/subscribe [:projects2/current-project])
         delete?  (r/atom false)
+        hide-dialog (fn [] (reset! delete? false))
+        id (:id @current-project)
         scenarios-sub (rf/subscribe [:scenarios/list])]
     (fn []
       (let [scenarios (asdf/value @scenarios-sub)]
@@ -68,10 +70,8 @@
                                  {:title (:name @current-project)
                                   :tabs [project-tabs {:active 0}]
                                   :secondary-actions (project-secondary-actions @current-project delete?)})
-           [new-dialog {:open? @delete?
-                        :title "Delete Project"
-                        :accept-fn #(dispatch [:projects2/delete-project (:id @current-project)])
-                        :cancel-fn #(reset! delete? false)
-                        :content [:p "Do you want to delete this project?"]}]
-           [ui/panel {}
-            (scenarios-list scenarios @current-project)]])))))
+           [delete-project-dialog {:open? @delete?
+                                   :cancel-fn hide-dialog
+                                   :delete-fn #(rf/dispatch [:projects2/delete-project id])}]])))))
+
+
