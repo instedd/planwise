@@ -8,9 +8,9 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]
-            [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component datasets-disabled-input-component]]
+            [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
             [planwise.client.mapping :refer [static-image fullmap-region-geo]]
-            [planwise.client.population :refer [population-dropdown-component population-disabled-input-component]]
+            [planwise.client.population :refer [population-dropdown-component]]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.filter-select :as filter-select]
@@ -110,13 +110,10 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 2 "Demand"]
-          (cond
-            (true? read-only) [population-disabled-input-component {:label "Sources"
-                                                                    :value (:population-source-id @current-project)}]
-            :else [population-dropdown-component {:label     "Sources"
-                                                  :value     (:population-source-id @current-project)
-                                                  :on-change #(dispatch [:projects2/save-key :population-source-id %])
-                                                  :disabled  read-only}])
+          [population-dropdown-component {:label     "Sources"
+                                          :value     (:population-source-id @current-project)
+                                          :on-change #(dispatch [:projects2/save-key :population-source-id %])
+                                          :disabled?  read-only}]
 
           [current-project-input "Unit" [:config :demographics :unit-name] identity {:disabled read-only}]
           [current-project-input "Target" [:config :demographics :target] valid-input {:disabled read-only}]
@@ -124,13 +121,10 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 3 "Sites"]
-          (cond
-            (true? read-only) [datasets-disabled-input-component {:label "Dataset"
-                                                                  :value (:dataset-id @current-project)}]
-            :else [datasets-dropdown-component {:label     "Dataset"
-                                                :value     (:dataset-id @current-project)
-                                                :on-change #(dispatch [:projects2/save-key :dataset-id %])
-                                                :disabled? read-only}])
+          [datasets-dropdown-component {:label     "Dataset"
+                                        :value     (:dataset-id @current-project)
+                                        :on-change #(dispatch [:projects2/save-key :dataset-id %])
+                                        :disabled? read-only}]
 
           [current-project-input "Capacity workload" [:config :sites :capacity] valid-input {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]

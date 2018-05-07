@@ -9,26 +9,34 @@
             [planwise.client.ui.rmwc :as m]
             [re-frame.utils :as c]))
 
-(defn datasets-dropdown-component
-  [{:keys [label value on-change]}]
-  (let [datasets-sub     (subscribe [:datasets2/list])
-        datasets-options (subscribe [:datasets2/dropdown-options])]
-    (when (asdf/should-reload? @datasets-sub)
-      (dispatch [:datasets2/load-datasets2]))
-    [m/Select {:label (if (empty? @datasets-options) "There are no datasets defined." label)
-               :disabled (empty? @datasets-options)
-               :value (str value)
-               :options (sort-by :label @datasets-options)
-               :on-change #(on-change (js/parseInt (-> % .-target .-value)))}]))
-
-(defn datasets-disabled-input-component
-  [{:keys [label value]}]
-  (let [datasets-sub     (subscribe [:datasets2/list])
-        datasets-options (subscribe [:datasets2/dropdown-options])
-        filtered         (filter (fn [el] (= (:value el) (str value))) @datasets-options)]
-    (when (asdf/should-reload? @datasets-sub)
-      (dispatch [:datasets2/load-datasets2]))
+(defn- disabled-input-component
+  [{:keys [label value options empty-label]}]
+  (let [filtered        (filter (fn [el] (= (:value el) (str value))) @options)
+        filtered-label  (:label (first filtered))]
     [m/TextField {:type     "text"
                   :label    label
-                  :value    (if (empty? filtered) "There are no datasets defined." (:label (first filtered)))
+                  :value    (if (empty? filtered) empty-label filtered-label)
                   :disabled true}]))
+
+(defn- datasets-select-component
+  [{:keys [label value options empty-label on-change]}]
+  [m/Select {:label (if (empty? @options) empty-label label)
+             :disabled (empty? @options)
+             :value (str value)
+             :options (sort-by :label @options)
+             :on-change #(on-change (js/parseInt (-> % .-target .-value)))}])
+
+(defn datasets-dropdown-component
+  [{:keys [label value on-change disabled?]}]
+  (let [datasets-sub     (subscribe [:datasets2/list])
+        datasets-options (subscribe [:datasets2/dropdown-options])]
+        params           {:label        label
+                          :value        value
+                          :options      datasets-options
+                          :empty-label  "There are no datasets defined."
+                          :on-change    on-change}
+    (when (asdf/should-reload? @datasets-sub)
+      (dispatch [:datasets2/load-datasets2]))
+    (cond
+      (true? disabled?) [disabled-input-component params]
+      :else [datasets-select-component params])))

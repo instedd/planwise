@@ -51,26 +51,34 @@
 ;; ----------------------------------------------------------------------------
 ;; Views
 
-(defn population-dropdown-component
-  [{:keys [label value on-change]}]
-  (let [list    (subscribe [:population/list])
-        options (subscribe [:population/dropdown-options])]
-    (when (asdf/should-reload? @list)
-      (dispatch [:population/load-population-sources]))
-    [m/Select {:label (if (empty? @options) "No population layer available." label)
-               :disabled (empty? @options)
-               :value (str value)
-               :options @options
-               :onChange #(on-change (js/parseInt (-> % .-target .-value)))}]))
-
-(defn population-disabled-input-component
-  [{:keys [label value]}]
-  (let [list        (subscribe [:population/list])
-        options     (subscribe [:population/dropdown-options])
-        filtered    (filter (fn [el] (= (:value el) value)) @options)]
-    (when (asdf/should-reload? @list)
-      (dispatch [:population/load-population-sources]))
+(defn- disabled-input-component
+  [{:keys [label value options empty-label]}]
+  (let [filtered        (filter (fn [el] (= (:value el) value)) @options)
+        filtered-label  (:label (first filtered))]
     [m/TextField {:type     "text"
                   :label    label
-                  :value    (if (empty? filtered) "" (:label (first filtered)))
+                  :value    (if (empty? filtered) empty-label filtered-label)
                   :disabled true}]))
+
+(defn- population-select-component
+  [{:keys [label value options empty-label on-change]}]
+  [m/Select {:label (if (empty? @options) empty-label label)
+             :disabled (empty? @options)
+             :value (str value)
+             :options @options
+             :onChange #(on-change (js/parseInt (-> % .-target .-value)))}])
+
+(defn population-dropdown-component
+  [{:keys [label value on-change disabled?]}]
+  (let [list    (subscribe [:population/list])
+        options (subscribe [:population/dropdown-options])
+        params  {:label        label
+                 :value        value
+                 :options      options
+                 :empty-label  "No population layer available."
+                 :on-change    on-change}]
+    (when (asdf/should-reload? @list)
+      (dispatch [:population/load-population-sources]))
+    (cond
+      (true? disabled?) [disabled-input-component params]
+      :else [population-select-component params])))

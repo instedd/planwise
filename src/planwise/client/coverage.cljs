@@ -59,7 +59,6 @@
         label             (get selected-criteria :label)
         options           (get selected-criteria :options)
         filtered-option   (first (filter (fn [el] (= (:value el) val)) options))]
-
     [m/TextField {:type     "text"
                   :label    label
                   :value    (:label filtered-option)
