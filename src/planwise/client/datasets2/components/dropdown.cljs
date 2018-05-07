@@ -29,12 +29,12 @@
 (defn datasets-dropdown-component
   [{:keys [label value on-change disabled?]}]
   (let [datasets-sub     (subscribe [:datasets2/list])
-        datasets-options (subscribe [:datasets2/dropdown-options])]
+        datasets-options (subscribe [:datasets2/dropdown-options])
         params           {:label        label
                           :value        value
                           :options      datasets-options
                           :empty-label  "There are no datasets defined."
-                          :on-change    on-change}
+                          :on-change    on-change}]
     (when (asdf/should-reload? @datasets-sub)
       (dispatch [:datasets2/load-datasets2]))
     (cond
