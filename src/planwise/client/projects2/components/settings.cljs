@@ -63,16 +63,17 @@
              :on-click #(reset! state true)} "Delete"])
 
 (defn- tag-chip
-  [props index input]
+  [props index input read-only]
   [m/Chip props [m/ChipText input]
-   [m/ChipIcon {:use "close"
-                :on-click #(dispatch [:projects2/delete-tag index])}]])
+   (cond
+     (false? read-only) [m/ChipIcon {:use "close"
+                                     :on-click #(dispatch [:projects2/delete-tag index])}])])
 
 (defn- tag-set
-  [tags]
+  [tags read-only]
   [m/ChipSet {:class "tags"}
    (for [[index tag] (map-indexed vector tags)]
-     [tag-chip {:key index} index tag])])
+     [tag-chip {:key index} index tag read-only])])
 
 (defn tag-input []
   (let [value (r/atom "")]
@@ -128,8 +129,10 @@
 
           [current-project-input "Capacity workload" [:config :sites :capacity] valid-input {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
-          [tag-input]
-          [:label "Tags: " [tag-set @tags]]]
+
+          (cond
+            (false? read-only) [tag-input])
+          [:label "Tags: " [tag-set @tags read-only]]]
 
          [:section {:class-name "project-settings-section"}
           [section-header 4 "Coverage"]
