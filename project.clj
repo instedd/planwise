@@ -86,6 +86,7 @@
                  [org.clojure/math.combinatorics "0.1.4"]]
 
   :plugins [[duct/lein-duct "0.10.6"]
+            [lein-doo "0.1.10"]
             [lein-cljfmt "0.5.7"]]
 
   :cljfmt {:remove-consecutive-blank-lines? false}
@@ -105,7 +106,29 @@
   :aliases {"migrate"               ["with-profile" "+repl" "run" ":duct/migrator"]
             "build-icons"           ["with-profile" "+repl" "run" "-m" "planwise.tasks.build-icons"]
             "preprocess-facilities" ["with-profile" "+repl" "run" "-m" "planwise.tasks.preprocess-facilities"]
-            "import-population"     ["with-profile" "+repl" "run" "-m" "planwise.tasks.import-population"]}
+            "import-population"     ["with-profile" "+repl" "run" "-m" "planwise.tasks.import-population"]
+            "test-cljs"             ["with-profile" "+test" "doo"]}
+
+  ;; For lein-doo to compile the client code for testing
+  ;; Development and release CLJS build configuration are in dev.edn and prod.edn
+  :cljsbuild {:builds [{:id "test"
+                        :source-paths ["src" "test"]
+                        :compiler {:output-to     "target/cljsbuild/test/main.js"
+                                   :output-dir    "target/cljsbuild/test"
+                                   :main          planwise.client.test-runner
+                                   :verbose       false
+                                   :optimizations :none}}
+                       {:id "test-nodejs"
+                        :source-paths ["src" "test"]
+                        :compiler {:output-to     "target/cljsbuild/test/main.js"
+                                   :output-dir    "target/cljsbuild/test"
+                                   :target        :nodejs
+                                   :main          planwise.client.test-runner
+                                   :verbose       false
+                                   :optimizations :none}}]}
+
+  :doo {:build   "test-nodejs"
+        :alias   {:default [:node]}}
 
   :profiles
   {:dev           [:project/dev  :profiles/dev]
