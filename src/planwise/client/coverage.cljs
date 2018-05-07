@@ -51,17 +51,41 @@
                :options options
                :onChange #(on-change (js/parseInt (-> % .-target .-value)))}]))
 
+(defn- disabled-input-component
+  [{:keys [criteria value]}]
+  (let [key               (first (keys value))
+        val               (first (vals value))
+        selected-criteria (get criteria (keyword key))
+        label             (get selected-criteria :label)
+        options           (get selected-criteria :options)
+        filtered-option   (first (filter (fn [el] (= (:value el) val)) options))]
+
+    [m/TextField {:type     "text"
+                  :label    label
+                  :value    (:label filtered-option)
+                  :disabled true}]))
+
+(defn- filter-options-component
+  [{:keys [criteria value on-change empty]}]
+  (cond
+    (nil? criteria) empty
+    :else
+    [:div {:class-name "fields-vertical"}
+     (map (fn [[key config]]
+            [criteria-option {:key key
+                              :config config
+                              :value (get value key)
+                              :on-change #(on-change (assoc value key %))}])
+          criteria)]))
+
 (defn coverage-algorithm-filter-options
-  [{:keys [coverage-algorithm value on-change empty]}]
+  [{:keys [coverage-algorithm value on-change empty disabled?]}]
   (let [list (rf/subscribe [:coverage/supported-algorithms])
         criteria (get-in @list [(keyword coverage-algorithm) :criteria])]
     (cond
-      (nil? criteria) empty
-      :else
-      [:div {:class-name "fields-vertical"}
-       (map (fn [[key config]]
-              [criteria-option {:key key
-                                :config config
-                                :value (get value key)
-                                :on-change #(on-change (assoc value key %))}])
-            criteria)])))
+      (true? disabled?) [disabled-input-component {:criteria criteria
+                                                   :value    value}]
+      :else [filter-options-component {:criteria  criteria
+                                       :value     value
+                                       :on-change on-change
+                                       :empty     empty}])))

@@ -20,3 +20,15 @@
                :value (str value)
                :options (sort-by :label @datasets-options)
                :on-change #(on-change (js/parseInt (-> % .-target .-value)))}]))
+
+(defn datasets-disabled-input-component
+  [{:keys [label value]}]
+  (let [datasets-sub     (subscribe [:datasets2/list])
+        datasets-options (subscribe [:datasets2/dropdown-options])
+        filtered         (filter (fn [el] (= (:value el) (str value))) @datasets-options)]
+    (when (asdf/should-reload? @datasets-sub)
+      (dispatch [:datasets2/load-datasets2]))
+    [m/TextField {:type     "text"
+                  :label    label
+                  :value    (if (empty? filtered) "There are no datasets defined." (:label (first filtered)))
+                  :disabled true}]))

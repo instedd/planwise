@@ -8,7 +8,7 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]
-            [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
+            [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component datasets-disabled-input-component]]
             [planwise.client.mapping :refer [static-image fullmap-region-geo]]
             [planwise.client.population :refer [population-dropdown-component population-disabled-input-component]]
             [planwise.client.routes :as routes]
@@ -124,10 +124,14 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 3 "Sites"]
-          [datasets-dropdown-component {:label     "Dataset"
-                                        :value     (:dataset-id @current-project)
-                                        :on-change #(dispatch [:projects2/save-key :dataset-id %])
-                                        :disabled? read-only}]
+          (cond
+            (true? read-only) [datasets-disabled-input-component {:label "Dataset"
+                                                                  :value (:dataset-id @current-project)}]
+            :else [datasets-dropdown-component {:label     "Dataset"
+                                                :value     (:dataset-id @current-project)
+                                                :on-change #(dispatch [:projects2/save-key :dataset-id %])
+                                                :disabled? read-only}])
+
           [current-project-input "Capacity workload" [:config :sites :capacity] valid-input {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
           [tag-input]
@@ -138,7 +142,8 @@
           [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
                                               :value              (get-in @current-project [:config :coverage :filter-options])
                                               :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-                                              :empty              [:div {:class-name " no-dataset-selected"} "First choose dataset."]}]]
+                                              :empty              [:div {:class-name " no-dataset-selected"} "First choose dataset."]
+                                              :disabled?          read-only}]]
 
          [:section {:class-name "project-settings-section"}
           [section-header 5 "Actions"]
