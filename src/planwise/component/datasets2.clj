@@ -58,11 +58,6 @@
   (db-find-sites (get-db store) {:dataset-id dataset-id
                                  :version version}))
 
-(defn filter-sites-by-tags
-  [sites tags]
-  (reduce
-   (fn [sites tag] (let [filtered-sites  (filter #(-> % :tags (includes? tag)) sites)] filtered-sites)) sites tags))
-
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
@@ -197,13 +192,14 @@
   (let [db-spec   (get-db store)
         region-id (:region-id filter-options)
         algorithm (:coverage-algorithm filter-options)
-        options   (:coverage-options filter-options)]
+        options   (:coverage-options filter-options)
+        tags      (str/join "& " (:tags filter-options))]
     (db-find-sites-with-coverage-in-region db-spec {:dataset-id dataset-id
                                                     :version    version
                                                     :region-id  region-id
                                                     :algorithm  algorithm
-                                                    :options    (some-> options pr-str)})))
-
+                                                    :options    (some-> options pr-str)
+                                                    :tags tags})))
 
 (defrecord SitesDatasetsStore [db coverage]
   boundary/Datasets2
@@ -216,9 +212,7 @@
   (new-processing-job [store dataset-id]
     (new-processing-job store dataset-id))
   (get-sites-with-coverage-in-region [store dataset-id version filter-options]
-    (get-sites-with-coverage-in-region store dataset-id version filter-options))
-  (filter-sites-by-tags [sites tags]
-    (filter-sites-by-tags sites tags)))
+    (get-sites-with-coverage-in-region store dataset-id version filter-options)))
 
 
 (defmethod ig/init-key :planwise.component/datasets2
