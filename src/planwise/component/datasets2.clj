@@ -201,6 +201,13 @@
                                                     :options    (some-> options pr-str)
                                                     :tags tags})))
 
+(defn count-sites-filter-by-tag
+  [store dataset-id version tag]
+  (let [db-spec  (get-db store)]
+    (db-count-sites-with-tag db-spec {:dataset-id dataset-id
+                                      :version version
+                                      :tag tag})))
+
 (defrecord SitesDatasetsStore [db coverage]
   boundary/Datasets2
   (list-datasets [store owner-id]
@@ -212,7 +219,9 @@
   (new-processing-job [store dataset-id]
     (new-processing-job store dataset-id))
   (get-sites-with-coverage-in-region [store dataset-id version filter-options]
-    (get-sites-with-coverage-in-region store dataset-id version filter-options)))
+    (get-sites-with-coverage-in-region store dataset-id version filter-options))
+  (count-sites-filter-by-tag [sites tags]
+    (count-sites-filter-by-tag sites tags)))
 
 
 (defmethod ig/init-key :planwise.component/datasets2

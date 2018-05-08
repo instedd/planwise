@@ -48,6 +48,12 @@ SELECT s2.id, s2.name, s2.lat, s2.lon, s2.capacity, s2.type, s2.tags, s2c.raster
           AND s2.tags::tsvector @@ :tags::tsquery;
          /*~ ) ~*/;
 
+-- :name db-count-sites-with-tag :? :1
+SELECT COUNT(*) FROM sites2
+    WHERE "dataset-id" = :dataset-id
+    AND version = :version
+    AND tags::tsvector @@ :tag::tsquery;
+
 -- :name db-enum-site-ids :?
 SELECT "id" FROM "sites2"
        WHERE "dataset-id" = :dataset-id

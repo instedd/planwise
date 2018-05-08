@@ -117,15 +117,17 @@
 ;; ----------------------------------------------------------------------
 ;; Testing site's tag filtering
 
+(defn- is-right-number?
+  [store id version tag number]
+  (is (= (:count (datasets2/count-sites-filter-by-tag store id version tag)) number)))
+
 (deftest filtering-sites
   (test-system/with-system (test-config fixture-filtering-sites-tags)
     (let [store                    (:planwise.component/datasets2 system)
           sites-dataset-id1        (datasets2/sites-by-version store 1 2)
-          sites-dataset-id2        (datasets2/sites-by-version store 2 2)]
-      (is (= (datasets2/filter-sites-by-tags sites-dataset-id1 []) sites-dataset-id1))
-      (is (empty? (datasets2/filter-sites-by-tags sites-dataset-id1 ["inexistent"])))
-      (is (= (count (datasets2/filter-sites-by-tags sites-dataset-id1 ["private"])) 2))
-      (is (empty? (datasets2/filter-sites-by-tags sites-dataset-id2 ["private"])))
-      (is (= (count (datasets2/filter-sites-by-tags sites-dataset-id1 ["private" "laboratory"])) 1))
-      (is (= (count (datasets2/filter-sites-by-tags sites-dataset-id2 ["general-medicine"])) 1))
-      (is (empty? (datasets2/filter-sites-by-tags sites-dataset-id1 ["public"]))))))
+          number  (count sites-dataset-id1)]
+      ;; "" is not considered valid tag
+      (is-right-number? store 1 2 "inexistent" 0)
+      (is-right-number? store 1 2 "private" 2)
+      (is-right-number? store 2 2 "private" 0)
+      (is-right-number? store 2 2 "-" 0))))
