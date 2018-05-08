@@ -18,6 +18,14 @@
   [project]
   (dissoc project :deleted-at))
 
+(defn- filter-projects-owned-by
+  [projects owner-id]
+  (filter (fn [proj] (= (:owner-id proj) owner-id)) projects))
+
+(defn- filter-owned-by
+  [project owner-id]
+  (first (filter-projects-owned-by [project] owner-id)))
+
 (defn- projects2-routes
   [{service :projects2 service-scenarios :scenarios}]
   (routes
@@ -39,7 +47,7 @@
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
-           project (projects2/get-project service (Integer. id))]
+           project (filter-owned-by (projects2/get-project service (Integer. id)) user-id)]
        (if (nil? project)
          (not-found {:error "Project not found"})
          (response (api-project project)))))
@@ -52,7 +60,7 @@
    (POST "/:id/start" [id :as request]
      (let [user-id       (util/request-user-id request)
            id            (Integer. id)
-           project       (projects2/get-project service id)]
+           project       (filter-owned-by (projects2/get-project service id) user-id)]
        ;; TODO validate permission
        (if (nil? project)
          (not-found {:error "Project not found"})
@@ -63,7 +71,7 @@
    (POST "/:id/reset" [id :as request]
      (let [user-id       (util/request-user-id request)
            id            (Integer. id)
-           project       (projects2/get-project service id)]
+           project       (filter-owned-by (projects2/get-project service id) user-id)]
        ;; TODO validate permission
        (if (nil? project)
          (not-found {:error "Project not found"})
