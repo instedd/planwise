@@ -126,7 +126,7 @@
     (let [store                    (:planwise.component/datasets2 system)
           sites-dataset-id1        (datasets2/sites-by-version store 1 2)
           number  (count sites-dataset-id1)]
-      ;; "" is not considered valid tag
+      (is-right-number? store 1 2 "" number)
       (is-right-number? store 1 2 "inexistent" 0)
       (is-right-number? store 1 2 "private" 2)
       (is-right-number? store 2 2 "private" 0)
