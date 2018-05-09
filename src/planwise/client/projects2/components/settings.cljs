@@ -85,6 +85,10 @@
                     :on-change #(reset! value (-> % .-target .-value))
                     :value @value}])))
 
+(defn- count-sites
+  [tags {{:keys [total filtered]} :dataset-sites}]
+  [:p "total sites: " (if (empty? tags) total filtered) "/ " total])
+
 (defn- section-header
   [number title]
   [:div {:class-name "step-header"}
@@ -131,6 +135,7 @@
 
           (when-not read-only [tag-input])
           [:label "Tags: " [tag-set @tags read-only]]]
+         [count-sites @tags @current-project]
 
          [:section {:class-name "project-settings-section"}
           [section-header 4 "Coverage"]
