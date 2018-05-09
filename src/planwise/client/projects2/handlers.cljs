@@ -132,6 +132,7 @@
      (if (= (:id project) (:id current-project))
         ;; keep current values of current-project except the once that could be updated from server
        (let [updated-project (-> current-project
+                                 (assoc-in [:config :sites :count] (get-in project [:config :sites :count]))
                                  (assoc :coverage-algorithm (:coverage-algorithm project)))]
          {:dispatch [:projects2/save-project-data updated-project]})))))
 
