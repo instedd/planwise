@@ -204,11 +204,13 @@
 (defn count-sites-filter-by-tag
   [store dataset-id tag]
   (let [db-spec  (get-db store)
-        {:keys [last-version]} (get-dataset store dataset-id)]
-    (println "when counting with the stars" dataset-id last-version)
-    (db-count-sites-with-tag db-spec {:dataset-id dataset-id
-                                      :version last-version
-                                      :tag tag})))
+        count-fn (fn [db-spec tag]
+                   (let [{:keys [last-version]} (get-dataset store dataset-id)]
+                     (:count (db-count-sites-with-tag db-spec {:dataset-id dataset-id
+                                                               :version last-version
+                                                               :tag tag}))))
+        response {:total (count-fn db-spec "")}]
+    (if (str/blank? tag) response (assoc response :filtered (count-fn db-spec tag)))))
 
 (defrecord SitesDatasetsStore [db coverage]
   boundary/Datasets2
