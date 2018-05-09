@@ -13,14 +13,12 @@
 
 (defn- project-tabs
   [{:keys [active] :or {active :scenarios}}]
-  [m/TabBar {:activeTabIndex (cond
-                               (= active :scenarios) 0
-                               (= active :settings) 1)
+  [m/TabBar {:activeTabIndex ({:scenarios 0 :settings 1} active)
              :on-change (fn [evt]
                           (let [tab-index (.-value (.-target evt))]
-                            (cond
-                              (= tab-index 0) (dispatch [:projects2/project-scenarios])
-                              (= tab-index 1) (dispatch [:projects2/project-settings]))))}
+                            (case tab-index
+                              0 (dispatch [:projects2/project-scenarios])
+                              1 (dispatch [:projects2/project-settings]))))}
    [m/Tab "Scenarios"]
    [m/Tab "Settings"]])
 
@@ -36,9 +34,9 @@
 (defn- scenarios-list-item
   [project-id {:keys [id name label state demand-coverage investment changeset-summary] :as scenario}]
   [:tr {:key id :on-click (fn [evt]
-                            (cond
-                              (or (.-shiftKey evt) (.-metaKey evt)) (.open js/window (routes/scenarios {:project-id project-id :id id}))
-                              :else (dispatch [:scenarios/load-scenario {:id id}])))}
+                            (if (or (.-shiftKey evt) (.-metaKey evt))
+                              (.open js/window (routes/scenarios {:project-id project-id :id id}))
+                              (dispatch [:scenarios/load-scenario {:id id}])))}
    [:td {:class "col1"} (cond (= state "pending") [create-chip state]
                               (not= label "initial") [create-chip label])]
    [:td {:class "col2"} name]
@@ -86,8 +84,6 @@
                                    :cancel-fn hide-dialog
                                    :delete-fn #(rf/dispatch [:projects2/delete-project id])}]
            [ui/panel {}
-            (cond
-              (= active-tab :scenarios) [scenarios-list scenarios @current-project]
-              (= active-tab :settings) [project-settings])]])))))
-
-
+            (case active-tab
+              :scenarios [scenarios-list scenarios @current-project]
+              :settings  [project-settings])]])))))

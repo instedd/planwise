@@ -1,5 +1,6 @@
 (ns planwise.client.coverage
   (:require [re-frame.core :as rf]
+            [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
 ;; ----------------------------------------------------------------------------
@@ -42,49 +43,44 @@
 ;; ----------------------------------------------------------------------------
 ;; Views
 
-(defn- criteria-option
-  [{:keys [config value on-change]}]
-  (let [options (map #(update % :value str) (:options config))]
-    [m/Select {:label (:label config)
-               :disabled (empty? options)
-               :value (str value)
-               :options options
-               :onChange #(on-change (js/parseInt (-> % .-target .-value)))}]))
-
 (defn- disabled-input-component
-  [{:keys [criteria value]}]
-  (let [key               (first (keys value))
-        val               (first (vals value))
-        selected-criteria (get criteria (keyword key))
-        label             (get selected-criteria :label)
-        options           (get selected-criteria :options)
-        filtered-option   (first (filter (fn [el] (= (:value el) val)) options))]
-    [m/TextField {:type     "text"
-                  :label    label
-                  :value    (:label filtered-option)
-                  :disabled true}]))
+  [{:keys [label value options]}]
+  [m/TextField {:type     "text"
+                :label    label
+                :value    (utils/label-from-options options value "")
+                :disabled true}])
 
-(defn- filter-options-component
-  [{:keys [criteria value on-change empty]}]
-  (cond
-    (nil? criteria) empty
-    :else
-    [:div {:class-name "fields-vertical"}
-     (map (fn [[key config]]
-            [criteria-option {:key key
-                              :config config
-                              :value (get value key)
-                              :on-change #(on-change (assoc value key %))}])
-          criteria)]))
+(defn- criteria-option-select-component
+  [{:keys [label value options on-change]}]
+  [m/Select {:label label
+             :disabled (empty? options)
+             :value (str value)
+             :options options
+             :onChange #(on-change (js/parseInt (-> % .-target .-value)))}])
+
+(defn- criteria-option
+  [{:keys [config value on-change disabled?]}]
+  (let [options   (map #(update % :value str) (:options config))
+        label     (:label config)
+        component (if disabled?
+                    disabled-input-component
+                    criteria-option-select-component)]
+    [component {:label     label
+                :value     value
+                :options   options
+                :on-change on-change}]))
 
 (defn coverage-algorithm-filter-options
   [{:keys [coverage-algorithm value on-change empty disabled?]}]
-  (let [list (rf/subscribe [:coverage/supported-algorithms])
-        criteria (get-in @list [(keyword coverage-algorithm) :criteria])]
+  (let [list      (rf/subscribe [:coverage/supported-algorithms])
+        criteria  (get-in @list [(keyword coverage-algorithm) :criteria])]
     (cond
-      (true? disabled?) [disabled-input-component {:criteria criteria
-                                                   :value    value}]
-      :else [filter-options-component {:criteria  criteria
-                                       :value     value
-                                       :on-change on-change
-                                       :empty     empty}])))
+      (nil? criteria) empty
+      :else [:div {:class-name "fields-vertical"}
+             (map (fn [[key config]]
+                    [criteria-option {:key key
+                                      :config config
+                                      :value (get value key)
+                                      :on-change #(on-change (assoc value key %))
+                                      :disabled? disabled?}])
+                  criteria)])))

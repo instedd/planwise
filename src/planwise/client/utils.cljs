@@ -113,3 +113,14 @@
 (defn is-valid-email?
   [email]
   (re-matches #"(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}" email))
+
+
+;; Filter options by value and return label for value
+;; Used when creating a disabled-input's
+(defn label-from-options
+  [options value empty-label]
+  (let [filtered        (filter (fn [el] (= (:value el) (str value))) options)
+        filtered-label  (:label (first filtered))]
+    (if (empty? filtered)
+      empty-label
+      filtered-label)))

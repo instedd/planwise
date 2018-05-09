@@ -35,9 +35,9 @@
         (when (nil? @projects-list)
           (dispatch [:projects2/projects-list]))
         (let [section      (:section @page-params)]
-          (cond
-            (= section :index) [listings/project-section-index]
-            (= section :show) [project-section-show :scenarios]
-            (= section :project-scenarios) [project-section-show :scenarios]
-            (= section :project-settings) [project-section-show :settings]
-            :else [common2/loading-placeholder]))))))
+          (case section
+            :index [listings/project-section-index]
+            :show [project-section-show :scenarios]
+            :project-scenarios [project-section-show :scenarios]
+            :project-settings [project-section-show :settings]
+            [common2/loading-placeholder]))))))

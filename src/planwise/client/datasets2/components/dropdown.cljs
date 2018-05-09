@@ -11,32 +11,30 @@
 
 (defn- disabled-input-component
   [{:keys [label value options empty-label]}]
-  (let [filtered        (filter (fn [el] (= (:value el) (str value))) @options)
-        filtered-label  (:label (first filtered))]
-    [m/TextField {:type     "text"
-                  :label    label
-                  :value    (if (empty? filtered) empty-label filtered-label)
-                  :disabled true}]))
+  [m/TextField {:type     "text"
+                :label    label
+                :value    (utils/label-from-options options (str value) empty-label)
+                :disabled true}])
 
 (defn- datasets-select-component
   [{:keys [label value options empty-label on-change]}]
-  [m/Select {:label (if (empty? @options) empty-label label)
-             :disabled (empty? @options)
+  [m/Select {:label (if (empty? options) empty-label label)
+             :disabled (empty? options)
              :value (str value)
-             :options (sort-by :label @options)
+             :options (sort-by :label options)
              :on-change #(on-change (js/parseInt (-> % .-target .-value)))}])
 
 (defn datasets-dropdown-component
   [{:keys [label value on-change disabled?]}]
-  (let [datasets-sub     (subscribe [:datasets2/list])
-        datasets-options (subscribe [:datasets2/dropdown-options])
-        params           {:label        label
-                          :value        value
-                          :options      datasets-options
-                          :empty-label  "There are no datasets defined."
-                          :on-change    on-change}]
-    (when (asdf/should-reload? @datasets-sub)
+  (let [list      (subscribe [:datasets2/list])
+        options   (subscribe [:datasets2/dropdown-options])
+        component (if disabled?
+                    disabled-input-component
+                    datasets-select-component)]
+    (when (asdf/should-reload? @list)
       (dispatch [:datasets2/load-datasets2]))
-    (cond
-      (true? disabled?) [disabled-input-component params]
-      :else [datasets-select-component params])))
+    [component {:label        label
+                :value        value
+                :options      @options
+                :empty-label  "There are no datasets defined."
+                :on-change    on-change}]))

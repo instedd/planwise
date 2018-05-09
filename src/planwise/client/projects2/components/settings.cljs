@@ -65,9 +65,8 @@
 (defn- tag-chip
   [props index input read-only]
   [m/Chip props [m/ChipText input]
-   (cond
-     (false? read-only) [m/ChipIcon {:use "close"
-                                     :on-click #(dispatch [:projects2/delete-tag index])}])])
+   (when-not read-only [m/ChipIcon {:use "close"
+                                    :on-click #(dispatch [:projects2/delete-tag index])}])])
 
 (defn- tag-set
   [tags read-only]
@@ -130,8 +129,7 @@
           [current-project-input "Capacity workload" [:config :sites :capacity] valid-input {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
 
-          (cond
-            (false? read-only) [tag-input])
+          (when-not read-only [tag-input])
           [:label "Tags: " [tag-set @tags read-only]]]
 
          [:section {:class-name "project-settings-section"}
