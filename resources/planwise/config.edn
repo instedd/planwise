@@ -215,6 +215,7 @@
 
  :planwise.component/projects2
  {:db          #ig/ref :duct.database/sql
+  :datasets2   #ig/ref :planwise.component/datasets2
   :scenarios   #ig/ref :planwise.component/scenarios}
 
  :planwise.component/regions

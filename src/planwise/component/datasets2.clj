@@ -202,10 +202,12 @@
                                                     :tags tags})))
 
 (defn count-sites-filter-by-tag
-  [store dataset-id version tag]
-  (let [db-spec  (get-db store)]
+  [store dataset-id tag]
+  (let [db-spec  (get-db store)
+        {:keys [last-version]} (get-dataset store dataset-id)]
+    (println "when counting with the stars" dataset-id last-version)
     (db-count-sites-with-tag db-spec {:dataset-id dataset-id
-                                      :version version
+                                      :version last-version
                                       :tag tag})))
 
 (defrecord SitesDatasetsStore [db coverage]
@@ -220,8 +222,8 @@
     (new-processing-job store dataset-id))
   (get-sites-with-coverage-in-region [store dataset-id version filter-options]
     (get-sites-with-coverage-in-region store dataset-id version filter-options))
-  (count-sites-filter-by-tag [sites tags]
-    (count-sites-filter-by-tag sites tags)))
+  (count-sites-filter-by-tag [store dataset-id tag]
+    (count-sites-filter-by-tag store dataset-id tag)))
 
 
 (defmethod ig/init-key :planwise.component/datasets2

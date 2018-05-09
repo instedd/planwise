@@ -18,7 +18,7 @@
   (get-sites-with-coverage-in-region [this dataset-id version filter-options]
     "Retrieves the sites for a version of a dataset located inside the region")
 
-  (count-sites-filter-by-tag [sites tags]
+  (count-sites-filter-by-tag [this dataset-id tag]
     "Count sites filtered by a single tag."))
 
 ;; Preprocessing dataset job type: ::preprocess-dataset
