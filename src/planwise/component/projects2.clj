@@ -39,8 +39,8 @@
 (defn get-project
   [store project-id]
   (let [{:keys [config dataset-id dataset-version] :as project} (db-get-project (get-db store) {:id project-id})
-        tag    (last (get-in (read-string config) [:sites :tags]))
-        number-of-sites (datasets2/count-sites-filter-by-tag (:datasets2 store) dataset-id (str tag))]
+        tag    (when (some? config) (last (get-in (read-string config) [:sites :tags])))
+        number-of-sites (datasets2/count-sites-filter-by-tag (:datasets2 store) dataset-id (or tag ""))]
     (regions/db->region
      (-> project
          (update* :engine-config edn/read-string)

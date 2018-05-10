@@ -34,8 +34,8 @@
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
    [:datasets2
-    [{:id 1 :name "First" "owner-id" owner-id}
-     {:id 2 :name "Bar" "owner-id" owner-id}]]
+    [{:id 1 :name "First" "owner-id" owner-id "last-version" 2}
+     {:id 2 :name "Bar" "owner-id" owner-id "last-version" 2}]]
    [:sites2
     [{:id 13 :lon 23.416667 :version 2 :the_geom (point "SRID=4326; POINT(23.416667 -19.983333)") "source-id" 1
       "processing-status" ":ok" "dataset-id" 1 :tags "private laboratory radiography pharmacy"
@@ -128,8 +128,8 @@
     (let [store                    (:planwise.component/datasets2 system)
           sites-dataset-id1        (datasets2/sites-by-version store 1 2)
           number  (count sites-dataset-id1)]
-      ;(is-right-number? store 1 "" number)
+      (is-right-number? store 1 "" number)
       (is-right-number? store 1 "inexistent" 0)
-      ;(is-right-number? store 1 "private" 2)
+      (is-right-number? store 1 "private" 2)
       (is-right-number? store 2 "private" 0)
       (is-right-number? store 2 "-" 0))))
