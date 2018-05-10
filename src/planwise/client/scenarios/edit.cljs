@@ -11,11 +11,6 @@
             [clojure.string :as str]
             [planwise.client.ui.rmwc :as m]))
 
-(defn- valid-input
-  [inp]
-  (let [value (js/parseInt inp)]
-    (if (and (number? value) (not (js/isNaN value))) value nil)))
-
 (defn rename-scenario-dialog
   []
   (let [rename-dialog (subscribe [:scenarios/rename-dialog])
@@ -32,8 +27,8 @@
 
 (defn input
   [{:keys [value onchange-path]}]
-  [m/TextField {:type "text"
-                :on-change  #(dispatch [:scenarios/save-key onchange-path (valid-input (-> % .-target .-value))])
+  [m/TextField {:type "number"
+                :on-change  #(dispatch [:scenarios/save-key onchange-path (-> % .-target .-value)])
                 :value value}])
 
 (defn changeset-dialog-content

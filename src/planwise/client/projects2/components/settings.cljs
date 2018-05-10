@@ -20,11 +20,6 @@
 ;;------------------------------------------------------------------------
 ;;Current Project updating
 
-(defn- valid-input
-  [inp]
-  (let [value (js/parseInt inp)]
-    (if (and (number? value) (not (js/isNaN value))) value nil)))
-
 (defn- regions-dropdown-component
   [attrs]
   (let [props (merge {:choices   @(rf/subscribe [:regions/list])
@@ -51,17 +46,17 @@
    [:div.mdc-line-ripple]])
 
 (defn- current-project-input
-  ([label path transform]
-   (current-project-input label path transform {:disabled false}))
-  ([label path transform {:keys [disabled]}]
+  ([label path type]
+   (current-project-input label path type {:disabled false}))
+  ([label path type {:keys [disabled]}]
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
-         change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value transform)])]
-     [text-field {:type      "text"
-                  :label     label
-                  :on-change change-fn
-                  :value     value
-                  :disabled  disabled}])))
+         change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value)])]
+     [m/TextField {:type      type
+                   :label     label
+                   :on-change change-fn
+                   :value     value
+                   :disabled  disabled}])))
 
 (defn- project-start-button
   [_ project]
@@ -122,7 +117,7 @@
         [:form.vertical
          [:section {:class-name "project-settings-section"}
           [section-header 1 "Goal"]
-          [current-project-input "Goal" [:name] identity]
+          [current-project-input "Goal" [:name] "text"]
           [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
 
           [regions-dropdown-component {:label     "Region"
@@ -137,8 +132,8 @@
                                           :on-change #(dispatch [:projects2/save-key :population-source-id %])
                                           :disabled?  read-only}]
 
-          [current-project-input "Unit" [:config :demographics :unit-name] identity {:disabled read-only}]
-          [current-project-input "Target" [:config :demographics :target] valid-input {:disabled read-only}]
+          [current-project-input "Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
+          [current-project-input "Target" [:config :demographics :target] "number" {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
 
          [:section {:class-name "project-settings-section"}
@@ -148,7 +143,7 @@
                                         :on-change #(dispatch [:projects2/save-key :dataset-id %])
                                         :disabled? read-only}]
 
-          [current-project-input "Capacity workload" [:config :sites :capacity] valid-input {:disabled read-only}]
+          [current-project-input "Capacity workload" [:config :sites :capacity] "number" {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
 
           (when-not read-only [tag-input])
@@ -165,7 +160,7 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 5 "Actions"]
-          [current-project-input "Budget" [:config :actions :budget] valid-input {:disabled read-only}]]]]])))
+          [current-project-input "Budget" [:config :actions :budget] "number" {:disabled read-only}]]]]])))
 
 (defn edit-current-project
   []
