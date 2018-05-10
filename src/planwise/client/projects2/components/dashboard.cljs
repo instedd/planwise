@@ -8,11 +8,17 @@
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.rmwc :as m]
-            [planwise.client.utils :as utils]))
+            [planwise.client.utils :as utils]
+            [planwise.client.projects2.components.settings :as settings]))
 
 (defn- project-tabs
-  [{:keys [active] :or {active 0}}]
-  [m/TabBar {:activeTabIndex active}
+  [{:keys [active] :or {active :scenarios}}]
+  [m/TabBar {:activeTabIndex ({:scenarios 0 :settings 1} active)
+             :on-change (fn [evt]
+                          (let [tab-index (.-value (.-target evt))]
+                            (case tab-index
+                              0 (dispatch [:projects2/project-scenarios])
+                              1 (dispatch [:projects2/project-settings]))))}
    [m/Tab "Scenarios"]
    [m/Tab "Settings"]])
 
@@ -28,9 +34,9 @@
 (defn- scenarios-list-item
   [project-id {:keys [id name label state demand-coverage investment changeset-summary] :as scenario}]
   [:tr {:key id :on-click (fn [evt]
-                            (cond
-                              (or (.-shiftKey evt) (.-metaKey evt)) (.open js/window (routes/scenarios {:project-id project-id :id id}))
-                              :else (dispatch [:scenarios/load-scenario {:id id}])))}
+                            (if (or (.-shiftKey evt) (.-metaKey evt))
+                              (.open js/window (routes/scenarios {:project-id project-id :id id}))
+                              (dispatch [:scenarios/load-scenario {:id id}])))}
    [:td {:class "col1"} (cond (= state "pending") [create-chip state]
                               (not= label "initial") [create-chip label])]
    [:td {:class "col2"} name]
@@ -49,17 +55,21 @@
       [:th {:class "col3"} (str (get-in current-project [:config :demographics :unit-name]) " coverage")]
       [:th {:class "col4"} "Investment"]
       [:th {:class "col5"} "Actions"]]]
+    [:tbody
+     (map #(scenarios-list-item (:id current-project) %) scenarios)]]])
 
-    (into [:tbody] (map #(scenarios-list-item (:id current-project) %) scenarios))]])
+(defn- project-settings
+  []
+  [settings/current-project-settings-view {:read-only true}])
 
 (defn view-current-project
-  []
+  [active-tab]
   (let [current-project (rf/subscribe [:projects2/current-project])
         delete?  (r/atom false)
         hide-dialog (fn [] (reset! delete? false))
         id (:id @current-project)
         scenarios-sub (rf/subscribe [:scenarios/list])]
-    (fn []
+    (fn [active-tab]
       (let [scenarios (asdf/value @scenarios-sub)]
         (when (asdf/should-reload? @scenarios-sub)
           (rf/dispatch [:scenarios/load-scenarios]))
@@ -68,10 +78,12 @@
           :else
           [ui/fixed-width (merge (common2/nav-params)
                                  {:title (:name @current-project)
-                                  :tabs [project-tabs {:active 0}]
+                                  :tabs [project-tabs {:active active-tab}]
                                   :secondary-actions (project-secondary-actions @current-project delete?)})
            [delete-project-dialog {:open? @delete?
                                    :cancel-fn hide-dialog
-                                   :delete-fn #(rf/dispatch [:projects2/delete-project id])}]])))))
-
-
+                                   :delete-fn #(rf/dispatch [:projects2/delete-project id])}]
+           [ui/panel {}
+            (case active-tab
+              :scenarios [scenarios-list scenarios @current-project]
+              :settings  [project-settings])]])))))

@@ -2,6 +2,7 @@
   (:require [re-frame.core :as rf]
             [re-frame.core :refer [dispatch subscribe]]
             [planwise.client.asdf :as asdf]
+            [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
 (def in-population (rf/path [:population]))
@@ -51,14 +52,32 @@
 ;; ----------------------------------------------------------------------------
 ;; Views
 
+(defn- disabled-input-component
+  [{:keys [label value options empty-label]}]
+  [m/TextField {:type     "text"
+                :label    label
+                :value    (utils/label-from-options options value empty-label)
+                :disabled true}])
+
+(defn- population-select-component
+  [{:keys [label value options empty-label on-change]}]
+  [m/Select {:label (if (empty? options) empty-label label)
+             :disabled (empty? options)
+             :value (str value)
+             :options options
+             :onChange #(on-change (js/parseInt (-> % .-target .-value)))}])
+
 (defn population-dropdown-component
-  [{:keys [label value on-change]}]
-  (let [list    (subscribe [:population/list])
-        options (subscribe [:population/dropdown-options])]
+  [{:keys [label value on-change disabled?]}]
+  (let [list      (subscribe [:population/list])
+        options   (subscribe [:population/dropdown-options])
+        component (if disabled?
+                    disabled-input-component
+                    population-select-component)]
     (when (asdf/should-reload? @list)
       (dispatch [:population/load-population-sources]))
-    [m/Select {:label (if (empty? @options) "No population layer available." label)
-               :disabled (empty? @options)
-               :value (str value)
-               :options @options
-               :onChange #(on-change (js/parseInt (-> % .-target .-value)))}]))
+    [component {:label        label
+                :value        value
+                :options      @options
+                :empty-label  "No population layer available."
+                :on-change    on-change}]))

@@ -9,14 +9,32 @@
             [planwise.client.ui.rmwc :as m]
             [re-frame.utils :as c]))
 
+(defn- disabled-input-component
+  [{:keys [label value options empty-label]}]
+  [m/TextField {:type     "text"
+                :label    label
+                :value    (utils/label-from-options options (str value) empty-label)
+                :disabled true}])
+
+(defn- datasets-select-component
+  [{:keys [label value options empty-label on-change]}]
+  [m/Select {:label (if (empty? options) empty-label label)
+             :disabled (empty? options)
+             :value (str value)
+             :options (sort-by :label options)
+             :on-change #(on-change (js/parseInt (-> % .-target .-value)))}])
+
 (defn datasets-dropdown-component
-  [{:keys [label value on-change]}]
-  (let [datasets-sub     (subscribe [:datasets2/list])
-        datasets-options (subscribe [:datasets2/dropdown-options])]
-    (when (asdf/should-reload? @datasets-sub)
+  [{:keys [label value on-change disabled?]}]
+  (let [list      (subscribe [:datasets2/list])
+        options   (subscribe [:datasets2/dropdown-options])
+        component (if disabled?
+                    disabled-input-component
+                    datasets-select-component)]
+    (when (asdf/should-reload? @list)
       (dispatch [:datasets2/load-datasets2]))
-    [m/Select {:label (if (empty? @datasets-options) "There are no datasets defined." label)
-               :disabled (empty? @datasets-options)
-               :value (str value)
-               :options (sort-by :label @datasets-options)
-               :on-change #(on-change (js/parseInt (-> % .-target .-value)))}]))
+    [component {:label        label
+                :value        value
+                :options      @options
+                :empty-label  "There are no datasets defined."
+                :on-change    on-change}]))
