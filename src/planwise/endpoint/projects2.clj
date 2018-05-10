@@ -41,9 +41,12 @@
            id       (Integer. id)
            project  (filter-owned-by (assoc project :id id) user-id)] ;; honor id of route
        ;; TODO validate permission
-       (assert (s/valid? ::model/project project) "Invalid project")
-       (projects2/update-project service project)
-       (response (api-project (projects2/get-project service id)))))
+       (if (nil? project)
+         (not-found {:error "Project not found"})
+         (do
+           (assert (s/valid? ::model/project project) "Invalid project")
+           (projects2/update-project service project)
+           (response (api-project (projects2/get-project service id)))))))
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
