@@ -20,7 +20,7 @@
 
 (defn- filter-projects-owned-by
   [projects owner-id]
-  (filter (fn [proj] (= (:owner-id proj) owner-id)) projects))
+  (filter (fn [project] (= (:owner-id project) owner-id)) projects))
 
 (defn- filter-owned-by
   [project owner-id]
@@ -39,7 +39,7 @@
    (PUT "/:id" [id project :as request]
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)
-           project  (assoc project :id id)] ;; honor id of route
+           project  (filter-owned-by (assoc project :id id) user-id)] ;; honor id of route
        ;; TODO validate permission
        (assert (s/valid? ::model/project project) "Invalid project")
        (projects2/update-project service project)
@@ -82,14 +82,20 @@
    (DELETE "/:id" [id :as request]
      ;; TODO authorize user-id
      (let [user-id  (util/request-user-id request)
-           id       (Integer. id)]
-       (projects2/delete-project service id)))
+           id       (Integer. id)
+           project  (filter-owned-by (projects2/get-project service id) user-id)]
+       (if (nil? project)
+         (not-found {:error "Project not found"})
+         (projects2/delete-project service id))))
 
    (GET "/:id/scenarios" [id :as request]
      (let [user-id       (util/request-user-id request)
            id            (Integer. id)
+           project       (filter-owned-by (projects2/get-project service id) user-id)
            scenarios     (scenarios/list-scenarios service-scenarios id)]
-       (response scenarios)))))
+       (if (nil? project)
+         (not-found {:error "Project not found"})
+         (response scenarios))))))
 
 (defn projects2-endpoint
   [config]
