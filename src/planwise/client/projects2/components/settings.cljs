@@ -87,7 +87,7 @@
 
 (defn- count-sites
   [tags {{:keys [total filtered]} :dataset-sites}]
-  [:p "total sites: " (if (empty? tags) total filtered) "/ " total])
+  [:p "Available sites: " (if (empty? tags) total filtered) " / " total])
 
 (defn- section-header
   [number title]
@@ -134,8 +134,8 @@
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
 
           (when-not read-only [tag-input])
-          [:label "Tags: " [tag-set @tags read-only]]]
-         [count-sites @tags @current-project]
+          [:label "Tags: " [tag-set @tags read-only]]
+          [count-sites @tags @current-project]]
 
          [:section {:class-name "project-settings-section"}
           [section-header 4 "Coverage"]
