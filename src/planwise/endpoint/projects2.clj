@@ -18,13 +18,9 @@
   [project]
   (dissoc project :deleted-at))
 
-(defn- filter-projects-owned-by
-  [projects owner-id]
-  (filter (fn [project] (= (:owner-id project) owner-id)) projects))
-
 (defn- filter-owned-by
   [project owner-id]
-  (first (filter-projects-owned-by [project] owner-id)))
+  (when (= (:owner-id project) owner-id) project))
 
 (defn- projects2-routes
   [{service :projects2 service-scenarios :scenarios}]
