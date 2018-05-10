@@ -18,6 +18,10 @@
   [project]
   (dissoc project :deleted-at))
 
+(defn- filter-owned-by
+  [project owner-id]
+  (when (= (:owner-id project) owner-id) project))
+
 (defn- projects2-routes
   [{service :projects2 service-scenarios :scenarios}]
   (routes
@@ -31,15 +35,18 @@
    (PUT "/:id" [id project :as request]
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)
-           project  (assoc project :id id)] ;; honor id of route
+           project  (filter-owned-by (assoc project :id id) user-id)] ;; honor id of route
        ;; TODO validate permission
-       (assert (s/valid? ::model/project project) "Invalid project")
-       (projects2/update-project service project)
-       (response (api-project (projects2/get-project service id)))))
+       (if (nil? project)
+         (not-found {:error "Project not found"})
+         (do
+           (assert (s/valid? ::model/project project) "Invalid project")
+           (projects2/update-project service project)
+           (response (api-project (projects2/get-project service id)))))))
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)
-           project (projects2/get-project service (Integer. id))]
+           project (filter-owned-by (projects2/get-project service (Integer. id)) user-id)]
        (if (nil? project)
          (not-found {:error "Project not found"})
          (response (api-project project)))))
@@ -52,7 +59,7 @@
    (POST "/:id/start" [id :as request]
      (let [user-id       (util/request-user-id request)
            id            (Integer. id)
-           project       (projects2/get-project service id)]
+           project       (filter-owned-by (projects2/get-project service id) user-id)]
        ;; TODO validate permission
        (if (nil? project)
          (not-found {:error "Project not found"})
@@ -63,7 +70,7 @@
    (POST "/:id/reset" [id :as request]
      (let [user-id       (util/request-user-id request)
            id            (Integer. id)
-           project       (projects2/get-project service id)]
+           project       (filter-owned-by (projects2/get-project service id) user-id)]
        ;; TODO validate permission
        (if (nil? project)
          (not-found {:error "Project not found"})
@@ -74,14 +81,20 @@
    (DELETE "/:id" [id :as request]
      ;; TODO authorize user-id
      (let [user-id  (util/request-user-id request)
-           id       (Integer. id)]
-       (projects2/delete-project service id)))
+           id       (Integer. id)
+           project  (filter-owned-by (projects2/get-project service id) user-id)]
+       (if (nil? project)
+         (not-found {:error "Project not found"})
+         (projects2/delete-project service id))))
 
    (GET "/:id/scenarios" [id :as request]
      (let [user-id       (util/request-user-id request)
            id            (Integer. id)
+           project       (filter-owned-by (projects2/get-project service id) user-id)
            scenarios     (scenarios/list-scenarios service-scenarios id)]
-       (response scenarios)))))
+       (if (nil? project)
+         (not-found {:error "Project not found"})
+         (response scenarios))))))
 
 (defn projects2-endpoint
   [config]
