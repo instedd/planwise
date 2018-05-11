@@ -7,7 +7,9 @@
             [planwise.client.routes :as routes]
             [planwise.client.utils :as utils]
             [planwise.client.ui.common :as ui]
-            [planwise.client.mapping :refer [static-image fullmap-region-geo]]))
+            [planwise.client.ui.rmwc :as m]
+            [planwise.client.mapping :refer [static-image fullmap-region-geo]]
+            [planwise.client.components.common :as common]))
 
 (def map-preview-size {:width 373 :height 278})
 
@@ -31,11 +33,21 @@
    (for [project projects]
      [project-card {:key (:id project)} project])])
 
+(defn- no-projects-view
+  []
+  [:div.empty-list-container
+   [:div.empty-list
+    [common/icon :box]
+    [:p "You have no projects yet"]
+    [m/Button {:type       "button"
+               :unelevated "unelevated"
+               :on-click   (utils/prevent-default #(dispatch [:projects2/new-project]))}
+     "Create one"]]])
+
 (defn- listing-component []
   (let [projects (subscribe [:projects2/list])]
     (if (empty? @projects)
-      [:div
-       [:p "You have no projects..."]]
+      [no-projects-view]
       [projects-list @projects])))
 
 (defn project-section-index []
