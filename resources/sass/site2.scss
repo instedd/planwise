@@ -514,3 +514,26 @@ form.vertical, .fields-vertical {
     margin-left: 25px;
   }
 }
+
+.empty-list-container {
+  position: relative;
+  width: 100%;
+
+  .empty-list {
+    color: #AAA;
+    font-size: 24px;
+    position: absolute;
+    text-align: center;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+
+    button {
+      background: transparent;
+      color: $mdc-theme-primary;
+      font-size: 26px;
+      font-weight: 400;
+      text-transform: inherit;
+    }
+  }
+}

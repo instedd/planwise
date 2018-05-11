@@ -12,10 +12,12 @@
 ;; ----------------------------------------------------------------------------
 ;; Datasets2 list
 
-(defn no-datasets2-view []
-  [:div.empty-list
-   [common/icon :box]
-   [:p "You have no datasets yet"]])
+(defn no-datasets2-view
+  []
+  [:div.empty-list-container
+   [:div.empty-list
+    [common/icon :box]
+    [:p "You have no datasets yet"]]])
 
 (defn dataset2-card
   [props dataset]
@@ -26,9 +28,8 @@
 
 (defn datasets2-list
   [datasets]
-  (cond
-    (empty? datasets) [no-datasets2-view]
-    :else
+  (if (empty? datasets)
+    [no-datasets2-view]
     [ui/card-list {:class "dataset-list"}
      (for [dataset datasets]
        [dataset2-card {:key (:id dataset)} dataset])]))
