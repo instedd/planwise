@@ -46,7 +46,8 @@
                           :coverage-options   coverage-options}
         sites            (datasets2/get-sites-with-coverage-in-region datasets2 dataset-id version filter-options)]
     (->> sites
-         (datasets2/filter-sites-by-tags tags)
+         ;; FIXME: Disable until #392 is merged
+         #_(datasets2/filter-sites-by-tags tags)
          (map #(select-keys % [:id :capacity :raster]))
          (sort-by :capacity)
          reverse)))
