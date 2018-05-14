@@ -30,21 +30,6 @@
                      attrs)]
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
-;; <div class="mdc-text-field">
-;;  <input type="text" id="my-text-field" class="mdc-text-field__input">
-;;  <label class="mdc-floating-label" for="my-text-field">Hint text</label>
-;;  <div class="mdc-line-ripple"></div>
-;; </div>
-
-(defn text-field
-  [{:keys [label value] :as props}]
-  [:div.mdc-text-field
-   [:input#my-text-field.mdc-text-field__input props]
-   [:label.mdc-floating-label {:for "my-text-field"
-            :class (when-not (blank? (str value)) "mdc-floating-label--float-above")}
-    label]
-   [:div.mdc-line-ripple]])
-
 (defn- current-project-input
   ([label path type]
    (current-project-input label path type {:disabled false}))
@@ -52,11 +37,11 @@
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
          change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value)])]
-     [m/TextField {:type      type
-                   :label     label
-                   :on-change change-fn
-                   :value     value
-                   :disabled  disabled}])))
+     [common2/text-field {:type      type
+                          :label     label
+                          :on-change change-fn
+                          :value     value
+                          :disabled  disabled}])))
 
 (defn- project-start-button
   [_ project]
@@ -87,13 +72,13 @@
 (defn tag-input []
   (let [value (r/atom "")]
     (fn []
-      [m/TextField {:type "text"
-                    :placeholder "Type tag for filtering sites"
-                    :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (not (blank? @value)))
-                                            (dispatch [:projects2/save-tag @value])
-                                            (reset! value "")))
-                    :on-change #(reset! value (-> % .-target .-value))
-                    :value @value}])))
+      [common2/text-field {:type "text"
+                           :placeholder "Type tag for filtering sites"
+                           :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (not (blank? @value)))
+                                                   (dispatch [:projects2/save-tag @value])
+                                                   (reset! value "")))
+                           :on-change #(reset! value (-> % .-target .-value))
+                           :value @value}])))
 
 (defn- count-sites
   [tags {:keys [dataset-id dataset-sites region-id]}]
