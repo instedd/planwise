@@ -1,5 +1,6 @@
 (ns planwise.client.coverage
   (:require [re-frame.core :as rf]
+            [planwise.client.components.common2 :as common2]
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
@@ -45,10 +46,10 @@
 
 (defn- disabled-input-component
   [{:keys [label value options]}]
-  [m/TextField {:type     "text"
-                :label    label
-                :value    (utils/label-from-options options value "")
-                :disabled true}])
+  [common2/text-field {:type     "text"
+                       :label    label
+                       :value    (utils/label-from-options options value "")
+                       :disabled true}])
 
 (defn- criteria-option-select-component
   [{:keys [label value options on-change]}]

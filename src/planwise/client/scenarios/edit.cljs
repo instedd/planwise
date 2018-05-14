@@ -18,18 +18,18 @@
     (fn []
       (dialog {:open? (= @view-state :rename-dialog)
                :title "Rename scenario"
-               :content  [m/TextField {:label "Name"
-                                       :value (str (:value @rename-dialog))
-                                       :on-change #(dispatch [:scenarios/save-key
-                                                              [:rename-dialog :value] (-> % .-target .-value)])}]
+               :content  [common2/text-field {:label "Name"
+                                              :value (str (:value @rename-dialog))
+                                              :on-change #(dispatch [:scenarios/save-key
+                                                                     [:rename-dialog :value] (-> % .-target .-value)])}]
                :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
                :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
 
 (defn input
   [{:keys [value onchange-path]}]
-  [m/TextField {:type "number"
-                :on-change  #(dispatch [:scenarios/save-key onchange-path (-> % .-target .-value)])
-                :value value}])
+  [common2/text-field {:type "number"
+                       :on-change  #(dispatch [:scenarios/save-key onchange-path (-> % .-target .-value)])
+                       :value value}])
 
 (defn changeset-dialog-content
   [{:keys [investment capacity]}]
