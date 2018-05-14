@@ -8,6 +8,7 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.model.projects2 :as model]
+            [planwise.model.starting-project :as project-start-model]
             [planwise.boundary.datasets2 :as datasets2]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.scenarios :as scenarios]))
@@ -64,6 +65,7 @@
        (if (nil? project)
          (not-found {:error "Project not found"})
          (do
+           (assert (s/valid? ::project-start-model/project-starting project) "Invalid starting project")
            (projects2/start-project service id)
            (response (api-project (projects2/get-project service id)))))))
 
