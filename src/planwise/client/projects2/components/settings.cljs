@@ -48,11 +48,49 @@
                    :value     value
                    :disabled  disabled}])))
 
+(defn- ^boolean valid-goal?
+  [project]
+  (every? false? [(blank? (:name project))
+                  (nil? (:region-id project))]))
+
+(defn- ^boolean valid-demographics?
+  [project]
+  (let [demographics (get-in project [:config :demographics])]
+    (every? false? [(nil?   (:population-source-id project))
+                    (blank? (:unit-name demographics))
+                    (blank? (:target demographics))])))
+
+(defn- ^boolean valid-sites?
+  [project]
+  (let [sites (get-in project [:config :sites])]
+    (every? false? [(nil? (:dataset-id project))
+                    (blank? (:capacity sites))])))
+
+(defn- ^boolean valid-coverage?
+  [project]
+  (let [coverage (get-in project [:config :coverage])]
+    (not (empty? (:filter-options coverage)))))
+
+(defn- ^boolean valid-actions?
+  [project]
+  (let [actions (get-in project [:config :actions])]
+    (every? false? [(empty? actions)
+                    (nil? (:budget actions))])))
+
+(defn- valid-project?
+  [project]
+  (every? #(% project) [valid-goal?
+                        valid-demographics?
+                        valid-sites?
+                        valid-coverage?
+                        valid-actions?]))
+
 (defn- project-start-button
   [_ project]
   [m/Button {:id         "start-project"
              :type       "button"
              :unelevated "unelevated"
+             :disabled   (not (valid-project? project))
              :on-click   (utils/prevent-default #(dispatch [:projects2/start-project (:id project)]))}
    (if (= (keyword (:state project)) :started) "Started ..." "Start")])
 
