@@ -15,7 +15,9 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.filter-select :as filter-select]
             [planwise.client.ui.rmwc :as m]
-            [planwise.client.utils :as utils]))
+            [planwise.client.utils :as utils]
+            [planwise.model.starting-project :as project-start-model]
+            [clojure.spec.alpha :as s]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
@@ -48,49 +50,12 @@
                    :value     value
                    :disabled  disabled}])))
 
-(defn- ^boolean valid-goal?
-  [project]
-  (every? false? [(blank? (:name project))
-                  (nil? (:region-id project))]))
-
-(defn- ^boolean valid-demographics?
-  [project]
-  (let [demographics (get-in project [:config :demographics])]
-    (every? false? [(nil?   (:population-source-id project))
-                    (blank? (:unit-name demographics))
-                    (nil? (:target demographics))])))
-
-(defn- ^boolean valid-sites?
-  [project]
-  (let [sites (get-in project [:config :sites])]
-    (every? false? [(nil? (:dataset-id project))
-                    (nil? (:capacity sites))])))
-
-(defn- ^boolean valid-coverage?
-  [project]
-  (let [coverage (get-in project [:config :coverage])]
-    (not (empty? (:filter-options coverage)))))
-
-(defn- ^boolean valid-actions?
-  [project]
-  (let [actions (get-in project [:config :actions])]
-    (every? false? [(empty? actions)
-                    (nil? (:budget actions))])))
-
-(defn- valid-project?
-  [project]
-  (every? #(% project) [valid-goal?
-                        valid-demographics?
-                        valid-sites?
-                        valid-coverage?
-                        valid-actions?]))
-
 (defn- project-start-button
   [_ project]
   [m/Button {:id         "start-project"
              :type       "button"
              :unelevated "unelevated"
-             :disabled   (not (valid-project? project))
+             :disabled   (not (s/valid? ::project-start-model/project-starting project))
              :on-click   (utils/prevent-default #(dispatch [:projects2/start-project (:id project)]))}
    (if (= (keyword (:state project)) :started) "Started ..." "Start")])
 

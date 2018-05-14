@@ -11,14 +11,9 @@
 (s/def ::region-id number?)
 
 ;; Demographics
-(defn- valid-unit-name?
-  [unit-name]
-  (and (string? unit-name)
-       (not (blank? unit-name))))
-
 (s/def ::population-source-id number?)
 (s/def ::target number?)
-(s/def ::unit-name valid-unit-name?)
+(s/def ::unit-name (comp not blank?))
 (s/def ::demographics (s/keys :req-un [::unit-name ::target]))
 
 ;; Sites
@@ -39,4 +34,3 @@
 
 ;; Project Starting
 (s/def ::project-starting (s/keys :req-un [::id ::owner-id ::name ::config ::dataset-id ::population-source-id ::region-id]))
-
