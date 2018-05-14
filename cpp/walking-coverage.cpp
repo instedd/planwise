@@ -867,13 +867,13 @@ static void
 write_isochrone(const string& filename, OGRGeometry *isochrone)
 {
   const char *pDriverName = "GeoJSON";
-  OGRSFDriver *pDriver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(pDriverName);
+  GDALDriver *pDriver = GetGDALDriverManager()->GetDriverByName(pDriverName);
   if (pDriver == NULL) {
     throw runtime_error("cannot get GeoJSON driver");
   }
 
-  pDriver->DeleteDataSource(filename.c_str());
-  OGRDataSource *pDataSource = pDriver->CreateDataSource(filename.c_str(), NULL);
+  pDriver->Delete(filename.c_str());
+  GDALDataset *pDataSource = pDriver->Create(filename.c_str(), 0, 0, 0, GDT_Unknown, NULL);
   if (pDataSource == NULL) {
     throw runtime_error("cannot create output file");
   }
@@ -899,7 +899,7 @@ write_isochrone(const string& filename, OGRGeometry *isochrone)
   }
   OGRFeature::DestroyFeature(pFeature);
 
-  OGRDataSource::DestroyDataSource(pDataSource);
+  GDALClose(pDataSource);
 }
 
 
