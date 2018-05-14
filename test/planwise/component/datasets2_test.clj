@@ -30,12 +30,20 @@
 (defn point [input]
   (PGgeometry. (str input)))
 
+(defn sample-polygon []
+  (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((0 0, 40 0, 40 -20, 0 -20, 0 0)))")))
+
 (def fixture-filtering-sites-tags
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
    [:datasets2
     [{:id 1 :name "First" "owner-id" owner-id "last-version" 2}
      {:id 2 :name "Bar" "owner-id" owner-id "last-version" 2}]]
+   [:regions
+    [{:id 1 :country "AAA" :name "Aaa" "the_geom" (sample-polygon)}]]
+   [:projects2
+    [{:id 1 "owner-id" owner-id :name "foo" :dataset-id 1 :region-id 1}
+     {:id 2 "owner-id" owner-id :name "foo2" :dataset-id 2 :region-id 1}]]
    [:sites2
     [{:id 13 :lon 23.416667 :version 2 :the_geom (point "SRID=4326; POINT(23.416667 -19.983333)") "source-id" 1
       "processing-status" ":ok" "dataset-id" 1 :tags "private laboratory radiography pharmacy"
@@ -118,18 +126,17 @@
 ;; ----------------------------------------------------------------------
 ;; Testing site's tag filtering
 
-(defn- is-right-number?
-  [store id tag number]
-  (cond (str/blank? tag) (is (= (:total (datasets2/count-sites-filter-by-tag store id tag)) number))
-        :else (is (= (:filtered (datasets2/count-sites-filter-by-tag store id tag)) number))))
+(defn- validate-filter-count
+  [store id tags number]
+  (is (= (:filtered (datasets2/count-sites-filter-by-tags store id 1 tags)) number)))
 
 (deftest filtering-sites
   (test-system/with-system (test-config fixture-filtering-sites-tags)
     (let [store                    (:planwise.component/datasets2 system)
           sites-dataset-id1        (datasets2/sites-by-version store 1 2)
-          number  (count sites-dataset-id1)]
-      (is-right-number? store 1 "" number)
-      (is-right-number? store 1 "inexistent" 0)
-      (is-right-number? store 1 "private" 2)
-      (is-right-number? store 2 "private" 0)
-      (is-right-number? store 2 "-" 0))))
+          number                   (count sites-dataset-id1)]
+      (validate-filter-count store 1 [""] number)
+      (validate-filter-count store 1 ["inexistent"] 0)
+      (validate-filter-count store 1 ["private"] 2)
+      (validate-filter-count store 2 ["private"] 0)
+      (validate-filter-count store 2 ["-"] 0))))

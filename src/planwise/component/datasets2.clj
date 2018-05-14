@@ -193,24 +193,29 @@
         region-id (:region-id filter-options)
         algorithm (:coverage-algorithm filter-options)
         options   (:coverage-options filter-options)
-        tags      (str/join "& " (:tags filter-options))]
+        tags      (str/join " & " (:tags filter-options))]
     (db-find-sites-with-coverage-in-region db-spec {:dataset-id dataset-id
                                                     :version    version
                                                     :region-id  region-id
                                                     :algorithm  algorithm
                                                     :options    (some-> options pr-str)
-                                                    :tags tags})))
+                                                    :tags       tags})))
 
-(defn count-sites-filter-by-tag
-  [store dataset-id tag]
-  (let [db-spec  (get-db store)
-        count-fn (fn [db-spec tag]
-                   (let [{:keys [last-version]} (get-dataset store dataset-id)]
-                     (:count (db-count-sites-with-tag db-spec {:dataset-id dataset-id
-                                                               :version last-version
-                                                               :tag tag}))))
-        response {:total (count-fn db-spec "")}]
-    (if (str/blank? tag) response (assoc response :filtered (count-fn db-spec tag)))))
+(defn count-sites-filter-by-tags
+  ([store dataset-id region-id tags]
+   (count-sites-filter-by-tags store dataset-id region-id tags nil))
+  ([store dataset-id region-id tags version]
+   (let [db-spec  (get-db store)
+         tags     (str/join " & " tags)
+         count-fn (fn [tags version]
+                    (let [{:keys [last-version]} (get-dataset store dataset-id)]
+                      (:count (db-count-sites-with-tags db-spec {:dataset-id dataset-id
+                                                                 :version (or version last-version)
+                                                                 :region-id region-id
+                                                                 :tags tags}))))
+         total     (count-fn "" version)
+         response {:total total :filtered total}]
+     (if (str/blank? tags) response (assoc response :filtered (count-fn tags version))))))
 
 (defrecord SitesDatasetsStore [db coverage]
   boundary/Datasets2
@@ -224,8 +229,10 @@
     (new-processing-job store dataset-id))
   (get-sites-with-coverage-in-region [store dataset-id version filter-options]
     (get-sites-with-coverage-in-region store dataset-id version filter-options))
-  (count-sites-filter-by-tag [store dataset-id tag]
-    (count-sites-filter-by-tag store dataset-id tag)))
+  (count-sites-filter-by-tags [store dataset-id region-id tags]
+    (count-sites-filter-by-tags store dataset-id region-id tags))
+  (count-sites-filter-by-tags [store dataset-id region-id tags version]
+    (count-sites-filter-by-tags store dataset-id region-id tags version)))
 
 
 (defmethod ig/init-key :planwise.component/datasets2

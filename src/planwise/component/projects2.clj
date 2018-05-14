@@ -8,6 +8,7 @@
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
+            [clojure.string :refer [join]]
             [clojure.java.io :as io]
             [planwise.model.projects2 :as model]
             [planwise.util.hash :refer [update*]]))
@@ -38,9 +39,9 @@
 
 (defn get-project
   [store project-id]
-  (let [{:keys [config dataset-id dataset-version] :as project} (db-get-project (get-db store) {:id project-id})
-        tag    (when (some? config) (last (get-in (read-string config) [:sites :tags])))
-        number-of-sites (datasets2/count-sites-filter-by-tag (:datasets2 store) dataset-id (or tag ""))]
+  (let [{:keys [config dataset-id region-id] :as project} (db-get-project (get-db store) {:id project-id})
+        tags    (when (some? config) (get-in (read-string config) [:sites :tags]))
+        number-of-sites (datasets2/count-sites-filter-by-tags (:datasets2 store) dataset-id region-id tags)]
     (regions/db->region
      (-> project
          (update* :engine-config edn/read-string)

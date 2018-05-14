@@ -86,8 +86,11 @@
                     :value @value}])))
 
 (defn- count-sites
-  [tags {{:keys [total filtered]} :dataset-sites}]
-  [:p "Available sites: " (if (empty? tags) total filtered) " / " total])
+  [tags {:keys [dataset-id dataset-sites region-id]}]
+  (let [{:keys [total filtered]} dataset-sites]
+    (cond (nil? region-id) [:p "Select region first."]
+          (nil? dataset-id) [:p "Select dataset first."]
+          :else [:p "Selected sites: " filtered " / " total])))
 
 (defn- section-header
   [number title]

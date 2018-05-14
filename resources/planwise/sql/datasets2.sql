@@ -48,12 +48,13 @@ SELECT s2.id, s2.name, s2.lat, s2.lon, s2.capacity, s2.type, s2.tags, s2c.raster
           AND s2.tags::tsvector @@ :tags::tsquery;
          /*~ ) ~*/;
 
--- :name db-count-sites-with-tag :? :1
-SELECT COUNT(*) FROM sites2
+-- :name db-count-sites-with-tags :? :1
+SELECT COUNT(*) FROM sites2 s2
     WHERE "dataset-id" = :dataset-id
     AND version = :version
-    /*~ (if (seq (:tag params)) */
-    AND tags::tsvector @@ :tag::tsquery;
+    AND s2."the_geom" @ (SELECT "the_geom" FROM regions WHERE id = :region-id)
+    /*~ (if (seq (:tags params)) */
+    AND s2.tags::tsvector @@ :tags::tsquery;
     /*~ ) ~*/;
 
 -- :name db-enum-site-ids :?
