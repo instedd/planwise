@@ -8,6 +8,7 @@
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
+            [clojure.string :refer [blank?]]
             [planwise.model.projects2 :as model]
             [planwise.util.hash :refer [update*]]))
 
@@ -19,6 +20,43 @@
 (defn get-db
   [store]
   (get-in store [:db :spec]))
+
+(defn- ^boolean valid-goal?
+  [project]
+  (every? false? [(blank? (:name project))
+                  (nil? (:region-id project))]))
+
+(defn- ^boolean valid-demographics?
+  [project]
+  (let [demographics (get-in project [:config :demographics])]
+    (every? false? [(nil?   (:population-source-id project))
+                    (blank? (:unit-name demographics))
+                    (nil? (:target demographics))])))
+
+(defn- ^boolean valid-sites?
+  [project]
+  (let [sites (get-in project [:config :sites])]
+    (every? false? [(nil? (:dataset-id project))
+                    (nil? (:capacity sites))])))
+
+(defn- ^boolean valid-coverage?
+  [project]
+  (let [coverage (get-in project [:config :coverage])]
+    (not (empty? (:filter-options coverage)))))
+
+(defn- ^boolean valid-actions?
+  [project]
+  (let [actions (get-in project [:config :actions])]
+    (every? false? [(empty? actions)
+                    (nil? (:budget actions))])))
+
+(defn- ^boolean valid-project?
+  [project]
+  (every? #(% project) [valid-goal?
+                        valid-demographics?
+                        valid-sites?
+                        valid-coverage?
+                        valid-actions?]))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -49,9 +87,10 @@
 
 (defn start-project
   [store project-id]
-  (db-start-project! (get-db store) {:id project-id})
   (let [project (get-project store project-id)]
-    (scenarios/create-initial-scenario (:scenarios store) project)))
+    (when (valid-project? project)
+      (db-start-project! (get-db store) {:id project-id})
+      (scenarios/create-initial-scenario (:scenarios store) project))))
 
 (defn reset-project
   [store project-id]

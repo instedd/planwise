@@ -58,13 +58,13 @@
   (let [demographics (get-in project [:config :demographics])]
     (every? false? [(nil?   (:population-source-id project))
                     (blank? (:unit-name demographics))
-                    (blank? (:target demographics))])))
+                    (nil? (:target demographics))])))
 
 (defn- ^boolean valid-sites?
   [project]
   (let [sites (get-in project [:config :sites])]
     (every? false? [(nil? (:dataset-id project))
-                    (blank? (:capacity sites))])))
+                    (nil? (:capacity sites))])))
 
 (defn- ^boolean valid-coverage?
   [project]
