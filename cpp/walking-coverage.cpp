@@ -701,6 +701,7 @@ int conrec(const float * const *d,
                   y2=ysect(m1,m2);
                   break;
                 default:
+                  throw runtime_error("unexpected contour case");
                   break;
                 }
                 //=============================================================
@@ -733,7 +734,7 @@ struct contour_builder_t {
   void add_segment(const coords_t& a, const coords_t& b) {
     list<coords_list_t>::iterator itSeqA = _sequences.end();
     list<coords_list_t>::iterator itSeqB = _sequences.end();
-    bool prependA, prependB;
+    bool prependA(false), prependB(false);
 
     _segments++;
     for (auto seqIt = _sequences.begin(); seqIt != _sequences.end(); seqIt++) {
