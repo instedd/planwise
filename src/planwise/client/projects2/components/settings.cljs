@@ -35,6 +35,21 @@
                      attrs)]
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
+;; <div class="mdc-text-field">
+;;  <input type="text" id="my-text-field" class="mdc-text-field__input">
+;;  <label class="mdc-floating-label" for="my-text-field">Hint text</label>
+;;  <div class="mdc-line-ripple"></div>
+;; </div>
+
+(defn text-field
+  [{:keys [label value] :as props}]
+  [:div.mdc-text-field
+   [:input#my-text-field.mdc-text-field__input props]
+   [:label.mdc-floating-label {:for "my-text-field"
+            :class (when-not (blank? (str value)) "mdc-floating-label--float-above")}
+    label]
+   [:div.mdc-line-ripple]])
+
 (defn- current-project-input
   ([label path transform]
    (current-project-input label path transform {:disabled false}))
@@ -42,11 +57,11 @@
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
          change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value transform)])]
-     [m/TextField {:type      "text"
-                   :label     label
-                   :on-change change-fn
-                   :value     value
-                   :disabled  disabled}])))
+     [text-field {:type      "text"
+                  :label     label
+                  :on-change change-fn
+                  :value     value
+                  :disabled  disabled}])))
 
 (defn- project-start-button
   [_ project]
