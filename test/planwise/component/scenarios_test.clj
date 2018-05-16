@@ -48,7 +48,9 @@
   ([data]
    (test-system/config
     {:planwise.test/fixtures       {:fixtures data}
-     :planwise.component/projects2 {:db (ig/ref :duct.database/sql)}
+     :planwise.component/datasets2 {:db (ig/ref :duct.database/sql)}
+     :planwise.component/projects2 {:db (ig/ref :duct.database/sql)
+                                    :datasets2 (ig/ref :planwise.component/datasets2)}
      :planwise.component/scenarios {:db (ig/ref :duct.database/sql)
                                     :jobrunner (stub jobrunner/JobRunner
                                                      {:queue-job :enqueued})}})))

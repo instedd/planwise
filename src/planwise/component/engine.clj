@@ -4,6 +4,7 @@
             [planwise.boundary.datasets2 :as datasets2]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
+            [clojure.string :refer [join]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
             [integrant.core :as ig]
@@ -43,11 +44,10 @@
         tags             (get-in config [:sites :tags])
         filter-options   {:region-id          region-id
                           :coverage-algorithm coverage-algorithm
-                          :coverage-options   coverage-options}
+                          :coverage-options   coverage-options
+                          :tags tags}
         sites            (datasets2/get-sites-with-coverage-in-region datasets2 dataset-id version filter-options)]
     (->> sites
-         ;; FIXME: Disable until #392 is merged
-         #_(datasets2/filter-sites-by-tags tags)
          (map #(select-keys % [:id :capacity :raster]))
          (sort-by :capacity)
          reverse)))

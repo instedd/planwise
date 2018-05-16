@@ -85,6 +85,13 @@
                     :on-change #(reset! value (-> % .-target .-value))
                     :value @value}])))
 
+(defn- count-sites
+  [tags {:keys [dataset-id dataset-sites region-id]}]
+  (let [{:keys [total filtered]} dataset-sites]
+    (cond (nil? region-id) [:p "Select region first."]
+          (nil? dataset-id) [:p "Select dataset first."]
+          :else [:p "Selected sites: " filtered " / " total])))
+
 (defn- section-header
   [number title]
   [:div {:class-name "step-header"}
@@ -130,7 +137,8 @@
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
 
           (when-not read-only [tag-input])
-          [:label "Tags: " [tag-set @tags read-only]]]
+          [:label "Tags: " [tag-set @tags read-only]]
+          [count-sites @tags @current-project]]
 
          [:section {:class-name "project-settings-section"}
           [section-header 4 "Coverage"]
