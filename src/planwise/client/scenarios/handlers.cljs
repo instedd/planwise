@@ -54,12 +54,11 @@
  (fn [{:keys [db]} [_ scenario]]
    (let [current-scenario (get-in db [:scenarios :current-scenario])
          should-update    (= (:id current-scenario) (:id scenario))]
-     (merge (cond
-              should-update {:db (-> db
-                                     (assoc-in [:scenarios :current-scenario]
-                                               (merge current-scenario (select-keys scenario demand-fields))))}
-              :else {})
-            (dispatch-track-demand-information-if-needed scenario)))))
+     (if should-update
+       (merge {:db (-> db (assoc-in [:scenarios :current-scenario]
+                                    (merge current-scenario (select-keys scenario demand-fields))))}
+              (dispatch-track-demand-information-if-needed scenario))
+       {}))))
 
 (rf/reg-event-fx
  :scenarios/track-demand-information
@@ -88,6 +87,12 @@
    {:dispatch [:scenarios/invalidate-scenarios]
     :api  (assoc (api/copy-scenario id)
                  :on-success [:scenarios/load-scenario])}))
+
+(rf/reg-event-db
+ :scenarios/clear-current-scenario
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :current-scenario nil)))
 
 ;; Editing scenario
 

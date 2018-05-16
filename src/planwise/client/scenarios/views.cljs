@@ -125,16 +125,23 @@
        [edit/rename-scenario-dialog]
        [edit/changeset-dialog current-scenario]])))
 
-(defn scenarios-page []
+(defn scenarios-page
+  []
   (let [page-params (subscribe [:page-params])
         state (subscribe [:scenarios/view-state])
         current-scenario (subscribe [:scenarios/current-scenario])
         current-project  (subscribe [:projects2/current-project])]
-    (fn []
-      (let [{:keys [id project-id]} @page-params]
-        (cond
-          (not= id (:id @current-scenario)) (dispatch [:scenarios/get-scenario id])
-          (not= project-id (:id @current-project)) (dispatch [:projects2/get-project project-id])
-          (not= project-id (:project-id @current-scenario)) (dispatch [:scenarios/scenario-not-found])
-          :else
-          [display-current-scenario @current-project @current-scenario])))))
+    (r/create-class
+     {:reagent-render
+      (fn []
+        (let [{:keys [id project-id]} @page-params]
+          (cond
+            (not= id (:id @current-scenario)) (dispatch [:scenarios/get-scenario id])
+            (not= project-id (:id @current-project)) (dispatch [:projects2/get-project project-id])
+            (not= project-id (:project-id @current-scenario)) (dispatch [:scenarios/scenario-not-found])
+            :else
+            [display-current-scenario @current-project @current-scenario])))
+
+      :component-will-unmount
+      (fn []
+        (dispatch [:scenarios/clear-current-scenario]))})))
