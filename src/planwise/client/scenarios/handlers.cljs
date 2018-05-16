@@ -114,7 +114,8 @@
  (fn [{:keys [db]} [_]]
    (let [name (get-in db [:rename-dialog :value])
          current-scenario (assoc (:current-scenario db) :name name)]
-     {:api  (api/update-scenario (:id current-scenario) current-scenario)
+     {:api  (assoc (api/update-scenario (:id current-scenario) current-scenario)
+                   :on-success [:scenarios/invalidate-scenarios])
       :db   (-> db
                 ;; do not reset rename-dialog to nil or dialog animation after <enter> will fail
                 (assoc-in [:current-scenario :name] name)
