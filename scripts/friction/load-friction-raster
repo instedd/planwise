@@ -1,0 +1,52 @@
+#!/bin/sh
+
+set -euo pipefail
+
+DATA_PATH=${DATA_PATH:-data}
+OUTPUT_PATH=${DATA_PATH}/friction/regions
+export PGPASSWORD=$POSTGRES_PASSWORD;
+
+if [ ! -d $DATA_PATH ]; then
+    echo Data path ${DATA_PATH} does not exist
+    exit 1
+fi
+
+raster_file=
+while [ $# -gt 0 ]; do
+    case $1 in
+        -h|--help)
+            echo Usage: $0 raster_file
+            exit 0
+            ;;
+        *)
+            if [ ! -z "$raster_file" ]; then
+                echo Multiple file arguments specified
+                exit 1
+            fi
+            raster_file=$1
+            ;;
+    esac
+    shift
+done
+
+if [ -z "$raster_file" -o ! -f "$raster_file" ]; then
+    echo Friction raster file $raster_file does not exist
+    exit 1
+fi
+
+echo "Clipping friction raster to country-level regions (admin_level = 0)"
+echo "Using raster file ${raster_file}"
+
+mkdir -p $OUTPUT_PATH
+
+regions="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c 'SELECT id FROM regions WHERE admin_level = 0;')"
+
+for region in $regions; do
+    echo Clipping for region $region
+    rm -f $OUTPUT_PATH/$region.tif
+    gdalwarp -co COMPRESS=DEFLATE \
+             -dstnodata -3.4e+38 \
+             -crop_to_cutline -csql "SELECT the_geom FROM regions WHERE id = ${region}" \
+             -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+             $raster_file $OUTPUT_PATH/$region.tif
+done
