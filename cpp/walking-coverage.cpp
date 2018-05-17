@@ -126,30 +126,30 @@ public:
 // ===== Utility functions
 
 static void
-show_raster_info(const raster_t &raster)
+show_raster_info(const raster_t &raster, std::ostream& out)
 {
-  cout << "Driver: " << raster.driver()->GetDescription()
-       << "/" << raster.driver()->GetMetadataItem(GDAL_DMD_LONGNAME)
-       << endl;
+  out << "Driver: " << raster.driver()->GetDescription()
+      << "/" << raster.driver()->GetMetadataItem(GDAL_DMD_LONGNAME)
+      << endl;
 
-  cout << "Raster size: " << raster.x_size()
-       << "x" << raster.y_size()
-       << "x" << raster.band_count()
-       << endl;
+  out << "Raster size: " << raster.x_size()
+      << "x" << raster.y_size()
+      << "x" << raster.band_count()
+      << endl;
 
   if (raster.dataset()->GetProjectionRef() != NULL) {
-    cout << "Projection: " << raster.dataset()->GetProjectionRef() << endl;
+    out << "Projection: " << raster.dataset()->GetProjectionRef() << endl;
   } else {
-    cout << "No projection data" << endl;
+    out << "No projection data" << endl;
   }
 
   coords_t tl(raster.top_left_coords());
-  cout.precision(6);
-  cout << "Origin: " << fixed << tl << endl;
-  cout << "Pixel size: " << fixed << raster.pixel_width() << "," << raster.pixel_height() << endl;
-  cout << "Aproximate pixel size (meters): " << fixed
-       << raster.pixel_width_meters() << ","
-       << raster.pixel_height_meters() << endl;
+  out.precision(6);
+  out << "Origin: " << fixed << tl << endl;
+  out << "Pixel size: " << fixed << raster.pixel_width() << "," << raster.pixel_height() << endl;
+  out << "Aproximate pixel size (meters): " << fixed
+      << raster.pixel_width_meters() << ","
+      << raster.pixel_height_meters() << endl;
 }
 
 
@@ -185,8 +185,8 @@ parse_coordinates(const string& s)
 struct run_options_t {
   string   _rasterPath;
   string   _outputCostPath;
-  string   _outputIsochronePath;
   coords_t _origin;
+  bool     _verbose;
   int      _maxTimeCost;    // defaults to 180 minutes = 3 hours
   float    _minFriction;    // defaults to 0.01 min/m = 6 km/h (ie. walking speed)
 };
@@ -201,10 +201,10 @@ parse_command_line(int argc, char *argv[], run_options_t& options)
   po::options_description desc("Options");
   desc.add_options()
     ("help,h", "Print help message")
-    ("friction-raster,r", po::value<string>(), "input friction raster file")
-    ("cost-raster,c", po::value<string>(), "output cost raster file")
-    ("isochrone-vector,i", po::value<string>(), "output isochrone vector file")
-    ("origin,o", po::value<string>(), "coordinates of origin given in lng,lat format")
+    ("verbose,v", "Print debugging information")
+    ("input-friction-raster,i", po::value<string>(), "input friction raster file")
+    ("output-cost-raster,o", po::value<string>(), "output cost raster file")
+    ("origin,g", po::value<string>(), "coordinates of origin given in lng,lat format")
     ("max-time,m", po::value<int>()->default_value(180), "maximum time given in minutes")
     ("min-friction,f", po::value<float>()->default_value(0.01), "minimum friction to consider in min/m");
 
@@ -218,13 +218,15 @@ parse_command_line(int argc, char *argv[], run_options_t& options)
 
     if (vm.count("help")) {
       cout << "Usage:" << endl
-           << "  " << appName << " [options]" << endl
-           << desc << endl;
+           << "  " << appName << " [options]" << endl << endl
+           << "Outputs the WKT of the coverage polygon from the given origin, "
+           << "computed using the friction raster, with maximum travel time using a "
+           << "minimum value of friction" << endl << desc << endl;
       return true;
     }
 
-    if (!vm.count("friction-raster")) {
-      cerr << "ERROR: missing friction raster option" << endl;
+    if (!vm.count("input-friction-raster")) {
+      cerr << "ERROR: missing input friction raster option" << endl;
       cerr << "Run with --help for available options" << endl;
       return false;
     }
@@ -235,16 +237,16 @@ parse_command_line(int argc, char *argv[], run_options_t& options)
       return false;
     }
 
-    options._rasterPath = vm["friction-raster"].as<string>();
+    options._rasterPath = vm["input-friction-raster"].as<string>();
     options._origin = parse_coordinates(vm["origin"].as<string>());
     options._maxTimeCost = vm["max-time"].as<int>();
     options._minFriction = vm["min-friction"].as<float>();
-
-    if (vm.count("cost-raster")) {
-      options._outputCostPath = vm["cost-raster"].as<string>();
+    if (vm.count("verbose")) {
+      options._verbose = true;
     }
-    if (vm.count("isochrone-vector")) {
-      options._outputIsochronePath = vm["isochrone-vector"].as<string>();
+
+    if (vm.count("output-cost-raster")) {
+      options._outputCostPath = vm["output-cost-raster"].as<string>();
     }
 
   } catch (exception& e) {
@@ -805,9 +807,6 @@ struct contour_builder_t {
   }
 
   OGRGeometry *build() {
-    cout << "No. of segments " << _segments << endl;
-    cout << "No. of sequences " << _sequences.size() << endl;
-
     // TODO: identify the outer ring and add it first to the polygon
 
     OGRPolygon *result = new OGRPolygon();
@@ -864,45 +863,6 @@ extract_isochrone(const float *data, int width, int height, const coords_t& topL
   return unique_ptr<OGRGeometry>(builder.build());
 }
 
-static void
-write_isochrone(const string& filename, OGRGeometry *isochrone)
-{
-  const char *pDriverName = "GeoJSON";
-  GDALDriver *pDriver = GetGDALDriverManager()->GetDriverByName(pDriverName);
-  if (pDriver == NULL) {
-    throw runtime_error("cannot get GeoJSON driver");
-  }
-
-  pDriver->Delete(filename.c_str());
-  GDALDataset *pDataSource = pDriver->Create(filename.c_str(), 0, 0, 0, GDT_Unknown, NULL);
-  if (pDataSource == NULL) {
-    throw runtime_error("cannot create output file");
-  }
-
-  OGRLayer *pLayer = pDataSource->CreateLayer("test", isochrone->getSpatialReference(), wkbMultiLineString, NULL);
-  if (pLayer == NULL) {
-    throw runtime_error("cannot create layer");
-  }
-
-  OGRFieldDefn nameField("Name", OFTString);
-  nameField.SetWidth(64);
-  if (pLayer->CreateField(&nameField) != OGRERR_NONE) {
-    throw runtime_error("cannot create field");
-  }
-
-  OGRFeature *pFeature;
-  pFeature = OGRFeature::CreateFeature(pLayer->GetLayerDefn());
-  pFeature->SetField("Name", "isochrone");
-  pFeature->SetGeometry(isochrone);
-
-  if (pLayer->CreateFeature(pFeature) != OGRERR_NONE) {
-    throw runtime_error("cannot write isochrone feature");
-  }
-  OGRFeature::DestroyFeature(pFeature);
-
-  GDALClose(pDataSource);
-}
-
 
 // ======== Main entry point
 
@@ -941,21 +901,23 @@ int main(int argc, char *argv[])
     return ERROR_OTHER;
   }
 
-  cout << "Using friction raster file: " << options._rasterPath << endl;
+  if (options._verbose) {
+    cerr << "Using friction raster file: " << options._rasterPath << endl;
 
-  show_raster_info(frictionRaster);
+    show_raster_info(frictionRaster, cerr);
 
-  cout << "Using origin at " << options._origin << endl;
+    cerr << "Using origin at " << options._origin << endl;
+  }
 
-  if (frictionRaster.contains(options._origin)) {
-    cout << "OK" << endl;
-  } else {
+  if (!frictionRaster.contains(options._origin)) {
     cerr << "ERROR: origin out of raster boundaries" << endl;
     return ERROR_OTHER;
   }
 
   pixel_coords_t pixelOrigin(frictionRaster.pixel_coords(options._origin));
-  cout << "Pixel origin at " << pixelOrigin << endl;
+  if (options._verbose) {
+    cerr << "Pixel origin at " << pixelOrigin << endl;
+  }
 
   int width, height;
   unique_ptr<float[]> friction = load_friction_data(frictionRaster.dataset(), 1, &width, &height);
@@ -972,18 +934,17 @@ int main(int argc, char *argv[])
 
   if (!options._outputCostPath.empty()) {
     write_cost_layer(options._outputCostPath, frictionRaster.dataset(), cost.get(), width, height);
-    cout << "Wrote " << options._outputCostPath << endl;
+    if (options._verbose) {
+      cerr << "Wrote " << options._outputCostPath << endl;
+    }
   }
 
-  if (!options._outputIsochronePath.empty()) {
-    unique_ptr<OGRGeometry> isochrone = extract_isochrone(cost.get(), width, height, frictionRaster.top_left_coords(), frictionRaster.bottom_right_coords(), maxTimeCost);
-
-    OGRSpatialReference *spatialRef = new OGRSpatialReference(frictionRaster.dataset()->GetProjectionRef());
-    isochrone->assignSpatialReference(spatialRef);
-
-    write_isochrone(options._outputIsochronePath, isochrone.get());
-    cout << "Wrote " << options._outputIsochronePath << endl;
-  }
+  // print the coverage WKT
+  unique_ptr<OGRGeometry> isochrone = extract_isochrone(cost.get(), width, height, frictionRaster.top_left_coords(), frictionRaster.bottom_right_coords(), maxTimeCost);
+  char *wkt = nullptr;
+  isochrone->exportToWkt(&wkt);
+  cout << wkt << endl;
+  CPLFree(wkt);
 
   return SUCCESS;
 }
