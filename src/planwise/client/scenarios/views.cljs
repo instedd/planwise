@@ -73,9 +73,9 @@
      [:small (str "Initial " unit-name " coverage")]
      (cond
        (= "pending" state) "loading..."
-       :else (str demand-coverage " (" (format-percentage demand-coverage source-demand) ")"))]
+       :else (str (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]
     [:p {:class-name "grey-text"}
-     (str "of a total of " source-demand)]]])
+     (str "of a total of " (utils/format-number source-demand))]]])
 
 (defn side-panel-view
   [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
@@ -93,11 +93,11 @@
     [:p {:class-name "grey-text"}
      (cond
        (= "pending" state) "to a total of"
-       :else (str "to a total of " demand-coverage " (" (format-percentage demand-coverage source-demand) ")"))]]
+       :else (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
    [:div {:class-name "section"}
     [:h1 {:class-name "large"}
      [:small "Investment required"]
-     "K " investment]]
+     "K " (utils/format-number investment)]]
    [:hr]
    [m/Fab {:class-name "btn-floating"
            :on-click #(dispatch [:scenarios/adding-new-site])} "domain"]])

@@ -40,8 +40,8 @@
    [:td {:class "col1"} (cond (= state "pending") [create-chip state]
                               (not= label "initial") [create-chip label])]
    [:td {:class "col2"} name]
-   [:td {:class "col3"} demand-coverage]
-   [:td {:class "col4"} investment]
+   [:td {:class "col3"} (utils/format-number demand-coverage)]
+   [:td {:class "col4"} (utils/format-number investment)]
    [:td {:class "col5"} changeset-summary]])
 
 (defn- scenarios-list
