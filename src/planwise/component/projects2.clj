@@ -49,8 +49,8 @@
 
 (defn start-project
   [store project-id]
+  (db-start-project! (get-db store) {:id project-id})
   (let [project (get-project store project-id)]
-    (db-start-project! (get-db store) {:id project-id})
     (scenarios/create-initial-scenario (:scenarios store) project)))
 
 (defn reset-project

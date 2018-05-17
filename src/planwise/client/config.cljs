@@ -1,4 +1,5 @@
-(ns planwise.client.config)
+(ns planwise.client.config
+  (:require [planwise.model.project]))
 
 (def global-config
   (aget js/window "_CONFIG"))

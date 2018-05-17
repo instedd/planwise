@@ -8,7 +8,6 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.model.projects2 :as model]
-            [planwise.model.starting-project :as project-start-model]
             [planwise.boundary.datasets2 :as datasets2]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.scenarios :as scenarios]))
@@ -62,12 +61,14 @@
            id            (Integer. id)
            project       (filter-owned-by (projects2/get-project service id) user-id)]
        ;; TODO validate permission
-       (if (nil? project)
-         (not-found {:error "Project not found"})
-         (do
-           (assert (s/valid? ::project-start-model/project-starting project) "Invalid starting project")
-           (projects2/start-project service id)
-           (response (api-project (projects2/get-project service id)))))))
+       (cond
+         (nil? project) (not-found {:error "Project not found"})
+         (not (s/valid? :planwise.model.project/starting project)) ({:status  400
+                                                                     :headers {}
+                                                                     :body    {:error "Invalid starting project"}})
+         :else (do
+                 (projects2/start-project service id)
+                 (response (api-project (projects2/get-project service id)))))))
 
    (POST "/:id/reset" [id :as request]
      (let [user-id       (util/request-user-id request)

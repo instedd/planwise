@@ -1,4 +1,4 @@
-(ns planwise.model.starting-project
+(ns planwise.model.project
   (:require [clojure.spec.alpha :as s]
             [clojure.string :refer [blank?]]))
 
@@ -22,7 +22,15 @@
 (s/def ::sites (s/keys :req-un [::capacity]))
 
 ;; Coverage
-(s/def ::filter-options map?)
+(s/def ::driving-time number?)
+(s/def ::walking-time number?)
+
+(s/def ::driving-options (s/keys :req-un [::driving-time]))
+(s/def ::walking-options (s/keys :req-un [::walking-time]))
+;; example:
+;; (s/def ::public-transport-options (s/keys :req-un [::walking-time ::transport-type ::total-time]))
+(s/def ::filter-options (s/or :driving-options ::driving-options
+                              :walking-options ::walking-options))
 (s/def ::coverage (s/keys :req-un [::filter-options]))
 
 ;; Actions
@@ -33,4 +41,4 @@
 (s/def ::config (s/keys :req-un [::demographics ::actions ::coverage ::sites]))
 
 ;; Project Starting
-(s/def ::project-starting (s/keys :req-un [::id ::owner-id ::name ::config ::dataset-id ::population-source-id ::region-id]))
+(s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::dataset-id ::population-source-id ::region-id]))

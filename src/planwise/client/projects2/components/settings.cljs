@@ -16,7 +16,6 @@
             [planwise.client.ui.filter-select :as filter-select]
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
-            [planwise.model.starting-project :as project-start-model]
             [clojure.spec.alpha :as s]))
 
 ;;------------------------------------------------------------------------
@@ -55,7 +54,7 @@
   [m/Button {:id         "start-project"
              :type       "button"
              :unelevated "unelevated"
-             :disabled   (not (s/valid? ::project-start-model/project-starting project))
+             :disabled   (not (s/valid? :planwise.model.project/starting project))
              :on-click   (utils/prevent-default #(dispatch [:projects2/start-project (:id project)]))}
    (if (= (keyword (:state project)) :started) "Started ..." "Start")])
 

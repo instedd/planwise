@@ -5,7 +5,8 @@
             [duct.compiler.sass]
             [planwise.sass]
             [clojure.java.io :as io]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [planwise.model.project]))
 
 (defmethod env/coerce 'Bool [x _]
   (Boolean/valueOf x))
