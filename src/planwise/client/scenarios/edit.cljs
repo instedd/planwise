@@ -29,7 +29,7 @@
 (defn input
   [{:keys [value onchange-path]}]
   [common2/text-field {:type "number"
-                       :on-change  #(dispatch [:scenarios/save-key onchange-path (-> % .-target .-value)])
+                       :on-change  #(dispatch [:scenarios/save-key onchange-path (-> % .-target .-value int)])
                        :value value}])
 
 (defn changeset-dialog-content

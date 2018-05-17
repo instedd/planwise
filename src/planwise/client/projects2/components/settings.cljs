@@ -36,7 +36,8 @@
   ([label path type {:keys [disabled]}]
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
-         change-fn       #(rf/dispatch-sync [:projects2/save-key path (-> % .-target .-value)])]
+         change-fn       (fn [e] (let [val (-> e .-target .-value)]
+                                   (rf/dispatch-sync [:projects2/save-key path (if (= type "number") (int val) val)])))]
      [common2/text-field {:type      type
                           :label     label
                           :on-change change-fn
