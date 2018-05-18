@@ -3,6 +3,7 @@
             [reagent.core :as r]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
+            [planwise.client.components.common2 :as common2]
             [planwise.client.datasets2.db :as db]
             [planwise.client.routes :as routes]
             [clojure.string :as str]
@@ -35,10 +36,10 @@
        [m/DialogHeaderTitle "New dataset"]]
       [m/DialogBody
        [:form.vertical
-        [m/TextField {:label "Name"
-                      :value @name
-                      :on-change #(rf/dispatch [:datasets2/new-dataset-update
-                                                :name (-> % .-target .-value)])}]
+        [common2/text-field {:label "Name"
+                             :value @name
+                             :on-change #(rf/dispatch [:datasets2/new-dataset-update
+                                                       :name (-> % .-target .-value)])}]
         [:label.file-input-wrapper
          [:div "Import sites from CSV"]
          [:input {:id "file-upload"

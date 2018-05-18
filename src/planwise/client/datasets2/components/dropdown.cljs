@@ -11,10 +11,10 @@
 
 (defn- disabled-input-component
   [{:keys [label value options empty-label]}]
-  [m/TextField {:type     "text"
-                :label    label
-                :value    (utils/label-from-options options (str value) empty-label)
-                :disabled true}])
+  [common2/text-field {:type     "text"
+                       :label    label
+                       :value    (utils/label-from-options options (str value) empty-label)
+                       :disabled true}])
 
 (defn- datasets-select-component
   [{:keys [label value options empty-label on-change]}]

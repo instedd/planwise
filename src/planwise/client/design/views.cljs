@@ -6,6 +6,7 @@
             [planwise.client.mapping :as mapping]
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]
+            [planwise.client.components.common2 :as common2]
             [planwise.client.ui.common :as ui]))
 
 (def dialog-open (r/atom false))
@@ -50,9 +51,9 @@
      [m/GridCell {:span 6}
       [:form.vertical
        [:h2 "Goal"]
-       [m/TextField {:label "Lorem"}]
+       [common2/text-field {:label "Lorem"}]
        [m/TextFieldHelperText {} "Enter the goal for this project"]
-       [m/TextField {:label "Ipsum"}]
+       [common2/text-field {:label "Ipsum"}]
        [m/Checkbox {} "dolor sit amet"]
        [m/Select {:label "Foo"
                   :options ["bar" "baz" "qux"]}]]]
@@ -109,12 +110,12 @@
        [:div {:style {:padding "0 15px"}}
         [:h1 "Demo Map"]
         [:form.vertical {:on-submit (utils/prevent-default (fn [_] (reset! map-options (build-options))))}
-         [m/TextField {:label     "Layer name"
-                       :value     @layer-name
-                       :on-change #(reset! layer-name (-> % .-target .-value))}]
-         [m/TextField {:label     "Map DATAFILE"
-                       :value     @map-datafile
-                       :on-change #(reset! map-datafile (-> % .-target .-value))}]
+         [common2/text-field {:label     "Layer name"
+                              :value     @layer-name
+                              :on-change #(reset! layer-name (-> % .-target .-value))}]
+         [common2/text-field {:label     "Map DATAFILE"
+                              :value     @map-datafile
+                              :on-change #(reset! map-datafile (-> % .-target .-value))}]
          [m/Button "Apply"]]]])))
 
 (defn demo-scenario

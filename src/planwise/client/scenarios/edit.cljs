@@ -7,14 +7,10 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.scenarios.db :as db]
             [planwise.client.utils :as utils]
+            [planwise.client.components.common2 :as common2]
             [planwise.client.routes :as routes]
             [clojure.string :as str]
             [planwise.client.ui.rmwc :as m]))
-
-(defn- valid-input
-  [inp]
-  (let [value (js/parseInt inp)]
-    (if (and (number? value) (not (js/isNaN value))) value nil)))
 
 (defn rename-scenario-dialog
   []
@@ -23,18 +19,18 @@
     (fn []
       (dialog {:open? (= @view-state :rename-dialog)
                :title "Rename scenario"
-               :content  [m/TextField {:label "Name"
-                                       :value (str (:value @rename-dialog))
-                                       :on-change #(dispatch [:scenarios/save-key
-                                                              [:rename-dialog :value] (-> % .-target .-value)])}]
+               :content  [common2/text-field {:label "Name"
+                                              :value (str (:value @rename-dialog))
+                                              :on-change #(dispatch [:scenarios/save-key
+                                                                     [:rename-dialog :value] (-> % .-target .-value)])}]
                :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
                :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
 
 (defn input
   [{:keys [value onchange-path]}]
-  [m/TextField {:type "text"
-                :on-change  #(dispatch [:scenarios/save-key onchange-path (valid-input (-> % .-target .-value))])
-                :value value}])
+  [common2/text-field {:type "number"
+                       :on-change  #(dispatch [:scenarios/save-key onchange-path (-> % .-target .-value int)])
+                       :value value}])
 
 (defn changeset-dialog-content
   [{:keys [investment capacity]}]
