@@ -815,10 +815,17 @@ struct contour_builder_t {
       for (auto point : seq) {
         ring->addPoint(point.first, point.second);
       }
+      // this removes some extraneous artifacts from the contour algorithm which
+      // can later produce problems with PostGIS; a closed polygon *must* consist
+      // of at least 4 points
+      ring->closeRings();
+      if (ring->getNumPoints() < 4) {
+        delete ring;
+        continue;
+      }
       result->addRing(ring);
     }
 
-    result->closeRings();
     return result;
   }
 };
