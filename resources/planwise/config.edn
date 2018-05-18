@@ -161,7 +161,8 @@
   :jwe-secret           #ig/ref :planwise.auth/jwe-secret}
 
  :planwise.component/coverage
- {:db          #ig/ref :duct.database/sql}
+ {:db          #ig/ref :duct.database/sql
+  :runner      #ig/ref :planwise.component/runner}
 
  :planwise.component/datasets
  {:db          #ig/ref :duct.database/sql}

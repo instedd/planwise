@@ -3,6 +3,7 @@
             [planwise.component.coverage.pgrouting :as pgrouting]
             [planwise.component.coverage.simple :as simple]
             [planwise.component.coverage.rasterize :as rasterize]
+            [planwise.component.coverage.friction :as friction]
             [planwise.util.pg :as pg]
             [integrant.core :as ig]
             [clojure.spec.alpha :as s]
@@ -22,11 +23,16 @@
 (s/def ::distance #{5 10 20 50 100})
 (s/def ::simple-buffer-criteria (s/keys :req-un [::distance]))
 
+(s/def ::walking-time #{60 120 180})
+(s/def ::walking-friction-criteria (s/keys :req-un [::walking-time]))
+
 (defmulti criteria-algo :algorithm)
 (defmethod criteria-algo :pgrouting-alpha [_]
   (s/merge ::base-criteria ::pgrouting-alpha-criteria))
 (defmethod criteria-algo :simple-buffer [_]
   (s/merge ::base-criteria ::simple-buffer-criteria))
+(defmethod criteria-algo :walking-friction [_]
+  (s/merge ::base-criteria ::walking-friction-criteria))
 
 (s/def ::criteria (s/multi-spec criteria-algo :algorithm))
 
@@ -43,6 +49,15 @@
                                            {:value 60  :label "1 hour"}
                                            {:value 90  :label "1:30 hours"}
                                            {:value 120 :label "2 hours"}]}}}
+
+   :walking-friction
+   {:label       "Walking distance"
+    :description "Computes reachable isochrone using a friction raster layer"
+    :criteria    {:walking-time {:label   "Walking time"
+                                 :type    :enum
+                                 :options [{:value 60  :label "1 hour"}
+                                           {:value 120 :label "2 hours"}
+                                           {:value 180 :label "3 hours"}]}}}
 
    :simple-buffer
    {:label       "Distance buffer"
@@ -83,11 +98,20 @@
       "ok" (:polygon result)
       (throw (RuntimeException. (str "Simple buffer coverage computation failed: " (:result result)))))))
 
+(defmethod compute-coverage-polygon :walking-friction
+  [{:keys [db runner]} coords criteria]
+  (let [db-spec         (:spec db)
+        friction-raster (friction/find-friction-raster db-spec coords)
+        max-time        (:walking-time criteria)]
+    (if friction-raster
+      (friction/compute-polygon runner friction-raster coords max-time)
+      (throw (ex-info "Cannot find a friction raster for the origin coordinates " {:coords coords})))))
+
 (def default-grid-align-options
   {:ref-coords {:lat 0 :lon 0}
    :resolution {:x-res 1/1200 :y-res 1/1200}})
 
-(defrecord CoverageService [db]
+(defrecord CoverageService [db runner]
   boundary/CoverageService
   (supported-algorithms [this]
     supported-algorithms)
