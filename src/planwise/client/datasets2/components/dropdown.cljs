@@ -28,7 +28,7 @@
   [{:keys [label value on-change disabled?]}]
   (let [list      (subscribe [:datasets2/list])
         options   (subscribe [:datasets2/dropdown-options])
-        component (if disabled?
+        component (if (or disabled? (empty? @options))
                     disabled-input-component
                     datasets-select-component)]
     (when (asdf/should-reload? @list)
