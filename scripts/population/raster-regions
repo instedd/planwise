@@ -25,12 +25,12 @@ fi
 
 echo "   -> Rasterizing regions"
 
-PARAM_COUNTRY=$1
+PARAM_COUNTRY_NAME=$1
 PARAM_ID_SOURCE=$2
 
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 
-REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, country FROM regions WHERE country = '$PARAM_COUNTRY';")
+REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id FROM regions WHERE country = '$PARAM_COUNTRY_NAME';")
 echo "   -> Regions to process: $(echo $REGIONS | wc -w | tr -d '[[:space:]]')"
 
 SOURCE_ROW=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, name, tif_file FROM population_sources WHERE id = '$PARAM_ID_SOURCE';")
@@ -44,11 +44,8 @@ fi
 echo " found!"
 
 mkdir -p ${DATA_PATH}/regions/
-REGIONS="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c 'SELECT id, country FROM regions;')"
 
-for region in $REGIONS; do
-  id=`echo $region | cut -d \| -f 1`
-  country=`echo $region | cut -d \| -f 2`
+for region_id in $REGIONS; do
   RASTER=$DATA_PATH/$RASTER_FILENAME
 
   if [[ ! -e $RASTER ]]; then
@@ -58,12 +55,12 @@ for region in $REGIONS; do
 
   resolution=$(target_resolution $RASTER)
 
-  echo "   -> Rasterizing ${id}"
-  TARGET=${DATA_PATH}/regions/${id}.tif
+  echo "   -> Rasterizing ${region_id}"
+  TARGET=${DATA_PATH}/regions/${region_id}.tif
   if [[ ! -e $TARGET ]]; then
     gdal_rasterize -q -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
       -ot byte -a_nodata 0 -burn 255 \
-      -sql "SELECT the_geom FROM regions WHERE id = ${id}" \
+      -sql "SELECT the_geom FROM regions WHERE id = ${region_id}" \
       -co "NBITS=1" -co "COMPRESS=CCITTFAX4" \
       -tr $resolution \
       -tap \
