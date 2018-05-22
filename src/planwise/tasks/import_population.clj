@@ -14,6 +14,10 @@
   [table values]
   (jdbc/insert! pg-db table values))
 
+(defn sql-find
+  [table values]
+  (jdbc/find-by-keys pg-db table values))
+
 (defn run-script
   [script-with-options]
   (comment (println script-with-options))
@@ -38,7 +42,13 @@
 
 (defn add-population-source
   [name filename]
-  (sql-insert! :population_sources {:name name :tif_file filename}))
+  (let [source (sql-find :population_sources {:tif_file filename})]
+    (if source
+      (do
+        (println source)
+        (println "tif-file exists!")
+        source)
+      (sql-insert! :population_sources {:name name :tif_file filename}))))
 
 (defn add-country-regions
   [country]

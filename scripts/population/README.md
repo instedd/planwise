@@ -20,6 +20,11 @@ $ docker-compose exec app bash
 /app$ lein import-population "ury_2015" "URY_ppp_v2b_2015.tif" "URY"
 ```
 
+_Note:_
+```
+docker-compose -f ./docker-compose.yml up app
+```
+
 ### Verbose option
 ```sh
 /app$ lein import-population "ury_2015" "URY_ppp_v2b_2015.tif" "URY" --verbose

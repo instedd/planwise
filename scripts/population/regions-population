@@ -47,55 +47,211 @@ gdaladdo $RASTER -ro --config COMPRESS_OVERVIEW DEFLATE -r average 2 4 8 16 32 6
 mkdir -p ${DATA_PATH}/populations/data/${PARAM_ID_SOURCE}
 mkdir -p ${DATA_PATH}/populations/maps/${PARAM_ID_SOURCE}
 
+
+function already-registered-population {
+  ID=$1
+  SOURCE_ID=$2
+
+  # check if population data for region was already registered
+  POPULATIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, region_id FROM populations WHERE region_id='$ID' AND source_id='$SOURCE_ID';")
+  POPULATIONS_LEN=$(echo $POPULATIONS | wc -w | tr -d '[[:space:]]')
+  if [ ${POPULATIONS_LEN} -gt 0 ]; then
+    #echo "   -> Population for region $ID (source $PARAM_ID_SOURCE) already registered."
+    echo 1
+  else
+    echo 0
+  fi
+}
+
+function insert-values-in-db {
+  ID=$1
+  SOURCE_ID=$2
+  TOTAL_POPULATION=$3
+  MAX_POPULATION=$4
+  PIXEL_AREA_M2=$5
+
+  psql -d $POSTGRES_DB -U $POSTGRES_USER \
+       -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+          INSERT INTO "populations" (source_id, region_id, total_population, max_population, raster_pixel_area)
+            VALUES (${SOURCE_ID}, ${ID}, ${TOTAL_POPULATION}, ${MAX_POPULATION}, ${PIXEL_AREA_M2});
+SQL_SCRIPT
+
+}
+
+function add-if-not-registered {
+  ID=$1
+  SOURCE_ID=$2
+  DATA=$3
+
+  IS_REGISTERED=$(already-registered-population ${ID} ${SOURCE_ID})
+  if [[ $IS_REGISTERED -eq 0 ]]; then #not registered
+    TOTAL_POPULATION=`gdalinfo $DATA | grep POPULATION_SUM | cut -d = -f2`
+    MAX_POPULATION=`gdalinfo $DATA | grep POPULATION_MAX | cut -d = -f2`
+    PIXEL_AREA_M2=`gdalinfo $DATA | grep PIXEL_AREA_M2 | cut -d = -f2`
+
+    insert-values-in-db $ID $SOURCE_ID $DATA $TOTAL_POPULATION $MAX_POPULATION $PIXEL_AREA_M2
+  else
+    echo "      -> Population for region $ID (source $SOURCE_ID) already registered in DB."
+  fi
+}
+
+function update-or-add {
+  ID=$1
+  SOURCE_ID=$2
+  DATA=$3
+
+  #
+  TOTAL_POPULATION=`gdalinfo $DATA | grep POPULATION_SUM | cut -d = -f2`
+  MAX_POPULATION=`gdalinfo $DATA | grep POPULATION_MAX | cut -d = -f2`
+  PIXEL_AREA_M2=`gdalinfo $DATA | grep PIXEL_AREA_M2 | cut -d = -f2`
+
+  IS_REGISTERED=$(already-registered-population ${ID} ${SOURCE_ID})
+  if [[ $IS_REGISTERED -eq 1 ]]; then
+    echo "      -> Population for region $ID (source $PARAM_ID_SOURCE) already registered."
+    #TODO:
+    #update
+  else
+    #insert
+    insert-values-in-db $ID $SOURCE_ID $DATA $TOTAL_POPULATION $MAX_POPULATION $PIXEL_AREA_M2
+  fi
+}
+
+
 for region in $REGIONS; do
   ID=`echo $region | cut -d \| -f 1`
 
   DATA_TARGET=${DATA_PATH}/populations/data/${PARAM_ID_SOURCE}/${ID}.tif
   VIZ_TARGET=${DATA_PATH}/populations/maps/${PARAM_ID_SOURCE}/${ID}.tif
 
-  if [[ ! -e $DATA_TARGET || ! -e $VIZ_TARGET || "`gdalinfo $DATA_TARGET | grep -e POPULATION_SUM -e POPULATION_MAX -e PIXEL_AREA_M2 | wc -l`" -ne 3 ]]; then
+  echo "   -> region-id: $ID; source-id: $PARAM_ID_SOURCE"
 
-    resolution=$(target_resolution $RASTER)
-    echo "   -> Warping population for ${ID}"
-    gdalwarp -q \
-      -tap \
-      -tr $resolution \
-      -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
-      -crop_to_cutline \
-      -cutline PG:"dbname=${POSTGRES_DB} port=${POSTGRES_PORT} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
-      -csql "SELECT the_geom FROM regions WHERE id = ${ID};" \
-      $RASTER $DATA_TARGET
+  if [[ -e $DATA_TARGET && -e $VIZ_TARGET ]]; then
+    echo "      -> ${DATA_TARGET} and ${VIZ_TARGET} files already exist."
 
-    echo "   -> Aggregating population for ${ID}"
-    IFS=' ' read -a AGGREGATES <<< $(${BIN_PATH}/aggregate-population ${DATA_TARGET})
-    POPULATION_SUM=${AGGREGATES[0]}
-    POPULATION_MAX=${AGGREGATES[1]}
+    add-if-not-registered $ID $PARAM_ID_SOURCE $DATA_TARGET
 
-    echo "   -> Calculating pixel area for ${ID}"
+  else
+    echo "      -> ${DATA_TARGET} and ${VIZ_TARGET} files do not exist."
 
-    IFS=' ' read -a RET <<< $(${SCRIPT_PATH}/raster-pixel-size ${DATA_TARGET})
-    PIXEL_AREA_M2=${RET[0]}
-    SATURATION=${RET[1]}
+    #create files
+#    if [[ "`gdalinfo $DATA_TARGET | grep -e POPULATION_SUM -e POPULATION_MAX -e PIXEL_AREA_M2 | wc -l`" -ne 3 ]]; then
 
-    echo "   -> Normalizing raster file scale for ${ID}"
-    gdal_translate -q -ot Byte -scale 0 $SATURATION 0 255 $DATA_TARGET $VIZ_TARGET
+      resolution=$(target_resolution $RASTER)
+      echo "      -> Warping population for ${ID}"
+      gdalwarp -q \
+        -tap \
+        -tr $resolution \
+        -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+        -crop_to_cutline \
+        -cutline PG:"dbname=${POSTGRES_DB} port=${POSTGRES_PORT} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+        -csql "SELECT the_geom FROM regions WHERE id = ${ID};" \
+        $RASTER $DATA_TARGET
 
-    echo "   -> Storing metadata for ${ID}"
-    for target in $DATA_TARGET $VIZ_TARGET; do
-      gdal_edit.py -mo "POPULATION_SUM=$POPULATION_SUM" -mo "POPULATION_MAX=$POPULATION_MAX" -mo "PIXEL_AREA_M2=$PIXEL_AREA_M2" $target
-    done
+      echo "      -> Aggregating population for ${ID}"
+      IFS=' ' read -a AGGREGATES <<< $(${BIN_PATH}/aggregate-population ${DATA_TARGET})
+      POPULATION_SUM=${AGGREGATES[0]}
+      POPULATION_MAX=${AGGREGATES[1]}
 
-  fi;
+      echo "      -> Calculating pixel area for ${ID}"
 
-  TOTAL_POPULATION=`gdalinfo $DATA_TARGET | grep POPULATION_SUM | cut -d = -f2`
-  MAX_POPULATION=`gdalinfo $DATA_TARGET | grep POPULATION_MAX | cut -d = -f2`
-  PIXEL_AREA_M2=`gdalinfo $DATA_TARGET | grep PIXEL_AREA_M2 | cut -d = -f2`
+      IFS=' ' read -a RET <<< $(${SCRIPT_PATH}/raster-pixel-size ${DATA_TARGET})
+      PIXEL_AREA_M2=${RET[0]}
+      SATURATION=${RET[1]}
 
-  echo "   -> Updating population for ${ID}: ${TOTAL_POPULATION}"
-  psql  -d $POSTGRES_DB -U $POSTGRES_USER \
-        -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
-          INSERT INTO "populations" (source_id, region_id, total_population, max_population, raster_pixel_area)
-            VALUES (${PARAM_ID_SOURCE}, ${ID}, ${TOTAL_POPULATION}, ${MAX_POPULATION}, ${PIXEL_AREA_M2});
-SQL_SCRIPT
+      echo "      -> Normalizing raster file scale for ${ID}"
+      gdal_translate -q -ot Byte -scale 0 $SATURATION 0 255 $DATA_TARGET $VIZ_TARGET
+
+      echo "      -> Storing metadata for ${ID}"
+      for target in $DATA_TARGET $VIZ_TARGET; do
+        gdal_edit.py -mo "POPULATION_SUM=$POPULATION_SUM" -mo "POPULATION_MAX=$POPULATION_MAX" -mo "PIXEL_AREA_M2=$PIXEL_AREA_M2" $target
+      done
+
+#    else
+#      #TODO:
+#      echo "Error"
+#    fi
+
+#    update-or-add $ID $PARAM_ID_SOURCE $DATA_TARGET
+  fi
 
 done;
+
+
+
+
+
+#for region in $REGIONS; do
+#  ID=`echo $region | cut -d \| -f 1`
+#
+#  DATA_TARGET=${DATA_PATH}/populations/data/${PARAM_ID_SOURCE}/${ID}.tif
+#  VIZ_TARGET=${DATA_PATH}/populations/maps/${PARAM_ID_SOURCE}/${ID}.tif
+#
+#  if [[ -e $DATA_TARGET && -e $VIZ_TARGET ]]; then
+#    echo "   -> ${DATA_TARGET} and ${VIZ_TARGET} files already exist."
+#
+#    # check if population data for region was already registered
+#    POPULATIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, region_id FROM populations WHERE region_id='$ID' AND source_id='$PARAM_ID_SOURCE';")
+#    POPULATIONS_LEN=$(echo $POPULATIONS | wc -w | tr -d '[[:space:]]')
+#    if [ ${POPULATIONS_LEN} -gt 0 ]; then
+#      echo "   -> Population for region $ID (source $PARAM_ID_SOURCE) already registered."
+#    fi
+#    exit 1
+#  fi
+#
+#  if [[ ! -e $DATA_TARGET || ! -e $VIZ_TARGET || "`gdalinfo $DATA_TARGET | grep -e POPULATION_SUM -e POPULATION_MAX -e PIXEL_AREA_M2 | wc -l`" -ne 3 ]]; then
+#
+#    resolution=$(target_resolution $RASTER)
+#    echo "   -> Warping population for ${ID}"
+#    gdalwarp -q \
+#      -tap \
+#      -tr $resolution \
+#      -co "TILED=YES" -co "BLOCKXSIZE=128" -co "BLOCKYSIZE=128" \
+#      -crop_to_cutline \
+#      -cutline PG:"dbname=${POSTGRES_DB} port=${POSTGRES_PORT} host=${POSTGRES_HOST} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+#      -csql "SELECT the_geom FROM regions WHERE id = ${ID};" \
+#      $RASTER $DATA_TARGET
+#
+#    echo "   -> Aggregating population for ${ID}"
+#    IFS=' ' read -a AGGREGATES <<< $(${BIN_PATH}/aggregate-population ${DATA_TARGET})
+#    POPULATION_SUM=${AGGREGATES[0]}
+#    POPULATION_MAX=${AGGREGATES[1]}
+#
+#    echo "   -> Calculating pixel area for ${ID}"
+#
+#    IFS=' ' read -a RET <<< $(${SCRIPT_PATH}/raster-pixel-size ${DATA_TARGET})
+#    PIXEL_AREA_M2=${RET[0]}
+#    SATURATION=${RET[1]}
+#
+#    echo "   -> Normalizing raster file scale for ${ID}"
+#    gdal_translate -q -ot Byte -scale 0 $SATURATION 0 255 $DATA_TARGET $VIZ_TARGET
+#
+#    echo "   -> Storing metadata for ${ID}"
+#    for target in $DATA_TARGET $VIZ_TARGET; do
+#      gdal_edit.py -mo "POPULATION_SUM=$POPULATION_SUM" -mo "POPULATION_MAX=$POPULATION_MAX" -mo "PIXEL_AREA_M2=$PIXEL_AREA_M2" $target
+#    done
+#
+#    #
+#    TOTAL_POPULATION=`gdalinfo $DATA_TARGET | grep POPULATION_SUM | cut -d = -f2`
+#    MAX_POPULATION=`gdalinfo $DATA_TARGET | grep POPULATION_MAX | cut -d = -f2`
+#    PIXEL_AREA_M2=`gdalinfo $DATA_TARGET | grep PIXEL_AREA_M2 | cut -d = -f2`
+#
+#    echo "   -> Updating population for ${ID}: ${TOTAL_POPULATION}"
+#    # check if population data for region was already registered
+#    echo psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, region_id FROM populations WHERE region_id='$ID' AND source_id='$PARAM_ID_SOURCE';"
+#    POPULATIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, region_id FROM populations WHERE region_id='$ID' AND source_id='$PARAM_ID_SOURCE';")
+#    POPULATIONS_LEN=$(echo $POPULATIONS | wc -w | tr -d '[[:space:]]')
+#    echo $POPULATIONS_LEN
+#
+#    if [ ${POPULATIONS_LEN} -gt 0 ]; then
+#      echo "   -> Population for region $ID (source $PARAM_ID_SOURCE) already registered."
+#    else
+#      psql  -d $POSTGRES_DB -U $POSTGRES_USER \
+#            -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+#              INSERT INTO "populations" (source_id, region_id, total_population, max_population, raster_pixel_area)
+#                VALUES (${PARAM_ID_SOURCE}, ${ID}, ${TOTAL_POPULATION}, ${MAX_POPULATION}, ${PIXEL_AREA_M2});
+#SQL_SCRIPT
+#    fi
+#  fi;
+#
+#
+#done;

@@ -15,7 +15,7 @@ REGIONS_LEN=$(echo $REGIONS | wc -w | tr -d '[[:space:]]')
 
 if [ ${REGIONS_LEN} -gt 0 ]; then
   echo "   -> Regions for country $COUNTRY already imported."
-  exit 1
+  exit 0
 fi
 
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
