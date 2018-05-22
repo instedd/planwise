@@ -1,6 +1,7 @@
 (ns planwise.tasks.import-population
   (:gen-class)
   (:require [clojure.java.shell  :as shell]
+            [clojure.xml :refer [parse]]
             [clojure.java.jdbc   :as jdbc]))
 
 (def pg-db {:dbtype "postgresql"
@@ -32,7 +33,12 @@
   [elem coll]
   (some (fn [el] (= el elem)) coll))
 
-;
+(defn get-name
+  [country-code]
+  (let [xml-tree    (parse (str "http://api.worldbank.org/v2/countries/" country-code))
+        name-tag    (filter #(= :wb:name (:tag %)) (xml-seq xml-tree))]
+    (-> name-tag first :content first)))
+
 (defn build-cpp
   []
   (println (str "*****************************************************************"))
@@ -43,16 +49,14 @@
 (defn add-population-source
   [name filename]
   (let [source (sql-find :population_sources {:tif_file filename})]
-    (if source
-      (do
-        (println source)
-        (println "tif-file exists!")
-        source)
-      (sql-insert! :population_sources {:name name :tif_file filename}))))
+    (if (empty? source)
+      (sql-insert! :population_sources {:name name :tif_file filename})
+      (do (println "tif-file exists!")
+          source))))
 
 (defn add-country-regions
-  [country]
-  (run-script [(add-script-path "load-regions") country]))
+  [country-code country-name]
+  (run-script [(add-script-path "load-regions") country-code country-name]))
 
 (defn calculate-country-population
   [country tif-filename-id]
@@ -94,14 +98,14 @@
 
 ;
 (defn -main
-  [name filename country & options]
+  [name filename country-code & options]
 
   (println (str "*****************************************************************"))
   (println (str "* Parameters: "))
   (println (str "***"))
   (println (str "   -> Name: " name))
   (println (str "   -> Filename: " filename))
-  (println (str "   -> Country: " country))
+  (println (str "   -> Country code: " country-code))
   (println (str ""))
 
   (when (in? "--build-cpp" options)
@@ -112,21 +116,22 @@
         print-result #(print-script-result verbose %)
         print-header-add-country-regions #(print-add-country-regions-header verbose %)
         print-header-calculate-country-population #(print-calculate-country-population-header verbose %1 %2)
-        print-header-raster-all-regions #(print-raster-all-regions-header verbose %)]
+        print-header-raster-all-regions #(print-raster-all-regions-header verbose %)
+        country-name (get-name country-code)]
 
     (doseq [ret sql-result]
       (comment (print-source ret))
 
-      (print-header-add-country-regions country)
-      (-> (add-country-regions country) ;load-regions
+      (print-header-add-country-regions country-name)
+      (-> (add-country-regions country-code country-name) ;load-regions
           (print-result))
 
-      (print-header-calculate-country-population country (:id ret))
-      (-> (calculate-country-population country (:id ret)) ;regions-population
+      (print-header-calculate-country-population country-name (:id ret))
+      (-> (calculate-country-population country-name (:id ret)) ;regions-population
           (print-result))
 
-      (print-header-raster-all-regions country)
-      (-> (raster-all-regions country (:id ret)) ;raster-regions
+      (print-header-raster-all-regions country-name)
+      (-> (raster-all-regions country-name (:id ret)) ;raster-regions
           (print-result))))
 
 
