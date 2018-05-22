@@ -39,9 +39,4 @@
  {:config {:mock? true}}
 
  :planwise.component/maps
- {:config {:facilities-capacity 1000000}}
-
- ;; Make the importer depend on the migrator such that migrations are run before
- ;; it, because it needs the datasets table to be present to start up
- :planwise.component/importer
- {:pre-dep #ig/ref :duct/migrator}}
+ {:config {:facilities-capacity 1000000}}}

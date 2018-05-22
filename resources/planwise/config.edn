@@ -36,23 +36,17 @@
  :planwise.router/api
  {:middleware [#ig/ref :planwise.middleware/api]
   :handlers   [#ig/ref :planwise.endpoint/coverage
-               #ig/ref :planwise.endpoint/datasets
                #ig/ref :planwise.endpoint/providers-set
-
-               #ig/ref :planwise.endpoint/facilities
                #ig/ref :planwise.endpoint/monitor
                #ig/ref :planwise.endpoint/sources
-               #ig/ref :planwise.endpoint/projects
                #ig/ref :planwise.endpoint/projects2
                #ig/ref :planwise.endpoint/regions
-               #ig/ref :planwise.endpoint/routing
                #ig/ref :planwise.endpoint/scenarios]}
 
  :planwise.router/app
  {:middleware [#ig/ref :planwise.middleware/app]
   :handlers   [#ig/ref :planwise.endpoint/home
-               #ig/ref :planwise.endpoint/auth
-               #ig/ref :planwise.endpoint/resmap-auth]}
+               #ig/ref :planwise.endpoint/auth]}
 
  ;; Middleware
 
@@ -103,24 +97,13 @@
  :planwise.endpoint/coverage
  {:coverage   #ig/ref :planwise.component/coverage}
 
- :planwise.endpoint/datasets
- {:datasets   #ig/ref :planwise.component/datasets
-  :facilities #ig/ref :planwise.component/facilities
-  :resmap     #ig/ref :planwise.component/resmap
-  :importer   #ig/ref :planwise.component/importer}
-
  :planwise.endpoint/providers-set
  {:providers-set  #ig/ref :planwise.component/providers-set
-  :jobrunner   #ig/ref :planwise.component/jobrunner}
+  :jobrunner      #ig/ref :planwise.component/jobrunner}
 
  :planwise.endpoint/home
  {:maps       #ig/ref :planwise.component/maps
-  :auth       #ig/ref :planwise.component/auth
-  :resmap     #ig/ref :planwise.component/resmap}
-
- :planwise.endpoint/facilities
- {:facilities #ig/ref :planwise.component/facilities
-  :maps       #ig/ref :planwise.component/maps}
+  :auth       #ig/ref :planwise.component/auth}
 
  :planwise.endpoint/monitor
  {}
@@ -128,24 +111,12 @@
  :planwise.endpoint/sources
  {:sources  #ig/ref :planwise.component/sources}
 
- :planwise.endpoint/projects
- {:projects   #ig/ref :planwise.component/projects
-  :facilities #ig/ref :planwise.component/facilities
-  :maps       #ig/ref :planwise.component/maps}
-
  :planwise.endpoint/projects2
  {:projects2  #ig/ref :planwise.component/projects2
   :scenarios  #ig/ref :planwise.component/scenarios}
 
  :planwise.endpoint/regions
  {:regions    #ig/ref :planwise.component/regions}
-
- :planwise.endpoint/resmap-auth
- {:auth       #ig/ref :planwise.component/auth
-  :resmap     #ig/ref :planwise.component/resmap}
-
- :planwise.endpoint/routing
- {:routing    #ig/ref :planwise.component/routing}
 
  :planwise.endpoint/scenarios
  {:projects2     #ig/ref :planwise.component/projects2
@@ -165,9 +136,6 @@
  {:db          #ig/ref :duct.database/sql
   :runner      #ig/ref :planwise.component/runner}
 
- :planwise.component/datasets
- {:db          #ig/ref :duct.database/sql}
-
  :planwise.component/providers-set
  {:db          #ig/ref :duct.database/sql
   :coverage    #ig/ref :planwise.component/coverage}
@@ -176,18 +144,6 @@
  {:providers-set #ig/ref :planwise.component/providers-set
   :sources-set #ig/ref :planwise.component/sources
   :coverage    #ig/ref :planwise.component/coverage}
-
- :planwise.component/facilities
- {:db          #ig/ref :duct.database/sql
-  :runner      #ig/ref :planwise.component/runner
-  :config      {:raster-isochrones #duct/env ["RASTER_ISOCHRONES" Bool :or true]}}
-
- :planwise.component/importer
- {:datasets           #ig/ref :planwise.component/datasets
-  :facilities         #ig/ref :planwise.component/facilities
-  :projects           #ig/ref :planwise.component/projects
-  :resmap             #ig/ref :planwise.component/resmap
-  :concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
 
  :planwise.component/jobrunner
  {:concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
@@ -211,24 +167,12 @@
  :planwise.component/sources
  {:db          #ig/ref :duct.database/sql}
 
- :planwise.component/projects
- {:db          #ig/ref :duct.database/sql
-  :facilities  #ig/ref :planwise.component/facilities
-  :mailer      #ig/ref :planwise.component/mailer}
-
  :planwise.component/projects2
  {:db             #ig/ref :duct.database/sql
   :providers-set  #ig/ref :planwise.component/providers-set
   :scenarios      #ig/ref :planwise.component/scenarios}
 
  :planwise.component/regions
- {:db          #ig/ref :duct.database/sql}
-
- :planwise.component/resmap
- {:auth        #ig/ref :planwise.component/auth
-  :url         #duct/env ["RESOURCEMAP_URL" Str :or "http://resourcemap.instedd.org"]}
-
- :planwise.component/routing
  {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/runner
