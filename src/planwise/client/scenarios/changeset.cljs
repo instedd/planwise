@@ -20,7 +20,7 @@
      [m/Icon {} "domain"]
      [:div {:class-name "icon-list-text"}
       [:p {:class-name "strong"} "Create new site"]
-      [:p {:class-name "grey-text"}  (str "K " (:investment site))]
+      [:p {:class-name "grey-text"}  (str "K " (utils/format-number (:investment site)))]
       [:p {:class-name "grey-text"}  "1,834 State House Rd, Nairobi, Kenya"]]]]
    [:hr]])
 
