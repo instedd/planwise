@@ -2,23 +2,14 @@
   (:require [re-frame.core :refer [subscribe dispatch]]
             [planwise.client.config :as config]
             [planwise.client.routes :as routes]
-            [planwise.client.components.nav :as nav]
             [planwise.client.components.common :refer [icon]]
             [planwise.client.components.common2 :as common2]
-            [planwise.client.projects.views :as projects]
             [planwise.client.projects2.views :as projects2]
             [planwise.client.providers-set.views :as providers-set]
             [planwise.client.sources.views :as sources]
-            [planwise.client.current-project.views :as current-project]
             [planwise.client.scenarios.views :as scenarios]
-            [planwise.client.datasets.views :as datasets]
             [planwise.client.design.views :as design]))
 
-
-(def nav-items
-  [{:item :home-old :href (routes/home-old) :title "Projects"}
-   {:item :datasets :href (routes/datasets) :title "Datasets"}
-   {:item :home :href (routes/home) :target "_blank" :title "New version"}])
 
 (def current-user-email
   (atom config/user-email))
@@ -30,18 +21,6 @@
     :on-click #(dispatch [:signout])}
    [icon :signout "icon-small"]])
 
-(defn nav-bar []
-  (let [current-page (subscribe [:current-page])]
-    (fn []
-      (let [active @current-page]
-        [:header
-         [:a.logo {:href (routes/home)}
-          (icon :logo)]
-         [:nav [nav/ul-menu nav-items active]]
-         [:div.user-info
-          @current-user-email
-          [signout-button]]]))))
-
 (defmulti content-pane identity)
 
 (defmethod content-pane :home []
@@ -50,17 +29,8 @@
     [common2/redirect-to (routes/projects2)]
     [common2/loading-placeholder]))
 
-(defmethod content-pane :home-old []
-  [projects/project-list-page])
-
-(defmethod content-pane :projects []
-  [current-project/project-page])
-
 (defmethod content-pane :projects2 []
   [projects2/project2-view])
-
-(defmethod content-pane :datasets []
-  [datasets/datasets-page])
 
 (defmethod content-pane :providers-set []
   [providers-set/providers-set-page])
@@ -77,12 +47,4 @@
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]
     (fn []
-      (if (some #(= @current-page %) [:design :home :projects2 :providers-set :sources :scenarios])
-        ; New design has full control of layout
-        [content-pane @current-page]
-        ; Old design with fixed layout
-        [:div
-         [nav-bar]
-         [content-pane @current-page]
-         [:footer
-          [:span.version (str "Version: " config/app-version)]]]))))
+      [content-pane @current-page])))

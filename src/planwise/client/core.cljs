@@ -19,24 +19,6 @@
   (reagent/render [views/planwise-app]
                   (.getElementById js/document "app")))
 
-(defn install-message-handler! []
-  (.addEventListener js/window
-                     "message"
-                     (fn [e]
-                       (let [message (.-data e)]
-                         (rf/dispatch [:message-posted message])))))
-
-(defn install-ticker! []
-  (let [time (atom 0)
-        interval 1000]
-    (letfn [(timeout-fn [] (.setTimeout
-                            js/window
-                            #(do
-                               (rf/dispatch [:tick (swap! time + interval)])
-                               (timeout-fn))
-                            interval))]
-      (timeout-fn))))
-
 (defn- ^:export main []
   (rf/dispatch-sync [:initialise-db])
   (accountant/configure-navigation!
@@ -47,6 +29,4 @@
     (fn [path]
       (secretary/locate-route path))})
   (accountant/dispatch-current!)
-  (install-message-handler!)
-  (install-ticker!)
   (mount-root))
