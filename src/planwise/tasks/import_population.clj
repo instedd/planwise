@@ -51,7 +51,8 @@
   (let [source (sql-find :population_sources {:tif_file filename})]
     (if (empty? source)
       (sql-insert! :population_sources {:name name :tif_file filename})
-      (do (println "tif-file exists!")
+      (do (println (str "   -> Population source (with filename " filename ") already exists in DB! <id: " (:id (first source)) ", name: " (:name (first source)) ">"))
+          (println "")
           source))))
 
 (defn add-country-regions
