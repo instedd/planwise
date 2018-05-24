@@ -1,5 +1,5 @@
-(ns planwise.component.datasets2
-  (:require [planwise.boundary.datasets2 :as boundary]
+(ns planwise.component.providers-set
+  (:require [planwise.boundary.providers-set :as boundary]
             [planwise.boundary.coverage :as coverage]
             [planwise.boundary.jobrunner :as jr]
             [integrant.core :as ig]
@@ -17,7 +17,7 @@
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
 
-(hugsql/def-db-fns "planwise/sql/datasets2.sql")
+(hugsql/def-db-fns "planwise/sql/providers_set.sql")
 
 (defn get-db
   [store]
@@ -32,11 +32,11 @@
        (rest csv-data)))
 
 (defn- import-site
-  [store dataset-id version csv-site-data]
+  [store provider-set-id version csv-site-data]
   (let [data {:source-id (Integer. (:id csv-site-data))
               :type (:type csv-site-data)
               :version version
-              :dataset-id dataset-id
+              :provider-set-id provider-set-id
               :name (:name csv-site-data)
               :lat  (Double. (:lat csv-site-data))
               :lon  (Double. (:lon csv-site-data))
@@ -45,44 +45,44 @@
     (db-create-site! (get-db store) data)))
 
 (defn csv-to-sites
-  "Generates sites from a dataset-id and a csv file"
-  [store dataset-id csv-file]
+  "Generates sites from a provider-set-id and a csv file"
+  [store provider-set-id csv-file]
   (let [reader     (io/reader csv-file)
         sites-data (csv-data->maps (csv/read-csv reader))
-        version    (:last-version (db-create-dataset-version! (get-db store) {:id dataset-id}))]
-    (doall (map #(import-site store dataset-id version %) sites-data))))
+        version    (:last-version (db-create-provider-set-version! (get-db store) {:id provider-set-id}))]
+    (doall (map #(import-site store provider-set-id version %) sites-data))))
 
 (defn sites-by-version
-  "Returns sites associated to a dataset-id and version"
-  [store dataset-id version]
-  (db-find-sites (get-db store) {:dataset-id dataset-id
+  "Returns sites associated to a provider-set-id and version"
+  [store provider-set-id version]
+  (db-find-sites (get-db store) {:provider-set-id provider-set-id
                                  :version version}))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defn create-dataset
+(defn create-provider-ser
   [store name owner-id coverage-algorithm]
-  (db-create-dataset! (get-db store) {:name name
+  (db-create-provider-ser! (get-db store) {:name name
                                       :owner-id owner-id
                                       :coverage-algorithm (some-> coverage-algorithm clojure.core/name)}))
 
-(defn list-datasets
+(defn list-providers-set
   [store owner-id]
-  (db-list-datasets (get-db store) {:owner-id owner-id}))
+  (db-list-providers-set (get-db store) {:owner-id owner-id}))
 
-(defn get-dataset
-  [store dataset-id]
-  (db-find-dataset (get-db store) {:id dataset-id}))
+(defn get-provider-set
+  [store provider-set-id]
+  (db-find-provider-set (get-db store) {:id provider-set-id}))
 
 (defn create-and-import-sites
   [store {:keys [name owner-id coverage-algorithm]} csv-file]
   (jdbc/with-db-transaction [tx (get-db store)]
     (let [tx-store (assoc-in store [:db :spec] tx)
-          create-result (create-dataset tx-store name owner-id coverage-algorithm)
-          dataset-id (:id create-result)]
-      (csv-to-sites tx-store dataset-id csv-file)
-      (get-dataset tx-store dataset-id))))
+          create-result (create-provider-set tx-store name owner-id coverage-algorithm)
+          provider-set-id (:id create-result)]
+      (csv-to-sites tx-store provider-set-id csv-file)
+      (get-provider-set tx-store provider-set-id))))
 
 
 ;;;
@@ -141,17 +141,17 @@
             "since it's already processed with status" (:processing-status site)))))
 
 (defn new-processing-job
-  "Returns the initial job state to pre-process the datasets' sites"
-  [store dataset-id]
+  "Returns the initial job state to pre-process the providers-set' sites"
+  [store provider-set-id]
   (let [db-spec      (get-db store)
         coverage     (:coverage store)
-        dataset      (db-find-dataset db-spec {:id dataset-id})
-        last-version (:last-version dataset)
-        algorithm    (keyword (:coverage-algorithm dataset))
-        sites        (db-enum-site-ids db-spec {:dataset-id dataset-id :version last-version})
+        provider-set      (db-find-provider-set db-spec {:id provider-set-id})
+        last-version (:last-version provider-set)
+        algorithm    (keyword (:coverage-algorithm provider-set))
+        sites        (db-enum-site-ids db-spec {:provider-set-id provider-set-id :version last-version})
         options-list (coverage/enumerate-algorithm-options coverage algorithm)
         ;; TODO: configure the raster-dir in the component
-        raster-dir   (str (io/file "data/coverage" (str dataset-id)))]
+        raster-dir   (str (io/file "data/coverage" (str provider-set-id)))]
 
     (cond
       (some? algorithm)
@@ -163,11 +163,11 @@
 
       :else
       (do
-        (warn "Coverage algorithm not set for dataset" dataset-id)
+        (warn "Coverage algorithm not set for provider-set" provider-set-id)
         nil))))
 
-(defmethod jr/job-next-task ::boundary/preprocess-dataset
-  [[_ dataset-id] {:keys [store options sites] :as state}]
+(defmethod jr/job-next-task ::boundary/preprocess-provider-set
+  [[_ provider-set-id] {:keys [store options sites] :as state}]
   (let [next-site (first sites)
         sites'    (next sites)
         state'    (when sites' (assoc state :sites sites'))]
@@ -178,23 +178,23 @@
          :task-fn (fn [] (preprocess-site! store site-id options))})
       {:state state'})))
 
-(defn preprocess-dataset!
-  "Manually trigger the synchronous pre-processing of a dataset"
-  [store dataset-id]
-  (info "Pre-processing sites for dataset" dataset-id)
-  (if-let [{:keys [sites options]} (new-processing-job store dataset-id)]
+(defn preprocess-provider-set!
+  "Manually trigger the synchronous pre-processing of a provider-set"
+  [store provider-set-id]
+  (info "Pre-processing sites for provider-set" provider-set-id)
+  (if-let [{:keys [sites options]} (new-processing-job store provider-set-id)]
     (dorun (for [site-id (map :id sites)]
              (preprocess-site! store site-id options)))
-    (info "Coverage algorithm not set for dataset" dataset-id)))
+    (info "Coverage algorithm not set for provider-set" provider-set-id)))
 
 (defn get-sites-with-coverage-in-region
-  [store dataset-id version filter-options]
+  [store provider-set-id version filter-options]
   (let [db-spec   (get-db store)
         region-id (:region-id filter-options)
         algorithm (:coverage-algorithm filter-options)
         options   (:coverage-options filter-options)
         tags      (str/join " & " (:tags filter-options))]
-    (db-find-sites-with-coverage-in-region db-spec {:dataset-id dataset-id
+    (db-find-sites-with-coverage-in-region db-spec {:provider-set-id provider-set-id
                                                     :version    version
                                                     :region-id  region-id
                                                     :algorithm  algorithm
@@ -202,47 +202,47 @@
                                                     :tags       tags})))
 
 (defn count-sites-filter-by-tags
-  ([store dataset-id region-id tags]
-   (count-sites-filter-by-tags store dataset-id region-id tags nil))
-  ([store dataset-id region-id tags version]
+  ([store provider-set-id region-id tags]
+   (count-sites-filter-by-tags store provider-set-id region-id tags nil))
+  ([store provider-set-id region-id tags version]
    (let [db-spec  (get-db store)
          tags     (str/join " & " tags)
          count-fn (fn [tags version]
-                    (let [{:keys [last-version]} (get-dataset store dataset-id)]
-                      (:count (db-count-sites-with-tags db-spec {:dataset-id dataset-id
-                                                                 :version (or version last-version)
-                                                                 :region-id region-id
-                                                                 :tags tags}))))
+                    (let [{:keys [last-version]} (get-provider-set store provider-set-id)]
+                      (:count (db-count-sites-with-tags db-spec {:provider-set-id provider-set-id
+                                                                 :version         (or version last-version)
+                                                                 :region-id       region-id
+                                                                 :tags            tags}))))
          total     (count-fn "" version)
          response {:total total :filtered total}]
      (if (str/blank? tags) response (assoc response :filtered (count-fn tags version))))))
 
-(defrecord SitesDatasetsStore [db coverage]
-  boundary/Datasets2
-  (list-datasets [store owner-id]
-    (list-datasets store owner-id))
-  (get-dataset [store dataset-id]
-    (get-dataset store dataset-id))
+(defrecord ProvidersStore [db coverage]
+  boundary/Providers-Set
+  (list-providers-set [store owner-id]
+    (list-providers-set store owner-id))
+  (get-provider-set [store provider-set-id]
+    (get-provider-set store provider-set-id))
   (create-and-import-sites [store options csv-file]
     (create-and-import-sites store options csv-file))
-  (new-processing-job [store dataset-id]
-    (new-processing-job store dataset-id))
-  (get-sites-with-coverage-in-region [store dataset-id version filter-options]
-    (get-sites-with-coverage-in-region store dataset-id version filter-options))
-  (count-sites-filter-by-tags [store dataset-id region-id tags]
-    (count-sites-filter-by-tags store dataset-id region-id tags))
-  (count-sites-filter-by-tags [store dataset-id region-id tags version]
-    (count-sites-filter-by-tags store dataset-id region-id tags version)))
+  (new-processing-job [store provider-set-id]
+    (new-processing-job store provider-set-id))
+  (get-sites-with-coverage-in-region [store provider-set-id version filter-options]
+    (get-sites-with-coverage-in-region store provider-set-id version filter-options))
+  (count-sites-filter-by-tags [store provider-set-id region-id tags]
+    (count-sites-filter-by-tags store provider-set-id region-id tags))
+  (count-sites-filter-by-tags [store provider-set-id region-id tags version]
+    (count-sites-filter-by-tags store provider-set-id region-id tags version)))
 
 
-(defmethod ig/init-key :planwise.component/datasets2
+(defmethod ig/init-key :planwise.component/providers-set
   [_ config]
-  (map->SitesDatasetsStore config))
+  (map->ProvidersStore config))
 
 (comment
   ;; REPL testing
 
-  (def store (:planwise.component/datasets2 integrant.repl.state/system))
+  (def store (:planwise.component/providers-set integrant.repl.state/system))
 
   (get-sites-with-coverage-in-region store 19 1 {:region-id 42
                                                  :coverage-algorithm "pgrouting-alpha"
@@ -256,4 +256,4 @@
                              :options-list [{:driving-time 30} {:driving-time 60}]
                              :raster-dir "data/coverage/11"})
 
-  (preprocess-dataset! store 11))
+  (preprocess-provider-set! store 11))
