@@ -30,11 +30,11 @@
 
 (defn- build-changeset-summary
   [changeset]
-  (let [sites (count changeset)
+  (let [providers (count changeset)
         capacity (apply +' (mapv :capacity changeset))
-        u (if (= sites 1) "site" "sites")]
-    (if (zero? sites) ""
-        (format "Create %d %s. Increase overall capacity in %d." sites u capacity))))
+        u (if (= providers 1) "provider" "providers")]
+    (if (zero? providers) ""
+        (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
 ;; ----------------------------------------------------------------------
 ;; Service definition
 

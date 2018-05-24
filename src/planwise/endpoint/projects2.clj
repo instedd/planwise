@@ -8,7 +8,7 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.model.projects2 :as model]
-            [planwise.boundary.datasets2 :as datasets2]
+            [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.scenarios :as scenarios]))
 

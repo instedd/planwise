@@ -14,7 +14,7 @@
       (default [:demographics :target] nil)
       (default [:actions :budget] nil)
       (default [:coverage :filter-options] {})
-      (default [:sites :capacity] 1)))
+      (default [:providers :capacity] 1)))
 
 (s/def ::target (s/nilable number?))
 (s/def ::budget (s/nilable number?))
@@ -23,13 +23,13 @@
 (s/def ::demographics (s/keys :req-un [::target]))
 (s/def ::actions (s/keys :req-un [::budget]))
 (s/def ::coverage (s/keys :req-un [::filter-options]))
-(s/def ::sites (s/keys :req-un [::capacity]))
+(s/def ::providers (s/keys :req-un [::capacity]))
 
-(s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions ::coverage ::sites])))
+(s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions ::coverage ::providers])))
 (s/def ::id number?)
 (s/def ::name string?)
-(s/def ::dataset-id (s/nilable number?))
+(s/def ::provider-set-id (s/nilable number?))
 (s/def ::region-id (s/nilable number?))
 (s/def ::population-source-id (s/nilable number?))
 
-(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::dataset-id ::population-source-id ::region-id]))
+(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::population-source-id ::region-id]))

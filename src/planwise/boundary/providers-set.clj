@@ -24,4 +24,4 @@
     [this provider-set-id region-id tags version]
     "Count providers filtered by a single tag. Default version is the last one"))
 
-;; Preprocessing provider-set job type: ::preprocess-dataset
+;; Preprocessing provider-set job type: ::preprocess-provider-set
