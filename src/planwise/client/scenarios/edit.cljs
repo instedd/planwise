@@ -26,31 +26,30 @@
                :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
                :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
 
-(defn input
-  [{:keys [value onchange-path]}]
-  [common2/text-field {:type "number"
-                       :on-change  #(dispatch [:scenarios/save-key onchange-path (-> % .-target .-value int)])
-                       :value value}])
-
 (defn changeset-dialog-content
-  [{:keys [investment capacity]}]
-  [:div
-   [:h2 "Investment"]
-   [input {:value (or investment "")
-           :onchange-path [:changeset-dialog :investment]}]
-   [:h2 "Capacity"]
-   [input {:value (or capacity "")
-           :onchange-path [:changeset-dialog :capacity]}]])
+  [{:keys [investment capacity]} scenario-investment]
+  (let [custom-text-prop (when (< scenario-investment investment) " invalid-input")]
+    [:div
+     [:h2 "Investment"]
+     (println custom-text-prop)
+     [common2/text-field {:type "number"
+                          :on-change  #(dispatch [:scenarios/save-key [:changeset-dialog :investment] (-> % .-target .-value int)])
+                          :value (or investment "")}
+      custom-text-prop]
 
+     [:h2 "Capacity"]
+     [common2/text-field {:type "number"
+                          :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] (-> % .-target .-value int)])
+                          :value (or capacity "")}]]))
 (defn changeset-dialog
-  []
+  [{:keys [investment]}]
   (let [site       (subscribe [:scenarios/changeset-dialog])
         view-state (subscribe [:scenarios/view-state])
         site-index (subscribe [:scenarios/changeset-index])]
-    (fn []
+    (fn [{:keys [investment]}]
       (dialog {:open? (= @view-state :changeset-dialog)
                :title "Edit Site"
-               :content (changeset-dialog-content @site)
+               :content (changeset-dialog-content @site investment)
                :delete-fn #(dispatch [:scenarios/delete-site @site-index])
                :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
                :cancel-fn #(dispatch [:scenarios/cancel-changeset-dialog])}))))
