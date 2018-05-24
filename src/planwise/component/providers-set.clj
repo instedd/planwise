@@ -31,31 +31,31 @@
             repeat)
        (rest csv-data)))
 
-(defn- import-site
-  [store provider-set-id version csv-site-data]
-  (let [data {:source-id (Integer. (:id csv-site-data))
-              :type (:type csv-site-data)
+(defn- import-provider
+  [store provider-set-id version csv-provider-data]
+  (let [data {:source-id (Integer. (:id csv-provider-data))
+              :type (:type csv-provider-data)
               :version version
               :provider-set-id provider-set-id
-              :name (:name csv-site-data)
-              :lat  (Double. (:lat csv-site-data))
-              :lon  (Double. (:lon csv-site-data))
-              :capacity (Integer. (:capacity csv-site-data))
-              :tags (:tags csv-site-data)}]
-    (db-create-site! (get-db store) data)))
+              :name (:name csv-provider-data)
+              :lat  (Double. (:lat csv-provider-data))
+              :lon  (Double. (:lon csv-provider-data))
+              :capacity (Integer. (:capacity csv-provider-data))
+              :tags (:tags csv-provider-data)}]
+    (db-create-provider! (get-db store) data)))
 
-(defn csv-to-sites
-  "Generates sites from a provider-set-id and a csv file"
+(defn csv-to-providers
+  "Generates providers from a provider-set-id and a csv file"
   [store provider-set-id csv-file]
   (let [reader     (io/reader csv-file)
-        sites-data (csv-data->maps (csv/read-csv reader))
+        providers-data (csv-data->maps (csv/read-csv reader))
         version    (:last-version (db-create-provider-set-version! (get-db store) {:id provider-set-id}))]
-    (doall (map #(import-site store provider-set-id version %) sites-data))))
+    (doall (map #(import-provider store provider-set-id version %) providers-data))))
 
-(defn sites-by-version
-  "Returns sites associated to a provider-set-id and version"
+(defn providers-by-version
+  "Returns providers associated to a provider-set-id and version"
   [store provider-set-id version]
-  (db-find-sites (get-db store) {:provider-set-id provider-set-id
+  (db-find-providers (get-db store) {:provider-set-id provider-set-id
                                  :version version}))
 
 ;; ----------------------------------------------------------------------
@@ -75,13 +75,13 @@
   [store provider-set-id]
   (db-find-provider-set (get-db store) {:id provider-set-id}))
 
-(defn create-and-import-sites
+(defn create-and-import-providers
   [store {:keys [name owner-id coverage-algorithm]} csv-file]
   (jdbc/with-db-transaction [tx (get-db store)]
     (let [tx-store (assoc-in store [:db :spec] tx)
           create-result (create-provider-set tx-store name owner-id coverage-algorithm)
           provider-set-id (:id create-result)]
-      (csv-to-sites tx-store provider-set-id csv-file)
+      (csv-to-providers tx-store provider-set-id csv-file)
       (get-provider-set tx-store provider-set-id))))
 
 
@@ -89,44 +89,44 @@
 ;;; Pre-processing job implementation
 ;;;
 
-(defn compute-site-coverage!
-  [store site {:keys [algorithm options raster-dir]}]
+(defn compute-provider-coverage!
+  [store provider {:keys [algorithm options raster-dir]}]
   (try
     (let [db-spec         (get-db store)
           coverage        (:coverage store)
-          coords          (select-keys site [:lat :lon])
-          site-id         (:id site)
-          raster-basename (str/join "_" (flatten [site-id (name algorithm) (vals options)]))
+          coords          (select-keys provider [:lat :lon])
+          provider-id         (:id provider)
+          raster-basename (str/join "_" (flatten [provider-id (name algorithm) (vals options)]))
           raster-filename (str raster-basename ".tif")
           raster-path     (str (io/file raster-dir raster-filename))
           criteria        (merge {:algorithm algorithm
                                   :raster    raster-path}
                                  options)
           polygon         (coverage/compute-coverage coverage coords criteria)
-          site-coverage   {:site-id   site-id
+          provider-coverage   {:provider-id   provider-id
                            :algorithm (name algorithm)
                            :options   (pr-str options)
                            :geom      polygon
                            :raster    raster-basename}
-          result          (db-create-site-coverage! db-spec site-coverage)]
+          result          (db-create-provider-coverage! db-spec provider-coverage)]
       {:ok (:id result)})
     (catch RuntimeException e
-      (warn "Error" (.getMessage e) "processing coverage for site" (:id site)
+      (warn "Error" (.getMessage e) "processing coverage for provider" (:id provider)
             "using algorithm" algorithm "with options" (pr-str options))
       {:error (.getMessage e)})))
 
-(defn preprocess-site!
-  [store site-id {:keys [algorithm options-list raster-dir]}]
+(defn preprocess-provider!
+  [store provider-id {:keys [algorithm options-list raster-dir]}]
   {:pre [(some? algorithm)]}
   (let [db-spec    (get-db store)
-        site       (db-fetch-site-by-id db-spec {:id site-id})]
-    (if (nil? (:processing-status site))
+        provider       (db-fetch-provider-by-id db-spec {:id provider-id})]
+    (if (nil? (:processing-status provider))
       (do
-        (info "Pre-processing site" site-id)
+        (info "Pre-processing provider" provider-id)
         ;; TODO: delete old raster as well as the database records
-        (db-delete-algorithm-coverages-by-site-id! db-spec {:site-id site-id :algorithm (name algorithm)})
+        (db-delete-algorithm-coverages-by-provider-id! db-spec {:provider-id provider-id :algorithm (name algorithm)})
         (let [results (doall (for [options options-list]
-                               (compute-site-coverage! store site {:algorithm algorithm
+                               (compute-provider-coverage! store provider {:algorithm algorithm
                                                                    :options options
                                                                    :raster-dir raster-dir})))]
           (let [total     (count options-list)
@@ -135,20 +135,20 @@
                             total :ok
                             0 :error
                             :partial)]
-            (db-update-site-processing-status! db-spec {:id site-id
+            (db-update-provider-processing-status! db-spec {:id provider-id
                                                         :processing-status (str result)}))))
-      (info "Skipping site" site-id
-            "since it's already processed with status" (:processing-status site)))))
+      (info "Skipping provider" provider-id
+            "since it's already processed with status" (:processing-status provider)))))
 
 (defn new-processing-job
-  "Returns the initial job state to pre-process the providers-set' sites"
+  "Returns the initial job state to pre-process the providers-set' providers"
   [store provider-set-id]
   (let [db-spec      (get-db store)
         coverage     (:coverage store)
         provider-set      (db-find-provider-set db-spec {:id provider-set-id})
         last-version (:last-version provider-set)
         algorithm    (keyword (:coverage-algorithm provider-set))
-        sites        (db-enum-site-ids db-spec {:provider-set-id provider-set-id :version last-version})
+        providers        (db-enum-provider-ids db-spec {:provider-set-id provider-set-id :version last-version})
         options-list (coverage/enumerate-algorithm-options coverage algorithm)
         ;; TODO: configure the raster-dir in the component
         raster-dir   (str (io/file "data/coverage" (str provider-set-id)))]
@@ -159,7 +159,7 @@
        :options {:algorithm    algorithm
                  :options-list options-list
                  :raster-dir   raster-dir}
-       :sites   sites}
+       :providers   providers}
 
       :else
       (do
@@ -167,49 +167,49 @@
         nil))))
 
 (defmethod jr/job-next-task ::boundary/preprocess-provider-set
-  [[_ provider-set-id] {:keys [store options sites] :as state}]
-  (let [next-site (first sites)
-        sites'    (next sites)
-        state'    (when sites' (assoc state :sites sites'))]
-    (if (some? next-site)
-      (let [site-id (:id next-site)]
+  [[_ provider-set-id] {:keys [store options providers] :as state}]
+  (let [next-provider (first providers)
+        providers'    (next providers)
+        state'    (when providers' (assoc state :providers providers'))]
+    (if (some? next-provider)
+      (let [provider-id (:id next-provider)]
         {:state state'
-         :task-id site-id
-         :task-fn (fn [] (preprocess-site! store site-id options))})
+         :task-id provider-id
+         :task-fn (fn [] (preprocess-provider! store provider-id options))})
       {:state state'})))
 
 (defn preprocess-provider-set!
   "Manually trigger the synchronous pre-processing of a provider-set"
   [store provider-set-id]
-  (info "Pre-processing sites for provider-set" provider-set-id)
-  (if-let [{:keys [sites options]} (new-processing-job store provider-set-id)]
-    (dorun (for [site-id (map :id sites)]
-             (preprocess-site! store site-id options)))
+  (info "Pre-processing providers for provider-set" provider-set-id)
+  (if-let [{:keys [providers options]} (new-processing-job store provider-set-id)]
+    (dorun (for [provider-id (map :id providers)]
+             (preprocess-provider! store provider-id options)))
     (info "Coverage algorithm not set for provider-set" provider-set-id)))
 
-(defn get-sites-with-coverage-in-region
+(defn get-providers-with-coverage-in-region
   [store provider-set-id version filter-options]
   (let [db-spec   (get-db store)
         region-id (:region-id filter-options)
         algorithm (:coverage-algorithm filter-options)
         options   (:coverage-options filter-options)
         tags      (str/join " & " (:tags filter-options))]
-    (db-find-sites-with-coverage-in-region db-spec {:provider-set-id provider-set-id
+    (db-find-providers-with-coverage-in-region db-spec {:provider-set-id provider-set-id
                                                     :version    version
                                                     :region-id  region-id
                                                     :algorithm  algorithm
                                                     :options    (some-> options pr-str)
                                                     :tags       tags})))
 
-(defn count-sites-filter-by-tags
+(defn count-providers-filter-by-tags
   ([store provider-set-id region-id tags]
-   (count-sites-filter-by-tags store provider-set-id region-id tags nil))
+   (count-providers-filter-by-tags store provider-set-id region-id tags nil))
   ([store provider-set-id region-id tags version]
    (let [db-spec  (get-db store)
          tags     (str/join " & " tags)
          count-fn (fn [tags version]
                     (let [{:keys [last-version]} (get-provider-set store provider-set-id)]
-                      (:count (db-count-sites-with-tags db-spec {:provider-set-id provider-set-id
+                      (:count (db-count-providers-with-tags db-spec {:provider-set-id provider-set-id
                                                                  :version         (or version last-version)
                                                                  :region-id       region-id
                                                                  :tags            tags}))))
@@ -223,16 +223,16 @@
     (list-providers-set store owner-id))
   (get-provider-set [store provider-set-id]
     (get-provider-set store provider-set-id))
-  (create-and-import-sites [store options csv-file]
-    (create-and-import-sites store options csv-file))
+  (create-and-import-providers [store options csv-file]
+    (create-and-import-providers store options csv-file))
   (new-processing-job [store provider-set-id]
     (new-processing-job store provider-set-id))
-  (get-sites-with-coverage-in-region [store provider-set-id version filter-options]
-    (get-sites-with-coverage-in-region store provider-set-id version filter-options))
-  (count-sites-filter-by-tags [store provider-set-id region-id tags]
-    (count-sites-filter-by-tags store provider-set-id region-id tags))
-  (count-sites-filter-by-tags [store provider-set-id region-id tags version]
-    (count-sites-filter-by-tags store provider-set-id region-id tags version)))
+  (get-providers-with-coverage-in-region [store provider-set-id version filter-options]
+    (get-providers-with-coverage-in-region store provider-set-id version filter-options))
+  (count-providers-filter-by-tags [store provider-set-id region-id tags]
+    (count-providers-filter-by-tags store provider-set-id region-id tags))
+  (count-providers-filter-by-tags [store provider-set-id region-id tags version]
+    (count-providers-filter-by-tags store provider-set-id region-id tags version)))
 
 
 (defmethod ig/init-key :planwise.component/providers-set
@@ -244,15 +244,15 @@
 
   (def store (:planwise.component/providers-set integrant.repl.state/system))
 
-  (get-sites-with-coverage-in-region store 19 1 {:region-id 42
+  (get-providers-with-coverage-in-region store 19 1 {:region-id 42
                                                  :coverage-algorithm "pgrouting-alpha"
                                                  :coverage-options {:driving-time 60}})
 
-  (preprocess-site! store 1 {:algorithm :simple-buffer
+  (preprocess-provider! store 1 {:algorithm :simple-buffer
                              :options-list [{:distance 5} {:distance 10}]
                              :raster-dir "data/coverage/11"})
 
-  (preprocess-site! store 1 {:algorithm :pgrouting-alpha
+  (preprocess-provider! store 1 {:algorithm :pgrouting-alpha
                              :options-list [{:driving-time 30} {:driving-time 60}]
                              :raster-dir "data/coverage/11"})
 
