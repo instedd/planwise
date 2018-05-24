@@ -33,13 +33,13 @@
      [:h2 "Investment"]
      (println custom-text-prop)
      [common2/text-field {:type "number"
-                          :on-change  #(dispatch [:scenarios/save-key [:changeset-dialog :investment] (-> % .-target .-value int)])
+                          :on-change  #(dispatch [:scenarios/save-key [:changeset-dialog :investment] (-> % .-target .-value js/parseInt)])
                           :value (or investment "")}
       custom-text-prop]
 
      [:h2 "Capacity"]
      [common2/text-field {:type "number"
-                          :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] (-> % .-target .-value int)])
+                          :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] (-> % .-target .-value js/parseInt)])
                           :value (or capacity "")}]]))
 (defn changeset-dialog
   [{:keys [investment]}]
