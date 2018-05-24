@@ -37,7 +37,8 @@
  {:middleware [#ig/ref :planwise.middleware/api]
   :handlers   [#ig/ref :planwise.endpoint/coverage
                #ig/ref :planwise.endpoint/datasets
-               #ig/ref :planwise.endpoint/datasets2
+               #ig/ref :planwise.endpoint/providers-set
+
                #ig/ref :planwise.endpoint/facilities
                #ig/ref :planwise.endpoint/monitor
                #ig/ref :planwise.endpoint/population
@@ -108,8 +109,10 @@
   :resmap     #ig/ref :planwise.component/resmap
   :importer   #ig/ref :planwise.component/importer}
 
- :planwise.endpoint/datasets2
- {:datasets2   #ig/ref :planwise.component/datasets2
+ :planwise.endpoint/providers-set
+
+ {:providers-set  #ig/ref :planwise.component/providers-set
+
   :jobrunner   #ig/ref :planwise.component/jobrunner}
 
  :planwise.endpoint/home
@@ -167,12 +170,14 @@
  :planwise.component/datasets
  {:db          #ig/ref :duct.database/sql}
 
- :planwise.component/datasets2
+ :planwise.component/providers-set
+
  {:db          #ig/ref :duct.database/sql
   :coverage    #ig/ref :planwise.component/coverage}
 
  :planwise.component/engine
- {:datasets2   #ig/ref :planwise.component/datasets2
+ {:providers-set #ig/ref :planwise.component/providers-set
+
   :coverage    #ig/ref :planwise.component/coverage}
 
  :planwise.component/facilities
@@ -215,9 +220,9 @@
   :mailer      #ig/ref :planwise.component/mailer}
 
  :planwise.component/projects2
- {:db          #ig/ref :duct.database/sql
-  :datasets2   #ig/ref :planwise.component/datasets2
-  :scenarios   #ig/ref :planwise.component/scenarios}
+ {:db             #ig/ref :duct.database/sql
+  :providers-set  #ig/ref :planwise.component/providers-set
+  :scenarios      #ig/ref :planwise.component/scenarios}
 
  :planwise.component/regions
  {:db          #ig/ref :duct.database/sql}
