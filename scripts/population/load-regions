@@ -27,7 +27,7 @@ mkdir -p ${DATA_PATH}
 
 # if the folder (still) doesn't exist then exit with error
 if [[ ! -e ${DATA_PATH}/$COUNTRY_CODE ]]; then
-  echo "   -> GeoJSON-Folder not found for country $COUNTRY_NAME"
+  echo "   -> GeoJSON folder not found for country $COUNTRY_NAME"
   exit 1
 fi
 
