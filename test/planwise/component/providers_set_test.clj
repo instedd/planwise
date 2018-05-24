@@ -15,7 +15,7 @@
     [{:id owner-id :email "jdoe@example.org"}]]
    [:providers-set
     []]
-   [:sites2
+   [:providers
     []]])
 
 (def fixture-listing-providers-set
@@ -24,7 +24,7 @@
    [:providers-set
     [{:id 1 :name "First" "owner-id" owner-id}
      {:id 2 :name "Bar" "owner-id" owner-id}]]
-   [:sites2
+   [:providers
     []]])
 
 (defn point [input]
@@ -33,7 +33,7 @@
 (defn sample-polygon []
   (PGgeometry. (str "SRID=4326;MULTIPOLYGON(((0 0, 40 0, 40 -20, 0 -20, 0 0)))")))
 
-(def fixture-filtering-sites-tags
+(def fixture-filtering-providers-tags
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
    [:providers-set
@@ -44,7 +44,7 @@
    [:projects2
     [{:id 1 "owner-id" owner-id :name "foo" :provider-set-id 1 :region-id 1}
      {:id 2 "owner-id" owner-id :name "foo2" :provider-set-id 2 :region-id 1}]]
-   [:sites2
+   [:providers
     [{:id 13 :lon 23.416667 :version 2 :the_geom (point "SRID=4326; POINT(23.416667 -19.983333)") "source-id" 1
       "processing-status" ":ok" "provider-set-id" 1 :tags "private laboratory radiography pharmacy"
       :type "hospital" :lat -19.983333 :capacity 50 :name "Nanyuki Cottage Hospital"}
@@ -99,28 +99,28 @@
 
 (deftest csv-to-correct-provider-set
   (test-system/with-system (test-config)
-    (let [store                    (:planwise.component/providers-set system)
+    (let [store                         (:planwise.component/providers-set system)
           provider-set1-id              (:id (providers-set/create-provider-set store "Initial" owner-id :none))
           provider-set2-id              (:id (providers-set/create-provider-set store "Other" owner-id :none))
-          facilities-provider-set1      (providers-set/csv-to-sites store provider-set1-id (io/resource "sites.csv"))
+          facilities-provider-set1      (providers-set/csv-to-providers store provider-set1-id (io/resource "sites.csv"))
           version-provider-set1         (:last-version (providers-set/get-provider-set store provider-set1-id))
           version-provider-set2         (:last-version (providers-set/get-provider-set store provider-set2-id))
-          listed-sites-provider-set1    (providers-set/sites-by-version store provider-set1-id version-provider-set1)
-          listed-sites-provider-set2    (providers-set/sites-by-version store provider-set2-id version-provider-set2)]
-      (is (= (count listed-sites-provider-set1) 4)
-          (is (= (count listed-sites-provider-set2) 0))))))
+          listed-providers-set1         (providers-set/providers-by-version store provider-set1-id version-provider-set1)
+          listed-providers-set2         (providers-set/providers-by-version store provider-set2-id version-provider-set2)]
+      (is (= (count listed-providers-set1) 4)
+          (is (= (count listed-providers-set2) 0))))))
 
 (defn- pd [v] (do (println v) v))
 
 (deftest several-csv-to-provider-set
   (test-system/with-system (test-config)
-    (let [store                    (:planwise.component/providers-set system)
-          provider-set-id               (pd (:id (providers-set/create-provider-set store "Initial" owner-id :none)))
-          sites                    (providers-set/csv-to-sites store provider-set-id (io/resource "sites.csv"))
-          other-sites              (providers-set/csv-to-sites store provider-set-id (io/resource "other-sites.csv"))
-          last-version-provider-set     (:last-version (providers-set/get-provider-set store provider-set-id))
-          listed-sites             (providers-set/sites-by-version store provider-set-id last-version-provider-set)]
-      (is (= (count listed-sites) 2))
+    (let [store                        (:planwise.component/providers-set system)
+          provider-set-id              (pd (:id (providers-set/create-provider-set store "Initial" owner-id :none)))
+          providers                    (providers-set/csv-to-providers store provider-set-id (io/resource "sites.csv"))
+          other-providers              (providers-set/csv-to-providers store provider-set-id (io/resource "other-sites.csv"))
+          last-version-provider-set    (:last-version (providers-set/get-provider-set store provider-set-id))
+          listed-providers             (providers-set/providers-by-version store provider-set-id last-version-provider-set)]
+      (is (= (count listed-providers) 2))
       (is (= last-version-provider-set 2)))))
 
 ;; ----------------------------------------------------------------------
@@ -128,12 +128,12 @@
 
 (defn- validate-filter-count
   [store id tags number]
-  (is (= (:filtered (providers-set/count-sites-filter-by-tags store id 1 tags)) number)))
+  (is (= (:filtered (providers-set/count-providers-filter-by-tags store id 1 tags)) number)))
 
-(deftest filtering-sites
-  (test-system/with-system (test-config fixture-filtering-sites-tags)
+(deftest filtering-providers
+  (test-system/with-system (test-config fixture-filtering-providers-tags)
     (let [store                    (:planwise.component/providers-set system)
-          providers-id1            (providers-set/sites-by-version store 1 2)
+          providers-id1            (providers-set/providers-by-version store 1 2)
           number                   (count providers-id1)]
       (validate-filter-count store 1 [""] number)
       (validate-filter-count store 1 ["inexistent"] 0)

@@ -1,9 +1,9 @@
 (ns planwise.boundary.providers-set)
 
-(defprotocol Providers-Set
+(defprotocol ProvidersSet
   "API for manipulating providers set"
 
-  (list-provider-sets [this owner-id]
+  (list-providers-set [this owner-id]
     "Returns the list of the providers-set owned by the user")
 
   (get-provider-set [this provider-set-id]

@@ -61,9 +61,9 @@
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defn create-provider-ser
+(defn create-provider-set
   [store name owner-id coverage-algorithm]
-  (db-create-provider-ser! (get-db store) {:name name
+  (db-create-provider-set! (get-db store) {:name name
                                       :owner-id owner-id
                                       :coverage-algorithm (some-> coverage-algorithm clojure.core/name)}))
 
@@ -218,7 +218,7 @@
      (if (str/blank? tags) response (assoc response :filtered (count-fn tags version))))))
 
 (defrecord ProvidersStore [db coverage]
-  boundary/Providers-Set
+  boundary/ProvidersSet
   (list-providers-set [store owner-id]
     (list-providers-set store owner-id))
   (get-provider-set [store provider-set-id]

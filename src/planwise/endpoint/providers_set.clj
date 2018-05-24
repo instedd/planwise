@@ -26,7 +26,7 @@
        (let [options    {:name               name
                          :owner-id           user-id
                          :coverage-algorithm coverage-algorithm}
-             result     (providers-set/create-and-import-sites service options csv-file)
+             result     (providers-set/create-and-import-providers service options csv-file)
              provider-set-id (:id result)]
          (jobrunner/queue-job jobrunner
                               [::providers-set/preprocess-provider-set provider-set-id]
