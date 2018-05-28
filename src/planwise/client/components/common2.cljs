@@ -15,7 +15,7 @@
   (let [page (subscribe [:current-page])
         active? (fn [pages] (contains? pages @page))]
     {:sections [[ui/section {:href (routes/projects2) :active (active? #{:projects2 :scenario})} "Projects"]
-                [ui/section {:href (routes/datasets2) :active (active? #{:datasets2})} "Datasets"]]
+                [ui/section {:href (routes/providers-set) :active (active? #{:providers-set})} "Providers set"]]
 
      :account [ui/account {:name @current-user-email :on-signout #(dispatch [:signout])}]
      :title "Planwise"

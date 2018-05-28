@@ -4,8 +4,8 @@
             [planwise.client.projects.subs]
             [planwise.client.current-project.subs]
             [planwise.client.projects2.subs]
-            [planwise.client.datasets2.subs]
             [planwise.client.datasets.subs]
+            [planwise.client.providers-set.subs]
             [planwise.client.regions.subs]
             [planwise.client.scenarios.subs]))
 

@@ -6,7 +6,7 @@
             [planwise.client.current-project.handlers :as current-project]
             [planwise.client.datasets.handlers]
             [planwise.client.projects2.handlers]
-            [planwise.client.datasets2.handlers]
+            [planwise.client.providers-set.handlers]
             [planwise.client.scenarios.handlers]
             [planwise.client.coverage]
             [planwise.client.population]

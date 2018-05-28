@@ -126,7 +126,7 @@
                 (assoc-in [:current-scenario :name] name)
                 (assoc-in [:view-state] :current-scenario))})))
 
-;;Creating new-sites
+;;Creating new-providers
 
 (rf/reg-event-db
  :scenarios/adding-new-site

@@ -20,8 +20,8 @@
   (dispatch [:navigate {:page :projects, :id id, :section :scenarios}]))
 (defroute project-access "/projects/:id/access/:token" [id token]
   (dispatch [:navigate {:page :projects, :id id, :section :access, :token token}]))
-(defroute datasets2 "/datasets2" []
-  (dispatch [:navigate {:page :datasets2}]))
+(defroute providers-set "/providers-set" []
+  (dispatch [:navigate {:page :providers-set}]))
 (defroute datasets "/datasets" []
   (dispatch [:navigate {:page :datasets}]))
 (defroute projects2 "/projects2" []

@@ -1,4 +1,4 @@
-(ns planwise.client.datasets.api)
+(ns planwise.client.providers-set.api)
 
 ;; ----------------------------------------------------------------------------
 ;; Utility functions
@@ -9,53 +9,53 @@
           (update :status keyword)
           (update :state keyword)))
 
-(defn- map-dataset
-  [server-dataset]
-  (update server-dataset :server-status map-server-status))
+(defn- map-provider-set
+  [server-provider-set]
+  (update server-provider-set :server-status map-server-status))
 
 ;; ----------------------------------------------------------------------------
 ;; API methods
 
-(def load-datasets
+(def load-providers-set
   {:method    :get
-   :uri       "/api/datasets"
-   :mapper-fn (partial map map-dataset)})
+   :uri       "/api/providers-set"
+   :mapper-fn (partial map map-provider-set)})
 
-(defn load-dataset
-  [dataset-id]
+(defn load-provider-set
+  [provider-set-id]
   {:method    :get
-   :uri       (str "/api/datasets/" dataset-id)
-   :mapper-fn map-dataset})
+   :uri       (str "/api/providers-set/" provider-set-id)
+   :mapper-fn map-provider-set})
 
 (def load-resourcemap-info
   {:method  :get
-   :uri     "/api/datasets/resourcemap-info"
+   :uri     "/api/providers-set/resourcemap-info"
    :timeout 60000})
 
-(defn create-dataset!
+(defn create-provider-set!
   [name description coll-id type-field]
   {:method    :post
-   :uri       "/api/datasets"
+   :uri       "/api/providers-set"
    :params    {:name        name
                :description description
                :coll-id     coll-id
                :type-field  type-field}
-   :mapper-fn map-dataset})
+   :mapper-fn map-provider-set})
 
-(defn update-dataset!
+(defn update-provider-set!
   [id]
   {:method    :post
-   :uri       (str "/api/datasets/" id "/update")
-   :mapper-fn map-dataset})
+   :uri       (str "/api/providers-set/" id "/update")
+   :mapper-fn map-provider-set})
 
 (defn cancel-import!
-  [dataset-id]
+  [provider-set-id]
   {:method    :post
-   :uri       "/api/datasets/cancel"
-   :params    {:dataset-id dataset-id}
-   :mapper-fn (partial map map-dataset)})
+   :uri       "/api/providers-set/cancel"
+   :params    {:provider-set-id provider-set-id}
+   :mapper-fn (partial map map-provider-set)})
 
-(defn delete-dataset!
-  [dataset-id]
+(defn delete-provider-set!
+  [provider-set-id]
   {:method :delete
-   :uri    (str "/api/datasets/" dataset-id)})
+   :uri    (str "/api/providers-set/" provider-set-id)})

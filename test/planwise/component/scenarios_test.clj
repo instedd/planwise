@@ -50,7 +50,7 @@
     {:planwise.test/fixtures           {:fixtures data}
      :planwise.component/providers-set {:db (ig/ref :duct.database/sql)}
      :planwise.component/projects2     {:db (ig/ref :duct.database/sql)
-                                    :providers-set (ig/ref :planwise.component/providers-set)}
+                                        :providers-set (ig/ref :planwise.component/providers-set)}
      :planwise.component/scenarios {:db (ig/ref :duct.database/sql)
                                     :jobrunner (stub jobrunner/JobRunner
                                                      {:queue-job :enqueued})}})))

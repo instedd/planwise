@@ -8,7 +8,7 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]
-            [planwise.client.datasets2.components.dropdown :refer [datasets-dropdown-component]]
+            [planwise.client.providers-set.components.dropdown :refer [providers-set-dropdown-component]]
             [planwise.client.mapping :refer [static-image fullmap-region-geo]]
             [planwise.client.population :refer [population-dropdown-component]]
             [planwise.client.routes :as routes]
@@ -76,19 +76,19 @@
   (let [value (r/atom "")]
     (fn []
       [common2/text-field {:type "text"
-                           :placeholder "Type tag for filtering sites"
+                           :placeholder "Type tag for filtering providers"
                            :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (not (blank? @value)))
                                                    (dispatch [:projects2/save-tag @value])
                                                    (reset! value "")))
                            :on-change #(reset! value (-> % .-target .-value))
                            :value @value}])))
 
-(defn- count-sites
-  [tags {:keys [dataset-id dataset-sites region-id]}]
-  (let [{:keys [total filtered]} dataset-sites]
+(defn- count-providers
+  [tags {:keys [provider-set-id provider-set-providers region-id]}]
+  (let [{:keys [total filtered]} provider-set-providers]
     (cond (nil? region-id) [:p "Select region first."]
-          (nil? dataset-id) [:p "Select dataset first."]
-          :else [:p "Selected sites: " filtered " / " total])))
+          (nil? provider-set-id) [:p "Select provider set first."]
+          :else [:p "Selected providers: " filtered " / " total])))
 
 (defn- section-header
   [number title]
@@ -126,24 +126,24 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 3 "Sites"]
-          [datasets-dropdown-component {:label     "Dataset"
-                                        :value     (:dataset-id @current-project)
-                                        :on-change #(dispatch [:projects2/save-key :dataset-id %])
-                                        :disabled? read-only}]
+          [providers-set-dropdown-component {:label     "Dataset"
+                                             :value     (:provider-set-id @current-project)
+                                             :on-change #(dispatch [:projects2/save-key :provider-set-id %])
+                                             :disabled? read-only}]
 
-          [current-project-input "Capacity workload" [:config :sites :capacity] "number" {:disabled read-only}]
+          [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
 
           (when-not read-only [tag-input])
           [:label "Tags: " [tag-set @tags read-only]]
-          [count-sites @tags @current-project]]
+          [count-providers @tags @current-project]]
 
          [:section {:class-name "project-settings-section"}
           [section-header 4 "Coverage"]
           [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
                                               :value              (get-in @current-project [:config :coverage :filter-options])
                                               :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-                                              :empty              [:div {:class-name " no-dataset-selected"} "First choose dataset."]
+                                              :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
                                               :disabled?          read-only}]]
 
          [:section {:class-name "project-settings-section"}

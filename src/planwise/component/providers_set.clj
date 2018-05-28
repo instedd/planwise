@@ -56,7 +56,7 @@
   "Returns providers associated to a provider-set-id and version"
   [store provider-set-id version]
   (db-find-providers (get-db store) {:provider-set-id provider-set-id
-                                 :version version}))
+                                     :version version}))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -64,8 +64,8 @@
 (defn create-provider-set
   [store name owner-id coverage-algorithm]
   (db-create-provider-set! (get-db store) {:name name
-                                      :owner-id owner-id
-                                      :coverage-algorithm (some-> coverage-algorithm clojure.core/name)}))
+                                           :owner-id owner-id
+                                           :coverage-algorithm (some-> coverage-algorithm clojure.core/name)}))
 
 (defn list-providers-set
   [store owner-id]
@@ -104,10 +104,10 @@
                                  options)
           polygon         (coverage/compute-coverage coverage coords criteria)
           provider-coverage   {:provider-id   provider-id
-                           :algorithm (name algorithm)
-                           :options   (pr-str options)
-                           :geom      polygon
-                           :raster    raster-basename}
+                               :algorithm (name algorithm)
+                               :options   (pr-str options)
+                               :geom      polygon
+                               :raster    raster-basename}
           result          (db-create-provider-coverage! db-spec provider-coverage)]
       {:ok (:id result)})
     (catch RuntimeException e
@@ -127,8 +127,8 @@
         (db-delete-algorithm-coverages-by-provider-id! db-spec {:provider-id provider-id :algorithm (name algorithm)})
         (let [results (doall (for [options options-list]
                                (compute-provider-coverage! store provider {:algorithm algorithm
-                                                                   :options options
-                                                                   :raster-dir raster-dir})))]
+                                                                           :options options
+                                                                           :raster-dir raster-dir})))]
           (let [total     (count options-list)
                 succeeded (count (filter (comp some? :ok) results))
                 result    (condp = succeeded
@@ -136,7 +136,7 @@
                             0 :error
                             :partial)]
             (db-update-provider-processing-status! db-spec {:id provider-id
-                                                        :processing-status (str result)}))))
+                                                            :processing-status (str result)}))))
       (info "Skipping provider" provider-id
             "since it's already processed with status" (:processing-status provider)))))
 
@@ -195,11 +195,11 @@
         options   (:coverage-options filter-options)
         tags      (str/join " & " (:tags filter-options))]
     (db-find-providers-with-coverage-in-region db-spec {:provider-set-id provider-set-id
-                                                    :version    version
-                                                    :region-id  region-id
-                                                    :algorithm  algorithm
-                                                    :options    (some-> options pr-str)
-                                                    :tags       tags})))
+                                                        :version    version
+                                                        :region-id  region-id
+                                                        :algorithm  algorithm
+                                                        :options    (some-> options pr-str)
+                                                        :tags       tags})))
 
 (defn count-providers-filter-by-tags
   ([store provider-set-id region-id tags]
@@ -210,9 +210,9 @@
          count-fn (fn [tags version]
                     (let [{:keys [last-version]} (get-provider-set store provider-set-id)]
                       (:count (db-count-providers-with-tags db-spec {:provider-set-id provider-set-id
-                                                                 :version         (or version last-version)
-                                                                 :region-id       region-id
-                                                                 :tags            tags}))))
+                                                                     :version         (or version last-version)
+                                                                     :region-id       region-id
+                                                                     :tags            tags}))))
          total     (count-fn "" version)
          response {:total total :filtered total}]
      (if (str/blank? tags) response (assoc response :filtered (count-fn tags version))))))
@@ -245,15 +245,15 @@
   (def store (:planwise.component/providers-set integrant.repl.state/system))
 
   (get-providers-with-coverage-in-region store 19 1 {:region-id 42
-                                                 :coverage-algorithm "pgrouting-alpha"
-                                                 :coverage-options {:driving-time 60}})
+                                                     :coverage-algorithm "pgrouting-alpha"
+                                                     :coverage-options {:driving-time 60}})
 
   (preprocess-provider! store 1 {:algorithm :simple-buffer
-                             :options-list [{:distance 5} {:distance 10}]
-                             :raster-dir "data/coverage/11"})
+                                 :options-list [{:distance 5} {:distance 10}]
+                                 :raster-dir "data/coverage/11"})
 
   (preprocess-provider! store 1 {:algorithm :pgrouting-alpha
-                             :options-list [{:driving-time 30} {:driving-time 60}]
-                             :raster-dir "data/coverage/11"})
+                                 :options-list [{:driving-time 30} {:driving-time 60}]
+                                 :raster-dir "data/coverage/11"})
 
   (preprocess-provider-set! store 11))

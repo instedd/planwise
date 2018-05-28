@@ -7,7 +7,7 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.projects.views :as projects]
             [planwise.client.projects2.views :as projects2]
-            [planwise.client.datasets2.views :as datasets2]
+            [planwise.client.providers-set.views :as providers-set]
             [planwise.client.current-project.views :as current-project]
             [planwise.client.scenarios.views :as scenarios]
             [planwise.client.datasets.views :as datasets]
@@ -61,8 +61,8 @@
 (defmethod content-pane :datasets []
   [datasets/datasets-page])
 
-(defmethod content-pane :datasets2 []
-  [datasets2/datasets2-page])
+(defmethod content-pane :providers-set []
+  [providers-set/providers-set-page])
 
 (defmethod content-pane :design []
   [design/app])
@@ -75,7 +75,7 @@
     (fn []
       (cond
         ; New design has full control of layout
-        (some #(= @current-page %) [:design :home :projects2 :datasets2 :scenarios]) [content-pane @current-page]
+        (some #(= @current-page %) [:design :home :projects2 :providers-set :scenarios]) [content-pane @current-page]
         ; Old design with fixed layout
         :else [:div
                [nav-bar]
