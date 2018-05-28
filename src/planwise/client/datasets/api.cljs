@@ -9,9 +9,9 @@
           (update :status keyword)
           (update :state keyword)))
 
-(defn- map-provider-set
-  [server-provider-set]
-  (update server-provider-set :server-status map-server-status))
+(defn- map-dataset
+  [server-dataset]
+  (update server-dataset :server-status map-server-status))
 
 ;; ----------------------------------------------------------------------------
 ;; API methods
@@ -19,20 +19,20 @@
 (def load-datasets
   {:method    :get
    :uri       "/api/datasets"
-   :mapper-fn (partial map map-provider-set)})
+   :mapper-fn (partial map map-dataset)})
 
-(defn load-provider-set
-  [provider-set-id]
+(defn load-dataset
+  [dataset-id]
   {:method    :get
-   :uri       (str "/api/datasets/" provider-set-id)
-   :mapper-fn map-provider-set})
+   :uri       (str "/api/datasets/" dataset-id)
+   :mapper-fn map-dataset})
 
 (def load-resourcemap-info
   {:method  :get
    :uri     "/api/datasets/resourcemap-info"
    :timeout 60000})
 
-(defn create-provider-set!
+(defn create-dataset!
   [name description coll-id type-field]
   {:method    :post
    :uri       "/api/datasets"
@@ -40,22 +40,22 @@
                :description description
                :coll-id     coll-id
                :type-field  type-field}
-   :mapper-fn map-provider-set})
+   :mapper-fn map-dataset})
 
-(defn update-provider-set!
+(defn update-dataset!
   [id]
   {:method    :post
    :uri       (str "/api/datasets/" id "/update")
-   :mapper-fn map-provider-set})
+   :mapper-fn map-dataset})
 
 (defn cancel-import!
-  [provider-set-id]
+  [dataset-id]
   {:method    :post
    :uri       "/api/datasets/cancel"
-   :params    {:provider-set-id provider-set-id}
-   :mapper-fn (partial map map-provider-set)})
+   :params    {:dataset-id dataset-id}
+   :mapper-fn (partial map map-dataset)})
 
-(defn delete-provider-set!
-  [provider-set-id]
+(defn delete-dataset!
+  [dataset-id]
   {:method :delete
-   :uri    (str "/api/datasets/" provider-set-id)})
+   :uri    (str "/api/datasets/" dataset-id)})

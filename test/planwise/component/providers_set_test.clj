@@ -13,7 +13,7 @@
 (def fixture-user
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
-   [:providers-set
+   [:providers_set
     []]
    [:providers
     []]])
@@ -21,7 +21,7 @@
 (def fixture-listing-providers-set
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
-   [:providers-set
+   [:providers_set
     [{:id 1 :name "First" "owner-id" owner-id}
      {:id 2 :name "Bar" "owner-id" owner-id}]]
    [:providers
@@ -36,7 +36,7 @@
 (def fixture-filtering-providers-tags
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
-   [:providers-set
+   [:providers_set
     [{:id 1 :name "First" "owner-id" owner-id "last-version" 2}
      {:id 2 :name "Bar" "owner-id" owner-id "last-version" 2}]]
    [:regions
