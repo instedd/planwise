@@ -19,7 +19,7 @@
     [common/icon :box]
     [:p "You have no providers-set yet"]]])
 
-(defn provider-set2-card
+(defn provider-set-card
   [props provider-set]
   (let [name (:name provider-set)
         provider-count (:provider-count provider-set 0)]
@@ -32,7 +32,7 @@
     [no-providers-set-view]
     [ui/card-list {:class "provider-set-list"}
      (for [provider-set providers-set]
-       [provider-set2-card {:key (:id provider-set)} provider-set])]))
+       [provider-set-card {:key (:id provider-set)} provider-set])]))
 
 (defn providers-set-page
   []

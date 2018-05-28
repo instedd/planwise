@@ -13,7 +13,7 @@ UPDATE projects2
   WHERE id = :id;
 
 -- :name db-get-project :? :1
-SELECT projects2.*, providers-set."coverage-algorithm", regions_bbox.bbox
+SELECT projects2.*, providers_set."coverage-algorithm", regions_bbox.bbox
   FROM (
     SELECT projects2.id, ST_AsGeoJSON(ST_Extent(regions."preview_geom")) AS bbox
       FROM regions
@@ -21,7 +21,7 @@ SELECT projects2.*, providers-set."coverage-algorithm", regions_bbox.bbox
       WHERE projects2.id = :id
       GROUP BY projects2.id) AS regions_bbox
   LEFT JOIN projects2 ON projects2.id = regions_bbox.id
-  LEFT JOIN providers-set ON projects2."provider-set-id" = providers-set.id
+  LEFT JOIN providers_set ON projects2."provider-set-id" = providers_set.id
   WHERE projects2.id = :id;
 
 -- :name db-list-projects :?
@@ -38,7 +38,7 @@ UPDATE projects2
 -- :name db-start-project! :!
 UPDATE "projects2" AS p2
   SET "state" = 'started',
-      "provider-set-version" = (SELECT "last-version" FROM "providers-set" d2 WHERE d2."id" = p2."provider-set-id")
+      "provider-set-version" = (SELECT "last-version" FROM providers_set ps WHERE ps."id" = ps."provider-set-id")
   WHERE "id" = :id;
 
 -- :name db-reset-project! :!
