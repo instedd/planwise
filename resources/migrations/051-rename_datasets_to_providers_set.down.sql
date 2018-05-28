@@ -1,17 +1,20 @@
 ALTER TABLE providers_coverage
-    RENAME "provider-id" TO "site-id";
+    RENAME COLUMN "provider-id" TO "site-id";
 
-ALTER TABLE providers_coverage
-    RENAME TO sites2_coverage;
+ALTER TABLE "providers_coverage"
+    RENAME TO "sites2_coverage";
 
 ALTER TABLE providers
-    IF EXISTS RENAME TO sites2;
+    RENAME TO sites2;
 
 ALTER TABLE projects2
-    RENAME "provider-set-id" to "dataset-id";
+    RENAME COLUMN "provider-set-id" TO "dataset-id";
+
+ALTER TABLE projects2
+    RENAME COLUMN "provider-set-version" TO "dataset-version";
 
 AlTER TABLE sites2
-    RENAME "provider-set-id" TO "dataset-id";
+    RENAME COLUMN "provider-set-id" TO "dataset-id";
 
 ALTER TABLE providers_set
-    IF EXISTS RENAME TO datasets2;
+    RENAME TO datasets2;
