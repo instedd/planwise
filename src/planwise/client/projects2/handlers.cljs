@@ -133,7 +133,7 @@
         ;; keep current values of current-project except the once that could be updated from server
         ;; to prevent replacing data that have not been saved in server yet
        (let [updated-project (-> current-project
-                                 (assoc :provider-set-providers (:provider-set-providers project))
+                                 (assoc :providers (:providers project))
                                  (assoc :coverage-algorithm (:coverage-algorithm project)))]
          {:dispatch [:projects2/save-project-data updated-project]})))))
 

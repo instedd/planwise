@@ -38,7 +38,7 @@ UPDATE projects2
 -- :name db-start-project! :!
 UPDATE "projects2" AS p2
   SET "state" = 'started',
-      "provider-set-version" = (SELECT "last-version" FROM providers_set ps WHERE ps."id" = ps."provider-set-id")
+      "provider-set-version" = (SELECT "last-version" FROM providers_set ps WHERE ps."id" = p2."provider-set-id")
   WHERE "id" = :id;
 
 -- :name db-reset-project! :!

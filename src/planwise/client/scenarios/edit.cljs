@@ -44,14 +44,14 @@
 
 (defn changeset-dialog
   []
-  (let [site       (subscribe [:scenarios/changeset-dialog])
+  (let [provider       (subscribe [:scenarios/changeset-dialog])
         view-state (subscribe [:scenarios/view-state])
-        site-index (subscribe [:scenarios/changeset-index])]
+        provider-index (subscribe [:scenarios/changeset-index])]
     (fn []
       (dialog {:open? (= @view-state :changeset-dialog)
-               :title "Edit Site"
-               :content (changeset-dialog-content @site)
-               :delete-fn #(dispatch [:scenarios/delete-site @site-index])
+               :title "Edit Provider"
+               :content (changeset-dialog-content @provider)
+               :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
                :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
                :cancel-fn #(dispatch [:scenarios/cancel-changeset-dialog])}))))
 

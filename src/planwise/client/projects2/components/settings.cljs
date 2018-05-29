@@ -84,8 +84,8 @@
                            :value @value}])))
 
 (defn- count-providers
-  [tags {:keys [provider-set-id provider-set-providers region-id]}]
-  (let [{:keys [total filtered]} provider-set-providers]
+  [tags {:keys [provider-set-id providers region-id]}]
+  (let [{:keys [total filtered]} providers]
     (cond (nil? region-id) [:p "Select region first."]
           (nil? provider-set-id) [:p "Select provider set first."]
           :else [:p "Selected providers: " filtered " / " total])))
@@ -125,14 +125,14 @@
           [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
 
          [:section {:class-name "project-settings-section"}
-          [section-header 3 "Sites"]
-          [providers-set-dropdown-component {:label     "Dataset"
+          [section-header 3 "Providers"]
+          [providers-set-dropdown-component {:label     "Provider Set"
                                              :value     (:provider-set-id @current-project)
                                              :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                              :disabled? read-only}]
 
           [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only}]
-          [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per site capacity")]
+          [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
 
           (when-not read-only [tag-input])
           [:label "Tags: " [tag-set @tags read-only]]

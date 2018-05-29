@@ -28,7 +28,7 @@
    ;; Datasets
    :datasets            datasets/initial-db
 
-   ;; Providers set
+   ;; Providers Set
    :providers-set       providers-set/initial-db
 
    :coverage            {}
@@ -36,4 +36,3 @@
    :population          population/initial-db
 
    :scenarios           scenarios/initial-db})
-

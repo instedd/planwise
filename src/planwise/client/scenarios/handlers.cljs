@@ -129,24 +129,24 @@
 ;;Creating new-providers
 
 (rf/reg-event-db
- :scenarios/adding-new-site
+ :scenarios/adding-new-provider
  in-scenarios
  (fn [db [_]]
-   (assoc db :view-state :new-site)))
+   (assoc db :view-state :new-provider)))
 
 (rf/reg-event-fx
- :scenarios/create-site
+ :scenarios/create-provider
  in-scenarios
  (fn [{:keys [db]} [_ {:keys [lat lon]}]]
    (let [{:keys [current-scenario]} db
-         new-site  (db/initial-site {:location {:lat lat :lon lon}})
-         updated-scenario (update current-scenario :changeset #(conj % new-site))
-         new-site-index (dec (count (:changeset updated-scenario)))]
+         new-provider  (db/initial-provider {:location {:lat lat :lon lon}})
+         updated-scenario (update current-scenario :changeset #(conj % new-provider))
+         new-provider-index (dec (count (:changeset updated-scenario)))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc :current-scenario updated-scenario))
-      :dispatch [:scenarios/open-changeset-dialog new-site-index]})))
+      :dispatch [:scenarios/open-changeset-dialog new-provider-index]})))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
@@ -180,7 +180,7 @@
           :changeset-dialog nil)))
 
 (rf/reg-event-fx
- :scenarios/delete-site
+ :scenarios/delete-provider
  in-scenarios
  (fn [{:keys [db]} [_ index]]
    (let [current-scenario (:current-scenario db)

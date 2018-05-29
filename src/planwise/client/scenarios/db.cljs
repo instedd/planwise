@@ -9,10 +9,10 @@
    :list-scope               nil
    :list                     (asdf/new nil)})
 
-(defn initial-site
+(defn initial-provider
   [props]
-  (merge {:action "create-site"
+  (merge {:action "create-provider"
           :investment 0
           :capacity 0
-          :site-id (str (random-uuid))}
+          :provider-id (str (random-uuid))}
          props))
