@@ -31,30 +31,27 @@ PARAM_ID_SOURCE=$2
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
 
 REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id FROM regions WHERE country = '$PARAM_COUNTRY_NAME';")
-echo "   -> Regions to process: $(echo $REGIONS | wc -w | tr -d '[[:space:]]')"
+REGIONS_LEN=$(echo $REGIONS | wc -w | tr -d '[[:space:]]')
+
+echo "   -> Regions to process: $REGIONS_LEN"
 
 SOURCE_ROW=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, name, tif_file FROM population_sources WHERE id = '$PARAM_ID_SOURCE';")
 RASTER_FILENAME=`echo $SOURCE_ROW | cut -d \| -f 3`
 echo -n "   -> Filename to process: $(echo $RASTER_FILENAME) ... "
 
-if [ ! -e ${DATA_PATH}/$RASTER_FILENAME ]; then
-  echo " not found."
+RASTER=$DATA_PATH/$RASTER_FILENAME
+if [ ! -e $RASTER ]; then
+  echo " not found. Cannot extract resolution."
   exit 1
 fi
-echo " found!"
+echo -n " found!"
+
+resolution=$(target_resolution $RASTER)
+echo " Using resolution: $resolution"
 
 mkdir -p ${DATA_PATH}/regions/
 
 for region_id in $REGIONS; do
-  RASTER=$DATA_PATH/$RASTER_FILENAME
-
-  if [[ ! -e $RASTER ]]; then
-    echo "   -> Base country raster $RASTER not found to extract resolution. Aborting."
-    exit 1
-  fi
-
-  resolution=$(target_resolution $RASTER)
-
   echo "   -> Rasterizing ${region_id}"
   TARGET=${DATA_PATH}/regions/${region_id}.tif
   if [[ ! -e $TARGET ]]; then

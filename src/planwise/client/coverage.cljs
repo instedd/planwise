@@ -48,7 +48,7 @@
   [{:keys [label value options]}]
   [common2/text-field {:type     "text"
                        :label    label
-                       :value    (utils/label-from-options options value "")
+                       :value    (utils/label-from-options options (str value) "")
                        :disabled true}])
 
 (defn- criteria-option-select-component
