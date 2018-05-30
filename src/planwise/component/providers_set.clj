@@ -201,6 +201,16 @@
                                                         :options    (some-> options pr-str)
                                                         :tags       tags})))
 
+(defn get-providers
+  [store provider-set-id version filter-options]
+  (let [providers (get-providers-with-coverage-in-region store provider-set-id version filter-options)
+        select-fn (fn [{:keys [id capacity lat lon]}]
+                    {:provider-id id
+                     :capacity capacity
+                     :location {:lat lat :lon lon}})]
+    (seq (map select-fn providers))))
+
+
 (defn count-providers-filter-by-tags
   ([store provider-set-id region-id tags]
    (count-providers-filter-by-tags store provider-set-id region-id tags nil))
@@ -232,7 +242,9 @@
   (count-providers-filter-by-tags [store provider-set-id region-id tags]
     (count-providers-filter-by-tags store provider-set-id region-id tags))
   (count-providers-filter-by-tags [store provider-set-id region-id tags version]
-    (count-providers-filter-by-tags store provider-set-id region-id tags version)))
+    (count-providers-filter-by-tags store provider-set-id region-id tags version))
+  (get-providers [store provider-set-id version filter-options]
+    (get-providers store provider-set-id version filter-options)))
 
 
 (defmethod ig/init-key :planwise.component/providers-set
