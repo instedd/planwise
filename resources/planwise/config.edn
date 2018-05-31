@@ -149,7 +149,6 @@
 
  :planwise.endpoint/scenarios
  {:projects2     #ig/ref :planwise.component/projects2
-  :providers-set #ig/ref :planwise.component/providers-set
   :scenarios     #ig/ref :planwise.component/scenarios}
 
  ;; Components
@@ -238,6 +237,7 @@
 
  :planwise.component/scenarios
  {:db          #ig/ref :duct.database/sql
+  :providers-set  #ig/ref :planwise.component/providers-set
   :engine      #ig/ref :planwise.component/engine
   :jobrunner   #ig/ref :planwise.component/jobrunner}
 

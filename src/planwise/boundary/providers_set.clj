@@ -21,10 +21,7 @@
   (count-providers-filter-by-tags
     [this provider-set-id region-id tags]
     [this provider-set-id region-id tags version]
-    "Count providers filtered by a single tag. Default version is the last one")
-
-  (get-providers [store provider-set-id version filter-options]
-    "Retrieves providers for initial scenario;s changeset"))
+    "Count providers filtered by a single tag. Default version is the last one"))
 
 
 ;; Preprocessing provider-set job type: ::preprocess-provider-set

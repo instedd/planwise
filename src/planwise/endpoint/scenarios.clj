@@ -9,7 +9,6 @@
             [buddy.auth.accessrules :refer [restrict]]
             [clojure.core.reducers :as r]
             [planwise.boundary.scenarios :as scenarios]
-            [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.projects2 :as projects2]))
 
 (timbre/refer-timbre)
@@ -18,27 +17,18 @@
   [project owner-id]
   (when (= (:owner-id project) owner-id) project))
 
-(defn- filter-options
-  [{:keys [region-id coverage-algorithm config]}]
-  {:region-id          region-id
-   :coverage-algorithm coverage-algorithm
-   :coverage-options   (get-in config [:coverage :filter-options])
-   :tags               (get-in config [:providers :tags])})
-
 (defn- scenarios-routes
-  [{service :scenarios projects2 :projects2 providers-set :providers-set}]
+  [{service :scenarios projects2 :projects2}]
   [service]
   (routes
    (GET "/:id" [id :as request]
-     (let [user-id                           (util/request-user-id request)
-           id                                (Integer. id)
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
            {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
-           {:keys [provider-set-id provider-set-version] :as project} (filter-owned-by (projects2/get-project projects2 project-id) user-id)
-           initial-changeset                 (providers-set/get-providers providers-set provider-set-id provider-set-version (filter-options project))]
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
        (if (or (nil? project) (nil? scenario))
          (not-found {:error "Scenario not found"})
-         (response (-> scenario (dissoc :updated-at)
-                       (assoc  :changeset initial-changeset))))))
+         (response (scenarios/get-scenario-for-project service scenario project)))))
 
    (PUT "/:id" [id scenario :as request]
      (let [user-id    (util/request-user-id request)

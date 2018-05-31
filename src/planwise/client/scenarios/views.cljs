@@ -23,15 +23,16 @@
     (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
 
 (defn simple-map
-  [{:keys [bbox]} {:keys [changeset raster]}]
+  [{:keys [bbox]} scenario]
   (let [state    (subscribe [:scenarios/view-state])
         index    (subscribe [:scenarios/changeset-index])
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
                                                                        :lon lon}]))]
-    (fn [{:keys [bbox]} {:keys [changeset raster]}]
-      (let [indexed-changeset     (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)
+    (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
+      (let [changeset   (into providers changeset)
+            indexed-changeset     (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)
             pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
@@ -113,6 +114,7 @@
 (defn display-current-scenario
   [current-project current-scenario]
   (let [read-only? (subscribe [:scenarios/read-only?])
+        created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])]
     (fn [current-project current-scenario]
@@ -127,7 +129,7 @@
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])
        [:div {:class-name "fade"}]
-       [changeset/listing-component current-scenario]
+       [changeset/listing-component @created-providers]
        [:div {:class-name "fade inverted"}]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]

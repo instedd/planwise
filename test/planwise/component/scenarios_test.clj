@@ -108,8 +108,7 @@
 (deftest valid-changeset
   (are [x] (s/valid? ::model/change-set x)
     []
-    [{:action "create-provider" :provider-id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}}
-     {:initial true :provider-id "1" :capacity 50 :location {:lat 0 :lon 0}}]
+    [{:action "create-provider" :provider-id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}}]
     [{:action "create-provider" :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]))
 
 (deftest invalid-changeset

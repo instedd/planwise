@@ -25,7 +25,7 @@
    [:hr]])
 
 (defn- listing-component
-  [{:keys [changeset] :as scenario}]
+  [providers]
   [:div {:class-name "scroll-list"}
-   (map-indexed (fn [i provider] (when (-> provider :initial nil?) [changeset-row {:key i} i provider]))
-                changeset)])
+   (map (fn [{:keys [provider index]}] [changeset-row {:key index} index provider])
+        providers)])

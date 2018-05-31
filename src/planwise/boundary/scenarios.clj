@@ -22,4 +22,7 @@
     "Returns a name for the following scenario to be created based on name")
 
   (reset-scenarios [this project-id]
-    "Reset scenarios information of project and clear engine state"))
+    "Reset scenarios information of project and clear engine state")
+
+  (get-scenario-for-project [this scenario project]
+    "Sets configuration of scenario for current project"))
