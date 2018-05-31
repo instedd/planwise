@@ -50,7 +50,10 @@
   [name filename]
   (let [source (sql-find :population_sources {:tif_file filename})]
     (if (empty? source)
-      (sql-insert! :population_sources {:name name :tif_file filename})
+      (sql-insert! :sources_set {:name name
+                                 :type "raster"
+                                 :unit "people"
+                                 :raster_file filename})
       (do (println (str "   -> Population source (with filename " filename ") already exists in DB! <id: " (:id (first source)) ", name: " (:name (first source)) ">"))
           (println "")
           source))))
@@ -71,25 +74,25 @@
   [source]
   (println (:id source))
   (println (:name source))
-  (println (:tif_file source)))
+  (println (:raster_file source)))
+
+(defn print-header
+  [verbose text]
+  (when verbose (println (str "*****************************************************************")))
+  (println (str "* " text))
+  (when verbose (println (str "***"))))
 
 (defn print-add-country-regions-header
   [verbose country]
-  (when verbose (println (str "*****************************************************************")))
-  (println (str "* Running script to add regions from: " country))
-  (when verbose (println (str "***"))))
+  (print-header verbose (str "Running script to add regions from: " country)))
 
 (defn print-calculate-country-population-header
   [verbose country tif-filename-id]
-  (when verbose (println (str "*****************************************************************")))
-  (println (str "* Running script to calculate population for: " country " with tif file id: " tif-filename-id))
-  (when verbose (println (str "***"))))
+  (print-header verbose (str "Running script to calculate population for: " country " with tif file id: " tif-filename-id)))
 
 (defn print-raster-all-regions-header
   [verbose country]
-  (when verbose (println (str "*****************************************************************")))
-  (println (str "* Running script to raster all regions from: " country))
-  (when verbose (println (str "***"))))
+  (print-header verbose (str "Running script to raster all regions from: " country)))
 
 (defn print-script-result
   [verbose script-result]
@@ -120,19 +123,19 @@
         print-header-raster-all-regions #(print-raster-all-regions-header verbose %)
         country-name (get-name country-code)]
 
-    (doseq [ret sql-result]
-      (comment (print-source ret))
+    (doseq [sources-set sql-result]
+      (comment (print-source sources-set))
 
       (print-header-add-country-regions country-name)
       (-> (add-country-regions country-code country-name) ;load-regions
           (print-result))
 
-      (print-header-calculate-country-population country-name (:id ret))
-      (-> (calculate-country-population country-name (:id ret)) ;regions-population
+      (print-header-calculate-country-population country-name (:id sources-set))
+      (-> (calculate-country-population country-name (:id sources-set)) ;regions-population
           (print-result))
 
       (print-header-raster-all-regions country-name)
-      (-> (raster-all-regions country-name (:id ret)) ;raster-regions
+      (-> (raster-all-regions country-name (:id sources-set)) ;raster-regions
           (print-result))))
 
 
