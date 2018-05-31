@@ -27,11 +27,10 @@
                :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
 
 (defn changeset-dialog-content
-  [{:keys [investment capacity]} scenario-investment]
-  (let [custom-text-prop (when (< scenario-investment investment) " invalid-input")]
+  [{:keys [investment capacity]} scenario-investment project-budget]
+  (let [custom-text-prop (when (< project-budget (+ scenario-investment investment)) " invalid-input")]
     [:div
      [:h2 "Investment"]
-     (println custom-text-prop)
      [common2/text-field {:type "number"
                           :on-change  #(dispatch [:scenarios/save-key [:changeset-dialog :investment] (-> % .-target .-value js/parseInt)])
                           :value (or investment "")}
@@ -42,14 +41,14 @@
                           :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] (-> % .-target .-value js/parseInt)])
                           :value (or capacity "")}]]))
 (defn changeset-dialog
-  [{:keys [investment]}]
+  [scenario budget]
   (let [site       (subscribe [:scenarios/changeset-dialog])
         view-state (subscribe [:scenarios/view-state])
         site-index (subscribe [:scenarios/changeset-index])]
-    (fn [{:keys [investment]}]
+    (fn [scenario budget]
       (dialog {:open? (= @view-state :changeset-dialog)
                :title "Edit Site"
-               :content (changeset-dialog-content @site investment)
+               :content (changeset-dialog-content @site (:investment scenario) budget)
                :delete-fn #(dispatch [:scenarios/delete-site @site-index])
                :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
                :cancel-fn #(dispatch [:scenarios/cancel-changeset-dialog])}))))
