@@ -48,7 +48,7 @@
 
 (defn add-population-source
   [name filename]
-  (let [source (sql-find :population_sources {:tif_file filename})]
+  (let [source (sql-find :sources_set {:raster_file filename})]
     (if (empty? source)
       (sql-insert! :sources_set {:name name
                                  :type "raster"
@@ -138,7 +138,5 @@
       (-> (raster-all-regions country-name (:id sources-set)) ;raster-regions
           (print-result))))
 
-
   (println (str "All done!"))
-
   (System/exit 0))
