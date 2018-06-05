@@ -4,18 +4,19 @@ set -euo pipefail
 source $(dirname "${BASH_SOURCE}")/env-vars
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
-COUNTRY=$1
+COUNTRY_CODE=$1
+COUNTRY_NAME=$2
 #LEVELS=${2:-2,4}
 LEVELS=(0,1)
-echo "   -> Importing $COUNTRY at levels $LEVELS"
+echo "   -> Importing $COUNTRY_NAME at levels $LEVELS"
 
 # check if country was already imported
-REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, country FROM regions WHERE country = '$COUNTRY';")
+REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, country FROM regions WHERE country = '$COUNTRY_NAME';")
 REGIONS_LEN=$(echo $REGIONS | wc -w | tr -d '[[:space:]]')
 
 if [ ${REGIONS_LEN} -gt 0 ]; then
-  echo "   -> Regions for country $COUNTRY already imported."
-  exit 1
+  echo "   -> Regions for country $COUNTRY_NAME already imported."
+  exit 0
 fi
 
 cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
@@ -25,22 +26,21 @@ DATA_PATH=${DATA_PATH:-data}/geojson
 mkdir -p ${DATA_PATH}
 
 # if the folder (still) doesn't exist then exit with error
-if [[ ! -e ${DATA_PATH}/$COUNTRY ]]; then
-  echo "   -> Folder not found for country $COUNTRY"
+if [[ ! -e ${DATA_PATH}/$COUNTRY_CODE ]]; then
+  echo "   -> GeoJSON folder not found for country $COUNTRY_NAME"
   exit 1
 fi
 
 IFS=',';
 for i in $LEVELS; do
-#  FILE=${DATA_PATH}/${COUNTRY}/admin_level_${i}.geojson
-  FILE=${DATA_PATH}/${COUNTRY}/${COUNTRY}_adm${i}.geojson
+  FILE=${DATA_PATH}/${COUNTRY_CODE}/${COUNTRY_CODE}_adm${i}.geojson
   echo -n "   -> Processing $FILE ... "
   psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 
     WITH data AS (SELECT \$$`cat $FILE`\$$::json AS fc)
     INSERT INTO "regions" (country, name, admin_level, the_geom)
     SELECT
-      '${COUNTRY}',
+      '${COUNTRY_NAME}',
       feat#>>'{properties,name}' AS name,
       ${i},
       ST_SetSRID(ST_CollectionExtract(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 3), 4326) as the_geom
@@ -60,3 +60,14 @@ psql -A -t -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT
 SQL_SCRIPT
 # TODO: print errors
 echo "   -> done!"
+
+echo -n "   -> Making regions valid...  $FILE ... "
+psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+
+  UPDATE "regions"
+    SET the_geom = ST_MakeValid(the_geom)
+    WHERE NOT ST_IsValid(the_geom);
+
+SQL_SCRIPT
+  # TODO: print errors
+  echo " done!"
