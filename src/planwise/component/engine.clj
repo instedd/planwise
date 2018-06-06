@@ -82,8 +82,7 @@
 
     (let [initial-demand   (demand/count-population demand-raster)
           quartiles        (vec (demand/compute-population-quartiles demand-raster))
-          update-providers (demand/compute-providers-demand providers props)]
-      (debug update-providers)
+          update-providers (demand/compute-providers-demand providers (merge props {:update? true}))]
       (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
       (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
       {:raster-path      raster-path

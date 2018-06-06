@@ -79,7 +79,7 @@ SELECT upper(name) AS name FROM scenarios
   ORDER BY upper(name) DESC
   LIMIT 1
 
--- :name db-get-providers-data :? :1
+-- :name db-get-initial-providers-data :? :1
 SELECT "providers-data" FROM scenarios
   WHERE "project-id" = :project-id
-    AND label = 'initial';
+  AND label = 'initial';

@@ -27,5 +27,5 @@
   (get-scenario-for-project [this scenario project]
     "Sets configuration of scenario for current project")
 
-  (get-providers-data [this scenario-id]
-    "Gets providers-data from the initial scenario computation"))
+  (get-initial-providers-data [this project-id]
+    "Gets initial demand information per provider for a given project-id."))
