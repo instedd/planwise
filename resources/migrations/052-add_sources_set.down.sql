@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS sources_set;
+DROP TABLE IF EXISTS source_set;

@@ -48,12 +48,12 @@
 
 (defn add-population-source
   [name filename]
-  (let [source (sql-find :sources_set {:raster_file filename})]
+  (let [source (sql-find :source_set {:raster_file filename})]
     (if (empty? source)
-      (sql-insert! :sources_set {:name name
-                                 :type "raster"
-                                 :unit "people"
-                                 :raster_file filename})
+      (sql-insert! :source_set {:name name
+                                :type "raster"
+                                :unit "people"
+                                :raster_file filename})
       (do (println (str "   -> Population source (with filename " filename ") already exists in DB! <id: " (:id (first source)) ", name: " (:name (first source)) ">"))
           (println "")
           source))))

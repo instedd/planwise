@@ -35,7 +35,7 @@ REGIONS_LEN=$(echo $REGIONS | wc -w | tr -d '[[:space:]]')
 
 echo "   -> Regions to process: $REGIONS_LEN"
 
-SOURCE_ROW=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, name, raster_file FROM sources_set WHERE id = '$PARAM_ID_SOURCE';")
+SOURCE_ROW=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, name, raster_file FROM source_set WHERE id = '$PARAM_ID_SOURCE';")
 RASTER_FILENAME=`echo $SOURCE_ROW | cut -d \| -f 3`
 echo -n "   -> Filename to process: $(echo $RASTER_FILENAME) ... "
 

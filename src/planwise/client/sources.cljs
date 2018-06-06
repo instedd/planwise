@@ -1,4 +1,4 @@
-(ns planwise.client.population
+(ns planwise.client.sources
   (:require [re-frame.core :as rf]
             [re-frame.core :refer [dispatch subscribe]]
             [planwise.client.asdf :as asdf]
@@ -6,7 +6,7 @@
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
-(def in-population (rf/path [:population]))
+(def in-sources (rf/path [:sources]))
 
 (def initial-db
   {:list (asdf/new nil)})
@@ -14,40 +14,40 @@
 ;; ----------------------------------------------------------------------------
 ;; API methods
 
-(def load-population-sources
+(def load-sources
   {:method    :get
    :section   :show
-   :uri       "/api/population"})
+   :uri       "/api/sources"})
 
 ;; ----------------------------------------------------------------------------
-;; Listing population sources
+;; Listing sources
 
 (rf/reg-event-fx
- :population/load-population-sources
- in-population
+ :sources/load
+ in-sources
  (fn [{:keys [db]} [_]]
-   {:api (assoc load-population-sources
-                :on-success [:population/sources-loaded])
+   {:api (assoc load-sources
+                :on-success [:sources/loaded])
     :db  (update db :list asdf/reload!)}))
 
 (rf/reg-event-db
- :population/sources-loaded
- in-population
- (fn [db [_ population-sources]]
-   (update db :list asdf/reset! population-sources)))
+ :sources/loaded
+ in-sources
+ (fn [db [_ sources]]
+   (update db :list asdf/reset! sources)))
 
 ;; ----------------------------------------------------------------------------
 ;; Subs
 
 (rf/reg-sub
- :population/list
+ :sources/list
  (fn [db _]
-   (get-in db [:population :list])))
+   (get-in db [:sources :list])))
 
 (rf/reg-sub
- :population/dropdown-options
+ :sources/dropdown-options
  (fn [db _]
-   (let [list (asdf/value (get-in db [:population :list]))]
+   (let [list (asdf/value (get-in db [:sources :list]))]
      (mapv (fn [source] (let [{:keys [id name]} source] {:value id :label name})) list))))
 
 ;; ----------------------------------------------------------------------------
@@ -60,7 +60,7 @@
                        :value    (utils/label-from-options options value empty-label)
                        :disabled true}])
 
-(defn- population-select-component
+(defn- sources-select-component
   [{:keys [label value options empty-label on-change]}]
   [m/Select {:label (if (empty? options) empty-label label)
              :disabled (empty? options)
@@ -68,17 +68,17 @@
              :options options
              :onChange #(on-change (js/parseInt (-> % .-target .-value)))}])
 
-(defn population-dropdown-component
+(defn sources-dropdown-component
   [{:keys [label value on-change disabled?]}]
-  (let [list      (subscribe [:population/list])
-        options   (subscribe [:population/dropdown-options])
-        component (if disabled?
+  (let [list      (subscribe [:sources/list])
+        options   (subscribe [:sources/dropdown-options])
+        component (if (or disabled? (empty? @options))
                     disabled-input-component
-                    population-select-component)]
+                    sources-select-component)]
     (when (asdf/should-reload? @list)
-      (dispatch [:population/load-population-sources]))
+      (dispatch [:sources/load]))
     [component {:label        label
                 :value        value
                 :options      @options
-                :empty-label  "No population layer available."
+                :empty-label  "No sources layer available."
                 :on-change    on-change}]))

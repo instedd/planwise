@@ -30,6 +30,6 @@
 (s/def ::name string?)
 (s/def ::dataset-id (s/nilable number?))
 (s/def ::region-id (s/nilable number?))
-(s/def ::population-source-id (s/nilable number?))
+(s/def ::source-set-id (s/nilable number?))
 
-(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::dataset-id ::population-source-id ::region-id]))
+(s/def ::project (s/keys :req-un [::id ::owner-id ::name ::config ::dataset-id ::source-set-id ::region-id]))

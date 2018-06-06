@@ -27,7 +27,7 @@
 
 (defn- project-base-demand
   [project]
-  (let [source-id              (:population-source-id project)
+  (let [source-id              (:source-set-id project)
         region-id              (:region-id project)
         project-config         (:config project)
         population-raster-file (str "data/populations/data/" source-id "/" region-id ".tif")

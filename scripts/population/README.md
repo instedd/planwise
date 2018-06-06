@@ -16,13 +16,8 @@ See script at `/scripts/geojson` to download KMZ files from [GADM](https://gadm.
 Instead of using the country name as 3rd parameter. Now we use the country code: [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) 
  
 ```diff
-$ docker-compose exec app bash
+$ docker-compose run --rm app bash
 /app$ lein import-population "ury_2015" "URY_ppp_v2b_2015.tif" "URY"
-```
-
-_Note:_
-```
-docker-compose -f ./docker-compose.yml up app
 ```
 
 ### Verbose option

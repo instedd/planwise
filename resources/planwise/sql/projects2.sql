@@ -9,7 +9,7 @@ UPDATE projects2
   SET name = :name, config = :config,
       "dataset-id" = :dataset-id,
       "region-id" = :region-id,
-      "population-source-id" = :population-source-id
+      "source-set-id" = :source-set-id
   WHERE id = :id;
 
 -- :name db-get-project :? :1
