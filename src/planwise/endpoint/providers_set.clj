@@ -36,7 +36,7 @@
 
 (defn providers-set-endpoint
   [config]
-  (context "/api/providers-set" []
+  (context "/api/providers" []
     (restrict (providers-set-routes config) {:handler authenticated?})))
 
 (defmethod ig/init-key :planwise.endpoint/providers-set

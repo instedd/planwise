@@ -5,7 +5,7 @@
 
 (def load-providers-set
   {:method    :get
-   :uri       "/api/providers-set"})
+   :uri       "/api/providers"})
 
 (defn create-provider-set-with-csv
   [{:keys [name csv-file coverage-algorithm]}]
@@ -14,5 +14,5 @@
                     (.append "file" csv-file)
                     (.append "coverage-algorithm" (cljs.core/name coverage-algorithm)))]
     {:method    :post
-     :uri       "/api/providers-set"
+     :uri       "/api/providers"
      :body      form-data}))

@@ -58,10 +58,10 @@
 
 (defn- with-open-raster
   [path f]
-  (if-let [provider-set (gdal/Open path gdalconst/GA_ReadOnly)]
+  (if-let [dataset (gdal/Open path gdalconst/GA_ReadOnly)]
     (try
-      (f provider-set)
-      (finally (.delete provider-set)))
+      (f dataset)
+      (finally (.delete dataset)))
     (throw (ex-info "Failed to open raster file"
                     {:filename path}))))
 
@@ -72,12 +72,12 @@
    (read-raster path 1))
   ([path band-number]
    (with-open-raster path
-     (fn [provider-set]
-       (let [projection   (.GetProjection provider-set)
-             geotransform (.GetGeoTransform provider-set)
-             raster-count (.GetRasterCount provider-set)]
+     (fn [dataset]
+       (let [projection   (.GetProjection dataset)
+             geotransform (.GetGeoTransform dataset)
+             raster-count (.GetRasterCount dataset)]
          (if (<= 1 band-number raster-count)
-           (let [band      (.GetRasterBand provider-set band-number)
+           (let [band      (.GetRasterBand dataset band-number)
                  data-type (.GetRasterDataType band)
                  xsize     (.GetXSize band)
                  ysize     (.GetYSize band)
@@ -108,10 +108,10 @@
    (compute-raster-histogram path 1))
   ([path band-number]
    (with-open-raster path
-     (fn [provider-set]
-       (let [raster-count (.GetRasterCount provider-set)]
+     (fn [dataset]
+       (let [raster-count (.GetRasterCount dataset)]
          (if (<= 1 band-number raster-count)
-           (let [band (.GetRasterBand provider-set band-number)]
+           (let [band (.GetRasterBand dataset band-number)]
              (compute-band-histogram band 256))
            (throw (ex-info "Invalid band number"
                            {:filename   path
@@ -136,14 +136,14 @@
   [{:keys [xsize ysize data-type nodata data projection geotransform] :as raster} output-path]
   (let [driver      (gdal/GetDriverByName "GTiff")
         options     (into-array String (raster-options data-type))
-        provider-set     (.Create driver output-path xsize ysize 1 data-type options)]
-    (doto provider-set
+        dataset     (.Create driver output-path xsize ysize 1 data-type options)]
+    (doto dataset
       (.SetProjection projection)
       (.SetGeoTransform geotransform))
-    (doto (.GetRasterBand provider-set 1)
+    (doto (.GetRasterBand dataset 1)
       (.SetNoDataValue nodata)
       (.WriteRaster 0 0 xsize ysize data))
-    (doto provider-set
+    (doto dataset
       (.FlushCache)
       (.delete))
     nil))

@@ -110,9 +110,7 @@
   :importer   #ig/ref :planwise.component/importer}
 
  :planwise.endpoint/providers-set
-
  {:providers-set  #ig/ref :planwise.component/providers-set
-
   :jobrunner   #ig/ref :planwise.component/jobrunner}
 
  :planwise.endpoint/home
