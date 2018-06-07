@@ -12,20 +12,20 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn- changeset-row
-  [props index provider]
+  [props index {:keys [action investment]}]
   [:div
    [:div {:class-name "section changeset-row"
           :on-click #(dispatch [:scenarios/open-changeset-dialog index])}
     [:div {:class-name "icon-list"}
      [m/Icon {} "domain"]
      [:div {:class-name "icon-list-text"}
-      [:p {:class-name "strong"} (str "Create new provider")]
-      [:p {:class-name "grey-text"}  (str "K " (utils/format-number (:investment provider)))]
+      [:p {:class-name "strong"} (str "Create new provider " index)]
+      [:p {:class-name "grey-text"}  (str "K " (utils/format-number investment))]
       [:p {:class-name "grey-text"}  "1,834 State House Rd, Nairobi, Kenya"]]]]
    [:hr]])
 
 (defn- listing-component
-  [scenario]
+  [{:keys [changeset] :as scenario}]
   [:div {:class-name "scroll-list"}
-   (map-indexed (fn [i provider] [changeset-row {:key i} i provider])
-                (:changeset scenario))])
+   (map-indexed (fn [i provider] (when (-> provider :initial nil?) [changeset-row {:key i} i provider]))
+                changeset)])

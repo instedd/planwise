@@ -26,11 +26,12 @@
 
 (defn- sum-investments
   [changeset]
-  (apply +' (map :investment changeset)))
+  (let [changeset (filter #(-> % :initial nil?) changeset)]
+    (apply +' (map :investment changeset))))
 
 (defn- build-changeset-summary
   [changeset]
-  (let [providers (count changeset)
+  (let [providers (count (filter #(-> % :initial nil?) changeset))
         capacity (apply +' (mapv :capacity changeset))
         u (if (= providers 1) "provider" "providers")]
     (if (zero? providers) ""

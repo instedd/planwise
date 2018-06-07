@@ -16,6 +16,12 @@
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
+(defn- show-provider
+  [{{:keys [action name capacity investment]} :elem :as provider}]
+  (if (nil? action)
+    (str "<b>" name "</b><br> Capacity: " capacity)
+    (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
+
 (defn simple-map
   [{:keys [bbox]} {:keys [changeset raster]}]
   (let [state    (subscribe [:scenarios/view-state])
@@ -49,8 +55,10 @@
                                              :radius 4
                                              :fillColor styles/orange
                                              :stroke false
+                                             :popup-fn #(show-provider %)
                                              :fillOpacity 1
-                                             :onclick-fn #(dispatch [:scenarios/open-changeset-dialog (-> % .-layer .-options .-index)])}]]]))))
+                                             :onclick-fn (fn [e] (when (get-in e [:elem :action])
+                                                                   (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
