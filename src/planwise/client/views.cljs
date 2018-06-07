@@ -8,6 +8,7 @@
             [planwise.client.projects.views :as projects]
             [planwise.client.projects2.views :as projects2]
             [planwise.client.providers-set.views :as providers-set]
+            [planwise.client.sources.views :as sources]
             [planwise.client.current-project.views :as current-project]
             [planwise.client.scenarios.views :as scenarios]
             [planwise.client.datasets.views :as datasets]
@@ -64,6 +65,9 @@
 (defmethod content-pane :providers-set []
   [providers-set/providers-set-page])
 
+(defmethod content-pane :sources []
+  [sources/sources-page])
+
 (defmethod content-pane :design []
   [design/app])
 
@@ -73,12 +77,12 @@
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]
     (fn []
-      (cond
+      (if (some #(= @current-page %) [:design :home :projects2 :providers-set :sources :scenarios])
         ; New design has full control of layout
-        (some #(= @current-page %) [:design :home :projects2 :providers-set :scenarios]) [content-pane @current-page]
+        [content-pane @current-page]
         ; Old design with fixed layout
-        :else [:div
-               [nav-bar]
-               [content-pane @current-page]
-               [:footer
-                [:span.version (str "Version: " config/app-version)]]]))))
+        [:div
+         [nav-bar]
+         [content-pane @current-page]
+         [:footer
+          [:span.version (str "Version: " config/app-version)]]]))))

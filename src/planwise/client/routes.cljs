@@ -22,6 +22,8 @@
   (dispatch [:navigate {:page :projects, :id id, :section :access, :token token}]))
 (defroute providers-set "/providers" []
   (dispatch [:navigate {:page :providers-set}]))
+(defroute sources "/sources" []
+  (dispatch [:navigate {:page :sources}]))
 (defroute datasets "/datasets" []
   (dispatch [:navigate {:page :datasets}]))
 (defroute projects2 "/projects2" []
