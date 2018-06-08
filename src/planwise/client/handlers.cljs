@@ -7,6 +7,7 @@
             [planwise.client.datasets.handlers]
             [planwise.client.projects2.handlers]
             [planwise.client.providers-set.handlers]
+            [planwise.client.sources.handlers]
             [planwise.client.scenarios.handlers]
             [planwise.client.coverage]
             [planwise.client.sources]
