@@ -61,10 +61,6 @@
   (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
       :providers-data read-string))
 
-(defn get-providers-data
-  [store scenario-id]
-  (-> (db-get-providers-data (get-db store) {:id scenario-id})
-      :providers-data read-string))
 
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config] :as project}]
@@ -252,11 +248,19 @@
 
   (create-initial-scenario store project))
 
-; (def store (:planwise.component/scenarios system))
-; (def pd (planwise.component.scenarios/get-providers-data store 217))
-; (def pd-i (planwise.component.scenarios/get-providers-data store 205))
-; (def final-d (reduce + (mapv :unsatisfied pd)))
-; (def satisat (reduce + (mapv :satisfied pd)))
-; (def sati (reduce + (mapv :satisfied pd-i)))
-; (def initial (reduce + (mapv :unsatisfied pd-i)))
-; (= (+ sati satisat) (- initial final-d))
+(comment
+;;REPL testing
+  (def store (:planwise.component/scenarios integrant.repl.state/system))
+
+  (def initial-scenario (get-scenario store 240)) ; scenario-id: 240 label: initial project-id: 16
+  (def scenario         (get-scenario store 244)); scenario-id: 244 project-id: 16
+
+  (def initial-demand   (:demand-coverage scenario))
+  (def final-demand     (:demand-coverage initial-scenario))
+
+  (def initial-providers     (read-string (:providers-data initial-scenario)))
+  (def providers-and-changes (read-string (:providers-data scenario)))
+  (def changes  (subvec providers-and-changes (count initial-providers)))
+
+  (def capacity-sat    (Math/abs (- initial-demand final-demand)))
+  (>= (reduce + (mapv :satisfied changes)) capacity-sat))
