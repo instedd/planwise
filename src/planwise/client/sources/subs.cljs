@@ -4,6 +4,6 @@
             [planwise.client.utils :as utils]))
 
 (rf/reg-sub
-  :sources/list
-  (fn [db _]
-    (get-in db [:sources :list])))
+ :sources/list
+ (fn [db _]
+   (get-in db [:sources :list])))
