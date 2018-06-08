@@ -38,15 +38,7 @@
     (if (zero? providers) ""
         (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
 
-(defn- get-initial-providers
-  [store provider-set-id version filter-options]
-  (let [providers (providers-set/get-providers-with-coverage-in-region
-                   (:providers-set store) provider-set-id version filter-options)
-        select-fn (fn [{:keys [id name capacity lat lon]}]
-                    {:initial true :provider-id (str id)
-                     :name name    :capacity capacity
-                     :location {:lat lat :lon lon}})]
-    (seq (map select-fn providers))))
+
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
@@ -56,11 +48,15 @@
   (-> (db-find-scenario (get-db store) {:id scenario-id})
       (update :changeset edn/read-string)))
 
-(defn get-initial-providers-data
-  [store project-id]
-  (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
-      :providers-data read-string))
-
+(defn- get-initial-providers
+  [store provider-set-id version filter-options]
+  (let [providers (providers-set/get-providers-with-coverage-in-region
+                   (:providers-set store) provider-set-id version filter-options)
+        select-fn (fn [{:keys [id name capacity lat lon]}]
+                    {:initial true :provider-id (str id)
+                     :name name    :capacity capacity
+                     :location {:lat lat :lon lon}})]
+    (seq (map select-fn providers))))
 
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config] :as project}]
@@ -81,7 +77,6 @@
                (assoc  :changeset-summary (build-changeset-summary (read-string changeset)))
                (dissoc :changeset)))
          list)))
-
 
 (defn create-initial-scenario
   [store project]
@@ -160,6 +155,10 @@
                   {:store store
                    :project project})))
 
+(defn- get-initial-providers-data
+  [store project-id]
+  (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
+      :providers-data read-string))
 
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
@@ -229,9 +228,7 @@
   (reset-scenarios [store project-id]
     (reset-scenarios store project-id))
   (get-scenario-for-project [store scenario project]
-    (get-scenario-for-project store scenario project))
-  (get-initial-providers-data [store project-id]
-    (get-initial-providers-data store project-id)))
+    (get-scenario-for-project store scenario project)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]

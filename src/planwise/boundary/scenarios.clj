@@ -25,7 +25,4 @@
     "Reset scenarios information of project and clear engine state")
 
   (get-scenario-for-project [this scenario project]
-    "Sets configuration of scenario for current project")
-
-  (get-initial-providers-data [this project-id]
-    "Gets initial demand information per provider for a given project-id."))
+    "Sets configuration of scenario for current project"))
