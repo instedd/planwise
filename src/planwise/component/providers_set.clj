@@ -75,6 +75,10 @@
   [store provider-set-id]
   (db-find-provider-set (get-db store) {:id provider-set-id}))
 
+(defn get-provider
+  [store provider-id]
+  (db-find-provider (get-db store) {:id provider-id}))
+
 (defn create-and-import-providers
   [store {:keys [name owner-id coverage-algorithm]} csv-file]
   (jdbc/with-db-transaction [tx (get-db store)]
@@ -223,6 +227,8 @@
     (list-providers-set store owner-id))
   (get-provider-set [store provider-set-id]
     (get-provider-set store provider-set-id))
+  (get-provider [store provider-id]
+    (get-provider store provider-id))
   (create-and-import-providers [store options csv-file]
     (create-and-import-providers store options csv-file))
   (new-processing-job [store provider-set-id]

@@ -9,6 +9,9 @@
   (get-provider-set [this provider-set-id]
     "Finds a provider-set by id")
 
+  (get-provider [this provider-id]
+    "Finds provider by id")
+
   (create-and-import-providers [this options csv-file]
     "Create and import a CSV file atomically")
 

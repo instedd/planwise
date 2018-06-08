@@ -14,6 +14,11 @@ UPDATE providers_set
 SELECT * FROM providers_set
   WHERE id = :id
 
+-- :name db-find-provider :? :1
+SELECT p.type, p.name, p.lat, p.lon, p.capacity, p.tags
+    FROM providers p
+    WHERE p.id = :id;
+
 -- :name db-list-providers-set :?
 SELECT id,
        name,
