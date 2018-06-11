@@ -116,7 +116,11 @@
   (let [read-only? (subscribe [:scenarios/read-only?])
         created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
-        unit-name  (get-in current-project [:config :demographics :unit-name])]
+        unit-name  (get-in current-project [:config :demographics :unit-name])
+        export-providers-button [:a {:class "mdc-fab disable-a"
+                                     :id "main-action"
+                                     :href (str "/api/scenarios/" (:id current-scenario) "/csv")}
+                                 [m/Icon {:class "material-icons  center-download-icon"} "get_app"]]]
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)
                              {:main-prop {:style {:position :relative}}
@@ -124,7 +128,8 @@
                               :title [:ul {:class-name "breadcrumb-menu"}
                                       [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
-                                      [:li (:name current-scenario)]]})
+                                      [:li (:name current-scenario)]]
+                              :action export-providers-button})
        (if @read-only?
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])
