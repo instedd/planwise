@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS pgrouting;
 
-CREATE OR REPLACE FUNCTION insert_way (class_id integer, speed integer, source bigint, target bigint)
+CREATE OR REPLACE FUNCTION insert_way(speed double precision, source bigint, target bigint)
 RETURNS integer AS $$
 DECLARE
   source_node RECORD;
@@ -17,9 +17,9 @@ BEGIN
   length_m := ST_Length(geom::geography);
 
   INSERT INTO ways
-         (class_id, length, length_m, source, target, x1, y1, x2, y2,
+         (length, length_m, source, target, x1, y1, x2, y2,
           cost, one_way, maxspeed_forward, the_geom)
-         VALUES (class_id, ST_Length(geom), length_m, source, target,
+         VALUES (ST_Length(geom), length_m, source, target,
                  ST_X(source_node.the_geom), ST_Y(source_node.the_geom),
                  ST_X(target_node.the_geom), ST_Y(target_node.the_geom),
                  ST_Length(geom), 0, speed, geom)
@@ -70,7 +70,7 @@ BEGIN
            LIMIT 1
            INTO closest_to_source;
     IF ST_Distance(segment.source_geom::geography, closest_to_source.the_geom::geography) < threshold THEN
-       new_way_gid := insert_way(segment.class_id, segment.maxspeed_forward, segment.source, closest_to_source.id);
+       new_way_gid := insert_way(segment.maxspeed_forward, segment.source, closest_to_source.id);
        created_ways := created_ways + 1;
        segment_fixed := TRUE;
     END IF;
@@ -82,7 +82,7 @@ BEGIN
            LIMIT 1
            INTO closest_to_target;
     IF ST_Distance(segment.target_geom::geography, closest_to_target.the_geom::geography) < threshold THEN
-       new_way_gid := insert_way(segment.class_id, segment.maxspeed_forward, segment.target, closest_to_target.id);
+       new_way_gid := insert_way(segment.maxspeed_forward, segment.target, closest_to_target.id);
        created_ways := created_ways + 1;
        segment_fixed := TRUE;
     END IF;

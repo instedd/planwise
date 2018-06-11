@@ -537,3 +537,7 @@ form.vertical, .fields-vertical {
     }
   }
 }
+
+.invalid-input{
+  @include mdc-text-field-ink-color(#FF5722)
+}

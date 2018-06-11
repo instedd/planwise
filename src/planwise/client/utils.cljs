@@ -119,7 +119,7 @@
 ;; Used when creating a disabled-input's
 (defn label-from-options
   [options value empty-label]
-  (let [filtered        (filter (fn [el] (= (:value el) (str value))) options)
+  (let [filtered        (filter (fn [el] (= (:value el) value)) options)
         filtered-label  (:label (first filtered))]
     (if (empty? filtered)
       empty-label
