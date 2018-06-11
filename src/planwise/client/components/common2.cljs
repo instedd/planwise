@@ -33,16 +33,17 @@
    [:p "Loading..."]])
 
 (defn text-field
-  [{:keys [label value] :as props}]
-  (let [focus  (r/atom false)
-        id     (str (random-uuid))]
-    (fn [{:keys [label value] :as props}]
-      (let [props (dissoc props :labels)]
-        [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus "mdc-text-field--focused")}
-         [:input.mdc-text-field__input (merge props {:id id
-                                                     :on-focus #(reset! focus true)
-                                                     :on-blur  #(reset! focus false)})]
-         [:label.mdc-floating-label {:for id
-                                     :class (when (or (not (blank? (str value))) @focus) "mdc-floating-label--float-above")}
-          label]
-         [:div.mdc-line-ripple {:class (when @focus "mdc-line-ripple--active")}]]))))
+  ([props-input]
+   (let [focus (r/atom false)
+         id    (str (random-uuid))]
+     (fn [{:keys [label value focus-extra-class] :as props-input}]
+       (let [props (dissoc props-input :label :focus-extra-class)]
+         [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus (str "mdc-text-field--focused" focus-extra-class))}
+          [:input.mdc-text-field__input (merge props {:id id
+                                                      :on-focus #(reset! focus true)
+                                                      :on-blur  #(reset! focus false)})]
+          [:label.mdc-floating-label {:for id
+                                      :class (when (or (not (blank? (str value))) @focus) "mdc-floating-label--float-above")}
+           label]
+          [:div.mdc-line-ripple {:class (when @focus "mdc-line-ripple--active")}]])))))
+

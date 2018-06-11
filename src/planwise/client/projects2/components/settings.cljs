@@ -38,7 +38,7 @@
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
          change-fn       (fn [e] (let [val (-> e .-target .-value)]
-                                   (rf/dispatch-sync [:projects2/save-key path (if (= type "number") (int val) val)])))]
+                                   (rf/dispatch-sync [:projects2/save-key path (if (= type "number") (js/parseInt val) val)])))]
      [common2/text-field {:type      type
                           :label     label
                           :on-change change-fn
