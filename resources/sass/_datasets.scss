@@ -41,7 +41,7 @@ article.datasets {
   }
 }
 
-.dataset-list {
+.provider-set-list {
   list-style: none;
   padding: 0;
   position: absolute;
@@ -52,7 +52,7 @@ article.datasets {
   z-index: 3;
   overflow: auto;
 
-  .dataset-card {
+  .provider-set-card {
     position: relative;
     height: 75px;
     color: $gray-text;
@@ -77,7 +77,7 @@ article.datasets {
       margin: 0;
     }
 
-    .dataset-status {
+    .provider-set-status {
       &.warning {
         cursor: pointer;
       }

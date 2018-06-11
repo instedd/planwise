@@ -20,7 +20,7 @@
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
    [:projects2
-    [{:id project-id :owner-id owner-id :name "" :config nil :dataset-id nil}]]
+    [{:id project-id :owner-id owner-id :name "" :config nil :provider-set-id nil}]]
    [:scenarios
     []]])
 
@@ -34,7 +34,7 @@
   [[:users
     [{:id owner-id :email "jdoe@example.org"}]]
    [:projects2
-    [{:id project-id :owner-id owner-id :name "" :config nil :dataset-id nil}]]
+    [{:id project-id :owner-id owner-id :name "" :config nil :provider-set-id nil}]]
    [:scenarios
     [{:investment 0    :demand-coverage 100 :id initial-scenario-id     :label "initial" :name "Initial" :project-id project-id :changeset "[]"}
      {:investment 500  :demand-coverage 120 :id sub-optimal-scenario-id :label nil       :name "S1"      :project-id project-id :changeset "[]"}
@@ -47,10 +47,10 @@
    (test-config fixture))
   ([data]
    (test-system/config
-    {:planwise.test/fixtures       {:fixtures data}
-     :planwise.component/datasets2 {:db (ig/ref :duct.database/sql)}
-     :planwise.component/projects2 {:db (ig/ref :duct.database/sql)
-                                    :datasets2 (ig/ref :planwise.component/datasets2)}
+    {:planwise.test/fixtures           {:fixtures data}
+     :planwise.component/providers-set {:db (ig/ref :duct.database/sql)}
+     :planwise.component/projects2     {:db (ig/ref :duct.database/sql)
+                                        :providers-set (ig/ref :planwise.component/providers-set)}
      :planwise.component/scenarios {:db (ig/ref :duct.database/sql)
                                     :jobrunner (stub jobrunner/JobRunner
                                                      {:queue-job :enqueued})}})))
@@ -76,12 +76,12 @@
       (is (= (:state scenario) "pending"))
       (is (= (:changeset scenario) [])))))
 
-(deftest create-scenario-with-new-sites
+(deftest create-scenario-with-new-providers
   (test-system/with-system (test-config)
     (let [store       (:planwise.component/scenarios system)
           projects2   (:planwise.component/projects2 system)
-          first-action {:action "create-site" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
-          second-action {:action "create-site" :site-id "new.2" :investment 5000 :capacity 20 :location {:lat 0 :lon 0}}
+          first-action {:action "create-provider" :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
+          second-action {:action "create-provider" :provider-id "new.2" :investment 5000 :capacity 20 :location {:lat 0 :lon 0}}
           props       {:name "Foo" :changeset [first-action second-action]}
           project     (projects2/get-project projects2 project-id)
           scenario-id (:id (scenarios/create-scenario store project props))
@@ -108,14 +108,14 @@
 (deftest valid-changeset
   (are [x] (s/valid? ::model/change-set x)
     []
-    [{:action "create-site" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]))
+    [{:action "create-provider" :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]))
 
 (deftest invalid-changeset
   (are [x] (not (s/valid? ::model/change-set x))
-    [{:action "unknown-action" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
-    [{:action "create-site" :site-id "new.1" :investment nil :capacity nil}]
-    [{:action "create-site" :site-id "new.1" :investment "" :capacity ""}]
-    [{:action "create-site" :site-id "new.1"}]))
+    [{:action "unknown-action" :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
+    [{:action "create-provider" :provider-id "new.1" :investment nil :capacity nil}]
+    [{:action "create-provider" :provider-id "new.1" :investment "" :capacity ""}]
+    [{:action "create-provider" :provider-id "new.1"}]))
 
 (deftest initial-scenario-read-only
   (test-system/with-system (test-config)
@@ -125,7 +125,7 @@
           scenario-id (scenarios/create-initial-scenario store project)
           scenario    (scenarios/get-scenario store scenario-id)
           new-scenario (assoc scenario
-                              :changeset [{:action "create-site" :site-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
+                              :changeset [{:action "create-provider" :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
                               :label "sub-optimal"
                               :investment 10000)]
       (do

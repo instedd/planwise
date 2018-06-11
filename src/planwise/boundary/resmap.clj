@@ -10,4 +10,3 @@
   (find-collection-field
     [service user-ident coll-id field-id]
     "Returns a collection field given its id"))
-

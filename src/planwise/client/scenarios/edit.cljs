@@ -41,14 +41,14 @@
                         :value (or capacity "")}]])
 (defn changeset-dialog
   [scenario budget]
-  (let [site       (subscribe [:scenarios/changeset-dialog])
-        view-state (subscribe [:scenarios/view-state])
-        site-index (subscribe [:scenarios/changeset-index])]
+  (let [provider       (subscribe [:scenarios/changeset-dialog])
+        view-state     (subscribe [:scenarios/view-state])
+        provider-index (subscribe [:scenarios/changeset-index])]
     (fn [scenario budget]
       (dialog {:open? (= @view-state :changeset-dialog)
-               :title "Edit Site"
-               :content (changeset-dialog-content (assoc @site :available-budget (- budget (:investment scenario))))
-               :delete-fn #(dispatch [:scenarios/delete-site @site-index])
+               :title "Edit Provider"
+               :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
+               :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
                :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
                :cancel-fn #(dispatch [:scenarios/cancel-changeset-dialog])}))))
 

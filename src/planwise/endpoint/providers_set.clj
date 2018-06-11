@@ -1,5 +1,5 @@
-(ns planwise.endpoint.datasets2
-  (:require [planwise.boundary.datasets2 :as datasets2]
+(ns planwise.endpoint.providers-set
+  (:require [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.jobrunner :as jobrunner]
             [compojure.core :refer :all]
             [integrant.core :as ig]
@@ -11,13 +11,13 @@
 
 (timbre/refer-timbre)
 
-(defn- datasets2-routes
-  [{service :datasets2 jobrunner :jobrunner}]
+(defn- providers-set-routes
+  [{service :providers-set jobrunner :jobrunner}]
   (routes
 
    (GET "/" request
      (let [user-id (util/request-user-id request)
-           sets    (datasets2/list-datasets service user-id)]
+           sets    (providers-set/list-providers-set service user-id)]
        (response sets)))
 
    (POST "/" [name coverage-algorithm :as request]
@@ -26,19 +26,19 @@
        (let [options    {:name               name
                          :owner-id           user-id
                          :coverage-algorithm coverage-algorithm}
-             result     (datasets2/create-and-import-sites service options csv-file)
-             dataset-id (:id result)]
+             result     (providers-set/create-and-import-providers service options csv-file)
+             provider-set-id (:id result)]
          (jobrunner/queue-job jobrunner
-                              [::datasets2/preprocess-dataset dataset-id]
-                              (datasets2/new-processing-job service dataset-id))
+                              [::providers-set/preprocess-provider-set provider-set-id]
+                              (providers-set/new-processing-job service provider-set-id))
          (response result))))))
 
 
-(defn datasets2-endpoint
+(defn providers-set-endpoint
   [config]
-  (context "/api/datasets2" []
-    (restrict (datasets2-routes config) {:handler authenticated?})))
+  (context "/api/providers" []
+    (restrict (providers-set-routes config) {:handler authenticated?})))
 
-(defmethod ig/init-key :planwise.endpoint/datasets2
+(defmethod ig/init-key :planwise.endpoint/providers-set
   [_ config]
-  (datasets2-endpoint config))
+  (providers-set-endpoint config))

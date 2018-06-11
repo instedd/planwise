@@ -1,19 +1,19 @@
 -- :name db-create-project! :<! :1
 INSERT INTO projects2
-  ("owner-id", name, config, "dataset-id", state, "deleted-at")
+  ("owner-id", name, config, "provider-set-id", state, "deleted-at")
   VALUES (:owner-id, :name, NULL, NULL, :state, NULL)
   RETURNING id;
 
 -- :name db-update-project :!
 UPDATE projects2
   SET name = :name, config = :config,
-      "dataset-id" = :dataset-id,
+      "provider-set-id" = :provider-set-id,
       "region-id" = :region-id,
       "population-source-id" = :population-source-id
   WHERE id = :id;
 
 -- :name db-get-project :? :1
-SELECT projects2.*, datasets2."coverage-algorithm", regions_bbox.bbox
+SELECT projects2.*, providers_set."coverage-algorithm", regions_bbox.bbox
   FROM (
     SELECT projects2.id, ST_AsGeoJSON(ST_Extent(regions."preview_geom")) AS bbox
       FROM regions
@@ -21,7 +21,7 @@ SELECT projects2.*, datasets2."coverage-algorithm", regions_bbox.bbox
       WHERE projects2.id = :id
       GROUP BY projects2.id) AS regions_bbox
   LEFT JOIN projects2 ON projects2.id = regions_bbox.id
-  LEFT JOIN datasets2 ON projects2."dataset-id" = datasets2.id
+  LEFT JOIN providers_set ON projects2."provider-set-id" = providers_set.id
   WHERE projects2.id = :id;
 
 -- :name db-list-projects :?
@@ -38,7 +38,7 @@ UPDATE projects2
 -- :name db-start-project! :!
 UPDATE "projects2" AS p2
   SET "state" = 'started',
-      "dataset-version" = (SELECT "last-version" FROM "datasets2" d2 WHERE d2."id" = p2."dataset-id")
+      "provider-set-version" = (SELECT "last-version" FROM providers_set ps WHERE ps."id" = p2."provider-set-id")
   WHERE "id" = :id;
 
 -- :name db-reset-project! :!

@@ -1,11 +1,11 @@
-(ns planwise.client.datasets2.components.dropdown
+(ns planwise.client.providers-set.components.dropdown
   (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as r]
             [clojure.string :as string]
             [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
             [planwise.client.components.common2 :as common2]
-            [planwise.client.datasets2.db :as db]
+            [planwise.client.providers-set.db :as db]
             [planwise.client.ui.rmwc :as m]
             [re-frame.utils :as c]))
 
@@ -16,7 +16,7 @@
                        :value    (utils/label-from-options options (str value) empty-label)
                        :disabled true}])
 
-(defn- datasets-select-component
+(defn- providers-set-select-component
   [{:keys [label value options empty-label on-change]}]
   [m/Select {:label (if (empty? options) empty-label label)
              :disabled (empty? options)
@@ -24,17 +24,17 @@
              :options (sort-by :label options)
              :on-change #(on-change (js/parseInt (-> % .-target .-value)))}])
 
-(defn datasets-dropdown-component
+(defn providers-set-dropdown-component
   [{:keys [label value on-change disabled?]}]
-  (let [list      (subscribe [:datasets2/list])
-        options   (subscribe [:datasets2/dropdown-options])
+  (let [list      (subscribe [:providers-set/list])
+        options   (subscribe [:providers-set/dropdown-options])
         component (if (or disabled? (empty? @options))
                     disabled-input-component
-                    datasets-select-component)]
+                    providers-set-select-component)]
     (when (asdf/should-reload? @list)
-      (dispatch [:datasets2/load-datasets2]))
+      (dispatch [:providers-set/load-providers-set]))
     [component {:label        label
                 :value        value
                 :options      @options
-                :empty-label  "There are no datasets defined."
+                :empty-label  "There are no providers-set defined."
                 :on-change    on-change}]))
