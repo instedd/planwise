@@ -6,4 +6,15 @@
 (rf/reg-sub
  :sources/list
  (fn [db _]
-   (get-in db [:sources :list])))
+   (let [sources (get-in db [:sources :list])]
+   (when (asdf/should-reload? sources)
+     (rf/dispatch [:sources/load]))
+   sources)))
+
+(rf/reg-sub
+  :sources/list-filtered-by-type-points
+  (fn [_]
+    (rf/subscribe [:sources/list]))
+  (fn [sources]
+    (println sources)
+    (filter (fn [source] (= (:type source) "points")) (asdf/value sources))))

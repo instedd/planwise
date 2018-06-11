@@ -30,14 +30,8 @@
 
 (defn sources-page
   []
-  (let [sources-sub (rf/subscribe [:sources/list])
-        sources     (asdf/value @sources-sub)]
-
-    (when (asdf/should-reload? @sources-sub)
-      (rf/dispatch [:sources/load]))
-
+  (let [sources @(rf/subscribe [:sources/list-filtered-by-type-points])]
     (if (nil? sources)
       [common2/loading-placeholder]
-      ;else
       [ui/fixed-width (common2/nav-params)
        [list-view sources]])))
