@@ -1,6 +1,6 @@
 (ns planwise.component.projects2
   (:require [planwise.boundary.projects2 :as boundary]
-            [planwise.boundary.datasets2 :as datasets2]
+            [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.scenarios :as scenarios]
             [planwise.component.regions :as regions]
             [integrant.core :as ig]
@@ -39,15 +39,15 @@
 
 (defn get-project
   [store project-id]
-  (let [{:keys [config dataset-id region-id] :as project} (db-get-project (get-db store) {:id project-id})
-        tags    (when (some? config) (get-in (read-string config) [:sites :tags]))
-        number-of-sites (datasets2/count-sites-filter-by-tags (:datasets2 store) dataset-id region-id tags)]
+  (let [{:keys [config provider-set-id region-id] :as project} (db-get-project (get-db store) {:id project-id})
+        tags    (when (some? config) (get-in (read-string config) [:providers :tags]))
+        number-of-providers (providers-set/count-providers-filter-by-tags (:providers-set store) provider-set-id region-id tags)]
     (regions/db->region
      (-> project
          (update* :engine-config edn/read-string)
          (update* :config edn/read-string)
          (update* :config model/apply-default)
-         (assoc :dataset-sites number-of-sites)))))
+         (assoc   :providers number-of-providers)))))
 
 (defn list-projects
   [store owner-id]
@@ -69,7 +69,7 @@
   [store project-id]
   (db-delete-project! (get-db store) {:id project-id}))
 
-(defrecord SitesProjectsStore [db scenarios datasets2]
+(defrecord ProjectsStore [db scenarios providers-set]
   boundary/Projects2
   (create-project [store owner-id]
     (create-project store owner-id))
@@ -88,7 +88,7 @@
 
 (defmethod ig/init-key :planwise.component/projects2
   [_ config]
-  (map->SitesProjectsStore config))
+  (map->ProjectsStore config))
 
 (comment
   ;; REPL testing

@@ -133,7 +133,7 @@
         ;; keep current values of current-project except the once that could be updated from server
         ;; to prevent replacing data that have not been saved in server yet
        (let [updated-project (-> current-project
-                                 (assoc :dataset-sites (:dataset-sites project))
+                                 (assoc :providers (:providers project))
                                  (assoc :coverage-algorithm (:coverage-algorithm project)))]
          {:dispatch [:projects2/save-project-data updated-project]})))))
 
@@ -161,7 +161,7 @@
  :projects2/save-tag
  in-projects2
  (fn [{:keys [db]} [_ tag]]
-   (let [path [:current-project :config :sites :tags]
+   (let [path [:current-project :config :providers :tags]
          n (count (get-in db path))]
      {:db          (update-in db path (comp vec conj) tag)
       :dispatch [:projects2/persist-current-project]})))
@@ -170,7 +170,7 @@
  :projects2/delete-tag
  in-projects2
  (fn [{:keys [db]} [_ index]]
-   (let [path  [:current-project :config :sites :tags]
+   (let [path  [:current-project :config :providers :tags]
          tags* (utils/remove-by-index (get-in db path) index)]
      {:db       (assoc-in db path tags*)
       :dispatch [:projects2/persist-current-project]})))

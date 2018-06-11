@@ -12,20 +12,20 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn- changeset-row
-  [props index site]
+  [props index provider]
   [:div
    [:div {:class-name "section changeset-row"
           :on-click #(dispatch [:scenarios/open-changeset-dialog index])}
     [:div {:class-name "icon-list"}
      [m/Icon {} "domain"]
      [:div {:class-name "icon-list-text"}
-      [:p {:class-name "strong"} "Create new site"]
-      [:p {:class-name "grey-text"}  (str "K " (utils/format-number (:investment site)))]
+      [:p {:class-name "strong"} (str "Create new provider")]
+      [:p {:class-name "grey-text"}  (str "K " (utils/format-number (:investment provider)))]
       [:p {:class-name "grey-text"}  "1,834 State House Rd, Nairobi, Kenya"]]]]
    [:hr]])
 
 (defn- listing-component
   [scenario]
   [:div {:class-name "scroll-list"}
-   (map-indexed (fn [i site] [changeset-row {:key i} i site])
+   (map-indexed (fn [i provider] [changeset-row {:key i} i provider])
                 (:changeset scenario))])

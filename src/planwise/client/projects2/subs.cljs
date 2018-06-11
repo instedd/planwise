@@ -18,5 +18,5 @@
 (rf/reg-sub
  :projects2/tags
  (fn [db _]
-   (get-in db [:projects2 :current-project :config :sites :tags])))
+   (get-in db [:projects2 :current-project :config :providers :tags])))
 

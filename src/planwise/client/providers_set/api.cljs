@@ -1,18 +1,18 @@
-(ns planwise.client.datasets2.api)
+(ns planwise.client.providers-set.api)
 
 ;; ----------------------------------------------------------------------------
 ;; API methods
 
-(def load-datasets2
+(def load-providers-set
   {:method    :get
-   :uri       "/api/datasets2"})
+   :uri       "/api/providers"})
 
-(defn create-dataset-with-csv
+(defn create-provider-set-with-csv
   [{:keys [name csv-file coverage-algorithm]}]
   (let [form-data (doto (js/FormData.)
                     (.append "name" name)
                     (.append "file" csv-file)
                     (.append "coverage-algorithm" (cljs.core/name coverage-algorithm)))]
     {:method    :post
-     :uri       "/api/datasets2"
+     :uri       "/api/providers"
      :body      form-data}))

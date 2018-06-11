@@ -1,4 +1,4 @@
-(ns planwise.client.datasets2.db
+(ns planwise.client.providers-set.db
   (:require [planwise.client.asdf :as asdf]
             [planwise.client.utils :refer [remove-by-id]]
             [clojure.spec.alpha :as s]))
@@ -8,7 +8,7 @@
 (s/def ::name string?)
 (s/def ::coverage keyword?)
 
-(def initial-new-dataset
+(def initial-new-provider-set
   {:name     ""
    :js-file  nil
    :coverage nil})
@@ -17,7 +17,7 @@
   {:view-state   :list
    :last-error   nil
    :list         (asdf/new nil)
-   :new-dataset  initial-new-dataset})
+   :new-provider-set  initial-new-provider-set})
 
 (defn show-dialog?
   [state]

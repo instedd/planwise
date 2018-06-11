@@ -22,8 +22,8 @@
         index    (subscribe [:scenarios/changeset-index])
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
-        add-point (fn [lat lon] (dispatch [:scenarios/create-site {:lat lat
-                                                                   :lon lon}]))]
+        add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
+                                                                       :lon lon}]))]
     (fn [{:keys [bbox]} {:keys [changeset raster]}]
       (let [indexed-changeset     (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)
             pending-demand-raster raster]
@@ -31,7 +31,7 @@
                                            :position @position
                                            :on-position-changed #(reset! position %)
                                            :on-zoom-changed #(reset! zoom %)
-                                           :on-click (cond  (= @state :new-site) add-point)
+                                           :on-click (cond  (= @state :new-provider) add-point)
                                            :controls []
                                            :initial-bbox bbox}
                              mapping/default-base-tile-layer
@@ -100,7 +100,7 @@
      "K " (utils/format-number investment)]]
    [:hr]
    [m/Fab {:class-name "btn-floating"
-           :on-click #(dispatch [:scenarios/adding-new-site])} "domain"]])
+           :on-click #(dispatch [:scenarios/adding-new-provider])} "domain"]])
 
 (defn display-current-scenario
   [current-project current-scenario]
@@ -123,7 +123,7 @@
        [:div {:class-name "fade inverted"}]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
-       [edit/changeset-dialog current-scenario]])))
+       [edit/changeset-dialog current-scenario (get-in current-project [:config :actions :budget])]])))
 
 (defn scenarios-page
   []
