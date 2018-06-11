@@ -9,7 +9,7 @@
             [planwise.client.providers-set.handlers]
             [planwise.client.scenarios.handlers]
             [planwise.client.coverage]
-            [planwise.client.population]
+            [planwise.client.sources]
             [planwise.client.regions.handlers :as regions]
             [re-frame.core :as rf]))
 

@@ -11,7 +11,7 @@
 (s/def ::region-id number?)
 
 ;; Demographics
-(s/def ::population-source-id number?)
+(s/def ::source-set-id number?)
 (s/def ::target number?)
 (s/def ::unit-name (comp not blank?))
 (s/def ::demographics (s/keys :req-un [::unit-name ::target]))
@@ -44,4 +44,4 @@
 (s/def ::config (s/keys :req-un [::demographics ::actions ::coverage ::providers]))
 
 ;; Project Starting
-(s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::population-source-id ::region-id]))
+(s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))

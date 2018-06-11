@@ -1,4 +1,4 @@
-(ns planwise.component.population
+(ns planwise.component.sources
   (:require [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [hugsql.core :as hugsql]))
@@ -6,7 +6,7 @@
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
 
-(hugsql/def-db-fns "planwise/sql/population.sql")
+(hugsql/def-db-fns "planwise/sql/sources.sql")
 
 (defn get-db
   [store]
@@ -15,12 +15,12 @@
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defrecord PopulationStore [db])
+(defrecord SourcesStore [db])
 
-(defn list-population-sources
+(defn list-sources
   [store]
-  (db-list-population-sources (get-db store)))
+  (db-list-sources (get-db store)))
 
-(defmethod ig/init-key :planwise.component/population
+(defmethod ig/init-key :planwise.component/sources
   [_ config]
-  (map->PopulationStore config))
+  (map->SourcesStore config))

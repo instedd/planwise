@@ -41,7 +41,7 @@
 
                #ig/ref :planwise.endpoint/facilities
                #ig/ref :planwise.endpoint/monitor
-               #ig/ref :planwise.endpoint/population
+               #ig/ref :planwise.endpoint/sources
                #ig/ref :planwise.endpoint/projects
                #ig/ref :planwise.endpoint/projects2
                #ig/ref :planwise.endpoint/regions
@@ -125,8 +125,8 @@
  :planwise.endpoint/monitor
  {}
 
- :planwise.endpoint/population
- {:population  #ig/ref :planwise.component/population}
+ :planwise.endpoint/sources
+ {:sources  #ig/ref :planwise.component/sources}
 
  :planwise.endpoint/projects
  {:projects   #ig/ref :planwise.component/projects
@@ -209,7 +209,7 @@
                 :calculate-demand    #duct/env ["CALCULATE_DEMAND" Bool :or true]
                 :data                #duct/env ["DATA_PATH" Str :or "data/"]}}
 
- :planwise.component/population
+ :planwise.component/sources
  {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/projects
