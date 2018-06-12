@@ -12,9 +12,5 @@
 (s/def ::create-provider
   (s/keys :req-un [::action ::investment ::capacity ::provider-id ::location]))
 
-(s/def ::initial-provider
-  (s/keys :req-un [::initial ::provider-id ::capacity ::location]))
-
 (s/def ::change-set
-  (s/coll-of (s/or :create-provider ::create-provider
-                   :initial-provider ::initial-provider)))
+  (s/coll-of ::create-provider))

@@ -19,7 +19,7 @@
 (defn- show-provider
   [{{:keys [action name capacity investment]} :elem :as provider}]
   (if (nil? action)
-    (str "<b>" name "</b><br> Capacity: " capacity)
+    (str "<b>" (utils/escape-html name) "</b><br> Capacity: " capacity)
     (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
 
 (defn simple-map
@@ -31,8 +31,8 @@
         add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
                                                                        :lon lon}]))]
     (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
-      (let [changeset   (into providers changeset)
-            indexed-changeset     (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)
+      (let [providers           (into providers changeset)
+            indexed-providers   (map-indexed (fn [idx elem] {:elem elem :index idx}) providers)
             pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
@@ -49,7 +49,7 @@
                                                  :DATAFILE (str pending-demand-raster ".map")
                                                  :format "image/png"
                                                  :opacity 0.6}])
-                             [:marker-layer {:points indexed-changeset
+                             [:marker-layer {:points indexed-providers
                                              :lat-fn #(get-in % [:elem :location :lat])
                                              :lon-fn #(get-in % [:elem :location :lon])
                                              :options-fn #(select-keys % [:index])

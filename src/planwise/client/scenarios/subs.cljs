@@ -39,6 +39,6 @@
 (rf/reg-sub
  :scenarios/created-providers :<- [:scenarios/current-scenario]
  (fn [current-scenario [_]]
-   (keep-indexed (fn [i provider] (when (-> provider :initial nil?) {:provider provider :index i}))
+   (keep-indexed (fn [i provider] (when (:action provider) {:provider provider :index i}))
                  (into (:providers current-scenario) (:changeset current-scenario)))))
 

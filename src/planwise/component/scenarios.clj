@@ -51,10 +51,9 @@
   (let [providers (providers-set/get-providers-with-coverage-in-region
                    (:providers-set store) provider-set-id version filter-options)
         select-fn (fn [{:keys [id name capacity lat lon]}]
-                    {:initial true :provider-id (str id)
-                     :name name    :capacity capacity
-                     :location {:lat lat :lon lon}})]
-    (seq (map select-fn providers))))
+                    {:provider-id id :name name
+                     :capacity capacity :location {:lat lat :lon lon}})]
+    (map select-fn providers)))
 
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config] :as project}]
