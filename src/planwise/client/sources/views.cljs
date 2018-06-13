@@ -31,23 +31,25 @@
 
 (defn new-source-view
   []
-  (let [new-source (rf/subscribe [:sources.new/data])]
+  (let [new-source (rf/subscribe [:sources.new/data])
+        name (:name @new-source)
+        csv-file (:csv-file @new-source)]
     (fn []
       [:form.vertical
        [common2/text-field {:label "Name"
-                            :value (:name @new-source)
+                            :value name
                             :on-change #(rf/dispatch [:sources.new/update {:name (-> % .-target .-value)}])}]
 
-       ;[:label.file-input-wrapper
-       ; [:div "Import sites from CSV"]
-       ; [:input {:id "file-upload"
-       ;          :type "file"
-       ;          :class "file-input"
-       ;          :value ""
-       ;          :on-change  #(rf/dispatch [:datasets2/new-dataset-update
-       ;                                     :js-file (-> (.-currentTarget %) .-files (aget 0))])}]
-       ; (when (some? @js-file)
-       ;   [:span (.-name @js-file)])]
+       [:label.file-input-wrapper
+        [:div "Import sources from CSV"]
+        [:input {:id "file-upload"
+                 :type "file"
+                 :class "file-input"
+                 :value ""
+                 :on-change  #(rf/dispatch [:sources.new/update {:csv-file (-> (.-currentTarget %) .-files (aget 0))}])}]
+        (when (some? csv-file)
+          (println csv-file)
+          [:span (.-name csv-file)])]
 
        ;[:a {:href (routes/download-sample)
        ;     :data-trigger "false"} "Download samples sites"]
