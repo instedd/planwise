@@ -68,12 +68,7 @@
   []
   (let [r-sources (rf/subscribe [:sources/list-filtered-by-type-points])
         btn-new (ui/main-action {:icon "add"
-                                 :on-click #(rf/dispatch [:modal/show {:open? true
-                                                                       :title "New source"
-                                                                       :accept-label "Create"
-                                                                       :accept-fn (fn [] (rf/dispatch [:sources.new/create]))
-                                                                       :accept-disabled? false
-                                                                       :cancel-fn (fn [] (println "cancel!"))}])})]
+                                 :on-click #(rf/dispatch [:modal/show])})]
     (fn []
       (let [sources @r-sources]
         (if (nil? sources)
@@ -81,5 +76,9 @@
           [ui/fixed-width (assoc (common2/nav-params)
                                  :action btn-new)
            [list-view sources]
-           [modal/modal-view
+           [modal/modal-view {:title "New source"
+                              :accept-label "Create"
+                              :accept-fn (fn [] (rf/dispatch [:sources.new/create]))
+                              :cancel-fn (fn [] (println "cancel!"))
+                              :accept-disabled? false}
             [new-source-view]]])))))

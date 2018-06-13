@@ -9,9 +9,9 @@
 ;; ----------------------------------------------------------------------------
 ;; Subscription
 (rf/reg-sub
- :modal/config
+ :modal/state
  (fn [db _]
-   (get-in db [:modal-window :config])))
+   (get-in db [:modal-window :state])))
 
 ;; ----------------------------------------------------------------------------
 ;; Handlers
@@ -19,25 +19,32 @@
  :modal/show
  in-modal-path
  (fn [db [_ config]]
-   (assoc-in db [:config] config)))
+   (assoc-in db [:state] {:open? true})))
+
+(rf/reg-event-db
+ :modal/hide
+ in-modal-path
+ (fn [db [_ config]]
+   (assoc-in db [:state] {:open? false})))
 
 ;; ----------------------------------------------------------------------------
 ;; View
 (defn modal-view
-  [content]
+  [attrs content]
   (fn []
-    (let [config @(rf/subscribe [:modal/config])]
-      [m/Dialog {:open (:open? config)
-                 :on-accept (:accept-fn config)
-                 :on-close (:cancel-fn config)}
+    (let [state @(rf/subscribe [:modal/state])]
+      [m/Dialog {:open (:open? state)
+                 :on-accept (:accept-fn attrs)
+                 :on-close (fn [] (rf/dispatch [:modal/hide]))}
        [m/DialogSurface
         [m/DialogHeader
-         [m/DialogHeaderTitle (:title config)]]
+         [m/DialogHeaderTitle (:title attrs)]]
         [m/DialogBody content]
         [m/DialogFooter
          [m/DialogFooterButton
           {:cancel true}
           "Cancel"]
          [m/DialogFooterButton
-          {:accept true :disabled (:accept-disabled config)}
-          (:accept-label config)]]]])))
+          {:accept true :disabled (:accept-disabled attrs)}
+          (:accept-label attrs)]]]])))
+
