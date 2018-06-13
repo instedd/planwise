@@ -9,17 +9,17 @@
 ;; ----------------------------------------------------------------------------
 ;; Subscription
 (rf/reg-sub
-  :modal/config
-  (fn [db _]
-    (get-in db [:modal-window :config])))
+ :modal/config
+ (fn [db _]
+   (get-in db [:modal-window :config])))
 
 ;; ----------------------------------------------------------------------------
 ;; Handlers
 (rf/reg-event-db
-  :modal/show
-  in-modal-path
-  (fn [db [_ config]]
-    (assoc-in db [:config] config)))
+ :modal/show
+ in-modal-path
+ (fn [db [_ config]]
+   (assoc-in db [:config] config)))
 
 ;; ----------------------------------------------------------------------------
 ;; View

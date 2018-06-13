@@ -20,6 +20,6 @@
    (filter (fn [source] (= (:type source) "points")) (asdf/value sources))))
 
 (rf/reg-sub
-  :sources.new/data
-  (fn [db _]
-    (get-in db [:sources :new])))
+ :sources.new/data
+ (fn [db _]
+   (get-in db [:sources :new])))

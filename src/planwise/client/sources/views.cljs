@@ -60,7 +60,7 @@
        ;(when-let [last-error @(rf/subscribe [:datasets2/last-error])]
        ;  [:div.error-message
        ;   (str last-error)])
-       ])))
+])))
 
 (defn sources-page
   []
@@ -69,9 +69,9 @@
                                  :on-click #(rf/dispatch [:modal/show {:open? true
                                                                        :title "New source"
                                                                        :accept-label "Create"
-                                                                       :accept-fn (fn[](rf/dispatch [:sources.new/create]))
+                                                                       :accept-fn (fn [] (rf/dispatch [:sources.new/create]))
                                                                        :accept-disabled? false
-                                                                       :cancel-fn (fn[](println "cancel!"))}])})]
+                                                                       :cancel-fn (fn [] (println "cancel!"))}])})]
     (fn []
       (let [sources @r-sources]
         (if (nil? sources)

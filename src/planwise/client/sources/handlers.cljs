@@ -20,14 +20,14 @@
    (update db :list asdf/reset! sources)))
 
 (rf/reg-event-db
-  :sources.new/update
-  in-sources
-  (fn [db [_ changes]]
-    (update db :new #(merge % changes))))
+ :sources.new/update
+ in-sources
+ (fn [db [_ changes]]
+   (update db :new #(merge % changes))))
 
 (rf/reg-event-fx
-  :sources.new/create
-  in-sources
-  (fn [{:keys [db]}]
-    (println "save new source")
-    (println (get db :new))))
+ :sources.new/create
+ in-sources
+ (fn [{:keys [db]}]
+   (println "save new source")
+   (println (get db :new))))
