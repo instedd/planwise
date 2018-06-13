@@ -62,29 +62,6 @@
                                :nodata nodata
                                :data-type gdalconst/GDT_Byte))))
 
-; -------------------------------------------------------------------------------
-
-(defn- compute-provider
-  [props provider]
-  (let [{:keys [id provider-id action raster capacity update?]} provider
-        {:keys [update? demand-raster project-capacity project-id provider-set-id]} props
-        path (if action (str "data/scenarios/" project-id "/coverage-cache/" provider-id ".tif")
-                 (str "data/coverage/" provider-set-id "/" raster ".tif"))
-        capacity (* capacity project-capacity)
-        population-reachable (count-population-under-coverage demand-raster (raster/read-raster path))]
-    (if update?
-      {:unsatisfied population-reachable}
-      {:id          (or id provider-id)
-       :capacity    capacity
-       :satisfied   (min capacity population-reachable)})))
-
-(defn compute-providers-demand
-  [set props]
-  (first
-   (reduce
-    (fn [[processed-providers props] provider]
-      [(conj processed-providers (compute-provider props provider)) props])
-    [[] props] set)))
 
 (comment
   (def raster1 (raster/read-raster "data/populations/data/20/42.tif"))

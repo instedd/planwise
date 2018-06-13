@@ -52,6 +52,36 @@
          (sort-by :capacity)
          reverse)))
 
+(defn- compute-provider
+  [props provider]
+  (let [{:keys [id provider-id action raster capacity]} provider
+        {:keys [update? demand-raster project-capacity project-id provider-set-id]} props
+        path (if action
+               (str "data/scenarios/" project-id "/coverage-cache/" provider-id ".tif")
+               (str "data/coverage/" provider-set-id "/" raster ".tif"))
+        coverage-raster (raster/read-raster path)
+        scaled-capacity (* capacity project-capacity)
+        population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)]
+
+    (if update?
+      {:unsatisfied population-reachable}
+      (do
+        (debug "Subtracting" scaled-capacity "of provider" (or provider-id id) "reaching" population-reachable "people")
+        (when-not (zero? population-reachable)
+          (let [factor (- 1 (min 1 (/ scaled-capacity population-reachable)))]
+            (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor))))
+        {:id         (or id provider-id)
+         :capacity   capacity
+         :satisfied  (min capacity population-reachable)}))))
+
+(defn- compute-providers-demand
+  [set props]
+  (first
+   (reduce
+    (fn [[processed-providers props] provider]
+      [(conj processed-providers (compute-provider props provider)) props])
+    [[] props] set)))
+
 (defn compute-initial-scenario
   [engine project]
   (let [demand-raster    (project-base-demand project)
@@ -66,23 +96,12 @@
         props            {:project-capacity capacity
                           :provider-set-id  provider-set-id
                           :project-id       project-id
-                          :demand-raster    demand-raster}
-        providers-data   (demand/compute-providers-demand providers props)]
+                          :demand-raster    demand-raster}]
     (debug "Source population demand:" source-demand)
-    (dorun (for [provider providers]
-             (let [capacity             (* capacity (:capacity provider))
-                   coverage-name        (:raster provider)
-                   coverage-path        (str "data/coverage/" provider-set-id "/" coverage-name ".tif")
-                   coverage-raster      (raster/read-raster coverage-path)
-                   population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)]
-               (debug "Subtracting" capacity "of provider" (:id provider) "reaching" population-reachable "people")
-               (when-not (zero? population-reachable)
-                 (let [factor (- 1 (min 1 (/ capacity population-reachable)))]
-                   (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
-
-    (let [initial-demand   (demand/count-population demand-raster)
-          quartiles        (vec (demand/compute-population-quartiles demand-raster))
-          update-providers (demand/compute-providers-demand providers (merge props {:update? true}))]
+    (let [processed-providers (compute-providers-demand providers props)
+          initial-demand      (demand/count-population demand-raster)
+          quartiles           (vec (demand/compute-population-quartiles demand-raster))
+          update-providers    (compute-providers-demand providers (assoc props :update? true))]
       (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
       (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
       {:raster-path      raster-path
@@ -90,7 +109,7 @@
        :pending-demand   initial-demand
        :covered-demand   (- source-demand initial-demand)
        :demand-quartiles quartiles
-       :providers-data   (mapv (fn [[a b]] (merge a b)) (map vector providers-data update-providers))})))
+       :providers-data   (mapv (fn [[a b]] (merge a b)) (map vector processed-providers update-providers))})))
 
 (defn compute-scenario
   [engine project {:keys [changeset providers-data] :as scenario}]
@@ -121,31 +140,22 @@
             coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")]
         (if (not (.exists (io/as-file coverage-path)))
           (coverage/compute-coverage coverage {:lat lat :lon lon} (merge criteria {:raster coverage-path})))))
-    (let [changes-data (demand/compute-providers-demand changeset props)]
+
     ;; Compute demand from initial scenario
     ;; TODO refactor with initial-scenario loop
-      (dorun (for [change changeset]
-               (let [capacity             (* capacity (:capacity change))
-                     coverage-path        (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")
-                     coverage-raster      (raster/read-raster coverage-path)
-                     population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)]
-                 (debug "Subtracting" capacity "of provider" (:provider-id change) "reaching" population-reachable "people")
-                 (when-not (zero? population-reachable)
-                   (let [factor (- 1 (min 1 (/ capacity population-reachable)))]
-                     (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor)))))))
-
-      (let [pending-demand            (demand/count-population demand-raster)
-            initial-providers-data    (mapv #(dissoc % :unsatisfied) providers-data)
-            update-changes    (demand/compute-providers-demand changeset (assoc props :update? true))
-            update-providers  (demand/compute-providers-demand providers (assoc props :update? true))
-            updated-providers (mapv (fn [[a b]] (merge a b)) (map vector initial-providers-data update-providers))
-            updated-changes   (mapv (fn [[a b]] (merge a b)) (map vector changes-data update-changes))]
-        (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
-        (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
-        {:raster-path      raster-path
-         :pending-demand   pending-demand
-         :covered-demand   (- source-demand pending-demand)
-         :providers-data   (into updated-providers updated-changes)}))))
+    (let [processed-changes         (compute-providers-demand changeset props)
+          pending-demand            (demand/count-population demand-raster)
+          initial-providers-data    (mapv #(dissoc % :unsatisfied) providers-data)
+          update-changes    (compute-providers-demand changeset (assoc props :update? true))
+          update-providers  (compute-providers-demand providers (assoc props :update? true))
+          updated-providers (mapv (fn [[a b]] (merge a b)) (map vector initial-providers-data update-providers))
+          updated-changes   (mapv (fn [[a b]] (merge a b)) (map vector processed-changes update-changes))]
+      (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
+      (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
+      {:raster-path      raster-path
+       :pending-demand   pending-demand
+       :covered-demand   (- source-demand pending-demand)
+       :providers-data   (into updated-providers updated-changes)})))
 
 (defn clear-project-cache
   [this project-id]

@@ -9,7 +9,7 @@
 
 (defrecord Raster [projection geotransform xsize ysize data-type nodata data])
 
-(defn cast-value
+(defn- cast-value
   [data-type value]
   (condp = data-type
     gdalconst/GDT_Byte    (byte value)
@@ -204,10 +204,6 @@
                (< dst-top dst-bottom))
       {:dst [dst-left dst-top (dec dst-right) (dec dst-bottom)]
        :src [src-left src-top (dec src-right) (dec src-bottom)]})))
-
-(defn create-child
-  [parent [width height minX minY]]
-  (.createChild parent minX minY width height minX minY []))
 
 (defprotocol RasterOps
   (compatible? [r1 r2]
