@@ -31,25 +31,25 @@
 
 (defn new-source-view
   []
-  (let [new-source (rf/subscribe [:sources.new/data])
-        name (:name @new-source)
-        csv-file (:csv-file @new-source)]
+  (let [new-source (rf/subscribe [:sources.new/data])]
     (fn []
-      [:form.vertical
-       [common2/text-field {:label "Name"
-                            :value name
-                            :on-change #(rf/dispatch [:sources.new/update {:name (-> % .-target .-value)}])}]
+      (let [name (:name @new-source)
+            csv-file (:csv-file @new-source)]
+        [:form.vertical
+         [common2/text-field {:label "Name"
+                              :value name
+                              :on-change #(rf/dispatch [:sources.new/update {:name (-> % .-target .-value)}])}]
 
-       [:label.file-input-wrapper
-        [:div "Import sources from CSV"]
-        [:input {:id "file-upload"
-                 :type "file"
-                 :class "file-input"
-                 :value ""
-                 :on-change  #(rf/dispatch [:sources.new/update {:csv-file (-> (.-currentTarget %) .-files (aget 0))}])}]
-        (when (some? csv-file)
-          (println csv-file)
-          [:span (.-name csv-file)])]
+         [:label.file-input-wrapper
+          [:div "Import sources from CSV"]
+          [:input {:id "file-upload"
+                   :type "file"
+                   :class "file-input"
+                   :value ""
+                   :on-change  #(rf/dispatch [:sources.new/update {:csv-file (-> (.-currentTarget %) .-files (aget 0))}])}]
+          (when (some? csv-file)
+            (println csv-file)
+            [:span (.-name csv-file)])]
 
        ;[:a {:href (routes/download-sample)
        ;     :data-trigger "false"} "Download samples sites"]
@@ -62,7 +62,7 @@
        ;(when-let [last-error @(rf/subscribe [:datasets2/last-error])]
        ;  [:div.error-message
        ;   (str last-error)])
-])))
+]))))
 
 (defn sources-page
   []
