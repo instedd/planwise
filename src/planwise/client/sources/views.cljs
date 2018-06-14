@@ -48,7 +48,6 @@
                    :value ""
                    :on-change  #(rf/dispatch [:sources.new/update {:csv-file (-> (.-currentTarget %) .-files (aget 0))}])}]
           (when (some? csv-file)
-            (println csv-file)
             [:span (.-name csv-file)])]
 
        ;[:a {:href (routes/download-sample)
@@ -78,7 +77,7 @@
            [list-view sources]
            [modal/modal-view {:title "New source"
                               :accept-label "Create"
-                              :accept-fn (fn [] (rf/dispatch [:sources.new/create]))
-                              :cancel-fn (fn [] (println "cancel!"))
-                              :accept-disabled? false}
+                              :accept-fn #(rf/dispatch [:sources.new/create])
+                              :accept-enabled? @(rf/subscribe [:sources.new/valid?])
+                              :cancel-fn #(rf/dispatch [:sources.new/discard])}
             [new-source-view]]])))))

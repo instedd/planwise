@@ -29,5 +29,10 @@
  :sources.new/create
  in-sources
  (fn [{:keys [db]}]
-   (println "save new source")
    (println (get db :new))))
+
+(rf/reg-event-fx
+ :sources.new/discard
+ in-sources
+ (fn [{:keys [db]}]
+   (println "discard new source")))

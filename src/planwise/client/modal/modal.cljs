@@ -18,33 +18,31 @@
 (rf/reg-event-db
  :modal/show
  in-modal-path
- (fn [db [_ config]]
+ (fn [db _]
    (assoc-in db [:state] {:open? true})))
 
 (rf/reg-event-db
  :modal/hide
  in-modal-path
- (fn [db [_ config]]
+ (fn [db _]
    (assoc-in db [:state] {:open? false})))
 
 ;; ----------------------------------------------------------------------------
 ;; View
 (defn modal-view
   [attrs content]
-  (fn []
+  (fn [attrs _]
     (let [state @(rf/subscribe [:modal/state])]
       [m/Dialog {:open (:open? state)
                  :on-accept (:accept-fn attrs)
-                 :on-close (fn [] (rf/dispatch [:modal/hide]))}
+                 :on-cancel (:cancel-fn attrs)
+                 :on-close #(rf/dispatch [:modal/hide])}
        [m/DialogSurface
         [m/DialogHeader
          [m/DialogHeaderTitle (:title attrs)]]
         [m/DialogBody content]
         [m/DialogFooter
-         [m/DialogFooterButton
-          {:cancel true}
+         [m/DialogFooterButton {:cancel true}
           "Cancel"]
-         [m/DialogFooterButton
-          {:accept true :disabled (:accept-disabled attrs)}
+         [m/DialogFooterButton {:accept true :disabled (not (:accept-enabled? attrs))}
           (:accept-label attrs)]]]])))
-
