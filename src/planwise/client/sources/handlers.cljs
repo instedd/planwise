@@ -31,8 +31,8 @@
  (fn [{:keys [db]}]
    (println (get db :new))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
  :sources.new/discard
  in-sources
- (fn [{:keys [db]}]
-   (println "discard new source")))
+ (fn [db]
+   (dissoc db :new)))
