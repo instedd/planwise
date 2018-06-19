@@ -23,8 +23,7 @@
   (db-list-sources (get-db store)))
 
 (defn import-from-csv
-  [store {:keys [name owner-id]} csv-file]
-  (println csv-file))
+  [store {:keys [name owner-id]} csv-file])
 
 (defrecord SourcesStore [db]
   boundary/Sources
