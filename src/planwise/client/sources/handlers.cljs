@@ -29,10 +29,28 @@
  :sources.new/create
  in-sources
  (fn [{:keys [db]}]
-   (println (get db :new))))
+   (let [new-source (get db :new)]
+     {:api (assoc (api/create-source-with-csv new-source)
+                  :on-success [:sources.new/created]
+                  :on-failure [:sources.new/failed])})))
 
 (rf/reg-event-db
  :sources.new/discard
  in-sources
  (fn [db]
+   (rf/dispatch [:modal/hide])
    (dissoc db :new)))
+
+(rf/reg-event-db
+ :sources.new/created
+ in-sources
+ (fn [db [_ updated-sources-list]]
+   (rf/dispatch [:modal/hide])
+   (dissoc db :new)
+   (update db :list #(asdf/reset! % updated-sources-list))))
+
+(rf/reg-event-db
+ :sources.new/failed
+ in-sources
+ (fn [db [_ err]]
+   (assoc-in db [:new :current-error] (:status-text err))))

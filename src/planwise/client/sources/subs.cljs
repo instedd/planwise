@@ -32,3 +32,8 @@
          csv-file (:csv-file new-source)]
      (not (or (str/blank? name)
               (nil? csv-file))))))
+
+(rf/reg-sub
+ :sources.new/current-error
+ (fn [db _]
+   (get-in db [:sources :new :current-error])))

@@ -10,7 +10,11 @@
   [service]
   (routes
    (GET "/" [request]
-     (response (sources/list-sources service)))))
+     (response (sources/list-sources service)))
+
+   (POST "/" [name :as request]
+     (let [csv-file (:tempfile (get (:multipart-params request) "csvfile"))]
+       (response (sources/import-from-csv service {:name name} csv-file))))))
 
 (defn sources-endpoint
   [{service :sources}]

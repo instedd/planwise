@@ -52,16 +52,10 @@
 
        ;[:a {:href (routes/download-sample)
        ;     :data-trigger "false"} "Download samples sites"]
-       ;[m/Select {:label "Coverage algorithm"
-       ;           :value @coverage
-       ;           :options @algorithms
-       ;           :on-change #(rf/dispatch [:datasets2/new-dataset-update
-       ;                                     :coverage (-> % .-target .-value)])}]
 
-       ;(when-let [last-error @(rf/subscribe [:datasets2/last-error])]
-       ;  [:div.error-message
-       ;   (str last-error)])
-]))))
+         (when-let [current-error @(rf/subscribe [:sources.new/current-error])]
+           [:div.error-message
+            (str current-error)])]))))
 
 (defn sources-page
   []

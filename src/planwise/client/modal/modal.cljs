@@ -33,16 +33,14 @@
   [attrs content]
   (fn [attrs _]
     (let [state @(rf/subscribe [:modal/state])]
-      [m/Dialog {:open (:open? state)
-                 :on-accept (:accept-fn attrs)
-                 :on-cancel (:cancel-fn attrs)
-                 :on-close #(rf/dispatch [:modal/hide])}
+      [m/Dialog {:open (:open? state)}
        [m/DialogSurface
         [m/DialogHeader
          [m/DialogHeaderTitle (:title attrs)]]
         [m/DialogBody content]
         [m/DialogFooter
-         [m/DialogFooterButton {:cancel true}
+         [m/DialogFooterButton {:on-click (fn [] ((:cancel-fn attrs)))}
           "Cancel"]
-         [m/DialogFooterButton {:accept true :disabled (not (:accept-enabled? attrs))}
+         [m/DialogFooterButton {:on-click (fn [] ((:accept-fn attrs)))
+                                :disabled (not (:accept-enabled? attrs))}
           (:accept-label attrs)]]]])))
