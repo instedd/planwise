@@ -163,7 +163,7 @@
  (fn [{:keys [db]} [_ tag]]
    (let [path [:current-project :config :providers :tags]
          n (count (get-in db path))]
-     {:db          (update-in db path (comp vec conj) tag)
+     {:db       (update-in db path (comp vec conj) tag)
       :dispatch [:projects2/persist-current-project]})))
 
 (rf/reg-event-fx
@@ -189,3 +189,25 @@
  in-projects2
  (fn [{:keys [db]} _]
    {:navigate (routes/projects2-settings {:id (get-in db [:current-project :id])})}))
+
+;;------------------------------------------------------------------------------
+;; Create actions
+
+(rf/reg-event-fx
+ :projects2/create-action
+ in-projects2
+ (fn [{:keys [db]} [_ action]]
+   (let [path [:current-project :config :actions action]
+         idx (count (get-in db path))]
+     {:db         (update-in db path (comp vec conj) {action idx})
+      :dispatch   [:projects2/persist-current-project]})))
+
+(rf/reg-event-fx
+ :projects2/delete-action
+ in-projects2
+ (fn [{:keys [db]} [_ action index]]
+   (let [path  [:current-project :config :actions action]
+         actions* (utils/remove-by-index (get-in db path) index)]
+     (println actions*)
+     {:db       (assoc-in db path actions*)
+      :dispatch [:projects2/persist-current-project]})))

@@ -16,7 +16,16 @@
             (sort-by (comp string/lower-case :name)))))
 
 (rf/reg-sub
- :projects2/tags
- (fn [db _]
-   (get-in db [:projects2 :current-project :config :providers :tags])))
+ :projects2/tags :<- [:projects2/current-project]
+ (fn [current-project [_]]
+   (get-in current-project [:config :providers :tags])))
 
+(rf/reg-sub
+ :projects2/build :<- [:projects2/current-project]
+ (fn [current-project [_]]
+   (get-in current-project [:config :actions :build])))
+
+(rf/reg-sub
+ :projects2/upgrade :<- [:projects2/current-project]
+ (fn [current-project [_]]
+   (get-in current-project [:config :actions :upgrade])))

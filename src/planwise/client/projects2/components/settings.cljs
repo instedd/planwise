@@ -70,7 +70,7 @@
   [tags read-only]
   [m/ChipSet {:class "tags"}
    (for [[index tag] (map-indexed vector tags)]
-     [tag-chip {:key index} index tag read-only])])
+     [tag-chip {:key (str "tag-" index)} index tag read-only])])
 
 (defn tag-input []
   (let [value (r/atom "")]
@@ -95,9 +95,35 @@
   [:div {:class-name "step-header"}
    [:h2 [:span title]]])
 
+
+;-------------------------------------------------------------------------------------------
+; Actions
+(defn- show-action
+  [_ {:keys [idx action-name capacity investment] :as action}]
+  [:div
+   [m/Button {:type "button"
+              :on-click #(dispatch [:projects2/delete-action action-name idx])}
+    [m/Icon "clear"]]
+   (when (= action-name :build) "with a capacity of ")
+   [current-project-input "" [:config :actions action-name idx :capacity]  "number"]
+   "would cost"
+   [current-project-input "" [:config :actions action-name idx :investment] "number"]])
+
+(defn- listing-actions
+  [action-name list]
+  [:div
+   (for [[index action] (map-indexed vector list)]
+     [show-action {:key (str action-name "-" index)} (assoc action :action-name action-name :idx index)])
+   [m/Button  {:type "button"
+               :on-click #(dispatch [:projects2/create-action action-name])} [m/Icon "add"] "Add Option"]])
+
+;-------------------------------------------------------------------------------------------
+
 (defn current-project-settings-view
   [{:keys [read-only]}]
   (let [current-project (subscribe [:projects2/current-project])
+        build           (subscribe [:projects2/build])
+        upgrade         (subscribe [:projects2/upgrade])
         tags            (subscribe [:projects2/tags])]
     (fn [{:keys [read-only]}]
       [m/Grid {}
@@ -148,7 +174,19 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 5 "Actions"]
-          [current-project-input "Budget" [:config :actions :budget] "number" {:disabled read-only}]]]]])))
+          [:div
+           [:div [:p [m/Icon "account_balance"] "Available budget"]]
+           [current-project-input "" [:config :actions :budget] "number" {:disabled read-only}]
+           [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
+
+           [:div [:p [m/Icon "domain"] "Building a new provider..."]
+            (when @build [listing-actions :build @build])]
+
+           [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
+           [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only}]
+
+           [:div [:p [m/Icon "add"] "Increase the capactiy of a hospital by..."]]
+           (when @upgrade [listing-actions :upgrade @upgrade])]]]]])))
 
 (defn edit-current-project
   []
