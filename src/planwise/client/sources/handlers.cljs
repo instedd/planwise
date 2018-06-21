@@ -44,10 +44,10 @@
 (rf/reg-event-db
  :sources.new/created
  in-sources
- (fn [db [_ updated-sources-list]]
+ (fn [db [_ created-source]]
    (rf/dispatch [:modal/hide])
    (dissoc db :new)
-   (update db :list #(asdf/reset! % updated-sources-list))))
+   (update db :list asdf/swap! into [created-source])))
 
 (rf/reg-event-db
  :sources.new/failed
