@@ -52,12 +52,12 @@
   [store {:keys [name owner-id]} csv-file]
   (jdbc/with-db-transaction [tx (get-db store)]
     (let [tx-store                  (assoc-in store [:db :spec] tx)
-          tx-create-source-set      (fn[name] (create-source-set tx-store name))
-          tx-import-sources-from    (fn[set-id csv-file] (import-sources tx-store set-id csv-file))
-          tx-get-created-source-set (fn[set-id] (get-source-set tx-store set-id))]
-          (-> (tx-create-source-set name)
-              (tx-import-sources-from csv-file)
-              (tx-get-created-source-set)))))
+          tx-create-source-set      (fn [name] (create-source-set tx-store name))
+          tx-import-sources-from    (fn [set-id csv-file] (import-sources tx-store set-id csv-file))
+          tx-get-created-source-set (fn [set-id] (get-source-set tx-store set-id))]
+      (-> (tx-create-source-set name)
+          (tx-import-sources-from csv-file)
+          (tx-get-created-source-set)))))
 
 ;; ----------------------------------------------------------------------
 ;; Store
