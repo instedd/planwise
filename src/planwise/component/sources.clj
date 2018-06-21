@@ -16,18 +16,17 @@
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-
 (defn list-sources
-  [store]
-  (db-list-sources (get-db store)))
+  [store owner-id]
+  (db-list-sources (get-db store) {:owner-id owner-id}))
 
 (defn import-from-csv
   [store {:keys [name owner-id]} csv-file])
 
 (defrecord SourcesStore [db]
   boundary/Sources
-  (list-sources [store]
-    (list-sources [store]))
+  (list-sources [store owner-id]
+    (list-sources [store owner-id]))
   (import-from-csv [store options csv-file]
     (import-from-csv [store options csv-file])))
 

@@ -1,0 +1,2 @@
+ALTER TABLE source_set
+  ADD COLUMN "owner-id" BIGINT REFERENCES users(id) DEFAULT NULL;
