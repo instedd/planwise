@@ -4,7 +4,7 @@
             [clojure.string :as str]))
 
 (rf/reg-sub
- :sources/list
+ :sources/list-as-asdf
  (fn [db _]
    (let [sources (get-in db [:sources :list])]
      (when (asdf/should-reload? sources)
@@ -12,9 +12,16 @@
      sources)))
 
 (rf/reg-sub
+ :sources/list
+ (fn [_]
+   (rf/subscribe [:sources/list-as-asdf]))
+ (fn [sources]
+   (asdf/value sources)))
+
+(rf/reg-sub
  :sources/list-filtered-by-type-points
  (fn [_]
-   (rf/subscribe [:sources/list]))
+   (rf/subscribe [:sources/list-as-asdf]))
  (fn [sources]
    (filter (fn [source] (= (:type source) "points")) (asdf/value sources))))
 

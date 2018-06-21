@@ -16,7 +16,6 @@
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-;(defrecord SourcesStore [db])
 
 (defn list-sources
   [store]

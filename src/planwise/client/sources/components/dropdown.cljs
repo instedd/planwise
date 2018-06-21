@@ -1,4 +1,4 @@
-(ns planwise.client.sources
+(ns planwise.client.sources.components.dropdown
   (:require [re-frame.core :as rf]
             [re-frame.core :refer [dispatch subscribe]]
             [planwise.client.asdf :as asdf]
@@ -7,42 +7,6 @@
             [planwise.client.ui.rmwc :as m]))
 
 (def in-sources (rf/path [:sources]))
-
-;(def initial-db
-;  {:list (asdf/new nil)})
-
-;; ----------------------------------------------------------------------------
-;; API methods
-
-;(def load-sources
-;  {:method    :get
-;   :section   :show
-;   :uri       "/api/sources"})
-
-;; ----------------------------------------------------------------------------
-;; Listing sources
-
-;(rf/reg-event-fx
-; :sources/load
-; in-sources
-; (fn [{:keys [db]} [_]]
-;   {:api (assoc load-sources
-;                :on-success [:sources/loaded])
-;    :db  (update db :list asdf/reload!)}))
-;
-;(rf/reg-event-db
-; :sources/loaded
-; in-sources
-; (fn [db [_ sources]]
-;   (update db :list asdf/reset! sources)))
-
-;; ----------------------------------------------------------------------------
-;; Subs
-
-;(rf/reg-sub
-; :sources/list
-; (fn [db _]
-;   (get-in db [:sources :list])))
 
 (rf/reg-sub
  :sources/dropdown-options

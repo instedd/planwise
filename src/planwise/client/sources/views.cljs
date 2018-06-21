@@ -50,20 +50,16 @@
           (when (some? csv-file)
             [:span (.-name csv-file)])]
 
-       ;[:a {:href (routes/download-sample)
-       ;     :data-trigger "false"} "Download samples sites"]
-
          (when-let [current-error @(rf/subscribe [:sources.new/current-error])]
            [:div.error-message
             (str current-error)])]))))
 
 (defn sources-page
   []
-  (let [r-sources (rf/subscribe [:sources/list-filtered-by-type-points])
-        btn-new (ui/main-action {:icon "add"
+  (let [btn-new (ui/main-action {:icon "add"
                                  :on-click #(rf/dispatch [:modal/show])})]
     (fn []
-      (let [sources @r-sources]
+      (let [sources @(rf/subscribe [:sources/list])]
         (if (nil? sources)
           [common2/loading-placeholder]
           [ui/fixed-width (assoc (common2/nav-params)

@@ -5,7 +5,6 @@
 
 (def load-sources
   {:method    :get
-   ;:section   :show
    :uri       "/api/sources"})
 
 (defn create-source-with-csv

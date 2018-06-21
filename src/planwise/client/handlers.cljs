@@ -10,7 +10,6 @@
             [planwise.client.sources.handlers]
             [planwise.client.scenarios.handlers]
             [planwise.client.coverage]
-            [planwise.client.sources]
             [planwise.client.regions.handlers :as regions]
             [re-frame.core :as rf]))
 
