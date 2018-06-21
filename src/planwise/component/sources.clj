@@ -32,18 +32,20 @@
   (db-list-sources (get-db store) {:owner-id owner-id}))
 
 (defn create-source-set
-  [store name]
-  (db-create-source-set! (get-db store) {:name name}))
+  [store name owner-id]
+  (db-create-source-set! (get-db store) {:name name
+                                         :owner-id owner-id}))
 
 (defn get-source-set
-  [store id]
-  (println id))
+  [store id owner-id]
+  (println "get-source-set")
+  (println id)
+  (println owner-id)
+  (db-find-source-set (get-db store) {:id id}))
+
 
 (defn import-sources
   [store set-id csv-file]
-  (println set-id)
-  (println csv-file)
-
   (let [reader (io/reader csv-file)]
     (println (csv-data->maps (csv/read-csv reader))))
   set-id)
@@ -52,9 +54,10 @@
   [store {:keys [name owner-id]} csv-file]
   (jdbc/with-db-transaction [tx (get-db store)]
     (let [tx-store                  (assoc-in store [:db :spec] tx)
-          tx-create-source-set      (fn [name] (create-source-set tx-store name))
+          tx-create-source-set      (fn [name] (let [result (create-source-set tx-store name owner-id)]
+                                                 (:id result)))
           tx-import-sources-from    (fn [set-id csv-file] (import-sources tx-store set-id csv-file))
-          tx-get-created-source-set (fn [set-id] (get-source-set tx-store set-id))]
+          tx-get-created-source-set (fn [set-id] (get-source-set tx-store set-id owner-id))]
       (-> (tx-create-source-set name)
           (tx-import-sources-from csv-file)
           (tx-get-created-source-set)))))
