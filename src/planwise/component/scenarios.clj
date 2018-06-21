@@ -1,5 +1,6 @@
 (ns planwise.component.scenarios
   (:require [planwise.boundary.scenarios :as boundary]
+            [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.engine :as engine]
             [planwise.boundary.jobrunner :as jr]
             [planwise.model.scenarios :as model]
@@ -26,11 +27,12 @@
 
 (defn- sum-investments
   [changeset]
-  (apply +' (map :investment changeset)))
+  (let [changeset (filter #(-> % :initial nil?) changeset)]
+    (apply +' (map :investment changeset))))
 
 (defn- build-changeset-summary
   [changeset]
-  (let [providers (count changeset)
+  (let [providers (count (filter #(-> % :initial nil?) changeset))
         capacity (apply +' (mapv :capacity changeset))
         u (if (= providers 1) "provider" "providers")]
     (if (zero? providers) ""
@@ -43,6 +45,25 @@
   ;; TODO compute % coverage from initial scenario/projects
   (-> (db-find-scenario (get-db store) {:id scenario-id})
       (update :changeset edn/read-string)))
+
+(defn- get-initial-providers
+  [store provider-set-id version filter-options]
+  (let [providers (providers-set/get-providers-with-coverage-in-region
+                   (:providers-set store) provider-set-id version filter-options)
+        select-fn (fn [{:keys [id name capacity lat lon]}]
+                    {:provider-id id :name name
+                     :capacity capacity :location {:lat lat :lon lon}})]
+    (map select-fn providers)))
+
+(defn get-scenario-for-project
+  [store scenario {:keys [provider-set-id provider-set-version config] :as project}]
+  (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
+                           (assoc :tags (get-in config [:providers :tags])
+                                  :coverage-options (get-in config [:coverage :filter-options])))
+        initial-providers  (get-initial-providers store provider-set-id provider-set-version filter-options)]
+    (-> scenario
+        (assoc :providers initial-providers)
+        (dissoc :updated-at))))
 
 (defn list-scenarios
   [store project-id]
@@ -181,7 +202,7 @@
   (db-delete-scenarios! (get-db store) {:project-id project-id})
   (engine/clear-project-cache (:engine store) project-id))
 
-(defrecord ScenariosStore [db engine jobrunner]
+(defrecord ScenariosStore [db engine jobrunner providers-set]
   boundary/Scenarios
   (list-scenarios [store project-id]
     (list-scenarios store project-id))
@@ -196,7 +217,9 @@
   (next-scenario-name [store project-id name]
     (next-scenario-name store project-id name))
   (reset-scenarios [store project-id]
-    (reset-scenarios store project-id)))
+    (reset-scenarios store project-id))
+  (get-scenario-for-project [this scenario project]
+    (get-scenario-for-project this scenario project)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]

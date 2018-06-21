@@ -54,13 +54,13 @@
 
 (defn compute-initial-scenario
   [engine project]
-  (let [demand-raster  (project-base-demand project)
-        providers          (project-providers engine project)
-        provider-set-id     (:provider-set-id project)
-        project-id     (:id project)
-        project-config (:config project)
-        capacity       (get-in project-config [:providers :capacity])
-        source-demand  (demand/count-population demand-raster)
+  (let [demand-raster    (project-base-demand project)
+        providers        (project-providers engine project)
+        provider-set-id  (:provider-set-id project)
+        project-id       (:id project)
+        project-config   (:config project)
+        capacity         (get-in project-config [:providers :capacity])
+        source-demand    (demand/count-population demand-raster)
         raster-full-path (files/create-temp-file (str "data/scenarios/" project-id) "initial-" ".tif")
         raster-path      (get (re-find (re-pattern "^data/(.*)\\.tif$") raster-full-path) 1)]
     (debug "Source population demand:" source-demand)

@@ -16,16 +16,23 @@
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
+(defn- show-provider
+  [{{:keys [action name capacity investment]} :elem :as provider}]
+  (if (nil? action)
+    (str "<b>" (utils/escape-html name) "</b><br> Capacity: " capacity)
+    (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
+
 (defn simple-map
-  [{:keys [bbox]} {:keys [changeset raster]}]
+  [{:keys [bbox]} scenario]
   (let [state    (subscribe [:scenarios/view-state])
         index    (subscribe [:scenarios/changeset-index])
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
                                                                        :lon lon}]))]
-    (fn [{:keys [bbox]} {:keys [changeset raster]}]
-      (let [indexed-changeset     (map (fn [elem] {:elem elem :index (.indexOf changeset elem)}) changeset)
+    (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
+      (let [providers           (into providers changeset)
+            indexed-providers   (map-indexed (fn [idx elem] {:elem elem :index idx}) providers)
             pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
@@ -42,15 +49,17 @@
                                                  :DATAFILE (str pending-demand-raster ".map")
                                                  :format "image/png"
                                                  :opacity 0.6}])
-                             [:marker-layer {:points indexed-changeset
+                             [:marker-layer {:points indexed-providers
                                              :lat-fn #(get-in % [:elem :location :lat])
                                              :lon-fn #(get-in % [:elem :location :lon])
                                              :options-fn #(select-keys % [:index])
                                              :radius 4
                                              :fillColor styles/orange
                                              :stroke false
+                                             :popup-fn #(show-provider %)
                                              :fillOpacity 1
-                                             :onclick-fn #(dispatch [:scenarios/open-changeset-dialog (-> % .-layer .-options .-index)])}]]]))))
+                                             :onclick-fn (fn [e] (when (get-in e [:elem :action])
+                                                                   (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
@@ -105,6 +114,7 @@
 (defn display-current-scenario
   [current-project current-scenario]
   (let [read-only? (subscribe [:scenarios/read-only?])
+        created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])]
     (fn [current-project current-scenario]
@@ -119,7 +129,7 @@
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])
        [:div {:class-name "fade"}]
-       [changeset/listing-component current-scenario]
+       [changeset/listing-component @created-providers]
        [:div {:class-name "fade inverted"}]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]

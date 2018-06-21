@@ -22,14 +22,13 @@
   [service]
   (routes
    (GET "/:id" [id :as request]
-     (let [user-id   (util/request-user-id request)
-           id         (Integer. id)
-           scenario   (scenarios/get-scenario service id)
-           project-id (:project-id scenario)
-           project    (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
        (if (or (nil? project) (nil? scenario))
          (not-found {:error "Scenario not found"})
-         (response (dissoc scenario :updated-at)))))
+         (response (scenarios/get-scenario-for-project service scenario project)))))
 
    (PUT "/:id" [id scenario :as request]
      (let [user-id    (util/request-user-id request)

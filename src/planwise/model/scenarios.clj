@@ -6,10 +6,11 @@
 (s/def ::provider-id string?)
 (s/def ::location map?)
 
-(s/def :create-provider/action #{"create-provider"})
+(s/def ::action #{"create-provider"})
+(s/def ::initial boolean?)
 
-(s/def ::create-provider-change
-  (s/keys :req-un [:create-provider/action ::investment ::capacity ::provider-id ::location]))
+(s/def ::create-provider
+  (s/keys :req-un [::action ::investment ::capacity ::provider-id ::location]))
 
 (s/def ::change-set
-  (s/coll-of ::create-provider-change))
+  (s/coll-of ::create-provider))

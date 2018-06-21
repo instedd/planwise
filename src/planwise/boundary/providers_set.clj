@@ -18,10 +18,10 @@
   (get-providers-with-coverage-in-region [this provider-set-id version filter-options]
     "Retrieves the providers for a version of a provider-set located inside the region")
 
-
   (count-providers-filter-by-tags
     [this provider-set-id region-id tags]
     [this provider-set-id region-id tags version]
     "Count providers filtered by a single tag. Default version is the last one"))
+
 
 ;; Preprocessing provider-set job type: ::preprocess-provider-set

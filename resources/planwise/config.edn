@@ -148,8 +148,8 @@
  {:routing    #ig/ref :planwise.component/routing}
 
  :planwise.endpoint/scenarios
- {:scenarios   #ig/ref :planwise.component/scenarios
-  :projects2   #ig/ref :planwise.component/projects2}
+ {:projects2     #ig/ref :planwise.component/projects2
+  :scenarios     #ig/ref :planwise.component/scenarios}
 
  ;; Components
 
@@ -169,7 +169,6 @@
  {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/providers-set
-
  {:db          #ig/ref :duct.database/sql
   :coverage    #ig/ref :planwise.component/coverage}
 
@@ -238,6 +237,7 @@
 
  :planwise.component/scenarios
  {:db          #ig/ref :duct.database/sql
+  :providers-set  #ig/ref :planwise.component/providers-set
   :engine      #ig/ref :planwise.component/engine
   :jobrunner   #ig/ref :planwise.component/jobrunner}
 

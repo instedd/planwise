@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
+            [clojure.string :refer [blank?]]
             [planwise.client.asdf :as asdf]
             [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.components.common2 :as common2]
@@ -29,7 +30,7 @@
 
 (defn- create-chip
   [input]
-  [m/ChipSet [m/Chip [m/ChipText input]]])
+  (when (not (blank? input)) [m/ChipSet [m/Chip [m/ChipText input]]]))
 
 (defn- scenarios-list-item
   [project-id {:keys [id name label state demand-coverage investment changeset-summary] :as scenario}]
