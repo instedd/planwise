@@ -34,7 +34,7 @@
 (defn- current-project-input
   ([label path type]
    (current-project-input label path type {:disabled false}))
-  ([label path type {:keys [disabled]}]
+  ([label path type {:keys [disabled class]}]
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
          change-fn       (fn [e] (let [val (-> e .-target .-value)]
@@ -42,6 +42,7 @@
      [common2/text-field {:type      type
                           :label     label
                           :on-change change-fn
+                          :class class
                           :value     value
                           :disabled  disabled}])))
 
@@ -100,14 +101,15 @@
 ; Actions
 (defn- show-action
   [_ {:keys [idx action-name capacity investment] :as action}]
-  [:div
+  [:div {:class "project-setting"}
    [m/Button {:type "button"
+              :theme    ["text-secondary-on-secondary-light"]
               :on-click #(dispatch [:projects2/delete-action action-name idx])}
     [m/Icon "clear"]]
    (when (= action-name :build) "with a capacity of ")
-   [current-project-input "" [:config :actions action-name idx :capacity]  "number"]
+   [current-project-input "" [:config :actions action-name idx :capacity]  "number" {:class "action-input"}]
    "would cost"
-   [current-project-input "" [:config :actions action-name idx :investment] "number"]])
+   [current-project-input "" [:config :actions action-name idx :investment] "number" {:class "action-input"}]])
 
 (defn- listing-actions
   [action-name list]
@@ -115,6 +117,7 @@
    (for [[index action] (map-indexed vector list)]
      [show-action {:key (str action-name "-" index)} (assoc action :action-name action-name :idx index)])
    [m/Button  {:type "button"
+               :theme    ["text-secondary-on-secondary-light"]
                :on-click #(dispatch [:projects2/create-action action-name])} [m/Icon "add"] "Add Option"]])
 
 ;-------------------------------------------------------------------------------------------
@@ -174,19 +177,20 @@
 
          [:section {:class-name "project-settings-section"}
           [section-header 5 "Actions"]
-          [:div
-           [:div [:p [m/Icon "account_balance"] "Available budget"]]
-           [current-project-input "" [:config :actions :budget] "number" {:disabled read-only}]
+          [:div {:class "project-setting"}
+           [:div
+            [:p [m/Icon "account_balance"] "Available budget"]]
+           [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
            [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
-           [:div [:p [m/Icon "domain"] "Building a new provider..."]
-            (when @build [listing-actions :build @build])]
+           [:div [:p [m/Icon "domain"] "Building a new provider..."]]
+           [listing-actions :build @build]
 
            [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
-           [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only}]
+           [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
 
            [:div [:p [m/Icon "add"] "Increase the capactiy of a hospital by..."]]
-           (when @upgrade [listing-actions :upgrade @upgrade])]]]]])))
+           [listing-actions :upgrade @upgrade]]]]]])))
 
 (defn edit-current-project
   []
