@@ -12,4 +12,4 @@ INSERT INTO source_set
 -- :name db-find-source-set :? :1
 SELECT id, name, type
   FROM source_set
-  WHERE id = :id;
+  WHERE id = :id AND "owner-id" = :owner-id;

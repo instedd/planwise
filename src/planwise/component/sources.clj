@@ -38,10 +38,8 @@
 
 (defn get-source-set
   [store id owner-id]
-  (println "get-source-set")
-  (println id)
-  (println owner-id)
-  (db-find-source-set (get-db store) {:id id}))
+  (db-find-source-set (get-db store) {:id id
+                                      :owner-id owner-id}))
 
 
 (defn import-sources

@@ -46,8 +46,9 @@
  in-sources
  (fn [db [_ created-source]]
    (rf/dispatch [:modal/hide])
-   (dissoc db :new)
-   (update db :list asdf/swap! into [created-source])))
+   (-> db
+       (dissoc :new)
+       (update :list asdf/swap! into [created-source]))))
 
 (rf/reg-event-db
  :sources.new/failed
