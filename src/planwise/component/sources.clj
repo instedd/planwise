@@ -1,5 +1,6 @@
 (ns planwise.component.sources
-  (:require [integrant.core :as ig]
+  (:require [planwise.boundary.sources :as boundary]
+            [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [hugsql.core :as hugsql]))
 
@@ -15,11 +16,20 @@
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
-(defrecord SourcesStore [db])
 
 (defn list-sources
   [store]
   (db-list-sources (get-db store)))
+
+(defn import-from-csv
+  [store {:keys [name owner-id]} csv-file])
+
+(defrecord SourcesStore [db]
+  boundary/Sources
+  (list-sources [store]
+    (list-sources [store]))
+  (import-from-csv [store options csv-file]
+    (import-from-csv [store options csv-file])))
 
 (defmethod ig/init-key :planwise.component/sources
   [_ config]

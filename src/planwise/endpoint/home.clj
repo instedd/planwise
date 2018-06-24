@@ -116,6 +116,7 @@
      #_(GET "/crash" [] (throw (RuntimeException. "Crash")))
      (GET "/datasets" [] loading-page)
      (GET "/providers" [] loading-page2)
+     (GET "/sources" [] loading-page2)
      (context "/projects2" []
        (GET "/" [] loading-page2)
        (GET "/:id" [] loading-page2)
