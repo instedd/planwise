@@ -41,9 +41,10 @@
         (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
 
 (defn- map->csv
-  [file-name coll]
-  (let [fields (mapv name (keys (first coll)))
-        data   (cons fields (mapv vals coll))]
+  [coll]
+  (let [fields (keys (first coll))
+        rows   (map #(map % fields) coll)
+        data   (cons (mapv name fields) rows)]
     (with-out-str (csv/write-csv *out* data))))
 
 ;; ----------------------------------------------------------------------
@@ -60,8 +61,10 @@
   (let [providers (providers-set/get-providers-with-coverage-in-region
                    (:providers-set store) provider-set-id version filter-options)
         select-fn (fn [{:keys [id name capacity lat lon]}]
-                    {:initial true :provider-id (str id)
-                     :name name    :capacity capacity
+                    {:initial true
+                     :provider-id (str id)
+                     :name name
+                     :capacity capacity
                      :location {:lat lat :lon lon}})]
     (seq (map select-fn providers))))
 
@@ -216,9 +219,13 @@
 (defn- changeset-to-export
   [changeset]
   (mapv (fn [{:keys [provider-id action capacity location]}]
-          {:provider-id provider-id      :type action
-           :name "" :lat (:lat location) :lon (:lon location)
-           :capacity capacity            :tags ""}) changeset))
+          {:provider-id provider-id
+           :type action
+           :name ""
+           :lat (:lat location)
+           :lon (:lon location)
+           :capacity capacity
+           :tags ""}) changeset))
 
 (defn- providers-to-export
   [store providers-data changeset]
@@ -234,10 +241,9 @@
 (defn export-providers-data
   [store scenario-id]
   (let [scenario       (get-scenario store scenario-id)
-        file-name      (str "resources/planwise/public/scenario-" scenario-id ".csv")
         changes        (changeset-to-export (:changeset scenario))
         providers-data (-> scenario :providers-data read-string)]
-    (map->csv file-name (providers-to-export store providers-data changes))))
+    (map->csv (providers-to-export store providers-data changes))))
 
 (defn reset-scenarios
   [store project-id]

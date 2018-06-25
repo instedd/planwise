@@ -39,9 +39,11 @@
            scenario   (assoc scenario :id id)
            project-id (:project-id (scenarios/get-scenario service id))
            project    (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
-       (if (or (nil? project) (nil? scenario)) (not-found {:error "Scenario not found"})
-           (do (scenarios/update-scenario service project scenario)
-               (response (dissoc (scenarios/get-scenario service id) scenario :updated-at))))))
+       (if (or (nil? project) (nil? scenario))
+         (not-found {:error "Scenario not found"})
+         (do
+           (scenarios/update-scenario service project scenario)
+           (response (dissoc (scenarios/get-scenario service id) scenario :updated-at))))))
 
    (POST "/:id/copy" [id :as request]
      (let [user-id    (util/request-user-id request)
