@@ -9,7 +9,7 @@
 
 (defrecord Raster [projection geotransform xsize ysize data-type nodata data])
 
-(defn- cast-value
+(defn cast-value
   [data-type value]
   (condp = data-type
     gdalconst/GDT_Byte    (byte value)
@@ -31,7 +31,7 @@
     (throw (ex-info "Unsupported data type"
                     {:data-type data-type}))))
 
-(defn- read-nodata-value
+(defn read-nodata-value
   "Reads the NODATA value from a raster band and returns it casted to the
   appropriate raster data type, or nil if the band doesn't have NODATA value"
   [band]
@@ -41,7 +41,7 @@
     (when-let [value (aget buffer 0)]
       (cast-value data-type value))))
 
-(defn- read-band-data
+(defn read-band-data
   "Reads the data slice from the raster band and returns a Java array of a type
   appropriate to the band data type"
   [band xoff yoff xsize ysize]
@@ -56,7 +56,7 @@
                        :size      [xsize ysize]
                        :data-type data-type})))))
 
-(defn- with-open-raster
+(defn with-open-raster
   [path f]
   (if-let [dataset (gdal/Open path gdalconst/GA_ReadOnly)]
     (try
@@ -204,6 +204,10 @@
                (< dst-top dst-bottom))
       {:dst [dst-left dst-top (dec dst-right) (dec dst-bottom)]
        :src [src-left src-top (dec src-right) (dec src-bottom)]})))
+
+(defn create-child
+  [parent [width height minX minY]]
+  (.createChild parent minX minY width height minX minY []))
 
 (defprotocol RasterOps
   (compatible? [r1 r2]

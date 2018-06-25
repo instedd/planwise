@@ -37,6 +37,16 @@
         u (if (= providers 1) "provider" "providers")]
     (if (zero? providers) ""
         (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
+
+(defn- get-initial-providers
+  [store provider-set-id version filter-options]
+  (let [providers (providers-set/get-providers-with-coverage-in-region
+                   (:providers-set store) provider-set-id version filter-options)
+        select-fn (fn [{:keys [id name capacity lat lon]}]
+                    {:initial true :provider-id (str id)
+                     :name name    :capacity capacity
+                     :location {:lat lat :lon lon}})]
+    (seq (map select-fn providers))))
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
@@ -46,14 +56,11 @@
   (-> (db-find-scenario (get-db store) {:id scenario-id})
       (update :changeset edn/read-string)))
 
-(defn- get-initial-providers
-  [store provider-set-id version filter-options]
-  (let [providers (providers-set/get-providers-with-coverage-in-region
-                   (:providers-set store) provider-set-id version filter-options)
-        select-fn (fn [{:keys [id name capacity lat lon]}]
-                    {:provider-id id :name name
-                     :capacity capacity :location {:lat lat :lon lon}})]
-    (map select-fn providers)))
+(defn get-providers-data
+  [store {:keys [scenario-id project-id] :as prop}]
+  (let [providers-data (if scenario-id (db-get-providers-data (get-db store) prop)
+                           (db-get-initial-providers-data (get-db store) prop))]
+    (-> providers-data :providers-data read-string)))
 
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config] :as project}]
@@ -63,7 +70,7 @@
         initial-providers  (get-initial-providers store provider-set-id provider-set-version filter-options)]
     (-> scenario
         (assoc :providers initial-providers)
-        (dissoc :updated-at))))
+        (dissoc :updated-at :providers-data))))
 
 (defn list-scenarios
   [store project-id]
@@ -104,6 +111,7 @@
                                          {:id              scenario-id
                                           :raster          (:raster-path result)
                                           :demand-coverage (:covered-demand result)
+                                          :providers-data  (pr-str (:providers-data result))
                                           :state           "done"})
               (db-update-project-engine-config! (get-db store)
                                                 {:project-id    (:id project)
@@ -157,9 +165,10 @@
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
             (info "Computing scenario" scenario-id)
-            (let [engine   (:engine store)
-                  scenario (get-scenario store scenario-id)
-                  result   (engine/compute-scenario engine project scenario)]
+            (let [engine         (:engine store)
+                  scenario       (get-scenario store scenario-id)
+                  initial-providers (get-providers-data store {:project-id (:project-id scenario)})
+                  result   (engine/compute-scenario engine project (assoc scenario :providers-data initial-providers))]
               (info "Scenario computed" result)
               ;; TODO check if scenario didn't change from result. If did, discard result.
               ;; TODO remove previous raster files
@@ -167,6 +176,7 @@
                                          {:id              scenario-id
                                           :raster          (:raster-path result)
                                           :demand-coverage (:covered-demand result)
+                                          :providers-data  (pr-str (:providers-data result))
                                           :state           "done"})
               (db-update-scenarios-label! (get-db store) {:project-id (:id project)})))]
     {:task-id scenario-id
@@ -218,8 +228,10 @@
     (next-scenario-name store project-id name))
   (reset-scenarios [store project-id]
     (reset-scenarios store project-id))
-  (get-scenario-for-project [this scenario project]
-    (get-scenario-for-project this scenario project)))
+  (get-scenario-for-project [store scenario project]
+    (get-scenario-for-project store scenario project))
+  (get-providers-data [store scenario-id]
+    (get-providers-data store scenario-id)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
@@ -235,3 +247,12 @@
   (def project (planwise.boundary.projects2/get-project (:planwise.component/projects2 integrant.repl.state/system) 5))
 
   (create-initial-scenario store project))
+
+; (def store (:planwise.component/scenarios system))
+; (def pd (planwise.component.scenarios/get-providers-data store 207))
+; (def pd-i (planwise.component.scenarios/get-providers-data store 205))
+; (def final-d (reduce + (mapv :unsatisfied pd)))
+; (def satisat (reduce + (mapv :satisfied pd)))
+; (def sati (reduce + (mapv :satisfied pd-i)))
+; (def initial (reduce + (mapv :unsatisfied pd-i)))
+; (= (+ sati satisat) (- initial final-d))
