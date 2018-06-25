@@ -36,17 +36,31 @@
   (db-create-source-set! (get-db store) {:name name
                                          :owner-id owner-id}))
 
+(defn create-source
+  [store source]
+  (println source)
+  (db-create-source! (get-db store) source))
+
 (defn get-source-set
   [store id owner-id]
   (db-find-source-set (get-db store) {:id id
                                       :owner-id owner-id}))
-
+(defn import-source
+  [store set-id csv-source-data]
+  (let [source {:set-id set-id
+                :name (:name csv-source-data)
+                :type (:type csv-source-data)
+                :lat  (Double. (:lat csv-source-data))
+                :lon  (Double. (:lon csv-source-data))
+                :quantity (Integer. (:quantity csv-source-data))}]
+    (create-source store source)))
 
 (defn import-sources
   [store set-id csv-file]
-  (let [reader (io/reader csv-file)]
-    (println (csv-data->maps (csv/read-csv reader))))
-  set-id)
+  (let [reader (io/reader csv-file)
+        csv-data (csv-data->maps (csv/read-csv reader))]
+    (doall (map #(import-source store set-id %) csv-data))
+    set-id))
 
 (defn import-from-csv
   [store {:keys [name owner-id]} csv-file]

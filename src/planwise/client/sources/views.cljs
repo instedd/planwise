@@ -1,6 +1,6 @@
 (ns planwise.client.sources.views
   (:require [re-frame.core :as rf]
-            [planwise.client.asdf :as asdf]
+            [planwise.client.utils :as utils]
             [planwise.client.ui.common :as ui]
             [planwise.client.components.common2 :as common2]
             [planwise.client.components.common :as common]
@@ -18,14 +18,18 @@
 
 (defn source-card
   [props source]
-  (let [name (:name source)]
-    [ui/card {:title name}]))
+  (let [name (:name source)
+        sources-count (:sources-count source 0)]
+    (println (:id source))
+    (println (:sources-count source))
+    [ui/card {:title name
+              :subtitle (utils/pluralize sources-count "source")}]))
 
 (defn list-view
   [sources]
   (if (empty? sources)
     [empty-list-view]
-    [ui/card-list {:class "dataset-list"}
+    [ui/card-list {:class "set-list"}
      (for [source sources]
        [source-card {:key (:id source)} source])]))
 

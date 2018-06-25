@@ -30,7 +30,7 @@
   [providers-set]
   (if (empty? providers-set)
     [no-providers-set-view]
-    [ui/card-list {:class "provider-set-list"}
+    [ui/card-list {:class "set-list"}
      (for [provider-set providers-set]
        [provider-set-card {:key (:id provider-set)} provider-set])]))
 
