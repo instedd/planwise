@@ -52,8 +52,10 @@ WHERE
 UPDATE "scenarios"
   SET "raster" = :raster,
       "demand-coverage" = :demand-coverage,
-      "state" = :state
+      "state" = :state,
+      "providers-data" = :providers-data
   WHERE "id" = :id;
+
 
 -- :name db-update-project-engine-config! :! :1
 UPDATE "projects2"
@@ -76,3 +78,8 @@ SELECT upper(name) AS name FROM scenarios
   AND "project-id" = :project-id
   ORDER BY upper(name) DESC
   LIMIT 1
+
+-- :name db-get-initial-providers-data :? :1
+SELECT "providers-data" FROM scenarios
+  WHERE "project-id" = :project-id
+  AND label = 'initial';

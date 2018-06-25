@@ -53,7 +53,7 @@
   [population quartiles]
   (let [pixel-count (count (:data population))
         pixels      (byte-array pixel-count)
-        ;; Java bytes are signed, so this should be -1, but we write 255 for
+        ;; Java  bytes are signed, so this should be -1, but we write 255 for
         ;; consistency with Mapserver style definition
         nodata      (unchecked-byte 255)]
     (Algorithm/mapDataForRender (:data population) (:nodata population) pixels nodata (float-array quartiles))
@@ -61,6 +61,7 @@
                                :data pixels
                                :nodata nodata
                                :data-type gdalconst/GDT_Byte))))
+
 
 (comment
   (def raster1 (raster/read-raster "data/populations/data/20/42.tif"))
