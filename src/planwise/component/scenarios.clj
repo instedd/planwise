@@ -11,7 +11,9 @@
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [clojure.string :as str]
+            [clojure.data.csv :as csv]
             [clojure.spec.alpha :as s]))
 
 (timbre/refer-timbre)
@@ -38,6 +40,13 @@
     (if (zero? providers) ""
         (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
 
+(defn- map->csv
+  [file-name coll]
+  {:coll coll}
+  (let [fields (mapv name (keys (first coll)))
+        data   (cons fields (mapv vals coll))]
+    (with-open [out-file (io/writer file-name)]
+      (csv/write-csv out-file data))))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -205,6 +214,32 @@
            (map :name)
            (cons name)
            (util-str/next-name))))
+
+(defn- changeset-to-export
+  [changeset]
+  (mapv (fn [{:keys [provider-id action capacity location]}]
+          {:provider-id provider-id      :type action
+           :name "" :lat (:lat location) :lon (:lon location)
+           :capacity capacity            :tags ""}) changeset))
+
+(defn- providers-to-export
+  [store providers-data changeset]
+  (let [update-fn (fn [{:keys [id capacity satisfied unsatisfied]}]
+                    (let [provider  (if (int? id) (providers-set/get-provider (:providers-set store) id)
+                                        (-> (filter (fn [{:keys [provider-id]}] (= id provider-id)) changeset)
+                                            (first)
+                                            (dissoc :provider-id)))]
+                      (assoc provider
+                             :capacity capacity :satisfied satisfied :unsatisfied unsatisfied)))]
+    (map-indexed (fn [idx e] (merge {:id idx} (update-fn e))) providers-data)))
+
+(defn export-providers-data
+  [store scenario-id]
+  (let [scenario       (get-scenario store scenario-id)
+        file-name      (str "resources/planwise/public/scenario-" scenario-id ".csv")
+        changes        (changeset-to-export (:changeset scenario))
+        providers-data (-> scenario :providers-data read-string)]
+    (map->csv file-name (providers-to-export store providers-data changes))))
 
 (defn reset-scenarios
   [store project-id]
