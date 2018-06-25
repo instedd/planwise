@@ -11,7 +11,9 @@
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [clojure.string :as str]
+            [clojure.data.csv :as csv]
             [clojure.spec.alpha :as s]))
 
 (timbre/refer-timbre)
@@ -38,6 +40,12 @@
     (if (zero? providers) ""
         (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
 
+(defn- map->csv
+  [coll]
+  (let [fields (keys (first coll))
+        rows   (map #(map % fields) coll)
+        data   (cons (mapv name fields) rows)]
+    (with-out-str (csv/write-csv *out* data))))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -53,8 +61,10 @@
   (let [providers (providers-set/get-providers-with-coverage-in-region
                    (:providers-set store) provider-set-id version filter-options)
         select-fn (fn [{:keys [id name capacity lat lon]}]
-                    {:initial true :provider-id (str id)
-                     :name name    :capacity capacity
+                    {:initial true
+                     :provider-id (str id)
+                     :name name
+                     :capacity capacity
                      :location {:lat lat :lon lon}})]
     (seq (map select-fn providers))))
 
@@ -206,6 +216,35 @@
            (cons name)
            (util-str/next-name))))
 
+(defn- changeset-to-export
+  [changeset]
+  (mapv (fn [{:keys [provider-id action capacity location]}]
+          {:provider-id provider-id
+           :type action
+           :name ""
+           :lat (:lat location)
+           :lon (:lon location)
+           :capacity capacity
+           :tags ""}) changeset))
+
+(defn- providers-to-export
+  [store providers-data changeset]
+  (let [update-fn (fn [{:keys [id capacity satisfied unsatisfied]}]
+                    (let [provider  (if (int? id) (providers-set/get-provider (:providers-set store) id)
+                                        (-> (filter (fn [{:keys [provider-id]}] (= id provider-id)) changeset)
+                                            (first)
+                                            (dissoc :provider-id)))]
+                      (assoc provider
+                             :capacity capacity :satisfied satisfied :unsatisfied unsatisfied)))]
+    (map-indexed (fn [idx e] (merge {:id idx} (update-fn e))) providers-data)))
+
+(defn export-providers-data
+  [store scenario-id]
+  (let [scenario       (get-scenario store scenario-id)
+        changes        (changeset-to-export (:changeset scenario))
+        providers-data (-> scenario :providers-data read-string)]
+    (map->csv (providers-to-export store providers-data changes))))
+
 (defn reset-scenarios
   [store project-id]
   (db-delete-scenarios! (get-db store) {:project-id project-id})
@@ -228,7 +267,9 @@
   (reset-scenarios [store project-id]
     (reset-scenarios store project-id))
   (get-scenario-for-project [store scenario project]
-    (get-scenario-for-project store scenario project)))
+    (get-scenario-for-project store scenario project))
+  (export-providers-data [store scenario-id]
+    (export-providers-data store scenario-id)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]

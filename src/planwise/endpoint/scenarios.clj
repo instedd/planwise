@@ -30,6 +30,9 @@
          (not-found {:error "Scenario not found"})
          (response (scenarios/get-scenario-for-project service scenario project)))))
 
+   (GET "/:id/csv" [id :as request]
+     (response (scenarios/export-providers-data service (Integer. id))))
+
    (PUT "/:id" [id scenario :as request]
      (let [user-id    (util/request-user-id request)
            id         (Integer. id)

@@ -25,4 +25,7 @@
     "Reset scenarios information of project and clear engine state")
 
   (get-scenario-for-project [this scenario project]
-    "Sets configuration of scenario for current project"))
+    "Sets configuration of scenario for current project")
+
+  (export-providers-data [this scenario-id]
+    "Create CSV file with scenario providers data and computed demand"))

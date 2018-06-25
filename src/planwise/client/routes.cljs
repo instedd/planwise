@@ -37,7 +37,6 @@
 (defroute download-sample "/sample.csv" [])
 (defroute scenarios "/projects2/:project-id/scenarios/:id" [project-id id]
   (dispatch [:navigate {:page :scenarios, :id (js/parseInt id), :project-id (js/parseInt project-id)}]))
-
 (defroute projects2-scenarios "/projects2/:id/scenarios" [id]
   (dispatch [:navigate {:page :projects2, :id (js/parseInt id), :section :project-scenarios}]))
 (defroute projects2-settings "/projects2/:id/settings" [id]

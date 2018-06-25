@@ -541,3 +541,14 @@ form.vertical, .fields-vertical {
 .invalid-input{
   @include mdc-text-field-ink-color(#FF5722)
 }
+
+.disable-a{
+  text-decoration: none;
+}
+
+.center-download-icon{
+  margin-bottom: 15px;
+  margin-top: 15px;
+  margin-left: 16px;
+  margin-right: 15px;
+}
