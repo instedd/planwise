@@ -42,11 +42,9 @@
 
 (defn- map->csv
   [file-name coll]
-  {:coll coll}
   (let [fields (mapv name (keys (first coll)))
         data   (cons fields (mapv vals coll))]
-    (with-open [out-file (io/writer file-name)]
-      (csv/write-csv out-file data))))
+    (with-out-str (csv/write-csv *out* data))))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -263,7 +261,9 @@
   (reset-scenarios [store project-id]
     (reset-scenarios store project-id))
   (get-scenario-for-project [store scenario project]
-    (get-scenario-for-project store scenario project)))
+    (get-scenario-for-project store scenario project))
+  (export-providers-data [store scenario-id]
+    (export-providers-data store scenario-id)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
