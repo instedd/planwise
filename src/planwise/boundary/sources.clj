@@ -3,7 +3,7 @@
 (defprotocol Sources
   "API for manipulating sources"
 
-  (list-sources [this]
+  (list-sources [this owner-id]
     "Returns the list of the sources")
 
   (import-from-csv [this options csv-file]

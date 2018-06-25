@@ -4,13 +4,15 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.component.sources :as sources]
+            [planwise.util.ring :as util]
             [integrant.core :as ig]))
 
 (defn- sources-routes
   [service]
   (routes
-   (GET "/" [request]
-     (response (sources/list-sources service)))
+   (GET "/" request
+     (let [user-id (util/request-user-id request)]
+       (response (sources/list-sources service user-id))))
 
    (POST "/" [name :as request]
      (let [csv-file (:tempfile (get (:multipart-params request) "csvfile"))]
