@@ -9,7 +9,7 @@ SELECT id,
 -- :name db-create-source-set! :<! :1
 INSERT INTO source_set
     (name, type, unit, raster_file, "owner-id")
-    VALUES (:name, 'points', 'not implemented', '', :owner-id)
+    VALUES (:name, 'points', :unit, NULL, :owner-id)
     RETURNING id;
 
 -- :name db-find-source-set :? :1

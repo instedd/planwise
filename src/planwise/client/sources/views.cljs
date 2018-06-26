@@ -36,11 +36,16 @@
   (let [new-source (rf/subscribe [:sources.new/data])]
     (fn []
       (let [name (:name @new-source)
+            unit (:unit @new-source)
             csv-file (:csv-file @new-source)]
         [:form.vertical
          [common2/text-field {:label "Name"
                               :value name
                               :on-change #(rf/dispatch [:sources.new/update {:name (-> % .-target .-value)}])}]
+
+         [common2/text-field {:label "Unit"
+                              :value unit
+                              :on-change #(rf/dispatch [:sources.new/update {:unit (-> % .-target .-value)}])}]
 
          [:label.file-input-wrapper
           [:div "Import sources from CSV"]
