@@ -20,8 +20,6 @@
   [props source]
   (let [name (:name source)
         sources-count (:sources-count source 0)]
-    (println (:id source))
-    (println (:sources-count source))
     [ui/card {:title name
               :subtitle (utils/pluralize sources-count "source")}]))
 

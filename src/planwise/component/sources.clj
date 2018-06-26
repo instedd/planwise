@@ -45,6 +45,7 @@
   [store id owner-id]
   (db-find-source-set (get-db store) {:id id
                                       :owner-id owner-id}))
+
 (defn import-source
   [store set-id csv-source-data]
   (let [source {:set-id set-id
@@ -52,7 +53,7 @@
                 :type (:type csv-source-data)
                 :lat  (Double. (:lat csv-source-data))
                 :lon  (Double. (:lon csv-source-data))
-                :quantity (Integer. (:quantity csv-source-data))}]
+                :quantity (Integer. (:unsatisfied csv-source-data))}]
     (create-source store source)))
 
 (defn import-sources
@@ -67,6 +68,7 @@
   (jdbc/with-db-transaction [tx (get-db store)]
     (let [tx-store                  (assoc-in store [:db :spec] tx)
           tx-create-source-set      (fn [name] (let [result (create-source-set tx-store name owner-id)]
+                                                 (println (:id result))
                                                  (:id result)))
           tx-import-sources-from    (fn [set-id csv-file] (import-sources tx-store set-id csv-file))
           tx-get-created-source-set (fn [set-id] (get-source-set tx-store set-id owner-id))]
