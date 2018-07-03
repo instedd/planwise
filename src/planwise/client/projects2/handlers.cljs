@@ -199,7 +199,7 @@
  (fn [{:keys [db]} [_ action]]
    (let [path [:current-project :config :actions action]
          idx (count (get-in db path))]
-     {:db         (update-in db path (comp vec conj) {action idx})
+     {:db         (update-in db path (comp vec conj) {:id (str (name action) "-" idx)})
       :dispatch   [:projects2/persist-current-project]})))
 
 (rf/reg-event-fx
@@ -208,6 +208,5 @@
  (fn [{:keys [db]} [_ action index]]
    (let [path  [:current-project :config :actions action]
          actions* (utils/remove-by-index (get-in db path) index)]
-     (println actions*)
      {:db       (assoc-in db path actions*)
       :dispatch [:projects2/persist-current-project]})))

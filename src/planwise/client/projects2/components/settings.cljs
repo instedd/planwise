@@ -125,8 +125,8 @@
 (defn current-project-settings-view
   [{:keys [read-only]}]
   (let [current-project (subscribe [:projects2/current-project])
-        build           (subscribe [:projects2/build])
-        upgrade         (subscribe [:projects2/upgrade])
+        build-actions   (subscribe [:projects2/build-actions])
+        upgrade-actions (subscribe [:projects2/upgrade-actions])
         tags            (subscribe [:projects2/tags])]
     (fn [{:keys [read-only]}]
       [m/Grid {}
@@ -176,21 +176,19 @@
                                               :disabled?          read-only}]]
 
          [:section {:class-name "project-settings-section"}
-          [section-header 5 "Actions"]
-          [:div {:class "project-setting"}
-           [:div
-            [:p [m/Icon "account_balance"] "Available budget"]]
-           [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
-           [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
+          [:div [:p [m/Icon "account_balance"] "Available budget"]]
+          [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
+          [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
-           [:div [:p [m/Icon "domain"] "Building a new provider..."]]
-           [listing-actions :build @build]
+          [:div [:p [m/Icon "domain"] "Building a new provider..."]]
+          [listing-actions :build @build-actions]
 
-           [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
-           [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
+          [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
+          [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
 
-           [:div [:p [m/Icon "add"] "Increase the capactiy of a hospital by..."]]
-           [listing-actions :upgrade @upgrade]]]]]])))
+          [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
+          [listing-actions :upgrade @upgrade-actions]]]]])))
+
 
 (defn edit-current-project
   []

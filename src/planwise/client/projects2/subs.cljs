@@ -21,11 +21,11 @@
    (get-in current-project [:config :providers :tags])))
 
 (rf/reg-sub
- :projects2/build :<- [:projects2/current-project]
+ :projects2/build-actions :<- [:projects2/current-project]
  (fn [current-project [_]]
    (get-in current-project [:config :actions :build])))
 
 (rf/reg-sub
- :projects2/upgrade :<- [:projects2/current-project]
+ :projects2/upgrade-actions :<- [:projects2/current-project]
  (fn [current-project [_]]
    (get-in current-project [:config :actions :upgrade])))
