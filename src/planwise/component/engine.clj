@@ -5,6 +5,7 @@
             [planwise.boundary.sources :as sources-set]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
+            [planwise.component.coverage.rasterize :as rasterize]
             [clojure.string :refer [join]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
@@ -303,6 +304,49 @@
     (if (= (:type source-set) "points")
       (compute-scenario-by-point engine project scenario)
       (compute-scenario-by-raster engine project scenario))))
+
+;New provider
+
+(defn pixel->coord
+  [geotransform pixels-vec]
+  (let [[x0 _ _ y0 _ _] (vec geotransform)
+        coord-fn  (fn [[x y]] [(+ x0 (/ x 1200)) (+ y0 (/ y (- 1200)))])]
+    (coord-fn pixels-vec)))
+
+(defn get-pixel
+  [idx xsize ysize]
+  (let [height (quot idx xsize)
+        width (mod idx xsize)]
+    [width height]))
+
+(defn unique-random-numbers [n bound]
+  (loop [num-set (set (take n (repeatedly #(rand-int bound))))]
+    (let [size  (count num-set)]
+      (if (= size n)
+        num-set
+        (recur (clojure.set/union num-set  (set (take (- n size) (repeatedly #(rand-int n))))))))))
+
+(defn coverage-fn
+  [coverage idx {:keys [data geotransform xsize ysize] :as raster} criteria]
+  (let [[lon lat] (pixel->coord geotransform (get-pixel idx xsize ysize))
+        polygon (coverage/compute-coverage coverage {:lat lat :lon lon} criteria)
+        coverage (raster/create-raster (rasterize/rasterize polygon))]
+    (demand/count-population-under-coverage raster coverage)))
+
+;REPL testing of coverage
+(comment
+  (def val (rand-nth (map-indexed vector (vec (:data raster)))))
+  (require '[planwise.engine.raster :as raster])
+  (require '[planwise.component.engine :as engine])
+  (def engine (:planwise.component/engine system))
+  (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
+  (def criteria {:algorithm :simple-buffer :distance 20})
+  (def vals (vec (engine/unique-random-numbers 15 (alength (:data raster)))))
+  (def f (fn [val] (engine/coverage-fn (:coverage engine) val raster criteria)))
+  (map f vals))
+
+
+
 
 (defn clear-project-cache
   [this project-id]
