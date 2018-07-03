@@ -59,6 +59,18 @@
     (.. dataset (GetRasterBand 1) (SetNoDataValue 0.0))
     dataset))
 
+(defn build-temporary-raster-mask
+  [{:keys [srs width height geotransform]}]
+  (let [block-size-x 128
+        block-size-y 128
+        driver (gdal/GetDriverByName "MEM")
+        dataset (.Create driver "" width height 1 gdalconst/GDT_Byte)]
+    (doto dataset
+      (.SetProjection (.ExportToWkt srs))
+      (.SetGeoTransform (double-array geotransform)))
+    (.. dataset (GetRasterBand 1) (SetNoDataValue 0.0))
+    dataset))
+
 (defn envelope
   [geom]
   (let [env (double-array 4)]
@@ -96,27 +108,43 @@
 (s/def ::rasterize-options (s/keys :req-un [::ref-coords ::resolution]))
 
 (defn rasterize
-  [polygon output-path {:keys [ref-coords resolution] :as options}]
-  {:pre [(s/valid? ::pg/polygon polygon)
-         (s/valid? string? output-path)
-         (s/valid? ::rasterize-options options)]}
-  (let [srs            (srs-from-pg polygon)
-        geometry       (pg->geometry polygon)
-        envelope       (envelope geometry)
-        aligned-extent (compute-aligned-raster-extent envelope ref-coords resolution)
-        datasource     (build-datasource-from-geometry srs geometry)
-        layer          (.GetLayer datasource 0)
-        raster         (build-mask-raster-file output-path (assoc aligned-extent :srs srs))]
-    (gdal/RasterizeLayer raster
-                         (int-array [1])
-                         layer
-                         (double-array [255.0]))
-    (.FlushCache raster)
+  ([polygon output-path {:keys [ref-coords resolution] :as options}]
+   {:pre [(s/valid? ::pg/polygon polygon)
+          (s/valid? string? output-path)
+          (s/valid? ::rasterize-options options)]}
+   (let [srs            (srs-from-pg polygon)
+         geometry       (pg->geometry polygon)
+         envelope       (envelope geometry)
+         aligned-extent (compute-aligned-raster-extent envelope ref-coords resolution)
+         datasource     (build-datasource-from-geometry srs geometry)
+         layer          (.GetLayer datasource 0)
+         raster         (build-mask-raster-file output-path (assoc aligned-extent :srs srs))]
+     (gdal/RasterizeLayer raster
+                          (int-array [1])
+                          layer
+                          (double-array [255.0]))
+     (.FlushCache raster)
 
     ;; Cleanup GDAL objects
-    (.delete raster)
-    (.delete datasource)
-    (.delete srs)))
+     (.delete raster)
+     (.delete datasource)
+     (.delete srs)))
+
+  ([polygon]
+   {:pre [(s/valid? ::pg/polygon polygon)]}
+   (let [ref-coords     {:lat 0 :lon 0}
+         resolution     {:x-res 1/1200 :y-res 1/1200}
+         srs            (srs-from-pg polygon)
+         geometry       (pg->geometry polygon)
+         envelope       (envelope geometry)
+         aligned-extent (compute-aligned-raster-extent envelope ref-coords resolution)
+         datasource     (build-datasource-from-geometry srs geometry)
+         layer          (.GetLayer datasource 0)
+         raster         (build-temporary-raster-mask (assoc aligned-extent :srs srs))]
+     (gdal/RasterizeLayer raster
+                          (int-array [1])
+                          layer
+                          (double-array [255.0])) raster)))
 
 (comment
   (require '[planwise.boundary.coverage :as coverage])
