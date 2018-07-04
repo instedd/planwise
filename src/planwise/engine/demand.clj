@@ -9,6 +9,21 @@
   (let [{:keys [data nodata]} population]
     (Algorithm/countPopulation data nodata)))
 
+(defn get-coverage
+  "Retrieves pixel index under coverage"
+  [population coverage]
+  (let [{src-bounds :src dst-bounds :dst}       (raster/clipped-coordinates population coverage)
+        {src-buffer :data src-nodata :nodata}   coverage
+        {dst-buffer :data dst-nodata :nodata}   population
+        [dst-left dst-top dst-right dst-bottom] dst-bounds
+        [src-left src-top _ _]                  src-bounds
+        dst-stride                              (:xsize population)
+        src-stride                              (:xsize coverage)]
+    (Algorithm/getPointsOfCoverage dst-buffer dst-stride dst-nodata
+                                   src-buffer src-stride src-nodata
+                                   dst-left dst-top dst-right dst-bottom
+                                   src-left src-top)))
+
 (defn count-population-under-coverage
   "Count population pixel values under coverage"
   [population coverage]

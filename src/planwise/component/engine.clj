@@ -3,6 +3,7 @@
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.sources :as sources-set]
+            [planwise.component.coverage.algorithm :refer :all]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
             [planwise.component.coverage.rasterize :as rasterize]
@@ -306,45 +307,48 @@
       (compute-scenario-by-raster engine project scenario))))
 
 ;New provider
-
-(defn pixel->coord
-  [geotransform pixels-vec]
-  (let [[x0 _ _ y0 _ _] (vec geotransform)
-        coord-fn  (fn [[x y]] [(+ x0 (/ x 1200)) (+ y0 (/ y (- 1200)))])]
-    (coord-fn pixels-vec)))
-
-(defn get-pixel
-  [idx xsize ysize]
-  (let [height (quot idx xsize)
-        width (mod idx xsize)]
-    [width height]))
-
-(defn unique-random-numbers [n bound]
-  (loop [num-set (set (take n (repeatedly #(rand-int bound))))]
-    (let [size  (count num-set)]
-      (if (= size n)
-        num-set
-        (recur (clojure.set/union num-set  (set (take (- n size) (repeatedly #(rand-int n))))))))))
-
 (defn coverage-fn
   [coverage idx {:keys [data geotransform xsize ysize] :as raster} criteria]
   (let [[lon lat] (pixel->coord geotransform (get-pixel idx xsize ysize))
         polygon (coverage/compute-coverage coverage {:lat lat :lon lon} criteria)
-        coverage (raster/create-raster (rasterize/rasterize polygon))]
+        coverage (raster/create-raster (rasterize/rasterize polygon))
+        {:keys [dst]} (raster/clipped-coordinates raster coverage)]
     (demand/count-population-under-coverage raster coverage)))
 
+(defn catch-exc
+  [coverage idx {:keys [data geotransform xsize ysize] :as raster} criteria]
+  (let [[lon lat] (pixel->coord geotransform (get-pixel idx xsize ysize))]
+    (try
+      (coverage-fn coverage idx raster criteria)
+      (catch Exception e
+        (println e)))))
+
+
 ;REPL testing of coverage
+;Correctnes of coverage
 (comment
-  (def val (rand-nth (map-indexed vector (vec (:data raster)))))
   (require '[planwise.engine.raster :as raster])
   (require '[planwise.component.engine :as engine])
   (def engine (:planwise.component/engine system))
   (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
   (def criteria {:algorithm :simple-buffer :distance 20})
-  (def vals (vec (engine/unique-random-numbers 15 (alength (:data raster)))))
+  (def val 1072404)
   (def f (fn [val] (engine/coverage-fn (:coverage engine) val raster criteria)))
-  (map f vals))
+  (f val) ;idx:  1072404 | total:  17580.679855613736  |demand:  17580
+         ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
+)
 
+;Catching pg-routing exceptions
+(comment
+  (require '[planwise.engine.raster :as raster])
+  (require '[planwise.component.engine :as engine])
+  (def engine (:planwise.component/engine system))
+  (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
+  (def vals (vec (planwise.component.coverage.algorithm/unique-random-numbers 100 (alength (:data raster)))))
+  (def f (fn [val] (engine/catch-exc (:coverage engine) val raster criteria)))
+  (def criteria {:algorithm :pgrouting-alpha
+                 :driving-time 60})
+  (map f vals))
 
 
 
