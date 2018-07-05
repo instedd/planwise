@@ -2,6 +2,7 @@
   (:require [planwise.boundary.engine :as boundary]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
+            [planwise.boundary.sources :as sources-set]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
             [clojure.string :refer [join]]
@@ -48,7 +49,7 @@
                           :tags tags}
         providers         (providers-set/get-providers-with-coverage-in-region providers-set provider-set-id version filter-options)]
     (->> providers
-         (map #(select-keys % [:id :capacity :raster]))
+         (map #(select-keys % [:id :name :capacity :raster]))
          (sort-by :capacity)
          reverse)))
 
@@ -82,8 +83,9 @@
       [(conj processed-providers (compute-provider props provider)) props])
     [[] props] set)))
 
-(defn compute-initial-scenario
+(defn compute-initial-scenario-by-raster
   [engine project]
+  (println "compute-initial-scenario-by-raster")
   (let [demand-raster    (project-base-demand project)
         providers        (project-providers engine project)
         provider-set-id  (:provider-set-id project)
@@ -110,6 +112,99 @@
        :covered-demand   (- source-demand initial-demand)
        :demand-quartiles quartiles
        :providers-data   (mapv (fn [[a b]] (merge a b)) (map vector processed-providers update-providers))})))
+
+(defn process-provider
+  [{:keys [provider sources-under-coverage total-source-demand]}]
+  (println "---")
+  (println "process-provider")
+  (println provider)
+  (println (str "sources under " (:name provider) " coverage: " (count sources-under-coverage)))
+
+  (map (fn [source]
+         (let [ratio (/ (:quantity source) total-source-demand)
+               unsatisfied (- (:quantity source) (* (:capacity provider) ratio))]
+         (println (str "source: " source))
+         (println (str "ratio " ratio))
+         (println (str "quantity remain for source (unsatisfied): " unsatisfied))
+         (println (str "capacity remain "))))
+       sources-under-coverage))
+
+;(defn find-and-update
+;  [source-to-update source]
+;  (if (= (:id source-to-update) (:id source))
+;    (assoc source-to-update :quantity (:quantity source))
+;    source-to-update))
+
+;(defn find-and-update-source
+;  [source sources]
+;
+;  (let [id (:id source)]
+;    (assoc source :quantity)
+;
+;  source)
+
+(defn compute-initial-scenario-by-point
+  [engine project]
+  (println "compute-initial-scenario-by-point")
+  (let [provider-set-id  (:provider-set-id project)
+        providers        (project-providers engine project) ;sort by capacity
+        algorithm        (:coverage-algorithm project)
+        filter-options   (get-in project [:config :coverage :filter-options])
+        result           (reduce
+                           (fn [computed-state provider]
+                            (let [providers (:providers computed-state)
+                                  sources   (:sources computed-state)
+                                  sources-under-coverage (sources-set/list-sources-under-provider-coverage (:sources-set engine) (:source-set-id project) (:id provider) algorithm filter-options)
+                                  id-sources-under-coverage (set (map :id sources-under-coverage))
+                                  total-demand (reduce (fn [acum source] (+ acum (:quantity source))) 0 sources-under-coverage)
+                                  updated-sources (map (fn [source]
+                                                         (if (id-sources-under-coverage (:id source))
+                                                           (let [ratio (/ (:quantity source) total-demand)
+                                                                 unsatisfied (max 0 (- (:quantity source) (* (:capacity provider) ratio)))]
+                                                             (assoc source :quantity unsatisfied))
+                                                           source)
+                                                         sources))]
+                              {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
+                               :sources updated-sources}))
+                          {:providers nil
+                           :sources (sources-set/list-sources-in-set (:sources-set engine) (:source-set-id project))}
+                          providers)]
+
+    (println "sources result")
+    (println (:sources result))
+    (println "providers result")
+    (println (:providers result))
+
+    ))
+
+;(defn compute-initial-scenario-by-point
+;  [engine project]
+;  (println "compute-initial-scenario-by-point")
+;  (let [provider-set-id  (:provider-set-id project)
+;        providers        (project-providers engine project) ;sort by capacity
+;        algorithm        (:coverage-algorithm project)
+;        filter-options   (get-in project [:config :coverage :filter-options])]
+;    (map process-provider
+;      (filter (fn[provider-info](> (:total-source-demand provider-info) 0))
+;        (map (fn [provider]
+;                  (let [filtered-sources (sources-set/list-sources-under-provider-coverage (:sources-set engine) (:source-set-id project) (:id provider) algorithm filter-options)
+;                        total-demand     (reduce (fn[acum source]
+;                                                   (+ acum (:quantity source))) 0 filtered-sources)]
+;                    {:provider provider
+;                     :sources-under-coverage filtered-sources
+;                     :total-source-demand total-demand}))
+;             providers)))))
+
+(defn compute-initial-scenario
+  [engine project]
+  (println "compute-initial-scenario")
+  (println engine)
+  (println project)
+  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))]
+    (println (:type source-set))
+    (if (=(:type source-set) "points")
+      (compute-initial-scenario-by-point engine project)
+      (compute-initial-scenario-by-raster engine project))))
 
 (defn compute-scenario
   [engine project {:keys [changeset providers-data] :as scenario}]
@@ -162,7 +257,7 @@
   (let [scenarios-path (str "data/scenarios/" project-id)]
     (files/delete-files-recursively scenarios-path true)))
 
-(defrecord Engine [providers-set coverage]
+(defrecord Engine [providers-set sources-set coverage]
   boundary/Engine
   (compute-initial-scenario [engine project]
     (compute-initial-scenario engine project))

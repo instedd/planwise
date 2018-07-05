@@ -46,6 +46,10 @@
   (db-find-source-set (get-db store) {:id id
                                       :owner-id owner-id}))
 
+(defn get-source-set-by-id
+  [store id]
+  (db-find-source-set-by-id (get-db store) {:id id}))
+
 (defn import-source
   [store set-id csv-source-data]
   (let [source {:set-id set-id
@@ -72,6 +76,17 @@
       (import-sources tx-store source-set-id csv-file)
       (get-source-set tx-store source-set-id owner-id))))
 
+(defn list-sources-under-provider-coverage
+  [store source-set-id provider-id algorithm filter-options]
+  (db-list-sources-under-provider-coverage (get-db store) {:source-set-id source-set-id
+                                                           :provider-id provider-id
+                                                           :algorithm algorithm
+                                                           :options (pr-str filter-options)}))
+
+(defn list-sources-in-set
+  [store source-set-id]
+  (db-list-sources-in-set (get-db store) {:source-set-id source-set-id}))
+
 ;; ----------------------------------------------------------------------
 ;; Store
 
@@ -80,7 +95,13 @@
   (list-sources [store owner-id]
     (list-sources store owner-id))
   (import-from-csv [store options csv-file]
-    (import-from-csv store options csv-file)))
+    (import-from-csv store options csv-file))
+  (get-source-set-by-id [store id]
+    (get-source-set-by-id store id))
+  (list-sources-under-provider-coverage [this source-set-id provider-id algorithm filter-options]
+    (list-sources-under-provider-coverage this source-set-id provider-id algorithm filter-options))
+  (list-sources-in-set [this source-set-id]
+    (list-sources-in-set this source-set-id)))
 
 ;; ----------------------------------------------------------------------
 ;;
