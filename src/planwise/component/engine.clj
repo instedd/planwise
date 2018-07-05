@@ -313,7 +313,15 @@
         polygon (coverage/compute-coverage coverage {:lat lat :lon lon} criteria)
         coverage (raster/create-raster (rasterize/rasterize polygon))
         {:keys [dst]} (raster/clipped-coordinates raster coverage)]
-    (demand/count-population-under-coverage raster coverage)))
+    {:count  (demand/count-population-under-coverage raster coverage)
+     :bounds (:src (raster/clipped-coordinates raster coverage))
+     :vector (demand/get-coverage raster coverage)}))
+
+(defn optimal-provider
+  [engine demand-quartiles raster criteria]
+    (evolve {:raster raster
+             :cost-fn (memoize (fn [[idx _]] (coverage-fn (:coverage engine) idx raster criteria)))
+             :demand-quartiles demand-quartiles}))
 
 (defn catch-exc
   [coverage idx {:keys [data geotransform xsize ysize] :as raster} criteria]
@@ -322,7 +330,6 @@
       (coverage-fn coverage idx raster criteria)
       (catch Exception e
         (println e)))))
-
 
 ;REPL testing of coverage
 ;Correctnes of coverage
@@ -346,9 +353,29 @@
   (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
   (def vals (vec (planwise.component.coverage.algorithm/unique-random-numbers 100 (alength (:data raster)))))
   (def f (fn [val] (engine/catch-exc (:coverage engine) val raster criteria)))
-  (def criteria {:algorithm :pgrouting-alpha
-                 :driving-time 60})
+  (def criteria {:algorithm :pgrouting-alpha :driving-time 60})
   (map f vals))
+
+;Centroid-GA
+(comment
+    (require '[planwise.engine.raster :as raster])
+    (require '[planwise.component.engine :as engine])
+    (def engine (:planwise.component/engine system))
+    (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
+    (def data (:data raster))
+    (def dq [0 0 0.001840375 0.018976588 12.925134])
+  )
+
+;Evolution
+(comment
+  (require '[planwise.engine.raster :as raster])
+  (require '[planwise.component.engine :as engine])
+  (def engine (:planwise.component/engine system))
+  (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
+  (def demand-quartiles  [0 0 0.001840375 0.018976588 12.925134])
+  (def criteria {:algorithm :simple-buffer :distance 20})
+  (engine/optimal-provider engine demand-quartiles raster criteria)
+)
 
 
 
