@@ -185,8 +185,8 @@
     (let [updated-sources           (:sources result-step1)
           updated-providers         result-step2
           total-sources-demand      (sum-up sources :quantity)
-          total-satisfied-demand    (sum-up (:providers result-step2) :satisfied)
-          total-unsatisfied-demand  (sum-up (:providers result-step2) :unsatisfied)]
+          total-satisfied-demand    (sum-up updated-providers :satisfied)
+          total-unsatisfied-demand  (sum-up updated-providers :unsatisfied)]
 
       (println "sources")
       (println (count sources))
