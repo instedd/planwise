@@ -2,8 +2,12 @@
   (:require [planwise.boundary.engine :as boundary]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
+<<<<<<< master
             [planwise.boundary.sources :as sources-set]
             [planwise.component.coverage.algorithm :refer :all]
+=======
+            [planwise.component.coverage.greedy-search :refer :all]
+>>>>>>> First approach - Greedy algorithm
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
             [planwise.component.coverage.rasterize :as rasterize]
@@ -307,21 +311,21 @@
       (compute-scenario-by-raster engine project scenario))))
 
 ;New provider
+(defn get-max-distance
+  [coord vector raster]
+  (reduce
+   (fn [max next] (let [d (euclidean-distance coord (get-geo next raster))]
+                    (if (> d max) d max))) 0 vector))
+
 (defn coverage-fn
-  [coverage idx {:keys [data geotransform xsize ysize] :as raster} criteria]
-  (let [[lon lat] (pixel->coord geotransform (get-pixel idx xsize ysize))
+  [coverage {:keys [idx coord]} {:keys [data geotransform xsize ysize] :as raster} criteria]
+  (let [[lon lat :as coord] (or coord (get-geo idx raster))
         polygon (coverage/compute-coverage coverage {:lat lat :lon lon} criteria)
         coverage (raster/create-raster (rasterize/rasterize polygon))
         {:keys [dst]} (raster/clipped-coordinates raster coverage)]
-    {:count  (demand/count-population-under-coverage raster coverage)
-     :bounds (:src (raster/clipped-coordinates raster coverage))
-     :vector (demand/get-coverage raster coverage)}))
-
-(defn optimal-provider
-  [engine demand-quartiles raster criteria]
-    (evolve {:raster raster
-             :cost-fn (memoize (fn [[idx _]] (coverage-fn (:coverage engine) idx raster criteria)))
-             :demand-quartiles demand-quartiles}))
+    {:cov (demand/count-population-under-coverage raster coverage)
+     :max (get-max-distance coord (demand/get-coverage raster coverage) raster)
+     :loc coord}))
 
 (defn catch-exc
   [coverage idx {:keys [data geotransform xsize ysize] :as raster} criteria]
@@ -340,9 +344,9 @@
   (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
   (def criteria {:algorithm :simple-buffer :distance 20})
   (def val 1072404)
-  (def f (fn [val] (engine/coverage-fn (:coverage engine) val raster criteria)))
+  (def f (fn [val] (engine/coverage-fn (:coverage engine) {:idx val} raster criteria)))
   (f val) ;idx:  1072404 | total:  17580.679855613736  |demand:  17580
-         ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
+          ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
 )
 
 ;Catching pg-routing exceptions
@@ -355,29 +359,6 @@
   (def f (fn [val] (engine/catch-exc (:coverage engine) val raster criteria)))
   (def criteria {:algorithm :pgrouting-alpha :driving-time 60})
   (map f vals))
-
-;Centroid-GA
-(comment
-    (require '[planwise.engine.raster :as raster])
-    (require '[planwise.component.engine :as engine])
-    (def engine (:planwise.component/engine system))
-    (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
-    (def data (:data raster))
-    (def dq [0 0 0.001840375 0.018976588 12.925134])
-  )
-
-;Evolution
-(comment
-  (require '[planwise.engine.raster :as raster])
-  (require '[planwise.component.engine :as engine])
-  (def engine (:planwise.component/engine system))
-  (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
-  (def demand-quartiles  [0 0 0.001840375 0.018976588 12.925134])
-  (def criteria {:algorithm :simple-buffer :distance 20})
-  (engine/optimal-provider engine demand-quartiles raster criteria)
-)
-
-
 
 (defn clear-project-cache
   [this project-id]
@@ -416,5 +397,4 @@
 
   (compute-initial-scenario (new-engine) (projects2/get-project projects2 5))
   (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 30))
-
   nil)
