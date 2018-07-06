@@ -113,87 +113,104 @@
        :demand-quartiles quartiles
        :providers-data   (mapv (fn [[a b]] (merge a b)) (map vector processed-providers update-providers))})))
 
-(defn process-provider
-  [{:keys [provider sources-under-coverage total-source-demand]}]
-  (println "---")
-  (println "process-provider")
-  (println provider)
-  (println (str "sources under " (:name provider) " coverage: " (count sources-under-coverage)))
-
-  (map (fn [source]
-         (let [ratio (/ (:quantity source) total-source-demand)
-               unsatisfied (- (:quantity source) (* (:capacity provider) ratio))]
-         (println (str "source: " source))
-         (println (str "ratio " ratio))
-         (println (str "quantity remain for source (unsatisfied): " unsatisfied))
-         (println (str "capacity remain "))))
-       sources-under-coverage))
-
-;(defn find-and-update
-;  [source-to-update source]
-;  (if (= (:id source-to-update) (:id source))
-;    (assoc source-to-update :quantity (:quantity source))
-;    source-to-update))
-
-;(defn find-and-update-source
-;  [source sources]
+;(defn process-provider
+;  [{:keys [provider sources-under-coverage total-source-demand]}]
+;  (println "---")
+;  (println "process-provider")
+;  (println provider)
+;  (println (str "sources under " (:name provider) " coverage: " (count sources-under-coverage)))
 ;
-;  (let [id (:id source)]
-;    (assoc source :quantity)
-;
-;  source)
+;  (map (fn [source]
+;         (let [ratio (/ (:quantity source) total-source-demand)
+;               unsatisfied (- (:quantity source) (* (:capacity provider) ratio))]
+;         (println (str "source: " source))
+;         (println (str "ratio " ratio))
+;         (println (str "quantity remain for source (unsatisfied): " unsatisfied))
+;         (println (str "capacity remain "))))
+;       sources-under-coverage))
+
+(defn sum-up
+  [coll k]
+  (reduce (fn [acum elem] (+ acum (k elem))) 0 coll))
+
+(defn update-source
+  [source provider total-demand]
+  (let [ratio (float (/ (:quantity source) total-demand))
+        unsatisfied (double (max 0 (- (:quantity source) (* (:capacity provider) ratio))))
+        updated-source (assoc source :quantity unsatisfied)]
+    updated-source))
+
+(defn need-to-update-source?
+  [source ids]
+  (and (ids (:id source))
+       (> (:quantity source) 0)))
+
+(defn update-source-if-needed
+  [source ids provider total-demand]
+  (if (need-to-update-source? source ids)
+    (update-source source provider total-demand)
+    source))
 
 (defn compute-initial-scenario-by-point
   [engine project]
   (println "compute-initial-scenario-by-point")
   (let [provider-set-id  (:provider-set-id project)
         providers        (project-providers engine project) ;sort by capacity
+        sources          (sources-set/list-sources-in-set (:sources-set engine) (:source-set-id project))
         algorithm        (:coverage-algorithm project)
         filter-options   (get-in project [:config :coverage :filter-options])
-        result           (reduce
+        sources-under    (fn [provider] (sources-set/list-sources-under-provider-coverage (:sources-set engine) (:source-set-id project) (:id provider) algorithm filter-options))
+        select-by-id     (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
+        result-step1     (reduce ; over providers
                            (fn [computed-state provider]
-                            (let [providers (:providers computed-state)
-                                  sources   (:sources computed-state)
-                                  sources-under-coverage (sources-set/list-sources-under-provider-coverage (:sources-set engine) (:source-set-id project) (:id provider) algorithm filter-options)
-                                  id-sources-under-coverage (set (map :id sources-under-coverage))
-                                  total-demand (reduce (fn [acum source] (+ acum (:quantity source))) 0 sources-under-coverage)
-                                  updated-sources (map (fn [source]
-                                                         (if (id-sources-under-coverage (:id source))
-                                                           (let [ratio (/ (:quantity source) total-demand)
-                                                                 unsatisfied (max 0 (- (:quantity source) (* (:capacity provider) ratio)))]
-                                                             (assoc source :quantity unsatisfied))
-                                                           source)
-                                                         sources))]
+                            (let [providers                 (:providers computed-state)
+                                  sources                   (:sources computed-state)
+                                  id-sources-under-coverage (set (map :id (sources-under provider)))
+                                  sources-under-coverage    (select-by-id sources id-sources-under-coverage) ; updated sources under coverage
+                                  total-demand              (sum-up sources-under-coverage :quantity)        ; total demand requested to current provider
+                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)]
                               {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
                                :sources updated-sources}))
                           {:providers nil
-                           :sources (sources-set/list-sources-in-set (:sources-set engine) (:source-set-id project))}
-                          providers)]
+                           :sources sources}
+                          providers)
+        result-step2     (map (fn [provider]  ; resolve unsatisfied demand per provider
+                                (let [sources                   (:sources result-step1)
+                                      id-sources-under-coverage (set (map :id (sources-under provider)))
+                                      sources-under-coverage    (select-by-id sources id-sources-under-coverage) ; updated sources under coverage
+                                      total-demand              (sum-up sources-under-coverage :quantity)]
+                                  (assoc provider :unsatisfied total-demand)))
+                              (:providers result-step1))]
 
-    (println "sources result")
-    (println (:sources result))
-    (println "providers result")
-    (println (:providers result))
+    (let [updated-sources           (:sources result-step1)
+          updated-providers         result-step2
+          total-sources-demand      (sum-up sources :quantity)
+          total-satisfied-demand    (sum-up (:providers result-step2) :satisfied)
+          total-unsatisfied-demand  (sum-up (:providers result-step2) :unsatisfied)]
 
-    ))
+      (println "sources")
+      (println (count sources))
+      (println sources)
+      (println (count updated-sources))
+      (println updated-sources)
+      (println "providers result")
+      (println (count providers))
+      (println (count updated-providers))
+      (println updated-providers)
 
-;(defn compute-initial-scenario-by-point
-;  [engine project]
-;  (println "compute-initial-scenario-by-point")
-;  (let [provider-set-id  (:provider-set-id project)
-;        providers        (project-providers engine project) ;sort by capacity
-;        algorithm        (:coverage-algorithm project)
-;        filter-options   (get-in project [:config :coverage :filter-options])]
-;    (map process-provider
-;      (filter (fn[provider-info](> (:total-source-demand provider-info) 0))
-;        (map (fn [provider]
-;                  (let [filtered-sources (sources-set/list-sources-under-provider-coverage (:sources-set engine) (:source-set-id project) (:id provider) algorithm filter-options)
-;                        total-demand     (reduce (fn[acum source]
-;                                                   (+ acum (:quantity source))) 0 filtered-sources)]
-;                    {:provider provider
-;                     :sources-under-coverage filtered-sources
-;                     :total-source-demand total-demand}))
-;             providers)))))
+      (println total-sources-demand)
+      (println total-satisfied-demand)
+      (println total-unsatisfied-demand)
+
+      ;{:raster-path      ""
+      ; :source-demand     total-sources-demand
+      ; :pending-demand    total-unsatisfied-demand
+      ; :covered-demand    total-satisfied-demand
+      ; :demand-quartiles  nil
+      ; :providers-data    {}
+      ; :sources-data      {}}
+
+      )))
 
 (defn compute-initial-scenario
   [engine project]
