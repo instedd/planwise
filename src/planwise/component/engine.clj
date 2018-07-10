@@ -254,13 +254,13 @@
 (defn add-new-providers
   [providers changeset]
   (reduce
-    (fn [providers change]
-      (let [new-provider {:id       (:provider-id change)
-                          :capacity (:capacity change)
-                          :location (:location change)}]
-        conj providers new-provider))
-    providers
-    changeset))
+   (fn [providers change]
+     (let [new-provider {:id       (:provider-id change)
+                         :capacity (:capacity change)
+                         :location (:location change)}]
+       conj providers new-provider))
+   providers
+   changeset))
 
 (defn sources-under
   [engine set-id provider algorithm filter-options]
@@ -331,11 +331,11 @@
       (println total-satisfied-demand)
       (println total-unsatisfied-demand)
 
-    {:raster-path      nil
-     :pending-demand   total-unsatisfied-demand
-     :covered-demand   total-satisfied-demand
-     :providers-data   updated-providers
-     :sources-data     updated-sources})))
+      {:raster-path      nil
+       :pending-demand   total-unsatisfied-demand
+       :covered-demand   total-satisfied-demand
+       :providers-data   updated-providers
+       :sources-data     updated-sources})))
 
 (defn compute-scenario
   [engine project scenario]
