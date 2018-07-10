@@ -170,6 +170,11 @@
   (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
       :providers-data read-string))
 
+(defn- get-initial-sources-data
+  [store project-id]
+  (-> (db-get-initial-sources-data (get-db store) {:project-id project-id})
+      :sources-data read-string))
+
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []

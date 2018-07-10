@@ -83,6 +83,11 @@
                                                            :algorithm algorithm
                                                            :options (pr-str filter-options)}))
 
+(defn list-sources-under-coverage
+  [store source-set-id coverage-geom]
+  (db-list-sources-under-coverage (get-db store) {:source-set-id source-set-id
+                                                  :coverage-geom coverage-geom}))
+
 (defn list-sources-in-set
   [store source-set-id]
   (db-list-sources-in-set (get-db store) {:source-set-id source-set-id}))
@@ -100,6 +105,8 @@
     (get-source-set-by-id store id))
   (list-sources-under-provider-coverage [this source-set-id provider-id algorithm filter-options]
     (list-sources-under-provider-coverage this source-set-id provider-id algorithm filter-options))
+  (list-sources-under-coverage [this source-set-id coverage-geom]
+    (list-sources-under-coverage this source-set-id coverage-geom))
   (list-sources-in-set [this source-set-id]
     (list-sources-in-set this source-set-id)))
 

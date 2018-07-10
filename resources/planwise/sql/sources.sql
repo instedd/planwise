@@ -48,6 +48,14 @@ SELECT s.*
     s.set_id = :source-set-id AND
     ST_CONTAINS(pc.geom, s.the_geom);
 
+-- :name db-list-sources-under-coverage :?
+SELECT *
+  FROM
+    sources
+  WHERE
+    set_id = :source-set-id AND
+    ST_CONTAINS(:coverage-geom, the_geom);
+
 -- :name db-list-sources-in-set :?
 SELECT *
   FROM

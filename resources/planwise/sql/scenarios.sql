@@ -83,3 +83,8 @@ SELECT upper(name) AS name FROM scenarios
 SELECT "providers-data" FROM scenarios
   WHERE "project-id" = :project-id
   AND label = 'initial';
+
+-- :name db-get-initial-sources-data :? :1
+SELECT "sources-data" FROM scenarios
+  WHERE "project-id" = :project-id
+  AND label = 'initial';
