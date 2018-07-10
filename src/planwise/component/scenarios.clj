@@ -180,10 +180,13 @@
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
             (info "Computing scenario" scenario-id)
-            (let [engine         (:engine store)
-                  scenario       (get-scenario store scenario-id)
+            (let [engine            (:engine store)
+                  scenario          (get-scenario store scenario-id)
                   initial-providers (get-initial-providers-data store (:project-id scenario))
-                  result   (engine/compute-scenario engine project (assoc scenario :providers-data initial-providers))]
+                  initial-sources   (get-initial-sources-data store (:project-id scenario))
+                  result            (engine/compute-scenario engine project (-> scenario
+                                                                                (assoc :providers-data initial-providers)
+                                                                                (assoc :sources-data initial-sources)))]
               (info "Scenario computed" result)
               ;; TODO check if scenario didn't change from result. If did, discard result.
               ;; TODO remove previous raster files
