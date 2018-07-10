@@ -12,6 +12,9 @@
   (get-source-set-by-id [this id]
     "Finds a sources-set by id")
 
+  (list-sources-under-coverage [this source-set-id coverage-geom]
+    "Finds sources under a given coverage geometry")
+
   (list-sources-under-provider-coverage [this source-set-id provider-id algorithm filter-options]
     "Finds sources under a provider coverage")
 
