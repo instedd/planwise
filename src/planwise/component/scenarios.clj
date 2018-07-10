@@ -117,6 +117,7 @@
                                           :raster          (:raster-path result)
                                           :demand-coverage (:covered-demand result)
                                           :providers-data  (pr-str (:providers-data result))
+                                          :sources-data    (pr-str (:sources-data result))
                                           :state           "done"})
               (db-update-project-engine-config! (get-db store)
                                                 {:project-id    (:id project)
@@ -191,6 +192,7 @@
                                           :raster          (:raster-path result)
                                           :demand-coverage (:covered-demand result)
                                           :providers-data  (pr-str (:providers-data result))
+                                          :sources-data    (pr-str (:sources-data result))
                                           :state           "done"})
               (db-update-scenarios-label! (get-db store) {:project-id (:id project)})))]
     {:task-id scenario-id

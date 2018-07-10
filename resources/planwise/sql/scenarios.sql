@@ -53,7 +53,8 @@ UPDATE "scenarios"
   SET "raster" = :raster,
       "demand-coverage" = :demand-coverage,
       "state" = :state,
-      "providers-data" = :providers-data
+      "providers-data" = :providers-data,
+      "sources-data" = :sources-data
   WHERE "id" = :id;
 
 
