@@ -16,9 +16,11 @@
 #include <list>
 #include <vector>
 #include <functional>
+#include <limits>
 
 using namespace std;
 
+static const float INF_FRICTION = numeric_limits<float>::infinity();
 
 // ====== Generic utilities
 
@@ -279,6 +281,7 @@ static unique_ptr<float[]>
 run_dijkstra_on_friction_layer(const float* pFrictionData,
                                const int width,
                                const int height,
+                               const float frictionNoData,
                                const float pixelWidthMeters,
                                const float pixelHeightMeters,
                                const int originX,
@@ -319,7 +322,7 @@ run_dijkstra_on_friction_layer(const float* pFrictionData,
 
     // for all neighbours n of x
     float fx = pFrictionData[x._x + width * x._y];
-    fx = max(fx, minFriction);
+    fx = fx == frictionNoData ? INF_FRICTION : max(fx, minFriction);
     int nx1 = x._x > 0 ? x._x - 1 : x._x;
     int nx2 = x._x < width-1 ? x._x + 1 : x._x;
     int ny1 = x._y > 0 ? x._y - 1 : x._y;
@@ -332,7 +335,7 @@ run_dijkstra_on_friction_layer(const float* pFrictionData,
         // compute the cost from x to n d(x,n) and C' <- C[x] + d(x,n)
         float cn = pCost[nx + width * ny];
         float fn = pFrictionData[nx + width * ny];
-        fn = max(fn, minFriction);
+        fn = fn == frictionNoData ? INF_FRICTION : max(fn, minFriction);
         float dxn = (fx + fn) / 2 * d_cost;
         // friction is given in minutes/meter
         float cn_from_x = x._cost + dxn;
@@ -364,7 +367,7 @@ run_dijkstra_on_friction_layer(const float* pFrictionData,
 }
 
 static unique_ptr<float[]>
-load_friction_data(GDALDataset *pDataset, int rasterNumber, int* pWidth, int *pHeight)
+load_friction_data(GDALDataset *pDataset, int rasterNumber, int* pWidth, int *pHeight, float *pNoData)
 {
 #ifdef BENCHMARK
   boost::timer::auto_cpu_timer t(std::cerr, 6, "load_friction_data: %t sec CPU, %w sec real\n");
@@ -373,6 +376,7 @@ load_friction_data(GDALDataset *pDataset, int rasterNumber, int* pWidth, int *pH
   GDALRasterBand *pRasterBand = pDataset->GetRasterBand(rasterNumber);
   *pWidth = pRasterBand->GetXSize();
   *pHeight = pRasterBand->GetYSize();
+  *pNoData = pRasterBand->GetNoDataValue();
   unique_ptr<float[]> pData(new float[*pWidth * *pHeight]);
 
   CPLErr result = pRasterBand->RasterIO(GF_Read,       // eRWFlag
@@ -927,12 +931,13 @@ int main(int argc, char *argv[])
   }
 
   int width, height;
-  unique_ptr<float[]> friction = load_friction_data(frictionRaster.dataset(), 1, &width, &height);
+  float nodata;
+  unique_ptr<float[]> friction = load_friction_data(frictionRaster.dataset(), 1, &width, &height, &nodata);
 
   const int maxTimeCost = options._maxTimeCost; // minutes
   unique_ptr<float[]> cost =
     run_dijkstra_on_friction_layer(friction.get(),
-                                   width, height,
+                                   width, height, nodata,
                                    frictionRaster.pixel_width_meters(),
                                    frictionRaster.pixel_height_meters(),
                                    pixelOrigin.first, pixelOrigin.second,
