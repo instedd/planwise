@@ -20,8 +20,6 @@
 
 using namespace std;
 
-static const float INF_FRICTION = numeric_limits<float>::infinity();
-
 // ====== Generic utilities
 
 template<typename T> inline bool
@@ -39,6 +37,7 @@ between(const T& value, const T& x1, const T& x2)
 // ===== Coordinates
 
 typedef pair<double,double> coords_t;
+typedef list<coords_t> coords_list_t;
 
 inline coords_t
 make_coords(double lng, double lat)
@@ -295,7 +294,7 @@ run_dijkstra_on_friction_layer(const float* pFrictionData,
 
   // initialize (lazily?) cost layer to infinity C[x] <- inf forall x
   unique_ptr<float[]> pCost(new float[width * height]);
-  fill(&pCost[0], &pCost[width * height], numeric_limits<float>::infinity());
+  fill(&pCost[0], &pCost[width * height], 10 * maxCost /* numeric_limits<float>::infinity() */);
 
   // add origin to priority queue Q and set the cost of origin to 0 C[o] = 0
   typedef typename boost::heap::binomial_heap<xy_with_cost_t> queue_t;
@@ -312,6 +311,8 @@ run_dijkstra_on_friction_layer(const float* pFrictionData,
   const float vertCost = pixelHeightMeters;
   const float diagCost = sqrt(horizCost * horizCost + vertCost * vertCost);
 
+  const float ndFriction = 10 * maxCost / diagCost;
+
   // while Q is not empty
   while (!queue.empty()) {
     // remove the location x with the least cost from Q
@@ -322,7 +323,7 @@ run_dijkstra_on_friction_layer(const float* pFrictionData,
 
     // for all neighbours n of x
     float fx = pFrictionData[x._x + width * x._y];
-    fx = fx == frictionNoData ? INF_FRICTION : max(fx, minFriction);
+    fx = fx == frictionNoData ? ndFriction : max(fx, minFriction);
     int nx1 = x._x > 0 ? x._x - 1 : x._x;
     int nx2 = x._x < width-1 ? x._x + 1 : x._x;
     int ny1 = x._y > 0 ? x._y - 1 : x._y;
@@ -335,7 +336,7 @@ run_dijkstra_on_friction_layer(const float* pFrictionData,
         // compute the cost from x to n d(x,n) and C' <- C[x] + d(x,n)
         float cn = pCost[nx + width * ny];
         float fn = pFrictionData[nx + width * ny];
-        fn = fn == frictionNoData ? INF_FRICTION : max(fn, minFriction);
+        fn = fn == frictionNoData ? ndFriction : max(fn, minFriction);
         float dxn = (fx + fn) / 2 * d_cost;
         // friction is given in minutes/meter
         float cn_from_x = x._cost + dxn;
@@ -359,7 +360,7 @@ run_dijkstra_on_friction_layer(const float* pFrictionData,
   }
 
 #ifdef BENCHMARK
-  cout << "visited " << visited << endl;
+  cerr << "visited " << visited << endl;
 #endif
 
   // return the resulting C layer
@@ -458,7 +459,7 @@ write_cost_layer(const string& filename, GDALDataset *pSource, const float data[
 #define xsect(p1,p2) (h[p2]*xh[p1]-h[p1]*xh[p2])/(h[p2]-h[p1])
 #define ysect(p1,p2) (h[p2]*yh[p1]-h[p1]*yh[p2])/(h[p2]-h[p1])
 
-typedef function<void(float,float,float,float,float)> contour_callback_t;
+typedef function<void(double,double,double,double,float)> contour_callback_t;
 
 /*
 Copyright (c) 1996-1997 Nicholas Yue
@@ -510,8 +511,8 @@ int conrec(const float * const *d,
            int iub,
            int jlb,
            int jub,
-           float *x,
-           float *y,
+           double *x,
+           double *y,
            int nc,
            float *z,
            const contour_callback_t& callback)
@@ -523,11 +524,12 @@ int conrec(const float * const *d,
 // z               ! contour levels in increasing order
 {
   int m1,m2,m3,case_value;
-  float dmin,dmax,x1,x2,y1,y2;
+  float dmin,dmax;
+  double x1,x2,y1,y2;
   int i,j,k,m;
   float h[5];
   int sh[5];
-  float xh[5],yh[5];
+  double xh[5],yh[5];
   //===========================================================================
   // The indexing of im and jm should be noted as it has to start from zero
   // unlike the fortran counter part
@@ -726,14 +728,19 @@ int conrec(const float * const *d,
 
 inline bool
 coordsEqual(const coords_t& a, const coords_t& b) {
-  float df = a.first - b.first;
-  float ds = a.second - b.second;
-  return df * df + ds * ds < 1e-10;
+  double df = a.first - b.first;
+  double ds = a.second - b.second;
+  return df * df + ds * ds < 1e-16;
+}
+
+static void
+checkNotClosed(const coords_list_t& l) {
+  if (coordsEqual(l.front(), l.back())) {
+    cerr << "WARN: attempting to manipulate already closed loop" << endl;
+  }
 }
 
 struct contour_builder_t {
-  typedef list<coords_t> coords_list_t;
-
   list<coords_list_t> _sequences;
   int _segments = 0;
 
@@ -765,6 +772,12 @@ struct contour_builder_t {
       if (itSeqA != _sequences.end() && itSeqB != _sequences.end()) {
         break;
       }
+    }
+    if (itSeqA != _sequences.end()) {
+      checkNotClosed(*itSeqA);
+    }
+    if (itSeqB != _sequences.end()) {
+      checkNotClosed(*itSeqB);
     }
 
     int c = (itSeqA != _sequences.end() ? 1 : 0) | (itSeqB != _sequences.end() ? 2 : 0);
@@ -811,11 +824,13 @@ struct contour_builder_t {
   }
 
   OGRGeometry *build() {
-    // TODO: identify the outer ring and add it first to the polygon
-
     OGRPolygon *result = new OGRPolygon();
+    OGRLinearRing **rings = new OGRLinearRing*[_sequences.size()];
+    int j = 0;
+    int outerRing = -1;
+    int outerRingPoints = -1;
     for (auto seq : _sequences) {
-      OGRLinearRing *ring = new OGRLinearRing();
+      OGRLinearRing *ring = rings[j] = new OGRLinearRing();
       for (auto point : seq) {
         ring->addPoint(point.first, point.second);
       }
@@ -827,9 +842,23 @@ struct contour_builder_t {
         delete ring;
         continue;
       }
-      result->addRing(ring);
+      if (ring->getNumPoints() > outerRingPoints) {
+        outerRing = j;
+        outerRingPoints = ring->getNumPoints();
+      }
+      j++;
     }
 
+    // use the ring with the greatest number of points as the outer ring
+    if (outerRing >= 0) {
+      result->addRing(rings[outerRing]);
+      for (int i = 0; i < j; i++) {
+        if (i == outerRing) continue;
+        result->addRing(rings[i]);
+      }
+    }
+
+    delete[] rings;
     return result;
   }
 };
@@ -846,22 +875,22 @@ extract_isochrone(const float *data, int width, int height, const coords_t& topL
   for (int i = 0; i < height; i++, p += width) {
     dataRows[i] = p;
   }
-  unique_ptr<float[]> latitudes(new float[height]);
-  unique_ptr<float[]> longitudes(new float[width]);
-  float dLat = (bottomRight.second - topLeft.second) / height;
-  float lat = topLeft.second + dLat / 2;
+  unique_ptr<double[]> latitudes(new double[height]);
+  unique_ptr<double[]> longitudes(new double[width]);
+  double dLat = (bottomRight.second - topLeft.second) / height;
+  double lat = topLeft.second + dLat / 2;
   for (int i = 0; i < height; i++, lat += dLat) {
     latitudes[i] = lat;
   }
-  float dLng = (bottomRight.first - topLeft.first) / width;
-  float lng = topLeft.first + dLng / 2;
+  double dLng = (bottomRight.first - topLeft.first) / width;
+  double lng = topLeft.first + dLng / 2;
   for (int i = 0; i < width; i++, lng += dLng) {
     longitudes[i] = lng;
   }
   float times[] = { time };
 
   contour_builder_t builder;
-  auto callback = [&builder](float x1, float y1, float x2, float y2, float z) {
+  auto callback = [&builder](double x1, double y1, double x2, double y2, float z) {
     builder.add_segment(make_coords(y1, x1), make_coords(y2, x2));
   };
 
@@ -871,7 +900,8 @@ extract_isochrone(const float *data, int width, int height, const coords_t& topL
          1, times,
          callback);
 
-  return unique_ptr<OGRGeometry>(builder.build());
+  OGRGeometry *polygon = builder.build();
+  return unique_ptr<OGRGeometry>(polygon);
 }
 
 
@@ -954,6 +984,18 @@ int main(int argc, char *argv[])
   // print the coverage WKT
   unique_ptr<OGRGeometry> isochrone = extract_isochrone(cost.get(), width, height, frictionRaster.top_left_coords(), frictionRaster.bottom_right_coords(), maxTimeCost);
   char *wkt = nullptr;
+
+  OGRGeometry *simplified = isochrone->Simplify(min(frictionRaster.pixel_width(), frictionRaster.pixel_height()) / 2);
+  if (simplified != NULL) {
+    delete isochrone.release();
+    isochrone.reset(simplified);
+  } else {
+    cerr << "Failed to simplify polygon" << endl;
+  }
+
+  if (options._verbose) {
+    cerr << "Generated polygon with " << ((OGRPolygon *)isochrone.get())->getNumInteriorRings() << " interior rings" << endl;
+  }
   isochrone->exportToWkt(&wkt);
   cout << wkt << endl;
   CPLFree(wkt);
