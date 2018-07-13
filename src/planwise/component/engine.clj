@@ -272,18 +272,18 @@
         fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))
         fn-filter-by-id  (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
         result-step1     (reduce ; over providers
-                           (fn [computed-state provider]
-                             (let [providers                 (:providers computed-state)
-                                   sources                   (:sources computed-state)
-                                   id-sources-under-coverage (set (map :id (fn-sources-under provider)))         ; create set with sources' id
-                                   sources-under-coverage    (fn-filter-by-id sources id-sources-under-coverage) ; take only the sources under coverage (using the id to filter)
-                                   total-demand              (sum-up sources-under-coverage :quantity)           ; total demand requested to current provider
-                                   updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)]
-                               {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
-                                :sources updated-sources}))
-                           {:providers nil
-                            :sources sources}
-                           providers)
+                          (fn [computed-state provider]
+                            (let [providers                 (:providers computed-state)
+                                  sources                   (:sources computed-state)
+                                  id-sources-under-coverage (set (map :id (fn-sources-under provider)))         ; create set with sources' id
+                                  sources-under-coverage    (fn-filter-by-id sources id-sources-under-coverage) ; take only the sources under coverage (using the id to filter)
+                                  total-demand              (sum-up sources-under-coverage :quantity)           ; total demand requested to current provider
+                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)]
+                              {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
+                               :sources updated-sources}))
+                          {:providers nil
+                           :sources sources}
+                          providers)
         result-step2     (map (fn [provider]  ; resolve unsatisfied demand per provider (for all providers!)
                                 (let [sources                   (:sources result-step1)
                                       id-sources-under-coverage (set (map :id (fn-sources-under provider)))
