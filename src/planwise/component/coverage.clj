@@ -19,6 +19,7 @@
 
 (s/def ::driving-time #{30 60 90 120})
 (s/def ::pgrouting-alpha-criteria (s/keys :req-un [::driving-time]))
+(s/def ::driving-friction-criteria (s/keys :req-un [::driving-time]))
 
 (s/def ::distance #{5 10 20 50 100})
 (s/def ::simple-buffer-criteria (s/keys :req-un [::distance]))
@@ -33,6 +34,8 @@
   (s/merge ::base-criteria ::simple-buffer-criteria))
 (defmethod criteria-algo :walking-friction [_]
   (s/merge ::base-criteria ::walking-friction-criteria))
+(defmethod criteria-algo :driving-friction [_]
+  (s/merge ::base-criteria ::driving-friction-criteria))
 
 (s/def ::criteria (s/multi-spec criteria-algo :algorithm))
 
@@ -41,8 +44,18 @@
 
 (def supported-algorithms
   {:pgrouting-alpha
-   {:label       "Travel by car"
+   {:label       "Travel by car (pgRouting)"
     :description "Computes all reachable OSM nodes from the nearest to the starting point and then applies the alpha shape algorithm to the resulting points"
+    :criteria    {:driving-time {:label   "Driving time"
+                                 :type    :enum
+                                 :options [{:value 30  :label "30 minutes"}
+                                           {:value 60  :label "1 hour"}
+                                           {:value 90  :label "1:30 hours"}
+                                           {:value 120 :label "2 hours"}]}}}
+
+   :driving-friction
+   {:label       "Travel by car (friction)"
+    :description "Computes reachable isochrone using a friction raster layer"
     :criteria    {:driving-time {:label   "Driving time"
                                  :type    :enum
                                  :options [{:value 30  :label "30 minutes"}
@@ -102,10 +115,21 @@
   [{:keys [db runner]} coords criteria]
   (let [db-spec         (:spec db)
         friction-raster (friction/find-friction-raster db-spec coords)
-        max-time        (:walking-time criteria)]
+        max-time        (:walking-time criteria)
+        min-friction    (float (/ 1 100))]
     (if friction-raster
-      (friction/compute-polygon runner friction-raster coords max-time)
+      (friction/compute-polygon runner friction-raster coords max-time min-friction)
       (throw (ex-info "Cannot find a friction raster for the origin coordinates " {:coords coords})))))
+
+  (defmethod compute-coverage-polygon :driving-friction
+    [{:keys [db runner]} coords criteria]
+    (let [db-spec         (:spec db)
+          friction-raster (friction/find-friction-raster db-spec coords)
+          max-time        (:driving-time criteria)
+          min-friction    (float (/ 1 2000))]
+      (if friction-raster
+        (friction/compute-polygon runner friction-raster coords max-time min-friction)
+        (throw (ex-info "Cannot find a friction raster for the origin coordinates " {:coords coords})))))
 
 (def default-grid-align-options
   {:ref-coords {:lat 0 :lon 0}

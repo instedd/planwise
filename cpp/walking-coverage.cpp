@@ -985,7 +985,7 @@ int main(int argc, char *argv[])
   unique_ptr<OGRGeometry> isochrone = extract_isochrone(cost.get(), width, height, frictionRaster.top_left_coords(), frictionRaster.bottom_right_coords(), maxTimeCost);
   char *wkt = nullptr;
 
-  OGRGeometry *simplified = isochrone->Simplify(min(frictionRaster.pixel_width(), frictionRaster.pixel_height()) / 2);
+  OGRGeometry *simplified = isochrone->SimplifyPreserveTopology(min(frictionRaster.pixel_width(), frictionRaster.pixel_height()) / 2);
   if (simplified != NULL) {
     delete isochrone.release();
     isochrone.reset(simplified);
