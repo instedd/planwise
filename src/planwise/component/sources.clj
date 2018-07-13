@@ -39,7 +39,6 @@
 
 (defn create-source
   [store source]
-  (println source)
   (db-create-source! (get-db store) source))
 
 (defn get-source-set
@@ -67,15 +66,11 @@
 (defn import-from-csv
   [store {:keys [name unit owner-id]} csv-file]
   (jdbc/with-db-transaction [tx (get-db store)]
-    (let [tx-store                  (assoc-in store [:db :spec] tx)
-          tx-create-source-set      (fn [name unit]
-                                      (let [result (create-source-set tx-store name unit owner-id)]
-                                        (:id result)))
-          tx-import-sources-from    (fn [set-id csv-file] (import-sources tx-store set-id csv-file))
-          tx-get-created-source-set (fn [set-id] (get-source-set tx-store set-id owner-id))]
-      (-> (tx-create-source-set name unit)
-          (tx-import-sources-from csv-file)
-          (tx-get-created-source-set)))))
+    (let [tx-store    (assoc-in store [:db :spec] tx)
+          source-set  (create-source-set tx-store name unit owner-id)
+          source-set-id (:id source-set)]
+      (import-sources tx-store source-set-id csv-file)
+      (get-source-set tx-store source-set-id owner-id))))
 
 ;; ----------------------------------------------------------------------
 ;; Store
@@ -83,9 +78,9 @@
 (defrecord SourcesStore [db]
   boundary/Sources
   (list-sources [store owner-id]
-    (list-sources [store owner-id]))
+    (list-sources store owner-id))
   (import-from-csv [store options csv-file]
-    (import-from-csv [store options csv-file])))
+    (import-from-csv store options csv-file)))
 
 ;; ----------------------------------------------------------------------
 ;;
