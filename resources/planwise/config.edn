@@ -236,10 +236,11 @@
   :scripts     #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
 
  :planwise.component/scenarios
- {:db          #ig/ref :duct.database/sql
+ {:db             #ig/ref :duct.database/sql
   :providers-set  #ig/ref :planwise.component/providers-set
-  :engine      #ig/ref :planwise.component/engine
-  :jobrunner   #ig/ref :planwise.component/jobrunner}
+  :sources-set    #ig/ref :planwise.component/sources
+  :engine         #ig/ref :planwise.component/engine
+  :jobrunner      #ig/ref :planwise.component/jobrunner}
 
  :planwise.component/users
  {:db          #ig/ref :duct.database/sql}}

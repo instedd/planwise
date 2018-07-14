@@ -57,7 +57,9 @@ SELECT *
     ST_CONTAINS(:coverage-geom, the_geom);
 
 -- :name db-list-sources-in-set :?
-SELECT *
+SELECT *,
+       ST_X(the_geom) AS lon,
+       ST_Y(the_geom) AS lat
   FROM
     sources
   WHERE
