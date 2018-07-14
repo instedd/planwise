@@ -121,15 +121,15 @@
       (friction/compute-polygon runner friction-raster coords max-time min-friction)
       (throw (ex-info "Cannot find a friction raster for the origin coordinates " {:coords coords})))))
 
-  (defmethod compute-coverage-polygon :driving-friction
-    [{:keys [db runner]} coords criteria]
-    (let [db-spec         (:spec db)
-          friction-raster (friction/find-friction-raster db-spec coords)
-          max-time        (:driving-time criteria)
-          min-friction    (float (/ 1 2000))]
-      (if friction-raster
-        (friction/compute-polygon runner friction-raster coords max-time min-friction)
-        (throw (ex-info "Cannot find a friction raster for the origin coordinates " {:coords coords})))))
+(defmethod compute-coverage-polygon :driving-friction
+  [{:keys [db runner]} coords criteria]
+  (let [db-spec         (:spec db)
+        friction-raster (friction/find-friction-raster db-spec coords)
+        max-time        (:driving-time criteria)
+        min-friction    (float (/ 1 2000))]
+    (if friction-raster
+      (friction/compute-polygon runner friction-raster coords max-time min-friction)
+      (throw (ex-info "Cannot find a friction raster for the origin coordinates " {:coords coords})))))
 
 (def default-grid-align-options
   {:ref-coords {:lat 0 :lon 0}
