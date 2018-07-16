@@ -22,6 +22,16 @@
     (str "<b>" (utils/escape-html name) "</b><br> Capacity: " capacity)
     (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
 
+(defn- show-source
+  [{{:keys [name quantity quantity-current]} :elem :as source}]
+  (str "<b>" (utils/escape-html name) "</b>"
+       "<br> Original quantity: " quantity
+       "<br> Current quantity: " quantity-current))
+
+(defn- to-indexed-map
+  [coll]
+  (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
+
 (defn simple-map
   [{:keys [bbox]} scenario]
   (let [state    (subscribe [:scenarios/view-state])
@@ -31,8 +41,9 @@
         add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
                                                                        :lon lon}]))]
     (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
-      (let [providers           (into providers changeset)
-            indexed-providers   (map-indexed (fn [idx elem] {:elem elem :index idx}) providers)
+      (let [providers             (into providers changeset)
+            indexed-providers     (to-indexed-map providers)
+            indexed-sources       (to-indexed-map (:sources scenario))
             pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
@@ -59,7 +70,18 @@
                                              :popup-fn #(show-provider %)
                                              :fillOpacity 1
                                              :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                                   (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
+                                                                   (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]
+                             [:point-layer {:points indexed-sources
+                                            :lat-fn #(get-in % [:elem :lat])
+                                            :lon-fn #(get-in % [:elem :lon])
+                                            :options-fn #(select-keys % [:index])
+                                            :radius 5
+                                            :fillColor styles/orange
+                                            :color styles/dark-orange
+                                            :stroke true
+                                            :weight 2
+                                            :popup-fn #(show-source %)
+                                            :fillOpacity 1}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
