@@ -75,7 +75,13 @@
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
         initial-providers  (get-initial-providers store provider-set-id provider-set-version filter-options)
-        initial-sources    (map #(dissoc % :the_geom) (sources/list-sources-in-set (:sources-set store) source-set-id))]
+        sources-data       (edn/read-string (:sources-data scenario))
+        initial-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
+                                  (assoc source :quantity-current (:quantity (first (filter (fn[source-data]
+                                                                                                (= (:id source-data) (:id source)))
+                                                                                              sources-data)))))
+                                (map #(dissoc % :the_geom)
+                                     (sources/list-sources-in-set (:sources-set store) source-set-id)))]
 
     (println initial-sources)
 
