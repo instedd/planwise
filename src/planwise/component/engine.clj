@@ -15,6 +15,7 @@
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
             [integrant.core :as ig]
+            [clojure.core.memoize :as memoize]
             [clojure.java.io :as io]
             [taoensso.timbre :as timbre]))
 
@@ -318,22 +319,62 @@
                     (if (> d max) d max))) 0 vector))
 
 (defn coverage-fn
-  [coverage {:keys [idx coord]} {:keys [data geotransform xsize ysize] :as raster} criteria]
+  [coverage {:keys [idx coord res]} {:keys [data geotransform xsize ysize] :as raster} criteria]
   (let [[lon lat :as coord] (or coord (get-geo idx raster))
         polygon (coverage/compute-coverage coverage {:lat lat :lon lon} criteria)
-        coverage (raster/create-raster (rasterize/rasterize polygon))
+        coverage (raster/create-raster (rasterize/rasterize polygon {:res res}))
         {:keys [dst]} (raster/clipped-coordinates raster coverage)]
+
     {:cov (demand/count-population-under-coverage raster coverage)
+     :set (demand/get-coverage raster coverage)
      :max (get-max-distance coord (demand/get-coverage raster coverage) raster)
      :loc coord}))
 
-(defn catch-exc
-  [coverage idx {:keys [data geotransform xsize ysize] :as raster} criteria]
-  (let [[lon lat] (pixel->coord geotransform (get-pixel idx xsize ysize))]
-    (try
-      (coverage-fn coverage idx raster criteria)
-      (catch Exception e
-        (println e)))))
+(defn- get-resolution
+  [{:keys [geotransform]}]
+  (-> geotransform vec second))
+
+(defn search-optimal-location
+  [engine raster criteria {:keys [demand-quartiles provider-set-id]}]
+  (let [coverage (:coverage engine)
+        aux-fn  #(coverage-fn coverage % raster criteria)
+        res      (get-resolution raster)
+        cost-fn  (memoize/lu (fn ([[idx _]] (catch-exc aux-fn {:idx idx :res (or res 1/1200)}))
+                               ([coord condition] (catch-exc aux-fn {:coord coord :res (or res 1/1200)}))))
+        bounds    (providers-set/get-computed-coverage (:providers-set engine) criteria provider-set-id)]
+    (map #(dissoc % :max :set)
+         (greedy-search raster cost-fn demand-quartiles {:bounds bounds :n 100}))))
+
+(defn finding-best
+  ([engine [raster & others :as levels] criteria]
+   (finding-best  engine levels criteria 0 (map-indexed (fn [i e] (get-geo i raster)) (vec (:data raster))) []))
+
+  ([{:keys [coverage] :as engine} levels criteria level queue best-loc]
+
+   (let [cost-fn  (fn [raster] (memoize/lu (fn [coord] (catch-exc coverage-fn coverage {:coord coord :res (get-resolution raster)} raster criteria))))
+         currents                  (take 5 (sort-by :cov > (map (cost-fn (nth levels level)) queue)))
+         [l0 l1 l2 l3 l4 :as locs] (map :loc currents)]
+
+     (println "condition 1: " (= 1 (count levels)))
+     (println "condition 2: " (= (inc level) (dec (count levels))))
+     (println "level:" level)
+
+     (cond
+       (= (inc level) (count levels))
+       (sort-by :cov > (map (cost-fn (first levels)) locs))
+
+       (= (inc level) (dec (count levels)))
+       (let [locs* (map (cost-fn (nth levels (inc level))) locs)]
+         (sort-by :cov > locs*))
+
+       :else
+       (let [raster                    (nth levels (inc level))
+             geo-fn                    (fn [set] (map #(get-geo % raster) set))
+             news                      (map (cost-fn raster) locs)
+             [s0 s1 s2 s3 s4 :as sets] (map #(-> % :set vec geo-fn) news)
+             recur-call                (fn [q] (finding-best engine levels criteria (inc level) (take 100 q) best-loc))
+             best-locs                 (reduce into (mapv recur-call sets))]
+         (take 10 (sort-by :cov > best-locs)))))))
 
 ;REPL testing of coverage
 ;Correctnes of coverage
@@ -348,17 +389,6 @@
   (f val) ;idx:  1072404 | total:  17580.679855613736  |demand:  17580
           ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
 )
-
-;Catching pg-routing exceptions
-(comment
-  (require '[planwise.engine.raster :as raster])
-  (require '[planwise.component.engine :as engine])
-  (def engine (:planwise.component/engine system))
-  (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
-  (def vals (vec (planwise.component.coverage.algorithm/unique-random-numbers 100 (alength (:data raster)))))
-  (def f (fn [val] (engine/catch-exc (:coverage engine) val raster criteria)))
-  (def criteria {:algorithm :pgrouting-alpha :driving-time 60})
-  (map f vals))
 
 (defn clear-project-cache
   [this project-id]
