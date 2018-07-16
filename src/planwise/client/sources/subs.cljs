@@ -19,13 +19,6 @@
    (asdf/value sources)))
 
 (rf/reg-sub
- :sources/list-filtered-by-type-points
- (fn [_]
-   (rf/subscribe [:sources/list-as-asdf]))
- (fn [sources]
-   (filter (fn [source] (= (:type source) "points")) (asdf/value sources))))
-
-(rf/reg-sub
  :sources.new/data
  (fn [db _]
    (get-in db [:sources :new])))

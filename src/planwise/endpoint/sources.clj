@@ -14,9 +14,11 @@
      (let [user-id (util/request-user-id request)]
        (response (sources/list-sources service user-id))))
 
-   (POST "/" [name :as request]
-     (let [csv-file (:tempfile (get (:multipart-params request) "csvfile"))]
-       (response (sources/import-from-csv service {:name name} csv-file))))))
+   (POST "/" [name unit :as request]
+     (let [user-id (util/request-user-id request)
+           csv-file (:tempfile (get (:multipart-params request) "csvfile"))
+           options {:name name :unit unit :owner-id user-id}]
+       (response (sources/import-from-csv service options csv-file))))))
 
 (defn sources-endpoint
   [{service :sources}]

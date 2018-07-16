@@ -1,6 +1,6 @@
 (ns planwise.client.sources.views
   (:require [re-frame.core :as rf]
-            [planwise.client.asdf :as asdf]
+            [planwise.client.utils :as utils]
             [planwise.client.ui.common :as ui]
             [planwise.client.components.common2 :as common2]
             [planwise.client.components.common :as common]
@@ -18,14 +18,16 @@
 
 (defn source-card
   [props source]
-  (let [name (:name source)]
-    [ui/card {:title name}]))
+  (let [name (:name source)
+        sources-count (:sources-count source 0)]
+    [ui/card {:title name
+              :subtitle (utils/pluralize sources-count "source")}]))
 
 (defn list-view
   [sources]
   (if (empty? sources)
     [empty-list-view]
-    [ui/card-list {:class "dataset-list"}
+    [ui/card-list {:class "set-list"}
      (for [source sources]
        [source-card {:key (:id source)} source])]))
 
@@ -34,11 +36,16 @@
   (let [new-source (rf/subscribe [:sources.new/data])]
     (fn []
       (let [name (:name @new-source)
+            unit (:unit @new-source)
             csv-file (:csv-file @new-source)]
         [:form.vertical
          [common2/text-field {:label "Name"
                               :value name
                               :on-change #(rf/dispatch [:sources.new/update {:name (-> % .-target .-value)}])}]
+
+         [common2/text-field {:label "Unit"
+                              :value unit
+                              :on-change #(rf/dispatch [:sources.new/update {:unit (-> % .-target .-value)}])}]
 
          [:label.file-input-wrapper
           [:div "Import sources from CSV"]
