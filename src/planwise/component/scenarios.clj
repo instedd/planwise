@@ -83,8 +83,6 @@
                                 (map #(dissoc % :the_geom)
                                      (sources/list-sources-in-set (:sources-set store) source-set-id)))]
 
-    (println initial-sources)
-
     (-> scenario
         (assoc :providers initial-providers)
         (assoc :sources initial-sources)
