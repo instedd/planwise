@@ -18,10 +18,14 @@
 
 (s/def ::target (s/nilable number?))
 (s/def ::budget (s/nilable number?))
+(s/def ::upgrade-budget (s/nilable number?))
+(s/def ::build (s/nilable (s/coll-of map? :kind vector? :distinct true)))
+(s/def ::upgrade (s/nilable (s/coll-of map? :kind vector? :distinct true)))
 (s/def ::filter-options map?)
 
 (s/def ::demographics (s/keys :req-un [::target]))
-(s/def ::actions (s/keys :req-un [::budget]))
+(s/def ::actions (s/keys :req-un [::budget]
+                         :opt-un [::build ::upgrade ::upgrade-budget]))
 (s/def ::coverage (s/keys :req-un [::filter-options]))
 (s/def ::providers (s/keys :req-un [::capacity]))
 
