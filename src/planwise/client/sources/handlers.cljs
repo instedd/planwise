@@ -48,7 +48,7 @@
    (rf/dispatch [:modal/hide])
    (-> db
        (dissoc :new)
-       (update :list asdf/swap! into [created-source]))))
+       (update :list #(asdf/swap! % conj created-source)))))
 
 (rf/reg-event-db
  :sources.new/failed
