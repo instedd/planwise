@@ -75,13 +75,23 @@
                                             :lat-fn #(get-in % [:elem :lat])
                                             :lon-fn #(get-in % [:elem :lon])
                                             :options-fn #(select-keys % [:index])
-                                            :radius 5
-                                            :fillColor styles/orange
-                                            :color styles/dark-orange
+                                            :style-fn #(let [source (:elem %)
+                                                             quantity-initial (:quantity source)
+                                                             quantity-current (:quantity-current source)
+                                                             ratio (/ quantity-current quantity-initial)
+                                                             color (cond
+                                                                     (<= ratio 0.25) {:fill :limegreen :stroke :limegreen}
+                                                                     (< 0.25 ratio 0.5) {:fill :yellow :stroke :yellow}
+                                                                     (<= 0.5 ratio 0.75) {:fill :orange :stroke :orange}
+                                                                     (> ratio 0.75) {:fill :red :stroke :red})]
+                                                         {:fillColor (:fill color)
+                                                          :color (:stroke color)})
+                                            :radius 7
+                                            :fillOpacity 0.8
                                             :stroke true
-                                            :weight 2
-                                            :popup-fn #(show-source %)
-                                            :fillOpacity 1}]]]))))
+                                            :weight 10
+                                            :opacity 0.2
+                                            :popup-fn #(show-source %)}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
