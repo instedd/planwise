@@ -260,6 +260,10 @@
   (db-delete-scenarios! (get-db store) {:project-id project-id})
   (engine/clear-project-cache (:engine store) project-id))
 
+(defn get-provider-suggestion
+  [store project scenario]
+  (engine/search-optimal-location (:engine store) project scenario))
+
 (defrecord ScenariosStore [db engine jobrunner providers-set]
   boundary/Scenarios
   (list-scenarios [store project-id]
@@ -279,7 +283,9 @@
   (get-scenario-for-project [store scenario project]
     (get-scenario-for-project store scenario project))
   (export-providers-data [store scenario-id]
-    (export-providers-data store scenario-id)))
+    (export-providers-data store scenario-id))
+  (get-provider-suggestion [store project scenario]
+   (get-provider-suggestion store project scenario)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]

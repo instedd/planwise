@@ -20,3 +20,8 @@
   [id]
   {:method    :get
    :uri       (str "/api/projects2/" id "/scenarios")})
+
+(defn- suggest-providers
+  [id]
+  {:method    :get
+   :uri       (str "/api/scenarios/" id "/new-provider")})
