@@ -60,17 +60,17 @@
                                                  :DATAFILE (str pending-demand-raster ".map")
                                                  :format "image/png"
                                                  :opacity 0.6}])
-                             [:marker-layer {:points indexed-providers
-                                             :lat-fn #(get-in % [:elem :location :lat])
-                                             :lon-fn #(get-in % [:elem :location :lon])
-                                             :options-fn #(select-keys % [:index])
-                                             :radius 4
-                                             :fillColor styles/orange
-                                             :stroke false
-                                             :popup-fn #(show-provider %)
-                                             :fillOpacity 1
-                                             :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                                   (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]
+                             [:cluster-group {:points indexed-providers
+                                              :lat-fn #(get-in % [:elem :location :lat])
+                                              :lon-fn #(get-in % [:elem :location :lon])
+                                              :options-fn #(select-keys % [:index])
+                                              :radius 4
+                                              :fillColor styles/orange
+                                              :stroke false
+                                              :popup-fn #(show-provider %)
+                                              :fillOpacity 1
+                                              :onclick-fn (fn [e] (when (get-in e [:elem :action])
+                                                                    (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]
                              [:point-layer {:points indexed-sources
                                             :lat-fn #(get-in % [:elem :lat])
                                             :lon-fn #(get-in % [:elem :lon])

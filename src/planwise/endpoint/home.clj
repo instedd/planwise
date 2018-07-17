@@ -103,6 +103,11 @@
       (include-js "/js/leaflet.bboxloader.js")
       (include-js "/js/leaflet.legend.js")
       (include-js "/js/main.js")
+      ;
+      (include-js "/js/leaflet.markercluster.js")
+      (include-css "/css/MarkerCluster.css")
+      (include-css "/css/MarkerCluster.Default.css")
+      ;
       [:script "planwise.client.core.main();"]])))
 
 (defn home-endpoint [endpoint]

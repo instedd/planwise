@@ -112,6 +112,15 @@
     (doseq [point points] (.addLayer layer (create-point point attrs)))
     layer))
 
+(defmethod leaflet-layer :cluster-group [[_ props & children]]
+  (let [layer      (.markerClusterGroup js/L)
+        points     (:points props)
+        onclick-fn (:onclick-fn props)
+        attrs      (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
+    (doseq [point points] (.addLayer layer (create-marker point attrs)))
+    (.on layer "click" onclick-fn)
+    layer))
+
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]
   (let [data  (:data props)
         layer (geojson-layer props)]
