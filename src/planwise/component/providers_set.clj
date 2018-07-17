@@ -223,10 +223,10 @@
 
 (defn get-computed-coverage
   [store {:keys [algorithm] :as criteria} provider-set-id]
-  (let [options (dissoc criteria :algorithm)]
-    {:avg-max (:avg (db-avg-max-distance (get-db store) {:algorithm (name algorithm)
-                                                         :provider-set-id provider-set-id
-                                                         :options (str options)}))}))
+  (let [info {:options (str (dissoc criteria :algorithm))
+              :algorithm (name algorithm)
+              :provider-set-id provider-set-id}]
+    {:avg-max (:avg (db-avg-max-distance (get-db store) info))}))
 
 (defrecord ProvidersStore [db coverage]
   boundary/ProvidersSet

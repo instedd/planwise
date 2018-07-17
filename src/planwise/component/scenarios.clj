@@ -285,7 +285,7 @@
   (export-providers-data [store scenario-id]
     (export-providers-data store scenario-id))
   (get-provider-suggestion [store project scenario]
-   (get-provider-suggestion store project scenario)))
+    (get-provider-suggestion store project scenario)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]

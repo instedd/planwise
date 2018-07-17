@@ -213,3 +213,21 @@
  in-scenarios
  (fn [db [_]]
    (update db :list asdf/invalidate!)))
+
+;; ----------------------------------------------------------------------------
+;; Suggested interventions
+
+(rf/reg-event-fx
+ :scenarios/search-optimal-loc
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   {:api (assoc (api/suggest-providers (get-in db [:current-scenario :id]))
+                :on-success [:scenarios/save-suggested-locations])}))
+
+(rf/reg-event-db
+ :scenarios/save-suggested-locations
+ in-scenarios
+ (fn [db [_ suggestions]]
+   (println suggestions)
+   (assoc-in db
+             [:current-scenario :suggested-locations] (pr-str suggestions))))

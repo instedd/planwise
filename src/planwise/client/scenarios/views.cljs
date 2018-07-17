@@ -26,6 +26,7 @@
   [{:keys [bbox]} scenario]
   (let [state    (subscribe [:scenarios/view-state])
         index    (subscribe [:scenarios/changeset-index])
+        suggestions (subscribe [:scenarios/suggestions])
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
@@ -59,13 +60,40 @@
                                              :popup-fn #(show-provider %)
                                              :fillOpacity 1
                                              :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                                   (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
+                                                                   (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]
+                             [:point-layer {:points  (take 50 (drop 5 @suggestions))
+                                            :lat-fn #(get-in % [:loc 1])
+                                            :lon-fn #(get-in % [:loc 0])
+                                            :options-fn #(select-keys % [:index])
+                                            :radius 5
+                                            :fillColor styles/black
+                                            :color styles/black
+                                            :stroke true
+                                            :weight 2
+                                            :popup-fn #(str "Expected coverage: " (:cov %))
+                                            :fillOpacity 1}]
+                             [:point-layer {:points  (take 5 @suggestions)
+                                            :lat-fn #(get-in % [:loc 1])
+                                            :lon-fn #(get-in % [:loc 0])
+                                            :options-fn #(select-keys % [:index])
+                                            :radius 5
+                                            :fillColor styles/green
+                                            :color styles/green
+                                            :stroke true
+                                            :weight 2
+                                            :popup-fn #(str "Expected coverage: " (:cov %))
+                                            :fillOpacity 1}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
   [m/Button {:class-name "btn-create"
              :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
    "Create new scenario from here"])
+
+(defn- suggest-provider
+  []
+  [m/Button {:on-click #(dispatch [:scenarios/search-optimal-loc])}
+   "Suggest locations for new provider"])
 
 (defn- format-percentage
   [num denom]
@@ -89,6 +117,7 @@
 (defn side-panel-view
   [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
   [:div
+   [suggest-provider]
    [:div {:class-name "section"
           :on-click  #(dispatch [:scenarios/open-rename-dialog])}
     [:h1 {:class-name "title-icon"} name]]

@@ -42,3 +42,7 @@
    (keep-indexed (fn [i provider] (when (:action provider) {:provider provider :index i}))
                  (into (:providers current-scenario) (:changeset current-scenario)))))
 
+(rf/reg-sub
+ :scenarios/suggestions :<- [:scenarios/current-scenario]
+ (fn [{:keys [suggested-locations]} _]
+   (cljs.reader/read-string suggested-locations)))
