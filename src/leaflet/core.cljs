@@ -112,7 +112,7 @@
     (doseq [point points] (.addLayer layer (create-point point attrs)))
     layer))
 
-(defmethod leaflet-layer :cluster-group [[_ props & children]]
+(defmethod leaflet-layer :cluster-layer [[_ props & children]]
   (let [layer      (.markerClusterGroup js/L)
         points     (:points props)
         onclick-fn (:onclick-fn props)

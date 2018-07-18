@@ -39,7 +39,9 @@
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
-                                                                       :lon lon}]))]
+                                                                       :lon lon}]))
+        use-providers-clustering false
+        providers-type-layer     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
       (let [providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
@@ -60,17 +62,6 @@
                                                  :DATAFILE (str pending-demand-raster ".map")
                                                  :format "image/png"
                                                  :opacity 0.6}])
-                             [:cluster-group {:points indexed-providers
-                                              :lat-fn #(get-in % [:elem :location :lat])
-                                              :lon-fn #(get-in % [:elem :location :lon])
-                                              :options-fn #(select-keys % [:index])
-                                              :radius 4
-                                              :fillColor styles/orange
-                                              :stroke false
-                                              :popup-fn #(show-provider %)
-                                              :fillOpacity 1
-                                              :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                                    (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]
                              [:point-layer {:points indexed-sources
                                             :lat-fn #(get-in % [:elem :lat])
                                             :lon-fn #(get-in % [:elem :lon])
@@ -91,7 +82,18 @@
                                             :stroke true
                                             :weight 10
                                             :opacity 0.2
-                                            :popup-fn #(show-source %)}]]]))))
+                                            :popup-fn #(show-source %)}]
+                             [providers-type-layer {:points indexed-providers
+                                                    :lat-fn #(get-in % [:elem :location :lat])
+                                                    :lon-fn #(get-in % [:elem :location :lon])
+                                                    :options-fn #(select-keys % [:index])
+                                                    :radius 4
+                                                    :fillColor "#444"
+                                                    :fillOpacity 0.9
+                                                    :stroke false
+                                                    :popup-fn #(show-provider %)
+                                                    :onclick-fn (fn [e] (when (get-in e [:elem :action])
+                                                                          (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
