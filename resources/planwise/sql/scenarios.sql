@@ -53,7 +53,8 @@ UPDATE "scenarios"
   SET "raster" = :raster,
       "demand-coverage" = :demand-coverage,
       "state" = :state,
-      "providers-data" = :providers-data
+      "providers-data" = :providers-data,
+      "sources-data" = :sources-data
   WHERE "id" = :id;
 
 
@@ -81,5 +82,10 @@ SELECT upper(name) AS name FROM scenarios
 
 -- :name db-get-initial-providers-data :? :1
 SELECT "providers-data" FROM scenarios
+  WHERE "project-id" = :project-id
+  AND label = 'initial';
+
+-- :name db-get-initial-sources-data :? :1
+SELECT "sources-data" FROM scenarios
   WHERE "project-id" = :project-id
   AND label = 'initial';

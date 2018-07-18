@@ -2,6 +2,7 @@
   (:require [planwise.boundary.engine :as boundary]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
+            [planwise.boundary.sources :as sources-set]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
             [clojure.string :refer [join]]
@@ -48,7 +49,7 @@
                           :tags tags}
         providers         (providers-set/get-providers-with-coverage-in-region providers-set provider-set-id version filter-options)]
     (->> providers
-         (map #(select-keys % [:id :capacity :raster]))
+         (map #(select-keys % [:id :name :capacity :raster]))
          (sort-by :capacity)
          reverse)))
 
@@ -82,7 +83,7 @@
       [(conj processed-providers (compute-provider props provider)) props])
     [[] props] set)))
 
-(defn compute-initial-scenario
+(defn compute-initial-scenario-by-raster
   [engine project]
   (let [demand-raster    (project-base-demand project)
         providers        (project-providers engine project)
@@ -99,19 +100,92 @@
                           :demand-raster    demand-raster}]
     (debug "Source population demand:" source-demand)
     (let [processed-providers (compute-providers-demand providers props)
-          initial-demand      (demand/count-population demand-raster)
+          scenario-demand      (demand/count-population demand-raster)
           quartiles           (vec (demand/compute-population-quartiles demand-raster))
           update-providers    (compute-providers-demand providers (assoc props :update? true))]
       (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
       (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
       {:raster-path      raster-path
        :source-demand    source-demand
-       :pending-demand   initial-demand
-       :covered-demand   (- source-demand initial-demand)
+       :pending-demand   scenario-demand
+       :covered-demand   (- source-demand scenario-demand)
        :demand-quartiles quartiles
        :providers-data   (mapv (fn [[a b]] (merge a b)) (map vector processed-providers update-providers))})))
 
-(defn compute-scenario
+(defn sum-map
+  [coll f]
+  (reduce + (map f coll))) ;another way: (apply + (map f coll))
+
+(defn update-source
+  [source provider total-demand]
+  (let [ratio (float (/ (:quantity source) total-demand))
+        unsatisfied (double (max 0 (- (:quantity source) (* (:capacity provider) ratio))))
+        updated-source (assoc source :quantity unsatisfied)]
+    updated-source))
+
+(defn need-to-update-source?
+  [source ids]
+  (and (ids (:id source))
+       (> (:quantity source) 0)))
+
+(defn update-source-if-needed
+  [source ids provider total-demand]
+  (if (need-to-update-source? source ids)
+    (update-source source provider total-demand)
+    source))
+
+(defn compute-initial-scenario-by-point
+  [engine project]
+  (let [provider-set-id  (:provider-set-id project)
+        providers        (project-providers engine project) ;sort by capacity
+        sources          (sources-set/list-sources-in-set (:sources-set engine) (:source-set-id project))
+        algorithm        (:coverage-algorithm project)
+        filter-options   (get-in project [:config :coverage :filter-options])
+        fn-sources-under (fn [provider] (sources-set/list-sources-under-provider-coverage (:sources-set engine) (:source-set-id project) (:id provider) algorithm filter-options))
+        fn-select-by-id  (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
+        result-step1     (reduce ; over providers
+                          (fn [computed-state provider]
+                            (let [providers                 (:providers computed-state)
+                                  sources                   (:sources computed-state)
+                                  id-sources-under-coverage (set (map :id (fn-sources-under provider)))         ; create set with sources' id
+                                  sources-under-coverage    (fn-select-by-id sources id-sources-under-coverage) ; updated sources under coverage
+                                  total-demand              (sum-map sources-under-coverage :quantity)        ; total demand requested to current provider
+                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)]
+                              {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
+                               :sources updated-sources}))
+                          {:providers nil
+                           :sources sources}
+                          providers)
+        result-step2     (map (fn [provider]  ; resolve unsatisfied demand per provider
+                                (let [sources                   (:sources result-step1)
+                                      id-sources-under-coverage (set (map :id (fn-sources-under provider)))
+                                      sources-under-coverage    (fn-select-by-id sources id-sources-under-coverage) ; updated sources under coverage
+                                      total-demand              (sum-map sources-under-coverage :quantity)]
+                                  (assoc provider :unsatisfied total-demand)))
+                              (:providers result-step1))]
+
+    (let [updated-sources           (map #(select-keys % [:id :quantity]) (:sources result-step1)) ; persist only id and quantity
+          updated-providers         result-step2
+          total-sources-demand      (sum-map sources :quantity)
+          total-satisfied-demand    (sum-map updated-providers :satisfied)
+          total-unsatisfied-demand  (sum-map updated-providers :unsatisfied)]
+
+      {:raster-path       nil
+       :source-demand     total-sources-demand
+       :pending-demand    total-unsatisfied-demand
+       :covered-demand    total-satisfied-demand
+       :demand-quartiles  nil
+       :providers-data    updated-providers
+       :sources-data      updated-sources})))
+
+(defn compute-initial-scenario
+  [engine project]
+  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))]
+    (if (= (:type source-set) "points")
+      (compute-initial-scenario-by-point engine project)
+      (compute-initial-scenario-by-raster engine project))))
+
+(defn compute-scenario-by-raster
   [engine project {:keys [changeset providers-data] :as scenario}]
   (let [coverage        (:coverage engine)
         providers       (project-providers engine project)
@@ -157,12 +231,85 @@
        :covered-demand   (- source-demand pending-demand)
        :providers-data   (into updated-providers updated-changes)})))
 
+(defn sources-under
+  [engine set-id provider algorithm filter-options]
+  (let [source-set-component (:sources-set engine)
+        coverage-component (:coverage engine)]
+    (if (:location provider)
+      (let [criteria (merge {:algorithm (keyword algorithm)} filter-options)
+            geom     (coverage/compute-coverage coverage-component
+                                                {:lat (get-in provider [:location :lat])
+                                                 :lon (get-in provider [:location :lon])}
+                                                criteria)]
+        (sources-set/list-sources-under-coverage source-set-component
+                                                 set-id
+                                                 geom))
+      (sources-set/list-sources-under-provider-coverage source-set-component
+                                                        set-id
+                                                        (:id provider)
+                                                        algorithm
+                                                        filter-options))))
+
+(defn- change-to-provider
+  [change]
+  {:id (:provider-id change)
+   :capacity (:capacity change)
+   :location (:location change)})
+
+(defn compute-scenario-by-point
+  [engine project {:keys [changeset providers-data sources-data] :as scenario}]
+  (let [providers        (map change-to-provider changeset)
+        sources          sources-data
+        algorithm        (:coverage-algorithm project)
+        filter-options   (get-in project [:config :coverage :filter-options])
+        fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))
+        fn-filter-by-id  (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
+        result-step1     (reduce ; over providers
+                          (fn [computed-state provider]
+                            (let [providers                 (:providers computed-state)
+                                  sources                   (:sources computed-state)
+                                  id-sources-under-coverage (set (map :id (fn-sources-under provider)))         ; create set with sources' id
+                                  sources-under-coverage    (fn-filter-by-id sources id-sources-under-coverage) ; take only the sources under coverage (using the id to filter)
+                                  total-demand              (sum-map sources-under-coverage :quantity)          ; total demand requested to current provider
+                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)]
+                              {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
+                               :sources updated-sources}))
+                          {:providers nil
+                           :sources sources}
+                          providers)
+        result-step2     (map (fn [provider]  ; resolve unsatisfied demand per provider (for all providers!)
+                                (let [sources                   (:sources result-step1)
+                                      id-sources-under-coverage (set (map :id (fn-sources-under provider)))
+                                      sources-under-coverage    (fn-filter-by-id sources id-sources-under-coverage) ; updated sources under coverage
+                                      total-demand              (sum-map sources-under-coverage :quantity)]
+                                  (assoc provider :unsatisfied total-demand)))
+                              (concat providers-data (:providers result-step1)))]
+
+    (let [updated-sources           (:sources result-step1)
+          updated-providers         result-step2
+          total-sources-demand      (sum-map sources :quantity)
+          total-satisfied-demand    (sum-map updated-providers :satisfied)
+          total-unsatisfied-demand  (sum-map updated-providers :unsatisfied)]
+
+      {:raster-path      nil
+       :pending-demand   total-unsatisfied-demand
+       :covered-demand   total-satisfied-demand
+       :providers-data   updated-providers
+       :sources-data     updated-sources})))
+
+(defn compute-scenario
+  [engine project scenario]
+  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))]
+    (if (= (:type source-set) "points")
+      (compute-scenario-by-point engine project scenario)
+      (compute-scenario-by-raster engine project scenario))))
+
 (defn clear-project-cache
   [this project-id]
   (let [scenarios-path (str "data/scenarios/" project-id)]
     (files/delete-files-recursively scenarios-path true)))
 
-(defrecord Engine [providers-set coverage]
+(defrecord Engine [providers-set sources-set coverage]
   boundary/Engine
   (compute-initial-scenario [engine project]
     (compute-initial-scenario engine project))

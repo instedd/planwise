@@ -174,7 +174,7 @@
 
  :planwise.component/engine
  {:providers-set #ig/ref :planwise.component/providers-set
-
+  :sources-set #ig/ref :planwise.component/sources
   :coverage    #ig/ref :planwise.component/coverage}
 
  :planwise.component/facilities
