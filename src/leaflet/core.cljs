@@ -219,7 +219,15 @@
   (let [state (reagent/state this)
         props (reagent/props this)
         max-bounds (:max-bounds props)
+        pointer-class (:pointer-class props)
         leaflet (:map state)]
+    ;pointer
+    (if (not (empty? (:pointer-class state)))
+      (.removeClass js/L.DomUtil (reagent/dom-node this) (:pointer-class state)))
+    (if (not (empty? pointer-class))
+      (.addClass js/L.DomUtil (reagent/dom-node this) pointer-class))
+    (reagent/set-state this {:pointer-class pointer-class})
+    ;max-bounds
     (when (not= max-bounds (:max-bounds state))
       (reagent/set-state this {:max-bounds max-bounds})
       (let [[[s w] [n e]] max-bounds
