@@ -329,7 +329,11 @@
   [{:keys [geotransform]}]
   (-> geotransform vec second))
 
-(defn search-optimal-location
+(defmulti search-optimal-location
+  (fn [engine project scenario] (if (= (:coverage-algorithm project) "pgrouting-alpha") :add-way-nodes :same-locations)))
+
+
+(defmethod search-optimal-location :same-locations
   [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} scenario]
   (let [raster   (raster/read-raster (str "data/" (:raster scenario) ".tif"))
         coverage (:coverage engine)
@@ -340,8 +344,26 @@
         cost-fn  (memoize/lu (fn ([[idx _]] (catch-exc aux-fn {:idx idx :res (or res 1/1200)}))
                                ([coord condition] (catch-exc aux-fn {:coord coord :res (or res 1/1200)}))))
         bounds    (when provider-set-id (providers-set/get-computed-coverage (:providers-set engine) criteria provider-set-id))]
-    (map #(dissoc % :max :set)
-         (greedy-search raster cost-fn demand-quartiles {:bounds bounds :n 100}))))
+    (map #(dissoc % :max)
+         (catch-exc
+          greedy-search raster cost-fn demand-quartiles {:bounds bounds :n 100}))))
+
+(defmethod search-optimal-location :add-way-nodes
+  [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} scenario]
+  (let [raster   (raster/read-raster (str "data/" (:raster scenario) ".tif"))
+        coverage (:coverage engine)
+        demand-quartiles (:demand-quartiles engine-config)
+        criteria (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
+        aux-fn  #(coverage-fn coverage % raster criteria)
+        res      (get-resolution raster)
+        cost-fn  (memoize/lu (fn ([[idx _]] (catch-exc aux-fn {:idx idx :res (or res 1/1200)}))
+                               ([coord condition] (catch-exc aux-fn {:coord coord :res (or res 1/1200)}))))
+        bounds    (when provider-set-id (providers-set/get-computed-coverage (:providers-set engine) criteria provider-set-id))]
+    (map #(dissoc % :max)
+         (catch-exc
+          greedy-search coverage raster cost-fn demand-quartiles {:bounds bounds :n 100 :way-nodes true}))))
+
+
 
 (defn clear-project-cache
   [this project-id]

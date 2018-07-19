@@ -15,6 +15,11 @@
          (s/valid? ::threshold threshold)]}
   (compute-pgr-alpha-coverage db-spec {:point point :threshold threshold}))
 
+(defn get-closest-way-node
+  [db-spec point]
+  {:pre [(s/valid? ::sjdbc/db-spec db-spec)
+         (s/valid? ::pg/point point)]}
+  (get-closest-node  db-spec {:point point}))
 
 ;; REPL testing
 
@@ -24,3 +29,4 @@
 
   ;; Nairobi location
   (compute-coverage (:spec (planwise.repl/db)) (pg/make-point -1.2741 36.7931) 180))
+

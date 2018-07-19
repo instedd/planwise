@@ -1,6 +1,8 @@
 (ns planwise.component.coverage.greedy-search
   (:require [planwise.engine.raster :as raster]
             [clojure.core.memoize :as memoize]
+            [planwise.util.pg :refer [make-point*]]
+            [planwise.component.coverage.pgrouting :refer [get-closest-way-node]]
             [planwise.component.coverage :as coverage])
   (:import [java.lang.Math]
            [org.gdal.gdalconst gdalconst]))
@@ -146,27 +148,37 @@
                   (recur avg-max radius center interior))))))))))
 
 (defn get-groups
-  [from initial-set raster bounds]
-  (loop [groups []
-         from   (first initial-set)
-         demand initial-set]
+  [coverage from initial-set raster bounds condition]
+  (let [alter-fn (if condition
+                   (fn [[idx _]] (let [[lon lat]         (get-geo idx raster)
+                                       {:keys [lon lat]}  (get-closest-way-node (get-in coverage [:db :spec]) (make-point* lat lon))]
+                                   [(get-index [lon lat] raster) 1]))
+                   identity)]
 
-    (if (nil? from)
+    (loop [groups []
+           from   (alter-fn (first initial-set))
+           demand initial-set]
 
-      groups
+      (if (nil? from)
 
-      (let [[group demand*] (get-neighbour from raster demand bounds)]
-        (if (nil? group)
-          (recur groups (first (take 1 demand)) (drop 1 demand))
-          (let [groups*         (into groups [group])
-                from*           (first (sort-by second > demand*))]
-            (recur groups* from* demand*)))))))
+        groups
+
+        (let [[group demand*] (get-neighbour from raster demand bounds)]
+          (if (nil? group)
+            (recur groups (alter-fn (first (take 1 demand))) (drop 1 demand))
+            (let [groups*         (into groups [group])
+                  from*           (when demand* (alter-fn (first (sort-by second > demand*))))]
+              (recur groups* from* demand*))))))))
 
 (defn greedy-search
-  [{:keys [data] :as raster} coverage-fn demand-quartiles {:keys [n bounds]}]
+  [coverage {:keys [data] :as raster} coverage-fn demand-quartiles {:keys [n bounds way-nodes]}]
   (let [[max & remain :as initial-set]   (get-demand data demand-quartiles)
         {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
         groups    (map (fn [group] (when (> (count group) 10) (map #(get-geo (first %) raster) group)))
-                       (get-groups max initial-set raster (/ avg-max 2)))
-        geo-cent  (remove nil? (map get-geo-centroid groups))]
-    (sort-by :cov > (map #(coverage-fn % true) geo-cent))))
+                       (get-groups coverage max initial-set raster (/ avg-max 4) (some? way-nodes)))
+        geo-cent  (remove nil? (map get-geo-centroid groups))
+        locations (remove nil? (map #(coverage-fn % true) geo-cent))]
+
+    (if (empty? locations)
+      (throw (IllegalArgumentException. "Demand can't be reached."))
+      (sort-by :cov > locations))))
