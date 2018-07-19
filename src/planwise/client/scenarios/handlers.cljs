@@ -129,10 +129,10 @@
 ;;Creating new-providers
 
 (rf/reg-event-db
- :scenarios/adding-new-provider
+ :scenarios/toggle-adding-new-provider
  in-scenarios
  (fn [db [_]]
-   (assoc db :view-state :new-provider)))
+   (assoc db :view-state (if (= (:view-state db) :current-scenario) :new-provider :current-scenario))))
 
 (rf/reg-event-fx
  :scenarios/create-provider

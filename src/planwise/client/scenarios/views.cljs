@@ -53,7 +53,8 @@
                                            :on-zoom-changed #(reset! zoom %)
                                            :on-click (cond  (= @state :new-provider) add-point)
                                            :controls []
-                                           :initial-bbox bbox}
+                                           :initial-bbox bbox
+                                           :pointer-class (cond (= @state :new-provider) "crosshair-pointer")}
                              mapping/default-base-tile-layer
                              (when pending-demand-raster
                                [:wms-tile-layer {:url config/mapserver-url
@@ -143,7 +144,7 @@
      "K " (utils/format-number investment)]]
    [:hr]
    [m/Fab {:class-name "btn-floating"
-           :on-click #(dispatch [:scenarios/adding-new-provider])} "domain"]])
+           :on-click #(dispatch [:scenarios/toggle-adding-new-provider])} "domain"]])
 
 (defn display-current-scenario
   [current-project current-scenario]
