@@ -26,7 +26,7 @@
     [this provider-set-id region-id tags version]
     "Count providers filtered by a single tag. Default version is the last one")
 
-  (get-computed-coverage
+  (get-radius-from-computed-coverage
     [this criteria provider-set-id]
     "Given a coverage criteria returns the average of maximus distances"))
 
