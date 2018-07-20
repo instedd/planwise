@@ -148,36 +148,34 @@
                   (recur avg-max radius center interior))))))))))
 
 (defn get-groups
-  [coverage from initial-set raster bounds condition]
-  (let [alter-fn (if condition
-                   (fn [[idx _]] (let [[lon lat]         (get-geo idx raster)
-                                       {:keys [lon lat]}  (get-closest-way-node (get-in coverage [:db :spec]) (make-point* lat lon))]
-                                   [(get-index [lon lat] raster) 1]))
-                   identity)]
+  [from initial-set raster bound]
+  (loop [groups []
+         from   (first initial-set)
+         demand initial-set]
 
-    (loop [groups []
-           from   (alter-fn (first initial-set))
-           demand initial-set]
+    (if (nil? from)
 
-      (if (nil? from)
+      groups
 
-        groups
-
-        (let [[group demand*] (get-neighbour from raster demand bounds)]
-          (if (nil? group)
-            (recur groups (alter-fn (first (take 1 demand))) (drop 1 demand))
-            (let [groups*         (into groups [group])
-                  from*           (when demand* (alter-fn (first (sort-by second > demand*))))]
-              (recur groups* from* demand*))))))))
+      (let [[group demand*] (get-neighbour from raster demand bound)]
+        (if (nil? group)
+          (recur groups  (first (take 1 demand)) (drop 1 demand))
+          (let [groups*         (into groups [group])
+                from*           (when demand*  (first (sort-by second > demand*)))]
+            (recur groups* from* demand*)))))))
 
 (defn greedy-search
   [coverage {:keys [data] :as raster} coverage-fn demand-quartiles {:keys [n bounds way-nodes]}]
   (let [[max & remain :as initial-set]   (get-demand data demand-quartiles)
         {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
         groups    (map (fn [group] (when (> (count group) 10) (map #(get-geo (first %) raster) group)))
-                       (get-groups coverage max initial-set raster (/ avg-max 4) (some? way-nodes)))
+                       (get-groups max initial-set raster (/ avg-max 4)))
+        alter-fn (if (some? way-nodes)
+                   (fn [[lon lat]] (let [{:keys [lon lat]}  (get-closest-way-node (get-in coverage [:db :spec]) (make-point* lat lon))]
+                                     [lon lat]))
+                   identity)
         geo-cent  (remove nil? (map get-geo-centroid groups))
-        locations (remove nil? (map #(coverage-fn % true) geo-cent))]
+        locations (remove nil? (map (fn [e] (coverage-fn (alter-fn e) true)) geo-cent))]
 
     (if (empty? locations)
       (throw (IllegalArgumentException. "Demand can't be reached."))
