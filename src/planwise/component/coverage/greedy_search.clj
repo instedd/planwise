@@ -159,17 +159,17 @@
         (if (nil? group)
           (recur groups (first (take 1 demand)) (drop 1 demand))
           (let [groups*         (into groups [group])
-                from*           (first (sort-by second > demand*))]
+                from*           (when demand* (first (sort-by second > demand*)))]
             (recur groups* from* demand*)))))))
 
 (defn greedy-search
-  [{:keys [data] :as raster} coverage-fn demand-quartiles {:keys [n bounds]}]
+  [sample {:keys [data] :as raster} coverage-fn demand-quartiles {:keys [n bounds]} radius-factor]
   (let [[max & remain :as initial-set]   (get-demand data demand-quartiles)
         {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
         groups    (map (fn [group] (when (> (count group) 10) (map #(get-geo (first %) raster) group)))
-                       (get-groups max initial-set raster (/ avg-max 2)))
-        geo-cent  (remove nil? (map get-geo-centroid groups))]
-
-    (if (empty? geo-cent)
-        (throw (IllegalArgumentException. "Demand can't be reached."))
-        (sort-by :cov > (map #(coverage-fn % true) geo-cent)))))
+                       (get-groups max initial-set raster (/ avg-max (or radius-factor 1))))
+        geo-cent  (remove nil? (map get-geo-centroid groups))
+        locations (remove nil? (map #(coverage-fn % true) geo-cent))]
+    (if (empty? locations)
+      (throw (IllegalArgumentException. "Demand can't be reached."))
+      (take sample (sort-by :coverage > locations)))))
