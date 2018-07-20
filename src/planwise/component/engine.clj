@@ -314,35 +314,37 @@
    (fn [max next] (let [d (euclidean-distance coord (get-geo next raster))]
                     (if (> d max) d max))) 0 vector))
 
+;TODO scale expected capacity of location
 (defn coverage-fn
   [coverage {:keys [idx coord res]} {:keys [data geotransform xsize ysize] :as raster} criteria]
   (let [[lon lat :as coord] (or coord (get-geo idx raster))
         polygon (coverage/compute-coverage coverage {:lat lat :lon lon} criteria)
         coverage (raster/create-raster (rasterize/rasterize polygon {:res res}))
-        {:keys [dst]} (raster/clipped-coordinates raster coverage)]
-
-    {:cov (demand/count-population-under-coverage raster coverage)
+        {:keys [dst]} (raster/clipped-coordinates raster coverage)
+        population-reacheable (demand/count-population-under-coverage raster coverage)]
+    {:coverage population-reacheable
      :max (get-max-distance coord (demand/get-coverage raster coverage) raster)
-     :loc coord}))
+     :location coord}))
 
 (defn- get-resolution
   [{:keys [geotransform]}]
   (-> geotransform vec second))
 
 (defn search-optimal-location
-  [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} scenario]
-  (let [raster   (raster/read-raster (str "data/" (:raster scenario) ".tif"))
-        coverage (:coverage engine)
+  [{:keys [coverage] :as engine} {:keys [engine-config config provider-set-id coverage-algorithm] :as project} scenario]
+  (println coverage-algorithm)
+  (let [raster        (raster/read-raster (str "data/" (:raster scenario) ".tif"))
+        algorithm     (keyword coverage-algorithm)
+        rad-factor       {:pgrouting-alpha 4 :walking-friction 1}
         demand-quartiles (:demand-quartiles engine-config)
-        criteria (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
-        aux-fn  #(coverage-fn coverage % raster criteria)
-        res      (get-resolution raster)
-        cost-fn  (memoize/lu (fn ([[idx _]] (catch-exc aux-fn {:idx idx :res (or res 1/1200)}))
-                               ([coord condition] (catch-exc aux-fn {:coord coord :res (or res 1/1200)}))))
-        bounds    (when provider-set-id (providers-set/get-computed-coverage (:providers-set engine) criteria provider-set-id))]
+        criteria         (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
+        aux-fn           #(coverage-fn coverage % raster criteria)
+        cost-fn  (memoize/lu (fn ([[idx _]] (catch-exc aux-fn {:idx idx :res (or (get-resolution raster) 1/1200)}))
+                               ([coord condition] (catch-exc aux-fn {:coord coord :res (or (get-resolution raster) 1/1200)}))))
+        bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
     (map #(dissoc % :max)
          (catch-exc
-            (greedy-search raster cost-fn demand-quartiles {:bounds bounds :n 100})))))
+          greedy-search 20 raster cost-fn demand-quartiles {:bounds bounds :n 100} (algorithm rad-factor)))))
 
 (defn clear-project-cache
   [this project-id]
@@ -385,8 +387,6 @@
   (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 30))
   nil)
 
-
-
 (comment
   ;REPL testing of coverage
   ;Correctnes of coverage
@@ -400,13 +400,37 @@
 
 (comment
     ;REPL testing
+
+  (def projects2 (:planwise.component/projects2 integrant.repl.state/system))
+  (def scenarios (:planwise.component/scenarios integrant.repl.state/system))
+  (def providers-set (:planwise.component/providers-set integrant.repl.state/system))
+  (def coverage (:planwise.component/coverage integrant.repl.state/system))
+  (defn new-engine []
+    (map->Engine {:providers-set providers-set :coverage coverage}))
+
+  (new-engine)
+  (require '[planwise.boundary.scenarios :as scenarios])
+    ;time assuming computed providers
+
     ;Criteria: walking friction
   (def project   (projects2/get-project projects2 51))
   (def scenario (scenarios/get-scenario scenarios 362))
-  (time (search-optimal-location engine project scenario)); "Elapsed time: 30125.428086 msecs"
+  (time (search-optimal-location (new-engine) project scenario)); "Elapsed time: 30125.428086 msecs" r.f = 2
 
-    ;Criteria: pg-routing
-  (def project   (projects2/get-project projects2 52))
-  (def scenario (scenarios/get-scenario scenarios 368))
+   ;Criteria: driving friction
+  (def project   (projects2/get-project projects2 56))
+  (def scenario (scenarios/get-scenario scenarios 386))
+  (time (search-optimal-location (new-engine) project scenario));"Elapsed time: 150422.481971 msecs" r.f = 2
+                                                               ;"Elapsed time: 51103.714445 msecs" r.d = 1
 
-)
+   ;Criteria: pg-routing
+  (def project   (projects2/get-project projects2 53))
+  (def scenario  (scenarios/get-scenario scenarios 380))
+  (time (search-optimal-location (new-engine) project scenario)); "Elapsed time: 16058.839293 msecs"
+
+   ;Criteria: simple buffer
+  (def project   (projects2/get-project projects2 55))
+  (def scenario  (scenarios/get-scenario scenarios 382))
+  (time (search-optimal-location (new-engine) project scenario)));"Elapsed time: 36028.555081 msecs" with
+                                                                ;"Elapsed time: 33726.076085 msecs" with filtering
+                                                                 ;filtered  (when simple-buffer (take (* (count groups) 0.5) (sort-by #(reduce + (map get-val % raster) groups))))
