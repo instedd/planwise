@@ -1,6 +1,7 @@
 (ns planwise.component.scenarios
   (:require [planwise.boundary.scenarios :as boundary]
             [planwise.boundary.providers-set :as providers-set]
+            [planwise.boundary.sources :as sources]
             [planwise.boundary.engine :as engine]
             [planwise.boundary.jobrunner :as jr]
             [planwise.model.scenarios :as model]
@@ -69,14 +70,23 @@
     (seq (map select-fn providers))))
 
 (defn get-scenario-for-project
-  [store scenario {:keys [provider-set-id provider-set-version config] :as project}]
+  [store scenario {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
-        initial-providers  (get-initial-providers store provider-set-id provider-set-version filter-options)]
+        initial-providers  (get-initial-providers store provider-set-id provider-set-version filter-options)
+        sources-data       (edn/read-string (:sources-data scenario))
+        initial-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
+                                  (assoc source :quantity-current (:quantity (first (filter (fn [source-data]
+                                                                                              (= (:id source-data) (:id source)))
+                                                                                            sources-data)))))
+                                (map #(dissoc % :the_geom)
+                                     (sources/list-sources-in-set (:sources-set store) source-set-id)))]
+
     (-> scenario
         (assoc :providers initial-providers)
-        (dissoc :updated-at :providers-data))))
+        (assoc :sources initial-sources)
+        (dissoc :updated-at :providers-data :sources-data))))
 
 (defn list-scenarios
   [store project-id]
@@ -260,7 +270,7 @@
   (db-delete-scenarios! (get-db store) {:project-id project-id})
   (engine/clear-project-cache (:engine store) project-id))
 
-(defrecord ScenariosStore [db engine jobrunner providers-set]
+(defrecord ScenariosStore [db engine jobrunner providers-set sources-set]
   boundary/Scenarios
   (list-scenarios [store project-id]
     (list-scenarios store project-id))

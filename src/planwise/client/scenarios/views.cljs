@@ -22,6 +22,16 @@
     (str "<b>" (utils/escape-html name) "</b><br> Capacity: " capacity)
     (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
 
+(defn- show-source
+  [{{:keys [name quantity quantity-current]} :elem :as source}]
+  (str "<b>" (utils/escape-html name) "</b>"
+       "<br> Original quantity: " quantity
+       "<br> Current quantity: " quantity-current))
+
+(defn- to-indexed-map
+  [coll]
+  (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
+
 (defn simple-map
   [{:keys [bbox]} scenario]
   (let [state    (subscribe [:scenarios/view-state])
@@ -29,10 +39,13 @@
         position (r/atom mapping/map-preview-position)
         zoom     (r/atom 3)
         add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
-                                                                       :lon lon}]))]
+                                                                       :lon lon}]))
+        use-providers-clustering false
+        providers-type-layer     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
-      (let [providers           (into providers changeset)
-            indexed-providers   (map-indexed (fn [idx elem] {:elem elem :index idx}) providers)
+      (let [providers             (into providers changeset)
+            indexed-providers     (to-indexed-map providers)
+            indexed-sources       (to-indexed-map (:sources scenario))
             pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
@@ -49,17 +62,38 @@
                                                  :DATAFILE (str pending-demand-raster ".map")
                                                  :format "image/png"
                                                  :opacity 0.6}])
-                             [:marker-layer {:points indexed-providers
-                                             :lat-fn #(get-in % [:elem :location :lat])
-                                             :lon-fn #(get-in % [:elem :location :lon])
-                                             :options-fn #(select-keys % [:index])
-                                             :radius 4
-                                             :fillColor styles/orange
-                                             :stroke false
-                                             :popup-fn #(show-provider %)
-                                             :fillOpacity 1
-                                             :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                                   (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
+                             [:point-layer {:points indexed-sources
+                                            :lat-fn #(get-in % [:elem :lat])
+                                            :lon-fn #(get-in % [:elem :lon])
+                                            :options-fn #(select-keys % [:index])
+                                            :style-fn #(let [source (:elem %)
+                                                             quantity-initial (:quantity source)
+                                                             quantity-current (:quantity-current source)
+                                                             ratio (/ quantity-current quantity-initial)
+                                                             color (cond
+                                                                     (<= ratio 0.25) {:fill :limegreen :stroke :limegreen}
+                                                                     (< 0.25 ratio 0.5) {:fill :yellow :stroke :yellow}
+                                                                     (<= 0.5 ratio 0.75) {:fill :orange :stroke :orange}
+                                                                     (> ratio 0.75) {:fill :red :stroke :red})]
+                                                         {:fillColor (:fill color)
+                                                          :color (:stroke color)})
+                                            :radius 7
+                                            :fillOpacity 0.8
+                                            :stroke true
+                                            :weight 10
+                                            :opacity 0.2
+                                            :popup-fn #(show-source %)}]
+                             [providers-type-layer {:points indexed-providers
+                                                    :lat-fn #(get-in % [:elem :location :lat])
+                                                    :lon-fn #(get-in % [:elem :location :lon])
+                                                    :options-fn #(select-keys % [:index])
+                                                    :radius 4
+                                                    :fillColor "#444"
+                                                    :fillOpacity 0.9
+                                                    :stroke false
+                                                    :popup-fn #(show-provider %)
+                                                    :onclick-fn (fn [e] (when (get-in e [:elem :action])
+                                                                          (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
