@@ -147,8 +147,6 @@
  :scenarios/suggested-providers
  in-scenarios
  (fn [db [_ suggestions]]
-   (println "suggested-providers")
-   (println suggestions)
    (assoc-in db [:current-scenario :suggested-locations] suggestions)))
 
 (rf/reg-event-db
