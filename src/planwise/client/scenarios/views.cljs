@@ -100,8 +100,7 @@
                                                :lat-fn #(get-in % [:location :lat])
                                                :lon-fn #(get-in % [:location :lon])
                                                :options-fn #(select-keys % [:index])
-                                               :popup-fn #(show-suggested-provider %)
-                                               }])
+                                               :popup-fn #(show-suggested-provider %)}])
 
                              (when (not (nil? @selected-provider))
                                [:polygon-layer {:polygons (map #(:coverage-geom %) [@selected-provider])
