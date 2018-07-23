@@ -224,7 +224,7 @@
    (assoc db :selected-provider provider)))
 
 (rf/reg-event-db
-  :scenarios.map/unselect-provider
-  in-scenarios
-  (fn [db [_ provider]]
-    (assoc db :selected-provider nil)))
+ :scenarios.map/unselect-provider
+ in-scenarios
+ (fn [db [_ provider]]
+   (assoc db :selected-provider nil)))
