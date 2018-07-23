@@ -107,9 +107,3 @@ SELECT
         WHERE "provider-id" = :provider-id
           AND algorithm = :algorithm
           AND options = :options) AS p) AS dp;
-
---SELECT geom
---  FROM providers_coverage
---  WHERE "provider-id" = :provider-id
---    AND algorithm = :algorithm
---    AND options = :options
