@@ -94,6 +94,13 @@
  (fn [db [_]]
    (assoc db :current-scenario nil)))
 
+(rf/reg-event-db
+ :scenarios/clear-state
+ in-scenarios
+ (fn [db [_]]
+   (assoc db
+          :view-state nil)))
+
 ;; Editing scenario
 
 (rf/reg-event-db

@@ -107,6 +107,7 @@
 
 (defn initial-scenario-panel
   [{:keys [name demand-coverage state]} unit-name source-demand]
+  (dispatch [:scenarios/clear-state])
   [:div
    [:div {:class-name "section"}
     [:h1 {:class-name "title-icon"} name]]
