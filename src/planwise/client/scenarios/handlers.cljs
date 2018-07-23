@@ -213,3 +213,18 @@
  in-scenarios
  (fn [db [_]]
    (update db :list asdf/invalidate!)))
+
+;; ----------------------------------------------------------------------------
+;; Providers in map
+
+(rf/reg-event-db
+ :scenarios.map/select-provider
+ in-scenarios
+ (fn [db [_ provider]]
+   (assoc db :selected-provider provider)))
+
+(rf/reg-event-db
+  :scenarios.map/unselect-provider
+  in-scenarios
+  (fn [db [_ provider]]
+    (assoc db :selected-provider nil)))
