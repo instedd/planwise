@@ -76,7 +76,6 @@
                                   :coverage-options (get-in config [:coverage :filter-options])))
         ;providers-data     (edn/read-string (:providers-data scenario))
         initial-providers  (map (fn [provider]
-                                  (println provider)
                                   (assoc provider :coverage-geom (providers-set/get-coverage
                                                                   (:providers-set store)
                                                                   (:provider-id provider)
