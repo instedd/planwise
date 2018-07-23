@@ -84,9 +84,9 @@
   (let [attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         clickable (boolean popup-fn)
         style     (merge
-                    {:clickable clickable :radius 5}
-                    attrs
-                    (when style-fn (map style-fn points)))
+                   {:clickable clickable :radius 5}
+                   attrs
+                   (when style-fn (map style-fn points)))
         latLngs (clj->js (map #(.latLng js/L (lat-fn %) (lon-fn %)) points))
         polygon (.polygon js/L latLngs (clj->js style))]
     polygon))

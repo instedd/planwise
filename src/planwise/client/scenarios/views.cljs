@@ -108,8 +108,7 @@
                                                     :onclick-fn (fn [e] (when (get-in e [:elem :action])
                                                                           (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))
                                                     :mouseover-fn (fn [ix-provider]
-                                                                    (dispatch [:scenarios.map/select-provider (:elem ix-provider)])
-                                                                    )
+                                                                    (dispatch [:scenarios.map/select-provider (:elem ix-provider)]))
                                                     :mouseout-fn (fn [ix-provider]
                                                                    (dispatch [:scenarios.map/unselect-provider (:elem ix-provider)]))}]]]))))
 
