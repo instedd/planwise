@@ -63,7 +63,7 @@
                    (:providers-set store) provider-set-id version filter-options)
         select-fn (fn [{:keys [id name capacity lat lon]}]
                     {:initial true
-                     :provider-id (str id)
+                     :provider-id id ;(str id)
                      :name name
                      :capacity capacity
                      :location {:lat lat :lon lon}})]
@@ -74,7 +74,15 @@
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
-        initial-providers  (get-initial-providers store provider-set-id provider-set-version filter-options)
+        ;providers-data     (edn/read-string (:providers-data scenario))
+        initial-providers  (map (fn [provider]
+                                  (println provider)
+                                  (assoc provider :coverage-geom (providers-set/get-coverage
+                                                                  (:providers-set store)
+                                                                  (:provider-id provider)
+                                                                  (:coverage-algorithm project)
+                                                                  (get-in config [:coverage :filter-options]))))
+                                (get-initial-providers store provider-set-id provider-set-version filter-options))
         sources-data       (edn/read-string (:sources-data scenario))
         initial-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
                                   (assoc source :quantity-current (:quantity (first (filter (fn [source-data]

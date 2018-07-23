@@ -34,12 +34,13 @@
 
 (defn simple-map
   [{:keys [bbox]} scenario]
-  (let [state    (subscribe [:scenarios/view-state])
-        index    (subscribe [:scenarios/changeset-index])
-        position (r/atom mapping/map-preview-position)
-        zoom     (r/atom 3)
-        add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
-                                                                       :lon lon}]))
+  (let [state             (subscribe [:scenarios/view-state])
+        index             (subscribe [:scenarios/changeset-index])
+        selected-provider (subscribe [:scenarios.map/selected-provider])
+        position          (r/atom mapping/map-preview-position)
+        zoom              (r/atom 3)
+        add-point         (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
+                                                                               :lon lon}]))
         use-providers-clustering false
         providers-type-layer     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
@@ -84,17 +85,33 @@
                                             :weight 10
                                             :opacity 0.2
                                             :popup-fn #(show-source %)}]
+
+                             (when (not (nil? @selected-provider))
+                               [:polygon-layer {:polygons (map #(:coverage-geom %) [@selected-provider])
+                                                :lat-fn (fn [polygon-point] (:lat polygon-point))
+                                                :lon-fn (fn [polygon-point] (:lon polygon-point))
+                                                :color :orange
+                                                :stroke true}])
+
                              [providers-type-layer {:points indexed-providers
                                                     :lat-fn #(get-in % [:elem :location :lat])
                                                     :lon-fn #(get-in % [:elem :location :lon])
                                                     :options-fn #(select-keys % [:index])
+                                                    :style-fn #(let [provider (:elem %)]
+                                                                 (if (= (:provider-id provider) (:provider-id @selected-provider))
+                                                                   {:fillColor :orange}
+                                                                   {:fillColor "#444"}))
                                                     :radius 4
-                                                    :fillColor "#444"
                                                     :fillOpacity 0.9
                                                     :stroke false
                                                     :popup-fn #(show-provider %)
                                                     :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                                          (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
+                                                                          (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))
+                                                    :mouseover-fn (fn [ix-provider]
+                                                                    (dispatch [:scenarios.map/select-provider (:elem ix-provider)])
+                                                                    )
+                                                    :mouseout-fn (fn [ix-provider]
+                                                                   (dispatch [:scenarios.map/unselect-provider (:elem ix-provider)]))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]

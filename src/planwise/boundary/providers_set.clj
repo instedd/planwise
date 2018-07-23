@@ -28,6 +28,9 @@
 
   (get-radius-from-computed-coverage
     [this criteria provider-set-id]
-    "Given a coverage criteria returns the average of maximus distances"))
+    "Given a coverage criteria returns the average of maximus distances")
+
+  (get-coverage [this provider-id algorithm filter-options]
+    "Finds the provider's coverage for an algorithm and filter options"))
 
 ;; Preprocessing provider-set job type: ::preprocess-provider-set

@@ -228,6 +228,12 @@
                                                          :provider-set-id provider-set-id
                                                          :options (str options)}))}))
 
+(defn get-coverage
+  [store provider-id algorithm filter-options]
+  (db-find-provider-coverage (get-db store) {:provider-id provider-id
+                                             :algorithm algorithm
+                                             :options (pr-str filter-options)}))
+
 (defrecord ProvidersStore [db coverage]
   boundary/ProvidersSet
   (list-providers-set [store owner-id]
@@ -247,8 +253,9 @@
   (count-providers-filter-by-tags [store provider-set-id region-id tags version]
     (count-providers-filter-by-tags store provider-set-id region-id tags version))
   (get-radius-from-computed-coverage [store criteria provider-set-id]
-    (get-radius-from-computed-coverage store criteria provider-set-id)))
-
+    (get-radius-from-computed-coverage store criteria provider-set-id))
+  (get-coverage [store provider-id algorithm filter-options]
+    (get-coverage store provider-id algorithm filter-options)))x
 
 (defmethod ig/init-key :planwise.component/providers-set
   [_ config]

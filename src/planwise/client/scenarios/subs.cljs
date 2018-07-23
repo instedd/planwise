@@ -42,3 +42,7 @@
    (keep-indexed (fn [i provider] (when (:action provider) {:provider provider :index i}))
                  (into (:providers current-scenario) (:changeset current-scenario)))))
 
+(rf/reg-sub
+ :scenarios.map/selected-provider
+ (fn [db _]
+   (get-in db [:scenarios :selected-provider])))
