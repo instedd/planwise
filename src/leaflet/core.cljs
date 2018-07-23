@@ -119,7 +119,8 @@
         onclick-fn (:onclick-fn props)
         attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
-    (.on layer "click" onclick-fn)
+    (when onclick-fn
+      (.on layer "click" onclick-fn))
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]

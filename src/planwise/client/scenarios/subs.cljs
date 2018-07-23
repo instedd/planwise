@@ -46,3 +46,9 @@
  :scenarios.map/selected-provider
  (fn [db _]
    (get-in db [:scenarios :selected-provider])))
+
+(rf/reg-sub
+  :scenarios.new-provider/suggested-locations
+  (fn [db _]
+    ;(println (:current-scenario (:scenarios db)))
+    (get-in db [:scenarios :current-scenario :suggested-locations])))
