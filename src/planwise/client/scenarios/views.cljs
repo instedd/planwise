@@ -159,8 +159,12 @@
      [:small "Investment required"]
      "K " (utils/format-number investment)]]
    [:hr]
-   [m/Fab {:class-name "btn-floating"
-           :on-click #(dispatch [:scenarios/toggle-adding-new-provider])} "domain"]])
+   [m/Fab
+    {:class-name "btn-floating"
+     :on-click (fn [e]
+                 (dispatch [:scenarios.new-provider/toggle-select-location])
+                 (dispatch [:scenarios.new-provider/get-suggested-providers]))}
+    "domain"]])
 
 (defn display-current-scenario
   [current-project current-scenario]

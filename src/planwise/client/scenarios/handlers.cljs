@@ -129,10 +129,33 @@
 ;;Creating new-providers
 
 (rf/reg-event-db
- :scenarios/toggle-adding-new-provider
+ :scenarios.new-provider/toggle-select-location
  in-scenarios
  (fn [db [_]]
    (assoc db :view-state (if (= (:view-state db) :current-scenario) :new-provider :current-scenario))))
+
+(rf/reg-event-fx
+ :scenarios.new-provider/get-suggested-providers
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+    ; TODO: show text calculating best locations ...
+   {:api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
+                :on-success [:scenarios/suggested-providers]
+                :on-failure [:scenarios/no-suggested-providers])}))
+
+(rf/reg-event-db
+ :scenarios/suggested-providers
+ in-scenarios
+ (fn [db [_ suggestions]]
+   (println "suggested-providers")
+   (println suggestions)
+   (assoc-in db [:current-scenario :suggested-locations] suggestions)))
+
+(rf/reg-event-db
+ :scenarios/no-suggested-providers
+ in-scenarios
+ (fn [db [_]]
+   (println "no-suggested-providers")))
 
 (rf/reg-event-fx
  :scenarios/create-provider
