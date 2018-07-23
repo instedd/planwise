@@ -21,8 +21,7 @@
      [m/Icon {} "domain"]
      [:div {:class-name "icon-list-text"}
       [:p {:class-name "strong"} (str "Create new provider " prov-index)]
-      [:p {:class-name "grey-text"}  (str "K " (utils/format-number investment))]
-      [:p {:class-name "grey-text"}  "1,834 State House Rd, Nairobi, Kenya"]]]]
+      [:p {:class-name "grey-text"}  (str "K " (utils/format-number investment))]]]]
    [:hr]])
 
 (defn- listing-component
