@@ -22,6 +22,10 @@
     (str "<b>" (utils/escape-html name) "</b><br> Capacity: " capacity)
     (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
 
+(defn- show-suggested-provider
+  [suggestion]
+  (str (:location suggestion)))
+
 (defn- show-source
   [{{:keys [name quantity quantity-current]} :elem :as source}]
   (str "<b>" (utils/escape-html name) "</b>"
@@ -34,20 +38,25 @@
 
 (defn simple-map
   [{:keys [bbox]} scenario]
-  (let [state             (subscribe [:scenarios/view-state])
-        index             (subscribe [:scenarios/changeset-index])
-        selected-provider (subscribe [:scenarios.map/selected-provider])
-        position          (r/atom mapping/map-preview-position)
-        zoom              (r/atom 3)
-        add-point         (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
-                                                                               :lon lon}]))
+  (let [state               (subscribe [:scenarios/view-state])
+        index               (subscribe [:scenarios/changeset-index])
+        selected-provider   (subscribe [:scenarios.map/selected-provider])
+        suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
+        position            (r/atom mapping/map-preview-position)
+        zoom                (r/atom 3)
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
+                                                                                 :lon lon}]))
         use-providers-clustering false
-        providers-type-layer     (if use-providers-clustering :cluster-layer :point-layer)]
+        providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
       (let [providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
             indexed-sources       (to-indexed-map (:sources scenario))
             pending-demand-raster raster]
+
+        (println "suggested-providers:")
+        (println @suggested-locations)
+
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
                                            :on-position-changed #(reset! position %)
@@ -86,6 +95,14 @@
                                             :opacity 0.2
                                             :popup-fn #(show-source %)}]
 
+                             (when (not (nil? @suggested-locations))
+                               [:marker-layer {:points @suggested-locations
+                                               :lat-fn #(get-in % [:location :lat])
+                                               :lon-fn #(get-in % [:location :lon])
+                                               :options-fn #(select-keys % [:index])
+                                               :popup-fn #(show-suggested-provider %)
+                                               }])
+
                              (when (not (nil? @selected-provider))
                                [:polygon-layer {:polygons (map #(:coverage-geom %) [@selected-provider])
                                                 :lat-fn (fn [polygon-point] (:lat polygon-point))
@@ -93,7 +110,7 @@
                                                 :color :orange
                                                 :stroke true}])
 
-                             [providers-type-layer {:points indexed-providers
+                             [providers-layer-type {:points indexed-providers
                                                     :lat-fn #(get-in % [:elem :location :lat])
                                                     :lon-fn #(get-in % [:elem :location :lon])
                                                     :options-fn #(select-keys % [:index])
