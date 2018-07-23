@@ -153,8 +153,9 @@
                                   id-sources-under-coverage (set (map :id (fn-sources-under provider)))         ; create set with sources' id
                                   sources-under-coverage    (fn-select-by-id sources id-sources-under-coverage) ; updated sources under coverage
                                   total-demand              (sum-map sources-under-coverage :quantity)        ; total demand requested to current provider
-                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)]
-                              {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
+                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)
+                                  updated-provider          (assoc provider :satisfied (min (:capacity provider) total-demand))]
+                              {:providers (conj providers updated-provider)
                                :sources updated-sources}))
                           {:providers nil
                            :sources sources}
@@ -238,7 +239,7 @@
   [engine set-id provider algorithm filter-options]
   (let [source-set-component (:sources-set engine)
         coverage-component (:coverage engine)]
-    (if (:location provider)
+    (if (:location provider) ; only providers in changeset have location (see function change-to-provider)
       (let [criteria (merge {:algorithm (keyword algorithm)} filter-options)
             geom     (coverage/compute-coverage coverage-component
                                                 {:lat (get-in provider [:location :lat])
