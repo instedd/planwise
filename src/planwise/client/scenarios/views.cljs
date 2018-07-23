@@ -95,14 +95,14 @@
                                             :opacity 0.2
                                             :popup-fn #(show-source %)}]
 
-                             (when (not (nil? @suggested-locations))
+                             (when @suggested-locations
                                [:marker-layer {:points @suggested-locations
                                                :lat-fn #(get-in % [:location :lat])
                                                :lon-fn #(get-in % [:location :lon])
                                                :options-fn #(select-keys % [:index])
                                                :popup-fn #(show-suggested-provider %)}])
 
-                             (when (not (nil? @selected-provider))
+                             (when @selected-provider
                                [:polygon-layer {:polygons (map #(:coverage-geom %) [@selected-provider])
                                                 :lat-fn (fn [polygon-point] (:lat polygon-point))
                                                 :lon-fn (fn [polygon-point] (:lon polygon-point))

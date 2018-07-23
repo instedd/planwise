@@ -48,7 +48,16 @@
    (get-in db [:scenarios :selected-provider])))
 
 (rf/reg-sub
- :scenarios.new-provider/suggested-locations
+ :scenarios.new-provider/new-suggested-locations
  (fn [db _]
-    ;(println (:current-scenario (:scenarios db)))
    (get-in db [:scenarios :current-scenario :suggested-locations])))
+
+(rf/reg-sub
+ :scenarios.new-provider/suggested-locations
+ (fn [_]
+   [(rf/subscribe [:scenarios/view-state])
+    (rf/subscribe [:scenarios.new-provider/new-suggested-locations])])
+ (fn [[view-state suggestions] _]
+   (if (= view-state :new-provider)
+     suggestions
+     nil)))
