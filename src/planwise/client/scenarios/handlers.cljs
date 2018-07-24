@@ -75,8 +75,9 @@
 
 (rf/reg-event-fx
  :scenarios/get-scenario
- (fn [_ [_ id]]
-   {:api (assoc (api/load-scenario id)
+ (fn [{:keys [db]} [_ id]]
+   {:db  (assoc-in db [:scenarios :view-state] :current-scenario)
+    :api (assoc (api/load-scenario id)
                 :on-success [:scenarios/save-current-scenario-and-track]
                 :on-failure [:scenarios/scenario-not-found])}))
 
@@ -92,8 +93,7 @@
  :scenarios/clear-current-scenario
  in-scenarios
  (fn [db [_]]
-   (assoc db :current-scenario nil
-          :view-state :current-scenario)))
+   (assoc db :current-scenario nil)))
 
 ;; Editing scenario
 

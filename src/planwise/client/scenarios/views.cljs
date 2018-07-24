@@ -185,8 +185,7 @@
       (fn []
         (let [{:keys [id project-id]} @page-params]
           (cond
-            (not= id (:id @current-scenario)) (do (dispatch [:scenarios/clear-current-scenario])
-                                                  (dispatch [:scenarios/get-scenario id]))
+            (not= id (:id @current-scenario)) (dispatch [:scenarios/get-scenario id])
             (not= project-id (:id @current-project)) (dispatch [:projects2/get-project project-id])
             (not= project-id (:project-id @current-scenario)) (dispatch [:scenarios/scenario-not-found])
             :else
