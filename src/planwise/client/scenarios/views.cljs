@@ -107,7 +107,6 @@
 
 (defn initial-scenario-panel
   [{:keys [name demand-coverage state]} unit-name source-demand]
-  (dispatch [:scenarios/clear-state])
   [:div
    [:div {:class-name "section"}
     [:h1 {:class-name "title-icon"} name]]
@@ -186,7 +185,8 @@
       (fn []
         (let [{:keys [id project-id]} @page-params]
           (cond
-            (not= id (:id @current-scenario)) (dispatch [:scenarios/get-scenario id])
+            (not= id (:id @current-scenario)) (do (dispatch [:scenarios/clear-current-scenario])
+                                                  (dispatch [:scenarios/get-scenario id]))
             (not= project-id (:id @current-project)) (dispatch [:projects2/get-project project-id])
             (not= project-id (:project-id @current-scenario)) (dispatch [:scenarios/scenario-not-found])
             :else
