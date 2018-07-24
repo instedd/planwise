@@ -53,10 +53,6 @@
             indexed-providers     (to-indexed-map providers)
             indexed-sources       (to-indexed-map (:sources scenario))
             pending-demand-raster raster]
-
-        (println "suggested-providers:")
-        (println @suggested-locations)
-
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
                                            :on-position-changed #(reset! position %)
@@ -100,7 +96,10 @@
                                                :lat-fn #(get-in % [:location :lat])
                                                :lon-fn #(get-in % [:location :lon])
                                                :options-fn #(select-keys % [:index])
-                                               :popup-fn #(show-suggested-provider %)}])
+                                               :popup-fn #(show-suggested-provider %)
+                                               :onclick-fn (fn [suggestion]
+                                                             (let [location (:location suggestion)]
+                                                               (add-point (:lat location) (:lon location))))}])
 
                              (when @selected-provider
                                [:polygon-layer {:polygons (map #(:coverage-geom %) [@selected-provider])
