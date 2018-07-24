@@ -47,7 +47,7 @@
                    (conj new-objects new-object)
                    (rest new-decls))))))))
 
-(defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn options-fn], :or {lat-fn :lat lon-fn :lon}}]
+(defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn options-fn onclick-fn], :or {lat-fn :lat lon-fn :lon}}]
   (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
         icon   (if icon-fn
                  (.divIcon js/L #js {:className (icon-fn point)})
@@ -58,8 +58,10 @@
         new-attrs (if (some? options-fn) (merge  attrs (options-fn point)) attrs)
         marker   (.marker js/L latLng (clj->js new-attrs))]
     (if popup-fn
-      (.bindPopup marker (popup-fn point))
-      marker)))
+      (.bindPopup marker (popup-fn point)))
+    (if onclick-fn
+      (.on marker "click" #(onclick-fn point)))
+    marker))
 
 (defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
   (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
@@ -73,11 +75,9 @@
     (if popup-fn
       (.bindPopup marker (popup-fn point)))
     (if mouseover-fn
-      (.on marker "mouseover" (fn [e]
-                                (mouseover-fn point))))
+      (.on marker "mouseover" #(mouseover-fn point)))
     (if mouseout-fn
-      (.on marker "mouseout" (fn [e]
-                               (mouseout-fn point))))
+      (.on marker "mouseout" #(mouseout-fn point)))
     marker))
 
 (defn create-polygon [points {:keys [lat-fn lon-fn style-fn popup-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
@@ -116,11 +116,12 @@
 (defmethod leaflet-layer :marker-layer [[_ props & children]]
   (let [layer (.featureGroup js/L)
         points (:points props)
-        onclick-fn (:onclick-fn props)
-        attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
+        ;onclick-fn (:onclick-fn props)
+        ;attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
+        attrs (dissoc props :points)]
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
-    (when onclick-fn
-      (.on layer "click" onclick-fn))
+    ;(when onclick-fn
+    ;  (.on layer "click" onclick-fn))
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]
