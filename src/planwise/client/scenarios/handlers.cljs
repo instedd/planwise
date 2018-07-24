@@ -93,7 +93,7 @@
  in-scenarios
  (fn [db [_]]
    (assoc db :current-scenario nil
-             :view-state :current-scenario)))
+          :view-state :current-scenario)))
 
 ;; Editing scenario
 
@@ -153,10 +153,13 @@
  :scenarios/open-changeset-dialog
  in-scenarios
  (fn [db [_ changeset-index]]
-   (assoc db
-          :view-state        :changeset-dialog
-          :view-state-params {:changeset-index changeset-index}
-          :changeset-dialog  (get-in db [:current-scenario :changeset changeset-index]))))
+   (let [last-change (:changeset-dialog db)
+         provider    (get-in db [:current-scenario :changeset changeset-index])
+         condition   (reduce = (map :provider-id [provider last-change]))]
+     (assoc db
+            :view-state        :changeset-dialog
+            :view-state-params {:changeset-index changeset-index}
+            :changeset-dialog  (if condition last-change provider)))))
 
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
