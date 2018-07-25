@@ -4,6 +4,7 @@
             [planwise.boundary.sources :as sources]
             [planwise.boundary.engine :as engine]
             [planwise.boundary.jobrunner :as jr]
+            [planwise.boundary.coverage :as coverage]
             [planwise.model.scenarios :as model]
             [clojure.string :as str]
             [planwise.util.str :as util-str]
@@ -161,6 +162,23 @@
                    :project project})
     result))
 
+(defn compute-change-coverage
+  [engine project change] ;change is a provider
+  (if (:coverage-geom change)
+    change ;coverage already computed for this change
+    (let [location            (:location change)
+          algorithm           (:coverage-algorithm project)
+          filter-options      (get-in project [:config :coverage :filter-options])
+          criteria            (merge {:algorithm (keyword algorithm)} filter-options)
+          coverage-component  (:coverage engine)
+          coverage-geometry   (coverage/compute-coverage coverage-component
+                                                         location
+                                                         criteria)]
+      (println "compute-change-coverage")
+      (println coverage-geometry)
+
+      (assoc change :coverage-geom coverage-geometry))))
+
 (defn update-scenario
   [store project {:keys [id name changeset]}]
   ;; TODO assert scenario belongs to project
@@ -174,6 +192,7 @@
                           :id id
                           :investment (sum-investments changeset)
                           :demand-coverage nil
+                          ;:changeset (pr-str (map #(compute-change-coverage (:engine store) project %) changeset))
                           :changeset (pr-str changeset)
                           :label nil})
         ;; Current label is removed so we need to search for the new optimal
