@@ -113,10 +113,20 @@
                                                     :lat-fn #(get-in % [:elem :location :lat])
                                                     :lon-fn #(get-in % [:elem :location :lon])
                                                     :options-fn #(select-keys % [:index])
-                                                    :style-fn #(let [provider (:elem %)]
-                                                                 (if (= (:provider-id provider) (:provider-id @selected-provider))
-                                                                   {:fillColor :orange}
-                                                                   {:fillColor "#444"}))
+                                                    :style-fn #(let [provider (:elem %)
+                                                                     style    {}]
+                                                                 (.log js/console provider)
+                                                                 (-> style
+                                                                     (assoc :fillColor
+                                                                            (if (= (:provider-id provider) (:provider-id @selected-provider))
+                                                                              :orange
+                                                                              "#444"))
+                                                                     (merge (if (nil? (:action provider))
+                                                                              {}                          ; providers
+                                                                              {:stroke true               ; style for providers created by user
+                                                                               :color :blueviolet
+                                                                               :weight 10
+                                                                               :opacity 0.2}))))
                                                     :radius 4
                                                     :fillOpacity 0.9
                                                     :stroke false
