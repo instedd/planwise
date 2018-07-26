@@ -37,8 +37,8 @@
   []
   [:div.empty-list-container
    [:div.empty-list
-    [common/icon :box]
-    [:p "You have no projects yet"]
+    [:i.material-icons.md-icon-96 "folder"]
+    [:p.message-margin "You have no projects yet"]
     [m/Button {:type       "button"
                :unelevated "unelevated"
                :on-click   (utils/prevent-default #(dispatch [:projects2/new-project]))}
