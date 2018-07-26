@@ -128,11 +128,16 @@
 
 ;;Creating new-providers
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :scenarios.new-provider/toggle-select-location
  in-scenarios
- (fn [db [_]]
-   (assoc db :view-state (if (= (:view-state db) :current-scenario) :new-provider :current-scenario))))
+ (fn [{:keys [db]} [_]]
+   (let [next-state (if (= (:view-state db) :new-provider) ; is creating new provider?
+                      :current-scenario
+                      :new-provider)]
+     (merge {:db (assoc db :view-state next-state)}
+            (if (= next-state :new-provider)
+              {:dispatch [:scenarios.new-provider/get-suggested-providers]})))))
 
 (rf/reg-event-fx
  :scenarios.new-provider/get-suggested-providers
@@ -141,19 +146,23 @@
     ; TODO: show text calculating best locations ...
    {:api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
                 :on-success [:scenarios/suggested-providers]
-                :on-failure [:scenarios/no-suggested-providers])}))
+                :on-failure [:scenarios/no-suggested-providers])
+    :db  (assoc-in db [:current-scenario :computing-best-locations] true)}))
 
 (rf/reg-event-db
  :scenarios/suggested-providers
  in-scenarios
  (fn [db [_ suggestions]]
-   (assoc-in db [:current-scenario :suggested-locations] suggestions)))
+   (-> db
+       (assoc-in [:current-scenario :suggested-locations] suggestions)
+       (assoc-in [:current-scenario :computing-best-locations] false))))
 
 (rf/reg-event-db
  :scenarios/no-suggested-providers
  in-scenarios
  (fn [db [_]]
-   (println "no-suggested-providers")))
+   (println "no-suggested-providers")
+   (assoc-in db [:current-scenario :computing-best-locations] false)))
 
 (rf/reg-event-fx
  :scenarios/create-provider
