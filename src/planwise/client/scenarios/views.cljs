@@ -172,32 +172,35 @@
 
 (defn side-panel-view
   [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
-  [:div
-   [:div {:class-name "section"
-          :on-click  #(dispatch [:scenarios/open-rename-dialog])}
-    [:h1 {:class-name "title-icon"} name]]
-   [:hr]
-   [:div {:class-name "section"}
-    [:h1 {:class-name "large"}
-     [:small (str "Increase in " unit-name " coverage")]
-     (cond
-       (= "pending" state) "loading..."
-       :else (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
-    [:p {:class-name "grey-text"}
-     (cond
-       (= "pending" state) "to a total of"
-       :else (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
-   [:div {:class-name "section"}
-    [:h1 {:class-name "large"}
-     [:small "Investment required"]
-     "K " (utils/format-number investment)]]
-   [:hr]
-   [m/Fab
-    {:class-name "btn-floating"
-     :on-click (fn [e]
-                 (dispatch [:scenarios.new-provider/toggle-select-location])
-                 (dispatch [:scenarios.new-provider/get-suggested-providers]))}
-    "domain"]])
+  (let [computing-best-locations? (subscribe [:scenarios.new-provider/computing-best-locations?])]
+    (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
+      [:div
+       [:div {:class-name "section"
+              :on-click  #(dispatch [:scenarios/open-rename-dialog])}
+        [:h1 {:class-name "title-icon"} name]]
+       [:hr]
+       [:div {:class-name "section"}
+        [:h1 {:class-name "large"}
+         [:small (str "Increase in " unit-name " coverage")]
+         (cond
+           (= "pending" state) "loading..."
+           :else (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
+        [:p {:class-name "grey-text"}
+         (cond
+           (= "pending" state) "to a total of"
+           :else (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
+       [:div {:class-name "section"}
+        [:h1 {:class-name "large"}
+         [:small "Investment required"]
+         "K " (utils/format-number investment)]]
+       [:hr]
+       [m/Fab
+        {:class-name "btn-floating"
+         :on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
+        "domain"]
+       (if @computing-best-locations?
+         [:div
+          [:small "Computing best locations ..."]])])))
 
 (defn display-current-scenario
   [current-project current-scenario]
