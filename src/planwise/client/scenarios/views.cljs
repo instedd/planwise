@@ -16,15 +16,21 @@
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
+(defn- provider-from-changeset?
+  [provider]
+  (not (nil? (:action provider))))
+
 (defn- show-provider
-  [{{:keys [action name capacity satisfied unsatisfied investment]} :elem :as provider}]
-  (if (nil? action)
-    (str "<b>" (utils/escape-html name) "</b>"
-         "<br> Capacity: " capacity
-         "<br> Satisfied demand: " satisfied
-         "<br> Unsatisfied demand: " unsatisfied
-         "<br> Current capacity: " (- capacity satisfied))
-    (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
+  [{{:keys [action name capacity satisfied unsatisfied investment]} :elem :as ix-provider}]
+  (str "<b>" (utils/escape-html (if (provider-from-changeset? (:elem ix-provider))
+                                  (str "New provider " (:index ix-provider))
+                                  name)) "</b>"
+       "<br> Capacity: " capacity
+       "<br> Satisfied demand: " satisfied
+       "<br> Unsatisfied demand: " unsatisfied
+       "<br> Current capacity: " (- capacity satisfied)
+       (if (provider-from-changeset? (:elem ix-provider))
+         (str "<br><br> Click on panel for editing... "))))
 
 (defn- show-suggested-provider
   [suggestion]
@@ -123,8 +129,7 @@
                                                                             (if (= (:provider-id provider) (:provider-id @selected-provider))
                                                                               :orange
                                                                               "#444"))
-                                                                     (merge (if (nil? (:action provider))
-                                                                              {}                          ; providers
+                                                                     (merge (when (provider-from-changeset? provider)
                                                                               {:stroke true               ; style for providers created by user
                                                                                :color :blueviolet
                                                                                :weight 10
