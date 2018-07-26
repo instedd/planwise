@@ -24,4 +24,5 @@
 (defn- suggested-providers
   [id]
   {:method    :get
+   :timeout   60000
    :uri       (str "/api/scenarios/" id "/suggested-providers")})
