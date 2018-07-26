@@ -17,9 +17,13 @@
             [planwise.client.ui.rmwc :as m]))
 
 (defn- show-provider
-  [{{:keys [action name capacity investment]} :elem :as provider}]
+  [{{:keys [action name capacity satisfied unsatisfied investment]} :elem :as provider}]
   (if (nil? action)
-    (str "<b>" (utils/escape-html name) "</b><br> Capacity: " capacity)
+    (str "<b>" (utils/escape-html name) "</b>"
+         "<br> Capacity: " capacity
+         "<br> Satisfied demand: " satisfied
+         "<br> Unsatisfied demand: " unsatisfied
+         "<br> Current capacity: " (- capacity satisfied))
     (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
 
 (defn- show-suggested-provider
