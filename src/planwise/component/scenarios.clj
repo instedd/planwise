@@ -70,17 +70,35 @@
                      :location {:lat lat :lon lon}})]
     (seq (map select-fn providers))))
 
+(defn- update-provider-data
+  [provider updated-data]
+  (let [id    (:provider-id provider)
+        data  (select-keys (get updated-data id) [:satisfied :unsatisfied])]
+    (merge provider data)))
+
+(defn- build-updated-data
+  [providers-data]
+  (reduce (fn [tree provider]
+            (assoc tree (:id provider) (dissoc provider :id)))
+          {}
+          providers-data))
+
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
-        ;providers-data     (edn/read-string (:providers-data scenario))
+        providers-data     (edn/read-string (:providers-data scenario))
+        updated-data       (build-updated-data providers-data)
         initial-providers  (map (fn [provider]
-                                  (assoc provider :coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
-                                                                                                    (:provider-id provider)
-                                                                                                    (:coverage-algorithm project)
-                                                                                                    (get-in config [:coverage :filter-options])))))
+                                  (-> provider
+                                      ; add coverage
+                                      (assoc :coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
+                                                                                               (:provider-id provider)
+                                                                                               (:coverage-algorithm project)
+                                                                                               (get-in config [:coverage :filter-options]))))
+                                      ; add updated satisfied and unsatisfied demand
+                                      (update-provider-data updated-data)))
                                 (get-initial-providers store provider-set-id provider-set-version filter-options))
         sources-data       (edn/read-string (:sources-data scenario))
         initial-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
