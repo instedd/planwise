@@ -90,8 +90,7 @@
         [total-cov total-max] (reduce (fn [[tc tm] location]
                                         (let [{:keys [cov max]} (or (coverage-fn location {:format :idx}) {:cov 0 :max 0})]
                                           [(+ tc cov) (+ tm max)])) [0 0] locations)]
-    {:avg-cov (float (/ total-cov n))
-     :avg-max (/ total-max n)}))
+    {:avg-max (/ total-max n)}))
 
 (defn neighbour-fn
   [[idx _ :as val] raster bound]
@@ -103,16 +102,16 @@
   (let [coord (get-geo idx raster)]
     (fn [[other _]] (< (- (euclidean-distance coord (get-geo other raster)) radius) eps))))
 
-(defn next-neigh
+(defn next-neighbour
   ([raster demand center radius]
-   (next-neigh raster demand center radius 0))
+   (next-neighbour raster demand center radius 0))
   ([raster demand center radius eps]
    (let [in-frontier? (fn [p] (frontier-fn p raster radius eps))
          set      (group-by (in-frontier? center) demand)
          frontier (get set true)]
      (get-centroid (map #(format* % raster) frontier)))))
 
-(defn get-neighbour
+(defn get-neighbourhood
   [demand-point {:keys [data] :as raster} demand avg-max]
 
   (let [is-neighbour? (memoize (fn [p r] (neighbour-fn p raster r)))
@@ -130,7 +129,7 @@
           (let [sep (group-by (is-neighbour? center avg-max) demand)]
             [(get sep true) (get sep false)])
 
-          (let [location (next-neigh raster interior center radius)]
+          (let [location (next-neighbour raster interior center radius)]
 
             (if (nil? location)
 
@@ -155,7 +154,7 @@
 
       groups
 
-      (let [[group demand*] (get-neighbour from raster demand bounds)]
+      (let [[group demand*] (get-neighbourhood from raster demand bounds)]
         (if (nil? group)
           (recur groups (first (take 1 demand)) (drop 1 demand))
           (let [groups*         (into groups [group])
