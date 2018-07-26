@@ -95,15 +95,11 @@ SELECT AVG(ST_MaxDistance(geom, geom))
 	AND pc."provider-id" IN (SELECT id FROM "providers" p WHERE p."provider-set-id" = :provider-set-id)
 	AND options = :options;
 
--- :name db-find-provider-coverage :?
-SELECT
-	ST_X(dp.geom) AS lon,
-	ST_Y(dp.geom) AS lat
-	FROM
-	(SELECT (ST_DumpPoints(p.geom)).geom
-			FROM
-			(SELECT geom
-        FROM providers_coverage
-        WHERE "provider-id" = :provider-id
-          AND algorithm = :algorithm
-          AND options = :options) AS p) AS dp;
+-- :name db-find-provider-coverage :? :1
+SELECT ST_AsGeoJSON(p.geom) AS geom
+  FROM
+  (SELECT geom
+    FROM providers_coverage
+    WHERE "provider-id" = :provider-id
+      AND algorithm = :algorithm
+      AND options = :options) AS p;
