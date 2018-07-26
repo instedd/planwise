@@ -172,7 +172,8 @@
 
 (defn side-panel-view
   [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
-  (let [computing-best-locations? (subscribe [:scenarios.new-provider/computing-best-locations?])]
+  (let [computing-best-locations? (subscribe [:scenarios.new-provider/computing-best-locations?])
+        view-state                (subscribe [:scenarios/view-state])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
       [:div
        [:div {:class-name "section"
@@ -197,7 +198,10 @@
        [m/Fab
         {:class-name "btn-floating"
          :on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
-        "domain"]
+        (cond
+          @computing-best-locations? "stop"
+          (= @view-state :new-provider) "cancel"
+          :default "domain")]
        (if @computing-best-locations?
          [:div
           [:small "Computing best locations ..."]])])))
