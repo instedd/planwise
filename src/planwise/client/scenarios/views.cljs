@@ -113,9 +113,8 @@
                                                     :lat-fn #(get-in % [:elem :location :lat])
                                                     :lon-fn #(get-in % [:elem :location :lon])
                                                     :options-fn #(select-keys % [:index])
-                                                    :style-fn #(let [provider (:elem %)
-                                                                     style    {}]
-                                                                 (-> style
+                                                    :style-fn #(let [provider (:elem %)]
+                                                                 (-> {}
                                                                      (assoc :fillColor
                                                                             (if (= (:provider-id provider) (:provider-id @selected-provider))
                                                                               :orange
