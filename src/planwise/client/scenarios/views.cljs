@@ -115,7 +115,6 @@
                                                     :options-fn #(select-keys % [:index])
                                                     :style-fn #(let [provider (:elem %)
                                                                      style    {}]
-                                                                 (.log js/console provider)
                                                                  (-> style
                                                                      (assoc :fillColor
                                                                             (if (= (:provider-id provider) (:provider-id @selected-provider))
