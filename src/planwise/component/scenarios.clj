@@ -88,9 +88,10 @@
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
+        ; providers
         providers-data     (edn/read-string (:providers-data scenario))
         updated-data       (build-updated-data providers-data)
-        initial-providers  (map (fn [provider]
+        updated-providers  (map (fn [provider]
                                   (-> provider
                                       ; add coverage
                                       (assoc :coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
@@ -100,8 +101,11 @@
                                       ; add updated satisfied and unsatisfied demand
                                       (update-provider-data updated-data)))
                                 (get-initial-providers store provider-set-id provider-set-version filter-options))
+        ;providers in changeset
+        updated-changeset  (map #(update-provider-data % updated-data) (:changeset scenario))
+        ; sources
         sources-data       (edn/read-string (:sources-data scenario))
-        initial-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
+        updated-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
                                   (assoc source :quantity-current (:quantity (first (filter (fn [source-data]
                                                                                               (= (:id source-data) (:id source)))
                                                                                             sources-data)))))
@@ -109,8 +113,9 @@
                                      (sources/list-sources-in-set (:sources-set store) source-set-id)))]
 
     (-> scenario
-        (assoc :providers initial-providers)
-        (assoc :sources initial-sources)
+        (assoc :providers updated-providers)
+        (assoc :sources updated-sources)
+        (assoc :changeset updated-changeset)
         (dissoc :updated-at :providers-data :sources-data))))
 
 (defn list-scenarios
