@@ -432,7 +432,7 @@
   ;Criteria: simple buffer
   (def project   (projects2/get-project projects2 55))
   (def scenario  (scenarios/get-scenario scenarios 382))
-  (time (search-optimal-location (new-engine) project scenario)));"Elapsed time: 36028.555081 msecs" with
+  (time (search-optimal-location (new-engine) project scenario)));"Elapsed time: 36028.555081 msecs"
 
 ;Testing over Kilifi
   ;;Efficiency
