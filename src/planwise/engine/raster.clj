@@ -78,6 +78,10 @@
         data      (read-band-data band 0 0 xsize ysize)]
     (->Raster projection geotransform xsize ysize data-type nodata data)))
 
+(defn update-raster
+  [{:keys [geotransform projection xsize ysize data-type nodata]} new-data]
+  (->Raster projection geotransform xsize ysize data-type nodata new-data))
+
 (defn read-raster
   "Reads a raster file and returns a Raster record with the data from the
   specified band number (defaults to 1)"
