@@ -61,3 +61,8 @@
    (if (= view-state :new-provider)
      suggestions
      nil)))
+
+(rf/reg-sub
+ :scenarios.new-provider/computing-best-locations?
+ (fn [db _]
+   (get-in db [:scenarios :current-scenario :computing-best-locations])))
