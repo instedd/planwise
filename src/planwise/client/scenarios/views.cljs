@@ -102,7 +102,8 @@
                                                                (add-point (:lat location) (:lon location))))}])
 
                              (when @selected-provider
-                               [:polygon-layer {:polygons (map #(:coverage-geom %) [@selected-provider])
+                               [:geojson-layer {:data (:coverage-geom @selected-provider)
+                                                :group {:pane "tilePane"}
                                                 :lat-fn (fn [polygon-point] (:lat polygon-point))
                                                 :lon-fn (fn [polygon-point] (:lon polygon-point))
                                                 :color :orange

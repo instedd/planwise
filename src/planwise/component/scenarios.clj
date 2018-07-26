@@ -77,11 +77,10 @@
                                   :coverage-options (get-in config [:coverage :filter-options])))
         ;providers-data     (edn/read-string (:providers-data scenario))
         initial-providers  (map (fn [provider]
-                                  (assoc provider :coverage-geom (providers-set/get-coverage
-                                                                  (:providers-set store)
-                                                                  (:provider-id provider)
-                                                                  (:coverage-algorithm project)
-                                                                  (get-in config [:coverage :filter-options]))))
+                                  (assoc provider :coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
+                                                                                                    (:provider-id provider)
+                                                                                                    (:coverage-algorithm project)
+                                                                                                    (get-in config [:coverage :filter-options])))))
                                 (get-initial-providers store provider-set-id provider-set-version filter-options))
         sources-data       (edn/read-string (:sources-data scenario))
         initial-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
@@ -173,11 +172,10 @@
           coverage-component  (:coverage engine)
           coverage-geometry   (coverage/compute-coverage coverage-component
                                                          location
-                                                         criteria)]
-      (println "compute-change-coverage")
-      (println coverage-geometry)
-
-      (assoc change :coverage-geom coverage-geometry))))
+                                                         criteria)
+          cov-as-geojson      (coverage/as-geojson coverage-component
+                                                   coverage-geometry)]
+      (assoc change :coverage-geom (:geom cov-as-geojson)))))
 
 (defn update-scenario
   [store project {:keys [id name changeset]}]
@@ -192,8 +190,7 @@
                           :id id
                           :investment (sum-investments changeset)
                           :demand-coverage nil
-                          ;:changeset (pr-str (map #(compute-change-coverage (:engine store) project %) changeset))
-                          :changeset (pr-str changeset)
+                          :changeset (pr-str (map #(compute-change-coverage (:engine store) project %) changeset))
                           :label nil})
         ;; Current label is removed so we need to search for the new optimal
     (db-update-scenarios-label! db {:project-id project-id})
