@@ -10,6 +10,8 @@
   (clear-project-cache [this project-id]
     "Clears a project cache")
 
-  (search-optimal-location [engine project scenario]
+  (search-optimal-location
+    [engine project scenario]
+    [engine project scenario raster]
     "Given a scenario returns suggestions for new provider"))
 
