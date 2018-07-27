@@ -201,15 +201,14 @@ header.mdc-toolbar {
     @extend .mdc-elevation-transition;
 
     .card-secondary {
-      padding: 1em;
+      padding: 24px;
+
       .title{
-      margin-top: 4px !important;
-      margin-bottom: 4px !important;
+        display: inline;
       }
       .props{
         color: #999999;
-        margin-top: 4px;
-        margin-bottom: 4px;
+        margin-top: 5px;
       }
     }
   }
