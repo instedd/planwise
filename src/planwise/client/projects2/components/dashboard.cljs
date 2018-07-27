@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
-            [clojure.string :refer [blank?]]
+            [clojure.string :refer [blank? capitalize]]
             [planwise.client.asdf :as asdf]
             [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.components.common2 :as common2]
@@ -38,24 +38,25 @@
                             (if (or (.-shiftKey evt) (.-metaKey evt))
                               (.open js/window (routes/scenarios {:project-id project-id :id id}))
                               (dispatch [:scenarios/load-scenario {:id id}])))}
-   [:td {:class "col1"} (cond (= state "pending") [create-chip state]
-                              (not= label "initial") [create-chip label])]
-   [:td {:class "col2"} name]
-   [:td {:class "col3"} (utils/format-number demand-coverage)]
-   [:td {:class "col4"} (utils/format-number investment)]
-   [:td {:class "col5"} changeset-summary]])
+   [:td (cond (= state "pending") [create-chip state]
+              (not= label "initial") [create-chip label])]
+   [:td.col  name]
+   [:td.col  (utils/format-number demand-coverage)]
+   [:td.col  (utils/format-number investment)]
+   [:td.actions changeset-summary]])
 
 (defn- scenarios-list
-  [scenarios current-project]
+  [scenarios current-project ]
   [:div.scenarios-content
    [:table
+    [:caption (utils/or-blank (:name current-project) [:p ""])]
     [:thead
      [:tr
-      [:th {:class "col1"} ""]
-      [:th {:class "col2"} "Name"]
-      [:th {:class "col3"} (str (get-in current-project [:config :demographics :unit-name]) " coverage")]
-      [:th {:class "col4"} "Investment"]
-      [:th {:class "col5"} "Actions"]]]
+      [:th {:key "col1"}]
+      [:th {:key "col2" } "Name"]
+      [:th.col {:key "col3"}(str (capitalize (get-in current-project [:config :demographics :unit-name])) " coverage")]
+      [:th.col {:key "col4"}"Investment"]
+      [:th.actions {:key "col5"}"Actions"]]]
     [:tbody
      (map #(scenarios-list-item (:id current-project) %) scenarios)]]])
 
