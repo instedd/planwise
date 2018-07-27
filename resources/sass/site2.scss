@@ -75,7 +75,7 @@ header {
   }
 
   #top-row {
-    min-height: 50px;
+    min-height: 48px;
     font-size: $small-font-size;
   }
 
@@ -83,13 +83,14 @@ header {
     display: flex;
     justify-content: flex-start;
     * {
-      margin-right: 10px;
+      margin-right: 48px;
+      font-size: 16px;
     }
   }
 
   #title-row {
-    border-top: 1px solid #404040;
-    height: 90px;
+    border-top: 1px solid #3A3A3A;
+    height: 108px;
 
     .icon {
       width: 60px;
@@ -151,7 +152,13 @@ header.mdc-toolbar {
 
 #account-menu {
   @include link-color(#9a9a9a);
+  display: inline-flex !important;
+  .icon-dropdown{
+    margin-left: 4px;
+  }
 }
+
+
 
 #top-row a {
   @include link-color(#9a9a9a);

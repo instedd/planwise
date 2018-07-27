@@ -71,7 +71,7 @@
        [m/Menu {:anchorCorner "bottomStart" :open @open :onClose #(reset! open false)}
         [m/MenuItem {:on-click on-signout} "Sign out"]]
        [:a {:id "account-menu" :href "#" :onClick #(reset! open true)}
-        name]])))
+        name [:i.material-icons.icon-dropdown "keyboard_arrow_down"]]])))
 
 (defn panel
   [{:keys [z] :or {z 2}} & children]
