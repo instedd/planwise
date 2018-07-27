@@ -29,3 +29,10 @@
  :projects2/upgrade-actions :<- [:projects2/current-project]
  (fn [current-project [_]]
    (get-in current-project [:config :actions :upgrade])))
+
+(rf/reg-sub
+ :projects2/count-scenarios
+ (fn [db _]
+   (let [total (count (get-in db [:scenarios :list :value]))
+         subsc (get-in db [:projects2 :current-project :subscenarios])]
+     {:from-initial (- total subsc) :subscenarios subsc})))

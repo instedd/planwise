@@ -40,23 +40,29 @@
                               (dispatch [:scenarios/load-scenario {:id id}])))}
    [:td (cond (= state "pending") [create-chip state]
               (not= label "initial") [create-chip label])]
-   [:td.col  name]
-   [:td.col  (utils/format-number demand-coverage)]
-   [:td.col  (utils/format-number investment)]
-   [:td.actions changeset-summary]])
+   [:td.col1  name]
+   [:td.col2  (utils/format-number demand-coverage)]
+   [:td.col3  (utils/format-number investment)]
+   [:td.col4 changeset-summary]])
+
+(defn- generate-title
+  [{:keys [from-initial subscenarios]}]
+  (str
+   (when from-initial (utils/pluralize from-initial "scenario"))
+   (when subscenarios (str " + " (utils/pluralize subscenarios " sub-scenario")))))
 
 (defn- scenarios-list
-  [scenarios current-project ]
+  [scenarios current-project count]
   [:div.scenarios-content
    [:table
-    [:caption (utils/or-blank (:name current-project) [:p ""])]
+    [:caption (generate-title count)]
     [:thead
      [:tr
-      [:th {:key "col1"}]
-      [:th {:key "col2" } "Name"]
-      [:th.col {:key "col3"}(str (capitalize (get-in current-project [:config :demographics :unit-name])) " coverage")]
-      [:th.col {:key "col4"}"Investment"]
-      [:th.actions {:key "col5"}"Actions"]]]
+      [:th]
+      [:th.col1 "Name"]
+      [:th (str (capitalize (get-in current-project [:config :demographics :unit-name])) " coverage")]
+      [:th  "Investment"]
+      [:th.col4 "Actions"]]]
     [:tbody
      (map #(scenarios-list-item (:id current-project) %) scenarios)]]])
 
@@ -70,7 +76,8 @@
         delete?  (r/atom false)
         hide-dialog (fn [] (reset! delete? false))
         id (:id @current-project)
-        scenarios-sub (rf/subscribe [:scenarios/list])]
+        scenarios-sub (rf/subscribe [:scenarios/list])
+        count-scenarios (rf/subscribe [:projects2/count-scenarios])]
     (fn [active-tab]
       (let [scenarios (asdf/value @scenarios-sub)]
         (when (asdf/should-reload? @scenarios-sub)
@@ -87,5 +94,5 @@
                                    :delete-fn #(rf/dispatch [:projects2/delete-project id])}]
            [ui/panel {}
             (case active-tab
-              :scenarios [scenarios-list scenarios @current-project]
+              :scenarios [scenarios-list scenarios @current-project @count-scenarios]
               :settings  [project-settings])]])))))

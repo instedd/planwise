@@ -465,11 +465,21 @@ form.vertical, .fields-vertical {
       height: 50px;
     }
 
-    .col{
+
+    .col1{
+      width: 20%;
+      text-align: left;
+    }
+
+    .col2{
       text-align: right;
     }
 
-    .actions {
+    .col3{
+      text-align: right;
+    }
+
+    .col4{
       text-align: left;
       width: 50%;
     }
