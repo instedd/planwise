@@ -203,7 +203,7 @@
           (= @view-state :new-provider) "cancel"
           :default "domain")]
        (if @computing-best-locations?
-         [:div
+         [:div {:class-name "info-computing-best-location"}
           [:small "Computing best locations ..."]])])))
 
 (defn display-current-scenario
