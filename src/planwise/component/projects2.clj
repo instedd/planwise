@@ -51,7 +51,8 @@
 
 (defn list-projects
   [store owner-id]
-  (db-list-projects (get-db store) {:owner-id owner-id}))
+  (let [get-budget (fn [{:keys [config] :as project}] (-> project (dissoc :config) (assoc :budget (get-in (read-string config) [:actions :budget]))))]
+    (map get-budget (db-list-projects (get-db store) {:owner-id owner-id}))))
 
 (defn start-project
   [store project-id]

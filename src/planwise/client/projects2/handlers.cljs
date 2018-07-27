@@ -22,9 +22,9 @@
 (rf/reg-event-fx
  :projects2/project-created
  in-projects2
- (fn [{:keys [db]} [_ project]]
+ (fn [{:keys [db]} [_ {:keys [config] :as project}]]
    (let [project-id   (:id project)
-         project-item (select-keys project [:id :name :state])
+         project-item (assoc (select-keys project [:id :name :state]) :budget (get-in config [:actions :budget]))
          new-list     (cons project-item (:list db))]
      {:db        (-> db
                      (assoc :current-project nil)
@@ -48,7 +48,8 @@
                                              #(-> %
                                                   (assoc :state (:state current-project))
                                                   (assoc :name (:name current-project))
-                                                  (assoc :region-id (:region-id current-project))))))))))
+                                                  (assoc :region-id (:region-id current-project))
+                                                  (assoc :budget (get-in current-project [:config :actions :budget]))))))))))
 
 
 (rf/reg-event-fx
@@ -104,7 +105,7 @@
  :projects2/save-key
  in-projects2
  (fn [{:keys [db]} [_ path data]]
-   (let [{:keys [list current-project]} db
+   (let [{:keys [current-project]} db
          {:keys [id name]}              current-project
          path                           (if (vector? path) path [path])
          current-project-path           (into [:current-project] path)]

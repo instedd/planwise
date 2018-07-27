@@ -25,6 +25,7 @@
     [ui/card {:href (routes/projects2-show {:id id})
               :primary [:img {:style map-preview-size :src preview-map-url}]
               :title (utils/or-blank (:name project) [:i "Untitled"])
+              :budget (utils/or-blank (:budget project) [:i ""])
               :status (utils/or-blank (:state project) [:i "status: unknown"])}]))
 
 (defn- projects-list

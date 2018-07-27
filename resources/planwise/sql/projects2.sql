@@ -25,7 +25,7 @@ SELECT projects2.*, providers_set."coverage-algorithm", regions_bbox.bbox
   WHERE projects2.id = :id;
 
 -- :name db-list-projects :?
-SELECT id, name, "region-id", state FROM projects2
+SELECT id, name, "region-id", state ,config FROM projects2
     WHERE "deleted-at" is NULL
     AND "owner-id" = :owner-id
     ORDER BY name;
