@@ -128,25 +128,31 @@
 
 ;;Creating new-providers
 
+(def request-key [:current-scenario :get-best-locations :request])
+
 (rf/reg-event-fx
  :scenarios.new-provider/toggle-select-location
  in-scenarios
  (fn [{:keys [db]} [_]]
-   (let [next-state (if (= (:view-state db) :new-provider) ; is creating new provider?
+   (let [view-state (get-in db [:view-state])
+         next-state (if (= view-state :new-provider) ; is creating new provider?
                       :current-scenario
                       :new-provider)]
-     (merge {:db (assoc db :view-state next-state)}
+     (merge {:db (-> db
+                     (assoc-in [:view-state] next-state)
+                     (assoc-in [:current-scenario :suggested-locations] nil))}
             (if (= next-state :new-provider)
-              {:dispatch [:scenarios.new-provider/get-suggested-providers]})))))
+              {:dispatch [:scenarios.new-provider/get-suggested-providers]}
+              {:api-abort request-key})))))
 
 (rf/reg-event-fx
  :scenarios.new-provider/get-suggested-providers
  in-scenarios
  (fn [{:keys [db]} [_]]
-    ; TODO: show text calculating best locations ...
    {:api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
                 :on-success [:scenarios/suggested-providers]
-                :on-failure [:scenarios/no-suggested-providers])
+                :on-failure [:scenarios/no-suggested-providers]
+                :key        request-key)
     :db  (assoc-in db [:current-scenario :computing-best-locations] true)}))
 
 (rf/reg-event-db
