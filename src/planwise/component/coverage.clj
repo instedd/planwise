@@ -7,7 +7,10 @@
             [planwise.util.pg :as pg]
             [integrant.core :as ig]
             [clojure.spec.alpha :as s]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [hugsql.core :as hugsql]))
+
+(hugsql/def-db-fns "planwise/sql/coverage/coverage.sql")
 
 ;; Specs
 
@@ -131,6 +134,11 @@
       (friction/compute-polygon runner friction-raster coords max-time min-friction)
       (throw (ex-info "Cannot find a friction raster for the origin coordinates " {:coords coords})))))
 
+(defn as-geojson
+  [{:keys [db]} geometry]
+  (let [db-spec (:spec db)]
+    (db-as-geojson db-spec {:geom geometry})))
+
 (def default-grid-align-options
   {:ref-coords {:lat 0 :lon 0}
    :resolution {:x-res 1/1200 :y-res 1/1200}})
@@ -147,7 +155,9 @@
       (when-let [raster-path (:raster criteria)]
         (io/make-parents raster-path)
         (rasterize/rasterize polygon raster-path raster-options))
-      polygon)))
+      polygon))
+  (as-geojson [this geometry]
+    (as-geojson this geometry)))
 
 
 (defmethod ig/init-key :planwise.component/coverage

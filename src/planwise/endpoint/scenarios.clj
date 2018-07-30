@@ -33,6 +33,17 @@
    (GET "/:id/csv" [id :as request]
      (response (scenarios/export-providers-data service (Integer. id))))
 
+   (GET "/:id/suggested-providers" [id :as request]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
+
+       ;TODO: replace with call to new provider best locations algorithm
+       (Thread/sleep 5000)
+       (response [{:location {:lat -3.698292 :lon 39.842558}}
+                  {:location {:lat -3.697622 :lon 39.865777}}])))
+
    (PUT "/:id" [id scenario :as request]
      (let [user-id    (util/request-user-id request)
            id         (Integer. id)

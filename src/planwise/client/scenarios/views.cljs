@@ -16,11 +16,25 @@
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
+(defn- provider-from-changeset?
+  [provider]
+  (not (nil? (:action provider))))
+
 (defn- show-provider
-  [{{:keys [action name capacity investment]} :elem :as provider}]
-  (if (nil? action)
-    (str "<b>" (utils/escape-html name) "</b><br> Capacity: " capacity)
-    (str "<b> New provider " (:index provider) "</b><br> Click on panel for editing... ")))
+  [{{:keys [action name capacity satisfied unsatisfied investment]} :elem :as ix-provider}]
+  (str "<b>" (utils/escape-html (if (provider-from-changeset? (:elem ix-provider))
+                                  (str "New provider " (:index ix-provider))
+                                  name)) "</b>"
+       "<br> Capacity: " capacity
+       "<br> Satisfied demand: " satisfied
+       "<br> Unsatisfied demand: " unsatisfied
+       "<br> Current capacity: " (- capacity satisfied)
+       (if (provider-from-changeset? (:elem ix-provider))
+         (str "<br><br> Click on panel for editing... "))))
+
+(defn- show-suggested-provider
+  [suggestion]
+  (str (:location suggestion)))
 
 (defn- show-source
   [{{:keys [name quantity quantity-current]} :elem :as source}]
@@ -34,14 +48,16 @@
 
 (defn simple-map
   [{:keys [bbox]} scenario]
-  (let [state    (subscribe [:scenarios/view-state])
-        index    (subscribe [:scenarios/changeset-index])
-        position (r/atom mapping/map-preview-position)
-        zoom     (r/atom 3)
-        add-point (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
-                                                                       :lon lon}]))
+  (let [state               (subscribe [:scenarios/view-state])
+        index               (subscribe [:scenarios/changeset-index])
+        selected-provider   (subscribe [:scenarios.map/selected-provider])
+        suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
+        position            (r/atom mapping/map-preview-position)
+        zoom                (r/atom 3)
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
+                                                                                 :lon lon}]))
         use-providers-clustering false
-        providers-type-layer     (if use-providers-clustering :cluster-layer :point-layer)]
+        providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
       (let [providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
@@ -53,7 +69,8 @@
                                            :on-zoom-changed #(reset! zoom %)
                                            :on-click (cond  (= @state :new-provider) add-point)
                                            :controls []
-                                           :initial-bbox bbox}
+                                           :initial-bbox bbox
+                                           :pointer-class (cond (= @state :new-provider) "crosshair-pointer")}
                              mapping/default-base-tile-layer
                              (when pending-demand-raster
                                [:wms-tile-layer {:url config/mapserver-url
@@ -83,17 +100,50 @@
                                             :weight 10
                                             :opacity 0.2
                                             :popup-fn #(show-source %)}]
-                             [providers-type-layer {:points indexed-providers
+
+                             (when @suggested-locations
+                               [:marker-layer {:points @suggested-locations
+                                               :lat-fn #(get-in % [:location :lat])
+                                               :lon-fn #(get-in % [:location :lon])
+                                               :options-fn #(select-keys % [:index])
+                                               :popup-fn #(show-suggested-provider %)
+                                               :onclick-fn (fn [suggestion]
+                                                             (let [location (:location suggestion)]
+                                                               (add-point (:lat location) (:lon location))))}])
+
+                             (when @selected-provider
+                               [:geojson-layer {:data (:coverage-geom @selected-provider)
+                                                :group {:pane "tilePane"}
+                                                :lat-fn (fn [polygon-point] (:lat polygon-point))
+                                                :lon-fn (fn [polygon-point] (:lon polygon-point))
+                                                :color :orange
+                                                :stroke true}])
+
+                             [providers-layer-type {:points indexed-providers
                                                     :lat-fn #(get-in % [:elem :location :lat])
                                                     :lon-fn #(get-in % [:elem :location :lon])
                                                     :options-fn #(select-keys % [:index])
+                                                    :style-fn #(let [provider (:elem %)]
+                                                                 (-> {}
+                                                                     (assoc :fillColor
+                                                                            (if (= (:provider-id provider) (:provider-id @selected-provider))
+                                                                              :orange
+                                                                              "#444"))
+                                                                     (merge (when (provider-from-changeset? provider)
+                                                                              {:stroke true               ; style for providers created by user
+                                                                               :color :blueviolet
+                                                                               :weight 10
+                                                                               :opacity 0.2}))))
                                                     :radius 4
-                                                    :fillColor "#444"
                                                     :fillOpacity 0.9
                                                     :stroke false
                                                     :popup-fn #(show-provider %)
                                                     :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                                          (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))}]]]))))
+                                                                          (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))
+                                                    :mouseover-fn (fn [ix-provider]
+                                                                    (dispatch [:scenarios.map/select-provider (:elem ix-provider)]))
+                                                    :mouseout-fn (fn [ix-provider]
+                                                                   (dispatch [:scenarios.map/unselect-provider (:elem ix-provider)]))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]
@@ -122,28 +172,39 @@
 
 (defn side-panel-view
   [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
-  [:div
-   [:div {:class-name "section"
-          :on-click  #(dispatch [:scenarios/open-rename-dialog])}
-    [:h1 {:class-name "title-icon"} name]]
-   [:hr]
-   [:div {:class-name "section"}
-    [:h1 {:class-name "large"}
-     [:small (str "Increase in " unit-name " coverage")]
-     (cond
-       (= "pending" state) "loading..."
-       :else (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
-    [:p {:class-name "grey-text"}
-     (cond
-       (= "pending" state) "to a total of"
-       :else (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
-   [:div {:class-name "section"}
-    [:h1 {:class-name "large"}
-     [:small "Investment required"]
-     "K " (utils/format-number investment)]]
-   [:hr]
-   [m/Fab {:class-name "btn-floating"
-           :on-click #(dispatch [:scenarios/adding-new-provider])} "domain"]])
+  (let [computing-best-locations? (subscribe [:scenarios.new-provider/computing-best-locations?])
+        view-state                (subscribe [:scenarios/view-state])]
+    (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
+      [:div
+       [:div {:class-name "section"
+              :on-click  #(dispatch [:scenarios/open-rename-dialog])}
+        [:h1 {:class-name "title-icon"} name]]
+       [:hr]
+       [:div {:class-name "section"}
+        [:h1 {:class-name "large"}
+         [:small (str "Increase in " unit-name " coverage")]
+         (cond
+           (= "pending" state) "loading..."
+           :else (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
+        [:p {:class-name "grey-text"}
+         (cond
+           (= "pending" state) "to a total of"
+           :else (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
+       [:div {:class-name "section"}
+        [:h1 {:class-name "large"}
+         [:small "Investment required"]
+         "K " (utils/format-number investment)]]
+       [:hr]
+       [m/Fab
+        {:class-name "btn-floating"
+         :on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
+        (cond
+          @computing-best-locations? "stop"
+          (= @view-state :new-provider) "cancel"
+          :default "domain")]
+       (if @computing-best-locations?
+         [:div {:class-name "info-computing-best-location"}
+          [:small "Computing best locations ..."]])])))
 
 (defn display-current-scenario
   [current-project current-scenario]

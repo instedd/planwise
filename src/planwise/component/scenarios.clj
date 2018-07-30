@@ -4,6 +4,7 @@
             [planwise.boundary.sources :as sources]
             [planwise.boundary.engine :as engine]
             [planwise.boundary.jobrunner :as jr]
+            [planwise.boundary.coverage :as coverage]
             [planwise.model.scenarios :as model]
             [clojure.string :as str]
             [planwise.util.str :as util-str]
@@ -63,20 +64,48 @@
                    (:providers-set store) provider-set-id version filter-options)
         select-fn (fn [{:keys [id name capacity lat lon]}]
                     {:initial true
-                     :provider-id (str id)
+                     :provider-id id ;(str id)
                      :name name
                      :capacity capacity
                      :location {:lat lat :lon lon}})]
     (seq (map select-fn providers))))
+
+(defn- update-provider-data
+  [provider updated-data]
+  (let [id    (:provider-id provider)
+        data  (select-keys (get updated-data id) [:satisfied :unsatisfied])]
+    (merge provider data)))
+
+(defn- build-updated-data
+  [providers-data]
+  (reduce (fn [tree provider]
+            (assoc tree (:id provider) (dissoc provider :id)))
+          {}
+          providers-data))
 
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
-        initial-providers  (get-initial-providers store provider-set-id provider-set-version filter-options)
+        ; providers
+        providers-data     (edn/read-string (:providers-data scenario))
+        updated-data       (build-updated-data providers-data)
+        updated-providers  (map (fn [provider]
+                                  (-> provider
+                                      ; add coverage
+                                      (assoc :coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
+                                                                                               (:provider-id provider)
+                                                                                               (:coverage-algorithm project)
+                                                                                               (get-in config [:coverage :filter-options]))))
+                                      ; add updated satisfied and unsatisfied demand
+                                      (update-provider-data updated-data)))
+                                (get-initial-providers store provider-set-id provider-set-version filter-options))
+        ;providers in changeset
+        updated-changeset  (map #(update-provider-data % updated-data) (:changeset scenario))
+        ; sources
         sources-data       (edn/read-string (:sources-data scenario))
-        initial-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
+        updated-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
                                   (assoc source :quantity-current (:quantity (first (filter (fn [source-data]
                                                                                               (= (:id source-data) (:id source)))
                                                                                             sources-data)))))
@@ -84,8 +113,9 @@
                                      (sources/list-sources-in-set (:sources-set store) source-set-id)))]
 
     (-> scenario
-        (assoc :providers initial-providers)
-        (assoc :sources initial-sources)
+        (assoc :providers updated-providers)
+        (assoc :sources updated-sources)
+        (assoc :changeset updated-changeset)
         (dissoc :updated-at :providers-data :sources-data))))
 
 (defn list-scenarios
@@ -154,6 +184,22 @@
                    :project project})
     result))
 
+(defn compute-change-coverage
+  [engine project change] ;change is a provider
+  (if (:coverage-geom change)
+    change ;coverage already computed for this change
+    (let [location            (:location change)
+          algorithm           (:coverage-algorithm project)
+          filter-options      (get-in project [:config :coverage :filter-options])
+          criteria            (merge {:algorithm (keyword algorithm)} filter-options)
+          coverage-component  (:coverage engine)
+          coverage-geometry   (coverage/compute-coverage coverage-component
+                                                         location
+                                                         criteria)
+          cov-as-geojson      (coverage/as-geojson coverage-component
+                                                   coverage-geometry)]
+      (assoc change :coverage-geom (:geom cov-as-geojson)))))
+
 (defn update-scenario
   [store project {:keys [id name changeset]}]
   ;; TODO assert scenario belongs to project
@@ -167,7 +213,7 @@
                           :id id
                           :investment (sum-investments changeset)
                           :demand-coverage nil
-                          :changeset (pr-str changeset)
+                          :changeset (pr-str (map #(compute-change-coverage (:engine store) project %) changeset))
                           :label nil})
         ;; Current label is removed so we need to search for the new optimal
     (db-update-scenarios-label! db {:project-id project-id})

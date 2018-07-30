@@ -8,8 +8,10 @@
     "Enumerate the supported algorithms")
 
   (compute-coverage [this point criteria]
-    "Computes a coverage area from a given geographical point"))
+    "Computes a coverage area from a given geographical point")
 
+  (as-geojson [this geometry]
+    "Converts a pg-geometry to geojson"))
 
 (defn enumerate-algorithm-options
   [service algorithm]

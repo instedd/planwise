@@ -87,3 +87,12 @@ INSERT INTO "providers_coverage"
        ("provider-id", "algorithm", "options", "geom", "raster")
        VALUES (:provider-id, :algorithm, :options, :geom, :raster)
        RETURNING "id";
+
+-- :name db-find-provider-coverage :? :1
+SELECT ST_AsGeoJSON(p.geom) AS geom
+  FROM
+  (SELECT geom
+    FROM providers_coverage
+    WHERE "provider-id" = :provider-id
+      AND algorithm = :algorithm
+      AND options = :options) AS p;
