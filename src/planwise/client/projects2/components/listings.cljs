@@ -14,7 +14,7 @@
 (def map-preview-size {:width 373 :height 278})
 
 (defn- project-card
-  [props project]
+  [props {:keys [state] :as project}]
   (let [id              (:id project)
         region-id       (:region-id project)
         region-geo      (subscribe [:regions/preview-geojson region-id])
@@ -23,7 +23,9 @@
                           (static-image fullmap-region-geo map-preview-size))]
     (when region-id (dispatch [:regions/load-regions-with-preview [region-id]]))
     [ui/card {:href (routes/projects2-show {:id id})
-              :primary [:img {:style map-preview-size :src preview-map-url}]
+              :primary [:img {:style map-preview-size
+                              :class (when (= state "draft") "map-draft-mode")
+                              :src preview-map-url}]
               :title (utils/or-blank (:name project) [:i "Untitled"])
               :budget (utils/or-blank (:budget project) [:i ""])
               :status (utils/or-blank (:state project) [:i "status: unknown"])}]))
