@@ -34,37 +34,38 @@
 
 (defn- scenarios-list-item
   [project-id {:keys [id name label state demand-coverage investment changeset-summary] :as scenario}]
-  [:tr {:key id :on-click (fn [evt]
-                            (if (or (.-shiftKey evt) (.-metaKey evt))
-                              (.open js/window (routes/scenarios {:project-id project-id :id id}))
-                              (dispatch [:scenarios/load-scenario {:id id}])))}
-   [:td (cond (= state "pending") [create-chip state]
-              (not= label "initial") [create-chip label])]
-   [:td.col1  name]
-   [:td.col2  (utils/format-number demand-coverage)]
-   [:td.col3  (utils/format-number investment)]
-   [:td.col4 changeset-summary]])
+  (if id
+    [:tr {:key id :on-click (fn [evt]
+                              (if (or (.-shiftKey evt) (.-metaKey evt))
+                                (.open js/window (routes/scenarios {:project-id project-id :id id}))
+                                (dispatch [:scenarios/load-scenario {:id id}])))}
+     [:td (cond (= state "pending") [create-chip state]
+                (not= label "initial") [create-chip label])]
+     [:td.col1  name]
+     [:td.col2  (utils/format-number demand-coverage)]
+     [:td.col3  (utils/format-number investment)]
+     [:td.col4 changeset-summary]]
+    [:tr (repeat 5 '[:td ""])]))
 
 (defn- generate-title
-  [{:keys [from-initial subscenarios]}]
-  (str
-   (when from-initial (utils/pluralize from-initial "scenario"))
-   (when subscenarios (str " + " (utils/pluralize subscenarios " sub-scenario")))))
+  [num]
+  (str (utils/pluralize num "scenario")))
 
 (defn- scenarios-list
-  [scenarios current-project count]
-  [:div.scenarios-content
-   [:table
-    [:caption (generate-title count)]
-    [:thead
-     [:tr
-      [:th]
-      [:th.col1 "Name"]
-      [:th (str (capitalize (get-in current-project [:config :demographics :unit-name])) " coverage")]
-      [:th  "Investment"]
-      [:th.col4 "Actions"]]]
-    [:tbody
-     (map #(scenarios-list-item (:id current-project) %) scenarios)]]])
+  [scenarios current-project]
+  (let [num (count scenarios)]
+    [:div.scenarios-content
+     [:table
+      [:caption (generate-title num)]
+      [:thead
+       [:tr
+        [:th]
+        [:th.col1 "Name"]
+        [:th.col2 (str (capitalize (get-in current-project [:config :demographics :unit-name])) " coverage")]
+        [:th.col3  "Investment"]
+        [:th.col4 "Actions"]]]
+      [:tbody
+       (map #(scenarios-list-item (:id current-project) %) (into scenarios (repeat (- 5 num) '{})))]]]))
 
 (defn- project-settings
   []
@@ -76,8 +77,7 @@
         delete?  (r/atom false)
         hide-dialog (fn [] (reset! delete? false))
         id (:id @current-project)
-        scenarios-sub (rf/subscribe [:scenarios/list])
-        count-scenarios (rf/subscribe [:projects2/count-scenarios])]
+        scenarios-sub (rf/subscribe [:scenarios/list])]
     (fn [active-tab]
       (let [scenarios (asdf/value @scenarios-sub)]
         (when (asdf/should-reload? @scenarios-sub)
@@ -94,5 +94,5 @@
                                    :delete-fn #(rf/dispatch [:projects2/delete-project id])}]
            [ui/panel {}
             (case active-tab
-              :scenarios [scenarios-list scenarios @current-project @count-scenarios]
+              :scenarios [scenarios-list scenarios @current-project]
               :settings  [project-settings])]])))))
