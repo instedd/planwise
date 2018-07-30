@@ -65,4 +65,4 @@
 (rf/reg-sub
  :scenarios.new-provider/computing-best-locations?
  (fn [db _]
-   (get-in db [:scenarios :current-scenario :computing-best-locations])))
+   (get-in db [:scenarios :current-scenario :computing-best-locations :state])))

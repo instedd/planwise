@@ -35,7 +35,7 @@
      {:navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
-(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label])
+(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset])
 
 (defn- dispatch-track-demand-information-if-needed
   [scenario]
@@ -128,7 +128,7 @@
 
 ;;Creating new-providers
 
-(def request-key [:current-scenario :get-best-locations :request])
+(def request-key [:scenarios :current-scenario :computing-best-locations :request])
 
 (rf/reg-event-fx
  :scenarios.new-provider/toggle-select-location
@@ -149,11 +149,12 @@
  :scenarios.new-provider/get-suggested-providers
  in-scenarios
  (fn [{:keys [db]} [_]]
-   {:api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
+   {;FIXME: Issue #456
+    :db  (assoc-in db [:current-scenario :computing-best-locations :state] true)
+    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
                 :on-success [:scenarios/suggested-providers]
                 :on-failure [:scenarios/no-suggested-providers]
-                :key        request-key)
-    :db  (assoc-in db [:current-scenario :computing-best-locations] true)}))
+                :key        request-key)}))
 
 (rf/reg-event-db
  :scenarios/suggested-providers
@@ -161,14 +162,14 @@
  (fn [db [_ suggestions]]
    (-> db
        (assoc-in [:current-scenario :suggested-locations] suggestions)
-       (assoc-in [:current-scenario :computing-best-locations] false))))
+       (assoc-in [:current-scenario :computing-best-locations :state] false))))
 
 (rf/reg-event-db
  :scenarios/no-suggested-providers
  in-scenarios
  (fn [db [_]]
    (println "no-suggested-providers")
-   (assoc-in db [:current-scenario :computing-best-locations] false)))
+   (assoc-in db [:current-scenario :computing-best-locations :state] false)))
 
 (rf/reg-event-fx
  :scenarios/create-provider
