@@ -37,10 +37,9 @@
   ([label path type {:keys [disabled class local]}]
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
-         format-fn       (if (= "number" type) js/Number identity)
-         change-fn       (fn [e] (rf/dispatch-sync [:projects2/save-key path (format-fn e)]))]
+         change-fn       (fn [e] (rf/dispatch-sync [:projects2/save-key path e]))]
      [common2/text-field {:label label
-                          :type "text"
+                          :type type
                           :on-change change-fn
                           :class class
                           :value value
@@ -76,7 +75,7 @@
 (defn tag-input []
   (let [value (r/atom "")]
     (fn []
-      [common2/text-field {:type "text"
+      [common2/text-field {:type :default
                            :placeholder "Type tag for filtering providers"
                            :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (not (blank? @value)))
                                                    (dispatch [:projects2/save-tag @value])
@@ -107,9 +106,9 @@
               :on-click #(dispatch [:projects2/delete-action action-name idx])}
     [m/Icon "clear"]]
    (when (= action-name :build) "with a capacity of ")
-   [current-project-input "" [:config :actions action-name idx :capacity]  "number" {:class "action-input"}]
+   [current-project-input "" [:config :actions action-name idx :capacity]  :numeric {:class "action-input"}]
    "would cost"
-   [current-project-input "" [:config :actions action-name idx :investment] "number" {:class "action-input"}]])
+   [current-project-input "" [:config :actions action-name idx :investment] :numeric {:class "action-input"}]])
 
 (defn- listing-actions
   [action-name list]
@@ -134,7 +133,7 @@
         [:form.vertical
          [:section {:class-name "project-settings-section"}
           [section-header 1 "Goal"]
-          [current-project-input "Goal" [:name] "text"]
+          [current-project-input "Goal" [:name] :default]
           [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
 
           [regions-dropdown-component {:label     "Region"
@@ -149,8 +148,8 @@
                                        :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                        :disabled?  read-only}]
 
-          [current-project-input "Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
-          [current-project-input "Target" [:config :demographics :target] "number" {:disabled read-only}]
+          [current-project-input "Unit" [:config :demographics :unit-name] :default {:disabled read-only}]
+          [current-project-input "Target" [:config :demographics :target] :numeric {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
 
          [:section {:class-name "project-settings-section"}
@@ -160,7 +159,7 @@
                                              :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                              :disabled? read-only}]
 
-          [current-project-input "Capacity workload" [:config :providers :capacity] "text" {:disabled read-only :local true}]
+          [current-project-input "Capacity workload" [:config :providers :capacity] :numeric {:disabled read-only}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
 
           (when-not read-only [tag-input])
@@ -177,14 +176,14 @@
 
          [:section {:class-name "project-settings-section"}
           [:div [:p [m/Icon "account_balance"] "Available budget"]]
-          [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
+          [current-project-input "" [:config :actions :budget] :numeric {:disabled read-only :class "project-setting"}]
           [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
           [:div [:p [m/Icon "domain"] "Building a new provider..."]]
           [listing-actions :build @build-actions]
 
           [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
-          [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
+          [current-project-input "" [:config :actions :upgrade-budget] :numeric {:disabled read-only :class "project-setting"}]
 
           [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
           [listing-actions :upgrade @upgrade-actions]]]]])))
