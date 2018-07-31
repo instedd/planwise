@@ -176,8 +176,8 @@
  in-scenarios
  (fn [{:keys [db]} [_ {:keys [lat lon]}]]
    (let [{:keys [current-scenario]} db
-         new-provider  (db/initial-provider {:location {:lat lat :lon lon}})
-         updated-scenario (update current-scenario :changeset #(conj % new-provider))
+         new-provider (db/initial-provider {:location {:lat lat :lon lon}})
+         updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)
          new-provider-index (dec (count (:changeset updated-scenario)))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
