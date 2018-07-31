@@ -205,7 +205,8 @@
   ;; TODO assert scenario belongs to project
   (let [db (get-db store)
         project-id (:id project)
-        label (:label (get-scenario store id))]
+        label (:label (get-scenario store id))
+        changeset (mapv #(compute-change-coverage (:engine store) project %) changeset)]
     (assert (s/valid? ::model/change-set changeset))
     (assert (not= label "initial"))
     (db-update-scenario! db
@@ -213,7 +214,7 @@
                           :id id
                           :investment (sum-investments changeset)
                           :demand-coverage nil
-                          :changeset (pr-str (map #(compute-change-coverage (:engine store) project %) changeset))
+                          :changeset (pr-str changeset)
                           :label nil})
         ;; Current label is removed so we need to search for the new optimal
     (db-update-scenarios-label! db {:project-id project-id})
