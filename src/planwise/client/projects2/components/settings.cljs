@@ -32,17 +32,16 @@
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
 (defn- current-project-input
-  ([label path type]
-   (current-project-input label path type {:disabled false}))
-  ([label path type {:keys [disabled class local]}]
-   (let [current-project (rf/subscribe [:projects2/current-project])
-         value           (or (get-in @current-project path) "")
-         change-fn       (fn [e] (rf/dispatch-sync [:projects2/save-key path e]))]
+  ([label path field]
+   (current-project-input label path field {:disabled false}))
+  ([label path field {:keys [disabled class type]}]
+   (let [current-project (rf/subscribe [:projects2/current-project])]
      [common2/text-field {:label label
+                          :field field
                           :type type
-                          :on-change change-fn
+                          :on-change (fn [e] (rf/dispatch-sync [:projects2/save-key path e]))
                           :class class
-                          :value value
+                          :value (str (get-in @current-project path))
                           :disabled disabled}])))
 
 (defn- project-start-button
@@ -149,7 +148,8 @@
                                        :disabled?  read-only}]
 
           [current-project-input "Unit" [:config :demographics :unit-name] :default {:disabled read-only}]
-          [current-project-input "Target" [:config :demographics :target] :numeric {:disabled read-only}]
+          [current-project-input "Target" [:config :demographics :target] :numeric {:disabled read-only
+                                                                                    :type :percentage}]
           [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
 
          [:section {:class-name "project-settings-section"}
@@ -159,7 +159,8 @@
                                              :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                              :disabled? read-only}]
 
-          [current-project-input "Capacity workload" [:config :providers :capacity] :numeric {:disabled read-only}]
+          [current-project-input "Capacity workload" [:config :providers :capacity] :numeric {:disabled read-only
+                                                                                              :type :float}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
 
           (when-not read-only [tag-input])

@@ -33,32 +33,34 @@
   [ui/fixed-width (nav-params)
    [:p "Loading..."]])
 
-
 (defn- set-format
-  [type]
-  (if (#{:numeric} type)
-    [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) js/Number]
-    [identity identity]))
+  [field type]
+  (let [prevent-fn (fn [f] #(let [val (f %)] (if (js/isNaN val) nil val)))
+        type (or type :integer)]
+    (cond (#{[:numeric :integer]} [field type]) [(fn [e] (re-find #"\d+" e)) (prevent-fn js/parseInt)]
+          (#{[:numeric :percentage]} [field type]) [(fn [e] (re-find #"(?u)100|\d\d|\d" e)) (prevent-fn js/parseInt)]
+          (#{[:numeric :float]} [field type]) [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (prevent-fn js/parseFloat)]
+          :else [identity identity])))
 
 (defn text-field
-  ([props-input]
+  ([{:keys [value field type] :as props-input}]
    (let [focus (r/atom false)
          id    (str (random-uuid))
-         local (r/atom (str (:value props-input)))
-         [valid-fn parse-fn] (set-format (:type props-input))]
+         local (r/atom value)
+         [valid-fn parse-fn] (apply set-format [field type])]
      (fn [{:keys [label value focus-extra-class on-change] :as props-input}]
-       (println "type " (:type props-input) "parse-fn" parse-fn "valid-fn" valid-fn)
-       (let [props (dissoc props-input :label :focus-extra-class :type)]
-         (println "value" @local "is string?" (string? @local))
+       (let [props (dissoc props-input :label :focus-extra-class :type :field)]
          [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus (str "mdc-text-field--focused" focus-extra-class))}
           [:input.mdc-text-field__input (merge props {:id id
                                                       :type "text"
                                                       :on-change #(when @focus (do
-                                                                                  (reset! local (-> % .-target .-value))
-                                                                                  (on-change (parse-fn @local))))
-                                                      :value (valid-fn @local)
+                                                                                 (reset! local (-> % .-target .-value valid-fn))
+                                                                                 (on-change (parse-fn @local))))
+                                                      :value @local
                                                       :on-focus  #(reset! focus true)
-                                                      :on-blur #(reset! focus false)})]
+                                                      :on-blur #(do
+                                                                  (reset! focus false)
+                                                                  (on-change (parse-fn @local)))})]
           [:label.mdc-floating-label {:for id
                                       :class (when (or (not (blank? (str value))) @focus) "mdc-floating-label--float-above")}
            label]
