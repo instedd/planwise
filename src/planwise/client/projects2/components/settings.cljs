@@ -34,17 +34,17 @@
 (defn- current-project-input
   ([label path type]
    (current-project-input label path type {:disabled false}))
-  ([label path type {:keys [disabled class]}]
+  ([label path type {:keys [disabled class local]}]
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
-         change-fn       (fn [e] (let [val (-> e .-target .-value)]
-                                   (rf/dispatch-sync [:projects2/save-key path (if (= type "number") (js/parseInt val) val)])))]
-     [common2/text-field {:type      type
-                          :label     label
+         format-fn       (if (= "number" type) js/Number identity)
+         change-fn       (fn [e] (rf/dispatch-sync [:projects2/save-key path (format-fn e)]))]
+     [common2/text-field {:label label
+                          :type "text"
                           :on-change change-fn
                           :class class
-                          :value     value
-                          :disabled  disabled}])))
+                          :value value
+                          :disabled disabled}])))
 
 (defn- project-start-button
   [_ project]
@@ -160,7 +160,7 @@
                                              :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                              :disabled? read-only}]
 
-          [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only}]
+          [current-project-input "Capacity workload" [:config :providers :capacity] "text" {:disabled read-only :local true}]
           [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
 
           (when-not read-only [tag-input])
