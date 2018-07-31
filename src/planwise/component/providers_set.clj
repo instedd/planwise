@@ -255,7 +255,7 @@
   (get-radius-from-computed-coverage [store criteria provider-set-id]
     (get-radius-from-computed-coverage store criteria provider-set-id))
   (get-coverage [store provider-id algorithm filter-options]
-    (get-coverage store provider-id algorithm filter-options)))x
+    (get-coverage store provider-id algorithm filter-options)))
 
 (defmethod ig/init-key :planwise.component/providers-set
   [_ config]
