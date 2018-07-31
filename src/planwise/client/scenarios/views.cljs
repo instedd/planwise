@@ -33,8 +33,9 @@
          (str "<br><br> Click on panel for editing... "))))
 
 (defn- show-suggested-provider
-  [suggestion]
-  (str (:location suggestion)))
+  [[idx suggestion]]
+  (str "<b> Suggestion:" (inc idx) " </b>"
+       "<br> Expected coverage : " (:coverage suggestion)))
 
 (defn- show-source
   [{{:keys [name quantity quantity-current]} :elem :as source}]
@@ -102,14 +103,12 @@
                                             :popup-fn #(show-source %)}]
 
                              (when @suggested-locations
-                               [:marker-layer {:points @suggested-locations
-                                               :lat-fn #(get-in % [:location :lat])
-                                               :lon-fn #(get-in % [:location :lon])
-                                               :options-fn #(select-keys % [:index])
+                               [:marker-layer {:points (map-indexed vector @suggested-locations)
+                                               :lat-fn #(get-in % [1 :location :lat])
+                                               :lon-fn #(get-in % [1 :location :lon])
                                                :popup-fn #(show-suggested-provider %)
-                                               :onclick-fn (fn [suggestion]
-                                                             (let [location (:location suggestion)]
-                                                               (add-point (:lat location) (:lon location))))}])
+                                               :onclick-fn (fn [{:keys [location]}]
+                                                             (add-point (:lat location) (:lon location)))}])
 
                              (when @selected-provider
                                [:geojson-layer {:data (:coverage-geom @selected-provider)

@@ -320,15 +320,16 @@
   (-> geotransform vec second))
 
 (defn coverage-fn
-  [coverage {:keys [idx coord res get-avg]} {:keys [data geotransform xsize ysize] :as raster} criteria]
+  [coverage-comp {:keys [idx coord res get-avg]} {:keys [data geotransform xsize ysize] :as raster} criteria]
   (let [[lon lat :as coord] (or coord (get-geo idx raster))
-        polygon (coverage/compute-coverage coverage {:lat lat :lon lon} criteria)
+        polygon (coverage/compute-coverage coverage-comp {:lat lat :lon lon} criteria)
         coverage (raster/create-raster (rasterize/rasterize polygon {:res res}))
         population-reacheable (demand/count-population-under-coverage raster coverage)]
     (if get-avg
       {:max (get-max-distance coord (demand/get-coverage raster coverage) raster)}
       {:coverage population-reacheable
-       :location coord})))
+       :coverage-geom (coverage/as-geojson coverage-comp polygon)
+       :location {:lat lat :lon lon}})))
 
 (defn search-optimal-location
   ([engine project scenario]
