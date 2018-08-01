@@ -233,6 +233,11 @@
   (-> (db-get-initial-sources-data (get-db store) {:project-id project-id})
       :sources-data read-string))
 
+(defn- get-new-providers-geom
+  [store scenario-id]
+  (-> (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})
+      :providers-geom read-string))
+
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
@@ -241,9 +246,11 @@
                   scenario          (get-scenario store scenario-id)
                   initial-providers (get-initial-providers-data store (:project-id scenario))
                   initial-sources   (get-initial-sources-data store (:project-id scenario))
+                  new-providers-geom (get-new-providers-geom store scenario-id)
                   result            (engine/compute-scenario engine project (-> scenario
-                                                                                (assoc :providers-data initial-providers)
-                                                                                (assoc :sources-data initial-sources)))]
+                                                                                (assoc :providers-data initial-providers
+                                                                                       :sources-data initial-sources
+                                                                                       :new-providers new-providers-geom)))]
               (info "Scenario computed" result)
               ;; TODO check if scenario didn't change from result. If did, discard result.
               ;; TODO remove previous raster files
@@ -253,6 +260,7 @@
                                           :demand-coverage (:covered-demand result)
                                           :providers-data  (pr-str (:providers-data result))
                                           :sources-data    (pr-str (:sources-data result))
+                                          :new-providers-geom (pr-str (:new-providers-geom result))
                                           :state           "done"})
               (db-update-scenarios-label! (get-db store) {:project-id (:id project)})))]
     {:task-id scenario-id
