@@ -54,7 +54,8 @@ UPDATE "scenarios"
       "demand-coverage" = :demand-coverage,
       "state" = :state,
       "providers-data" = :providers-data,
-      "sources-data" = :sources-data
+      "sources-data" = :sources-data,
+      "new-providers-geom" = :new-providers-geom
   WHERE "id" = :id;
 
 
