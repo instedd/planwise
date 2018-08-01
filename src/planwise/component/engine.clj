@@ -190,7 +190,7 @@
       (compute-initial-scenario-by-raster engine project))))
 
 (defn compute-scenario-by-raster
-  [engine project {:keys [changeset providers-data] :as scenario}]
+  [engine project {:keys [changeset providers-data new-providers-geom] :as scenario}]
   (let [coverage        (:coverage engine)
         providers       (project-providers engine project)
         project-id      (:id project)
@@ -210,14 +210,14 @@
         props            {:project-capacity capacity
                           :provider-set-id  provider-set-id
                           :project-id       project-id
-                          :demand-raster    demand-raster}]
+                          :demand-raster    demand-raster}
     ;; Compute coverage of providers that are not yet computed
-    (doseq [change changeset]
-      (let [lat      (get-in change [:location :lat])
-            lon      (get-in change [:location :lon])
-            coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")]
-        (if (not (.exists (io/as-file coverage-path)))
-          (coverage/compute-coverage coverage {:lat lat :lon lon} (merge criteria {:raster coverage-path})))))
+        changes-geom    (reduce (fn [changes-geom {:keys [provider-id location] :as change}]
+                                  (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")
+                                        polygon  (when-not (.exists (io/as-file coverage-path)) (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path})))]
+                                  (if polygon
+                                      (conj changes-geom {:id provider-id :geom (coverage/as-geojson coverage polygon)})
+                                      changes-geom))) [] changeset)]
 
     ;; Compute demand from initial scenario
     ;; TODO refactor with initial-scenario loop
@@ -233,7 +233,9 @@
       {:raster-path      raster-path
        :pending-demand   pending-demand
        :covered-demand   (- source-demand pending-demand)
-       :providers-data   (into updated-providers updated-changes)})))
+       :providers-data   (into updated-providers updated-changes)
+       :new-providers-geom   (seq (concat new-providers-geom changes-geom))
+      })))
 
 (defn sources-under
   [engine set-id provider algorithm filter-options]

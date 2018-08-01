@@ -158,6 +158,7 @@
                                           :demand-coverage (:covered-demand result)
                                           :providers-data  (pr-str (:providers-data result))
                                           :sources-data    (pr-str (:sources-data result))
+                                          :new-providers-geom "[]"
                                           :state           "done"})
               (db-update-project-engine-config! (get-db store)
                                                 {:project-id    (:id project)
@@ -206,7 +207,8 @@
   (let [db (get-db store)
         project-id (:id project)
         label (:label (get-scenario store id))
-        changeset (mapv #(compute-change-coverage (:engine store) project %) changeset)]
+        ;changeset (mapv #(compute-change-coverage (:engine store) project %) changeset)
+        ]
     (assert (s/valid? ::model/change-set changeset))
     (assert (not= label "initial"))
     (db-update-scenario! db
@@ -235,8 +237,9 @@
 
 (defn- get-new-providers-geom
   [store scenario-id]
-  (-> (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})
-      :providers-geom read-string))
+  (let [{:keys [new-providers-geom]} (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})]
+    (when new-providers-geom (read-string new-providers-geom))))
+
 
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
@@ -250,7 +253,7 @@
                   result            (engine/compute-scenario engine project (-> scenario
                                                                                 (assoc :providers-data initial-providers
                                                                                        :sources-data initial-sources
-                                                                                       :new-providers new-providers-geom)))]
+                                                                                       :new-providers-geom new-providers-geom)))]
               (info "Scenario computed" result)
               ;; TODO check if scenario didn't change from result. If did, discard result.
               ;; TODO remove previous raster files
