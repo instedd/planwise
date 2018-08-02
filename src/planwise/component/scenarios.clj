@@ -73,13 +73,19 @@
 (defn- update-provider-data
   [provider updated-data]
   (let [id    (:provider-id provider)
-        data  (select-keys (get updated-data id) [:satisfied :unsatisfied])]
+        data  (select-keys (get updated-data id) [:satisfied :unsatisfied :coverage-geom])]
     (merge provider data)))
 
+(defn- get-new-providers-geom
+  [store scenario-id]
+  (let [{:keys [new-providers-geom]} (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})]
+    (when new-providers-geom (read-string new-providers-geom))))
+
+
 (defn- build-updated-data
-  [providers-data]
-  (reduce (fn [tree provider]
-            (assoc tree (:id provider) (dissoc provider :id)))
+  [providers-data new-providers-geom]
+  (reduce (fn [tree {:keys [id] :as provider}]
+            (assoc tree id (merge (dissoc provider :id) ((keyword (str id)) new-providers-geom))))
           {}
           providers-data))
 
@@ -90,7 +96,8 @@
                                   :coverage-options (get-in config [:coverage :filter-options])))
         ; providers
         providers-data     (edn/read-string (:providers-data scenario))
-        updated-data       (build-updated-data providers-data)
+        new-providers-geom (or (get-new-providers-geom store (:id scenario)) {})
+        updated-data       (build-updated-data providers-data new-providers-geom)
         updated-providers  (map (fn [provider]
                                   (-> provider
                                       ; add coverage
@@ -116,7 +123,7 @@
         (assoc :providers updated-providers)
         (assoc :sources updated-sources)
         (assoc :changeset updated-changeset)
-        (dissoc :updated-at :providers-data :sources-data))))
+        (dissoc :updated-at :providers-data :sources-data :new-providers-geom))))
 
 (defn list-scenarios
   [store project-id]
@@ -137,6 +144,7 @@
                                                :investment      0
                                                :demand-coverage nil
                                                :changeset       "[]"
+                                               :new-providers-data "{}"
                                                :label           "initial"}))]
     (jr/queue-job (:jobrunner store)
                   [::boundary/compute-initial-scenario scenario-id]
@@ -206,9 +214,8 @@
   ;; TODO assert scenario belongs to project
   (let [db (get-db store)
         project-id (:id project)
-        label (:label (get-scenario store id))
+        label (:label (get-scenario store id))]
         ;changeset (mapv #(compute-change-coverage (:engine store) project %) changeset)
-        ]
     (assert (s/valid? ::model/change-set changeset))
     (assert (not= label "initial"))
     (db-update-scenario! db
@@ -234,12 +241,6 @@
   [store project-id]
   (-> (db-get-initial-sources-data (get-db store) {:project-id project-id})
       :sources-data read-string))
-
-(defn- get-new-providers-geom
-  [store scenario-id]
-  (let [{:keys [new-providers-geom]} (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})]
-    (when new-providers-geom (read-string new-providers-geom))))
-
 
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
