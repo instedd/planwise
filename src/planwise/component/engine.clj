@@ -215,9 +215,9 @@
         changes-geom    (reduce (fn [changes-geom {:keys [provider-id location] :as change}]
                                   (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")
                                         polygon  (when-not (.exists (io/as-file coverage-path)) (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path})))]
-                                  (if polygon
-                                      (conj changes-geom {:id provider-id :geom (coverage/as-geojson coverage polygon)})
-                                      changes-geom))) [] changeset)]
+                                    (if polygon
+                                      (assoc changes-geom (keyword provider-id) {:coverage-geom (:geom (coverage/as-geojson coverage polygon))})
+                                      changes-geom))) {} changeset)]
 
     ;; Compute demand from initial scenario
     ;; TODO refactor with initial-scenario loop
@@ -234,8 +234,7 @@
        :pending-demand   pending-demand
        :covered-demand   (- source-demand pending-demand)
        :providers-data   (into updated-providers updated-changes)
-       :new-providers-geom   (seq (concat new-providers-geom changes-geom))
-      })))
+       :new-providers-geom   (merge new-providers-geom changes-geom)})))
 
 (defn sources-under
   [engine set-id provider algorithm filter-options]
