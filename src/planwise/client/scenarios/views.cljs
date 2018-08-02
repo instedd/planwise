@@ -33,8 +33,8 @@
          (str "<br><br> Click on panel for editing... "))))
 
 (defn- show-suggested-provider
-  [[idx suggestion]]
-  (str "<b> Suggestion:" (inc idx) " </b>"
+  [suggestion]
+  (str "<b> Suggestion:" (:ranked suggestion) " </b>"
        "<br> Expected coverage : " (:coverage suggestion)))
 
 (defn- show-source
@@ -103,12 +103,15 @@
                                             :popup-fn #(show-source %)}]
 
                              (when @suggested-locations
-                               [:marker-layer {:points (map-indexed vector @suggested-locations)
-                                               :lat-fn #(get-in % [1 :location :lat])
-                                               :lon-fn #(get-in % [1 :location :lon])
+                               [:marker-layer {:points (map-indexed (fn [ix suggestion]
+                                                                      (assoc suggestion :ranked (inc ix)))
+                                                                    @suggested-locations)
+                                               :lat-fn #(get-in % [:location :lat])
+                                               :lon-fn #(get-in % [:location :lon])
                                                :popup-fn #(show-suggested-provider %)
-                                               :onclick-fn (fn [{:keys [location]}]
-                                                             (add-point (:lat location) (:lon location)))}])
+                                               ;:onclick-fn (fn [{:keys [location]}]
+                                               ;              (add-point (:lat location) (:lon location)))
+                                               }])
 
                              (when @selected-provider
                                [:geojson-layer {:data (:coverage-geom @selected-provider)
@@ -194,13 +197,17 @@
          [:small "Investment required"]
          "K " (utils/format-number investment)]]
        [:hr]
-       [m/Fab
-        {:class-name "btn-floating"
-         :on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
-        (cond
-          @computing-best-locations? "stop"
-          (= @view-state :new-provider) "cancel"
-          :default "domain")]
+       [:div (if @computing-best-locations?
+               {:class-name "border-btn-floating border-btn-floating-animated"}
+               {:class-name "border-btn-floating"})
+        [m/Fab
+         {:class-name "btn-floating"
+          :on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
+         (cond
+           @computing-best-locations? "stop"
+           (= @view-state :new-provider) "cancel"
+           :default "domain")]]
+
        (if @computing-best-locations?
          [:div {:class-name "info-computing-best-location"}
           [:small "Computing best locations ..."]])])))
