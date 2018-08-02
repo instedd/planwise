@@ -241,14 +241,9 @@
   (let [source-set-component (:sources-set engine)
         coverage-component (:coverage engine)]
     (if (:location provider) ; only providers in changeset have location (see function change-to-provider)
-      (let [criteria (merge {:algorithm (keyword algorithm)} filter-options)
-            geom     (coverage/compute-coverage coverage-component
-                                                {:lat (get-in provider [:location :lat])
-                                                 :lon (get-in provider [:location :lon])}
-                                                criteria)]
-        (sources-set/list-sources-under-coverage source-set-component
-                                                 set-id
-                                                 geom))
+      (sources-set/list-sources-under-coverage source-set-component
+                                               set-id
+                                               (:coverage-geom provider))
       (sources-set/list-sources-under-provider-coverage source-set-component
                                                         set-id
                                                         (:id provider)
@@ -256,17 +251,20 @@
                                                         filter-options))))
 
 (defn- change-to-provider
-  [change]
-  {:id (:provider-id change)
-   :capacity (:capacity change)
-   :location (:location change)})
+  [{:keys [provider-id location coverage-geom] :as change} coverage-fn]
+  (let [change (assoc (select-keys change [:capacity :location :coverage-geom]) :id provider-id)]
+    (if coverage-geom
+      change
+      (assoc change :coverage-geom (coverage-fn location)))))
 
 (defn compute-scenario-by-point
-  [engine project {:keys [changeset providers-data sources-data] :as scenario}]
-  (let [providers        (map change-to-provider changeset)
-        sources          sources-data
-        algorithm        (:coverage-algorithm project)
+  [engine project {:keys [changeset providers-data sources-data new-providers-geom] :as scenario}]
+  (let [algorithm        (:coverage-algorithm project)
         filter-options   (get-in project [:config :coverage :filter-options])
+        criteria         (merge {:algorithm (keyword algorithm)} filter-options)
+        coverage-fn      (fn [provider] (coverage/compute-coverage (:coverage engine) provider criteria))
+        providers        (map #(change-to-provider % coverage-fn) changeset)
+        sources          sources-data
         fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))
         fn-filter-by-id  (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
         result-step1     (reduce ; over providers
@@ -290,17 +288,20 @@
                                   (assoc provider :unsatisfied total-demand)))
                               (concat providers-data (:providers result-step1)))]
 
-    (let [updated-sources           (:sources result-step1)
-          updated-providers         result-step2
-          total-sources-demand      (sum-map sources :quantity)
-          total-satisfied-demand    (sum-map updated-providers :satisfied)
-          total-unsatisfied-demand  (sum-map updated-providers :unsatisfied)]
+    (let [updated-sources          (:sources result-step1)
+          updated-providers        (map #(dissoc % :coverage-geom) result-step2)
+          as-geojson               (fn [geom] {:coverage-geom (:geom (coverage/as-geojson (:coverage engine) geom))})
+          changes-geom             (reduce (fn [tree {:keys [id coverage-geom]}] (assoc tree (keyword id) (as-geojson coverage-geom))) {} providers)
+          total-sources-demand     (sum-map sources :quantity)
+          total-satisfied-demand   (sum-map updated-providers :satisfied)
+          total-unsatisfied-demand (sum-map updated-providers :unsatisfied)]
 
       {:raster-path      nil
        :pending-demand   total-unsatisfied-demand
        :covered-demand   total-satisfied-demand
        :providers-data   updated-providers
-       :sources-data     updated-sources})))
+       :sources-data     updated-sources
+       :new-providers-geom (merge new-providers-geom changes-geom)})))
 
 (defn compute-scenario
   [engine project scenario]

@@ -96,7 +96,7 @@
                                   :coverage-options (get-in config [:coverage :filter-options])))
         ; providers
         providers-data     (edn/read-string (:providers-data scenario))
-        new-providers-geom (or (get-new-providers-geom store (:id scenario)) {})
+        new-providers-geom (get-new-providers-geom store (:id scenario))
         updated-data       (build-updated-data providers-data new-providers-geom)
         updated-providers  (map (fn [provider]
                                   (-> provider
@@ -144,7 +144,6 @@
                                                :investment      0
                                                :demand-coverage nil
                                                :changeset       "[]"
-                                               :new-providers-data "{}"
                                                :label           "initial"}))]
     (jr/queue-job (:jobrunner store)
                   [::boundary/compute-initial-scenario scenario-id]
@@ -166,7 +165,7 @@
                                           :demand-coverage (:covered-demand result)
                                           :providers-data  (pr-str (:providers-data result))
                                           :sources-data    (pr-str (:sources-data result))
-                                          :new-providers-geom "[]"
+                                          :new-providers-geom "{}"
                                           :state           "done"})
               (db-update-project-engine-config! (get-db store)
                                                 {:project-id    (:id project)
@@ -192,22 +191,6 @@
                   {:store store
                    :project project})
     result))
-
-(defn compute-change-coverage
-  [engine project change] ;change is a provider
-  (if (:coverage-geom change)
-    change ;coverage already computed for this change
-    (let [location            (:location change)
-          algorithm           (:coverage-algorithm project)
-          filter-options      (get-in project [:config :coverage :filter-options])
-          criteria            (merge {:algorithm (keyword algorithm)} filter-options)
-          coverage-component  (:coverage engine)
-          coverage-geometry   (coverage/compute-coverage coverage-component
-                                                         location
-                                                         criteria)
-          cov-as-geojson      (coverage/as-geojson coverage-component
-                                                   coverage-geometry)]
-      (assoc change :coverage-geom (:geom cov-as-geojson)))))
 
 (defn update-scenario
   [store project {:keys [id name changeset]}]
