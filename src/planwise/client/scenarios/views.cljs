@@ -109,9 +109,14 @@
                                                :lat-fn #(get-in % [:location :lat])
                                                :lon-fn #(get-in % [:location :lon])
                                                :popup-fn #(show-suggested-provider %)
-                                               ;:onclick-fn (fn [{:keys [location]}]
-                                               ;              (add-point (:lat location) (:lon location)))
-                                               }])
+                                               :onclick-fn (fn [{:keys [location]}]
+                                                             (add-point (:lat location) (:lon location)))
+                                               :mouseover-fn (fn [this ev suggestion]
+                                                               (.openPopup this)
+                                                               (dispatch [:scenarios.map/select-provider suggestion]))
+                                               :mouseout-fn (fn [this ev suggestion]
+                                                              (.closePopup this)
+                                                              (dispatch [:scenarios.map/unselect-provider suggestion]))}])
 
                              (when @selected-provider
                                [:geojson-layer {:data (:coverage-geom @selected-provider)

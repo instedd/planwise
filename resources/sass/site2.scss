@@ -579,10 +579,10 @@ form.vertical, .fields-vertical {
 .border-btn-floating {
     position: absolute;
     right: 1rem;
-    margin-top: -2.6rem;
+    margin-top: -2.5rem;
     z-index: 2;
     border-radius: 50%;
-    padding: 5px;
+    padding: 3px;
 
     .btn-floating {
         z-index: 2;
@@ -593,7 +593,7 @@ form.vertical, .fields-vertical {
 
 .border-btn-floating-animated {
     background: linear-gradient(0deg, #ff7710, #FFF, #FFF);
-    animation: rotate-background 1s ease 1 forwards;
+    animation: rotate-background .5s ease 1 forwards;
 
     animation-iteration-count: infinite;
     -moz-animation-iteration-count: infinite;
