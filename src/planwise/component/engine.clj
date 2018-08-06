@@ -328,7 +328,7 @@
     (if get-avg
       {:max (get-max-distance coord (demand/get-coverage raster coverage) raster)}
       {:coverage population-reacheable
-       :coverage-geom (coverage/as-geojson coverage-comp polygon)
+       :coverage-geom (:geom (coverage/as-geojson coverage-comp polygon))
        :location {:lat lat :lon lon}})))
 
 (defn search-optimal-location
