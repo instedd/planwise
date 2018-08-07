@@ -162,9 +162,8 @@
             (recur groups* from* demand*)))))))
 
 (defn greedy-search
-  [sample {:keys [data] :as raster} coverage-fn demand-quartiles {:keys [n bounds]}]
-  (let [[max & remain :as initial-set]   (get-demand data demand-quartiles)
-        {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
+  [sample {:keys [raster sources-data]} coverage-fn demand-quartiles {:keys [n bounds]}]
+  (let [[max & remain :as initial-set]   (get-demand (:data raster) demand-quartiles)       {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
         groups    (map (fn [group] (when (> (count group) 10) (map #(get-geo (first %) raster) group)))
                        (get-groups max initial-set raster (/ avg-max 2)))
         geo-cent  (remove nil? (map get-geo-centroid groups))

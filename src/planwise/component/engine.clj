@@ -1,4 +1,4 @@
-(ns planwise.component.engine
+
   (:require [planwise.boundary.engine :as boundary]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
@@ -310,7 +310,6 @@
       (compute-scenario-by-point engine project scenario)
       (compute-scenario-by-raster engine project scenario))))
 
-
 (defn- get-max-distance
   [coord vector raster]
   (reduce
@@ -322,31 +321,33 @@
   (-> geotransform vec second))
 
 (defn coverage-fn
-  [coverage-comp {:keys [idx coord res get-avg]} {:keys [data geotransform xsize ysize] :as raster} criteria]
-  (let [[lon lat :as coord] (or coord (get-geo idx raster))
-        polygon (coverage/compute-coverage coverage-comp {:lat lat :lon lon} criteria)
+  [engine criteria {:keys [sources-data raster]} {:keys [idx coord res get-avg]}]
+  (let [{:keys [data geotransform xsize ysize]} raster
+        [lon lat :as coord] (or coord (get-geo idx raster))
+        polygon (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
         coverage (raster/create-raster (rasterize/rasterize polygon {:res res}))
         population-reacheable (demand/count-population-under-coverage raster coverage)]
     (if get-avg
       {:max (get-max-distance coord (demand/get-coverage raster coverage) raster)}
       {:coverage population-reacheable
+       :coverage-geom (coverage/as-geojson coverage-comp polygon)
        :coverage-geom (:geom (coverage/as-geojson coverage-comp polygon))
        :location {:lat lat :lon lon}})))
 
 (defn search-optimal-location
-  ([engine project scenario]
-   (search-optimal-location engine project scenario (raster/read-raster (str "data/" (:raster scenario) ".tif"))))
-  ([{:keys [coverage] :as engine} {:keys [engine-config config provider-set-id coverage-algorithm] :as project} scenario raster]
-   (let [algorithm     (keyword coverage-algorithm)
+ [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
+   (let [raster        (when raster (raster/read-raster (str "data/" (:raster source) ".tif")))
+         source        (assoc source :raster raster)
+         algorithm     (keyword coverage-algorithm)
          demand-quartiles (:demand-quartiles engine-config)
          criteria         (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
-         aux-fn          #(coverage-fn coverage % raster criteria)
+         aux-fn          #(coverage-fn engine criteria source %)
          cost-fn  (memoize/lu (fn [val {:keys [format get-avg]}] (catch-exc aux-fn  {:get-avg get-avg
                                                                                      format (if (= :idx format) (first val) val)
                                                                                      :res (get-resolution raster)})))
          bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
      (catch-exc
-      greedy-search 20 raster cost-fn demand-quartiles {:bounds bounds :n 100}))))
+      greedy-search 20 source cost-fn demand-quartiles {:bounds bounds :n 100})))
 
 (defn clear-project-cache
   [this project-id]
@@ -361,10 +362,8 @@
     (clear-project-cache engine project))
   (compute-scenario [engine project scenario]
     (compute-scenario engine project scenario))
-  (search-optimal-location [engine project scenario]
-    (search-optimal-location engine project scenario))
-  (search-optimal-location [engine project scenario raster]
-    (search-optimal-location engine project scenario raster)))
+  (search-optimal-location [engine project source]
+    (search-optimal-location engine project source)))
 
 (defmethod ig/init-key :planwise.component/engine
   [_ config]

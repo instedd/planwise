@@ -313,8 +313,10 @@
   (engine/clear-project-cache (:engine store) project-id))
 
 (defn get-provider-suggestion
-  [store project scenario]
-  (engine/search-optimal-location (:engine store) project scenario))
+  [store {:keys [sources-set-id] :as project} {:keys [raster sources-data] :as scenario}]
+  (engine/search-optimal-location (:engine store) project  {:raster raster
+                                                            :sources-data sources-data
+                                                            :sources-set-id sources-set-id}))
 
 (defrecord ScenariosStore [db engine jobrunner providers-set sources-set]
   boundary/Scenarios

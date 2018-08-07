@@ -11,7 +11,6 @@
     "Clears a project cache")
 
   (search-optimal-location
-    [engine project scenario]
-    [engine project scenario raster]
-    "Given a scenario returns suggestions for new provider"))
+    [engine project source]
+    "Given initial set returns suggestions for new provider"))
 
