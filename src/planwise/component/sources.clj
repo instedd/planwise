@@ -85,8 +85,9 @@
 
 (defn list-sources-under-coverage
   [store source-set-id coverage-geom]
-  (db-list-sources-under-coverage (get-db store) {:source-set-id source-set-id
-                                                  :coverage-geom coverage-geom}))
+  (let [key (if (-> coverage-geom print-str map?) :coverage-geojson :coverage-geom)]
+    (db-list-sources-under-coverage (get-db store) {:source-set-id source-set-id
+                                                    key coverage-geom})))
 
 (defn list-sources-in-set
   [store source-set-id]
