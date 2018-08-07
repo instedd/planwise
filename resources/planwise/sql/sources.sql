@@ -53,8 +53,13 @@ SELECT *
   FROM
     sources
   WHERE
-    set_id = :source-set-id AND
-    ST_CONTAINS(:coverage-geom, the_geom);
+    set_id = :source-set-id
+    /*~ (if (:coverage-geom params) */
+    AND ST_CONTAINS(:coverage-geom, the_geom);
+    /*~ ) ~*/
+    /*~ (if (:coverage-geojson params) */
+    AND ST_CONTAINS(ST_AsText(ST_GeomFromGeoJSON(:coverage-geojson)), the_geom);
+    /*~ ) ~*/;
 
 -- :name db-list-sources-in-set :?
 SELECT *,
