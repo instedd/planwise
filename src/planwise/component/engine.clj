@@ -1,4 +1,4 @@
-
+(ns planwise.component.engine
   (:require [planwise.boundary.engine :as boundary]
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
@@ -8,6 +8,7 @@
             [planwise.engine.raster :as raster]
             [planwise.component.coverage.rasterize :as rasterize]
             [clojure.string :refer [join]]
+            [clojure.edn :refer [read-string]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
             [integrant.core :as ig]
@@ -168,7 +169,7 @@
                                   (assoc provider :unsatisfied total-demand)))
                               (:providers result-step1))]
 
-    (let [updated-sources           (map #(select-keys % [:id :quantity]) (:sources result-step1)) ; persist only id and quantity
+    (let [updated-sources           (map #(select-keys % [:id :quantity :lat :lon]) (:sources result-step1)) ; persist only id and quantity
           updated-providers         result-step2
           total-sources-demand      (sum-map sources :quantity)
           total-satisfied-demand    (sum-map updated-providers :satisfied)
@@ -311,52 +312,58 @@
       (compute-scenario-by-raster engine project scenario))))
 
 (defn- get-max-distance
-  [coord raster polygon]
-  (let [coverage (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))
-        vector (demand/get-coverage raster coverage)])
-  (reduce
-   (fn [max next] (let [d (euclidean-distance coord (get-geo next raster))]
-                    (if (> d max) d max))) 0 vector))
+  [coord {:keys [sources-data raster]} polygon]
+  (if raster
+    (let [coverage (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))
+          vector (demand/get-coverage raster coverage)]
+      (reduce
+       (fn [max next] (let [d (euclidean-distance coord (get-geo next raster))]
+                        (if (> d max) d max))) 0 vector))
+    (reduce
+     (fn [max next] (let [d (euclidean-distance coord next)] (if (> d max) d max)))
+     0 sources-data)))
 
 (defn- get-resolution
   [{:keys [geotransform]}]
   (-> geotransform vec second))
 
 (defn count-under-geometry
-  [engine polygon {:keys [raster sources-data sources-set-id]}]
+  [engine polygon {:keys [raster original-sources source-set-id]}]
   (if raster
     (let [coverage (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))]
       (demand/count-population-under-coverage raster coverage))
-    (let [ids (set (map :id (sources-set/list-sources-under-coverage (:source-set engine) sources-set-id polygon)))]
-      (reduce + (fn [{:keys [quantity id]}] (if (ids id) quantity 0)) 0 sources-data))))
+    (let [ids (set (map :id (sources-set/list-sources-under-coverage (:sources-set engine) source-set-id polygon)))]
+      (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
+
 
 (defn coverage-fn
-  [engine criteria {:keys [sources-data raster] :as source} {:keys [idx coord res get-avg]}]
+  [engine criteria {:keys [raster sources-data] :as source} {:keys [coord get-avg]}]
   (let [{:keys [data geotransform xsize ysize]} raster
-        [lon lat :as coord] (or coord (get-geo idx raster))
+        [lon lat :as coord] coord
         polygon (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
         population-reacheable (count-under-geometry engine polygon source)]
     (if get-avg
-      {:max (get-max-distance coord raster polygon)}
+      {:max (get-max-distance coord source polygon)}
       {:coverage population-reacheable
-       :coverage-geom (coverage/as-geojson coverage-comp polygon)
-       :coverage-geom (:geom (coverage/as-geojson coverage-comp polygon))
+       :coverage-geom (:geom (coverage/as-geojson (:coverage engine) polygon))
        :location {:lat lat :lon lon}})))
 
 (defn search-optimal-location
   [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
   (let [raster        (when raster (raster/read-raster (str "data/" (:raster source) ".tif")))
-        source        (assoc source :raster raster)
+        source        (assoc source :raster raster
+                             :source-set-id (:source-set-id project)
+                             :original-sources (read-string sources-data)
+                             :sources-data (get-demand {:sources-data (remove #(-> % :quantity zero?) (read-string sources-data))} nil))
         algorithm     (keyword coverage-algorithm)
         demand-quartiles (:demand-quartiles engine-config)
         criteria         (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
         aux-fn          #(coverage-fn engine criteria source %)
-        cost-fn  (memoize/lu (fn [val {:keys [format get-avg]}] (catch-exc aux-fn  {:get-avg get-avg
-                                                                                    format (if (= :idx format) (first val) val)
-                                                                                    :res (get-resolution raster)})))
+        cost-fn  (memoize/lu (fn [val {:keys [get-avg]}] (catch-exc aux-fn  {:get-avg get-avg
+                                                                             :coord val})))
         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
     (catch-exc
-     greedy-search 20 source cost-fn demand-quartiles {:bounds bounds :n 100})))
+     greedy-search 20 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
 
 (defn clear-project-cache
   [this project-id]
