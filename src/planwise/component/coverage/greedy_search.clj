@@ -54,16 +54,6 @@
   (let [[x y :as pixel-vec] (coord->pixel geotransform [lon lat])]
     (+ (* y xsize) x)))
 
-(defn *format
-  [coord raster]
-  (let [idx (get-index coord raster)]
-    [idx (aget (:data raster) idx)]))
-
-(defn format*
-  [[idx w :as val] raster]
-  (let [[lon lat] (get-geo idx raster)]
-    [lon lat w]))
-
 (defn get-centroid
   [set-points]
   (let [[r0 r1 total-w]  (reduce (fn [[r0 r1 partial-w] [l0 l1 w]]
@@ -79,73 +69,76 @@
     (if (pos? total) (map #(/ % total) [r0 r1]) (first set-points))))
 
 (defn get-demand
-  [data [_ b0 b1 b2 _ :as demand-quartiles]]
-  (let [indexed-data (map-indexed vector (vec data))
-        initial-set  (sort-by last > (filter (fn [[idx val]] (> val b2)) indexed-data))]
-    initial-set))
+  [{:keys [raster sources-data]} [_ b0 b1 b2 _ :as demand-quartiles]]
+  (if raster
+    (let [indexed-data (map-indexed vector (vec (:data raster)))
+          initial-set  (sort-by last > (filter (fn [[_ val]] (> val b2)) indexed-data))]
+      (mapv (fn [[idx val]] (conj (get-geo idx raster) val)) initial-set))
+    (mapv (fn [{:keys [lon lat quantity]}] [lon lat quantity]) (sort-by :quantity > sources-data))))
 
 (defn mean-initial-data
   [n demand coverage-fn]
   (let [locations (take n (random-sample 0.8 demand))
-        [total-cov total-max] (reduce (fn [[tc tm] location]
-                                        (let [{:keys [cov max]} (or (coverage-fn location {:format :idx}) {:cov 0 :max 0})]
-                                          [(+ tc cov) (+ tm max)])) [0 0] locations)]
+        total-max (reduce (fn [tm location]
+                            (let [{:keys [max]} (or (coverage-fn (drop-last location) {:get-avg true}) {:cov 0 :max 0})]
+                              (+ tm max))) 0 locations)]
     {:avg-max (/ total-max n)}))
 
 (defn neighbour-fn
-  [[idx _ :as val] raster bound]
-  (let [coord (get-geo idx raster)]
-    (fn [[other _]] (< (euclidean-distance coord (get-geo other raster)) bound))))
-
-(defn frontier-fn
-  [[idx _] raster radius eps]
-  (let [coord (get-geo idx raster)]
-    (fn [[other _]] (< (- (euclidean-distance coord (get-geo other raster)) radius) eps))))
+  ([coord bound]
+   (fn [[lon lat _]] (< (euclidean-distance (drop-last coord) [lon lat]) bound)))
+  ([coord radius eps]
+   (fn [[lon lat _]] (< (- (euclidean-distance (drop-last coord) [lon lat]) radius) eps))))
 
 (defn next-neighbour
-  ([raster demand center radius]
-   (next-neighbour raster demand center radius 0))
-  ([raster demand center radius eps]
-   (let [in-frontier? (fn [p] (frontier-fn p raster radius eps))
+  ([demand center radius]
+   (next-neighbour demand center radius (/ radius 100000)))
+  ([demand center radius eps]
+   (let [in-frontier? (fn [p] (neighbour-fn p radius))
          set      (group-by (in-frontier? center) demand)
          frontier (get set true)]
-     (get-centroid (map #(format* % raster) frontier)))))
+     (get-centroid frontier))))
 
 (defn get-neighbourhood
-  [demand-point {:keys [data] :as raster} demand avg-max]
+  [source demand-point demand avg-max]
 
-  (let [is-neighbour? (memoize (fn [p r] (neighbour-fn p raster r)))
+  (let [get-value-fn  (if (vector? source)
+                        (fn [location] (last (filter #(= (drop-last %) location) source)))
+                        (fn [location] (aget (:data source) (get-index location source))))
+        is-neighbour? (memoize (fn [p r] (neighbour-fn p r)))
         interior      (get (group-by (is-neighbour? demand-point avg-max) demand) true)]
 
-    (when (some? interior)
+
+    (if (some? interior)
 
       (loop [sum 0
              radius avg-max
-             [idx _ :as center] demand-point
+             [lon lat _ :as center] demand-point
              interior interior]
-
         (if (<= (- avg-max sum) 0)
 
           (let [sep (group-by (is-neighbour? center avg-max) demand)]
             [(get sep true) (get sep false)])
 
-          (let [location (next-neighbour raster interior center radius)]
+          (let [location (next-neighbour interior center radius)]
 
             (if (nil? location)
 
               (recur avg-max radius center demand)
 
-              (let [index       (get-index location raster)
-                    next-center [index (aget data index)]
-                    next-radius (euclidean-distance (get-geo idx raster) location)
+              (let [value       (get-value-fn location)
+                    next-center (conj (vec location) value)
+                    next-radius (euclidean-distance [lon lat] location)
                     step        (- radius next-radius)]
 
                 (if (and (> step 0) (pos? next-radius))
                   (recur (+ sum step) next-radius next-center (get (group-by (is-neighbour? next-center next-radius) interior) true))
-                  (recur avg-max radius center interior))))))))))
+                  (recur avg-max radius center interior)))))))
+
+      [[demand-point] (drop 1 demand)])))
 
 (defn get-groups
-  [from initial-set raster bounds]
+  [source from initial-set bounds]
   (loop [groups []
          from   (first initial-set)
          demand initial-set]
@@ -154,20 +147,21 @@
 
       groups
 
-      (let [[group demand*] (get-neighbourhood from raster demand bounds)]
+      (let [[group demand*] (get-neighbourhood source from demand bounds)]
         (if (nil? group)
           (recur groups (first (take 1 demand)) (drop 1 demand))
           (let [groups*         (into groups [group])
                 from*           (when demand* (first (sort-by second > demand*)))]
             (recur groups* from* demand*)))))))
 
+;TODO check mean-initial-data (or bounds (mean-initial-data n initial-set coverage-fn))
 (defn greedy-search
-  [sample {:keys [raster sources-data]} coverage-fn demand-quartiles {:keys [n bounds]}]
-  (let [[max & remain :as initial-set]   (get-demand (:data raster) demand-quartiles)       {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
-        groups    (map (fn [group] (when (> (count group) 10) (map #(get-geo (first %) raster) group)))
-                       (get-groups max initial-set raster (/ avg-max 2)))
+  [sample {:keys [raster sources-data] :as source} coverage-fn demand-quartiles {:keys [n bounds]}]
+  (let [[max & remain :as initial-set]   (if raster (get-demand raster demand-quartiles) sources-data)
+        {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
+        groups    (get-groups (or raster sources-data) max initial-set (/ avg-max 2))
         geo-cent  (remove nil? (map get-geo-centroid groups))
-        locations (remove nil? (map #(coverage-fn % {:format :coord}) geo-cent))]
+        locations (remove nil? (map #(coverage-fn % {}) geo-cent))]
     (if (empty? locations)
       (throw (IllegalArgumentException. "Demand can't be reached."))
       (take sample (sort-by :coverage > locations)))))
