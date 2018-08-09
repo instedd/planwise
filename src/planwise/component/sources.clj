@@ -5,7 +5,9 @@
             [clojure.java.io :as io]
             [clojure.data.csv :as csv]
             [hugsql.core :as hugsql]
-            [clojure.java.jdbc :as jdbc]))
+            [clojure.java.jdbc :as jdbc]
+            [planwise.util.exceptions :refer [catch-exc]]
+            [clojure.data.json :as json]))
 
 ;; ----------------------------------------------------------------------
 ;; Auxiliary and utility functions
@@ -85,7 +87,7 @@
 
 (defn list-sources-under-coverage
   [store source-set-id coverage-geom]
-  (let [key (if (-> coverage-geom print-str map?) :coverage-geojson :coverage-geom)]
+  (let [key (if (catch-exc json/read-str coverage-geom) :coverage-geojson :coverage-geom)]
     (db-list-sources-under-coverage (get-db store) {:source-set-id source-set-id
                                                     key coverage-geom})))
 

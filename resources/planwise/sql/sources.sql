@@ -58,7 +58,7 @@ SELECT *
     AND ST_CONTAINS(:coverage-geom, the_geom);
     /*~ ) ~*/
     /*~ (if (:coverage-geojson params) */
-    AND ST_CONTAINS(ST_AsText(ST_GeomFromGeoJSON(:coverage-geojson)), the_geom);
+    AND ST_CONTAINS(ST_SetSRID(ST_GeomFromGeoJSON(:coverage-geojson), 4326), the_geom);
     /*~ ) ~*/;
 
 -- :name db-list-sources-in-set :?

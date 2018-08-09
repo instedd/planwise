@@ -80,6 +80,7 @@
 
                  ; Misc
                  [org.clojure/data.csv "0.1.4"]
+                 [org.clojure/data.json "0.2.4"]
                  [com.draines/postal "2.0.0"]
                  [funcool/cuerdas "2.0.3"]
                  [org.gdal/gdal "2.1.0"]

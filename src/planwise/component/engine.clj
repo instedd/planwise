@@ -11,6 +11,7 @@
             [clojure.edn :refer [read-string]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
+            [planwise.util.exceptions :refer [catch-exc]]
             [integrant.core :as ig]
             [clojure.core.memoize :as memoize]
             [clojure.java.io :as io]
@@ -292,7 +293,7 @@
     (let [updated-sources          (:sources result-step1)
           updated-providers        (map #(dissoc % :coverage-geom) result-step2)
           as-geojson               (fn [geom] {:coverage-geom (:geom (coverage/as-geojson (:coverage engine) geom))})
-          changes-geom             (reduce (fn [tree {:keys [id coverage-geom]}] (assoc tree (keyword id) (as-geojson coverage-geom))) {} providers)
+          changes-geom             (reduce (fn [tree {:keys [id coverage-geom]}] (when-not ((keyword id) tree) (assoc tree (keyword id) (as-geojson coverage-geom)))) new-providers-geom providers)
           total-sources-demand     (sum-map sources :quantity)
           total-satisfied-demand   (sum-map updated-providers :satisfied)
           total-unsatisfied-demand (sum-map updated-providers :unsatisfied)]
