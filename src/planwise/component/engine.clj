@@ -170,7 +170,8 @@
                                   (assoc provider :unsatisfied total-demand)))
                               (:providers result-step1))]
 
-    (let [updated-sources           (map #(select-keys % [:id :quantity :lat :lon]) (:sources result-step1)) ; persist only id and quantity
+    (let [initial-quantities        (reduce (fn [tree {:keys [id quantity] :as source}] (assoc tree (keyword (str id)) quantity)) {} sources)
+          updated-sources           (map (fn [s] (assoc (select-keys s [:id :quantity :lat :lon]) :initial-quantity ((keyword (-> s :id str)) initial-quantities))) (:sources result-step1))
           updated-providers         result-step2
           total-sources-demand      (sum-map sources :quantity)
           total-satisfied-demand    (sum-map updated-providers :satisfied)
@@ -354,8 +355,8 @@
   (let [raster        (when raster (raster/read-raster (str "data/" (:raster source) ".tif")))
         source        (assoc source :raster raster
                              :source-set-id (:source-set-id project)
-                             :original-sources (read-string sources-data)
-                             :sources-data (get-demand {:sources-data (remove #(-> % :quantity zero?) (read-string sources-data))} nil))
+                             :original-sources sources-data
+                             :sources-data (get-demand {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
         algorithm     (keyword coverage-algorithm)
         demand-quartiles (:demand-quartiles engine-config)
         criteria         (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
