@@ -1,7 +1,8 @@
 (ns planwise.component.coverage.greedy-search
   (:require [planwise.engine.raster :as raster]
             [clojure.core.memoize :as memoize]
-            [planwise.component.coverage :as coverage])
+            [planwise.component.coverage :as coverage]
+            [planwise.util.exceptions :refer [catch-exc]])
   (:import [java.lang.Math]
            [org.gdal.gdalconst gdalconst]))
 
@@ -15,13 +16,6 @@
 
 ;---------------------------------------------------------------------------------------------------------
 ;Auxiliar functions
-
-(defn catch-exc
-  [function & params]
-  (try
-    (apply function params)
-    (catch Exception e
-      nil)))
 
 (defn euclidean-distance [a b]
   (Math/pow  (reduce + (map #(-> (- %1 %2) (Math/pow 2)) a b))
