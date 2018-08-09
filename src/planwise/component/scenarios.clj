@@ -56,7 +56,8 @@
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
   (-> (db-find-scenario (get-db store) {:id scenario-id})
-      (update :changeset edn/read-string)))
+      (update :changeset edn/read-string)
+      (update :sources-data edn/read-string)))
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
@@ -108,22 +109,18 @@
                                       ; add updated satisfied and unsatisfied demand
                                       (update-provider-data updated-data)))
                                 (get-initial-providers store provider-set-id provider-set-version filter-options))
-        ;providers in changeset
+        ;changeset
         updated-changeset  (map #(update-provider-data % updated-data) (:changeset scenario))
-        ; sources
-        sources-data       (edn/read-string (:sources-data scenario))
-        updated-sources    (map (fn [source] ; update each source's current quantity with quantity in scenario->sources-data
-                                  (assoc source :quantity-current (:quantity (first (filter (fn [source-data]
-                                                                                              (= (:id source-data) (:id source)))
-                                                                                            sources-data)))))
-                                (map #(dissoc % :the_geom)
-                                     (sources/list-sources-in-set (:sources-set store) source-set-id)))]
+        ;sources
+        sources             (sources/list-sources-in-set (:sources-set store) source-set-id)
+        get-source-info-fn  (fn [id] (select-keys (-> (filter #(= id (:id %)) sources) first) [:name]))
+        updated-sources (map (fn [s] (merge s (get-source-info-fn (:id s)))) (filter #(pos? (:initial-quantity %)) (:sources-data scenario)))]
 
     (-> scenario
-        (assoc :providers updated-providers)
-        (assoc :sources updated-sources)
-        (assoc :changeset updated-changeset)
-        (dissoc :updated-at :providers-data :sources-data :new-providers-geom))))
+        (assoc :providers updated-providers
+               :sources-data updated-sources
+               :changeset updated-changeset)
+        (dissoc :updated-at :providers-data :new-providers-geom))))
 
 (defn list-scenarios
   [store project-id]

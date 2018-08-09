@@ -38,10 +38,10 @@
        "<br> Expected coverage : " (:coverage suggestion)))
 
 (defn- show-source
-  [{{:keys [name quantity quantity-current]} :elem :as source}]
+  [{{:keys [name initial-quantity quantity]} :elem :as source}]
   (str "<b>" (utils/escape-html name) "</b>"
-       "<br> Original quantity: " quantity
-       "<br> Current quantity: " quantity-current))
+       "<br> Original quantity: " initial-quantity
+       "<br> Current quantity: " quantity))
 
 (defn- to-indexed-map
   [coll]
@@ -59,10 +59,10 @@
                                                                                  :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
-    (fn [{:keys [bbox]} {:keys [changeset providers raster] :as scenario}]
+    (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario}]
       (let [providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
-            indexed-sources       (to-indexed-map (:sources scenario))
+            indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
         [:div.map-container [l/map-widget {:zoom @zoom
                                            :position @position
@@ -85,9 +85,9 @@
                                             :lon-fn #(get-in % [:elem :lon])
                                             :options-fn #(select-keys % [:index])
                                             :style-fn #(let [source (:elem %)
-                                                             quantity-initial (:quantity source)
-                                                             quantity-current (:quantity-current source)
-                                                             ratio (/ quantity-current quantity-initial)
+                                                             quantity-initial (:initial-quantity source)
+                                                             quantity-current (:quantity source)
+                                                             ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
                                                              color (cond
                                                                      (<= ratio 0.25) {:fill :limegreen :stroke :limegreen}
                                                                      (< 0.25 ratio 0.5) {:fill :yellow :stroke :yellow}
