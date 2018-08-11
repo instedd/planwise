@@ -139,6 +139,13 @@
   (let [db-spec (:spec db)]
     (db-as-geojson db-spec {:geom geometry})))
 
+(defn locations-outside-polygon
+  [{:keys [db]} polygon locations]
+  (remove (fn [[lon lat _]] (:cond (db-inside-geometry (:spec db) {:lon lon
+                                                                   :lat lat
+                                                                   :geom polygon})))
+          locations))
+
 (def default-grid-align-options
   {:ref-coords {:lat 0 :lon 0}
    :resolution {:x-res 1/1200 :y-res 1/1200}})
@@ -157,7 +164,9 @@
         (rasterize/rasterize polygon raster-path raster-options))
       polygon))
   (as-geojson [this geometry]
-    (as-geojson this geometry)))
+    (as-geojson this geometry))
+  (locations-outside-polygon [this polygon locations]
+    (locations-outside-polygon this polygon locations)))
 
 
 (defmethod ig/init-key :planwise.component/coverage

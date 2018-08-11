@@ -325,45 +325,64 @@
      (fn [max next] (let [d (euclidean-distance coord next)] (if (> d max) d max)))
      0 sources-data)))
 
-(defn- get-resolution
-  [{:keys [geotransform]}]
-  (-> geotransform vec second))
-
 (defn count-under-geometry
-  [engine polygon {:keys [raster original-sources source-set-id]}]
+  [engine polygon {:keys [raster original-sources source-set-id geom-set]}]
   (if raster
     (let [coverage (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))]
       (demand/count-population-under-coverage raster coverage))
     (let [ids (set (map :id (sources-set/list-sources-under-coverage (:sources-set engine) source-set-id polygon)))]
       (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
 
+(defn printo [a]
+  (println "look at me " a)
+  a)
+
+; (when-not (zero? population-reachable)
+;           (let [factor (- 1 (min 1 (/ scaled-capacity population-reachable)))]))
+
+
+(defn update-source
+  [engine {:keys [raster sources-data search-path demand-quartiles]} polygon get-update]
+  (if search-path
+
+    (let [raster   (raster/read-raster search-path)
+          coverage-raster (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))]
+      (demand/multiply-population-under-coverage! raster coverage-raster 0)
+      (raster/write-raster raster search-path)
+      (get-demand {:raster raster} (printo demand-quartiles)))
+
+    (coverage/locations-outside-polygon (:coverage engine) polygon get-update)))
 
 (defn coverage-fn
-  [engine criteria {:keys [raster sources-data] :as source} {:keys [coord get-avg]}]
-  (let [{:keys [data geotransform xsize ysize]} raster
-        [lon lat :as coord] coord
-        polygon (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
-        population-reacheable (count-under-geometry engine polygon source)]
-    (if get-avg
-      {:max (get-max-distance coord source polygon)}
-      {:coverage population-reacheable
-       :coverage-geom (:geom (coverage/as-geojson (:coverage engine) polygon))
-       :location {:lat lat :lon lon}})))
+  [engine criteria {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
+  (let [criteria              (if sources-data criteria (merge criteria {:raster search-path}))
+        [lon lat :as coord]   coord
+        polygon               (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
+        population-reacheable (count-under-geometry engine polygon source)
+        info   {:coverage population-reacheable
+                :coverage-geom (:geom (coverage/as-geojson (:coverage engine) polygon))
+                :location {:lat lat :lon lon}}]
+    (cond get-avg {:max (get-max-distance coord source polygon)}
+          get-update {:location-info info :updated-demand (update-source engine source polygon get-update)}
+          :other info)))
 
 (defn search-optimal-location
   [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
   (let [raster        (when raster (raster/read-raster (str "data/" (:raster source) ".tif")))
+        search-path   (when raster (str "data/scenarios/" (:id project) "/coverage-cache/new-provider.tif"))
+        demand-quartiles (:demand-quartiles engine-config)
         source        (assoc source :raster raster
+                             :search-path search-path
+                             :demand-quartiles demand-quartiles
                              :source-set-id (:source-set-id project)
                              :original-sources sources-data
                              :sources-data (get-demand {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
         algorithm     (keyword coverage-algorithm)
-        demand-quartiles (:demand-quartiles engine-config)
         criteria         (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
         aux-fn          #(coverage-fn engine criteria source %)
-        cost-fn  (memoize/lu (fn [val {:keys [get-avg]}] (catch-exc aux-fn  {:get-avg get-avg
-                                                                             :coord val})))
+        cost-fn   (memoize/memo (fn [val props] (catch-exc aux-fn (assoc props :coord val))))
         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
+    (when raster (raster/write-raster-file raster search-path))
     (catch-exc
      greedy-search 20 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
 

@@ -11,7 +11,10 @@
     "Computes a coverage area from a given geographical point")
 
   (as-geojson [this geometry]
-    "Converts a pg-geometry to geojson"))
+    "Converts a pg-geometry to geojson")
+
+  (locations-outside-polygon [this polygon locations]
+    "Given a polygon and set of locations returns those outside the geometry"))
 
 (defn enumerate-algorithm-options
   [service algorithm]
