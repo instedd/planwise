@@ -89,6 +89,7 @@
                                                              quantity-current (:quantity source)
                                                              ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
                                                              color (cond
+                                                                     (= 0 quantity-initial) {:fill :gray :stroke :lightgray}
                                                                      (<= ratio 0.25) {:fill :limegreen :stroke :limegreen}
                                                                      (< 0.25 ratio 0.5) {:fill :yellow :stroke :yellow}
                                                                      (<= 0.5 ratio 0.75) {:fill :orange :stroke :orange}
