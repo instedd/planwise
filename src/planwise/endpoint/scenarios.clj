@@ -40,6 +40,13 @@
            project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
        (response (scenarios/get-provider-suggestion service project scenario))))
 
+   (GET "/:id/geometries" [id :as request]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
+       (response (scenarios/get-providers-geom service scenario project))))
+
    (PUT "/:id" [id scenario :as request]
      (let [user-id    (util/request-user-id request)
            id         (Integer. id)

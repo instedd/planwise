@@ -26,3 +26,8 @@
   {:method    :get
    :timeout   90000
    :uri       (str "/api/scenarios/" id "/suggested-providers")})
+
+(defn- get-providers-geom
+  [id]
+  :method :get
+  :uri    (str "/api/scenarios/" id "/geometries"))

@@ -179,10 +179,38 @@
          updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)
          new-provider-index (dec (count (:changeset updated-scenario)))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
-                   :on-success [:scenarios/update-demand-information])
+                   :on-success [:scenarios/compute-provider])
       :db   (-> db
                 (assoc :current-scenario updated-scenario))
       :dispatch [:scenarios/open-changeset-dialog new-provider-index]})))
+
+(rf/reg-event-fx
+ :scenarios/compute-provider
+ in-scenarios
+ (fn [{:keys [db]} [_ {:keys [id] :as scenario}]]
+   {:dispatch [:scenarios/update-demand-information scenario]
+    :api  (assoc (api/get-providers-geom id)
+                 :on-success [:scenarios/update-geometries])}))
+
+(rf/reg-event-db
+ :scenarios/update-geometries
+ in-scenarios
+ (fn [db [_ map]]
+   (assoc-in db [:geom :new-providers] map)))
+
+(rf/reg-event-fx
+ :scenarios/get-providers-geometries
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   (let [providers (get-in db [:current-scenario :providers])]
+     {:api  (assoc (api/get-providers-geom (:id (:current-scenario db)))
+                   :on-success [:scenarios/save-geometries])})))
+
+(rf/reg-event-db
+ :scenarios/save-geometries
+ in-scenarios
+ (fn [db [_ map]]
+   (assoc-in db [:geom :initial-providers] map)))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
