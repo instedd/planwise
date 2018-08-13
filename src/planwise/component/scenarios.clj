@@ -55,9 +55,10 @@
 (defn get-scenario
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
-  (-> (db-find-scenario (get-db store) {:id scenario-id})
-      (update :changeset edn/read-string)
-      (update :sources-data edn/read-string)))
+  (let [scenario (db-find-scenario (get-db store) {:id scenario-id})]
+      (reduce (fn [map key] (update map key edn/read-string))
+            scenario
+            [:changeset :sources-data :providers-data :new-providers-geom])))
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
@@ -96,7 +97,7 @@
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
         ; providers
-        providers-data     (edn/read-string (:providers-data scenario))
+        providers-data     (:providers-data scenario)
         new-providers-geom (get-new-providers-geom store (:id scenario))
         updated-data       (build-updated-data providers-data new-providers-geom)
         updated-providers  (map (fn [provider]
