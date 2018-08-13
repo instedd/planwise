@@ -166,8 +166,11 @@
 
       (remove #(zero? (:coverage %)) locations)
 
-      (let [[location demand*]        (update-demand coverage-fn source from demand bound)
-            [from* & demand* :as set] (sort-by last > demand*)]
+      (let [[location demand*]      (update-demand coverage-fn source from demand bound)
+            [from* & demand* :as set]       (sort-by last > demand*)
+            ;from* (if (vector? source) from* (above-avg from set bound locations))
+]
+
         (recur (inc times) (conj locations location) from* demand*)))))
 
 (defn greedy-search
