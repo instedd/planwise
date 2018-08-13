@@ -346,7 +346,7 @@
 
     (coverage/locations-outside-polygon (:coverage engine) polygon get-update)))
 
-(defn coverage-fn
+(defn get-coverage
   [engine criteria {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
   (let [criteria              (if sources-data criteria (merge criteria {:raster search-path}))
         [lon lat :as coord]   coord
@@ -370,9 +370,9 @@
                              :source-set-id (:source-set-id project)
                              :original-sources sources-data
                              :sources-data (get-demand {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
-        algorithm     (keyword coverage-algorithm)
-        criteria         (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
-        aux-fn          #(coverage-fn engine criteria source %)
+        algorithm (keyword coverage-algorithm)
+        criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
+        aux-fn    #(get-coverage engine criteria source %)
         cost-fn   (memoize/memo (fn [val props] (catch-exc aux-fn (assoc props :coord val))))
         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
     (when raster (raster/write-raster-file raster search-path))
@@ -427,7 +427,7 @@
   (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
   (def criteria {:algorithm :simple-buffer :distance 20})
   (def val 1072404)
-  (def f (fn [val] (engine/coverage-fn (:coverage engine) {:idx val} raster criteria)))
+  (def f (fn [val] (engine/get-coverage (:coverage engine) {:idx val} raster criteria)))
   (f val) ;idx:  1072404 | total:  17580.679855613736  |demand:  17580
           ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
 )
