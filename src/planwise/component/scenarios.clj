@@ -114,7 +114,7 @@
         ;sources
         sources             (sources/list-sources-in-set (:sources-set store) source-set-id)
         get-source-info-fn  (fn [id] (select-keys (-> (filter #(= id (:id %)) sources) first) [:name]))
-        updated-sources (map (fn [s] (merge s (get-source-info-fn (:id s)))) (filter #(pos? (:initial-quantity %)) (:sources-data scenario)))]
+        updated-sources (map (fn [s] (merge s (get-source-info-fn (:id s)))) (:sources-data scenario))]
 
     (-> scenario
         (assoc :providers updated-providers
