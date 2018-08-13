@@ -97,9 +97,10 @@
 (defn update-demand
   [coverage-fn source demand-point demand avg-max]
 
-  (let [get-value-fn  (if (vector? source)
-                        (fn [location] (last (filter #(= (drop-last %) location) source)))
-                        (fn [location] (aget (:data source) (get-index location source))))
+  (let [raster? (when-not (vector? source) true)
+        get-value-fn  (if raster?
+                        (fn [location] (aget (:data source) (get-index location source)))
+                        (fn [location] (last (filter #(= (drop-last %) location) source))))
         is-neighbour? (memoize (fn [p r] (neighbour-fn p r)))
         interior      (filter (is-neighbour? demand-point avg-max) demand)]
 
@@ -112,10 +113,11 @@
 
         (if (<= (- avg-max sum) 0)
 
-          (let [group    (filter (is-neighbour? center avg-max) demand)
-                geo-cent (get-geo-centroid group)
-                {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update demand})]
-            [location-info updated-demand])
+          (let [division (group-by (is-neighbour? center avg-max) demand)
+                geo-cent (get-geo-centroid (get division true))
+                {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update demand})
+                demand*  (when raster? (vec (clojure.set/intersection (set (get division false)) (set updated-demand))))]
+            [location-info (or demand* updated-demand)])
 
           (let [location (next-neighbour interior center radius)]
 
@@ -136,18 +138,18 @@
             {:keys [location-info updated-demand]} (coverage-fn (drop-last demand-point) {:get-update demand})]
         [location-info updated-demand]))))
 
-(defn above-avg
-  [point set bound locations]
-  (let [locations (map (fn [{:keys [location]}] [(:lat location) (:lon location)]) locations)
-        greater-than? #(>= (euclidean-distance (drop-last point) % (* 2 bound))
-        condition (empty? (remove true? greater-than? locations))]
-  (loop [from nil
-         set set]
-    (if (and (nil? from) (some? set))
-      (let [[lon lat _ :as from*] (first set)
-            from (when (and (greater-than? from)condition) from*)]
-      (recur from (drop 1 set)))
-      from)))))
+; (defn above-avg
+;   [point set bound locations]
+;   (let [locations (map (fn [{:keys [location]}] [(:lat location) (:lon location)]) locations)
+;         greater-than? #(>= (euclidean-distance (drop-last point) %) (* 2 bound))
+;         condition (if (empty? locations) true (empty? (remove true? (map greater-than? locations))))]
+;   (loop [from nil
+;          set set]
+;     (if (and (nil? from) (some? set) condition)
+;       (let [[lon lat _ :as from*] (first set)
+;             from (when (greater-than? [lon lat]) from*)]
+;       (recur from (drop 1 set)))
+;       from))))
 
 
 (defn get-locations
@@ -158,27 +160,23 @@
          from   (first initial-set)
          demand (drop 1 initial-set)]
 
-    (println "locations" (count locations))
 
-    (if (or (nil? demand) (nil? from) (= times 10))
+    (if (or (nil? demand) (nil? from) (= times 10) (or (= 0 (:coverage (last locations))) false))
 
-      locations
+      (remove #(zero? (:coverage %)) locations)
 
       (let [[location demand*]      (update-demand coverage-fn source from demand bound)
             [from* & demand* :as set]       (sort-by last > demand*)
-            from* (if (vector? source) from* (above-avg from set bound locations))]
-        (println "from*" from* )
-        (println "dem" (count demand*))
+            ;from* (if (vector? source) from* (above-avg from set bound locations))
+            ]
+
         (recur (inc times) (conj locations location) from* demand* )))))
 
-;TODO check mean-initial-data (or bounds (mean-initial-data n initial-set coverage-fn))
 (defn greedy-search
   [sample {:keys [raster sources-data] :as source} coverage-fn demand-quartiles {:keys [n bounds]}]
-  (println sources-data)
   (let [[max & remain :as initial-set]   (if raster (get-demand {:raster raster} demand-quartiles) sources-data)
         {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
         locations (get-locations coverage-fn (or raster sources-data) max initial-set (/ avg-max 2))]
-    (println (map :location locations))
     (if (empty? locations)
       (throw (IllegalArgumentException. "Demand can't be reached."))
       (take sample (sort-by :coverage > locations)))))

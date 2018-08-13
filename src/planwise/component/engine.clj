@@ -333,15 +333,8 @@
     (let [ids (set (map :id (sources-set/list-sources-under-coverage (:sources-set engine) source-set-id polygon)))]
       (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
 
-(defn printo [a]
-  (println "look at me " a)
-  a)
 
-; (when-not (zero? population-reachable)
-;           (let [factor (- 1 (min 1 (/ scaled-capacity population-reachable)))]))
-
-
-(defn update-source
+(defn get-demand-source-updated
   [engine {:keys [raster sources-data search-path demand-quartiles]} polygon get-update]
   (if search-path
 
@@ -349,7 +342,7 @@
           coverage-raster (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))]
       (demand/multiply-population-under-coverage! raster coverage-raster 0)
       (raster/write-raster raster search-path)
-      (get-demand {:raster raster} (printo demand-quartiles)))
+      (get-demand {:raster raster} demand-quartiles))
 
     (coverage/locations-outside-polygon (:coverage engine) polygon get-update)))
 
@@ -363,7 +356,7 @@
                 :coverage-geom (:geom (coverage/as-geojson (:coverage engine) polygon))
                 :location {:lat lat :lon lon}}]
     (cond get-avg {:max (get-max-distance coord source polygon)}
-          get-update {:location-info info :updated-demand (update-source engine source polygon get-update)}
+          get-update {:location-info info :updated-demand (get-demand-source-updated engine source polygon get-update)}
           :other info)))
 
 (defn search-optimal-location
