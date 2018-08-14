@@ -122,10 +122,10 @@
 (defn- get-initial-providers-geom
   [store project providers]
   (reduce (fn [dic {:keys [id] :as provider}] (assoc  dic id {:coverage-geom (:geom (providers-set/get-coverage
-                                                                                                (:providers-set store)
-                                                                                                id
-                                                                                                (:coverage-algorithm project)
-                                                                                                (get-in project [:config :coverage :filter-options])))}))
+                                                                                     (:providers-set store)
+                                                                                     id
+                                                                                     (:coverage-algorithm project)
+                                                                                     (get-in project [:config :coverage :filter-options])))}))
           {}
           providers))
 

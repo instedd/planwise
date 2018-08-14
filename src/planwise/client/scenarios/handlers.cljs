@@ -207,8 +207,8 @@
  :scenarios/get-providers-geometries
  in-scenarios
  (fn [{:keys [db]} [_ id]]
-     {:api  (assoc (api/get-providers-geom id (empty? (:geom db)))
-                   :on-success [:scenarios/save-geometries])}))
+   {:api  (assoc (api/get-providers-geom id (empty? (:geom db)))
+                 :on-success [:scenarios/save-geometries])}))
 
 (rf/reg-event-db
  :scenarios/save-geometries
@@ -216,7 +216,7 @@
  (fn [db [_ map]]
    (println "look at me" map)
    (when map
-    (assoc db :geom map))))
+     (assoc db :geom map))))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog

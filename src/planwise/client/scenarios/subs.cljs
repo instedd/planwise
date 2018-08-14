@@ -69,5 +69,5 @@
 
 (rf/reg-sub
  :scenarios/providers-geometries
-  (fn [db _]
+ (fn [db _]
    (get-in db [:scenarios :geom])))
