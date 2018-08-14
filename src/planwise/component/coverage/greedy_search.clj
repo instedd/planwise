@@ -100,7 +100,7 @@
                         (fn [location] (last (filter #(= (drop-last %) location) source)))
                         (fn [location] (aget (:data source) (get-index location source))))
         is-neighbour? (memoize (fn [p r] (neighbour-fn p r)))
-        interior      (get (group-by (is-neighbour? demand-point avg-max) demand) true)]
+        interior      (filter (is-neighbour? demand-point avg-max) demand)]
 
 
     (if (some? interior)
@@ -151,7 +151,7 @@
 ;TODO check mean-initial-data (or bounds (mean-initial-data n initial-set coverage-fn))
 (defn greedy-search
   [sample {:keys [raster sources-data] :as source} coverage-fn demand-quartiles {:keys [n bounds]}]
-  (let [[max & remain :as initial-set]   (if raster (get-demand raster demand-quartiles) sources-data)
+  (let [[max & remain :as initial-set]   (if raster (get-demand {:raster raster} demand-quartiles) sources-data)
         {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
         groups    (get-groups (or raster sources-data) max initial-set (/ avg-max 2))
         geo-cent  (remove nil? (map get-geo-centroid groups))

@@ -340,8 +340,7 @@
 
 (defn coverage-fn
   [engine criteria {:keys [raster sources-data] :as source} {:keys [coord get-avg]}]
-  (let [{:keys [data geotransform xsize ysize]} raster
-        [lon lat :as coord] coord
+  (let [[lon lat :as coord] coord
         polygon (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
         population-reacheable (count-under-geometry engine polygon source)]
     (if get-avg
@@ -361,8 +360,7 @@
         demand-quartiles (:demand-quartiles engine-config)
         criteria         (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
         aux-fn          #(coverage-fn engine criteria source %)
-        cost-fn  (memoize/lu (fn [val {:keys [get-avg]}] (catch-exc aux-fn  {:get-avg get-avg
-                                                                             :coord val})))
+        cost-fn   (memoize/memo (fn [val props] (catch-exc aux-fn (assoc props :coord val))))
         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
     (catch-exc
      greedy-search 20 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
