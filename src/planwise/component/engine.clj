@@ -3,7 +3,7 @@
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.sources :as sources-set]
-            [planwise.component.coverage.greedy-search :refer :all]
+            [planwise.component.coverage.greedy-search :as gs]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
             [planwise.component.coverage.rasterize :as rasterize]
@@ -316,19 +316,19 @@
 (defn- get-max-distance
   [coord {:keys [sources-data raster]} polygon]
   (if raster
-    (let [coverage (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))
+    (let [coverage (raster/create-raster (rasterize/rasterize polygon))
           vector (demand/get-coverage raster coverage)]
       (reduce
-       (fn [max next] (let [d (euclidean-distance coord (get-geo next raster))]
+       (fn [max next] (let [d (gs/euclidean-distance coord (gs/get-geo next raster))]
                         (if (> d max) d max))) 0 vector))
     (reduce
-     (fn [max next] (let [d (euclidean-distance coord next)] (if (> d max) d max)))
+     (fn [max next] (let [d (gs/euclidean-distance coord next)] (if (> d max) d max)))
      0 sources-data)))
 
 (defn count-under-geometry
   [engine polygon {:keys [raster original-sources source-set-id geom-set]}]
   (if raster
-    (let [coverage (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))]
+    (let [coverage (raster/create-raster (rasterize/rasterize polygon))]
       (demand/count-population-under-coverage raster coverage))
     (let [ids (set (map :id (sources-set/list-sources-under-coverage (:sources-set engine) source-set-id polygon)))]
       (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
@@ -339,10 +339,10 @@
   (if search-path
 
     (let [raster   (raster/read-raster search-path)
-          coverage-raster (raster/create-raster (rasterize/rasterize polygon {:res 1/1200}))]
+          coverage-raster (raster/create-raster (rasterize/rasterize polygon))]
       (demand/multiply-population-under-coverage! raster coverage-raster 0)
       (raster/write-raster raster search-path)
-      (get-demand {:raster raster} demand-quartiles))
+      (gs/get-saturated-locations {:raster raster} demand-quartiles))
 
     (coverage/locations-outside-polygon (:coverage engine) polygon get-update)))
 
@@ -369,7 +369,7 @@
                              :demand-quartiles demand-quartiles
                              :source-set-id (:source-set-id project)
                              :original-sources sources-data
-                             :sources-data (get-demand {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
+                             :sources-data (gs/get-saturated-locations {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
         algorithm (keyword coverage-algorithm)
         criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
         aux-fn    #(get-coverage engine criteria source %)
@@ -377,7 +377,7 @@
         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
     (when raster (raster/write-raster-file raster search-path))
     (catch-exc
-     greedy-search 20 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
+     gs/greedy-search 20 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
 
 (defn clear-project-cache
   [this project-id]
@@ -471,31 +471,32 @@
   ;;Efficiency
     ;;Images
 
-(defn generate-raster-sample
-  [coverage locations criteria]
-  (let [kilifi-pop (raster/read-raster "data/kilifi.tif")
-        new-pop    (raster/read-raster "data/cerozing.tif")
-        dataset-fn (fn [loc] (let [polygon (coverage/compute-coverage coverage loc criteria)] (rasterize/rasterize polygon {:res 1/1200})))
-        get-index  (fn [dataset] (vec (demand/get-coverage kilifi-pop (raster/create-raster dataset))))
-        same-values (fn [set] (map (fn [i] [i (aget (:data kilifi-pop) i)]) set))
-        set         (reduce into (mapv #(-> % dataset-fn get-index same-values) locations))
-        new-data    (reduce (fn [new-data [idx val]] (assoc new-data idx val)) (vec (:data new-pop)) set)
-        raster      (raster/update-raster kilifi-pop (float-array new-data))]
-    raster))
-
-(defn generate-project
-  [raster {:keys [algorithm] :as criteria}]
-  (let [demand-quartiles (vec (demand/compute-population-quartiles raster))
-        provider-set-id {:walking-friction 5 :pgrouting-alpha 7
-                         :driving-friction 8 :simple-buffer 4}]
-    {:bbox '[(-3.9910888671875 40.2415275573733) (-2.3092041015625 39.0872802734376)]
-     :region-id 85, :config {:coverage {:filter-options (dissoc criteria :algorithm)}}
-     :provider-set-id (algorithm provider-set-id) :source-set-id 2 :owner-id 1
-     :engine-config {:demand-quartiles demand-quartiles
-                     :source-demand 1311728}
-     :coverage-algorithm (name algorithm)}))
-
 (comment
+  (defn generate-raster-sample
+    [coverage locations criteria]
+    (let [kilifi-pop (raster/read-raster "data/kilifi.tif")
+          new-pop    (raster/read-raster "data/cerozing.tif")
+          dataset-fn (fn [loc] (let [polygon (coverage/compute-coverage coverage loc criteria)] (rasterize/rasterize polygon)))
+          get-index  (fn [dataset] (vec (demand/get-coverage kilifi-pop (raster/create-raster dataset))))
+          same-values (fn [set] (map (fn [i] [i (aget (:data kilifi-pop) i)]) set))
+          set         (reduce into (mapv #(-> % dataset-fn get-index same-values) locations))
+          new-data    (reduce (fn [new-data [idx val]] (assoc new-data idx val)) (vec (:data new-pop)) set)
+          raster      (raster/create-raster-from-existing kilifi-pop (float-array new-data))]
+      raster))
+
+  (defn generate-project
+    [raster {:keys [algorithm] :as criteria}]
+    (let [demand-quartiles (vec (demand/compute-population-quartiles raster))
+          provider-set-id {:walking-friction 5 :pgrouting-alpha 7
+                           :driving-friction 8 :simple-buffer 4}]
+      {:bbox '[(-3.9910888671875 40.2415275573733) (-2.3092041015625 39.0872802734376)]
+       :region-id 85, :config {:coverage {:filter-options (dissoc criteria :algorithm)}}
+       :provider-set-id (algorithm provider-set-id) :source-set-id 2 :owner-id 1
+       :engine-config {:demand-quartiles demand-quartiles
+                       :source-demand 1311728}
+       :coverage-algorithm (name algorithm)}))
+
+
 ;;For visualizing effectiveness
   (def criteria {:algorithm :walking-friction, :walking-time 120})
   (def criteria {:algorithm :pgrouting-alpha :driving-time 60})

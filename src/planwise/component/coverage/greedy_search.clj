@@ -17,9 +17,13 @@
 ;---------------------------------------------------------------------------------------------------------
 ;Auxiliar functions
 
-(defn euclidean-distance [a b]
-  (Math/pow  (reduce + (map #(-> (- %1 %2) (Math/pow 2)) a b))
-             (/ 1 2)))
+(defn euclidean-distance-squared
+  [[a0 a1] [b0 b1]]
+  (+ (* (- b0 a0) (- b0 a0)) (* (- b1 a1) (- b1 a1))))
+
+(defn euclidean-distance
+  [a b]
+  (Math/sqrt (euclidean-distance-squared a b)))
 
 (defn pixel->coord
   [geotransform pixels-vec]
@@ -35,9 +39,9 @@
 
 (defn get-pixel
   [idx xsize]
-  (let [height (quot idx xsize)
-        width (mod idx xsize)]
-    [width height]))
+  (let [y (quot idx xsize)
+        x (mod idx xsize)]
+    [x y]))
 
 (defn get-geo
   [idx {:keys [xsize ysize geotransform]}]
@@ -48,7 +52,7 @@
   (let [[x y :as pixel-vec] (coord->pixel geotransform [lon lat])]
     (+ (* y xsize) x)))
 
-(defn get-centroid
+(defn get-weighted-centroid
   [set-points]
   (let [[r0 r1 total-w]  (reduce (fn [[r0 r1 partial-w] [l0 l1 w]]
                                    [(+ r0 (* w l0)) (+ r1 (* w l1)) (+ partial-w w)]) [0 0 0] set-points)]
@@ -56,13 +60,13 @@
       (map #(/ % total-w) [r0 r1])
       (first set-points))))
 
-(defn get-geo-centroid
+(defn get-centroid
   [set-points]
   (let [total (count set-points)
         [r0 r1] (reduce (fn [[r0 r1] [l0 l1]] [(+ r0 l0) (+ r1 l1)]) [0 0] set-points)]
     (if (pos? total) (map #(/ % total) [r0 r1]) (first set-points))))
 
-(defn get-demand
+(defn get-saturated-locations
   [{:keys [raster sources-data]} [_ b0 b1 b2 _ :as demand-quartiles]]
   (if raster
     (let [indexed-data (map-indexed vector (vec (:data raster)))
@@ -90,10 +94,8 @@
    (next-neighbour demand center radius (/ radius 100000)))
   ([demand center radius eps]
    (let [in-frontier? (fn [p] (neighbour-fn p radius))
-         set      (group-by (in-frontier? center) demand)
-         frontier (get set true)]
-     (get-centroid frontier))))
-
+         frontier     (filter (in-frontier? center) demand)]
+     (get-weighted-centroid frontier))))
 
 (defn update-demand
   [coverage-fn {:keys [sources-data raster]} demand-point demand avg-max]
@@ -108,7 +110,8 @@
 
       (let [division (group-by (is-neighbour? demand-point avg-max) demand)
             {:keys [location-info updated-demand]} (coverage-fn (drop-last demand-point) {:get-update demand})
-            demand*  (when raster (vec (clojure.set/intersection (set (get division false)) (set updated-demand))))]
+            demand*  nil]
+            ;(when raster (vec (clojure.set/intersection (set (get division false)) (set updated-demand))))]
         [location-info (or demand* updated-demand)])
 
       (loop [sum 0
@@ -119,7 +122,7 @@
         (if (<= (- avg-max sum) 0)
 
           (let [division (group-by (is-neighbour? center avg-max) demand)
-                geo-cent (get-geo-centroid (get division true))
+                geo-cent (get-centroid (get division true))
                 {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update demand})
                 demand*  (when raster (vec (clojure.set/intersection (set (get division false)) (set updated-demand))))]
             [location-info (or demand* updated-demand)])
@@ -136,18 +139,21 @@
                     step        (- radius next-radius)]
 
                 (if (and (> step 0) (pos? next-radius))
-                  (recur (+ sum step) next-radius next-center (get (group-by (is-neighbour? next-center next-radius) interior) true))
+                  (recur (+ sum step) next-radius next-center (filter (is-neighbour? next-center next-radius) demand))
                   (recur avg-max radius center interior))))))))))
 
 (defn get-locations
   [coverage-fn source from initial-set bound]
+;Add times for controlling loops
 
   (loop [times 0
          locations []
          from   (first initial-set)
-         demand (drop 1 initial-set)]
+         demand (rest initial-set)]
 
-    (if (or (nil? demand) (nil? from) (= times 20))
+    (println "times" times)
+
+    (if (or (nil? demand) (nil? from) (= times 10))
 
       (remove #(zero? (:coverage %)) locations)
 
@@ -157,7 +163,7 @@
 
 (defn greedy-search
   [sample {:keys [raster sources-data] :as source} coverage-fn demand-quartiles {:keys [n bounds]}]
-  (let [[max & remain :as initial-set]   (if raster (get-demand {:raster raster} demand-quartiles) sources-data)
+  (let [[max & remain :as initial-set]   (if raster (get-saturated-locations {:raster raster} demand-quartiles) sources-data)
         {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
         locations (get-locations coverage-fn source max initial-set (/ avg-max 2))]
     (if (empty? locations)

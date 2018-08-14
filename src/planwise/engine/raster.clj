@@ -78,7 +78,7 @@
         data      (read-band-data band 0 0 xsize ysize)]
     (->Raster projection geotransform xsize ysize data-type nodata data)))
 
-(defn update-raster
+(defn create-raster-from-existing
   [{:keys [geotransform projection xsize ysize data-type nodata]} new-data]
   (->Raster projection geotransform xsize ysize data-type nodata new-data))
 
