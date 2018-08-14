@@ -33,5 +33,5 @@
   (get-provider-suggestion [store project scenario]
     "Get list of providers suggestions.")
 
-  (get-providers-geom [store scenario project]
+  (get-providers-geom [store scenario project condition]
     "Retrieves providers coverage geometries"))

@@ -28,6 +28,7 @@
    :uri       (str "/api/scenarios/" id "/suggested-providers")})
 
 (defn- get-providers-geom
-  [id]
-  :method :get
-  :uri    (str "/api/scenarios/" id "/geometries"))
+  [id condition]
+  {:method :get
+   :params {:condition condition}
+   :uri    (str "/api/scenarios/" id "/geometries")})

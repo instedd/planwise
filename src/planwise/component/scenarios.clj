@@ -102,7 +102,7 @@
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
         ; providers
-        providers-data     (edn/read-string (:providers-data scenario))
+        providers-data     (:providers-data scenario)
         updated-data       (build-updated-data providers-data)
         updated-providers  (map #(update-provider-data % updated-data)
                                 (get-initial-providers store provider-set-id provider-set-version filter-options))
@@ -121,17 +121,19 @@
 
 (defn- get-initial-providers-geom
   [store project providers]
-  (reduce (fn [dic {:keys [id] :as provider}] (assoc  dic id (:geom (providers-set/get-coverage (:providers-set store)
+  (reduce (fn [dic {:keys [id] :as provider}] (assoc  dic id {:coverage-geom (:geom (providers-set/get-coverage
+                                                                                                (:providers-set store)
                                                                                                 id
                                                                                                 (:coverage-algorithm project)
-                                                                                                (get-in project [:config :coverage :filter-options])))))
+                                                                                                (get-in project [:config :coverage :filter-options])))}))
           {}
           providers))
 
+
 (defn get-providers-geom
-  [store scenario project]
-  (if (= (:label scenario) "initial")
-    (get-initial-providers-geom store project (read-string (:providers-data scenario)))
+  [store scenario project get-all?]
+  (if get-all?
+    (merge (get-initial-providers-geom store project (filter #(number? (:id %)) (:providers-data scenario))) (:new-providers-geom scenario))
     (:new-providers-geom scenario)))
 
 (defn list-scenarios
@@ -238,7 +240,7 @@
                   scenario          (get-scenario store scenario-id)
                   initial-providers (get-initial-providers-data store (:project-id scenario))
                   initial-sources   (get-initial-sources-data store (:project-id scenario))
-                  new-providers-geom (get-new-providers-geom store scenario-id)
+                  new-providers-geom (get-new-providers-geom store scenario-id project)
                   result            (engine/compute-scenario engine project (-> scenario
                                                                                 (assoc :providers-data initial-providers
                                                                                        :sources-data initial-sources
@@ -345,8 +347,8 @@
     (export-providers-data store scenario-id))
   (get-provider-suggestion [store project scenario]
     (get-provider-suggestion store project scenario))
-  (get-providers-geom [store scenario project]
-    (get-providers-geom store scenario project)))
+  (get-providers-geom [store scenario project condition]
+    (get-providers-geom store scenario project condition)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
