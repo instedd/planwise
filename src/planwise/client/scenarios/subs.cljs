@@ -66,3 +66,8 @@
  :scenarios.new-provider/computing-best-locations?
  (fn [db _]
    (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
+
+(rf/reg-sub
+ :scenarios/providers-geometries
+  (fn [db _]
+   (get-in db [:scenarios :geom])))
