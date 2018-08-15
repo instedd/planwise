@@ -120,12 +120,8 @@
 (defmethod leaflet-layer :marker-layer [[_ props & children]]
   (let [layer (.featureGroup js/L)
         points (:points props)
-        ;onclick-fn (:onclick-fn props)
-        ;attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
         attrs (dissoc props :points)]
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
-    ;(when onclick-fn
-    ;  (.on layer "click" onclick-fn))
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]

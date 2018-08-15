@@ -168,7 +168,6 @@
  :scenarios/no-suggested-providers
  in-scenarios
  (fn [db [_]]
-   (println "no-suggested-providers")
    (assoc-in db [:current-scenario :computing-best-locations :state] false)))
 
 (rf/reg-event-fx
