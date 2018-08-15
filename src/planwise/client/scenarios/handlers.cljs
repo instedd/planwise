@@ -299,4 +299,3 @@
  in-scenarios
  (fn [db [_ provider]]
    (assoc db :selected-provider nil)))
-

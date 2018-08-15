@@ -5,6 +5,7 @@
             [planwise.boundary.engine :as engine]
             [planwise.boundary.jobrunner :as jr]
             [planwise.boundary.coverage :as coverage]
+            [planwise.util.exceptions :refer [catch-exception]]
             [planwise.model.scenarios :as model]
             [clojure.string :as str]
             [planwise.util.str :as util-str]
@@ -159,7 +160,10 @@
   (letfn [(task-fn []
             (info "Computing initial scenario" scenario-id)
             (let [engine (:engine store)
-                  result (engine/compute-initial-scenario engine project)]
+                  result (catch-exception
+                          #(db-update-error-message (get-db store) {:id scenario-id
+                                                                    :msg (.getMessage %)})
+                          engine/compute-initial-scenario engine project)]
               (info "Initial scenario computed" result)
               ;; TODO check if scenario didn't change from result
               (db-update-scenario-state! (get-db store)
@@ -202,7 +206,6 @@
   (let [db (get-db store)
         project-id (:id project)
         label (:label (get-scenario store id))]
-        ;changeset (mapv #(compute-change-coverage (:engine store) project %) changeset)
     (assert (s/valid? ::model/change-set changeset))
     (assert (not= label "initial"))
     (db-update-scenario! db
@@ -233,7 +236,10 @@
                   initial-providers (get-initial-providers-data store (:project-id scenario))
                   initial-sources   (get-initial-sources-data store (:project-id scenario))
                   new-providers-geom (get-new-providers-geom store scenario-id project)
-                  result            (engine/compute-scenario engine project (-> scenario
+                  result            (catch-exception
+                                     #(db-update-error-message (get-db store) {:id scenario-id
+                                                                               :msg (.getMessage %)})
+                                     engine/compute-scenario engine project (-> scenario
                                                                                 (assoc :providers-data initial-providers
                                                                                        :sources-data initial-sources
                                                                                        :new-providers-geom new-providers-geom)))]
@@ -316,6 +322,7 @@
   (engine/search-optimal-location (:engine store) project  {:raster raster
                                                             :sources-data sources-data
                                                             :sources-set-id sources-set-id}))
+
 
 (defrecord ScenariosStore [db engine jobrunner providers-set sources-set]
   boundary/Scenarios

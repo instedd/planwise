@@ -94,3 +94,8 @@ SELECT "sources-data" FROM scenarios
 -- :name db-get-new-providers-geom :? :1
 SELECT "new-providers-geom" FROM scenarios
   WHERE id = :scenario-id;
+
+-- :name db-update-error-message :!
+UPDATE scenarios
+    SET "error-message" = :msg
+    WHERE id = :id;

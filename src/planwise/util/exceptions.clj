@@ -1,6 +1,6 @@
 (ns planwise.util.exceptions)
 
-(defn catch-exc
+(defn catch-exception
   [response-fn function & params]
   (try
     (apply function params)

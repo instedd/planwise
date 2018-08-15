@@ -11,7 +11,7 @@
             [clojure.edn :refer [read-string]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
-            [planwise.util.exceptions :refer [catch-exc]]
+            [planwise.util.exceptions :refer [catch-exception]]
             [integrant.core :as ig]
             [clojure.core.memoize :as memoize]
             [clojure.java.io :as io]
@@ -362,11 +362,10 @@
         algorithm (keyword coverage-algorithm)
         criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
         aux-fn    #(get-coverage engine criteria source %)
-        cost-fn   (memoize/memo (fn [val props] (catch-exc nil aux-fn (assoc props :coord val))))
+        cost-fn   (fn [val props] (catch-exception nil aux-fn (assoc props :coord val)))
         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
     (when raster (raster/write-raster-file raster search-path))
-    (catch-exc nil
-     gs/greedy-search 10 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
+    (gs/greedy-search 10 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
 
 (defn clear-project-cache
   [this project-id]
