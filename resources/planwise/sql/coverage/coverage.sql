@@ -2,4 +2,7 @@
 SELECT ST_AsGeoJSON(:geom) AS geom;
 
 -- :name db-inside-geometry :? :1
-SELECT (ST_Within(ST_SetSRID(ST_MakePoint(:lon,:lat),4326), :geom)) AS cond;
+SELECT ST_Within(ST_SetSRID(ST_MakePoint(:lon,:lat),4326), :geom) AS cond;
+
+-- :name db-get-max-distance :? :1
+SELECT ST_MaxDistance(:geom, :geom) AS maxdist;

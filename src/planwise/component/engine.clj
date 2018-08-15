@@ -313,18 +313,6 @@
       (compute-scenario-by-point engine project scenario)
       (compute-scenario-by-raster engine project scenario))))
 
-(defn- get-max-distance
-  [coord {:keys [sources-data raster]} polygon]
-  (if raster
-    (let [coverage (raster/create-raster (rasterize/rasterize polygon))
-          vector (demand/get-coverage raster coverage)]
-      (reduce
-       (fn [max next] (let [d (gs/euclidean-distance coord (gs/get-geo next raster))]
-                        (if (> d max) d max))) 0 vector))
-    (reduce
-     (fn [max next] (let [d (gs/euclidean-distance coord next)] (if (> d max) d max)))
-     0 sources-data)))
-
 (defn count-under-geometry
   [engine polygon {:keys [raster original-sources source-set-id geom-set]}]
   (if raster
@@ -355,7 +343,7 @@
         info   {:coverage population-reacheable
                 :coverage-geom (:geom (coverage/as-geojson (:coverage engine) polygon))
                 :location {:lat lat :lon lon}}]
-    (cond get-avg {:max (get-max-distance coord source polygon)}
+    (cond get-avg {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
           get-update {:location-info info :updated-demand (get-demand-source-updated engine source polygon get-update)}
           :other info)))
 

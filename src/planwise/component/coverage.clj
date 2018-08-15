@@ -142,9 +142,13 @@
 (defn locations-outside-polygon
   [{:keys [db]} polygon locations]
   (remove (fn [[lon lat _]] (:cond (db-inside-geometry (:spec db) {:lon lon
-                                                                   :lat lat
-                                                                   :geom polygon})))
-          locations))
+                                                                             :lat lat
+                                                                             :geom polygon})))
+                    locations))
+
+(defn get-max-distance-from-geometry
+  [{:keys [db] :as cov} polygon]
+  (:maxdist (db-get-max-distance (:spec db) {:geom polygon})))
 
 (def default-grid-align-options
   {:ref-coords {:lat 0 :lon 0}
@@ -166,7 +170,9 @@
   (as-geojson [this geometry]
     (as-geojson this geometry))
   (locations-outside-polygon [this polygon locations]
-    (locations-outside-polygon this polygon locations)))
+    (locations-outside-polygon this polygon locations))
+  (get-max-distance-from-geometry [this geometry]
+    (get-max-distance-from-geometry this geometry)))
 
 
 (defmethod ig/init-key :planwise.component/coverage
