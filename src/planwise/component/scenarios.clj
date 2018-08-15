@@ -141,7 +141,8 @@
 (defn create-scenario
   [store project {:keys [name changeset]}]
   (assert (s/valid? ::model/change-set changeset))
-  (let [result (db-create-scenario! (get-db store)
+  (let [changeset (map #(assoc % :provider-id (str (java.util.UUID/randomUUID))) changeset)
+        result (db-create-scenario! (get-db store)
                                     {:name name
                                      :project-id (:id project)
                                      :investment (sum-investments changeset)
