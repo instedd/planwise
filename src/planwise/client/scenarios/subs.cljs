@@ -12,6 +12,11 @@
    (get-in db [:scenarios :view-state])))
 
 (rf/reg-sub
+ :scenarios/message-error
+ (fn [db _]
+   (get-in db [:scenarios :raise-error])))
+
+(rf/reg-sub
  :scenarios/rename-dialog
  (fn [db _]
    (get-in db [:scenarios :rename-dialog])))

@@ -5,6 +5,7 @@
             [leaflet.core :as l]
             [planwise.client.config :as config]
             [planwise.client.scenarios.db :as db]
+            [planwise.client.dialog :refer [dialog]]
             [planwise.client.ui.common :as ui]
             [planwise.client.routes :as routes]
             [planwise.client.styles :as styles]
@@ -15,6 +16,13 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
+
+(defn raise-alert
+  [state error-msg]
+  (dialog {:open? (= state :raise-error)
+           :title "Oops..something went wrong"
+           :content [:p error-msg]
+           :accept-fn #(dispatch [:scenarios/message-delivered])}))
 
 (defn- provider-from-changeset?
   [provider]
@@ -48,9 +56,8 @@
   (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
 
 (defn simple-map
-  [{:keys [bbox]} scenario]
-  (let [state               (subscribe [:scenarios/view-state])
-        index               (subscribe [:scenarios/changeset-index])
+  [{:keys [bbox]} scenario state]
+  (let [index               (subscribe [:scenarios/changeset-index])
         selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
         geometries          (subscribe [:scenarios/providers-geometries])
@@ -70,10 +77,10 @@
                                            :position @position
                                            :on-position-changed #(reset! position %)
                                            :on-zoom-changed #(reset! zoom %)
-                                           :on-click (cond  (= @state :new-provider) add-point)
+                                           :on-click (cond  (= state :new-provider) add-point)
                                            :controls []
                                            :initial-bbox bbox
-                                           :pointer-class (cond (= @state :new-provider) "crosshair-pointer")}
+                                           :pointer-class (cond (= state :new-provider) "crosshair-pointer")}
                              mapping/default-base-tile-layer
                              (when pending-demand-raster
                                [:wms-tile-layer {:url config/mapserver-url
@@ -222,6 +229,8 @@
 (defn display-current-scenario
   [current-project current-scenario]
   (let [read-only? (subscribe [:scenarios/read-only?])
+        state      (subscribe [:scenarios/view-state])
+        message-error (subscribe [:scenarios/message-error])
         created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
@@ -232,7 +241,7 @@
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)
                              {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario]
+                              :main [simple-map current-project current-scenario @state]
                               :title [:ul {:class-name "breadcrumb-menu"}
                                       [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
@@ -241,6 +250,7 @@
        (if @read-only?
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])
+       [raise-alert @state @message-error]
        [:div {:class-name "fade"}]
        [changeset/listing-component @created-providers]
        [:div {:class-name "fade inverted"}]
@@ -251,7 +261,6 @@
 (defn scenarios-page
   []
   (let [page-params (subscribe [:page-params])
-        state (subscribe [:scenarios/view-state])
         current-scenario (subscribe [:scenarios/current-scenario])
         current-project  (subscribe [:projects2/current-project])]
     (r/create-class

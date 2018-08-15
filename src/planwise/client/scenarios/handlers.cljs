@@ -167,8 +167,29 @@
 (rf/reg-event-db
  :scenarios/no-suggested-providers
  in-scenarios
+ (fn [db [_ {:keys [response]}]]
+   (-> db (assoc-in [:current-scenario :computing-best-locations :state] false)
+       (assoc :view-state :raise-error
+              :raise-error (:error response)))))
+
+(rf/reg-event-db
+ :scenarios/message-delivered
+ in-scenarios
  (fn [db [_]]
-   (assoc-in db [:current-scenario :computing-best-locations :state] false)))
+   (-> db (assoc-in [:current-scenario :computing-best-locations :state] false)
+       (assoc :view-state :current-scenario
+              :raise-error nil))))
+
+(rf/reg-event-fx
+ :scenarios/raise-error
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   {;FIXME: Issue #456
+    :db  (assoc-in db [:current-scenario :computing-best-locations :state] true)
+    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
+                :on-success [:scenarios/suggested-providers]
+                :on-failure [:scenarios/no-suggested-providers]
+                :key        request-key)}))
 
 (rf/reg-event-fx
  :scenarios/create-provider
@@ -278,3 +299,4 @@
  in-scenarios
  (fn [db [_ provider]]
    (assoc db :selected-provider nil)))
+
