@@ -55,6 +55,47 @@ public class Algorithm {
         return (long) sum;
     }
 
+    public static int[] getPointsOfCoverage(float[] popData,
+                                            int popStride,
+                                            float popNodata,
+                                            byte[] covData,
+                                            int covStride,
+                                            byte covNodata,
+                                            int popLeft,
+                                            int popTop,
+                                            int popRight,
+                                            int popBottom,
+                                            int covLeft,
+                                            int covTop){
+
+        int width = popRight - popLeft + 1;
+        int height = popTop - popBottom + 1;
+        int popSkip = popStride - width;
+        int covSkip = covStride - width;
+        int popIdx = popTop * popStride + popLeft;
+        int covIdx = covTop * covStride + covLeft;
+
+        int [] ind = new int[popData.length];
+        int j = 0;
+
+        for (int y = popTop; y <= popBottom; y++) {
+            for (int x = popLeft; x <= popRight; x++) {
+                if (popData[popIdx] != popNodata && covData[covIdx] != covNodata) {
+                    ind[j]= popIdx;
+                    j ++;
+                }
+                popIdx++;
+                covIdx++;
+            }
+            popIdx += popSkip;
+            covIdx += covSkip;
+        }
+
+        int[] res = Arrays.copyOfRange(ind, 0, j);
+        return res;
+    }
+
+
     public static void multiplyPopulationUnderCoverage(float[] popData,
                                                        int popStride,
                                                        float popNodata,

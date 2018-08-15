@@ -3,12 +3,15 @@
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.sources :as sources-set]
+            [planwise.component.coverage.greedy-search :refer :all]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
+            [planwise.component.coverage.rasterize :as rasterize]
             [clojure.string :refer [join]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
             [integrant.core :as ig]
+            [clojure.core.memoize :as memoize]
             [clojure.java.io :as io]
             [taoensso.timbre :as timbre]))
 
@@ -304,6 +307,43 @@
       (compute-scenario-by-point engine project scenario)
       (compute-scenario-by-raster engine project scenario))))
 
+
+(defn- get-max-distance
+  [coord vector raster]
+  (reduce
+   (fn [max next] (let [d (euclidean-distance coord (get-geo next raster))]
+                    (if (> d max) d max))) 0 vector))
+
+(defn- get-resolution
+  [{:keys [geotransform]}]
+  (-> geotransform vec second))
+
+(defn coverage-fn
+  [coverage {:keys [idx coord res get-avg]} {:keys [data geotransform xsize ysize] :as raster} criteria]
+  (let [[lon lat :as coord] (or coord (get-geo idx raster))
+        polygon (coverage/compute-coverage coverage {:lat lat :lon lon} criteria)
+        coverage (raster/create-raster (rasterize/rasterize polygon {:res res}))
+        population-reacheable (demand/count-population-under-coverage raster coverage)]
+    (if get-avg
+      {:max (get-max-distance coord (demand/get-coverage raster coverage) raster)}
+      {:coverage population-reacheable
+       :location coord})))
+
+(defn search-optimal-location
+  ([engine project scenario]
+   (search-optimal-location engine project scenario (raster/read-raster (str "data/" (:raster scenario) ".tif"))))
+  ([{:keys [coverage] :as engine} {:keys [engine-config config provider-set-id coverage-algorithm] :as project} scenario raster]
+   (let [algorithm     (keyword coverage-algorithm)
+         demand-quartiles (:demand-quartiles engine-config)
+         criteria         (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
+         aux-fn          #(coverage-fn coverage % raster criteria)
+         cost-fn  (memoize/lu (fn [val {:keys [format get-avg]}] (catch-exc aux-fn  {:get-avg get-avg
+                                                                                     format (if (= :idx format) (first val) val)
+                                                                                     :res (get-resolution raster)})))
+         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
+     (catch-exc
+      greedy-search 20 raster cost-fn demand-quartiles {:bounds bounds :n 100}))))
+
 (defn clear-project-cache
   [this project-id]
   (let [scenarios-path (str "data/scenarios/" project-id)]
@@ -316,7 +356,11 @@
   (clear-project-cache [engine project]
     (clear-project-cache engine project))
   (compute-scenario [engine project scenario]
-    (compute-scenario engine project scenario)))
+    (compute-scenario engine project scenario))
+  (search-optimal-location [engine project scenario]
+    (search-optimal-location engine project scenario))
+  (search-optimal-location [engine project scenario raster]
+    (search-optimal-location engine project scenario raster)))
 
 (defmethod ig/init-key :planwise.component/engine
   [_ config]
@@ -341,5 +385,104 @@
 
   (compute-initial-scenario (new-engine) (projects2/get-project projects2 5))
   (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 30))
-
   nil)
+
+(comment
+  ;REPL testing
+  ;Correctnes of coverage
+
+  (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
+  (def criteria {:algorithm :simple-buffer :distance 20})
+  (def val 1072404)
+  (def f (fn [val] (engine/coverage-fn (:coverage engine) {:idx val} raster criteria)))
+  (f val) ;idx:  1072404 | total:  17580.679855613736  |demand:  17580
+          ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
+)
+
+(comment
+    ;REPL testing
+    ;Timing
+        ;Assuming computed providers
+
+  (def projects2 (:planwise.component/projects2 integrant.repl.state/system))
+  (def scenarios (:planwise.component/scenarios integrant.repl.state/system))
+  (def providers-set (:planwise.component/providers-set integrant.repl.state/system))
+  (def coverage (:planwise.component/coverage integrant.repl.state/system))
+  (defn new-engine []
+    (map->Engine {:providers-set providers-set :coverage coverage}))
+
+  (new-engine)
+  (require '[planwise.boundary.scenarios :as scenarios])
+
+    ;Criteria: walking friction
+  (def project   (projects2/get-project projects2 51))
+  (def scenario (scenarios/get-scenario scenarios 362))
+  (time (search-optimal-location (new-engine) project scenario)); "Elapsed time: 30125.428086 msecs"
+
+    ;Criteria: driving friction
+  (def project   (projects2/get-project projects2 57))
+  (def scenario (scenarios/get-scenario scenarios 399))
+  (time (search-optimal-location (new-engine) project scenario));"Elapsed time: 28535.980406 msecs"
+
+    ;Criteria: pg-routing
+  (def project   (projects2/get-project projects2 53))
+  (def scenario  (scenarios/get-scenario scenarios 380))
+  (time (search-optimal-location (new-engine) project scenario)); "Elapsed time: 16058.839293 msecs"
+
+  ;Criteria: simple buffer
+  (def project   (projects2/get-project projects2 55))
+  (def scenario  (scenarios/get-scenario scenarios 382))
+  (time (search-optimal-location (new-engine) project scenario)));"Elapsed time: 36028.555081 msecs"
+
+;Testing over Kilifi
+  ;;Efficiency
+    ;;Images
+
+(defn generate-raster-sample
+  [coverage locations criteria]
+  (let [kilifi-pop (raster/read-raster "data/kilifi.tif")
+        new-pop    (raster/read-raster "data/cerozing.tif")
+        dataset-fn (fn [loc] (let [polygon (coverage/compute-coverage coverage loc criteria)] (rasterize/rasterize polygon {:res 1/1200})))
+        get-index  (fn [dataset] (vec (demand/get-coverage kilifi-pop (raster/create-raster dataset))))
+        same-values (fn [set] (map (fn [i] [i (aget (:data kilifi-pop) i)]) set))
+        set         (reduce into (mapv #(-> % dataset-fn get-index same-values) locations))
+        new-data    (reduce (fn [new-data [idx val]] (assoc new-data idx val)) (vec (:data new-pop)) set)
+        raster      (raster/update-raster kilifi-pop (float-array new-data))]
+    raster))
+
+(defn generate-project
+  [raster {:keys [algorithm] :as criteria}]
+  (let [demand-quartiles (vec (demand/compute-population-quartiles raster))
+        provider-set-id {:walking-friction 5 :pgrouting-alpha 7
+                         :driving-friction 8 :simple-buffer 4}]
+    {:bbox '[(-3.9910888671875 40.2415275573733) (-2.3092041015625 39.0872802734376)]
+     :region-id 85, :config {:coverage {:filter-options (dissoc criteria :algorithm)}}
+     :provider-set-id (algorithm provider-set-id) :source-set-id 2 :owner-id 1
+     :engine-config {:demand-quartiles demand-quartiles
+                     :source-demand 1311728}
+     :coverage-algorithm (name algorithm)}))
+
+(comment
+;;For visualizing effectiveness
+  (def criteria {:algorithm :walking-friction, :walking-time 120})
+  (def criteria {:algorithm :pgrouting-alpha :driving-time 60})
+  (def criteria {:algorithm :driving-friction :driving-time 90})
+
+ ;Test 0
+  (def locations0 [{:lon 39.672257821715334, :lat -3.8315073359981278}])
+  (def raster-test0 (generate-raster-sample coverage locations criteria))
+
+  ;Test 1
+  (def locations1 [{:lon 39.863 :lat -3.097} {:lon 39.672257821715334, :lat -3.8315073359981278}])
+  (def raster-test1 (generate-raster-sample coverage locations1 criteria))
+
+  ;Test 2
+  (def locations2 [{:lon 39.672257821715334, :lat -3.8315073359981278} {:lon 39.863 :lat -3.097} {:lon 39.602 :lat -3.830}])
+  (def raster-test2 (generate-raster-sample coverage locations2 criteria))
+
+  ;Test 3
+  (def locations3 [{:lon 39.672257821715334, :lat -3.8315073359981278} {:lon 39.863 :lat -3.097} {:lon 39.479 :lat -3.407}])
+  (def raster-test3 (generate-raster-sample coverage locations3 criteria))
+
+  (def project-test (generate-project raster-test criteria))
+  (search-optimal-location engine project-test {} raster-test))
