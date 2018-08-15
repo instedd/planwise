@@ -159,7 +159,6 @@ header.mdc-toolbar {
 }
 
 
-
 #top-row a {
   @include link-color(#9a9a9a);
 }
@@ -343,12 +342,14 @@ form.vertical, .fields-vertical {
     border: none;
     border-top: 1px solid #e6e6e6;
   }
+  /*
   .btn-floating {
     position: absolute;
     right: 1rem;
     margin-top: -2.4rem;
     z-index: 2;
   }
+  */
   .scroll-list {
     max-height: 280px;
     width: 100%;
@@ -575,4 +576,70 @@ form.vertical, .fields-vertical {
 }
 .message-margin{
  margin-bottom: 7px;
+}
+.crosshair-pointer {
+  cursor: crosshair;
+}
+
+.info-computing-best-location {
+  background-color: #404040;
+  margin: 7px 15px;
+  padding: 7px 10px;
+  color: #FFF;
+  font-weight: 500;
+}
+
+.border-btn-floating {
+    position: absolute;
+    right: 1rem;
+    margin-top: -2.5rem;
+    z-index: 2;
+    border-radius: 50%;
+    padding: 3px;
+
+    .btn-floating {
+        z-index: 2;
+        border: 1px solid #FFF;
+        box-shadow: none;
+    }
+}
+
+.border-btn-floating-animated {
+    background: linear-gradient(0deg, #ff7710, #FFF, #FFF);
+    animation: rotate-background .5s ease 1 forwards;
+
+    animation-iteration-count: infinite;
+    -moz-animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    -o-animation-iteration-count: infinite;
+}
+
+@keyframes rotate-background {
+  0% {
+    background: linear-gradient(0deg, #ff7710 , #FFF, #FFF);
+  }
+  12% {
+    background: linear-gradient(45deg, #ff7710 , #FFF, #FFF);
+  }
+  25% {
+    background: linear-gradient(90deg, #ff7710 , #FFF, #FFF);
+  }
+  37% {
+    background: linear-gradient(135deg, #ff7710 , #FFF, #FFF);
+  }
+  50% {
+    background: linear-gradient(180deg, #ff7710 , #FFF, #FFF);
+  }
+  62% {
+    background: linear-gradient(225deg, #ff7710 , #FFF, #FFF);
+  }
+  75% {
+    background: linear-gradient(270deg, #ff7710 , #FFF, #FFF);
+  }
+  82% {
+    background: linear-gradient(315deg, #ff7710 , #FFF, #FFF);
+  }
+  100% {
+    background: linear-gradient(360deg, #ff7710 , #FFF, #FFF);
+  }
 }

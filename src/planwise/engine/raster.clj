@@ -65,6 +65,23 @@
     (throw (ex-info "Failed to open raster file"
                     {:filename path}))))
 
+(defn create-raster
+  [dataset]
+  (let [projection   (.GetProjection dataset)
+        geotransform (.GetGeoTransform dataset)
+        raster-count (.GetRasterCount dataset)
+        band      (.GetRasterBand dataset 1)
+        data-type (.GetRasterDataType band)
+        xsize     (.GetXSize band)
+        ysize     (.GetYSize band)
+        nodata    (read-nodata-value band)
+        data      (read-band-data band 0 0 xsize ysize)]
+    (->Raster projection geotransform xsize ysize data-type nodata data)))
+
+(defn create-raster-from-existing
+  [{:keys [geotransform projection xsize ysize data-type nodata]} new-data]
+  (->Raster projection geotransform xsize ysize data-type nodata new-data))
+
 (defn read-raster
   "Reads a raster file and returns a Raster record with the data from the
   specified band number (defaults to 1)"

@@ -54,7 +54,8 @@ UPDATE "scenarios"
       "demand-coverage" = :demand-coverage,
       "state" = :state,
       "providers-data" = :providers-data,
-      "sources-data" = :sources-data
+      "sources-data" = :sources-data,
+      "new-providers-geom" = :new-providers-geom
   WHERE "id" = :id;
 
 
@@ -89,3 +90,7 @@ SELECT "providers-data" FROM scenarios
 SELECT "sources-data" FROM scenarios
   WHERE "project-id" = :project-id
   AND label = 'initial';
+
+-- :name db-get-new-providers-geom :? :1
+SELECT "new-providers-geom" FROM scenarios
+  WHERE id = :scenario-id;

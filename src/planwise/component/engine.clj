@@ -3,12 +3,17 @@
             [planwise.boundary.projects2 :as projects2]
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.sources :as sources-set]
+            [planwise.component.coverage.greedy-search :as gs]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
+            [planwise.component.coverage.rasterize :as rasterize]
             [clojure.string :refer [join]]
+            [clojure.edn :refer [read-string]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
+            [planwise.util.exceptions :refer [catch-exc]]
             [integrant.core :as ig]
+            [clojure.core.memoize :as memoize]
             [clojure.java.io :as io]
             [taoensso.timbre :as timbre]))
 
@@ -150,8 +155,9 @@
                                   id-sources-under-coverage (set (map :id (fn-sources-under provider)))         ; create set with sources' id
                                   sources-under-coverage    (fn-select-by-id sources id-sources-under-coverage) ; updated sources under coverage
                                   total-demand              (sum-map sources-under-coverage :quantity)        ; total demand requested to current provider
-                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)]
-                              {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
+                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)
+                                  updated-provider          (assoc provider :satisfied (min (:capacity provider) total-demand))]
+                              {:providers (conj providers updated-provider)
                                :sources updated-sources}))
                           {:providers nil
                            :sources sources}
@@ -164,7 +170,8 @@
                                   (assoc provider :unsatisfied total-demand)))
                               (:providers result-step1))]
 
-    (let [updated-sources           (map #(select-keys % [:id :quantity]) (:sources result-step1)) ; persist only id and quantity
+    (let [initial-quantities        (reduce (fn [tree {:keys [id quantity] :as source}] (assoc tree (keyword (str id)) quantity)) {} sources)
+          updated-sources           (map (fn [s] (assoc (select-keys s [:id :quantity :lat :lon]) :initial-quantity ((keyword (-> s :id str)) initial-quantities))) (:sources result-step1))
           updated-providers         result-step2
           total-sources-demand      (sum-map sources :quantity)
           total-satisfied-demand    (sum-map updated-providers :satisfied)
@@ -186,7 +193,7 @@
       (compute-initial-scenario-by-raster engine project))))
 
 (defn compute-scenario-by-raster
-  [engine project {:keys [changeset providers-data] :as scenario}]
+  [engine project {:keys [changeset providers-data new-providers-geom] :as scenario}]
   (let [coverage        (:coverage engine)
         providers       (project-providers engine project)
         project-id      (:id project)
@@ -206,14 +213,14 @@
         props            {:project-capacity capacity
                           :provider-set-id  provider-set-id
                           :project-id       project-id
-                          :demand-raster    demand-raster}]
+                          :demand-raster    demand-raster}
     ;; Compute coverage of providers that are not yet computed
-    (doseq [change changeset]
-      (let [lat      (get-in change [:location :lat])
-            lon      (get-in change [:location :lon])
-            coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")]
-        (if (not (.exists (io/as-file coverage-path)))
-          (coverage/compute-coverage coverage {:lat lat :lon lon} (merge criteria {:raster coverage-path})))))
+        changes-geom    (reduce (fn [changes-geom {:keys [provider-id location] :as change}]
+                                  (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")
+                                        polygon  (when-not (.exists (io/as-file coverage-path)) (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path})))]
+                                    (if polygon
+                                      (assoc changes-geom (keyword provider-id) {:coverage-geom (:geom (coverage/as-geojson coverage polygon))})
+                                      changes-geom))) {} changeset)]
 
     ;; Compute demand from initial scenario
     ;; TODO refactor with initial-scenario loop
@@ -229,21 +236,17 @@
       {:raster-path      raster-path
        :pending-demand   pending-demand
        :covered-demand   (- source-demand pending-demand)
-       :providers-data   (into updated-providers updated-changes)})))
+       :providers-data   (into updated-providers updated-changes)
+       :new-providers-geom   (merge new-providers-geom changes-geom)})))
 
 (defn sources-under
   [engine set-id provider algorithm filter-options]
   (let [source-set-component (:sources-set engine)
         coverage-component (:coverage engine)]
-    (if (:location provider)
-      (let [criteria (merge {:algorithm (keyword algorithm)} filter-options)
-            geom     (coverage/compute-coverage coverage-component
-                                                {:lat (get-in provider [:location :lat])
-                                                 :lon (get-in provider [:location :lon])}
-                                                criteria)]
-        (sources-set/list-sources-under-coverage source-set-component
-                                                 set-id
-                                                 geom))
+    (if (:location provider) ; only providers in changeset have location (see function change-to-provider)
+      (sources-set/list-sources-under-coverage source-set-component
+                                               set-id
+                                               (:coverage-geom provider))
       (sources-set/list-sources-under-provider-coverage source-set-component
                                                         set-id
                                                         (:id provider)
@@ -251,17 +254,20 @@
                                                         filter-options))))
 
 (defn- change-to-provider
-  [change]
-  {:id (:provider-id change)
-   :capacity (:capacity change)
-   :location (:location change)})
+  [{:keys [provider-id location coverage-geom] :as change} coverage-fn]
+  (let [change (assoc (select-keys change [:capacity :location :coverage-geom]) :id provider-id)]
+    (if coverage-geom
+      change
+      (assoc change :coverage-geom (coverage-fn location)))))
 
 (defn compute-scenario-by-point
-  [engine project {:keys [changeset providers-data sources-data] :as scenario}]
-  (let [providers        (map change-to-provider changeset)
-        sources          sources-data
-        algorithm        (:coverage-algorithm project)
+  [engine project {:keys [changeset providers-data sources-data new-providers-geom] :as scenario}]
+  (let [algorithm        (:coverage-algorithm project)
         filter-options   (get-in project [:config :coverage :filter-options])
+        criteria         (merge {:algorithm (keyword algorithm)} filter-options)
+        coverage-fn      (fn [provider] (coverage/compute-coverage (:coverage engine) provider criteria))
+        providers        (map #(change-to-provider % coverage-fn) changeset)
+        sources          sources-data
         fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))
         fn-filter-by-id  (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
         result-step1     (reduce ; over providers
@@ -285,17 +291,20 @@
                                   (assoc provider :unsatisfied total-demand)))
                               (concat providers-data (:providers result-step1)))]
 
-    (let [updated-sources           (:sources result-step1)
-          updated-providers         result-step2
-          total-sources-demand      (sum-map sources :quantity)
-          total-satisfied-demand    (sum-map updated-providers :satisfied)
-          total-unsatisfied-demand  (sum-map updated-providers :unsatisfied)]
+    (let [updated-sources          (:sources result-step1)
+          updated-providers        (map #(dissoc % :coverage-geom) result-step2)
+          as-geojson               (fn [geom] {:coverage-geom (:geom (coverage/as-geojson (:coverage engine) geom))})
+          changes-geom             (reduce (fn [tree {:keys [id coverage-geom]}] (when-not ((keyword id) tree) (assoc tree (keyword id) (as-geojson coverage-geom)))) new-providers-geom providers)
+          total-sources-demand     (sum-map sources :quantity)
+          total-satisfied-demand   (sum-map updated-providers :satisfied)
+          total-unsatisfied-demand (sum-map updated-providers :unsatisfied)]
 
       {:raster-path      nil
        :pending-demand   total-unsatisfied-demand
        :covered-demand   total-satisfied-demand
        :providers-data   updated-providers
-       :sources-data     updated-sources})))
+       :sources-data     updated-sources
+       :new-providers-geom (merge new-providers-geom changes-geom)})))
 
 (defn compute-scenario
   [engine project scenario]
@@ -303,6 +312,60 @@
     (if (= (:type source-set) "points")
       (compute-scenario-by-point engine project scenario)
       (compute-scenario-by-raster engine project scenario))))
+
+(defn count-under-geometry
+  [engine polygon {:keys [raster original-sources source-set-id geom-set]}]
+  (if raster
+    (let [coverage (raster/create-raster (rasterize/rasterize polygon))]
+      (demand/count-population-under-coverage raster coverage))
+    (let [ids (set (map :id (sources-set/list-sources-under-coverage (:sources-set engine) source-set-id polygon)))]
+      (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
+
+
+(defn get-demand-source-updated
+  [engine {:keys [raster sources-data search-path demand-quartiles]} polygon get-update]
+  (if search-path
+
+    (let [raster   (raster/read-raster search-path)
+          coverage-raster (raster/create-raster (rasterize/rasterize polygon))]
+      (demand/multiply-population-under-coverage! raster coverage-raster 0)
+      (raster/write-raster raster search-path)
+      (gs/get-saturated-locations {:raster raster} demand-quartiles))
+
+    (coverage/locations-outside-polygon (:coverage engine) polygon get-update)))
+
+(defn get-coverage
+  [engine criteria {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
+  (let [criteria              (if sources-data criteria (merge criteria {:raster search-path}))
+        [lon lat :as coord]   coord
+        polygon               (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
+        population-reacheable (count-under-geometry engine polygon source)
+        info   {:coverage population-reacheable
+                :coverage-geom (:geom (coverage/as-geojson (:coverage engine) polygon))
+                :location {:lat lat :lon lon}}]
+    (cond get-avg {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
+          get-update {:location-info info :updated-demand (get-demand-source-updated engine source polygon get-update)}
+          :other info)))
+
+(defn search-optimal-location
+  [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
+  (let [raster        (when raster (raster/read-raster (str "data/" (:raster source) ".tif")))
+        search-path   (when raster (files/create-temp-file (str "data/scenarios/" (:id project) "/coverage-cache/") "new-provider-" ".tif"))
+        demand-quartiles (:demand-quartiles engine-config)
+        source        (assoc source :raster raster
+                             :search-path search-path
+                             :demand-quartiles demand-quartiles
+                             :source-set-id (:source-set-id project)
+                             :original-sources sources-data
+                             :sources-data (gs/get-saturated-locations {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
+        algorithm (keyword coverage-algorithm)
+        criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
+        aux-fn    #(get-coverage engine criteria source %)
+        cost-fn   (memoize/memo (fn [val props] (catch-exc aux-fn (assoc props :coord val))))
+        bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
+    (when raster (raster/write-raster-file raster search-path))
+    (catch-exc
+     gs/greedy-search 10 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
 
 (defn clear-project-cache
   [this project-id]
@@ -316,7 +379,9 @@
   (clear-project-cache [engine project]
     (clear-project-cache engine project))
   (compute-scenario [engine project scenario]
-    (compute-scenario engine project scenario)))
+    (compute-scenario engine project scenario))
+  (search-optimal-location [engine project source]
+    (search-optimal-location engine project source)))
 
 (defmethod ig/init-key :planwise.component/engine
   [_ config]
@@ -341,5 +406,105 @@
 
   (compute-initial-scenario (new-engine) (projects2/get-project projects2 5))
   (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 30))
-
   nil)
+
+(comment
+  ;REPL testing
+  ;Correctnes of coverage
+
+  (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
+  (def criteria {:algorithm :simple-buffer :distance 20})
+  (def val 1072404)
+  (def f (fn [val] (engine/get-coverage (:coverage engine) {:idx val} raster criteria)))
+  (f val) ;idx:  1072404 | total:  17580.679855613736  |demand:  17580
+          ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
+)
+
+(comment
+    ;REPL testing
+    ;Timing
+        ;Assuming computed providers
+
+  (def projects2 (:planwise.component/projects2 integrant.repl.state/system))
+  (def scenarios (:planwise.component/scenarios integrant.repl.state/system))
+  (def providers-set (:planwise.component/providers-set integrant.repl.state/system))
+  (def coverage (:planwise.component/coverage integrant.repl.state/system))
+  (defn new-engine []
+    (map->Engine {:providers-set providers-set :coverage coverage}))
+
+  (new-engine)
+  (require '[planwise.boundary.scenarios :as scenarios])
+
+    ;Criteria: walking friction
+  (def project   (projects2/get-project projects2 51))
+  (def scenario (scenarios/get-scenario scenarios 362))
+  (time (search-optimal-location (new-engine) project scenario)); "Elapsed time: 30125.428086 msecs"
+
+    ;Criteria: driving friction
+  (def project   (projects2/get-project projects2 57))
+  (def scenario (scenarios/get-scenario scenarios 399))
+  (time (search-optimal-location (new-engine) project scenario));"Elapsed time: 28535.980406 msecs"
+
+    ;Criteria: pg-routing
+  (def project   (projects2/get-project projects2 53))
+  (def scenario  (scenarios/get-scenario scenarios 380))
+  (time (search-optimal-location (new-engine) project scenario)); "Elapsed time: 16058.839293 msecs"
+
+  ;Criteria: simple buffer
+  (def project   (projects2/get-project projects2 55))
+  (def scenario  (scenarios/get-scenario scenarios 382))
+  (time (search-optimal-location (new-engine) project scenario)));"Elapsed time: 36028.555081 msecs"
+
+;Testing over Kilifi
+  ;;Efficiency
+    ;;Images
+
+(comment
+  (defn generate-raster-sample
+    [coverage locations criteria]
+    (let [kilifi-pop (raster/read-raster "data/kilifi.tif")
+          new-pop    (raster/read-raster "data/cerozing.tif")
+          dataset-fn (fn [loc] (let [polygon (coverage/compute-coverage coverage loc criteria)] (rasterize/rasterize polygon)))
+          get-index  (fn [dataset] (vec (demand/get-coverage kilifi-pop (raster/create-raster dataset))))
+          same-values (fn [set] (map (fn [i] [i (aget (:data kilifi-pop) i)]) set))
+          set         (reduce into (mapv #(-> % dataset-fn get-index same-values) locations))
+          new-data    (reduce (fn [new-data [idx val]] (assoc new-data idx val)) (vec (:data new-pop)) set)
+          raster      (raster/create-raster-from-existing kilifi-pop (float-array new-data))]
+      raster))
+
+  (defn generate-project
+    [raster {:keys [algorithm] :as criteria}]
+    (let [demand-quartiles (vec (demand/compute-population-quartiles raster))
+          provider-set-id {:walking-friction 5 :pgrouting-alpha 7
+                           :driving-friction 8 :simple-buffer 4}]
+      {:bbox '[(-3.9910888671875 40.2415275573733) (-2.3092041015625 39.0872802734376)]
+       :region-id 85, :config {:coverage {:filter-options (dissoc criteria :algorithm)}}
+       :provider-set-id (algorithm provider-set-id) :source-set-id 2 :owner-id 1
+       :engine-config {:demand-quartiles demand-quartiles
+                       :source-demand 1311728}
+       :coverage-algorithm (name algorithm)}))
+
+
+;;For visualizing effectiveness
+  (def criteria {:algorithm :walking-friction, :walking-time 120})
+  (def criteria {:algorithm :pgrouting-alpha :driving-time 60})
+  (def criteria {:algorithm :driving-friction :driving-time 90})
+
+ ;Test 0
+  (def locations0 [{:lon 39.672257821715334, :lat -3.8315073359981278}])
+  (def raster-test0 (generate-raster-sample coverage locations criteria))
+
+  ;Test 1
+  (def locations1 [{:lon 39.863 :lat -3.097} {:lon 39.672257821715334, :lat -3.8315073359981278}])
+  (def raster-test1 (generate-raster-sample coverage locations1 criteria))
+
+  ;Test 2
+  (def locations2 [{:lon 39.672257821715334, :lat -3.8315073359981278} {:lon 39.863 :lat -3.097} {:lon 39.602 :lat -3.830}])
+  (def raster-test2 (generate-raster-sample coverage locations2 criteria))
+
+  ;Test 3
+  (def locations3 [{:lon 39.672257821715334, :lat -3.8315073359981278} {:lon 39.863 :lat -3.097} {:lon 39.479 :lat -3.407}])
+  (def raster-test3 (generate-raster-sample coverage locations3 criteria))
+
+  (def project-test (generate-project raster-test criteria))
+  (search-optimal-location engine project-test {} raster-test))

@@ -8,5 +8,9 @@
     "Computes the scenario for a project. It assumes the initial scenario was created.")
 
   (clear-project-cache [this project-id]
-    "Clears a project cache"))
+    "Clears a project cache")
+
+  (search-optimal-location
+    [engine project source]
+    "Given initial set returns suggestions for new provider"))
 

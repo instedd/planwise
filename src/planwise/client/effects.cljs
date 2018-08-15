@@ -102,6 +102,7 @@
                       (dissoc :key)
                       request->xhrio-options
                       ajax/ajax-request)]
+        ;FIXME: Issue #456
         (when key (swap! rf-db/app-db assoc-in key xhrio))))))
 
 

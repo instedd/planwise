@@ -221,6 +221,19 @@
          response {:total total :filtered total}]
      (if (str/blank? tags) response (assoc response :filtered (count-fn tags version))))))
 
+(defn get-radius-from-computed-coverage
+  [store {:keys [algorithm] :as criteria} provider-set-id]
+  (let [options (dissoc criteria :algorithm)]
+    {:avg-max (:avg (db-avg-max-distance (get-db store) {:algorithm (name algorithm)
+                                                         :provider-set-id provider-set-id
+                                                         :options (str options)}))}))
+
+(defn get-coverage
+  [store provider-id algorithm filter-options]
+  (db-find-provider-coverage (get-db store) {:provider-id provider-id
+                                             :algorithm algorithm
+                                             :options (pr-str filter-options)}))
+
 (defrecord ProvidersStore [db coverage]
   boundary/ProvidersSet
   (list-providers-set [store owner-id]
@@ -238,8 +251,11 @@
   (count-providers-filter-by-tags [store provider-set-id region-id tags]
     (count-providers-filter-by-tags store provider-set-id region-id tags))
   (count-providers-filter-by-tags [store provider-set-id region-id tags version]
-    (count-providers-filter-by-tags store provider-set-id region-id tags version)))
-
+    (count-providers-filter-by-tags store provider-set-id region-id tags version))
+  (get-radius-from-computed-coverage [store criteria provider-set-id]
+    (get-radius-from-computed-coverage store criteria provider-set-id))
+  (get-coverage [store provider-id algorithm filter-options]
+    (get-coverage store provider-id algorithm filter-options)))
 
 (defmethod ig/init-key :planwise.component/providers-set
   [_ config]

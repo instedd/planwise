@@ -42,3 +42,27 @@
    (keep-indexed (fn [i provider] (when (:action provider) {:provider provider :index i}))
                  (into (:providers current-scenario) (:changeset current-scenario)))))
 
+(rf/reg-sub
+ :scenarios.map/selected-provider
+ (fn [db _]
+   (get-in db [:scenarios :selected-provider])))
+
+(rf/reg-sub
+ :scenarios.new-provider/new-suggested-locations
+ (fn [db _]
+   (get-in db [:scenarios :current-scenario :suggested-locations])))
+
+(rf/reg-sub
+ :scenarios.new-provider/suggested-locations
+ (fn [_]
+   [(rf/subscribe [:scenarios/view-state])
+    (rf/subscribe [:scenarios.new-provider/new-suggested-locations])])
+ (fn [[view-state suggestions] _]
+   (if (= view-state :new-provider)
+     suggestions
+     nil)))
+
+(rf/reg-sub
+ :scenarios.new-provider/computing-best-locations?
+ (fn [db _]
+   (get-in db [:scenarios :current-scenario :computing-best-locations :state])))

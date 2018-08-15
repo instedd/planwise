@@ -47,7 +47,7 @@
                    (conj new-objects new-object)
                    (rest new-decls))))))))
 
-(defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn options-fn], :or {lat-fn :lat lon-fn :lon}}]
+(defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn options-fn onclick-fn mouseover-fn mouseout-fn], :or {lat-fn :lat lon-fn :lon}}]
   (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
         icon   (if icon-fn
                  (.divIcon js/L #js {:className (icon-fn point)})
@@ -58,10 +58,16 @@
         new-attrs (if (some? options-fn) (merge  attrs (options-fn point)) attrs)
         marker   (.marker js/L latLng (clj->js new-attrs))]
     (if popup-fn
-      (.bindPopup marker (popup-fn point))
-      marker)))
+      (.bindPopup marker (popup-fn point)))
+    (if onclick-fn
+      (.on marker "click" #(onclick-fn point)))
+    (if mouseover-fn
+      (.on marker "mouseover" #(mouseover-fn marker % point)))
+    (if mouseout-fn
+      (.on marker "mouseout" #(mouseout-fn marker % point)))
+    marker))
 
-(defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+(defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
   (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
         attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         clickable (boolean popup-fn)
@@ -71,8 +77,23 @@
                    (when style-fn (style-fn point)))
         marker    (.circleMarker js/L latLng (clj->js style))]
     (if popup-fn
-      (.bindPopup marker (popup-fn point))
-      marker)))
+      (.bindPopup marker (popup-fn point)))
+    (if mouseover-fn
+      (.on marker "mouseover" #(mouseover-fn point)))
+    (if mouseout-fn
+      (.on marker "mouseout" #(mouseout-fn point)))
+    marker))
+
+(defn create-polygon [points {:keys [lat-fn lon-fn style-fn popup-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+  (let [attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
+        clickable (boolean popup-fn)
+        style     (merge
+                   {:clickable clickable :radius 5}
+                   attrs
+                   (when style-fn (map style-fn points)))
+        latLngs (clj->js (map #(.latLng js/L (lat-fn %) (lon-fn %)) points))
+        polygon (.polygon js/L latLngs (clj->js style))]
+    polygon))
 
 (defn layer-type [layer-def]
   (first layer-def))
@@ -99,10 +120,8 @@
 (defmethod leaflet-layer :marker-layer [[_ props & children]]
   (let [layer (.featureGroup js/L)
         points (:points props)
-        onclick-fn (:onclick-fn props)
-        attrs (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
+        attrs (dissoc props :points)]
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
-    (.on layer "click" onclick-fn)
     layer))
 
 (defmethod leaflet-layer :point-layer [[_ props & children]]
@@ -119,6 +138,13 @@
         attrs      (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
     (.on layer "click" onclick-fn)
+    layer))
+
+(defmethod leaflet-layer :polygon-layer [[_ props & children]]
+  (let [layer      (.layerGroup js/L)
+        polygons   (:polygons props)
+        attrs  (dissoc props :polygons)]
+    (doseq [points polygons] (.addLayer layer (create-polygon points attrs)))
     layer))
 
 (defmethod leaflet-layer :geojson-layer [[_ props & children]]
@@ -219,7 +245,15 @@
   (let [state (reagent/state this)
         props (reagent/props this)
         max-bounds (:max-bounds props)
+        pointer-class (:pointer-class props)
         leaflet (:map state)]
+    ;pointer
+    (if (not (empty? (:pointer-class state)))
+      (.removeClass js/L.DomUtil (reagent/dom-node this) (:pointer-class state)))
+    (if (not (empty? pointer-class))
+      (.addClass js/L.DomUtil (reagent/dom-node this) pointer-class))
+    (reagent/set-state this {:pointer-class pointer-class})
+    ;max-bounds
     (when (not= max-bounds (:max-bounds state))
       (reagent/set-state this {:max-bounds max-bounds})
       (let [[[s w] [n e]] max-bounds

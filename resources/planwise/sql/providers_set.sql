@@ -87,3 +87,19 @@ INSERT INTO "providers_coverage"
        ("provider-id", "algorithm", "options", "geom", "raster")
        VALUES (:provider-id, :algorithm, :options, :geom, :raster)
        RETURNING "id";
+
+-- :name db-avg-max-distance :? :1
+SELECT AVG(ST_MaxDistance(geom, geom))
+	FROM providers_coverage pc
+	WHERE algorithm = :algorithm
+	AND pc."provider-id" IN (SELECT id FROM "providers" p WHERE p."provider-set-id" = :provider-set-id)
+	AND options = :options;
+
+-- :name db-find-provider-coverage :? :1
+SELECT ST_AsGeoJSON(p.geom) AS geom
+  FROM
+  (SELECT geom
+    FROM providers_coverage
+    WHERE "provider-id" = :provider-id
+      AND algorithm = :algorithm
+      AND options = :options) AS p;
