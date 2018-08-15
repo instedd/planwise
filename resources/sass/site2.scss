@@ -159,7 +159,6 @@ header.mdc-toolbar {
 }
 
 
-
 #top-row a {
   @include link-color(#9a9a9a);
 }
@@ -577,9 +576,9 @@ form.vertical, .fields-vertical {
 }
 .message-margin{
  margin-bottom: 7px;
+}
 .crosshair-pointer {
   cursor: crosshair;
-}
 }
 
 .info-computing-best-location {
