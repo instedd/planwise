@@ -54,15 +54,16 @@
  :scenarios/update-demand-information
  in-scenarios
  (fn [{:keys [db]} [_ scenario]]
-   (let [current-scenario (get-in db [:scenarios :current-scenario])
+   (let [current-scenario (:current-scenario db)
          error      (:error-message scenario)
          should-update    (= (:id current-scenario) (:id scenario))]
-     (if (and should-update (not error))
-       (merge {:db (assoc db :current-scenario
-                          (merge current-scenario (select-keys scenario demand-fields)))}
-              (dispatch-track-demand-information-if-needed scenario))
-       {:db   (assoc db :raise-error (-> (s/split error #":") last s/trim keyword)
-                     :view-state :raise-error)}))))
+     (cond (some? error) {:db (assoc db :raise-error (-> (s/split error #":") last s/trim keyword))
+                          :view-state :raise-error}
+           should-update
+           (merge {:db (assoc db :current-scenario
+                              (merge current-scenario (select-keys scenario demand-fields)))}
+                  (dispatch-track-demand-information-if-needed scenario))
+           :else {}))))
 
 (rf/reg-event-fx
  :scenarios/track-demand-information

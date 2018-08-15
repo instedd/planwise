@@ -87,7 +87,6 @@
 
 (defn list-sources-under-coverage
   [store source-set-id coverage-geom]
-  (println "geometry is " (string? coverage-geom))
   (let [key (if (catch-exception nil json/read-str coverage-geom) :coverage-geojson :coverage-geom)]
     (db-list-sources-under-coverage (get-db store) {:source-set-id source-set-id
                                                     key coverage-geom})))
