@@ -2,8 +2,8 @@
   (:require [planwise.engine.raster :as raster]
             [planwise.util.files :as files]
             [clojure.core.memoize :as memoize]
-            [planwise.component.coverage :as coverage]
-            [planwise.util.exceptions :refer [catch-exc]])
+            [planwise.component.coverage :as coverage])
+            ;[planwise.util.exceptions :refer [catch-exc]])
   (:import [java.lang.Math]
            [planwise.engine Algorithm]
            [org.gdal.gdalconst gdalconst]))
