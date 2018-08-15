@@ -350,7 +350,8 @@
 (defn search-optimal-location
   [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
   (let [raster        (when raster (raster/read-raster (str "data/" (:raster source) ".tif")))
-        search-path   (when raster (str "data/scenarios/" (:id project) "/coverage-cache/new-provider.tif"))
+        search-path   (when raster (files/create-temp-file (str "data/scenarios/" (:id project) "/coverage-cache/")
+                                                           "new-provider-" ".tif"))
         demand-quartiles (:demand-quartiles engine-config)
         source        (assoc source :raster raster
                              :search-path search-path
@@ -363,7 +364,7 @@
         aux-fn    #(get-coverage engine criteria source %)
         cost-fn   (memoize/memo (fn [val props] (catch-exc aux-fn (assoc props :coord val))))
         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
-    (when raster (raster/write-raster-file raster search-path))
+    (raster/write-raster-file raster search-path)
     (catch-exc
      gs/greedy-search 20 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
 

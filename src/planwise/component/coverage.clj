@@ -142,9 +142,9 @@
 (defn locations-outside-polygon
   [{:keys [db]} polygon locations]
   (remove (fn [[lon lat _]] (:cond (db-inside-geometry (:spec db) {:lon lon
-                                                                             :lat lat
-                                                                             :geom polygon})))
-                    locations))
+                                                                   :lat lat
+                                                                   :geom polygon})))
+          locations))
 
 (defn get-max-distance-from-geometry
   [{:keys [db] :as cov} polygon]
