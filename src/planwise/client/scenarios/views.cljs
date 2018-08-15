@@ -39,7 +39,7 @@
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
-  (str "<b>" (utils/escape-html name) "</b>"
+  (str "<b>" (utils/escape-html (str name)) "</b>"
        "<br> Original quantity: " initial-quantity
        "<br> Current quantity: " quantity))
 
