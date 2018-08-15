@@ -17,12 +17,16 @@
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
+(def messages
+  {:no-road-network "Location can not be reached from road network. Please try another."})
+
 (defn raise-alert
-  [state error-msg]
-  (dialog {:open? (= state :raise-error)
-           :title "Oops..something went wrong"
-           :content [:p error-msg]
-           :accept-fn #(dispatch [:scenarios/message-delivered])}))
+  [state key]
+  (let [message (or (when key (key messages)) "Please, load scenario again.")]
+    (dialog {:open? (= state :raise-error)
+             :title "Oops... something went wrong"
+             :content [:p message]
+             :accept-fn #(dispatch [:scenarios/message-delivered])})))
 
 (defn- provider-from-changeset?
   [provider]

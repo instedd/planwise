@@ -1,5 +1,6 @@
 (ns planwise.client.scenarios.handlers
   (:require [re-frame.core :refer [register-handler dispatch] :as rf]
+            [clojure.string :as s]
             [planwise.client.asdf :as asdf]
             [planwise.client.routes :as routes]
             [planwise.client.scenarios.api :as api]
@@ -51,14 +52,17 @@
 ;; the processing status
 (rf/reg-event-fx
  :scenarios/update-demand-information
+ in-scenarios
  (fn [{:keys [db]} [_ scenario]]
    (let [current-scenario (get-in db [:scenarios :current-scenario])
+         error      (:error-message scenario)
          should-update    (= (:id current-scenario) (:id scenario))]
-     (if should-update
-       (merge {:db (-> db (assoc-in [:scenarios :current-scenario]
-                                    (merge current-scenario (select-keys scenario demand-fields))))}
+     (if (and should-update (not error))
+       (merge {:db (assoc db :current-scenario
+                          (merge current-scenario (select-keys scenario demand-fields)))}
               (dispatch-track-demand-information-if-needed scenario))
-       {}))))
+       {:db   (assoc db :raise-error (-> (s/split error #":") last s/trim keyword)
+                     :view-state :raise-error)}))))
 
 (rf/reg-event-fx
  :scenarios/track-demand-information
@@ -176,20 +180,8 @@
  :scenarios/message-delivered
  in-scenarios
  (fn [db [_]]
-   (-> db (assoc-in [:current-scenario :computing-best-locations :state] false)
-       (assoc :view-state :current-scenario
-              :raise-error nil))))
-
-(rf/reg-event-fx
- :scenarios/raise-error
- in-scenarios
- (fn [{:keys [db]} [_]]
-   {;FIXME: Issue #456
-    :db  (assoc-in db [:current-scenario :computing-best-locations :state] true)
-    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
-                :on-success [:scenarios/suggested-providers]
-                :on-failure [:scenarios/no-suggested-providers]
-                :key        request-key)}))
+   (-> db (assoc :view-state :current-scenario
+                 :raise-error nil))))
 
 (rf/reg-event-fx
  :scenarios/create-provider
