@@ -89,7 +89,7 @@
       (is (= (:name scenario) (:name props)))
       (is (= (:project-id scenario) project-id))
       (is (= (:state scenario) "pending"))
-      (is (= (:changeset scenario) (:changeset props)))
+      (is (= (map #(dissoc % :provider-id) (:changeset scenario)) (map #(dissoc % :provider-id) (:changeset props))))
 
       ;; computes sum of investments of actions
       (is (= (:investment scenario) 15000M)))))
@@ -109,7 +109,7 @@
   (are [x] (s/valid? ::model/change-set x)
     []
     [{:action "create-provider" :provider-id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}}]
-    [{:action "create-provider" :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]))
+    [{:action "create-provider" :provider-id "new.2" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]))
 
 (deftest invalid-changeset
   (are [x] (not (s/valid? ::model/change-set x))
