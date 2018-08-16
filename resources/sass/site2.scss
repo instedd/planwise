@@ -158,6 +158,10 @@ header.mdc-toolbar {
   }
 }
 
+.gray-filter {
+filter: grayscale(100%);
+}
+
 
 #top-row a {
   @include link-color(#9a9a9a);

@@ -71,13 +71,13 @@
                                                                                  :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
-    (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario}]
-      (let [{:keys [initial-providers new-providers]} geometries
-            providers             (into providers changeset)
+    (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario} state]
+      (let [providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
             indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
-        [:div.map-container [l/map-widget {:zoom @zoom
+        [:div.map-container (when (= state :raise-error) {:class "gray-filter"})
+                            [l/map-widget {:zoom @zoom
                                            :position @position
                                            :on-position-changed #(reset! position %)
                                            :on-zoom-changed #(reset! zoom %)
