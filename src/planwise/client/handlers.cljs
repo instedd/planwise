@@ -2,9 +2,6 @@
   (:require [planwise.client.db :as db]
             [planwise.client.api :as api]
             [planwise.client.routes :as routes]
-            [planwise.client.projects.handlers :as projects]
-            [planwise.client.current-project.handlers :as current-project]
-            [planwise.client.datasets.handlers]
             [planwise.client.projects2.handlers]
             [planwise.client.providers-set.handlers]
             [planwise.client.sources.handlers]
@@ -24,12 +21,6 @@
     :db db/initial-db}))
 
 (defmulti on-navigate (fn [page params] page))
-
-(defmethod on-navigate :projects [page {id :id, section :section, token :token, :as page-params}]
-  (let [id (js/parseInt id)]
-    (if (= :access (keyword section))
-      {:dispatch [:current-project/access-project id token]}
-      {:dispatch [:current-project/navigate-project id section]})))
 
 (defmethod on-navigate :default [_ _]
   nil)
@@ -59,9 +50,6 @@
  :message-posted
  (fn [_ [_ message]]
    (cond
-     (= message "authenticated")
-     {:dispatch [:datasets/load-resourcemap-info]}
-
      (#{"react-devtools-content-script"
         "react-devtools-bridge"
         "react-devtools-detector"}
@@ -70,9 +58,3 @@
 
      true
      (rf/console :warn "Invalid message received " message))))
-
-(rf/reg-event-fx
- :tick
- (fn [_ [_ time]]
-   (when (= 0 (mod time 1000))
-     {:dispatch [:datasets/refresh-datasets time]})))

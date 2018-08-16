@@ -4,9 +4,6 @@
 (def global-config
   (aget js/window "_CONFIG"))
 
-(def resourcemap-url
-  (aget global-config "resourcemap-url"))
-
 (def jwe-token
   (aget global-config "jwe-token"))
 
@@ -18,9 +15,6 @@
 
 (def app-version
   (aget global-config "app-version"))
-
-(def facilities-default-capacity
-  (aget global-config "facilities-default-capacity"))
 
 (def calculate-demand
   (aget global-config "calculate-demand"))

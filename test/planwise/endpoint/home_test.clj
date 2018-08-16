@@ -19,7 +19,7 @@
 
 (def mock-maps-service
   (reify maps/Maps
-    (mapserver-url [service] "http://resourcemap")
+    (mapserver-url [service] "http://mapserver")
     (default-capacity [service] 1)
     (calculate-demand? [service] true)))
 
@@ -35,11 +35,12 @@
       (wrap-authorization (backends/session))))
 
 (def home-paths ["/"
-                 "/datasets"
-                 "/projects/1"
-                 "/projects/1/facilities"
-                 "/projects/1/transport"
-                 "/projects/1/scenarios"])
+                 "/providers"
+                 "/sources"
+                 "/projects2/1"
+                 "/projects2/1/scenarios"
+                 "/projects2/1/settings"
+                 "/projects2/1/scenarios/1"])
 
 (deftest home-endpoint-checks-login
   (let [handler (handler)]
