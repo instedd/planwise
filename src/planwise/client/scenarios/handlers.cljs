@@ -111,7 +111,7 @@
             :rename-dialog {:value name}))))
 
 (rf/reg-event-db
- :scenarios/cancel-rename-dialog
+ :scenarios/cancel-dialog
  in-scenarios
  (fn [db [_]]
    (assoc db
@@ -221,13 +221,6 @@
                 (assoc-in [:current-scenario] updated-scenario)
                 (assoc-in [:view-state] :current-scenario))})))
 
-(rf/reg-event-db
- :scenarios/cancel-changeset-dialog
- in-scenarios
- (fn [db [_]]
-   (assoc db
-          :view-state :current-scenario
-          :changeset-dialog nil)))
 
 (rf/reg-event-fx
  :scenarios/delete-provider
@@ -239,7 +232,7 @@
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (assoc db :current-scenario updated-scenario)
-      :dispatch [:scenarios/cancel-changeset-dialog]})))
+      :dispatch [:scenarios/cancel-dialog]})))
 
 ;; ----------------------------------------------------------------------------
 ;; Scenarios listing
@@ -292,3 +285,19 @@
  in-scenarios
  (fn [db [_ provider]]
    (assoc db :selected-provider nil)))
+
+(rf/reg-event-db
+  :scenarios.new-provider/choose-option
+ in-scenarios
+ (fn [db [_]]
+  (let [actual-state (:view-state db)
+        options? (keyword "choose-options-for-new-provider")]
+   (assoc db :view-state (if (= options? actual-state)
+                           :current-scenario
+                           options?)))))
+
+(rf/reg-event-db
+ :scenarios.new-provider/simple-creation
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :view-state :new-provider)))

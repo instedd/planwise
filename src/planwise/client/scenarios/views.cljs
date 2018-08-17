@@ -215,20 +215,11 @@
          [:small "Investment required"]
          "K " (utils/format-number investment)]]
        [:hr]
-       [:div (if @computing-best-locations?
-               {:class-name "border-btn-floating border-btn-floating-animated"}
-               {:class-name "border-btn-floating"})
-        [m/Fab
-         {:class-name "btn-floating"
-          :on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
-         (cond
-           @computing-best-locations? "stop"
-           (= @view-state :new-provider) "cancel"
-           :default "domain")]]
-
+       [edit/create-new-provider-component @view-state @computing-best-locations?]
        (if @computing-best-locations?
          [:div {:class-name "info-computing-best-location"}
-          [:small "Computing best locations ..."]])])))
+          [:small "Computing best locations ..."]])
+       ])))
 
 (defn display-current-scenario
   [current-project current-scenario]

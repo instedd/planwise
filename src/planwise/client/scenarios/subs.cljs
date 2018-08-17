@@ -71,3 +71,8 @@
  :scenarios.new-provider/computing-best-locations?
  (fn [db _]
    (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
+
+(rf/reg-sub
+ :scenarios.new-provider/options :<- [:scenarios/view-state]
+ (fn [view-state [_]]
+    (= :choose-options-for-new-provider view-state)))
