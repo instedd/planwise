@@ -31,7 +31,7 @@
       [m/Button {:on-click #(do (dispatch [:scenarios/message-delivered])
                                 (dispatch [:scenarios/delete-provider index]))}
        "Remove last change"]
-      [m/Button {:on-click #(dispatch [:projects2/reset-project (:id project)])}
+      [m/Button {:on-click #(dispatch [:projects2/project-settings])}
        "Go back to project settings"])]])
 
 

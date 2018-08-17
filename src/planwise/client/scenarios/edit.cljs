@@ -71,8 +71,8 @@
        [new-provider-button state computing?]
        [m/Menu (when @open {:class "options-menu mdc-menu--open"})
         [m/MenuItem
-        {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
+         {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
          "Create one"]
         [m/MenuItem
-        {:on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
+         {:on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
          "Get suggestions"]]])))
