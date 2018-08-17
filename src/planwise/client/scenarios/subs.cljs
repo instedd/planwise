@@ -14,7 +14,7 @@
 (rf/reg-sub
  :scenarios/message-error
  (fn [db _]
-   (get-in db [:scenarios :raise-error])))
+   (get-in db [:scenarios :current-scenario :raise-error])))
 
 (rf/reg-sub
  :scenarios/rename-dialog
@@ -75,4 +75,11 @@
 (rf/reg-sub
  :scenarios.new-provider/options :<- [:scenarios/view-state]
  (fn [view-state [_]]
-    (= :choose-options-for-new-provider view-state)))
+   (= :choose-options-for-new-provider view-state)))
+
+(rf/reg-sub
+ :scenarios/invalid-location-for-provider
+ (fn [db _]
+   (get-in db [:scenarios :current-scenario :invalid-location-for-provider])))
+
+
