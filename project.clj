@@ -84,7 +84,8 @@
                  [com.draines/postal "2.0.0"]
                  [funcool/cuerdas "2.0.3"]
                  [org.gdal/gdal "2.1.0"]
-                 [org.clojure/math.combinatorics "0.1.4"]]
+                 [org.clojure/math.combinatorics "0.1.4"]
+                 [net.mintern/primitive "1.3"]]
 
   :plugins [[duct/lein-duct "0.10.6"]
             [lein-doo "0.1.10"]

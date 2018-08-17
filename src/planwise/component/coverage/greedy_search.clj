@@ -5,6 +5,7 @@
             [planwise.component.coverage :as coverage]
             [planwise.util.exceptions :refer [catch-exc]])
   (:import [java.lang.Math]
+           [planwise.engine Algorithm]
            [org.gdal.gdalconst gdalconst]))
 
 ;; Idea of algorithm:
@@ -67,13 +68,23 @@
         [r0 r1] (reduce (fn [[r0 r1] [l0 l1]] [(+ r0 l0) (+ r1 l1)]) [0 0] set-points)]
     (if (pos? total) (map #(/ % total) [r0 r1]) (first set-points))))
 
+(defn fast-raster-saturated-locations
+  [raster cutoff]
+  (let [{:keys [data nodata xsize geotransform]} raster
+        saturated-indices (Algorithm/filterAndSortIndices data nodata cutoff)]
+    (Algorithm/locateIndices data saturated-indices xsize geotransform)))
+
+;; old implementation; fails with OOM for big rasters
+(defn slow-raster-saturated-locations
+  [raster cutoff]
+  (let [indexed-data (map-indexed vector (vec (:data raster)))
+        initial-set  (sort-by last > (filter (fn [[_ val]] (> val cutoff)) indexed-data))]
+    (mapv (fn [[idx val]] (conj (get-geo idx raster) val)) initial-set)))
+
 (defn get-saturated-locations
   [{:keys [raster sources-data]} [_ b0 b1 b2 _ :as demand-quartiles]]
   (if raster
-    (let [indexed-data (map-indexed vector (vec (:data raster)))
-          initial-set  (sort-by last > (filter (fn [[_ val]] (> val b2)) indexed-data))]
-      (mapv (fn [[idx val]] (conj (get-geo idx raster) val)) initial-set))
-
+    (fast-raster-saturated-locations raster b2)
     (mapv (fn [{:keys [lon lat quantity]}] [lon lat quantity]) (sort-by :quantity > sources-data))))
 
 (defn mean-initial-data

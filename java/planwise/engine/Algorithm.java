@@ -1,6 +1,10 @@
 package planwise.engine;
 
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import net.mintern.primitive.Primitive;
+import net.mintern.primitive.comparators.IntComparator;
 
 public class Algorithm {
     public static long countPopulation(float[] popData,
@@ -160,5 +164,40 @@ public class Algorithm {
             }
             renderData[i] = renderValue;
         }
+    }
+
+    public static int[] filterAndSortIndices(float[] values,
+                                             float nodata,
+                                             float cutoff) {
+        int indices[] = new int[values.length];
+        int j = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] != nodata && values[i] > cutoff) {
+                indices[j++] = i;
+            }
+        }
+        IntComparator valueCmp = (i1, i2) -> Float.compare(values[i1], values[i2]);
+        Primitive.sort(indices, 0, j, valueCmp);
+        return Arrays.copyOf(indices, j);
+    }
+
+    public static List<float[]> locateIndices(float[] values,
+                                              int[] indices,
+                                              int xsize,
+                                              double[] geotransform) {
+        List<float[]> locations = new ArrayList<>(indices.length);
+        for (int i = 0; i < indices.length; i++) {
+            int index = indices[i];
+            int x = index % xsize;
+            int y = (int) Math.floor(index / xsize);
+            double longitude = geotransform[0] + x * geotransform[1];
+            double latitude = geotransform[3] + y * geotransform[5];
+            float location[] = new float[3];
+            location[0] = (float) longitude;
+            location[1] = (float) latitude;
+            location[2] = values[index];
+            locations.add(location);
+        }
+        return locations;
     }
 }
