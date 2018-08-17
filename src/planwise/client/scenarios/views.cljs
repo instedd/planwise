@@ -18,15 +18,22 @@
             [planwise.client.ui.rmwc :as m]))
 
 (def messages
-  {:no-road-network "Location can not be reached from road network. Please try another."})
+  {:no-road-network "Location can not be reached from road network. "})
 
 (defn raise-alert
-  [state key]
-  (let [message (or (when key (key messages)) "Please, load scenario again.")]
-    (dialog {:open? (= state :raise-error)
-             :title "Oops... something went wrong"
-             :content [:p message]
-             :accept-fn #(dispatch [:scenarios/message-delivered])})))
+  [project index error]
+  [:div.raise-alert
+   [:div.card-message
+    [:div.content
+     [:h2.mdc-dialog__header__title "Oops...  something went wrong"]
+     [:h3 (or ((keyword error) messages) error)]]
+    (if index
+      [m/Button {:on-click #(do (dispatch [:scenarios/message-delivered])
+                                (dispatch [:scenarios/delete-provider index]))}
+       "Remove last change"]
+      [m/Button {:on-click #(dispatch [:projects2/reset-project (:id project)])}
+       "Go back to project settings"])]])
+
 
 (defn- provider-from-changeset?
   [provider]
@@ -123,21 +130,21 @@
                                                 :color :orange
                                                 :stroke true}])
 
-                             (when @suggested-locations
-                               [:marker-layer {:points (map-indexed (fn [ix suggestion]
-                                                                      (assoc suggestion :ranked (inc ix)))
-                                                                    @suggested-locations)
-                                               :lat-fn #(get-in % [:location :lat])
-                                               :lon-fn #(get-in % [:location :lon])
-                                               :popup-fn #(show-suggested-provider %)
-                                               :onclick-fn (fn [{:keys [location]}]
-                                                             (add-point (:lat location) (:lon location)))
-                                               :mouseover-fn (fn [this ev suggestion]
-                                                               (.openPopup this)
-                                                               (dispatch [:scenarios.map/select-provider suggestion]))
-                                               :mouseout-fn (fn [this ev suggestion]
-                                                              (.closePopup this)
-                                                              (dispatch [:scenarios.map/unselect-provider suggestion]))}])
+          (when @suggested-locations
+            [:marker-layer {:points (map-indexed (fn [ix suggestion]
+                                                   (assoc suggestion :ranked (inc ix)))
+                                                 @suggested-locations)
+                            :lat-fn #(get-in % [:location :lat])
+                            :lon-fn #(get-in % [:location :lon])
+                            :popup-fn #(show-suggested-provider %)
+                            :onclick-fn (fn [{:keys [location]}]
+                                          (add-point (:lat location) (:lon location)))
+                            :mouseover-fn (fn [this ev suggestion]
+                                            (.openPopup this)
+                                            (dispatch [:scenarios.map/select-provider suggestion]))
+                            :mouseout-fn (fn [this ev suggestion]
+                                           (.closePopup this)
+                                           (dispatch [:scenarios.map/unselect-provider suggestion]))}])
 
                              [providers-layer-type {:points indexed-providers
                                                     :lat-fn #(get-in % [:elem :location :lat])
@@ -195,6 +202,7 @@
   (let [computing-best-locations? (subscribe [:scenarios.new-provider/computing-best-locations?])
         view-state                (subscribe [:scenarios/view-state])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
+      (println "view-state" @view-state)
       [:div
        [:div {:class-name "section"
               :on-click  #(dispatch [:scenarios/open-rename-dialog])}
@@ -218,14 +226,14 @@
        [edit/create-new-provider-component @view-state @computing-best-locations?]
        (if @computing-best-locations?
          [:div {:class-name "info-computing-best-location"}
-          [:small "Computing best locations ..."]])
-       ])))
+          [:small "Computing best locations ..."]])])))
 
 (defn display-current-scenario
   [current-project current-scenario]
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
-        message-error (subscribe [:scenarios/message-error])
+        invalid-location? (subscribe [:scenarios/invalid-location-for-provider])
+        message-error     (subscribe [:scenarios/message-error])
         created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
@@ -245,10 +253,11 @@
        (if @read-only?
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])
-       [raise-alert @state @message-error]
-       [:div {:class-name "fade"}]
-       [changeset/listing-component @created-providers]
-       [:div {:class-name "fade inverted"}]
+       [:div (when (not= @state :raise-error) {:class-name "fade"})]
+       (if (= @state :raise-error)
+         [raise-alert current-project @invalid-location? @message-error]
+         [changeset/listing-component @created-providers])
+       [:div (when (not= @state :raise-error) {:class-name "fade inverted"})]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
        [edit/changeset-dialog current-scenario (get-in current-project [:config :actions :budget])]])))

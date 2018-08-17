@@ -654,3 +654,28 @@ form.vertical, .fields-vertical {
     background: linear-gradient(360deg, #ff7710 , #FFF, #FFF);
   }
 }
+.raise-alert{
+  background-color: #ff561c;
+  padding: 4px;
+  margin-top: 32px;
+
+  @include mdc-elevation(4);
+    &:hover {
+      border: 1px dashed #ff561c;
+      background-color:  #ff7710;
+    }
+  }
+
+.card-message{
+    background-color: #FFF;
+    $card-radius: 4px;
+    @include mdc-elevation(1);
+    @extend .mdc-elevation-transition;
+    justify-content: center;
+
+    .content {
+      padding:16px;
+    }
+}
+
+
