@@ -123,8 +123,7 @@
     (if (empty? interior)
 
       (let [division (group-by (is-neighbour? demand-point avg-max) demand)
-            {:keys [location-info updated-demand]} (coverage-fn (drop-last demand-point) {:get-update demand})
-            demand* (when raster (vec (clojure.set/intersection (set (get division false)) (set updated-demand))))]
+            {:keys [location-info updated-demand]} (coverage-fn (drop-last demand-point) {:get-update demand})]
         [location-info updated-demand])
 
       (loop [sum 0
@@ -136,9 +135,8 @@
 
           (let [division (group-by (is-neighbour? center avg-max) demand)
                 geo-cent (get-centroid (get division true))
-                {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update demand})
-                demand*  (when raster (vec (clojure.set/intersection (set (get division false)) (set updated-demand))))]
-            [location-info (or demand* updated-demand)])
+                {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update demand})]
+            [location-info updated-demand])
 
           (let [location (next-neighbour interior center radius)]
 
@@ -166,16 +164,16 @@
 
     (if (or (nil? demand) (nil? from) (= times sample))
       (remove #(zero? (:coverage %)) locations)
-      (let [[location demand*]        (update-demand coverage-fn source from demand bound)]
+      (let [[location demand*] (update-demand coverage-fn source from demand bound)]
         (if location
           (let [[from* & demand* :as set] (when demand* (sort-by last > demand*))]
             (recur (inc times) (conj locations location) from* demand*))
-          (recur times locations (first demand) (rest demand)))))))
+          (recur (inc times) locations (first demand*) (rest demand*)))))))
 
 (defn greedy-search
-  [sample {:keys [search-path raster sources-data] :as source} coverage-fn demand-quartiles {:keys [n bounds]}]
-  (let [[max & remain :as initial-set] (or sources-data raster)
-        bound        (or bounds (mean-initial-data n initial-set coverage-fn))
-        locations    (when (number? bound) (get-locations coverage-fn source max initial-set (/ bound 2) sample))]
+  [sample {:keys [search-path initial-set sources-data] :as source} coverage-fn demand-quartiles {:keys [n bound]}]
+  (let [[max & remain :as initial-set] (or initial-set sources-data)
+        bound        (or bound (:avg-max (mean-initial-data 30 initial-set coverage-fn)))
+        locations    (get-locations coverage-fn source max initial-set (/ bound 2) sample)]
     (when search-path (clojure.java.io/delete-file search-path true))
     (sort-by :coverage > locations)))
