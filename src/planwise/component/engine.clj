@@ -322,18 +322,31 @@
     (let [ids (set (map :id (sources-set/list-sources-under-coverage (:sources-set engine) source-set-id polygon)))]
       (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
 
+(defn update-visited
+  [{:keys [xsize geotransform data] :as raster} visited]
+  (if (empty? (vec visited))
+    raster
+    (let [idxs (mapv (fn [coord] (let [[x y] (gs/coord->pixel geotransform coord)]
+                                   (+ (* y xsize) x))) (remove empty? (vec visited)))]
+      (doseq [i idxs]
+        (aset data i (float 0)))
+      (assert (every? zero? (map #(aget data %) idxs)))
+      (raster/create-raster-from-existing raster data))))
 
 (defn get-demand-source-updated
-  [engine {:keys [raster sources-data search-path demand-quartiles]} polygon get-update]
+  [engine {:keys [sources-data search-path demand-quartiles]} polygon get-update]
   (if search-path
 
-    (let [raster   (raster/read-raster search-path)
+    (let [{:keys [demand visited]} get-update
+          raster (update-visited (raster/read-raster search-path) visited)
           coverage-raster (raster/create-raster (rasterize/rasterize polygon))]
+
       (demand/multiply-population-under-coverage! raster coverage-raster (float 0))
+      (assert (zero? (count-under-geometry engine polygon {:raster raster})))
       (raster/write-raster raster search-path)
       (gs/get-saturated-locations {:raster raster} demand-quartiles))
 
-    (coverage/locations-outside-polygon (:coverage engine) polygon get-update)))
+    (coverage/locations-outside-polygon (:coverage engine) polygon (:demand get-update))))
 
 (defn get-coverage
   [engine criteria region-id {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
@@ -346,10 +359,11 @@
                 :location {:lat lat :lon lon}}]
     (cond get-avg {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
           get-update {:location-info info
-                      :updated-demand (drop-while (fn [[l1 l2 _]] (= (vec coord) [l1 l2])) (get-demand-source-updated engine source polygon get-update))}
+                      :updated-demand (get-demand-source-updated engine source polygon get-update)}
           :other info)))
 
 (defn- test-coverage
+  ;TODO may fail if maximus demand value can not be reached: interpret error
   [coverage-fn demand]
   (let [val (coverage-fn (drop-last (first demand)) {:get-avg true})]
     (or (:max val) {:error val})))

@@ -105,53 +105,57 @@
   ([demand center radius]
    (next-neighbour demand center radius (/ radius 1000)))
   ([demand center radius eps]
-   (let [in-frontier? (fn [p] (neighbour-fn p radius))
+   (let [in-frontier? (fn [p] (neighbour-fn p radius eps))
          frontier     (filter (in-frontier? center) demand)]
      (get-weighted-centroid frontier))))
 
 (defn update-demand
   [coverage-fn {:keys [sources-data raster]} demand-point demand avg-max]
-  {:pre [(not (nil? demand))]}
+  {:pre [(and (not (nil? demand)) (not (nil? demand-point)))]}
 
   (let [source (or raster sources-data)
         get-value-fn  (if raster
                         (fn [location] (aget (:data source) (get-index location source)))
                         (fn [location] (last (filter #(= (drop-last %) location) source))))
-        is-neighbour? (memoize (fn [p r] (neighbour-fn p r)))
+        is-neighbour? (memoize (fn [coord r] (neighbour-fn coord r)))
         interior      (filter (is-neighbour? demand-point avg-max) demand)]
 
     (if (empty? interior)
 
       (let [division (group-by (is-neighbour? demand-point avg-max) demand)
-            {:keys [location-info updated-demand]} (coverage-fn (drop-last demand-point) {:get-update demand})]
+            {:keys [location-info updated-demand]} (coverage-fn (drop-last demand-point) {:get-update {:demand demand}})]
         [location-info updated-demand])
 
       (loop [sum 0
              radius avg-max
              [lon lat _ :as center] demand-point
+             visited #{[lon lat]}
              interior interior]
 
         (if (<= (- avg-max sum) 0)
 
-          (let [division (group-by (is-neighbour? center avg-max) demand)
-                geo-cent (get-centroid (get division true))
-                {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update demand})]
+          (let [interior (filter (is-neighbour? center avg-max) demand)
+                geo-cent (get-centroid interior)
+                {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update {:demand demand
+                                                                                           :visited visited}})]
             [location-info updated-demand])
 
-          (let [location (next-neighbour interior center radius)]
+          (let [location (next-neighbour interior center radius)
+                visited  (clojure.set/union visited #{(vec location)})]
 
             (if (nil? location)
 
-              (recur avg-max radius center demand)
+              (recur avg-max radius center visited demand)
 
               (let [value       (get-value-fn location)
                     next-center (conj (vec location) value)
                     next-radius (euclidean-distance [lon lat] location)
                     step        (- radius next-radius)]
 
+
                 (if (and (> step 0) (pos? next-radius))
-                  (recur (+ sum step) next-radius next-center (filter (is-neighbour? next-center next-radius) demand))
-                  (recur avg-max radius center interior))))))))))
+                  (recur (+ sum step) next-radius next-center visited (filter (is-neighbour? next-center next-radius) interior))
+                  (recur avg-max radius center visited interior))))))))))
 
 (defn get-locations
   [coverage-fn source from initial-set bound sample]
