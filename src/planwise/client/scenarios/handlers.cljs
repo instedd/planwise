@@ -199,8 +199,8 @@
  in-scenarios
  (fn [db [_ {:keys [response]}]]
    (-> db (assoc-in [:current-scenario :computing-best-locations :state] false)
-       (assoc :view-state :raise-error
-              :raise-error (:error response)))))
+       (assoc :view-state :raise-error)
+       (assoc-in [:current-scenario :raise-error] (:error response)))))
 
 (rf/reg-event-db
  :scenarios/message-delivered

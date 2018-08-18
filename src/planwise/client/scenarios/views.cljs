@@ -28,10 +28,12 @@
      [:h2.mdc-dialog__header__title "Oops...  something went wrong"]
      [:h3 (or ((keyword error) messages) error)]]
     (if index
-      [m/Button {:on-click #(do (dispatch [:scenarios/message-delivered])
-                                (dispatch [:scenarios/delete-provider index]))}
+      [m/Button   {:class-name "bottom-button"
+                   :on-click #(do (dispatch [:scenarios/message-delivered])
+                                  (dispatch [:scenarios/delete-provider index]))}
        "Remove last change"]
-      [m/Button {:on-click #(dispatch [:projects2/project-settings])}
+      [m/Button {:class-name "bottom-button"
+                 :on-click #(dispatch [:projects2/project-settings])}
        "Go back to project settings"])]])
 
 
