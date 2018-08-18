@@ -91,7 +91,7 @@
   [n demand coverage-fn]
   (let [locations (take n (random-sample 0.8 demand))
         total-max (reduce (fn [tm location]
-                            (let [{:keys [max]} (or (coverage-fn (drop-last location) {:get-avg true}) {:cov 0 :max 0})]
+                            (let [{:keys [max]} (or (coverage-fn (drop-last location) {:get-avg true}) {:max 0})]
                               (+ tm max))) 0 locations)]
     {:avg-max (/ total-max n)}))
 
@@ -157,6 +157,8 @@
 
 (defn get-locations
   [coverage-fn source from initial-set bound sample]
+  {:pre [(pos? bound)]}
+
   (loop [times 0
          locations []
          from   (first initial-set)
@@ -164,17 +166,16 @@
 
     (if (or (nil? demand) (nil? from) (= times sample))
       (remove #(zero? (:coverage %)) locations)
-      (let [[location demand*]        (update-demand coverage-fn source from demand bound)
-            [from* & demand* :as set] (sort-by last > demand*)]
-        (recur (inc times) (conj locations location) from* demand*)))))
+      (let [[location demand*]        (update-demand coverage-fn source from demand bound)]
+        (if location
+          (let [[from* & demand* :as set] (when demand* (sort-by last > demand*))]
+            (recur (inc times) (conj locations location) from* demand*))
+          (recur times locations (first demand) (rest demand)))))))
 
 (defn greedy-search
-  [sample {:keys [raster  search-path sources-data] :as source} coverage-fn demand-quartiles {:keys [n bounds]}]
-  (let [[max & remain :as initial-set]   (if raster (get-saturated-locations {:raster raster} demand-quartiles) sources-data)
-        {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
-        locations (get-locations coverage-fn source max initial-set (/ avg-max 2) sample)]
-
+  [sample {:keys [search-path raster sources-data] :as source} coverage-fn demand-quartiles {:keys [n bounds]}]
+  (let [[max & remain :as initial-set] (or sources-data raster)
+        bound        (or bounds (mean-initial-data n initial-set coverage-fn))
+        locations    (when (number? bound) (get-locations coverage-fn source max initial-set (/ bound 2) sample))]
     (when search-path (clojure.java.io/delete-file search-path true))
-    (if (empty? locations)
-      (throw (IllegalArgumentException. "Demand can't be reached."))
-      (sort-by :coverage > locations))))
+    (sort-by :coverage > locations)))

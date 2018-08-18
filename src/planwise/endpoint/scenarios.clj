@@ -8,6 +8,7 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [clojure.core.reducers :as r]
+            [planwise.util.exceptions :refer [catch-exception]]
             [planwise.boundary.scenarios :as scenarios]
             [planwise.boundary.projects2 :as projects2]))
 
@@ -38,9 +39,10 @@
            id       (Integer. id)
            {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
            project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
-           suggestions (scenarios/get-provider-suggestion service project scenario)]
-       (if (nil? suggestions)
-         (not-found {:error "No available suggestions"})
+           suggestions (catch-exception #(.getMessage %)
+                                        scenarios/get-provider-suggestion service project scenario)]
+       (if (string? suggestions)
+         (not-found {:error suggestions})
          (response suggestions))))
 
    (GET "/:id/geometry/:provider-id" [id provider-id :as request]

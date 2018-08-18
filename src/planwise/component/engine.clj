@@ -348,12 +348,18 @@
           get-update {:location-info info :updated-demand (get-demand-source-updated engine source polygon get-update)}
           :other info)))
 
+(defn- test-coverage
+  [coverage-fn demand]
+  (let [val (coverage-fn (drop-last (first demand)) {:get-avg true})]
+    (or (:avg-max val) {:error val})))
+
 (defn search-optimal-location
   [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
   (let [raster        (when raster (raster/read-raster (str "data/" (:raster source) ".tif")))
         search-path   (when raster (files/create-temp-file (str "data/scenarios/" (:id project) "/coverage-cache/") "new-provider-" ".tif"))
         demand-quartiles (:demand-quartiles engine-config)
-        source        (assoc source :raster raster
+        source        (assoc source
+                             :raster    (gs/get-saturated-locations {:raster raster} demand-quartiles)
                              :search-path search-path
                              :demand-quartiles demand-quartiles
                              :source-set-id (:source-set-id project)
@@ -362,10 +368,16 @@
         algorithm (keyword coverage-algorithm)
         criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
         aux-fn    #(get-coverage engine criteria source %)
-        cost-fn   (fn [val props] (catch-exception nil aux-fn (assoc props :coord val)))
-        bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
-    (when raster (raster/write-raster-file raster search-path))
-    (gs/greedy-search 10 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})))
+        cost-fn   (fn [val props] (catch-exception #(.getMessage %) aux-fn (assoc props :coord val)))
+        checked   (test-coverage cost-fn (or (:raster source) (:source-data source)))]
+    (if (:error checked) (throw (IllegalArgumentException. (str "Can not apply coverage algorithm to current project")))
+        (let [bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))
+              locations (gs/greedy-search 10 source cost-fn demand-quartiles {:bounds (when (:avg-max bounds) bounds) :n 100})]
+          (when raster (raster/write-raster-file raster search-path))
+          (if (empty? locations) (throw (IllegalArgumentException. "Demand can't be reached"))
+              locations)))))
+
+
 
 (defn clear-project-cache
   [this project-id]
