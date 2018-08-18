@@ -3,6 +3,7 @@
             [reagent.core :as r]
             [re-com.core :as rc]
             [leaflet.core :as l]
+            [clojure.string :refer [join split]]
             [planwise.client.config :as config]
             [planwise.client.scenarios.db :as db]
             [planwise.client.dialog :refer [dialog]]
@@ -22,19 +23,22 @@
 
 (defn raise-alert
   [project index error]
-  [:div.raise-alert
-   [:div.card-message
-    [:div.content
-     [:h2.mdc-dialog__header__title "Oops...  something went wrong"]
-     [:h3 (or ((keyword error) messages) error)]]
-    (if index
-      [m/Button   {:class-name "bottom-button"
-                   :on-click #(do (dispatch [:scenarios/message-delivered])
-                                  (dispatch [:scenarios/delete-provider index]))}
-       "Remove last change"]
-      [m/Button {:class-name "bottom-button"
-                 :on-click #(dispatch [:projects2/project-settings])}
-       "Go back to project settings"])]])
+  (let [message (if (string? error)
+                  error
+                  (or ((keyword (:key error)) messages) (join " " (split (:msg error) "-"))))]
+    [:div.raise-alert
+     [:div.card-message
+      [:div.content
+       [:h2.mdc-dialog__header__title "Oops...  something went wrong"]
+       [:h3 message]]
+      (if index
+        [m/Button   {:class-name "bottom-button"
+                     :on-click #(do (dispatch [:scenarios/message-delivered])
+                                    (dispatch [:scenarios/delete-provider index]))}
+         "Remove last change"]
+        [m/Button {:class-name "bottom-button"
+                   :on-click #(dispatch [:projects2/project-settings])}
+         "Go back to project settings"])]]))
 
 
 (defn- provider-from-changeset?

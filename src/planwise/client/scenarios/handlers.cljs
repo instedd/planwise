@@ -67,12 +67,12 @@
  in-scenarios
  (fn [{:keys [db]} [_ error]]
    (let [current-scenario (:current-scenario db)
-         error-index      (get-index-from-changeset (:location error) (:changeset current-scenario))
-         error-recieved?  (when (:location error) (nil? error-index))]
+         error-index      (get-index-from-changeset (:coords error) (:changeset current-scenario))
+         error-recieved?  (when (:coords error) (nil? error-index))]
      (if (not error-recieved?)
        {:db (->  db (assoc-in [:current-scenario :invalid-location-for-provider] error-index)
-                 (assoc-in [:current-scenario :raise-error] (or (:key error) error))
-                 (assoc-in [:current-scenario :message-error] nil))
+                 (assoc-in [:current-scenario :raise-error] (or (dissoc error :coords) error))
+                 (assoc-in [:current-scenario :error-message] nil))
         :dispatch [:scenarios/raise-error]}))))
 
 (rf/reg-event-fx
