@@ -253,11 +253,25 @@
 ;; ----------------------------------------------------------------------------
 ;; Providers in map
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :scenarios.map/select-provider
  in-scenarios
- (fn [db [_ provider]]
-   (assoc db :selected-provider provider)))
+ (fn [{:keys [db dispatch]} [_ provider]]
+   (when (not= (:provider-id provider)
+               (get-in db [:selected-provider :provider-id]))
+     (let [id (get-in db [:current-scenario :id])
+           has-coverage? (some? (:coverage-geom provider))]
+       (merge
+        {:db (assoc db :selected-provider provider)}
+        (when-not has-coverage?
+          {:api (assoc (api/get-provider-geom id (:provider-id provider))
+                       :on-success [:scenarios/update-geometry])}))))))
+
+(rf/reg-event-db
+ :scenarios/update-geometry
+ in-scenarios
+ (fn [db [_ geom]]
+   (update db :selected-provider #(merge % geom))))
 
 (rf/reg-event-db
  :scenarios.map/unselect-provider

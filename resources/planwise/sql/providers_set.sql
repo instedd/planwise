@@ -96,10 +96,18 @@ SELECT AVG(ST_MaxDistance(geom, geom))
 	AND options = :options;
 
 -- :name db-find-provider-coverage :? :1
-SELECT ST_AsGeoJSON(p.geom) AS geom
-  FROM
-  (SELECT geom
-    FROM providers_coverage
-    WHERE "provider-id" = :provider-id
-      AND algorithm = :algorithm
-      AND options = :options) AS p;
+SELECT
+    St_AsGEOJSON(
+        /*~ (if (:region-id params) */
+        St_Intersection(St_MakeValid(pc.geom), regions.the_geom)
+        /*~*/
+        St_MakeValid(pc.geom)
+        /*~ ) ~*/
+    ) AS geom
+    FROM providers_coverage pc, regions
+    WHERE pc."provider-id" = :provider-id
+    AND pc.algorithm = :algorithm
+    AND pc.options =  :options
+/*~ (if (:region-id params) */
+    AND regions.id = :region-id;
+/*~ ) ~*/;

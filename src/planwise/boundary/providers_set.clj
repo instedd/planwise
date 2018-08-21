@@ -30,7 +30,10 @@
     [this criteria provider-set-id]
     "Given a coverage criteria returns the average of maximus distances")
 
-  (get-coverage [this provider-id algorithm filter-options]
-    "Finds the provider's coverage for an algorithm and filter options"))
+  (get-coverage [this provider-id coverage-options]
+    "Finds the provider's coverage
+     coverage-options must contain algorithm and filter-options and optionally
+     a region-id to clip the returned geometry.
+     Returns the result as GeoJSON string"))
 
 ;; Preprocessing provider-set job type: ::preprocess-provider-set

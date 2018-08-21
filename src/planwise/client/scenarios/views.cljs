@@ -53,6 +53,7 @@
         index               (subscribe [:scenarios/changeset-index])
         selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
+        geometries          (subscribe [:scenarios/providers-geometries])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
@@ -60,7 +61,8 @@
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario}]
-      (let [providers             (into providers changeset)
+      (let [{:keys [initial-providers new-providers]} geometries
+            providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
             indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
@@ -102,6 +104,13 @@
                                             :weight 10
                                             :opacity 0.2
                                             :popup-fn #(show-source %)}]
+                             (when @selected-provider
+                               [:geojson-layer {:data (:coverage-geom @selected-provider)
+                                                :group {:pane "tilePane"}
+                                                :lat-fn (fn [polygon-point] (:lat polygon-point))
+                                                :lon-fn (fn [polygon-point] (:lon polygon-point))
+                                                :color :orange
+                                                :stroke true}])
 
                              (when @suggested-locations
                                [:marker-layer {:points (map-indexed (fn [ix suggestion]
@@ -118,14 +127,6 @@
                                                :mouseout-fn (fn [this ev suggestion]
                                                               (.closePopup this)
                                                               (dispatch [:scenarios.map/unselect-provider suggestion]))}])
-
-                             (when @selected-provider
-                               [:geojson-layer {:data (:coverage-geom @selected-provider)
-                                                :group {:pane "tilePane"}
-                                                :lat-fn (fn [polygon-point] (:lat polygon-point))
-                                                :lon-fn (fn [polygon-point] (:lon polygon-point))
-                                                :color :orange
-                                                :stroke true}])
 
                              [providers-layer-type {:points indexed-providers
                                                     :lat-fn #(get-in % [:elem :location :lat])

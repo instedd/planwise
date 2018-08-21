@@ -55,9 +55,20 @@
 (defn get-scenario
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
-  (-> (db-find-scenario (get-db store) {:id scenario-id})
-      (update :changeset edn/read-string)
-      (update :sources-data edn/read-string)))
+  (let [scenario (db-find-scenario (get-db store) {:id scenario-id})]
+    (reduce (fn [map key] (update map key edn/read-string))
+            scenario
+            [:changeset :sources-data :providers-data :new-providers-geom])))
+
+(defn- get-initial-providers-data
+  [store project-id]
+  (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
+      :providers-data read-string))
+
+(defn- get-initial-sources-data
+  [store project-id]
+  (-> (db-get-initial-sources-data (get-db store) {:project-id project-id})
+      :sources-data read-string))
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
@@ -77,16 +88,10 @@
         data  (select-keys (get updated-data id) [:satisfied :unsatisfied :coverage-geom])]
     (merge provider data)))
 
-(defn- get-new-providers-geom
-  [store scenario-id]
-  (let [{:keys [new-providers-geom]} (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})]
-    (when new-providers-geom (read-string new-providers-geom))))
-
-
 (defn- build-updated-data
-  [providers-data new-providers-geom]
-  (reduce (fn [tree {:keys [id] :as provider}]
-            (assoc tree id (merge (dissoc provider :id) ((keyword (str id)) new-providers-geom))))
+  [providers-data]
+  (reduce (fn [dic {:keys [id] :as provider}]
+            (assoc dic id (dissoc provider :id)))
           {}
           providers-data))
 
@@ -96,18 +101,9 @@
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
         ; providers
-        providers-data     (edn/read-string (:providers-data scenario))
-        new-providers-geom (get-new-providers-geom store (:id scenario))
-        updated-data       (build-updated-data providers-data new-providers-geom)
-        updated-providers  (map (fn [provider]
-                                  (-> provider
-                                      ; add coverage
-                                      (assoc :coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
-                                                                                               (:provider-id provider)
-                                                                                               (:coverage-algorithm project)
-                                                                                               (get-in config [:coverage :filter-options]))))
-                                      ; add updated satisfied and unsatisfied demand
-                                      (update-provider-data updated-data)))
+        providers-data     (:providers-data scenario)
+        updated-data       (build-updated-data providers-data)
+        updated-providers  (map #(update-provider-data % updated-data)
                                 (get-initial-providers store provider-set-id provider-set-version filter-options))
         ;changeset
         updated-changeset  (map #(update-provider-data % updated-data) (:changeset scenario))
@@ -121,6 +117,16 @@
                :sources-data updated-sources
                :changeset updated-changeset)
         (dissoc :updated-at :providers-data :new-providers-geom))))
+
+(defn get-provider-geom
+  [store project scenario provider-id]
+  (if (re-matches #"\A[0-9]+\z" provider-id)
+    {:coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
+                                                       (Integer/parseInt provider-id)
+                                                       {:algorithm (:coverage-algorithm project)
+                                                        :filter-options (get-in project [:config :coverage :filter-options])
+                                                        :region-id (:region-id project)}))}
+    ((keyword provider-id) (:new-providers-geom scenario))))
 
 (defn list-scenarios
   [store project-id]
@@ -213,15 +219,10 @@
                   {:store store
                    :project project})))
 
-(defn- get-initial-providers-data
-  [store project-id]
-  (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
-      :providers-data read-string))
-
-(defn- get-initial-sources-data
-  [store project-id]
-  (-> (db-get-initial-sources-data (get-db store) {:project-id project-id})
-      :sources-data read-string))
+(defn- get-new-providers-geom
+  [store scenario-id {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
+  (let [{:keys [new-providers-geom]} (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})]
+    (when new-providers-geom (read-string new-providers-geom))))
 
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
@@ -231,7 +232,7 @@
                   scenario          (get-scenario store scenario-id)
                   initial-providers (get-initial-providers-data store (:project-id scenario))
                   initial-sources   (get-initial-sources-data store (:project-id scenario))
-                  new-providers-geom (get-new-providers-geom store scenario-id)
+                  new-providers-geom (get-new-providers-geom store scenario-id project)
                   result            (engine/compute-scenario engine project (-> scenario
                                                                                 (assoc :providers-data initial-providers
                                                                                        :sources-data initial-sources
@@ -337,7 +338,9 @@
   (export-providers-data [store scenario-id]
     (export-providers-data store scenario-id))
   (get-provider-suggestion [store project scenario]
-    (get-provider-suggestion store project scenario)))
+    (get-provider-suggestion store project scenario))
+  (get-provider-geom [store scenario project provider-id]
+    (get-provider-geom store scenario project provider-id)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
