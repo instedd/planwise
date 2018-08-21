@@ -154,7 +154,7 @@
 
 
                 (if (and (> step 0) (pos? next-radius))
-                  (recur (+ sum step) next-radius next-center visited (filter (is-neighbour? next-center next-radius) interior))
+                  (recur (+ sum step) next-radius next-center visited (filter (is-neighbour? next-center next-radius) demand))
                   (recur avg-max radius center visited interior))))))))))
 
 (defn get-locations

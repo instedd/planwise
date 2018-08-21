@@ -208,7 +208,6 @@
   (let [computing-best-locations? (subscribe [:scenarios.new-provider/computing-best-locations?])
         view-state                (subscribe [:scenarios/view-state])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
-      (println "view-state" @view-state)
       [:div
        [:div {:class-name "section"
               :on-click  #(dispatch [:scenarios/open-rename-dialog])}
