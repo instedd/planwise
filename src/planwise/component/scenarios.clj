@@ -119,24 +119,14 @@
                :changeset updated-changeset)
         (dissoc :updated-at :providers-data :new-providers-geom))))
 
-(defn- get-initial-providers-geom
-  [store project providers]
-  (reduce (fn [dic {:keys [id] :as provider}] (assoc  dic id {:coverage-geom (:geom (providers-set/get-coverage
-                                                                                     (:providers-set store)
-                                                                                     id
-                                                                                     (:coverage-algorithm project)
-                                                                                     (get-in project [:config :coverage :filter-options])))}))
-          {}
-          providers))
-
-
 (defn get-provider-geom
   [store project scenario provider-id]
   (if (re-matches #"\A[0-9]+\z" provider-id)
     {:coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
                                                        (Integer/parseInt provider-id)
-                                                       (:coverage-algorithm project)
-                                                       (get-in project [:config :coverage :filter-options])))}
+                                                       {:algorithm (:coverage-algorithm project)
+                                                        :filter-options (get-in project [:config :coverage :filter-options])
+                                                        :region-id (:region-id project)}))}
     ((keyword provider-id) (:new-providers-geom scenario))))
 
 (defn list-scenarios

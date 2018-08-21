@@ -273,7 +273,7 @@
  (fn [db [_ geom]]
    (update db :selected-provider #(merge % geom))))
 
-(rf/reg-event-fx
+(rf/reg-event-db
  :scenarios.map/unselect-provider
  in-scenarios
  (fn [db [_ provider]]
