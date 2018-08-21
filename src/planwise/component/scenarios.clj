@@ -60,7 +60,6 @@
             scenario
             [:changeset :sources-data :providers-data :new-providers-geom])))
 
-;TODO check if necessary when computing initial scenario
 (defn- get-initial-providers-data
   [store project-id]
   (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})

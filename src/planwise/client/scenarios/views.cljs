@@ -47,10 +47,6 @@
   [coll]
   (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
 
-(defn- assoc-geom
-  [{:keys [provider-id] :as provider} geometries]
-  (merge provider ((keyword (str provider-id)) geometries)))
-
 (defn simple-map
   [{:keys [bbox]} scenario]
   (let [state               (subscribe [:scenarios/view-state])
@@ -66,7 +62,7 @@
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario}]
       (let [{:keys [initial-providers new-providers]} geometries
-            providers             (map #(assoc-geom % @geometries) (into providers changeset))
+            providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
             indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
