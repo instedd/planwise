@@ -78,8 +78,7 @@
  (fn [_ [_ id]]
    {:api (assoc (api/load-scenario id)
                 :on-success [:scenarios/save-current-scenario-and-track]
-                :on-failure [:scenarios/scenario-not-found])
-    :dispatch [:scenarios/get-providers-geometries id]}))
+                :on-failure [:scenarios/scenario-not-found])}))
 
 (rf/reg-event-fx
  :scenarios/copy-scenario
@@ -180,43 +179,10 @@
          updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)
          new-provider-index (dec (count (:changeset updated-scenario)))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
-                   :on-success [:scenarios/compute-provider])
+                   :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc :current-scenario updated-scenario))
       :dispatch [:scenarios/open-changeset-dialog new-provider-index]})))
-
-(rf/reg-event-fx
- :scenarios/compute-provider
- in-scenarios
- (fn [{:keys [db]} [_ {:keys [id] :as scenario}]]
-   (println "condition before" (empty? (:geom db)))
-   {:dispatch [:scenarios/update-demand-information scenario]
-    :api  (assoc (api/get-providers-geom id (empty? (:geom db)))
-                 :on-success [:scenarios/update-geometries])}))
-
-(rf/reg-event-db
- :scenarios/update-geometries
- in-scenarios
- (fn [db [_ map]]
-   (let [changes-id (set (map :provider-id (get-in db [:current-scenario :changeset])))
-         map (filter #(changes-id (name (first %))) map)]
-     (when map
-       (assoc db :geom (merge (:geom db) (filter #(changes-id %) map)))))))
-
-(rf/reg-event-fx
- :scenarios/get-providers-geometries
- in-scenarios
- (fn [{:keys [db]} [_ id]]
-   {:api  (assoc (api/get-providers-geom id (empty? (:geom db)))
-                 :on-success [:scenarios/save-geometries])}))
-
-(rf/reg-event-db
- :scenarios/save-geometries
- in-scenarios
- (fn [db [_ map]]
-   (println "look at me" map)
-   (when map
-     (assoc db :geom map))))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
@@ -287,13 +253,27 @@
 ;; ----------------------------------------------------------------------------
 ;; Providers in map
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :scenarios.map/select-provider
  in-scenarios
- (fn [db [_ provider]]
-   (assoc db :selected-provider provider)))
+ (fn [{:keys [db dispatch]} [_ provider]]
+   (when (not= (:provider-id provider)
+               (get-in db [:selected-provider :provider-id]))
+     (let [id (get-in db [:current-scenario :id])
+           has-coverage? (some? (:coverage-geom provider))]
+       (merge
+        {:db (assoc db :selected-provider provider)}
+        (when-not has-coverage?
+          {:api (assoc (api/get-provider-geom id (:provider-id provider))
+                       :on-success [:scenarios/update-geometry])}))))))
 
 (rf/reg-event-db
+ :scenarios/update-geometry
+ in-scenarios
+ (fn [db [_ geom]]
+   (update db :selected-provider #(merge % geom))))
+
+(rf/reg-event-fx
  :scenarios.map/unselect-provider
  in-scenarios
  (fn [db [_ provider]]

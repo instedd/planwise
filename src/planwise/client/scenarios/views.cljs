@@ -108,6 +108,13 @@
                                             :weight 10
                                             :opacity 0.2
                                             :popup-fn #(show-source %)}]
+                             (when @selected-provider
+                               [:geojson-layer {:data (:coverage-geom @selected-provider)
+                                                :group {:pane "tilePane"}
+                                                :lat-fn (fn [polygon-point] (:lat polygon-point))
+                                                :lon-fn (fn [polygon-point] (:lon polygon-point))
+                                                :color :orange
+                                                :stroke true}])
 
                              (when @suggested-locations
                                [:marker-layer {:points (map-indexed (fn [ix suggestion]
@@ -124,14 +131,6 @@
                                                :mouseout-fn (fn [this ev suggestion]
                                                               (.closePopup this)
                                                               (dispatch [:scenarios.map/unselect-provider suggestion]))}])
-
-                             (when @selected-provider
-                               [:geojson-layer {:data (:coverage-geom @selected-provider)
-                                                :group {:pane "tilePane"}
-                                                :lat-fn (fn [polygon-point] (:lat polygon-point))
-                                                :lon-fn (fn [polygon-point] (:lon polygon-point))
-                                                :color :orange
-                                                :stroke true}])
 
                              [providers-layer-type {:points indexed-providers
                                                     :lat-fn #(get-in % [:elem :location :lat])

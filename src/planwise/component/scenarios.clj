@@ -130,11 +130,14 @@
           providers))
 
 
-(defn get-providers-geom
-  [store scenario project get-all?]
-  (if get-all?
-    (merge (get-initial-providers-geom store project (filter #(number? (:id %)) (:providers-data scenario))) (:new-providers-geom scenario))
-    (:new-providers-geom scenario)))
+(defn get-provider-geom
+  [store project scenario provider-id]
+  (if (re-matches #"\A[0-9]+\z" provider-id)
+    {:coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
+                                                       (Integer/parseInt provider-id)
+                                                       (:coverage-algorithm project)
+                                                       (get-in project [:config :coverage :filter-options])))}
+    ((keyword provider-id) (:new-providers-geom scenario))))
 
 (defn list-scenarios
   [store project-id]
@@ -347,8 +350,8 @@
     (export-providers-data store scenario-id))
   (get-provider-suggestion [store project scenario]
     (get-provider-suggestion store project scenario))
-  (get-providers-geom [store scenario project condition]
-    (get-providers-geom store scenario project condition)))
+  (get-provider-geom [store scenario project provider-id]
+    (get-provider-geom store scenario project provider-id)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
