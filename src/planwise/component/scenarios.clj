@@ -5,7 +5,6 @@
             [planwise.boundary.engine :as engine]
             [planwise.boundary.jobrunner :as jr]
             [planwise.boundary.coverage :as coverage]
-            [planwise.util.exceptions :refer [catch-exception]]
             [planwise.model.scenarios :as model]
             [clojure.string :as str]
             [planwise.util.str :as util-str]
@@ -160,10 +159,10 @@
   (letfn [(task-fn []
             (info "Computing initial scenario" scenario-id)
             (let [engine (:engine store)
-                  result (catch-exception
-                          #(db-update-error-message (get-db store) {:id scenario-id
-                                                                    :msg (.getMessage %)})
-                          engine/compute-initial-scenario engine project)]
+                  result (try (engine/compute-initial-scenario engine project)
+                              (catch Exception e
+                                (db-update-error-message (get-db store) {:id scenario-id
+                                                                         :msg (.getMessage e)})))]
               (info "Initial scenario computed" result)
               ;; TODO check if scenario didn't change from result
               (db-update-scenario-state! (get-db store)
@@ -236,13 +235,12 @@
                   initial-providers (get-initial-providers-data store (:project-id scenario))
                   initial-sources   (get-initial-sources-data store (:project-id scenario))
                   new-providers-geom (get-new-providers-geom store scenario-id project)
-                  result            (catch-exception
-                                     #(db-update-error-message (get-db store) {:id scenario-id
-                                                                               :msg (.getMessage %)})
-                                     engine/compute-scenario engine project (-> scenario
-                                                                                (assoc :providers-data initial-providers
-                                                                                       :sources-data initial-sources
-                                                                                       :new-providers-geom new-providers-geom)))]
+                  result             (try (engine/compute-scenario engine project (-> scenario
+                                                                                      (assoc :providers-data initial-providers
+                                                                                             :sources-data initial-sources
+                                                                                             :new-providers-geom new-providers-geom)))
+                                          (catch Exception e (db-update-error-message (get-db store) {:id scenario-id
+                                                                                                      :msg (.getMessage e)})))]
               (info "Scenario computed" result)
               ;; TODO check if scenario didn't change from result. If did, discard result.
               ;; TODO remove previous raster files

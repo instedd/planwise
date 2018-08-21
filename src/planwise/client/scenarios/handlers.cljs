@@ -290,10 +290,12 @@
  :scenarios.map/select-provider
  in-scenarios
  (fn [{:keys [db dispatch]} [_ provider]]
-   (when (not= (:provider-id provider)
-               (get-in db [:selected-provider :provider-id]))
-     (let [id (get-in db [:current-scenario :id])
-           has-coverage? (some? (:coverage-geom provider))]
+   (let [suggestion? (:coverage provider)
+         has-coverage? (:coverage-geom provider)
+         id (get-in db [:current-scenario :id])]
+     (when (or suggestion?
+               (not= (:provider-id provider)
+                     (get-in db [:selected-provider :provider-id])))
        (merge
         {:db (assoc db :selected-provider provider)}
         (when-not has-coverage?
@@ -317,10 +319,10 @@
  in-scenarios
  (fn [db [_]]
    (let [actual-state (:view-state db)
-         options? (keyword "choose-options-for-new-provider")]
-     (assoc db :view-state (if (= options? actual-state)
+         already-clicked? (= :create-or-suggest-new-provider actual-state)]
+     (assoc db :view-state (if already-clicked?
                              :current-scenario
-                             options?)))))
+                             :create-or-suggest-new-provider)))))
 
 (rf/reg-event-db
  :scenarios.new-provider/simple-creation

@@ -77,7 +77,6 @@
   (let [index               (subscribe [:scenarios/changeset-index])
         selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
-        geometries          (subscribe [:scenarios/providers-geometries])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
@@ -90,51 +89,51 @@
             indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
         [:div.map-container (when (= state :raise-error) {:class "gray-filter"})
-                            [l/map-widget {:zoom @zoom
-                                           :position @position
-                                           :on-position-changed #(reset! position %)
-                                           :on-zoom-changed #(reset! zoom %)
-                                           :on-click (cond  (= state :new-provider) add-point)
-                                           :controls []
-                                           :initial-bbox bbox
-                                           :pointer-class (cond (= state :new-provider) "crosshair-pointer")}
-                             mapping/default-base-tile-layer
-                             (when pending-demand-raster
-                               [:wms-tile-layer {:url config/mapserver-url
-                                                 :transparent true
-                                                 :layers "scenario"
-                                                 :DATAFILE (str pending-demand-raster ".map")
-                                                 :format "image/png"
-                                                 :opacity 0.6}])
-                             [:point-layer {:points indexed-sources
-                                            :lat-fn #(get-in % [:elem :lat])
-                                            :lon-fn #(get-in % [:elem :lon])
-                                            :options-fn #(select-keys % [:index])
-                                            :style-fn #(let [source (:elem %)
-                                                             quantity-initial (:initial-quantity source)
-                                                             quantity-current (:quantity source)
-                                                             ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
-                                                             color (cond
-                                                                     (= 0 quantity-initial) {:fill :gray :stroke :lightgray}
-                                                                     (<= ratio 0.25) {:fill :limegreen :stroke :limegreen}
-                                                                     (< 0.25 ratio 0.5) {:fill :yellow :stroke :yellow}
-                                                                     (<= 0.5 ratio 0.75) {:fill :orange :stroke :orange}
-                                                                     (> ratio 0.75) {:fill :red :stroke :red})]
-                                                         {:fillColor (:fill color)
-                                                          :color (:stroke color)})
-                                            :radius 7
-                                            :fillOpacity 0.8
-                                            :stroke true
-                                            :weight 10
-                                            :opacity 0.2
-                                            :popup-fn #(show-source %)}]
-                             (when @selected-provider
-                               [:geojson-layer {:data (:coverage-geom @selected-provider)
-                                                :group {:pane "tilePane"}
-                                                :lat-fn (fn [polygon-point] (:lat polygon-point))
-                                                :lon-fn (fn [polygon-point] (:lon polygon-point))
-                                                :color :orange
-                                                :stroke true}])
+         [l/map-widget {:zoom @zoom
+                        :position @position
+                        :on-position-changed #(reset! position %)
+                        :on-zoom-changed #(reset! zoom %)
+                        :on-click (cond  (= state :new-provider) add-point)
+                        :controls []
+                        :initial-bbox bbox
+                        :pointer-class (cond (= state :new-provider) "crosshair-pointer")}
+          mapping/default-base-tile-layer
+          (when pending-demand-raster
+            [:wms-tile-layer {:url config/mapserver-url
+                              :transparent true
+                              :layers "scenario"
+                              :DATAFILE (str pending-demand-raster ".map")
+                              :format "image/png"
+                              :opacity 0.6}])
+          [:point-layer {:points indexed-sources
+                         :lat-fn #(get-in % [:elem :lat])
+                         :lon-fn #(get-in % [:elem :lon])
+                         :options-fn #(select-keys % [:index])
+                         :style-fn #(let [source (:elem %)
+                                          quantity-initial (:initial-quantity source)
+                                          quantity-current (:quantity source)
+                                          ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
+                                          color (cond
+                                                  (= 0 quantity-initial) {:fill :gray :stroke :lightgray}
+                                                  (<= ratio 0.25) {:fill :limegreen :stroke :limegreen}
+                                                  (< 0.25 ratio 0.5) {:fill :yellow :stroke :yellow}
+                                                  (<= 0.5 ratio 0.75) {:fill :orange :stroke :orange}
+                                                  (> ratio 0.75) {:fill :red :stroke :red})]
+                                      {:fillColor (:fill color)
+                                       :color (:stroke color)})
+                         :radius 7
+                         :fillOpacity 0.8
+                         :stroke true
+                         :weight 10
+                         :opacity 0.2
+                         :popup-fn #(show-source %)}]
+          (when @selected-provider
+            [:geojson-layer {:data (:coverage-geom @selected-provider)
+                             :group {:pane "tilePane"}
+                             :lat-fn (fn [polygon-point] (:lat polygon-point))
+                             :lon-fn (fn [polygon-point] (:lon polygon-point))
+                             :color :orange
+                             :stroke true}])
 
           (when @suggested-locations
             [:marker-layer {:points (map-indexed (fn [ix suggestion]
@@ -152,31 +151,31 @@
                                            (.closePopup this)
                                            (dispatch [:scenarios.map/unselect-provider suggestion]))}])
 
-                             [providers-layer-type {:points indexed-providers
-                                                    :lat-fn #(get-in % [:elem :location :lat])
-                                                    :lon-fn #(get-in % [:elem :location :lon])
-                                                    :options-fn #(select-keys % [:index])
-                                                    :style-fn #(let [provider (:elem %)]
-                                                                 (-> {}
-                                                                     (assoc :fillColor
-                                                                            (if (= (:provider-id provider) (:provider-id @selected-provider))
-                                                                              :orange
-                                                                              "#444"))
-                                                                     (merge (when (provider-from-changeset? provider)
-                                                                              {:stroke true               ; style for providers created by user
-                                                                               :color :blueviolet
-                                                                               :weight 10
-                                                                               :opacity 0.2}))))
-                                                    :radius 4
-                                                    :fillOpacity 0.9
-                                                    :stroke false
-                                                    :popup-fn #(show-provider %)
-                                                    :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                                          (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))
-                                                    :mouseover-fn (fn [ix-provider]
-                                                                    (dispatch [:scenarios.map/select-provider (:elem ix-provider)]))
-                                                    :mouseout-fn (fn [ix-provider]
-                                                                   (dispatch [:scenarios.map/unselect-provider (:elem ix-provider)]))}]]]))))
+          [providers-layer-type {:points indexed-providers
+                                 :lat-fn #(get-in % [:elem :location :lat])
+                                 :lon-fn #(get-in % [:elem :location :lon])
+                                 :options-fn #(select-keys % [:index])
+                                 :style-fn #(let [provider (:elem %)]
+                                              (-> {}
+                                                  (assoc :fillColor
+                                                         (if (= (:provider-id provider) (:provider-id @selected-provider))
+                                                           :orange
+                                                           "#444"))
+                                                  (merge (when (provider-from-changeset? provider)
+                                                           {:stroke true               ; style for providers created by user
+                                                            :color :blueviolet
+                                                            :weight 10
+                                                            :opacity 0.2}))))
+                                 :radius 4
+                                 :fillOpacity 0.9
+                                 :stroke false
+                                 :popup-fn #(show-provider %)
+                                 :onclick-fn (fn [e] (when (get-in e [:elem :action])
+                                                       (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))
+                                 :mouseover-fn (fn [ix-provider]
+                                                 (dispatch [:scenarios.map/select-provider (:elem ix-provider)]))
+                                 :mouseout-fn (fn [ix-provider]
+                                                (dispatch [:scenarios.map/unselect-provider (:elem ix-provider)]))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]

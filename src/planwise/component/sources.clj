@@ -6,7 +6,6 @@
             [clojure.data.csv :as csv]
             [hugsql.core :as hugsql]
             [clojure.java.jdbc :as jdbc]
-            [planwise.util.exceptions :refer [catch-exception]]
             [clojure.data.json :as json]))
 
 ;; ----------------------------------------------------------------------

@@ -75,11 +75,9 @@
 (rf/reg-sub
  :scenarios.new-provider/options :<- [:scenarios/view-state]
  (fn [view-state [_]]
-   (= :choose-options-for-new-provider view-state)))
+   (= :create-or-suggest-new-provider view-state)))
 
 (rf/reg-sub
  :scenarios/invalid-location-for-provider
  (fn [db _]
    (get-in db [:scenarios :current-scenario :invalid-location-for-provider])))
-
-

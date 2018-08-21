@@ -11,7 +11,6 @@
             [clojure.edn :refer [read-string]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
-            [planwise.util.exceptions :refer [catch-exception]]
             [integrant.core :as ig]
             [clojure.core.memoize :as memoize]
             [clojure.java.io :as io]
@@ -363,11 +362,11 @@
                       :updated-demand (get-demand-source-updated engine source polygon get-update)}
           :other info)))
 
-(defn- test-coverage
-  [coverage-fn demand]
-  (let [val (coverage-fn (drop-last (first demand)) {:get-avg true})
-        fail-settings (every? #(s/includes? val %) ["Spec assertion failed" "(contains? "])]
-    (if fail-settings {:error val} 1)))
+; (defn- test-coverage
+;   [coverage-fn demand]
+;   (let [val (coverage-fn (drop-last (first demand)) {:get-avg true})
+;         fail-settings (every? #(s/includes? val %) ["Spec assertion failed" "(contains? "])]
+;     (if fail-settings {:error val} 1))))
 
 (defn search-optimal-location
   [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
@@ -383,15 +382,17 @@
                              :sources-data (gs/get-saturated-locations {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
         algorithm (keyword coverage-algorithm)
         criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
-        aux-fn    #(get-coverage engine criteria source %)
-        cost-fn   (fn [val props] (catch-exception #(pr-str (.getMessage %)) aux-fn (assoc props :coord val)))
-        checked   (test-coverage cost-fn (or (:initial-set source) (:sources-data source)))]
+        coverage-fn (fn [val props] (try
+                                      (get-coverage engine criteria source (assoc props :coord val))
+                                      (catch Exception e (pr-str (.getMessage e)))))]
+    ;checked   (test-coverage coverage-fn (or (:initial-set source) (:sources-data source)))
     (when raster (raster/write-raster-file raster search-path))
-    (if (map? checked) (throw (IllegalArgumentException. (str "Can not apply coverage algorithm to current project.")))
-        (let [bound    (when provider-set-id (:avg-max (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id)))
-              locations (gs/greedy-search 10 source cost-fn demand-quartiles {:bound bound :n 20})]
-          (if (empty? locations) (throw (IllegalArgumentException. "Demand can't be reached"))
-              locations)))))
+    ;if (map? checked) (throw (IllegalArgumentException. (str "Can not apply coverage algorithm to current project.")))
+    (let [bound    (when provider-set-id (:avg-max (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id)))
+          locations (gs/greedy-search 10 source coverage-fn demand-quartiles {:bound bound :n 20})]
+      (if (empty? locations)
+        (throw (IllegalArgumentException. "Demand can't be reached"))
+        locations))))
 
 
 
