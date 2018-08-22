@@ -134,10 +134,11 @@
       (friction/compute-polygon runner friction-raster coords max-time min-friction)
       (throw (ex-info "Cannot find a friction raster for the origin coordinates " {:coords coords})))))
 
-(defn as-geojson
-  [{:keys [db]} geometry]
+(defn geometry-intersected-with-project-region
+  [{:keys [db]} geometry region-id]
   (let [db-spec (:spec db)]
-    (db-as-geojson db-spec {:geom geometry})))
+    (db-intersected-coverage-region db-spec {:geom geometry
+                                             :region-id region-id})))
 
 (defn locations-outside-polygon
   [{:keys [db]} polygon locations]
@@ -167,8 +168,8 @@
         (io/make-parents raster-path)
         (rasterize/rasterize polygon raster-path raster-options))
       polygon))
-  (as-geojson [this geometry]
-    (as-geojson this geometry))
+  (geometry-intersected-with-project-region [this geometry region-id]
+    (geometry-intersected-with-project-region this geometry region-id))
   (locations-outside-polygon [this polygon locations]
     (locations-outside-polygon this polygon locations))
   (get-max-distance-from-geometry [this geometry]
