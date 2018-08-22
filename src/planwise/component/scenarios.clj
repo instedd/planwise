@@ -162,7 +162,7 @@
                   result (try (engine/compute-initial-scenario engine project)
                               (catch Exception e
                                 (db-update-error-message (get-db store) {:id scenario-id
-                                                                         :msg (.getMessage e)})))]
+                                                                         :msg (ex-data e)})))]
               (info "Initial scenario computed" result)
               ;; TODO check if scenario didn't change from result
               (db-update-scenario-state! (get-db store)
@@ -240,7 +240,7 @@
                                                                                              :sources-data initial-sources
                                                                                              :new-providers-geom new-providers-geom)))
                                           (catch Exception e (db-update-error-message (get-db store) {:id scenario-id
-                                                                                                      :msg (.getMessage e)})))]
+                                                                                                      :msg (pr-str (ex-data e))})))]
               (info "Scenario computed" result)
               ;; TODO check if scenario didn't change from result. If did, discard result.
               ;; TODO remove previous raster files

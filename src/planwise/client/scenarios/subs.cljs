@@ -12,7 +12,7 @@
    (get-in db [:scenarios :view-state])))
 
 (rf/reg-sub
- :scenarios/message-error
+ :scenarios/raise-error
  (fn [db _]
    (get-in db [:scenarios :current-scenario :raise-error])))
 

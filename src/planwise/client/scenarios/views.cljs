@@ -19,13 +19,14 @@
             [planwise.client.ui.rmwc :as m]))
 
 (def messages
-  {:no-road-network "Location can not be reached from road network. "})
+  {:no-road-network "Location can not be reached from road network."})
+
+
+;TODO (sol) ask default-message  (index // coord))
 
 (defn raise-alert
-  [project index error]
-  (let [message (if (string? error)
-                  error
-                  (or ((keyword (:key error)) messages) (join " " (split (:msg error) "-"))))]
+  [project index cause]
+  (let [message (or ((keyword cause) messages) "default-message")]
     [:div.raise-alert
      [:div.card-message
       [:div.content
@@ -237,7 +238,7 @@
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
         invalid-location? (subscribe [:scenarios/invalid-location-for-provider])
-        message-error     (subscribe [:scenarios/message-error])
+        raise-error     (subscribe [:scenarios/raise-error])
         created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
@@ -259,7 +260,7 @@
          [side-panel-view current-scenario unit-name source-demand])
        [:div (when (not= @state :raise-error) {:class-name "fade"})]
        (if (= @state :raise-error)
-         [raise-alert current-project @invalid-location? @message-error]
+         [raise-alert current-project @invalid-location? @raise-error]
          [changeset/listing-component @created-providers])
        [:div (when (not= @state :raise-error) {:class-name "fade inverted"})]
        [create-new-scenario current-scenario]

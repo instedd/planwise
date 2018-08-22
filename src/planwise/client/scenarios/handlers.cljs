@@ -65,13 +65,13 @@
 (rf/reg-event-fx
  :scenarios/catching-error
  in-scenarios
- (fn [{:keys [db]} [_ error]]
+ (fn [{:keys [db]} [_ {:keys [causes] :as error}]]
    (let [current-scenario (:current-scenario db)
          error-index      (get-index-from-changeset (:coords error) (:changeset current-scenario))
          error-recieved?  (when (:coords error) (nil? error-index))]
      (if (not error-recieved?)
        {:db (->  db (assoc-in [:current-scenario :invalid-location-for-provider] error-index)
-                 (assoc-in [:current-scenario :raise-error] (or (dissoc error :coords) error))
+                 (assoc-in [:current-scenario :raise-error] (or causes error))
                  (assoc-in [:current-scenario :error-message] nil))
         :dispatch [:scenarios/raise-error]}))))
 

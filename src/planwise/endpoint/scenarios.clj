@@ -40,7 +40,7 @@
            project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
            result (try
                     (scenarios/get-provider-suggestion service project scenario)
-                    (catch Exception e (.getMessage e)))]
+                    (catch Exception e (ex-data e)))]
        (if (string? result)
          (not-found {:error result})
          (response result))))
