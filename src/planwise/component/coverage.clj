@@ -113,7 +113,6 @@
         result   (simple/compute-coverage db-spec pg-point distance)]
     (case (:result result)
       "ok" (:polygon result)
-      ;(throw (RuntimeException. (str "Simple buffer coverage computation failed " (:result result))))
       (throw (ex-info "Simple buffer coverage computation failed" {:causes (:result result) :coords coords})))))
 
 (defmethod compute-coverage-polygon :walking-friction
@@ -124,8 +123,7 @@
         min-friction    (float (/ 1 100))]
     (if friction-raster
       (friction/compute-polygon runner friction-raster coords max-time min-friction)
-      ;(throw (ex-info (str Cannot find a friction raster for the origin coordinates) (:coords coords)))
-      (throw (ex-info "Cannot find a friction raster for the origin coordinates" {:coords coords})))))
+      (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
 
 (defmethod compute-coverage-polygon :driving-friction
   [{:keys [db runner]} coords criteria]
@@ -135,8 +133,7 @@
         min-friction    (float (/ 1 2000))]
     (if friction-raster
       (friction/compute-polygon runner friction-raster coords max-time min-friction)
-      ;(throw (ex-info (str Cannot find a friction raster for the origin coordinates (:coords coords))))
-      (throw (ex-info "Cannot find a friction raster for the origin coordinates" {:coords coords})))))
+      (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
 
 (defn geometry-intersected-with-project-region
   [{:keys [db]} geometry region-id]

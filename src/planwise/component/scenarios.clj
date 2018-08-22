@@ -154,15 +154,18 @@
                    :project project})
     scenario-id))
 
+(defn- scenario-update-error-message
+  [store id exception]
+  (db-update-error-message (get-db store) {:id id
+                                           :msg (pr-str (ex-data exception))}))
+
 (defmethod jr/job-next-task ::boundary/compute-initial-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
             (info "Computing initial scenario" scenario-id)
             (let [engine (:engine store)
                   result (try (engine/compute-initial-scenario engine project)
-                              (catch Exception e
-                                (db-update-error-message (get-db store) {:id scenario-id
-                                                                         :msg (ex-data e)})))]
+                              (catch Exception e (scenario-update-error-message store scenario-id e)))]
               (info "Initial scenario computed" result)
               ;; TODO check if scenario didn't change from result
               (db-update-scenario-state! (get-db store)
@@ -239,8 +242,7 @@
                                                                                       (assoc :providers-data initial-providers
                                                                                              :sources-data initial-sources
                                                                                              :new-providers-geom new-providers-geom)))
-                                          (catch Exception e (db-update-error-message (get-db store) {:id scenario-id
-                                                                                                      :msg (pr-str (ex-data e))})))]
+                                          (catch Exception e (scenario-update-error-message store scenario-id e)))]
               (info "Scenario computed" result)
               ;; TODO check if scenario didn't change from result. If did, discard result.
               ;; TODO remove previous raster files

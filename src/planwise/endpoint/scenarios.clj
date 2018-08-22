@@ -38,11 +38,9 @@
            id       (Integer. id)
            {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
            project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
-           result (try
-                    (scenarios/get-provider-suggestion service project scenario)
-                    (catch Exception e (ex-data e)))]
-       (if (string? result)
-         (not-found {:error result})
+           result (scenarios/get-provider-suggestion service project scenario)]
+       (if (empty? result)
+         (not-found {:error "Can not find optimal locations"})
          (response result))))
 
    (GET "/:id/geometry/:provider-id" [id provider-id :as request]
