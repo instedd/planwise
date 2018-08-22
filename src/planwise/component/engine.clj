@@ -361,7 +361,7 @@
                              :sources-data (gs/get-saturated-locations {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
         algorithm (keyword coverage-algorithm)
         criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
-        aux-fn    #(get-coverage engine criteria source %)
+        aux-fn    #(get-coverage engine criteria (:region-id project) source %)
         cost-fn   (memoize/memo (fn [val props] (catch-exc aux-fn (assoc props :coord val))))
         bounds    (when provider-set-id (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id))]
     (when raster (raster/write-raster-file raster search-path))
