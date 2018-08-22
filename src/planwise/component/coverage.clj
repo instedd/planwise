@@ -139,6 +139,12 @@
   (let [db-spec (:spec db)]
     (db-as-geojson db-spec {:geom geometry})))
 
+(defn geometry-intersected-with-project-region
+  [{:keys [db]} geometry region-id]
+  (let [db-spec (:spec db)]
+    (db-intersected-coverage-region db-spec {:geom geometry
+                                             :region-id region-id})))
+
 (defn locations-outside-polygon
   [{:keys [db]} polygon locations]
   (remove (fn [[lon lat _]] (:cond (db-inside-geometry (:spec db) {:lon lon
@@ -167,6 +173,8 @@
         (io/make-parents raster-path)
         (rasterize/rasterize polygon raster-path raster-options))
       polygon))
+  (geometry-intersected-with-project-region [this geometry region-id]
+    (geometry-intersected-with-project-region this geometry region-id))
   (as-geojson [this geometry]
     (as-geojson this geometry))
   (locations-outside-polygon [this polygon locations]

@@ -17,7 +17,11 @@
     "Given a polygon and set of locations returns those outside the geometry")
 
   (get-max-distance-from-geometry [this geometry]
-    "Retrieves max distance in geometry"))
+    "Retrieves max distance in geometry")
+
+  (geometry-intersected-with-project-region [this geometry region-id]
+    "Given a coverage geometry intersects it with project region
+    Returns result as geojson"))
 
 (defn enumerate-algorithm-options
   [service algorithm]

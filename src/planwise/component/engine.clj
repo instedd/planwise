@@ -219,7 +219,7 @@
                                   (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")
                                         polygon  (when-not (.exists (io/as-file coverage-path)) (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path})))]
                                     (if polygon
-                                      (assoc changes-geom (keyword provider-id) {:coverage-geom (:geom (coverage/as-geojson coverage polygon))})
+                                      (assoc changes-geom (keyword provider-id) {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon (:region-id project)))})
                                       changes-geom))) {} changeset)]
 
     ;; Compute demand from initial scenario
@@ -294,7 +294,7 @@
 
     (let [updated-sources          (:sources result-step1)
           updated-providers        (map #(dissoc % :coverage-geom) result-step2)
-          as-geojson               (fn [geom] {:coverage-geom (:geom (coverage/as-geojson (:coverage engine) geom))})
+          as-geojson               (fn [geom] {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) geom (:region-id project)))})
           changes-geom             (reduce (fn [tree {:keys [id coverage-geom]}] (when-not ((keyword id) tree) (assoc tree (keyword id) (as-geojson coverage-geom)))) new-providers-geom providers)
           total-sources-demand     (sum-map sources :quantity)
           total-satisfied-demand   (sum-map updated-providers :satisfied)
@@ -336,13 +336,13 @@
     (coverage/locations-outside-polygon (:coverage engine) polygon get-update)))
 
 (defn get-coverage
-  [engine criteria {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
+  [engine criteria region-id {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
   (let [criteria              (if sources-data criteria (merge criteria {:raster search-path}))
         [lon lat :as coord]   coord
         polygon               (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
         population-reacheable (count-under-geometry engine polygon source)
         info   {:coverage population-reacheable
-                :coverage-geom (:geom (coverage/as-geojson (:coverage engine) polygon))
+                :coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon region-id))
                 :location {:lat lat :lon lon}}]
     (cond get-avg {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
           get-update {:location-info info :updated-demand (get-demand-source-updated engine source polygon get-update)}
