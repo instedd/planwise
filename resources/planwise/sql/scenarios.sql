@@ -47,11 +47,6 @@ UPDATE scenarios
       "demand-coverage" = :demand-coverage,
        changeset = :changeset,
        label = :label,
-       /*~ (if (= (:error-message params) "nil") */
-      "error-message" = NULL,
-      /*~*/
-      "error-message" = :error-message,
-      /*~ ) ~*/
   state = 'pending', "updated-at" = NOW()
 WHERE
   id = :id;
@@ -103,7 +98,8 @@ SELECT "sources-data" FROM scenarios
 SELECT "new-providers-geom" FROM scenarios
   WHERE id = :scenario-id;
 
--- :name db-update-error-message :!
+-- :name db-mark-as-error :!
 UPDATE scenarios
-    SET "error-message" = :msg
+    SET "error-message" = :msg,
+        state = 'error'
     WHERE id = :id;

@@ -219,8 +219,7 @@
                           :investment (sum-investments changeset)
                           :demand-coverage nil
                           :changeset (pr-str changeset)
-                          :label nil
-                          :error-message error-message})
+                          :label nil})
         ;; Current label is removed so we need to search for the new optimal
     (db-update-scenarios-label! db {:project-id project-id})
     (jr/queue-job (:jobrunner store)

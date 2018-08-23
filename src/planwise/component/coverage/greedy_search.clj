@@ -2,10 +2,13 @@
   (:require [planwise.engine.raster :as raster]
             [planwise.util.files :as files]
             [clojure.core.memoize :as memoize]
-            [planwise.component.coverage :as coverage])
+            [planwise.component.coverage :as coverage]
+            [taoensso.timbre :as timbre])
   (:import [java.lang.Math]
            [planwise.engine Algorithm]
            [org.gdal.gdalconst gdalconst]))
+
+(timbre/refer-timbre)
 
 ;; Idea of algorithm:
  ;; i.   Fixed radius according to coverage algorithm:
@@ -175,6 +178,7 @@
 
 (defn greedy-search
   [sample {:keys [search-path initial-set sources-data] :as source} coverage-fn demand-quartiles {:keys [n bound]}]
+  (info "Starting greedy search for " (first sources-data))
   (let [[max & remain :as initial-set] (or initial-set sources-data)
         bound        (or bound (:avg-max (mean-initial-data 30 initial-set coverage-fn)))
         locations    (get-locations coverage-fn source max initial-set (/ bound 2) sample)]

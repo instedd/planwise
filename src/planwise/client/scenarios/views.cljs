@@ -31,9 +31,9 @@
         (let [index (first (keep-indexed #(if (= provider-id (:provider-id %2)) %1) changeset))]
           (when index
             [m/Button   {:class-name "bottom-button"
-                        :on-click #(do (dispatch [:scenarios/delete-provider index])
+                         :on-click #(do (dispatch [:scenarios/delete-provider index])
                                         (dispatch [:scenarios/message-delivered]))}
-            "Remove last change"]))
+             "Remove last change"]))
         [m/Button {:class-name "bottom-button"
                    :on-click #(dispatch [:projects2/project-settings])}
          "Go back to project settings"])]]))

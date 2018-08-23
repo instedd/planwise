@@ -256,16 +256,16 @@
  in-scenarios
  (fn [{:keys [db dispatch]} [_ provider]]
    (let [suggestion? (:coverage provider)
-         has-coverage? (:coverage-geom provider)
          id (get-in db [:current-scenario :id])]
-     (when (or suggestion?
-               (not= (:provider-id provider)
-                     (get-in db [:selected-provider :provider-id])))
-       (merge
-        {:db (assoc db :selected-provider provider)}
-        (when-not has-coverage?
-          {:api (assoc (api/get-provider-geom id (:provider-id provider))
-                       :on-success [:scenarios/update-geometry])}))))))
+     (cond
+       suggestion?
+       {:db (assoc db :selected-provider provider)}
+
+       (not= (:provider-id provider)
+             (get-in db [:selected-provider :provider-id]))
+       {:db (assoc db :selected-provider provider)
+        :api (assoc (api/get-provider-geom id (:provider-id provider))
+                    :on-success [:scenarios/update-geometry])}))))
 
 (rf/reg-event-db
  :scenarios/update-geometry

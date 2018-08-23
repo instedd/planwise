@@ -9,6 +9,6 @@ SELECT ST_MaxDistance(:geom, :geom) AS maxdist;
 
 -- :name db-intersected-coverage-region :? :1
 SELECT
-    St_AsGEOJSON(St_Intersection(:geom, regions.the_geom)) AS geom
+    St_AsGEOJSON(St_Intersection(St_MakeValid(:geom), regions.the_geom)) AS geom
     FROM regions
     WHERE regions.id = :region-id;
