@@ -14,7 +14,7 @@
 (rf/reg-sub
  :scenarios/error
  (fn [db _]
-   (get-in db [:scenarios :current-scenario :error])))
+   (cljs.reader/read-string (get-in db [:scenarios :current-scenario :error-message]))))
 
 (rf/reg-sub
  :scenarios/rename-dialog
@@ -76,8 +76,3 @@
  :scenarios.new-provider/options :<- [:scenarios/view-state]
  (fn [view-state [_]]
    (= :show-options-to-create-provider view-state)))
-
-(rf/reg-sub
- :scenarios/invalid-provider-index
- (fn [db _]
-   (get-in db [:scenarios :current-scenario :invalid-provider-index])))

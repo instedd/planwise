@@ -58,7 +58,8 @@ UPDATE "scenarios"
       "state" = :state,
       "providers-data" = :providers-data,
       "sources-data" = :sources-data,
-      "new-providers-geom" = :new-providers-geom
+      "new-providers-geom" = :new-providers-geom,
+      "error-message" = NULL
   WHERE "id" = :id;
 
 

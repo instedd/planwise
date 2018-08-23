@@ -251,9 +251,6 @@
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
                                       [:li (:name current-scenario)]]
                               :action export-providers-button})
-       (let [error (:error-message current-scenario)]
-         (when (some? error)
-           (dispatch [:scenarios/catch-error (cljs.reader/read-string error)])))
        (if @read-only?
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])

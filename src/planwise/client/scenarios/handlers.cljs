@@ -33,7 +33,8 @@
  :scenarios/load-scenario
  (fn [{:keys [db]} [_ {:keys [id]}]]
    (let [project-id    (get-in db [:projects2 :current-project :id])]
-     {:navigate (routes/scenarios {:project-id project-id :id id})})))
+     {:dispatch [:scenarios/clear-current-scenario]
+      :navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
 (def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data :error-message])
@@ -96,7 +97,9 @@
  :scenarios/clear-current-scenario
  in-scenarios
  (fn [db [_]]
-   (assoc db :current-scenario nil)))
+ (assoc db
+   :current-scenario nil
+   :view-state :current-scenario)))
 
 ;; Editing scenario
 
@@ -295,19 +298,10 @@
  (fn [db [_]]
    (assoc db :view-state :new-provider)))
 
-;Catching errors
 (rf/reg-event-fx
  :scenarios/catch-error
  in-scenarios
  (fn [{:keys [db]} [_ error]]
    (let [scenario (:current-scenario db)]
      {:db    (-> db (assoc-in [:current-scenario :error] error)
-                 (assoc-in [:current-scenario :view-state] :current-scenario))
-      :api   (assoc (api/update-scenario (:id scenario) (assoc scenario :error-message nil))
-                    :on-success [:scenarios/update-error-status])})))
-
-(rf/reg-event-db
- :scenarios/update-error-status
- in-scenarios
- (fn [db [_ {:keys [error-message]}]]
-   (assoc-in db [:current-scenario :error-message] error-message)))
+                    (assoc :view-state :current-scenario))})))
