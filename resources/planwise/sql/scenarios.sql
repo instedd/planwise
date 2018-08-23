@@ -42,11 +42,19 @@ RETURNING id;
 
 -- :name db-update-scenario! :! :1
 UPDATE scenarios
-  SET name = :name, investment = :investment,
-  "demand-coverage" = :demand-coverage, changeset = :changeset, label = :label,
+  SET name = :name,
+      investment = :investment,
+      "demand-coverage" = :demand-coverage,
+       changeset = :changeset,
+       label = :label,
+       /*~ (if (= (:error-message params) "nil") */
+      "error-message" = NULL,
+      /*~*/
+      "error-message" = :error-message,
+      /*~ ) ~*/
   state = 'pending', "updated-at" = NOW()
 WHERE
-  id = :id
+  id = :id;
 
 -- :name db-update-scenario-state! :! :1
 UPDATE "scenarios"

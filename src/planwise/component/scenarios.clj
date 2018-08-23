@@ -203,7 +203,7 @@
     result))
 
 (defn update-scenario
-  [store project {:keys [id name changeset]}]
+  [store project {:keys [id name changeset error-message]}]
   ;; TODO assert scenario belongs to project
   (let [db (get-db store)
         project-id (:id project)
@@ -216,7 +216,8 @@
                           :investment (sum-investments changeset)
                           :demand-coverage nil
                           :changeset (pr-str changeset)
-                          :label nil})
+                          :label nil
+                          :error-message error-message})
         ;; Current label is removed so we need to search for the new optimal
     (db-update-scenarios-label! db {:project-id project-id})
     (jr/queue-job (:jobrunner store)
