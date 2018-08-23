@@ -102,7 +102,6 @@
         result    (pgrouting/compute-coverage db-spec pg-point threshold)]
     (case (:result result)
       "ok" (:polygon result)
-      ;(throw (RuntimeException. (str pgRouting coverage computation failed (:result result))))
       (throw (ex-info "pgRouting coverage computation failed"  {:causes (:result result) :coords coords})))))
 
 (defmethod compute-coverage-polygon :simple-buffer

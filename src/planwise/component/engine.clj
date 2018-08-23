@@ -198,7 +198,8 @@
     (when-not (.exists (io/as-file coverage-path))
       (try
         (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path}))
-        (catch Exception e (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id provider-id))))))))
+        (catch Exception e
+          (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id provider-id))))))))
 
 (defn compute-scenario-by-raster
   [engine project {:keys [changeset providers-data new-providers-geom] :as scenario}]
@@ -274,10 +275,10 @@
         filter-options   (get-in project [:config :coverage :filter-options])
         criteria         (merge {:algorithm (keyword algorithm)} filter-options)
         coverage-fn      (fn [{:keys [location id]}]
-                            (try
-                                (coverage/compute-coverage (:coverage engine) location criteria)
-                                (catch Exception e
-                                  (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id id))))))
+                           (try
+                             (coverage/compute-coverage (:coverage engine) location criteria)
+                             (catch Exception e
+                               (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id id))))))
         providers        (map #(change-to-provider % coverage-fn new-providers-geom) changeset)
         sources          sources-data
         fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))
@@ -389,7 +390,8 @@
         criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
         coverage-fn (fn [val props] (try
                                       (get-coverage engine criteria (:region-id project) source (assoc props :coord val))
-                                      (catch Exception e (pr-str (.getMessage e)))))]
+                                      (catch Exception e
+                                        (warn (str "Failed to compute coverage for coordinates " val) e))))]
     (when raster (raster/write-raster-file raster search-path))
     (let [bound    (when provider-set-id (:avg-max (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id)))
           locations (gs/greedy-search 10 source coverage-fn demand-quartiles {:bound bound :n 20})]

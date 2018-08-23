@@ -154,33 +154,36 @@
                    :project project})
     scenario-id))
 
-(defn- scenario-update-error-message
+(defn- scenario-mark-as-error
   [store id exception]
-  (db-update-error-message (get-db store) {:id id
-                                           :msg (pr-str (ex-data exception))}))
+  (db-mark-as-error (get-db store) {:id id
+                                    :msg (pr-str (ex-data exception))}))
 
 (defmethod jr/job-next-task ::boundary/compute-initial-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
             (info "Computing initial scenario" scenario-id)
-            (let [engine (:engine store)
-                  result (try (engine/compute-initial-scenario engine project)
-                              (catch Exception e (scenario-update-error-message store scenario-id e)))]
-              (info "Initial scenario computed" result)
-              ;; TODO check if scenario didn't change from result
-              (db-update-scenario-state! (get-db store)
-                                         {:id              scenario-id
-                                          :raster          (:raster-path result)
-                                          :demand-coverage (:covered-demand result)
-                                          :providers-data  (pr-str (:providers-data result))
-                                          :sources-data    (pr-str (:sources-data result))
-                                          :new-providers-geom "{}"
-                                          :state           "done"})
-              (db-update-project-engine-config! (get-db store)
-                                                {:project-id    (:id project)
-                                                 :engine-config (pr-str {:demand-quartiles           (:demand-quartiles result)
-                                                                         :source-demand              (:source-demand result)
-                                                                         :pending-demand-raster-path (:raster-path result)})})))]
+            (try
+              (let [engine (:engine store)
+                    result (engine/compute-initial-scenario engine project)]
+                (info "Initial scenario computed" result)
+                ;; TODO check if scenario didn't change from result
+                (db-update-scenario-state! (get-db store)
+                                           {:id              scenario-id
+                                            :raster          (:raster-path result)
+                                            :demand-coverage (:covered-demand result)
+                                            :providers-data  (pr-str (:providers-data result))
+                                            :sources-data    (pr-str (:sources-data result))
+                                            :new-providers-geom "{}"
+                                            :state           "done"})
+                (db-update-project-engine-config! (get-db store)
+                                                  {:project-id    (:id project)
+                                                   :engine-config (pr-str {:demand-quartiles           (:demand-quartiles result)
+                                                                           :source-demand              (:source-demand result)
+                                                                           :pending-demand-raster-path (:raster-path result)})}))
+              (catch Exception e
+                (scenario-mark-as-error store scenario-id e)
+                (error "Scenario initial computation failed"))))]
     {:task-id :initial
      :task-fn task-fn
      :state   nil}))
@@ -234,28 +237,32 @@
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
             (info "Computing scenario" scenario-id)
-            (let [engine            (:engine store)
-                  scenario          (get-scenario store scenario-id)
-                  initial-providers (get-initial-providers-data store (:project-id scenario))
-                  initial-sources   (get-initial-sources-data store (:project-id scenario))
-                  new-providers-geom (get-new-providers-geom store scenario-id project)
-                  result             (try (engine/compute-scenario engine project (-> scenario
-                                                                                      (assoc :providers-data initial-providers
-                                                                                             :sources-data initial-sources
-                                                                                             :new-providers-geom new-providers-geom)))
-                                          (catch Exception e (scenario-update-error-message store scenario-id e)))]
-              (info "Scenario computed" result)
-              ;; TODO check if scenario didn't change from result. If did, discard result.
-              ;; TODO remove previous raster files
-              (db-update-scenario-state! (get-db store)
-                                         {:id              scenario-id
-                                          :raster          (:raster-path result)
-                                          :demand-coverage (:covered-demand result)
-                                          :providers-data  (pr-str (:providers-data result))
-                                          :sources-data    (pr-str (:sources-data result))
-                                          :new-providers-geom (pr-str (:new-providers-geom result))
-                                          :state           "done"})
-              (db-update-scenarios-label! (get-db store) {:project-id (:id project)})))]
+            (try
+              (let [engine            (:engine store)
+                    scenario          (get-scenario store scenario-id)
+                    initial-providers (get-initial-providers-data store (:project-id scenario))
+                    initial-sources   (get-initial-sources-data store (:project-id scenario))
+                    new-providers-geom (get-new-providers-geom store scenario-id project)
+                    scenario-with-data (assoc scenario
+                                              :providers-data initial-providers
+                                              :sources-data initial-sources
+                                              :new-providers-geom new-providers-geom)
+                    result             (engine/compute-scenario engine project scenario-with-data)]
+                (info "Scenario computed" result)
+                ;; TODO check if scenario didn't change from result. If did, discard result.
+                ;; TODO remove previous raster files
+                (db-update-scenario-state! (get-db store)
+                                           {:id              scenario-id
+                                            :raster          (:raster-path result)
+                                            :demand-coverage (:covered-demand result)
+                                            :providers-data  (pr-str (:providers-data result))
+                                            :sources-data    (pr-str (:sources-data result))
+                                            :new-providers-geom (pr-str (:new-providers-geom result))
+                                            :state           "done"})
+                (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
+              (catch Exception e
+                (scenario-mark-as-error store scenario-id e)
+                (error "Scenario computation failed"))))]
     {:task-id scenario-id
      :task-fn task-fn
      :state   nil}))
