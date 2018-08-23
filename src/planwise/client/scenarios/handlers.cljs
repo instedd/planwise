@@ -97,9 +97,9 @@
  :scenarios/clear-current-scenario
  in-scenarios
  (fn [db [_]]
- (assoc db
-   :current-scenario nil
-   :view-state :current-scenario)))
+   (assoc db
+          :current-scenario nil
+          :view-state :current-scenario)))
 
 ;; Editing scenario
 
@@ -132,51 +132,6 @@
                 ;; do not reset rename-dialog to nil or dialog animation after <enter> will fail
                 (assoc-in [:current-scenario :name] name)
                 (assoc-in [:view-state] :current-scenario))})))
-
-;;Creating new-providers
-
-(def request-key [:scenarios :current-scenario :computing-best-locations :request])
-
-(rf/reg-event-fx
- :scenarios.new-provider/fetch-suggested-locations
- in-scenarios
- (fn [{:keys [db]} [_]]
-   (let [view-state (get-in db [:view-state])
-         next-state (if (= view-state :new-provider) ; is creating new provider?
-                      :current-scenario
-                      :new-provider)]
-     (merge {:db (-> db
-                     (assoc-in [:view-state] next-state)
-                     (assoc-in [:current-scenario :suggested-locations] nil))}
-            (if (= next-state :new-provider)
-              {:dispatch [:scenarios.new-provider/get-suggested-providers]}
-              {:api-abort request-key})))))
-
-(rf/reg-event-fx
- :scenarios.new-provider/get-suggested-providers
- in-scenarios
- (fn [{:keys [db]} [_]]
-   {;FIXME: Issue #456
-    :db  (assoc-in db [:current-scenario :computing-best-locations :state] true)
-    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
-                :on-success [:scenarios/suggested-providers]
-                :on-failure [:scenarios/no-suggested-providers]
-                :key        request-key)}))
-
-(rf/reg-event-db
- :scenarios/suggested-providers
- in-scenarios
- (fn [db [_ suggestions]]
-   (-> db
-       (assoc-in [:current-scenario :suggested-locations] suggestions)
-       (assoc-in [:current-scenario :computing-best-locations :state] false))))
-
-(rf/reg-event-db
- :scenarios/no-suggested-providers
- in-scenarios
- (fn [db [_ {:keys [response]}]]
-   (js/alert (:error response))
-   (-> db (assoc-in [:current-scenario :computing-best-locations :state] false))))
 
 (rf/reg-event-fx
  :scenarios/create-provider
@@ -282,26 +237,57 @@
  (fn [db [_ provider]]
    (assoc db :selected-provider nil)))
 
-(rf/reg-event-db
- :scenarios.new-provider/choose-option
+;;Creating new-providers
+
+(rf/reg-event-fx
+ :scenarios.new-provider/toggle-options
  in-scenarios
- (fn [db [_]]
-   (let [actual-state (:view-state db)]
-     (assoc db :view-state (case actual-state
-                             :current-scenario :show-options-to-create-provider
-                             :show-options-to-create-provider :current-scenario
-                             actual-state)))))
+ (fn [{:keys [db]} [_]]
+   (let [actual-state (:view-state db)
+         getting-suggestions? (get-in db [:current-scenario :computing-best-locations :state])
+         next-state (case actual-state
+                      :current-scenario :show-options-to-create-provider
+                      :show-options-to-create-provider :current-scenario
+                      :new-provider :current-scenario
+                      :get-suggestions :current-scenario
+                      actual-state)]
+     {:db       (-> db (assoc :view-state next-state)
+                    (assoc-in [:current-scenario :suggested-locations] nil))
+      :dispatch (when getting-suggestions? [:scenarios.new-provider/abort-fetching-suggestions])})))
+
+(rf/reg-event-fx
+ :scenarios.new-provider/fetch-suggested-locations
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   {:db  (-> db (assoc-in [:current-scenario :computing-best-locations :state] true)
+             (assoc :view-state :get-suggestions))
+    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
+                :on-success [:scenarios/suggested-providers]
+                :on-failure [:scenarios/no-suggested-providers])}))
+
+(rf/reg-event-db
+ :scenarios/suggested-providers
+ in-scenarios
+ (fn [db [_ suggestions]]
+   (-> db (assoc :view-state :new-provider)
+       (assoc-in [:current-scenario :suggested-locations] suggestions)
+       (assoc-in [:current-scenario :computing-best-locations :state] false))))
+
+(rf/reg-event-db
+ :scenarios/no-suggested-providers
+ in-scenarios
+ (fn [db [_ {:keys [response]}]]
+   (js/alert (:error response))
+   (assoc-in db [:current-scenario :computing-best-locations :state] false)))
 
 (rf/reg-event-db
  :scenarios.new-provider/simple-creation
  in-scenarios
  (fn [db [_]]
-   (assoc db :view-state :new-provider)))
+   (-> db (assoc :view-state :new-provider))))
 
-(rf/reg-event-fx
- :scenarios/catch-error
+(rf/reg-event-db
+ :scenarios.new-provider/abort-fetching-suggestions
  in-scenarios
- (fn [{:keys [db]} [_ error]]
-   (let [scenario (:current-scenario db)]
-     {:db    (-> db (assoc-in [:current-scenario :error] error)
-                    (assoc :view-state :current-scenario))})))
+ (fn [db [_]]
+   (assoc-in db [:current-scenario :computing-best-locations :state] false)))

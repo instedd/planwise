@@ -58,7 +58,7 @@
           {:class-name "border-btn-floating border-btn-floating-animated"}
           {:class-name "border-btn-floating"})
    [m/Fab {:class-name "btn-floating"
-           :on-click #(dispatch [:scenarios.new-provider/choose-option])}
+           :on-click #(dispatch [:scenarios.new-provider/toggle-options])}
     (cond computing? "stop"
           (= state :new-provider) "cancel"
           :default "domain")]])
