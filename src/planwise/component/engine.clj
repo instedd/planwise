@@ -261,19 +261,23 @@
                                                         filter-options))))
 
 (defn- change-to-provider
-  [{:keys [provider-id location coverage-geom] :as change} coverage-fn new-providers-geom]
+  [{:keys [provider-id coverage-geom] :as change} coverage-fn new-providers-geom]
   (let [coverage-geom ((keyword provider-id) new-providers-geom)
         change (assoc (select-keys change [:capacity :location]) :id provider-id)]
     (if coverage-geom
       (merge change coverage-geom)
-      (assoc change :coverage-geom (coverage-fn location)))))
+      (assoc change :coverage-geom (coverage-fn change)))))
 
 (defn compute-scenario-by-point
   [engine project {:keys [changeset providers-data sources-data new-providers-geom] :as scenario}]
   (let [algorithm        (:coverage-algorithm project)
         filter-options   (get-in project [:config :coverage :filter-options])
         criteria         (merge {:algorithm (keyword algorithm)} filter-options)
-        coverage-fn      (fn [provider] (coverage/compute-coverage (:coverage engine) provider criteria))
+        coverage-fn      (fn [{:keys [location id]}]
+                            (try
+                                (coverage/compute-coverage (:coverage engine) location criteria)
+                                (catch Exception e
+                                  (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id id))))))
         providers        (map #(change-to-provider % coverage-fn new-providers-geom) changeset)
         sources          sources-data
         fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))
