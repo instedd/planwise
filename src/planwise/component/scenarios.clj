@@ -316,7 +316,7 @@
   [store scenario-id]
   (let [scenario       (get-scenario store scenario-id)
         changes        (changeset-to-export (:changeset scenario))
-        providers-data (-> scenario :providers-data read-string)]
+        providers-data (-> scenario :providers-data)]
     (map->csv (providers-to-export store providers-data changes))))
 
 (defn reset-scenarios
