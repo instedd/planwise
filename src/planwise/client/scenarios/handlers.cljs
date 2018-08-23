@@ -36,7 +36,7 @@
      {:navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
-(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data])
+(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data :error-message])
 
 (defn- dispatch-track-demand-information-if-needed
   [scenario]
@@ -59,7 +59,7 @@
          should-update    (= (:id current-scenario) (:id scenario))]
      (if should-update
        (merge {:db (assoc db :current-scenario
-                          (merge current-scenario (select-keys scenario (conj demand-fields :error-message))))}
+                          (merge current-scenario (select-keys scenario demand-fields)))}
               (dispatch-track-demand-information-if-needed scenario))
        {}))))
 
@@ -168,13 +168,12 @@
        (assoc-in [:current-scenario :suggested-locations] suggestions)
        (assoc-in [:current-scenario :computing-best-locations :state] false))))
 
-; (rf/reg-event-db
-;  :scenarios/no-suggested-providers
-;  in-scenarios
-;  (fn [db [_ {:keys [response]}]]
-;    (-> db (assoc-in [:current-scenario :computing-best-locations :state] false)
-;        (assoc :view-state :raise-error)
-;        (assoc-in [:current-scenario :raise-error] (:error response)))))
+(rf/reg-event-db
+ :scenarios/no-suggested-providers
+ in-scenarios
+ (fn [db [_ {:keys [response]}]]
+   (js/alert (:error response))
+   (-> db (assoc-in [:current-scenario :computing-best-locations :state] false))))
 
 (rf/reg-event-fx
  :scenarios/create-provider
@@ -302,16 +301,10 @@
  in-scenarios
  (fn [{:keys [db]} [_ error]]
    (let [scenario (:current-scenario db)]
-     {:db    (-> db (assoc :raise-error error)
+     {:db    (-> db (assoc-in [:current-scenario :error] error)
                  (assoc-in [:current-scenario :view-state] :current-scenario))
       :api   (assoc (api/update-scenario (:id scenario) (assoc scenario :error-message nil))
                     :on-success [:scenarios/update-error-status])})))
-
-(rf/reg-event-db
- :scenarios/message-delivered
- in-scenarios
- (fn [db [_]]
-   (assoc db :raise-error nil)))
 
 (rf/reg-event-db
  :scenarios/update-error-status

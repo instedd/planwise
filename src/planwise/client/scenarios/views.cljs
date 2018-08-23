@@ -18,13 +18,10 @@
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]))
 
-(def messages
-  {:no-road-network "Location can not be reached from road network."})
 
-;TODO (sol) ask default-message  (index // coord))
 (defn raise-alert
   [project {:keys [changeset]} {:keys [causes provider-id]}]
-  (let [message (or ((keyword causes) messages) "default-message")]
+  (let [message ""]
     [:div.raise-alert
      [:div.card-message
       [:div.content
@@ -32,10 +29,11 @@
        [:h3 message]]
       (if provider-id
         (let [index (first (keep-indexed #(if (= provider-id (:provider-id %2)) %1) changeset))]
-          [m/Button   {:class-name "bottom-button"
-                       :on-click #(do (dispatch [:scenarios/delete-provider index])
-                                      (dispatch [:scenarios/message-delivered]))}
-           "Remove last change"])
+          (when index
+            [m/Button   {:class-name "bottom-button"
+                        :on-click #(do (dispatch [:scenarios/delete-provider index])
+                                        (dispatch [:scenarios/message-delivered]))}
+            "Remove last change"]))
         [m/Button {:class-name "bottom-button"
                    :on-click #(dispatch [:projects2/project-settings])}
          "Go back to project settings"])]]))
@@ -73,7 +71,7 @@
   (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
 
 (defn simple-map
-  [{:keys [bbox]} scenario state raise-error]
+  [{:keys [bbox]} scenario state error]
   (let [index               (subscribe [:scenarios/changeset-index])
         selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
@@ -83,12 +81,12 @@
                                                                                  :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
-    (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario} state raise-error]
+    (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario} state error]
       (let [providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
             indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
-        [:div.map-container (when raise-error {:class "gray-filter"})
+        [:div.map-container (when error {:class "gray-filter"})
          [l/map-widget {:zoom @zoom
                         :position @position
                         :on-position-changed #(reset! position %)
@@ -236,7 +234,7 @@
   [current-project current-scenario]
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
-        raise-error       (subscribe [:scenarios/raise-error])
+        error      (subscribe [:scenarios/error])
         created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
@@ -247,7 +245,7 @@
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)
                              {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario @state @raise-error]
+                              :main [simple-map current-project current-scenario @state @error]
                               :title [:ul {:class-name "breadcrumb-menu"}
                                       [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
@@ -259,11 +257,11 @@
        (if @read-only?
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])
-       [:div (when-not @raise-error {:class-name "fade"})]
-       (if @raise-error
-         [raise-alert current-project current-scenario @raise-error]
+       [:div (when-not @error {:class-name "fade"})]
+       (if @error
+         [raise-alert current-project current-scenario @error]
          [changeset/listing-component @created-providers])
-       [:div (when-not @raise-error {:class-name "fade inverted"})]
+       [:div (when-not @error {:class-name "fade inverted"})]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
        [edit/changeset-dialog current-scenario (get-in current-project [:config :actions :budget])]])))
