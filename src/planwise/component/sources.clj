@@ -86,7 +86,7 @@
 
 (defn list-sources-under-coverage
   [store source-set-id coverage-geom]
-  (let [key (if (= (pr-str (.getClass coverage-geom) "org.postgis.PGgeometry")) :coverage-geom :coverage-geojson)]
+  (let [key (if (= (pr-str (.getClass coverage-geom)) "org.postgis.PGgeometry") :coverage-geom :coverage-geojson)]
     (db-list-sources-under-coverage (get-db store) {:source-set-id source-set-id
                                                     key coverage-geom})))
 
