@@ -1,5 +1,6 @@
 (ns planwise.client.scenarios.handlers
   (:require [re-frame.core :refer [register-handler dispatch] :as rf]
+            [clojure.string :as s]
             [planwise.client.asdf :as asdf]
             [planwise.client.routes :as routes]
             [planwise.client.scenarios.api :as api]
@@ -32,10 +33,11 @@
  :scenarios/load-scenario
  (fn [{:keys [db]} [_ {:keys [id]}]]
    (let [project-id    (get-in db [:projects2 :current-project :id])]
-     {:navigate (routes/scenarios {:project-id project-id :id id})})))
+     {:dispatch [:scenarios/clear-current-scenario]
+      :navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
-(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data])
+(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data :error-message])
 
 (defn- dispatch-track-demand-information-if-needed
   [scenario]
@@ -49,16 +51,19 @@
 ;; Updates the current scenario (if it's still the same one passed by the argument)
 ;; and if the scenario is still in pending, schedule a next dispatch for tracking
 ;; the processing status
+
 (rf/reg-event-fx
  :scenarios/update-demand-information
+ in-scenarios
  (fn [{:keys [db]} [_ scenario]]
-   (let [current-scenario (get-in db [:scenarios :current-scenario])
+   (let [current-scenario (:current-scenario db)
          should-update    (= (:id current-scenario) (:id scenario))]
      (if should-update
-       (merge {:db (-> db (assoc-in [:scenarios :current-scenario]
-                                    (merge current-scenario (select-keys scenario demand-fields))))}
+       (merge {:db (assoc db :current-scenario
+                          (merge current-scenario (select-keys scenario demand-fields)))}
               (dispatch-track-demand-information-if-needed scenario))
        {}))))
+
 
 (rf/reg-event-fx
  :scenarios/track-demand-information
@@ -92,7 +97,9 @@
  :scenarios/clear-current-scenario
  in-scenarios
  (fn [db [_]]
-   (assoc db :current-scenario nil)))
+   (assoc db
+          :current-scenario nil
+          :view-state :current-scenario)))
 
 ;; Editing scenario
 
@@ -106,7 +113,7 @@
             :rename-dialog {:value name}))))
 
 (rf/reg-event-db
- :scenarios/cancel-rename-dialog
+ :scenarios/cancel-dialog
  in-scenarios
  (fn [db [_]]
    (assoc db
@@ -125,50 +132,6 @@
                 ;; do not reset rename-dialog to nil or dialog animation after <enter> will fail
                 (assoc-in [:current-scenario :name] name)
                 (assoc-in [:view-state] :current-scenario))})))
-
-;;Creating new-providers
-
-(def request-key [:scenarios :current-scenario :computing-best-locations :request])
-
-(rf/reg-event-fx
- :scenarios.new-provider/toggle-select-location
- in-scenarios
- (fn [{:keys [db]} [_]]
-   (let [view-state (get-in db [:view-state])
-         next-state (if (= view-state :new-provider) ; is creating new provider?
-                      :current-scenario
-                      :new-provider)]
-     (merge {:db (-> db
-                     (assoc-in [:view-state] next-state)
-                     (assoc-in [:current-scenario :suggested-locations] nil))}
-            (if (= next-state :new-provider)
-              {:dispatch [:scenarios.new-provider/get-suggested-providers]}
-              {:api-abort request-key})))))
-
-(rf/reg-event-fx
- :scenarios.new-provider/get-suggested-providers
- in-scenarios
- (fn [{:keys [db]} [_]]
-   {;FIXME: Issue #456
-    :db  (assoc-in db [:current-scenario :computing-best-locations :state] true)
-    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
-                :on-success [:scenarios/suggested-providers]
-                :on-failure [:scenarios/no-suggested-providers]
-                :key        request-key)}))
-
-(rf/reg-event-db
- :scenarios/suggested-providers
- in-scenarios
- (fn [db [_ suggestions]]
-   (-> db
-       (assoc-in [:current-scenario :suggested-locations] suggestions)
-       (assoc-in [:current-scenario :computing-best-locations :state] false))))
-
-(rf/reg-event-db
- :scenarios/no-suggested-providers
- in-scenarios
- (fn [db [_]]
-   (assoc-in db [:current-scenario :computing-best-locations :state] false)))
 
 (rf/reg-event-fx
  :scenarios/create-provider
@@ -207,13 +170,6 @@
                 (assoc-in [:current-scenario] updated-scenario)
                 (assoc-in [:view-state] :current-scenario))})))
 
-(rf/reg-event-db
- :scenarios/cancel-changeset-dialog
- in-scenarios
- (fn [db [_]]
-   (assoc db
-          :view-state :current-scenario
-          :changeset-dialog nil)))
 
 (rf/reg-event-fx
  :scenarios/delete-provider
@@ -225,7 +181,7 @@
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (assoc db :current-scenario updated-scenario)
-      :dispatch [:scenarios/cancel-changeset-dialog]})))
+      :dispatch [:scenarios/cancel-dialog]})))
 
 ;; ----------------------------------------------------------------------------
 ;; Scenarios listing
@@ -257,15 +213,17 @@
  :scenarios.map/select-provider
  in-scenarios
  (fn [{:keys [db dispatch]} [_ provider]]
-   (when (not= (:provider-id provider)
-               (get-in db [:selected-provider :provider-id]))
-     (let [id (get-in db [:current-scenario :id])
-           has-coverage? (some? (:coverage-geom provider))]
-       (merge
-        {:db (assoc db :selected-provider provider)}
-        (when-not has-coverage?
-          {:api (assoc (api/get-provider-geom id (:provider-id provider))
-                       :on-success [:scenarios/update-geometry])}))))))
+   (let [suggestion? (:coverage provider)
+         id (get-in db [:current-scenario :id])]
+     (cond
+       suggestion?
+       {:db (assoc db :selected-provider provider)}
+
+       (not= (:provider-id provider)
+             (get-in db [:selected-provider :provider-id]))
+       {:db (assoc db :selected-provider provider)
+        :api (assoc (api/get-provider-geom id (:provider-id provider))
+                    :on-success [:scenarios/update-geometry])}))))
 
 (rf/reg-event-db
  :scenarios/update-geometry
@@ -278,3 +236,58 @@
  in-scenarios
  (fn [db [_ provider]]
    (assoc db :selected-provider nil)))
+
+;;Creating new-providers
+
+(rf/reg-event-fx
+ :scenarios.new-provider/toggle-options
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   (let [actual-state (:view-state db)
+         getting-suggestions? (get-in db [:current-scenario :computing-best-locations :state])
+         next-state (case actual-state
+                      :current-scenario :show-options-to-create-provider
+                      :show-options-to-create-provider :current-scenario
+                      :new-provider :current-scenario
+                      :get-suggestions :current-scenario
+                      actual-state)]
+     {:db       (-> db (assoc :view-state next-state)
+                    (assoc-in [:current-scenario :suggested-locations] nil))
+      :dispatch (when getting-suggestions? [:scenarios.new-provider/abort-fetching-suggestions])})))
+
+(rf/reg-event-fx
+ :scenarios.new-provider/fetch-suggested-locations
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   {:db  (-> db (assoc-in [:current-scenario :computing-best-locations :state] true)
+             (assoc :view-state :get-suggestions))
+    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
+                :on-success [:scenarios/suggested-providers]
+                :on-failure [:scenarios/no-suggested-providers])}))
+
+(rf/reg-event-db
+ :scenarios/suggested-providers
+ in-scenarios
+ (fn [db [_ suggestions]]
+   (-> db (assoc :view-state :new-provider)
+       (assoc-in [:current-scenario :suggested-locations] suggestions)
+       (assoc-in [:current-scenario :computing-best-locations :state] false))))
+
+(rf/reg-event-db
+ :scenarios/no-suggested-providers
+ in-scenarios
+ (fn [db [_ {:keys [response]}]]
+   (js/alert (:error response))
+   (assoc-in db [:current-scenario :computing-best-locations :state] false)))
+
+(rf/reg-event-db
+ :scenarios.new-provider/simple-creation
+ in-scenarios
+ (fn [db [_]]
+   (-> db (assoc :view-state :new-provider))))
+
+(rf/reg-event-db
+ :scenarios.new-provider/abort-fetching-suggestions
+ in-scenarios
+ (fn [db [_]]
+   (assoc-in db [:current-scenario :computing-best-locations :state] false)))

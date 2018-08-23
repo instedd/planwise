@@ -3,10 +3,12 @@
             [planwise.util.files :as files]
             [clojure.core.memoize :as memoize]
             [planwise.component.coverage :as coverage]
-            [planwise.util.exceptions :refer [catch-exc]])
+            [taoensso.timbre :as timbre])
   (:import [java.lang.Math]
            [planwise.engine Algorithm]
            [org.gdal.gdalconst gdalconst]))
+
+(timbre/refer-timbre)
 
 ;; Idea of algorithm:
  ;; i.   Fixed radius according to coverage algorithm:
@@ -91,7 +93,7 @@
   [n demand coverage-fn]
   (let [locations (take n (random-sample 0.8 demand))
         total-max (reduce (fn [tm location]
-                            (let [{:keys [max]} (or (coverage-fn (drop-last location) {:get-avg true}) {:cov 0 :max 0})]
+                            (let [{:keys [max]} (or (coverage-fn (drop-last location) {:get-avg true}) {:max 0})]
                               (+ tm max))) 0 locations)]
     {:avg-max (/ total-max n)}))
 
@@ -105,58 +107,62 @@
   ([demand center radius]
    (next-neighbour demand center radius (/ radius 1000)))
   ([demand center radius eps]
-   (let [in-frontier? (fn [p] (neighbour-fn p radius))
+   (let [in-frontier? (fn [p] (neighbour-fn p radius eps))
          frontier     (filter (in-frontier? center) demand)]
      (get-weighted-centroid frontier))))
 
 (defn update-demand
   [coverage-fn {:keys [sources-data raster]} demand-point demand avg-max]
-  {:pre [(not (nil? demand))]}
+  {:pre [(and (not (nil? demand)) (not (nil? demand-point)))]}
 
   (let [source (or raster sources-data)
         get-value-fn  (if raster
                         (fn [location] (aget (:data source) (get-index location source)))
                         (fn [location] (last (filter #(= (drop-last %) location) source))))
-        is-neighbour? (memoize (fn [p r] (neighbour-fn p r)))
+        is-neighbour? (memoize (fn [coord r] (neighbour-fn coord r)))
         interior      (filter (is-neighbour? demand-point avg-max) demand)]
 
     (if (empty? interior)
 
       (let [division (group-by (is-neighbour? demand-point avg-max) demand)
-            {:keys [location-info updated-demand]} (coverage-fn (drop-last demand-point) {:get-update demand})
-            demand* (when raster (vec (clojure.set/intersection (set (get division false)) (set updated-demand))))]
+            {:keys [location-info updated-demand]} (coverage-fn (drop-last demand-point) {:get-update {:demand demand}})]
         [location-info updated-demand])
 
       (loop [sum 0
              radius avg-max
              [lon lat _ :as center] demand-point
+             visited #{[lon lat]}
              interior interior]
 
         (if (<= (- avg-max sum) 0)
 
-          (let [division (group-by (is-neighbour? center avg-max) demand)
-                geo-cent (get-centroid (get division true))
-                {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update demand})
-                demand*  (when raster (vec (clojure.set/intersection (set (get division false)) (set updated-demand))))]
-            [location-info (or demand* updated-demand)])
+          (let [interior (filter (is-neighbour? center avg-max) demand)
+                geo-cent (get-centroid interior)
+                {:keys [location-info updated-demand]} (coverage-fn geo-cent {:get-update {:demand demand
+                                                                                           :visited visited}})]
+            [location-info updated-demand])
 
-          (let [location (next-neighbour interior center radius)]
+          (let [location (next-neighbour interior center radius)
+                visited  (clojure.set/union visited #{(vec location)})]
 
             (if (nil? location)
 
-              (recur avg-max radius center demand)
+              (recur avg-max radius center visited demand)
 
               (let [value       (get-value-fn location)
                     next-center (conj (vec location) value)
                     next-radius (euclidean-distance [lon lat] location)
                     step        (- radius next-radius)]
 
+
                 (if (and (> step 0) (pos? next-radius))
-                  (recur (+ sum step) next-radius next-center (filter (is-neighbour? next-center next-radius) demand))
-                  (recur avg-max radius center interior))))))))))
+                  (recur (+ sum step) next-radius next-center visited (filter (is-neighbour? next-center next-radius) demand))
+                  (recur avg-max radius center visited interior))))))))))
 
 (defn get-locations
   [coverage-fn source from initial-set bound sample]
+  {:pre [(pos? bound)]}
+
   (loop [times 0
          locations []
          from   (first initial-set)
@@ -164,17 +170,17 @@
 
     (if (or (nil? demand) (nil? from) (= times sample))
       (remove #(zero? (:coverage %)) locations)
-      (let [[location demand*]        (update-demand coverage-fn source from demand bound)
-            [from* & demand* :as set] (sort-by last > demand*)]
-        (recur (inc times) (conj locations location) from* demand*)))))
+      (let [[location demand*] (update-demand coverage-fn source from demand bound)]
+        (if location
+          (let [[from* & demand* :as set] (when demand* (sort-by last > demand*))]
+            (recur (inc times) (conj locations location) from* demand*))
+          (recur (inc times) locations (first demand*) (rest demand*)))))))
 
 (defn greedy-search
-  [sample {:keys [raster  search-path sources-data] :as source} coverage-fn demand-quartiles {:keys [n bounds]}]
-  (let [[max & remain :as initial-set]   (if raster (get-saturated-locations {:raster raster} demand-quartiles) sources-data)
-        {:keys [avg-max] :as bounds}     (or bounds (mean-initial-data n initial-set coverage-fn))
-        locations (get-locations coverage-fn source max initial-set (/ avg-max 2) sample)]
-
+  [sample {:keys [search-path initial-set sources-data] :as source} coverage-fn demand-quartiles {:keys [n bound]}]
+  (info "Starting greedy search for " (first sources-data))
+  (let [[max & remain :as initial-set] (or initial-set sources-data)
+        bound        (or bound (:avg-max (mean-initial-data 30 initial-set coverage-fn)))
+        locations    (get-locations coverage-fn source max initial-set (/ bound 2) sample)]
     (when search-path (clojure.java.io/delete-file search-path true))
-    (if (empty? locations)
-      (throw (IllegalArgumentException. "Demand can't be reached."))
-      (sort-by :coverage > locations))))
+    (sort-by :coverage > locations)))

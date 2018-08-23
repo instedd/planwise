@@ -158,6 +158,10 @@ header.mdc-toolbar {
   }
 }
 
+.gray-filter {
+filter: grayscale(100%);
+}
+
 
 #top-row a {
   @include link-color(#9a9a9a);
@@ -350,6 +354,13 @@ form.vertical, .fields-vertical {
     z-index: 2;
   }
   */
+
+  .options-menu{
+    left: 196px;
+    background-color: rgba(255, 255, 255, 0);
+    margin-top: -0.5rem;
+  }
+
   .scroll-list {
     max-height: 280px;
     width: 100%;
@@ -643,3 +654,31 @@ form.vertical, .fields-vertical {
     background: linear-gradient(360deg, #ff7710 , #FFF, #FFF);
   }
 }
+.raise-alert{
+  background-color: #ff561c;
+  padding: 4px;
+  margin-top: 32px;
+
+  @include mdc-elevation(4);
+    &:hover {
+      border: 1px dashed #ff561c;
+      background-color:  #ff7710;
+    }
+  }
+
+.card-message{
+    background-color: #FFF;
+    $card-radius: 4px;
+    @include mdc-elevation(1);
+    @extend .mdc-elevation-transition;
+    justify-content: center;
+
+    .content {
+      padding:16px;
+    }
+    .bottom-button{
+      width: 100%;
+    }
+}
+
+

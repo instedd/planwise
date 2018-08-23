@@ -15,5 +15,5 @@
       content]]
     [m/DialogFooter
      (when (some? delete-fn) [m/Button {:on-click delete-fn} "Delete"])
-     [m/DialogFooterButton {:cancel true} "Cancel"]
+     (when (some? cancel-fn) [m/DialogFooterButton {:cancel true} "Cancel"])
      (when (some? accept-fn) [m/DialogFooterButton {:accept true} "OK"])]]])

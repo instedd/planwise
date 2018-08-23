@@ -6,7 +6,6 @@
             [clojure.data.csv :as csv]
             [hugsql.core :as hugsql]
             [clojure.java.jdbc :as jdbc]
-            [planwise.util.exceptions :refer [catch-exc]]
             [clojure.data.json :as json]))
 
 ;; ----------------------------------------------------------------------
@@ -87,7 +86,7 @@
 
 (defn list-sources-under-coverage
   [store source-set-id coverage-geom]
-  (let [key (if (catch-exc json/read-str coverage-geom) :coverage-geojson :coverage-geom)]
+  (let [key (if (= (pr-str (.getClass coverage-geom)) "org.postgis.PGgeometry") :coverage-geom :coverage-geojson)]
     (db-list-sources-under-coverage (get-db store) {:source-set-id source-set-id
                                                     key coverage-geom})))
 

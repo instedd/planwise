@@ -24,7 +24,7 @@
                                               :on-change #(dispatch [:scenarios/save-key
                                                                      [:rename-dialog :value] (-> % .-target .-value)])}]
                :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
-               :cancel-fn  #(dispatch [:scenarios/cancel-rename-dialog])}))))
+               :cancel-fn  #(dispatch [:scenarios/cancel-dialog])}))))
 
 (defn changeset-dialog-content
   [{:keys [investment available-budget capacity]}]
@@ -50,5 +50,29 @@
                :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
                :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
                :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
-               :cancel-fn #(dispatch [:scenarios/cancel-changeset-dialog])}))))
+               :cancel-fn #(dispatch [:scenarios/cancel-dialog])}))))
 
+(defn new-provider-button
+  [state computing?]
+  [:div (if computing?
+          {:class-name "border-btn-floating border-btn-floating-animated"}
+          {:class-name "border-btn-floating"})
+   [m/Fab {:class-name "btn-floating"
+           :on-click #(dispatch [:scenarios.new-provider/toggle-options])}
+    (cond computing? "stop"
+          (= state :new-provider) "cancel"
+          :default "domain")]])
+
+(defn create-new-provider-component
+  [state computing?]
+  (let [open (subscribe [:scenarios.new-provider/options])]
+    (fn [state computing?]
+      [m/MenuAnchor
+       [new-provider-button state computing?]
+       [m/Menu (when @open {:class "options-menu mdc-menu--open"})
+        [m/MenuItem
+         {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
+         "Create one"]
+        [m/MenuItem
+         {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
+         "Get suggestions"]]])))

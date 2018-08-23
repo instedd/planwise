@@ -42,11 +42,14 @@ RETURNING id;
 
 -- :name db-update-scenario! :! :1
 UPDATE scenarios
-  SET name = :name, investment = :investment,
-  "demand-coverage" = :demand-coverage, changeset = :changeset, label = :label,
+  SET name = :name,
+      investment = :investment,
+      "demand-coverage" = :demand-coverage,
+       changeset = :changeset,
+       label = :label,
   state = 'pending', "updated-at" = NOW()
 WHERE
-  id = :id
+  id = :id;
 
 -- :name db-update-scenario-state! :! :1
 UPDATE "scenarios"
@@ -55,7 +58,8 @@ UPDATE "scenarios"
       "state" = :state,
       "providers-data" = :providers-data,
       "sources-data" = :sources-data,
-      "new-providers-geom" = :new-providers-geom
+      "new-providers-geom" = :new-providers-geom,
+      "error-message" = NULL
   WHERE "id" = :id;
 
 
@@ -94,3 +98,9 @@ SELECT "sources-data" FROM scenarios
 -- :name db-get-new-providers-geom :? :1
 SELECT "new-providers-geom" FROM scenarios
   WHERE id = :scenario-id;
+
+-- :name db-mark-as-error :!
+UPDATE scenarios
+    SET "error-message" = :msg,
+        state = 'error'
+    WHERE id = :id;

@@ -12,6 +12,11 @@
    (get-in db [:scenarios :view-state])))
 
 (rf/reg-sub
+ :scenarios/error
+ (fn [db _]
+   (cljs.reader/read-string (get-in db [:scenarios :current-scenario :error-message]))))
+
+(rf/reg-sub
  :scenarios/rename-dialog
  (fn [db _]
    (get-in db [:scenarios :rename-dialog])))
@@ -66,3 +71,8 @@
  :scenarios.new-provider/computing-best-locations?
  (fn [db _]
    (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
+
+(rf/reg-sub
+ :scenarios.new-provider/options :<- [:scenarios/view-state]
+ (fn [view-state [_]]
+   (= :show-options-to-create-provider view-state)))
