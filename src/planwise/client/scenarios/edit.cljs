@@ -74,5 +74,5 @@
          {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
          "Create one"]
         [m/MenuItem
-         {:on-click #(dispatch [:scenarios.new-provider/toggle-select-location])}
+         {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
          "Get suggestions"]]])))

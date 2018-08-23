@@ -51,43 +51,17 @@
 ;; and if the scenario is still in pending, schedule a next dispatch for tracking
 ;; the processing status
 
-(rf/reg-event-db
- :scenarios/raise-error
- in-scenarios
- (fn [db [_]]
-   (assoc db :view-state :raise-error)))
-
-(defn- get-index-from-changeset
-  [location changes]
-  (when location
-    (first (first (filter (fn [[_ e]] (= (:location e) location)) (map-indexed vector changes))))))
-
-(rf/reg-event-fx
- :scenarios/catching-error
- in-scenarios
- (fn [{:keys [db]} [_ {:keys [causes] :as error}]]
-   (let [current-scenario (:current-scenario db)
-         error-index      (get-index-from-changeset (:coords error) (:changeset current-scenario))
-         error-recieved?  (when (:coords error) (nil? error-index))]
-     (if (not error-recieved?)
-       {:db (->  db (assoc-in [:current-scenario :invalid-location-for-provider] error-index)
-                 (assoc-in [:current-scenario :raise-error] (or causes error))
-                 (assoc-in [:current-scenario :error-message] nil))
-        :dispatch [:scenarios/raise-error]}))))
-
 (rf/reg-event-fx
  :scenarios/update-demand-information
  in-scenarios
  (fn [{:keys [db]} [_ scenario]]
    (let [current-scenario (:current-scenario db)
-         should-update    (= (:id current-scenario) (:id scenario))
-         error (:error-message scenario)]
-     (if should-update (merge {:db (assoc db :current-scenario
-                                          (merge current-scenario (select-keys scenario demand-fields)))}
-                              (dispatch-track-demand-information-if-needed scenario)
-                              (when (some? error) {:dispatch [:scenarios/catching-error (cljs.reader/read-string error)]}))
-         {}))))
-
+         should-update    (= (:id current-scenario) (:id scenario))]
+     (if should-update
+       (merge {:db (assoc db :current-scenario
+                          (merge current-scenario (select-keys scenario (conj demand-fields :error-message))))}
+              (dispatch-track-demand-information-if-needed scenario))
+       {}))))
 
 
 (rf/reg-event-fx
@@ -161,7 +135,7 @@
 (def request-key [:scenarios :current-scenario :computing-best-locations :request])
 
 (rf/reg-event-fx
- :scenarios.new-provider/toggle-select-location
+ :scenarios.new-provider/fetch-suggested-locations
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [view-state (get-in db [:view-state])
@@ -194,21 +168,13 @@
        (assoc-in [:current-scenario :suggested-locations] suggestions)
        (assoc-in [:current-scenario :computing-best-locations :state] false))))
 
-(rf/reg-event-db
- :scenarios/no-suggested-providers
- in-scenarios
- (fn [db [_ {:keys [response]}]]
-   (-> db (assoc-in [:current-scenario :computing-best-locations :state] false)
-       (assoc :view-state :raise-error)
-       (assoc-in [:current-scenario :raise-error] (:error response)))))
-
-(rf/reg-event-db
- :scenarios/message-delivered
- in-scenarios
- (fn [db [_]]
-   (-> db (assoc :view-state :current-scenario)
-       (assoc-in [:current-scenario  :raise-error] nil)
-       (assoc-in [:current-scenario :invalid-location-for-provider] nil))))
+; (rf/reg-event-db
+;  :scenarios/no-suggested-providers
+;  in-scenarios
+;  (fn [db [_ {:keys [response]}]]
+;    (-> db (assoc-in [:current-scenario :computing-best-locations :state] false)
+;        (assoc :view-state :raise-error)
+;        (assoc-in [:current-scenario :raise-error] (:error response)))))
 
 (rf/reg-event-fx
  :scenarios/create-provider
@@ -318,14 +284,37 @@
  :scenarios.new-provider/choose-option
  in-scenarios
  (fn [db [_]]
-   (let [actual-state (:view-state db)
-         already-clicked? (= :create-or-suggest-new-provider actual-state)]
-     (assoc db :view-state (if already-clicked?
-                             :current-scenario
-                             :create-or-suggest-new-provider)))))
+   (let [actual-state (:view-state db)]
+     (assoc db :view-state (case actual-state
+                             :current-scenario :show-options-to-create-provider
+                             :show-options-to-create-provider :current-scenario
+                             actual-state)))))
 
 (rf/reg-event-db
  :scenarios.new-provider/simple-creation
  in-scenarios
  (fn [db [_]]
    (assoc db :view-state :new-provider)))
+
+;Catching errors
+(rf/reg-event-fx
+ :scenarios/catch-error
+ in-scenarios
+ (fn [{:keys [db]} [_ error]]
+   (let [scenario (:current-scenario db)]
+     {:db    (-> db (assoc :raise-error error)
+                 (assoc-in [:current-scenario :view-state] :current-scenario))
+      :api   (assoc (api/update-scenario (:id scenario) (assoc scenario :error-message nil))
+                    :on-success [:scenarios/update-error-status])})))
+
+(rf/reg-event-db
+ :scenarios/message-delivered
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :raise-error nil)))
+
+(rf/reg-event-db
+ :scenarios/update-error-status
+ in-scenarios
+ (fn [db [_ {:keys [error-message]}]]
+   (assoc-in db [:current-scenario :error-message] error-message)))

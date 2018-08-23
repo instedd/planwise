@@ -21,22 +21,21 @@
 (def messages
   {:no-road-network "Location can not be reached from road network."})
 
-
 ;TODO (sol) ask default-message  (index // coord))
-
 (defn raise-alert
-  [project index cause]
-  (let [message (or ((keyword cause) messages) "default-message")]
+  [project {:keys [changeset]} {:keys [causes provider-id]}]
+  (let [message (or ((keyword causes) messages) "default-message")]
     [:div.raise-alert
      [:div.card-message
       [:div.content
        [:h2.mdc-dialog__header__title "Oops...  something went wrong"]
        [:h3 message]]
-      (if index
-        [m/Button   {:class-name "bottom-button"
-                     :on-click #(do (dispatch [:scenarios/message-delivered])
-                                    (dispatch [:scenarios/delete-provider index]))}
-         "Remove last change"]
+      (if provider-id
+        (let [index (first (keep-indexed #(if (= provider-id (:provider-id %2)) %1) changeset))]
+          [m/Button   {:class-name "bottom-button"
+                       :on-click #(do (dispatch [:scenarios/delete-provider index])
+                                      (dispatch [:scenarios/message-delivered]))}
+           "Remove last change"])
         [m/Button {:class-name "bottom-button"
                    :on-click #(dispatch [:projects2/project-settings])}
          "Go back to project settings"])]]))
@@ -74,7 +73,7 @@
   (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
 
 (defn simple-map
-  [{:keys [bbox]} scenario state]
+  [{:keys [bbox]} scenario state raise-error]
   (let [index               (subscribe [:scenarios/changeset-index])
         selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
@@ -84,12 +83,12 @@
                                                                                  :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
-    (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario} state]
+    (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario} state raise-error]
       (let [providers             (into providers changeset)
             indexed-providers     (to-indexed-map providers)
             indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
-        [:div.map-container (when (= state :raise-error) {:class "gray-filter"})
+        [:div.map-container (when raise-error {:class "gray-filter"})
          [l/map-widget {:zoom @zoom
                         :position @position
                         :on-position-changed #(reset! position %)
@@ -237,8 +236,7 @@
   [current-project current-scenario]
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
-        invalid-location? (subscribe [:scenarios/invalid-location-for-provider])
-        raise-error     (subscribe [:scenarios/raise-error])
+        raise-error       (subscribe [:scenarios/raise-error])
         created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
@@ -249,20 +247,23 @@
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)
                              {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario @state]
+                              :main [simple-map current-project current-scenario @state @raise-error]
                               :title [:ul {:class-name "breadcrumb-menu"}
                                       [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
                                       [:li (:name current-scenario)]]
                               :action export-providers-button})
+       (let [error (:error-message current-scenario)]
+         (when (some? error)
+           (dispatch [:scenarios/catch-error (cljs.reader/read-string error)])))
        (if @read-only?
          [initial-scenario-panel current-scenario unit-name source-demand]
          [side-panel-view current-scenario unit-name source-demand])
-       [:div (when (not= @state :raise-error) {:class-name "fade"})]
-       (if (= @state :raise-error)
-         [raise-alert current-project @invalid-location? @raise-error]
+       [:div (when-not @raise-error {:class-name "fade"})]
+       (if @raise-error
+         [raise-alert current-project current-scenario @raise-error]
          [changeset/listing-component @created-providers])
-       [:div (when (not= @state :raise-error) {:class-name "fade inverted"})]
+       [:div (when-not @raise-error {:class-name "fade inverted"})]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
        [edit/changeset-dialog current-scenario (get-in current-project [:config :actions :budget])]])))
