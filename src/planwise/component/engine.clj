@@ -192,6 +192,14 @@
       (compute-initial-scenario-by-point engine project)
       (compute-initial-scenario-by-raster engine project))))
 
+(defn compute-coverage-for-new-provider
+  [coverage project-id {:keys [provider-id location] :as change} criteria]
+  (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")]
+    (when-not (.exists (io/as-file coverage-path))
+      (try
+        (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path}))
+        (catch Exception e (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id provider-id))))))))
+
 (defn compute-scenario-by-raster
   [engine project {:keys [changeset providers-data new-providers-geom] :as scenario}]
   (let [coverage        (:coverage engine)
@@ -215,9 +223,8 @@
                           :project-id       project-id
                           :demand-raster    demand-raster}
     ;; Compute coverage of providers that are not yet computed
-        changes-geom    (reduce (fn [changes-geom {:keys [provider-id location] :as change}]
-                                  (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")
-                                        polygon  (when-not (.exists (io/as-file coverage-path)) (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path})))]
+        changes-geom    (reduce (fn [changes-geom {:keys [provider-id] :as change}]
+                                  (let [polygon (compute-coverage-for-new-provider (:coverage engine) project-id change criteria)]
                                     (if polygon
                                       (assoc changes-geom (keyword provider-id) {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon (:region-id project)))})
                                       changes-geom))) {} changeset)]
