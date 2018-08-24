@@ -1,5 +1,6 @@
 (ns planwise.client.scenarios.subs
-  (:require [re-frame.core :as rf]))
+  (:require [re-frame.core :as rf]
+            [cljs.reader]))
 
 (rf/reg-sub
  :scenarios/current-scenario
