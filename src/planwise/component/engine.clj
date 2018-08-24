@@ -169,7 +169,6 @@
                                       total-demand              (sum-map sources-under-coverage :quantity)]
                                   (assoc provider :unsatisfied total-demand)))
                               (:providers result-step1))]
-
     (let [initial-quantities        (reduce (fn [tree {:keys [id quantity] :as source}] (assoc tree (keyword (str id)) quantity)) {} sources)
           updated-sources           (map (fn [s] (assoc (select-keys s [:id :quantity :lat :lon]) :initial-quantity ((keyword (-> s :id str)) initial-quantities))) (:sources result-step1))
           updated-providers         result-step2
@@ -274,12 +273,13 @@
   (let [algorithm        (:coverage-algorithm project)
         filter-options   (get-in project [:config :coverage :filter-options])
         criteria         (merge {:algorithm (keyword algorithm)} filter-options)
+        as-geojson       (fn [geom] (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) geom (:region-id project))))
         coverage-fn      (fn [{:keys [location id]}]
                            (try
                              (coverage/compute-coverage (:coverage engine) location criteria)
                              (catch Exception e
                                (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id id))))))
-        providers        (map #(change-to-provider % coverage-fn new-providers-geom) changeset)
+        providers        (map #(change-to-provider % (comp as-geojson coverage-fn) new-providers-geom) changeset)
         sources          sources-data
         fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))
         fn-filter-by-id  (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
@@ -303,15 +303,14 @@
                                       total-demand              (sum-map sources-under-coverage :quantity)]
                                   (assoc provider :unsatisfied total-demand)))
                               (concat providers-data (:providers result-step1)))]
-
     (let [updated-sources          (:sources result-step1)
           updated-providers        (map #(dissoc % :coverage-geom) result-step2)
-          as-geojson               (fn [geom] {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) geom (:region-id project)))})
-          changes-geom             (reduce (fn [tree {:keys [id coverage-geom]}] (when-not ((keyword id) tree) (assoc tree (keyword id) (as-geojson coverage-geom)))) new-providers-geom providers)
+          changes-geom             (reduce (fn [dic {:keys [id] :as provider}]
+                                             (when-not ((keyword id) dic) (assoc dic (keyword id) (select-keys provider [:coverage-geom]))))
+                                           new-providers-geom providers)
           total-sources-demand     (sum-map sources :quantity)
           total-satisfied-demand   (sum-map updated-providers :satisfied)
           total-unsatisfied-demand (sum-map updated-providers :unsatisfied)]
-
       {:raster-path      nil
        :pending-demand   total-unsatisfied-demand
        :covered-demand   total-satisfied-demand
