@@ -100,7 +100,7 @@ public:
   float pixel_width_meters() const {
     float lngDegDistInMEquator = 111111.0f;
     float centerLat = (top_left_coords().second + bottom_right_coords().second) / 2;
-    return lngDegDistInMEquator * cos(centerLat) * pixel_width();
+    return lngDegDistInMEquator * cos(M_PI * centerLat / 180.0f) * pixel_width();
   }
   float pixel_height_meters() const {
     float latDegDistInM = 111111.0f;

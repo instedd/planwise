@@ -261,7 +261,7 @@
                 (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)
-                (error "Scenario computation failed"))))]
+                (error "Scenario computation failed" e))))]
     {:task-id scenario-id
      :task-fn task-fn
      :state   nil}))
