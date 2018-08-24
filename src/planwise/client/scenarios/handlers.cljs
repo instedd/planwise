@@ -269,7 +269,8 @@
  :scenarios/suggested-providers
  in-scenarios
  (fn [db [_ suggestions]]
-   (-> db (assoc :view-state :new-provider)
+   (-> db
+       (assoc :view-state :new-provider)
        (assoc-in [:current-scenario :suggested-locations] suggestions)
        (assoc-in [:current-scenario :computing-best-locations :state] false))))
 
@@ -277,8 +278,10 @@
  :scenarios/no-suggested-providers
  in-scenarios
  (fn [db [_ {:keys [response]}]]
-   (js/alert (:error response))
-   (assoc-in db [:current-scenario :computing-best-locations :state] false)))
+   (js/alert (or (:error response) "Could not compute suggestions"))
+   (-> db
+       (assoc-in [:view-state] :new-provider)
+       (assoc-in [:current-scenario :computing-best-locations :state] false))))
 
 (rf/reg-event-db
  :scenarios.new-provider/simple-creation
