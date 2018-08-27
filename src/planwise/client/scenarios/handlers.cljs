@@ -80,8 +80,9 @@
 
 (rf/reg-event-fx
  :scenarios/get-scenario
- (fn [_ [_ id]]
-   {:api (assoc (api/load-scenario id)
+ (fn [{:keys [db]} [_ id]]
+   {:db  (assoc-in db [:scenarios :view-state] :current-scenario)
+    :api (assoc (api/load-scenario id)
                 :on-success [:scenarios/save-current-scenario-and-track]
                 :on-failure [:scenarios/scenario-not-found])}))
 
@@ -151,10 +152,13 @@
  :scenarios/open-changeset-dialog
  in-scenarios
  (fn [db [_ changeset-index]]
-   (assoc db
-          :view-state        :changeset-dialog
-          :view-state-params {:changeset-index changeset-index}
-          :changeset-dialog  (get-in db [:current-scenario :changeset changeset-index]))))
+   (let [last-change (:changeset-dialog db)
+         provider    (get-in db [:current-scenario :changeset changeset-index])
+         condition   (reduce = (map :provider-id [provider last-change]))]
+     (assoc db
+            :view-state        :changeset-dialog
+            :view-state-params {:changeset-index changeset-index}
+            :changeset-dialog  (if condition last-change provider)))))
 
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
