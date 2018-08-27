@@ -87,13 +87,11 @@
 
 (rf/reg-event-fx
  :scenarios/copy-scenario
+ in-scenarios
  (fn [{:keys [db]} [_ id]]
-   (let [label (get-in db [:scenarios :current-scenario :label])
-         path (when (not= label "initial") [:projects2 :current-project :subscenarios])]
-     {:dispatch [:scenarios/invalidate-scenarios]
-      :db   (update-in db path (fnil inc 0))
-      :api  (assoc (api/copy-scenario id)
-                   :on-success [:scenarios/load-scenario])})))
+   {:dispatch [:scenarios/invalidate-scenarios]
+    :api  (assoc (api/copy-scenario id)
+                 :on-success [:scenarios/load-scenario])}))
 
 
 (rf/reg-event-db

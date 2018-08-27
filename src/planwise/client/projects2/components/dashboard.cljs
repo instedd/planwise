@@ -33,7 +33,7 @@
   (when (not (blank? input)) [m/ChipSet [m/Chip [m/ChipText input]]]))
 
 (defn- scenarios-list-item
-  [project-id {:keys [id name label state demand-coverage investment changeset-summary] :as scenario}]
+  [project-id {:keys [id name label state demand-coverage investment changeset-summary] :as scenario} index]
   (if id
     [:tr {:key id :on-click (fn [evt]
                               (if (or (.-shiftKey evt) (.-metaKey evt))
@@ -41,11 +41,12 @@
                                 (dispatch [:scenarios/load-scenario {:id id}])))}
      [:td (cond (= state "pending") [create-chip state]
                 (not= label "initial") [create-chip label])]
-     [:td.col1  name]
-     [:td.col2  (utils/format-number demand-coverage)]
-     [:td.col3  (utils/format-number investment)]
+     [:td.col1 name]
+     [:td.col2 (utils/format-number demand-coverage)]
+     [:td.col3 (utils/format-number investment)]
      [:td.col4 changeset-summary]]
-    [:tr (repeat 5 '[:td ""])]))
+    [:tr {:key (str "tr-" index)}
+     (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 5))]))
 
 (defn- generate-title
   [num]
@@ -65,7 +66,7 @@
         [:th.col3  "Investment"]
         [:th.col4 "Actions"]]]
       [:tbody
-       (map #(scenarios-list-item (:id current-project) %) (into scenarios (repeat (- 5 num) '{})))]]]))
+       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index)) (into scenarios (repeat (- 5 num) nil)))]]]))
 
 (defn- project-settings
   []
