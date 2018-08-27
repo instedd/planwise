@@ -682,3 +682,21 @@ form.vertical, .fields-vertical {
 }
 
 
+  .loader {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1;
+    border: 6px solid #f5f5f5;
+    border-top: 6px solid   #ff7710;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    -webkit-animation: spin 2s linear infinite;
+    animation: spin 2s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }

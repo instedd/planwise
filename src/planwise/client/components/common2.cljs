@@ -25,13 +25,12 @@
 (defn loading-placeholder
   []
   [ui/fixed-width (nav-params)
-   [:p "Loading..."]])
+   [:div.spinning-loader]])
 
 (defn redirect-to
   [route]
   (accountant/navigate! route)
-  [ui/fixed-width (nav-params)
-   [:p "Loading..."]])
+  (loading-placeholder))
 
 (defn text-field
   ([props-input]
