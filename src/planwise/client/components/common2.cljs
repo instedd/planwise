@@ -38,7 +38,7 @@
   (let [prevent-fn (fn [f] #(let [val (f %)] (if (js/isNaN val) nil val)))
         type (or type :integer)]
     (cond (#{[:numeric :integer]} [field type]) [(fn [e] (re-find #"\d+" e)) (prevent-fn js/parseInt)]
-          (#{[:numeric :percentage]} [field type]) [(fn [e] (re-find #"(?u)100|\d\d|\d" e)) (prevent-fn js/parseInt)]
+          (#{[:numeric :percentage]} [field type]) [(fn [e] (re-find #"(?u)100|\d{0,2}\.\d+|\d{0,2}\.|\d{0,2}" e)) (prevent-fn js/parseFloat)]
           (#{[:numeric :float]} [field type]) [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (prevent-fn js/parseFloat)]
           :else [identity identity])))
 
