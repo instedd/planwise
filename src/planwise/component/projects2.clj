@@ -3,6 +3,8 @@
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.scenarios :as scenarios]
             [planwise.component.regions :as regions]
+            [planwise.component.coverage :as coverage]
+            [clojure.spec.alpha :as s]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
@@ -32,10 +34,17 @@
                                       :state "draft"}))
 
 (defn update-project
-  [store project]
-  (db-update-project (get-db store) (-> project
-                                        (update :config pr-str)
-                                        (dissoc :state))))
+  [store {:keys [config provider-set-id] :as project}]
+  (let [algorithm (-> (providers-set/get-provider-set (:providers-set store) provider-set-id)
+                      :coverage-algorithm
+                      keyword)
+        valid-criteria? (s/valid? ::coverage/criteria
+                                  (assoc (get-in project [:config :coverage :filter-options])
+                                         :algorithm algorithm))
+        updated-config   (if valid-criteria? config (assoc-in config [:coverage :filter-options] {}))]
+    (db-update-project (get-db store) (-> project
+                                          (assoc :config (pr-str updated-config))
+                                          (dissoc :state)))))
 
 (defn get-project
   [store project-id]

@@ -127,14 +127,15 @@
 (rf/reg-event-fx
  :projects2/update-current-project-from-server
  in-projects2
- (fn [{:keys [db]} [_ project]]
+ (fn [{:keys [db]} [_ {:keys [config] :as project}]]
    (let [current-project (:current-project db)]
      (if (= (:id project) (:id current-project))
         ;; keep current values of current-project except the once that could be updated from server
         ;; to prevent replacing data that have not been saved in server yet
        (let [updated-project (-> current-project
                                  (assoc :providers (:providers project))
-                                 (assoc :coverage-algorithm (:coverage-algorithm project)))]
+                                 (assoc :coverage-algorithm (:coverage-algorithm project))
+                                 (assoc-in [:config :coverage :filter-options] (get-in config [:coverage :filter-options])))]
          {:dispatch [:projects2/save-project-data updated-project]})))))
 
 
