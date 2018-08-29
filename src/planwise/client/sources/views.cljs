@@ -56,7 +56,6 @@
               :data-trigger "false"} "Download sources sample"]
          [common2/text-field {:label "Unit"
                               :value unit
-                              :placeholder "Unit used to quantify capacity, satisfied and unsatisfied demand"
                               :on-change #(rf/dispatch [:sources.new/update {:unit (-> % .-target .-value)}])}]
          (when-let [current-error @(rf/subscribe [:sources.new/current-error])]
            [:div.error-message
