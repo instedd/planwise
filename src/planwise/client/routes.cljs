@@ -27,3 +27,4 @@
   (dispatch [:navigate {:page :projects2, :id (js/parseInt id), :section :project-scenarios}]))
 (defroute projects2-settings "/projects2/:id/settings" [id]
   (dispatch [:navigate {:page :projects2, :id (js/parseInt id), :section :project-settings}]))
+(defroute download-sources-sample "/sources-sample.csv" [])
