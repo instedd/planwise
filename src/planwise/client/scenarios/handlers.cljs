@@ -251,9 +251,11 @@
                       :new-provider :current-scenario
                       :get-suggestions :current-scenario
                       actual-state)]
-     {:db       (-> db (assoc :view-state next-state)
-                    (assoc-in [:current-scenario :suggested-locations] nil))
-      :dispatch (when getting-suggestions? [:scenarios.new-provider/abort-fetching-suggestions])})))
+     (merge
+      {:db       (-> db (assoc :view-state next-state)
+                     (assoc-in [:current-scenario :suggested-locations] nil))}
+      (when getting-suggestions?
+        {:dispatch  [:scenarios.new-provider/abort-fetching-suggestions]})))))
 
 (rf/reg-event-fx
  :scenarios.new-provider/fetch-suggested-locations
