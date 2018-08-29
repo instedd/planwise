@@ -50,8 +50,8 @@
                                              :js-file (-> (.-currentTarget %) .-files (aget 0))])}]
          (when (some? @js-file)
            [:span (.-name @js-file)])]
-        [:a {:href (routes/download-sample)
-             :data-trigger "false"} "Download samples providers"]
+        [:a {:href (routes/download-providers-sample)
+             :data-trigger "false"} "Download providers sample"]
         [m/Select {:label "Coverage algorithm"
                    :value @coverage
                    :options @algorithms
