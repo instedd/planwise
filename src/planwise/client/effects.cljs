@@ -102,8 +102,7 @@
                       (dissoc :key)
                       request->xhrio-options
                       ajax/ajax-request)]
-        ;FIXME: Issue #456
-        (when key (swap! rf-db/app-db assoc-in key xhrio))))))
+        (when key (swap! rf-db/app-db assoc-in [key] xhrio))))))
 
 
 (rf/reg-fx :api api-effect)
@@ -112,7 +111,7 @@
  :api-abort
  (fn [key]
    (some-> (get-in @rf-db/app-db key) ajax.protocols/-abort)
-   (swap! rf-db/app-db assoc-in key nil)))
+   (swap! rf-db/app-db dissoc key)))
 
 (defn make-api-request
   "Allows manually triggering an API request. Use :on-success-cb and
