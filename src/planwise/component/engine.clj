@@ -67,18 +67,22 @@
                (str "data/coverage/" provider-set-id "/" raster ".tif"))
         coverage-raster (raster/read-raster path)
         scaled-capacity (* capacity project-capacity)
-        population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)]
+        population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)
+        satisfied (min scaled-capacity population-reachable)]
 
     (if update?
-      {:unsatisfied population-reachable}
+      {:unsatisfied population-reachable
+       :required-capacity (/ population-reachable project-capacity)}
       (do
         (debug "Subtracting" scaled-capacity "of provider" (or provider-id id) "reaching" population-reachable "people")
         (when-not (zero? population-reachable)
           (let [factor (- 1 (min 1 (/ scaled-capacity population-reachable)))]
             (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor))))
         {:id         (or id provider-id)
+         :satisfied  satisfied
          :capacity   capacity
-         :satisfied  (min capacity population-reachable)}))))
+         :used-capacity (float (/ satisfied project-capacity))
+         :free-capacity (- capacity (float (/ satisfied project-capacity)))}))))
 
 (defn- compute-providers-demand
   [set props]
