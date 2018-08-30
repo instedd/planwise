@@ -51,8 +51,8 @@
        "<br> Capacity: " capacity
        "<br> Satisfied demand: " satisfied
        "<br> Unsatisfied demand: " unsatisfied
-       "<br> Free capacity: " free-capacity
-       "<br> Required capacity: " required-capacity
+       "<br> Free capacity: " (.toFixed (or free-capacity 0) 2)
+       "<br> Required capacity: " (.toFixed (or required-capacity 0) 2)
        (if (provider-from-changeset? (:elem ix-provider))
          (str "<br><br> Click on panel for editing... "))))
 
@@ -65,8 +65,8 @@
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
   (str "<b>" (utils/escape-html (str name)) "</b>"
-       "<br> Original quantity: " initial-quantity
-       "<br> Current quantity: " quantity))
+       "<br> Original quantity: " (.toFixed (or initial-quantity 0) 2)
+       "<br> Current quantity: " (.toFixed (or quantity 0) 2)))
 
 (defn- to-indexed-map
   [coll]
