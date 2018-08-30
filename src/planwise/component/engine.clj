@@ -145,7 +145,6 @@
 
 (defn compute-initial-scenario-by-point
   [engine project]
-  (info "Project capacity" (get-in project [:config :providers :capacity]))
   (let [provider-set-id  (:provider-set-id project)
         providers        (project-providers engine project) ;sort by capacity
         sources          (sources-set/list-sources-in-set (:sources-set engine) (:source-set-id project))
