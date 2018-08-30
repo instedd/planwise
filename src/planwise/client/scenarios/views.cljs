@@ -233,16 +233,17 @@
           [:small "Computing best locations ..."]])])))
 
 (defn display-current-scenario
-  [current-project current-scenario]
+  [current-project {:keys [id] :as current-scenario}]
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
         error      (subscribe [:scenarios/error])
         created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
+        csv-name (str (:id current-project) "-" id "-" (:name current-scenario) ".csv")
         export-providers-button [:a {:class "mdc-fab disable-a"
                                      :id "main-action"
-                                     :href (str "/api/scenarios/" (:id current-scenario) "/csv")}
+                                     :href (str "/api/scenarios/" id "/" csv-name)}
                                  [m/Icon {:class "material-icons  center-download-icon"} "get_app"]]]
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)

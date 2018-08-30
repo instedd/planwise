@@ -30,7 +30,7 @@
          (not-found {:error "Scenario not found"})
          (response (scenarios/get-scenario-for-project service scenario project)))))
 
-   (GET "/:id/csv" [id :as request]
+   (GET "/:id/:name" [id :as request]
      (response (scenarios/export-providers-data service (Integer. id))))
 
    (GET "/:id/suggested-providers" [id :as request]
