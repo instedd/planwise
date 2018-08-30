@@ -44,7 +44,7 @@
   (not (nil? (:action provider))))
 
 (defn- show-provider
-  [{{:keys [action name capacity free-capacity required-capacity satisfied unsatisfied investment]} :elem :as ix-provider}]
+  [{{:keys [action name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand investment]} :elem :as ix-provider}]
   (str "<b>" (utils/escape-html (if (provider-from-changeset? (:elem ix-provider))
                                   (str "New provider " (:index ix-provider))
                                   name)) "</b>"

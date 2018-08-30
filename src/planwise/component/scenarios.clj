@@ -317,7 +317,7 @@
   (let [scenario       (get-scenario store scenario-id)
         changes        (changeset-to-export (:changeset scenario))
         providers-data (-> scenario :providers-data)
-        fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied :unsatisfied]]
+        fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
     (map->csv (providers-to-export store providers-data changes) fields)))
 
 (defn reset-scenarios

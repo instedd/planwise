@@ -71,7 +71,7 @@
         satisfied (min scaled-capacity population-reachable)]
 
     (if update?
-      {:unsatisfied population-reachable
+      {:unsatisfied-demand population-reachable
        :required-capacity (/ population-reachable project-capacity)}
       (do
         (debug "Subtracting" scaled-capacity "of provider" (or provider-id id) "reaching" population-reachable "people")
@@ -79,7 +79,7 @@
           (let [factor (- 1 (min 1 (/ scaled-capacity population-reachable)))]
             (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor))))
         {:id         (or id provider-id)
-         :satisfied  satisfied
+         :satisfied-demand  satisfied
          :capacity   capacity
          :used-capacity (float (/ satisfied project-capacity))
          :free-capacity (- capacity (float (/ satisfied project-capacity)))}))))
@@ -164,7 +164,7 @@
                                                                    (update-source-if-needed source id-sources-under-coverage provider total-demand project-capacity))
                                                                  sources)
                                   satisfied-demand          (min (* capacity project-capacity) total-demand)
-                                  updated-provider          (assoc provider :satisfied satisfied-demand
+                                  updated-provider          (assoc provider :satisfied-demand satisfied-demand
                                                                    :free-capacity (- capacity (float (/ satisfied-demand project-capacity))))]
                               {:providers (conj providers updated-provider)
                                :sources updated-sources}))
@@ -176,15 +176,15 @@
                                       id-sources-under-coverage (set (map :id (fn-sources-under provider)))
                                       sources-under-coverage    (fn-select-by-id sources id-sources-under-coverage) ; updated sources under coverage
                                       total-demand              (sum-map sources-under-coverage :quantity)]
-                                  (assoc provider :unsatisfied total-demand
+                                  (assoc provider :unsatisfied-demand total-demand
                                          :required-capacity (float (/ total-demand project-capacity)))))
                               (:providers result-step1))]
     (let [initial-quantities        (reduce (fn [tree {:keys [id quantity] :as source}] (assoc tree (keyword (str id)) quantity)) {} sources)
           updated-sources           (map (fn [s] (assoc (select-keys s [:id :quantity :lat :lon]) :initial-quantity ((keyword (-> s :id str)) initial-quantities))) (:sources result-step1))
           updated-providers         result-step2
           total-sources-demand      (sum-map sources :quantity)
-          total-satisfied-demand    (sum-map updated-providers :satisfied)
-          total-unsatisfied-demand  (sum-map updated-providers :unsatisfied)]
+          total-satisfied-demand    (sum-map updated-providers :satisfied-demand)
+          total-unsatisfied-demand  (sum-map updated-providers :unsatisfied-demand)]
 
       {:raster-path       nil
        :source-demand     total-sources-demand
@@ -243,7 +243,7 @@
     ;; TODO refactor with initial-scenario loop
     (let [processed-changes         (compute-providers-demand changeset props)
           pending-demand            (demand/count-population demand-raster)
-          initial-providers-data    (mapv #(dissoc % :unsatisfied) providers-data)
+          initial-providers-data    (mapv #(dissoc % :unsatisfied-demand) providers-data)
           update-changes    (compute-providers-demand changeset (assoc props :update? true))
           update-providers  (compute-providers-demand providers (assoc props :update? true))
           updated-providers (mapv (fn [[a b]] (merge a b)) (map vector initial-providers-data update-providers))
@@ -303,7 +303,7 @@
                                   total-demand              (sum-map sources-under-coverage :quantity)          ; total demand requested to current provider
                                   updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand project-capacity)) sources)
                                   satisfied-demand          (min (* capacity project-capacity) total-demand)]
-                              {:providers (conj providers (assoc provider :satisfied satisfied-demand
+                              {:providers (conj providers (assoc provider :satisfied-demand satisfied-demand
                                                                  :free-capacity (- capacity (float (/ satisfied-demand project-capacity)))))
                                :sources updated-sources}))
                           {:providers nil
@@ -314,7 +314,7 @@
                                       id-sources-under-coverage (set (map :id (fn-sources-under provider)))
                                       sources-under-coverage    (fn-filter-by-id sources id-sources-under-coverage) ; updated sources under coverage
                                       total-demand              (sum-map sources-under-coverage :quantity)]
-                                  (assoc provider :unsatisfied total-demand
+                                  (assoc provider :unsatisfied-demand total-demand
                                          :required-capacity (float (/ total-demand project-capacity)))))
                               (concat providers-data (:providers result-step1)))]
     (let [updated-sources          (:sources result-step1)
@@ -323,8 +323,8 @@
                                              (when-not ((keyword id) dic) (assoc dic (keyword id) (select-keys provider [:coverage-geom]))))
                                            new-providers-geom providers)
           total-sources-demand     (sum-map sources :quantity)
-          total-satisfied-demand   (sum-map updated-providers :satisfied)
-          total-unsatisfied-demand (sum-map updated-providers :unsatisfied)]
+          total-satisfied-demand   (sum-map updated-providers :satisfied-demand)
+          total-unsatisfied-demand (sum-map updated-providers :unsatisfied-demand)]
       {:raster-path      nil
        :pending-demand   total-unsatisfied-demand
        :covered-demand   total-satisfied-demand
