@@ -205,6 +205,20 @@
                                                         :options    (some-> options pr-str)
                                                         :tags       tags})))
 
+(defn get-disabled-providers-with-coverage-in-region
+  [store provider-set-id version filter-options]
+  (let [db-spec   (get-db store)
+        region-id (:region-id filter-options)
+        algorithm (:coverage-algorithm filter-options)
+        options   (:coverage-options filter-options)
+        tags      (str/join " & " (:tags filter-options))]
+    (db-find-providers-with-coverage-in-region db-spec {:provider-set-id provider-set-id
+                                                        :version    version
+                                                        :region-id  region-id
+                                                        :algorithm  algorithm
+                                                        :options    (some-> options pr-str)
+                                                        :disable-tags tags})))
+
 (defn count-providers-filter-by-tags
   ([store provider-set-id region-id tags]
    (count-providers-filter-by-tags store provider-set-id region-id tags nil))
@@ -249,6 +263,8 @@
     (new-processing-job store provider-set-id))
   (get-providers-with-coverage-in-region [store provider-set-id version filter-options]
     (get-providers-with-coverage-in-region store provider-set-id version filter-options))
+  (get-disabled-providers-with-coverage-in-region [store provider-set-id version filter-options]
+    (get-disabled-providers-with-coverage-in-region store provider-set-id version filter-options))
   (count-providers-filter-by-tags [store provider-set-id region-id tags]
     (count-providers-filter-by-tags store provider-set-id region-id tags))
   (count-providers-filter-by-tags [store provider-set-id region-id tags version]
