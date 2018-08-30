@@ -363,13 +363,14 @@
 
     (coverage/locations-outside-polygon (:coverage engine) polygon (:demand get-update))))
 
-(defn get-coverage
-  [engine criteria region-id {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
+(defn get-coverage-for-suggestion
+  [engine {:keys [criteria region-id project-capacity]} {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
   (let [criteria              (if sources-data criteria (merge criteria {:raster search-path}))
         [lon lat :as coord]   coord
         polygon               (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
         population-reacheable (count-under-geometry engine polygon source)
         info   {:coverage population-reacheable
+                :required-capacity (/ population-reacheable project-capacity)
                 :coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon region-id))
                 :location {:lat lat :lon lon}}]
     (cond get-avg {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
@@ -389,10 +390,12 @@
                              :source-set-id (:source-set-id project)
                              :original-sources sources-data
                              :sources-data (gs/get-saturated-locations {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
-        algorithm (keyword coverage-algorithm)
         criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
+        project-info {:criteria criteria
+                      :region-id (:region-id project)
+                      :project-capacity (get-in config [:providers :capacity])}
         coverage-fn (fn [val props] (try
-                                      (get-coverage engine criteria (:region-id project) source (assoc props :coord val))
+                                      (get-coverage-for-suggestion engine project-info source (assoc props :coord val))
                                       (catch Exception e
                                         (warn (str "Failed to compute coverage for coordinates " val) e))))]
     (when raster (raster/write-raster-file raster search-path))

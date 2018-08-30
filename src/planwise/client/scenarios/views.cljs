@@ -59,7 +59,8 @@
 (defn- show-suggested-provider
   [suggestion]
   (str "<b> Suggestion:" (:ranked suggestion) " </b>"
-       "<br> Expected coverage : " (:coverage suggestion)))
+       "<br> Needed capacity : " (:required-capacity suggestion)
+       "<br> Expected demand to satisfy : " (:coverage suggestion)))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
