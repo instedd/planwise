@@ -38,7 +38,7 @@
    (let [focus (r/atom false)
          id    (str (random-uuid))]
      (fn [{:keys [label value focus-extra-class] :as props-input}]
-       (let [props (dissoc props-input :label :focus-extra-class)]
+       (let [props (dissoc props-input :label :focus-extra-class :placeholder)]
          [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus (str "mdc-text-field--focused" focus-extra-class))}
           [:input.mdc-text-field__input (merge props {:id id
                                                       :on-focus #(reset! focus true)
