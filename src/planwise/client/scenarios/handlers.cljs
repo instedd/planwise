@@ -93,6 +93,7 @@
     :api  (assoc (api/copy-scenario id)
                  :on-success [:scenarios/load-scenario])}))
 
+
 (rf/reg-event-db
  :scenarios/clear-current-scenario
  in-scenarios

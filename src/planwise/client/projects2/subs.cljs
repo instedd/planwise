@@ -29,3 +29,4 @@
  :projects2/upgrade-actions :<- [:projects2/current-project]
  (fn [current-project [_]]
    (get-in current-project [:config :actions :upgrade])))
+

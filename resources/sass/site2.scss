@@ -422,10 +422,18 @@ form.vertical, .fields-vertical {
 
   table {
     border-spacing: 0;
-    font-size: 18px;
+    font-size: 16px;
     margin: 0;
     padding: 0;
     width: 100%;
+
+    caption{
+      padding: 32px 72px;
+      color: #000000;
+      font-size: 20px;
+      text-align: left;
+
+    }
 
     thead {
 
@@ -435,9 +443,10 @@ form.vertical, .fields-vertical {
       }
 
       th {
-        color: #bbb;
+        color: #999999;
+        text-align: left;
+        padding: 24px 20px;
         font-weight: 500;
-        padding: 35px 30px;
       }
     }
 
@@ -452,30 +461,28 @@ form.vertical, .fields-vertical {
     tr > td {
       border-bottom: 1px solid #eee;
       padding: 20px;
+      height: 50px;
     }
 
-    .col1 {
+
+    .col1{
+      width: 15%;
       text-align: left;
-      width: 105px;
     }
 
-    .col2 {
-      text-align: left;
-      width: 150px;
-    }
-
-    .col3 {
+    .col2{
+      width: 10%;
       text-align: right;
-      width: 170px;
     }
 
-    .col4 {
+    .col3{
+      width: 15%;
       text-align: right;
-      width: 120px;
     }
 
-    .col5 {
+    .col4{
       text-align: left;
+      width: 60%;
     }
   }
 }
