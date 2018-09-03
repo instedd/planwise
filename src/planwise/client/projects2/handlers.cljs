@@ -132,10 +132,14 @@
      (if (= (:id project) (:id current-project))
         ;; keep current values of current-project except the once that could be updated from server
         ;; to prevent replacing data that have not been saved in server yet
-       (let [updated-project (-> current-project
+       (let [update-config-if-necessary (if (= (:coverage-algorithm current-project)
+                                               (:coverage-algorithm project))
+                                          (:config current-project)
+                                          (get-in config [:coverage :filter-options]))
+             updated-project (-> current-project
                                  (assoc :providers (:providers project))
                                  (assoc :coverage-algorithm (:coverage-algorithm project))
-                                 (assoc-in [:config :coverage :filter-options] (get-in config [:coverage :filter-options])))]
+                                 (assoc :config update-config-if-necessary))]
          {:dispatch [:projects2/save-project-data updated-project]})))))
 
 
