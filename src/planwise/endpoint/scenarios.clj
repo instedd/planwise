@@ -3,7 +3,7 @@
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.spec.alpha :as s]
-            [ring.util.response :refer [response status not-found]]
+            [ring.util.response :refer [response status not-found header]]
             [planwise.util.ring :as util]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
@@ -30,8 +30,14 @@
          (not-found {:error "Scenario not found"})
          (response (scenarios/get-scenario-for-project service scenario project)))))
 
-   (GET "/:id/:name" [id :as request]
-     (response (scenarios/export-providers-data service (Integer. id))))
+   (GET "/:id/csv" [id :as request]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
+           csv-name (str (:id project) "-" id "-" (:name scenario) ".csv")
+           response (response (scenarios/export-providers-data service (Integer. id)))]
+       (header response "Content-Disposition" (str "attachment; filename=" csv-name))))
 
    (GET "/:id/suggested-providers" [id :as request]
      (let [user-id  (util/request-user-id request)
