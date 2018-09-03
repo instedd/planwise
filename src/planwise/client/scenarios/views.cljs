@@ -48,11 +48,11 @@
   (str "<b>" (utils/escape-html (if (provider-from-changeset? (:elem ix-provider))
                                   (str "New provider " (:index ix-provider))
                                   name)) "</b>"
-       "<br> Capacity: " capacity
-       "<br> Satisfied demand: " satisfied
-       "<br> Unsatisfied demand: " unsatisfied
-       "<br> Free capacity: " (.toFixed (or free-capacity 0) 2)
-       "<br> Required capacity: " (.toFixed (or required-capacity 0) 2)
+       "<br> Capacity: " (utils/format-number capacity)
+       "<br> Satisfied demand: " (utils/format-number satisfied)
+       "<br> Unsatisfied demand: " (utils/format-number unsatisfied)
+       "<br> Free capacity: " (utils/format-number free-capacity)
+       "<br> Required capacity: " (utils/format-number required-capacity)
        (if (provider-from-changeset? (:elem ix-provider))
          (str "<br><br> Click on panel for editing... "))))
 
