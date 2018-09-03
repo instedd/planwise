@@ -67,18 +67,22 @@
                (str "data/coverage/" provider-set-id "/" raster ".tif"))
         coverage-raster (raster/read-raster path)
         scaled-capacity (* capacity project-capacity)
-        population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)]
+        population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)
+        satisfied (min scaled-capacity population-reachable)]
 
     (if update?
-      {:unsatisfied population-reachable}
+      {:unsatisfied population-reachable
+       :required-capacity (/ population-reachable project-capacity)}
       (do
         (debug "Subtracting" scaled-capacity "of provider" (or provider-id id) "reaching" population-reachable "people")
         (when-not (zero? population-reachable)
           (let [factor (- 1 (min 1 (/ scaled-capacity population-reachable)))]
             (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor))))
         {:id         (or id provider-id)
+         :satisfied  satisfied
          :capacity   capacity
-         :satisfied  (min capacity population-reachable)}))))
+         :used-capacity (float (/ satisfied project-capacity))
+         :free-capacity (- capacity (float (/ satisfied project-capacity)))}))))
 
 (defn- compute-providers-demand
   [set props]
@@ -122,9 +126,9 @@
   (reduce + (map f coll))) ;another way: (apply + (map f coll))
 
 (defn update-source
-  [source provider total-demand]
+  [source provider total-demand project-capacity]
   (let [ratio (float (/ (:quantity source) total-demand))
-        unsatisfied (double (max 0 (- (:quantity source) (* (:capacity provider) ratio))))
+        unsatisfied (double (max 0 (- (:quantity source) (* (* (:capacity provider) project-capacity) ratio))))
         updated-source (assoc source :quantity unsatisfied)]
     updated-source))
 
@@ -134,9 +138,9 @@
        (> (:quantity source) 0)))
 
 (defn update-source-if-needed
-  [source ids provider total-demand]
+  [source ids provider total-demand project-capacity]
   (if (need-to-update-source? source ids)
-    (update-source source provider total-demand)
+    (update-source source provider total-demand project-capacity)
     source))
 
 (defn compute-initial-scenario-by-point
@@ -146,17 +150,22 @@
         sources          (sources-set/list-sources-in-set (:sources-set engine) (:source-set-id project))
         algorithm        (:coverage-algorithm project)
         filter-options   (get-in project [:config :coverage :filter-options])
+        project-capacity (get-in project [:config :providers :capacity])
         fn-sources-under (fn [provider] (sources-set/list-sources-under-provider-coverage (:sources-set engine) (:source-set-id project) (:id provider) algorithm filter-options))
         fn-select-by-id  (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
         result-step1     (reduce ; over providers
-                          (fn [computed-state provider]
+                          (fn [computed-state {:keys [capacity] :as provider}]
                             (let [providers                 (:providers computed-state)
                                   sources                   (:sources computed-state)
                                   id-sources-under-coverage (set (map :id (fn-sources-under provider)))         ; create set with sources' id
                                   sources-under-coverage    (fn-select-by-id sources id-sources-under-coverage) ; updated sources under coverage
                                   total-demand              (sum-map sources-under-coverage :quantity)        ; total demand requested to current provider
-                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)
-                                  updated-provider          (assoc provider :satisfied (min (:capacity provider) total-demand))]
+                                  updated-sources           (map (fn [source]
+                                                                   (update-source-if-needed source id-sources-under-coverage provider total-demand project-capacity))
+                                                                 sources)
+                                  satisfied-demand          (min (* capacity project-capacity) total-demand)
+                                  updated-provider          (assoc provider :satisfied satisfied-demand
+                                                                   :free-capacity (- capacity (float (/ satisfied-demand project-capacity))))]
                               {:providers (conj providers updated-provider)
                                :sources updated-sources}))
                           {:providers nil
@@ -167,7 +176,8 @@
                                       id-sources-under-coverage (set (map :id (fn-sources-under provider)))
                                       sources-under-coverage    (fn-select-by-id sources id-sources-under-coverage) ; updated sources under coverage
                                       total-demand              (sum-map sources-under-coverage :quantity)]
-                                  (assoc provider :unsatisfied total-demand)))
+                                  (assoc provider :unsatisfied total-demand
+                                         :required-capacity (float (/ total-demand project-capacity)))))
                               (:providers result-step1))]
     (let [initial-quantities        (reduce (fn [tree {:keys [id quantity] :as source}] (assoc tree (keyword (str id)) quantity)) {} sources)
           updated-sources           (map (fn [s] (assoc (select-keys s [:id :quantity :lat :lon]) :initial-quantity ((keyword (-> s :id str)) initial-quantities))) (:sources result-step1))
@@ -283,15 +293,18 @@
         sources          sources-data
         fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))
         fn-filter-by-id  (fn [sources ids] (filter (fn [source] (ids (:id source))) sources))
+        project-capacity (get-in project [:config :providers :capacity])
         result-step1     (reduce ; over providers
-                          (fn [computed-state provider]
+                          (fn [computed-state {:keys [capacity] :as provider}]
                             (let [providers                 (:providers computed-state)
                                   sources                   (:sources computed-state)
                                   id-sources-under-coverage (set (map :id (fn-sources-under provider)))         ; create set with sources' id
                                   sources-under-coverage    (fn-filter-by-id sources id-sources-under-coverage) ; take only the sources under coverage (using the id to filter)
                                   total-demand              (sum-map sources-under-coverage :quantity)          ; total demand requested to current provider
-                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand)) sources)]
-                              {:providers (conj providers (assoc provider :satisfied (min (:capacity provider) total-demand)))
+                                  updated-sources           (map (fn [source] (update-source-if-needed source id-sources-under-coverage provider total-demand project-capacity)) sources)
+                                  satisfied-demand          (min (* capacity project-capacity) total-demand)]
+                              {:providers (conj providers (assoc provider :satisfied satisfied-demand
+                                                                 :free-capacity (- capacity (float (/ satisfied-demand project-capacity)))))
                                :sources updated-sources}))
                           {:providers nil
                            :sources sources}
@@ -301,7 +314,8 @@
                                       id-sources-under-coverage (set (map :id (fn-sources-under provider)))
                                       sources-under-coverage    (fn-filter-by-id sources id-sources-under-coverage) ; updated sources under coverage
                                       total-demand              (sum-map sources-under-coverage :quantity)]
-                                  (assoc provider :unsatisfied total-demand)))
+                                  (assoc provider :unsatisfied total-demand
+                                         :required-capacity (float (/ total-demand project-capacity)))))
                               (concat providers-data (:providers result-step1)))]
     (let [updated-sources          (:sources result-step1)
           updated-providers        (map #(dissoc % :coverage-geom) result-step2)
@@ -359,13 +373,14 @@
 
     (coverage/locations-outside-polygon (:coverage engine) polygon (:demand get-update))))
 
-(defn get-coverage
-  [engine criteria region-id {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
+(defn get-coverage-for-suggestion
+  [engine {:keys [criteria region-id project-capacity]} {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
   (let [criteria              (if sources-data criteria (merge criteria {:raster search-path}))
         [lon lat :as coord]   coord
         polygon               (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
         population-reacheable (count-under-geometry engine polygon source)
         info   {:coverage population-reacheable
+                :required-capacity (/ population-reacheable project-capacity)
                 :coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon region-id))
                 :location {:lat lat :lon lon}}]
     (cond get-avg {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
@@ -385,10 +400,12 @@
                              :source-set-id (:source-set-id project)
                              :original-sources sources-data
                              :sources-data (gs/get-saturated-locations {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
-        algorithm (keyword coverage-algorithm)
         criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
+        project-info {:criteria criteria
+                      :region-id (:region-id project)
+                      :project-capacity (get-in config [:providers :capacity])}
         coverage-fn (fn [val props] (try
-                                      (get-coverage engine criteria (:region-id project) source (assoc props :coord val))
+                                      (get-coverage-for-suggestion engine project-info source (assoc props :coord val))
                                       (catch Exception e
                                         (warn (str "Failed to compute coverage for coordinates " val) e))))]
     (when raster (raster/write-raster-file raster search-path))

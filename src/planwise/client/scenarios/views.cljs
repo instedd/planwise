@@ -44,27 +44,29 @@
   (not (nil? (:action provider))))
 
 (defn- show-provider
-  [{{:keys [action name capacity satisfied unsatisfied investment]} :elem :as ix-provider}]
+  [{{:keys [action name capacity free-capacity required-capacity satisfied unsatisfied investment]} :elem :as ix-provider}]
   (str "<b>" (utils/escape-html (if (provider-from-changeset? (:elem ix-provider))
                                   (str "New provider " (:index ix-provider))
                                   name)) "</b>"
-       "<br> Capacity: " capacity
-       "<br> Satisfied demand: " satisfied
-       "<br> Unsatisfied demand: " unsatisfied
-       "<br> Current capacity: " (- capacity satisfied)
+       "<br> Capacity: " (utils/format-number capacity)
+       "<br> Satisfied demand: " (utils/format-number satisfied)
+       "<br> Unsatisfied demand: " (utils/format-number unsatisfied)
+       "<br> Free capacity: " (utils/format-number free-capacity)
+       "<br> Required capacity: " (utils/format-number required-capacity)
        (if (provider-from-changeset? (:elem ix-provider))
          (str "<br><br> Click on panel for editing... "))))
 
 (defn- show-suggested-provider
   [suggestion]
   (str "<b> Suggestion:" (:ranked suggestion) " </b>"
-       "<br> Expected coverage : " (:coverage suggestion)))
+       "<br> Needed capacity : " (:required-capacity suggestion)
+       "<br> Expected demand to satisfy : " (:coverage suggestion)))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
   (str "<b>" (utils/escape-html (str name)) "</b>"
-       "<br> Original quantity: " initial-quantity
-       "<br> Current quantity: " quantity))
+       "<br> Original quantity: " (.toFixed (or initial-quantity 0) 2)
+       "<br> Current quantity: " (.toFixed (or quantity 0) 2)))
 
 (defn- to-indexed-map
   [coll]

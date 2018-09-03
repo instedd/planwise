@@ -85,7 +85,7 @@
 (defn- update-provider-data
   [provider updated-data]
   (let [id    (:provider-id provider)
-        data  (select-keys (get updated-data id) [:satisfied :unsatisfied :coverage-geom])]
+        data  (dissoc (get updated-data id) :id)]
     (merge provider data)))
 
 (defn- build-updated-data

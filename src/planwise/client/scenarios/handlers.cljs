@@ -37,7 +37,7 @@
       :navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
-(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data :error-message])
+(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data :error-message :providers])
 
 (defn- dispatch-track-demand-information-if-needed
   [scenario]
