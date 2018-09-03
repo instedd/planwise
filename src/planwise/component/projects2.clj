@@ -65,8 +65,16 @@
 (defn start-project
   [store project-id]
   (db-start-project! (get-db store) {:id project-id})
-  (let [project (get-project store project-id)]
-    (scenarios/create-initial-scenario (:scenarios store) project)))
+  (let [{:keys [provider-set-id] :as project} (get-project store project-id)
+        algorithm (-> (providers-set/get-provider-set (:providers-set store) provider-set-id)
+                      :coverage-algorithm
+                      keyword)
+        valid-criteria? (s/valid? ::coverage/criteria
+                                  (assoc (get-in project [:config :coverage :filter-options])
+                                         :algorithm algorithm))]
+    (if valid-criteria?
+      (scenarios/create-initial-scenario (:scenarios store) project)
+      (throw (ex-info "Invalid starting project" {:invalid-starting-project true})))))
 
 (defn reset-project
   [store project-id]
