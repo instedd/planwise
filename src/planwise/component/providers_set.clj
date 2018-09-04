@@ -191,35 +191,26 @@
              (preprocess-provider! store provider-id options)))
     (info "Coverage algorithm not set for provider-set" provider-set-id)))
 
+(defn- should-be-remove?
+  [provider tags]
+  (if (empty? tags)
+    false
+    (empty? (clojure.set/intersection (set tags) (set (:tags provider))))))
+
 (defn get-providers-with-coverage-in-region
   [store provider-set-id version filter-options]
   (let [db-spec   (get-db store)
-        region-id (:region-id filter-options)
-        algorithm (:coverage-algorithm filter-options)
-        options   (:coverage-options filter-options)
-        tags      (str/join " & " (:tags filter-options))]
-    (db-find-providers-with-coverage-in-region db-spec {:provider-set-id provider-set-id
-                                                        :version    version
-                                                        :region-id  region-id
-                                                        :algorithm  algorithm
-                                                        :options    (some-> options pr-str)
-                                                        :tags       tags})))
-
-(defn get-disabled-providers-with-coverage-in-region
-  [store provider-set-id version {:keys [tags] :as filter-options}]
-  (if (empty? tags)
-    []
-    (let [db-spec   (get-db store)
-          region-id (:region-id filter-options)
-          algorithm (:coverage-algorithm filter-options)
-          options   (:coverage-options filter-options)
-          tags      (str/join " & " tags)]
-      (db-find-providers-with-coverage-in-region db-spec {:provider-set-id provider-set-id
-                                                          :version    version
-                                                          :region-id  region-id
-                                                          :algorithm  algorithm
-                                                          :options    (some-> options pr-str)
-                                                          :disable tags}))))
+        config {:provider-set-id provider-set-id
+                :version    version
+                :region-id  (:region-id filter-options)
+                :algorithm  (:coverage-algorithm filter-options)
+                :options    (some-> (:coverage-options filter-options) pr-str)}
+        all-providers (db-find-providers-with-coverage-in-region db-spec config)
+        should-remove-providers (group-by
+                                 #(should-be-remove? % (:tags filter-options))
+                                 all-providers)]
+    {:providers (or (get should-remove-providers false) [])
+     :disabled-providers (or (get should-remove-providers true) [])}))
 
 (defn count-providers-filter-by-tags
   ([store provider-set-id region-id tags]
@@ -265,8 +256,6 @@
     (new-processing-job store provider-set-id))
   (get-providers-with-coverage-in-region [store provider-set-id version filter-options]
     (get-providers-with-coverage-in-region store provider-set-id version filter-options))
-  (get-disabled-providers-with-coverage-in-region [store provider-set-id version filter-options]
-    (get-disabled-providers-with-coverage-in-region store provider-set-id version filter-options))
   (count-providers-filter-by-tags [store provider-set-id region-id tags]
     (count-providers-filter-by-tags store provider-set-id region-id tags))
   (count-providers-filter-by-tags [store provider-set-id region-id tags version]

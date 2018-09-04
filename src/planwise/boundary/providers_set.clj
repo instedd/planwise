@@ -19,11 +19,7 @@
     "Creates a new job state for processing the provider-set asynchronously")
 
   (get-providers-with-coverage-in-region [this provider-set-id version filter-options]
-    "Retrieves filtered providers for a version of a provider-set located inside the region")
-
-  (get-disabled-providers-with-coverage-in-region [this provider-set-id version filter-options]
-    "Retrieves providers for a version of a provider-set located inside the region
-    and remove those whose tags are in filter-options")
+    "Retrieves providers and disabled-providers for a version of a provider-set located inside the region")
 
   (count-providers-filter-by-tags
     [this provider-set-id region-id tags]

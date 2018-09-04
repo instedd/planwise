@@ -71,10 +71,11 @@
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
-  (let [providers (providers-set/get-providers-with-coverage-in-region
-                   (:providers-set store) provider-set-id version filter-options)
-        disabled-providers (providers-set/get-disabled-providers-with-coverage-in-region
-                            (:providers-set store) provider-set-id version filter-options)
+  (let [{:keys [providers disabled-providers]} (providers-set/get-providers-with-coverage-in-region
+                                                (:providers-set store)
+                                                provider-set-id
+                                                version
+                                                filter-options)
         select-fn (fn [{:keys [id name capacity lat lon]} key]
                     {key true
                      :provider-id id ;(str id)
@@ -333,8 +334,12 @@
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
         disabled-providers (disabled-providers-to-export
-                            (providers-set/get-disabled-providers-with-coverage-in-region
-                             (:providers-set store) provider-set-id (:provider-set-version project) filter-options))
+                            (:disabled-providers
+                             (providers-set/get-providers-with-coverage-in-region
+                              (:providers-set store)
+                              provider-set-id
+                              (:provider-set-version project)
+                              filter-options)))
         changes        (changeset-to-export (:changeset scenario))
         fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
     (map->csv

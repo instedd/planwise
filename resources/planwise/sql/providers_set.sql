@@ -51,9 +51,6 @@ SELECT p.id, p.name, p.lat, p.lon, p.capacity, p.type, p.tags, pc.raster
           AND pc.options = :options
          /*~ (if (seq (:tags params)) */
           AND p.tags::tsvector @@ :tags::tsquery;
-         /*~ ) ~*/
-         /*~ (if (seq (:disable params)) */
-          AND NOT p.tags::tsvector @@ :disable::tsquery;
          /*~ ) ~*/;
 
 -- :name db-count-providers-with-tags :? :1
