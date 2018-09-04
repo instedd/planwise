@@ -135,7 +135,7 @@
        (let [update-config-if-necessary (if (= (:coverage-algorithm current-project)
                                                (:coverage-algorithm project))
                                           (:config current-project)
-                                          (get-in config [:coverage :filter-options]))
+                                          config)
              updated-project (-> current-project
                                  (assoc :providers (:providers project))
                                  (assoc :coverage-algorithm (:coverage-algorithm project))

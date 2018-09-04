@@ -49,8 +49,8 @@
                                   (str "New provider " (:index ix-provider))
                                   name)) "</b>"
        "<br> Capacity: " (utils/format-number capacity)
-       "<br> Satisfied demand: " (utils/format-number satisfied)
-       "<br> Unsatisfied demand: " (utils/format-number unsatisfied)
+       "<br> Satisfied demand: " (utils/format-number satisfied-demand)
+       "<br> Unsatisfied demand: " (utils/format-number unsatisfied-demand)
        "<br> Free capacity: " (utils/format-number free-capacity)
        "<br> Required capacity: " (utils/format-number required-capacity)
        (if (provider-from-changeset? (:elem ix-provider))
