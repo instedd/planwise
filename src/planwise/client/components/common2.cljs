@@ -35,11 +35,11 @@
 
 (defn- set-format
   [field type]
-  (let [prevent-fn (fn [f] #(let [val (f %)] (if (js/isNaN val) nil val)))
+  (let [not-nan #(when-not (js/isNaN %) %)
         type (or type :integer)]
-    (cond (#{[:numeric :integer]} [field type]) [(fn [e] (re-find #"\d+" e)) (prevent-fn js/parseInt)]
-          (#{[:numeric :percentage]} [field type]) [(fn [e] (re-find #"(?u)100|\d{0,2}\.\d+|\d{0,2}\.|\d{0,2}" e)) (prevent-fn js/parseFloat)]
-          (#{[:numeric :float]} [field type]) [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (prevent-fn js/parseFloat)]
+    (cond (#{[:numeric :integer]} [field type]) [(fn [e] (re-find #"\d+" e)) (comp not-nan js/parseInt)]
+          (#{[:numeric :percentage]} [field type]) [(fn [e] (re-find #"(?u)100|\d{0,2}\.\d+|\d{0,2}\.|\d{0,2}" e)) (comp not-nan js/parseFloat)]
+          (#{[:numeric :float]} [field type]) [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (comp not-nan js/parseFloat)]
           :else [identity identity])))
 
 (defn text-field
@@ -49,18 +49,22 @@
          local (r/atom value)
          [valid-fn parse-fn] (apply set-format [field type])]
      (fn [{:keys [label value focus-extra-class on-change] :as props-input}]
-       (let [props (dissoc props-input :label :focus-extra-class :type :field)]
-         [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus (str "mdc-text-field--focused" focus-extra-class))}
+       (let [props (dissoc props-input :label :focus-extra-class :type :field)
+             necessary? (not= focus-extra-class " invalid-input")
+             wrong-input (not= (valid-fn @local) @local)]
+         [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus
+                                                                 (str "mdc-text-field--focused"
+                                                                      focus-extra-class
+                                                                      (when (and wrong-input necessary?) " invalid-input")))}
           [:input.mdc-text-field__input (merge props {:id id
                                                       :type "text"
-                                                      :on-change #(when @focus (do
-                                                                                 (reset! local (-> % .-target .-value valid-fn))
-                                                                                 (on-change (parse-fn @local))))
+                                                      :on-change #(when @focus (reset! local (-> % .-target .-value)))
                                                       :value @local
                                                       :on-focus  #(reset! focus true)
                                                       :on-blur #(do
                                                                   (reset! focus false)
-                                                                  (on-change (parse-fn @local)))})]
+                                                                  (on-change (parse-fn (valid-fn @local)))
+                                                                  (reset! local (valid-fn @local)))})]
           [:label.mdc-floating-label {:for id
                                       :class (when (or (not (blank? (str value))) @focus) "mdc-floating-label--float-above")}
            label]
