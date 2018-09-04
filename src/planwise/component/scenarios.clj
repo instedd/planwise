@@ -73,13 +73,16 @@
   [store provider-set-id version filter-options]
   (let [providers (providers-set/get-providers-with-coverage-in-region
                    (:providers-set store) provider-set-id version filter-options)
+        disabled-providers (providers-set/get-disabled-providers-with-coverage-in-region
+                            (:providers-set store) provider-set-id version filter-options)
         select-fn (fn [{:keys [id name capacity lat lon]}]
                     {:initial true
                      :provider-id id ;(str id)
                      :name name
                      :capacity capacity
                      :location {:lat lat :lon lon}})]
-    (seq (map select-fn providers))))
+    {:providers (mapv select-fn providers)
+     :disabled-providers (mapv select-fn disabled-providers)}))
 
 (defn- update-provider-data
   [provider updated-data]
@@ -99,11 +102,15 @@
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
+        {:keys [providers disabled-providers]} (let [requested (select-keys scenario [:providers :disabled-providers])]
+                                                 (if (empty? requested)
+                                                   (get-initial-providers store provider-set-id provider-set-version filter-options)
+                                                   requested))
         ; providers
         providers-data     (:providers-data scenario)
         updated-data       (build-updated-data providers-data)
         updated-providers  (map #(update-provider-data % updated-data)
-                                (get-initial-providers store provider-set-id provider-set-version filter-options))
+                                providers)
         ;changeset
         updated-changeset  (map #(update-provider-data % updated-data) (:changeset scenario))
         ;sources
@@ -113,6 +120,7 @@
 
     (-> scenario
         (assoc :providers updated-providers
+               :disabled-providers disabled-providers
                :sources-data updated-sources
                :changeset updated-changeset)
         (dissoc :updated-at :providers-data :new-providers-geom))))
