@@ -36,7 +36,7 @@
            {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
            project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
            csv-name (str (:id project) "-" id "-" (:name scenario) ".csv")
-           response (response (scenarios/export-providers-data service (Integer. id)))]
+           response (response (scenarios/export-providers-data service project scneario))]
        (header response "Content-Disposition" (str "attachment; filename=" csv-name))))
 
    (GET "/:id/suggested-providers" [id :as request]
