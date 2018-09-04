@@ -271,8 +271,8 @@
 (rf/reg-event-db
  :scenarios/suggested-providers
  (fn [db [_ suggestions]]
-   (let [request-key (get-in db [:scenarios :current-scenario :computing-best-locations :state])]
-     (if (get db request-key)
+   (let [state (get-in db [:scenarios :current-scenario :computing-best-locations :state])]
+     (if (some? state)
        (-> db
            (assoc-in [:scenarios :view-state] :new-provider)
            (assoc-in [:scenarios :current-scenario :suggested-locations] suggestions)
@@ -283,10 +283,14 @@
  :scenarios/no-suggested-providers
  in-scenarios
  (fn [db [_ {:keys [response]}]]
-   (js/alert (or (:error response) "Could not compute suggestions"))
-   (-> db
-       (assoc-in [:view-state] :new-provider)
-       (assoc-in [:current-scenario :computing-best-locations :state] nil))))
+   (let [state (get-in db [:scenarios :current-scenario :computing-best-locations :state])]
+     (if (some? state)
+       (do
+         (js/alert (or (:error response) "Could not compute suggestions"))
+         (-> db
+             (assoc-in [:view-state] :new-provider)
+             (assoc-in [:current-scenario :computing-best-locations :state] nil)))
+       db))))
 
 (rf/reg-event-db
  :scenarios.new-provider/simple-creation
