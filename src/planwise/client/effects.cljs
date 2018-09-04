@@ -94,6 +94,8 @@
                                   api))
                (dissoc :on-success-cb :on-failure-cb :mapper-fn)))))
 
+(def on-request (atom {}))
+
 (defn api-effect
   [request]
   (let [seq-request-maps (if (sequential? request) request [request])]
@@ -102,7 +104,7 @@
                       (dissoc :key)
                       request->xhrio-options
                       ajax/ajax-request)]
-        (when key (swap! rf-db/app-db assoc-in [key] xhrio))))))
+        (when key (swap! on-request assoc-in [key] xhrio))))))
 
 
 (rf/reg-fx :api api-effect)
@@ -110,8 +112,7 @@
 (rf/reg-fx
  :api-abort
  (fn [key]
-   (some-> (get-in @rf-db/app-db key) ajax.protocols/-abort)
-   (swap! rf-db/app-db dissoc key)))
+   (swap! on-request dissoc key)))
 
 (defn make-api-request
   "Allows manually triggering an API request. Use :on-success-cb and

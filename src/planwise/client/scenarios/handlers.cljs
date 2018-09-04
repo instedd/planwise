@@ -261,24 +261,23 @@
  :scenarios.new-provider/fetch-suggested-locations
  in-scenarios
  (fn [{:keys [db]} [_]]
-   (let [request-key (str (random-uuid))]
-     {:db  (-> db (assoc-in [:current-scenario :computing-best-locations :state] request-key)
-               (assoc :view-state :get-suggestions))
-      :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
-                  :on-success [:scenarios/suggested-providers]
-                  :on-failure [:scenarios/no-suggested-providers]
-                  :key request-key)})))
+   {:db  (-> db (assoc-in [:current-scenario :computing-best-locations :state] :suggestions-request)
+             (assoc :view-state :get-suggestions))
+    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
+                :on-success [:scenarios/suggested-providers]
+                :on-failure [:scenarios/no-suggested-providers]
+                :key :suggestions-request)}))
 
-(rf/reg-event-fx
+(rf/reg-event-db
  :scenarios/suggested-providers
- (fn [{:keys [db]} [_ suggestions]]
+ (fn [db [_ suggestions]]
    (let [request-key (get-in db [:scenarios :current-scenario :computing-best-locations :state])]
-     (when (get db request-key)
+     (if (get db request-key)
        (-> db
            (assoc-in [:scenarios :view-state] :new-provider)
            (assoc-in [:scenarios :current-scenario :suggested-locations] suggestions)
-           (assoc-in [:scenarios :current-scenario :computing-best-locations :state] nil)
-           (dissoc request-key))))))
+           (assoc-in [:scenarios :current-scenario :computing-best-locations :state] nil))
+       db))))
 
 (rf/reg-event-db
  :scenarios/no-suggested-providers
