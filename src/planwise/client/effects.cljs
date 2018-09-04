@@ -58,9 +58,11 @@
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
+(def on-request (atom {}))
+
 (defn request->xhrio-options
   [{:as   request
-    :keys [on-success on-failure mapper-fn]
+    :keys [on-success on-failure mapper-fn key]
     :or   {on-success      [:http-no-on-success]
            on-failure      [:http-no-on-failure]
            mapper-fn       identity}}]
@@ -70,11 +72,14 @@
            (-> request
                (assoc
                 :api     api
-                :handler (partial http-fx/ajax-xhrio-handler
+                :handler (fn [& args]
+                           (swap! on-request dissoc key)
+                           (apply http-fx/ajax-xhrio-handler
                                   #(->> % mapper-fn (conj on-success) rf/dispatch)
                                   #(rf/dispatch (conj on-failure %))
-                                  api))
-               (dissoc :on-success :on-failure :mapper-fn)))))
+                                  api
+                                  args)))
+               (dissoc :on-success :on-failure :mapper-fn :key)))))
 
 (defn request->options-callback
   [{:as   request
@@ -94,16 +99,15 @@
                                   api))
                (dissoc :on-success-cb :on-failure-cb :mapper-fn)))))
 
+
 (defn api-effect
   [request]
   (let [seq-request-maps (if (sequential? request) request [request])]
     (doseq [{:keys [key] :as request} seq-request-maps]
       (let [xhrio (-> request
-                      (dissoc :key)
                       request->xhrio-options
                       ajax/ajax-request)]
-        ;FIXME: Issue #456
-        (when key (swap! rf-db/app-db assoc-in key xhrio))))))
+        (when key (swap! on-request assoc-in [key] xhrio))))))
 
 
 (rf/reg-fx :api api-effect)
@@ -111,8 +115,8 @@
 (rf/reg-fx
  :api-abort
  (fn [key]
-   (some-> (get-in @rf-db/app-db key) ajax.protocols/-abort)
-   (swap! rf-db/app-db assoc-in key nil)))
+   (some-> (get @on-request key) ajax.protocols/-abort)
+   (swap! on-request dissoc key)))
 
 (defn make-api-request
   "Allows manually triggering an API request. Use :on-success-cb and
