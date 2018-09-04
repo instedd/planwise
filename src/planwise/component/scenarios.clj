@@ -75,14 +75,14 @@
                    (:providers-set store) provider-set-id version filter-options)
         disabled-providers (providers-set/get-disabled-providers-with-coverage-in-region
                             (:providers-set store) provider-set-id version filter-options)
-        select-fn (fn [{:keys [id name capacity lat lon]}]
-                    {:initial true
+        select-fn (fn [{:keys [id name capacity lat lon]} key]
+                    {key true
                      :provider-id id ;(str id)
                      :name name
                      :capacity capacity
                      :location {:lat lat :lon lon}})]
-    {:providers (mapv select-fn providers)
-     :disabled-providers (mapv select-fn disabled-providers)}))
+    {:providers (mapv #(select-fn % :initial) providers)
+     :disabled-providers (mapv #(select-fn % :disabled) disabled-providers)}))
 
 (defn- update-provider-data
   [provider updated-data]
