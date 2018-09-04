@@ -44,7 +44,7 @@
   (not (nil? (:action provider))))
 
 (defn- show-provider
-  [{{:keys [action name capacity free-capacity required-capacity satisfied unsatisfied investment]} :elem :as ix-provider}]
+  [{{:keys [action name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand investment]} :elem :as ix-provider}]
   (str "<b>" (utils/escape-html (if (provider-from-changeset? (:elem ix-provider))
                                   (str "New provider " (:index ix-provider))
                                   name)) "</b>"
@@ -233,7 +233,7 @@
           [:small "Computing best locations ..."]])])))
 
 (defn display-current-scenario
-  [current-project current-scenario]
+  [current-project {:keys [id] :as current-scenario}]
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
         error      (subscribe [:scenarios/error])
@@ -242,7 +242,7 @@
         unit-name  (get-in current-project [:config :demographics :unit-name])
         export-providers-button [:a {:class "mdc-fab disable-a"
                                      :id "main-action"
-                                     :href (str "/api/scenarios/" (:id current-scenario) "/csv")}
+                                     :href (str "/api/scenarios/" id "/csv")}
                                  [m/Icon {:class "material-icons  center-download-icon"} "get_app"]]]
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)

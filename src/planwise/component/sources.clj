@@ -58,7 +58,7 @@
                 :type (:type csv-source-data)
                 :lat  (Double. (:lat csv-source-data))
                 :lon  (Double. (:lon csv-source-data))
-                :quantity (Integer. (:unsatisfied csv-source-data))}]
+                :quantity (Integer. (:unsatisfied-demand csv-source-data))}]
     (create-source store source)))
 
 (defn import-sources

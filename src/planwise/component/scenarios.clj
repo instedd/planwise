@@ -43,9 +43,8 @@
         (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
 
 (defn- map->csv
-  [coll]
-  (let [fields (keys (first coll))
-        rows   (map #(map % fields) coll)
+  [coll fields]
+  (let [rows   (map #(map % fields) coll)
         data   (cons (mapv name fields) rows)]
     (with-out-str (csv/write-csv *out* data))))
 
@@ -303,21 +302,23 @@
 
 (defn- providers-to-export
   [store providers-data changeset]
-  (let [update-fn (fn [{:keys [id capacity satisfied unsatisfied]}]
-                    (let [provider  (if (int? id) (providers-set/get-provider (:providers-set store) id)
-                                        (-> (filter (fn [{:keys [provider-id]}] (= id provider-id)) changeset)
-                                            (first)
-                                            (dissoc :provider-id)))]
-                      (assoc provider
-                             :capacity capacity :satisfied satisfied :unsatisfied unsatisfied)))]
-    (map-indexed (fn [idx e] (merge {:id idx} (update-fn e))) providers-data)))
+  (let [update-fn (fn [{:keys [id] :as provider}]
+                    (let [initial-data  (if (int? id)
+                                          (providers-set/get-provider (:providers-set store) id)
+                                          (-> (filter (fn [{:keys [provider-id]}] (= id provider-id)) changeset)
+                                              (first)
+                                              (dissoc :provider-id)))]
+                      (merge initial-data
+                             provider)))]
+    (map-indexed (fn [idx e] (assoc (update-fn e) :id idx)) providers-data)))
 
 (defn export-providers-data
   [store scenario-id]
   (let [scenario       (get-scenario store scenario-id)
         changes        (changeset-to-export (:changeset scenario))
-        providers-data (-> scenario :providers-data)]
-    (map->csv (providers-to-export store providers-data changes))))
+        providers-data (-> scenario :providers-data)
+        fields [:id :type :name :lat :lon :capacity :tags :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
+    (map->csv (providers-to-export store providers-data changes) fields)))
 
 (defn reset-scenarios
   [store project-id]
