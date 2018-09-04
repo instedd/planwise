@@ -240,7 +240,6 @@
         created-providers (subscribe [:scenarios/created-providers])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
-        csv-name (str (:id current-project) "-" id "-" (:name current-scenario) ".csv")
         export-providers-button [:a {:class "mdc-fab disable-a"
                                      :id "main-action"
                                      :href (str "/api/scenarios/" id "/csv")}
