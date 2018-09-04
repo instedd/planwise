@@ -112,6 +112,7 @@
 (rf/reg-fx
  :api-abort
  (fn [key]
+   (some-> (key @on-request) ajax.protocols/-abort)
    (swap! on-request dissoc key)))
 
 (defn make-api-request
