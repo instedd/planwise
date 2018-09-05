@@ -77,14 +77,15 @@
   (let [index               (subscribe [:scenarios/changeset-index])
         selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
+        all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
                                                                                  :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
-    (fn [{:keys [bbox]} {:keys [changeset providers raster sources-data] :as scenario} state error]
-      (let [providers             (into providers changeset)
+    (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
+      (let [providers             (reduce into [(:providers @all-providers) (:disabled-providers @all-providers) changeset])
             indexed-providers     (to-indexed-map providers)
             indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
@@ -237,7 +238,7 @@
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
         error      (subscribe [:scenarios/error])
-        created-providers (subscribe [:scenarios/created-providers])
+        providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
         source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
         export-providers-button [:a {:class "mdc-fab disable-a"
@@ -259,7 +260,7 @@
        [:div (when-not @error {:class-name "fade"})]
        (if @error
          [raise-alert current-project current-scenario @error]
-         [changeset/listing-component @created-providers])
+         [changeset/listing-component @providers-from-changeset])
        [:div (when-not @error {:class-name "fade inverted"})]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]

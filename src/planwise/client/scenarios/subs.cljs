@@ -42,8 +42,9 @@
  (fn [current-scenario [_]]
    (= (:label current-scenario) "initial")))
 
+;TODO necessary indexed changes?
 (rf/reg-sub
- :scenarios/created-providers :<- [:scenarios/current-scenario]
+ :scenarios/providers-from-changeset :<- [:scenarios/current-scenario]
  (fn [current-scenario [_]]
    (keep-indexed (fn [i provider] (when (:action provider) {:provider provider :index i}))
                  (into (:providers current-scenario) (:changeset current-scenario)))))
@@ -77,3 +78,19 @@
  :scenarios.new-provider/options :<- [:scenarios/view-state]
  (fn [view-state [_]]
    (= :show-options-to-create-provider view-state)))
+
+(defn group-providers
+  [{:keys [providers disabled-providers changeset] :as scenario}]
+  (let [changes                     (group-by :action changeset)
+        filtered-providers          (remove (fn [{:keys [id]}]
+                                              (= id (map :provider-id (get changes "increase-provider")))) providers)
+        filtered-disabled-providers (remove (fn [{:keys [id]}]
+                                              (= id (map :provider-id (get changes "upgrade-provider")))) disabled-providers)]
+    {:changeset changeset
+     :providers filtered-providers
+     :disabled-providers filtered-disabled-providers}))
+
+(rf/reg-sub
+ :scenarios/all-providers :<- [:scenarios/current-scenario]
+ (fn [scenario [_]]
+   (group-providers scenario)))
