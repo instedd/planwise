@@ -31,13 +31,13 @@
   [:div
    [:h2 "Investment"]
    [common2/text-field {:type "number"
-                        :on-change  #(dispatch [:scenarios/save-key [:changeset-dialog :investment] (-> % .-target .-value js/parseInt)])
+                        :on-change  #(dispatch [:scenarios/save-key [:changeset-dialog :investment] %])
                         :focus-extra-class (when (< available-budget investment) " invalid-input")
                         :value (or investment "")}]
 
    [:h2 "Capacity"]
    [common2/text-field {:type "number"
-                        :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] (-> % .-target .-value js/parseInt)])
+                        :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] %])
                         :value (or capacity "")}]])
 (defn changeset-dialog
   [scenario budget]
