@@ -3,7 +3,7 @@
             [planwise.client.utils :as utils]))
 
 (defn dialog
-  [{:keys [open? title content accept-fn cancel-fn delete-fn]}]
+  [{:keys [open? title content accept-fn cancel-fn delete-fn disable-accept-button]}]
   [m/Dialog {:open open?
              :on-accept accept-fn
              :on-close cancel-fn}
@@ -16,4 +16,5 @@
     [m/DialogFooter
      (when (some? delete-fn) [m/Button {:on-click delete-fn} "Delete"])
      (when (some? cancel-fn) [m/DialogFooterButton {:cancel true} "Cancel"])
-     (when (some? accept-fn) [m/DialogFooterButton {:accept true} "OK"])]]])
+     (when (some? accept-fn) [m/DialogFooterButton {:accept true
+                                                    :disabled disable-accept-button} "OK"])]]])

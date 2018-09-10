@@ -46,6 +46,7 @@
         provider-index (subscribe [:scenarios/changeset-index])]
     (fn [scenario budget]
       (dialog {:open? (= @view-state :changeset-dialog)
+               :disable-accept-button (or (nil? (:capacity @provider)) (nil? (:investment @provider)))
                :title "Edit Provider"
                :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
                :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
