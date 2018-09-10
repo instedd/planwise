@@ -46,24 +46,24 @@
 
 (defn- show-provider
   [{{:keys [action disabled name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand investment]} :elem :as ix-provider}]
-    (crate/html
-     [:div
-      [:h3 (if (#{"create-provider"} action)
-             (str "New provider " (:index ix-provider))
-              name)]
-       [:p (str "Capacity: " (utils/format-number capacity))]
-       [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))]
-       [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
-       [:p (str "Free capacity: " (utils/format-number free-capacity))]
-       [:p (str "Required capacity: " (utils/format-number required-capacity))]
-        (cond
-          (#{"create-provider"} action)
-            [:button.edit-open-button {:id (:index ix-provider)
-                                       :on-click #(dispatch [:scenarios/edit-change (:elem ix-provider)])} "Edit Provider"]
-            disabled
-            [:button.upgrade-open-button {:id (:index ix-provider)} "Upgrade Provider"]
-            :else
-            [:button.increase-open-button {:id (:index ix-provider)} "Increase Provider"])]))
+  (crate/html
+   [:div
+    [:h3 (if (#{"create-provider"} action)
+           (str "New provider " (:index ix-provider))
+           name)]
+    [:p (str "Capacity: " (utils/format-number capacity))]
+    [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))]
+    [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
+    [:p (str "Free capacity: " (utils/format-number free-capacity))]
+    [:p (str "Required capacity: " (utils/format-number required-capacity))]
+    (cond
+      (#{"create-provider"} action)
+      [:button.edit-open-button {:id (:index ix-provider)
+                                 :on-click #(dispatch [:scenarios/edit-change (:elem ix-provider)])} "Edit Provider"]
+      disabled
+      [:button.upgrade-open-button {:id (:index ix-provider)} "Upgrade Provider"]
+      :else
+      [:button.increase-open-button {:id (:index ix-provider)} "Increase Provider"])]))
 
 (defn- show-suggested-provider
   [suggestion]

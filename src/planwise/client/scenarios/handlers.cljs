@@ -167,7 +167,7 @@
          updated-changeset (get-in db [:changeset-dialog])
          updated-scenario  (assoc-in current-scenario [:changeset changeset-index] updated-changeset)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
-              :on-success [:scenarios/update-demand-information])
+                   :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc-in [:current-scenario] updated-scenario)
                 (assoc-in [:view-state] :current-scenario))})))
