@@ -76,4 +76,4 @@
                                          (reset! local (-> % .-target .-value str))
                                          (on-change (parse-fn (valid-fn @local))))
                            :reset-local-value #(reset! local (str value))
-                           :value @local)]))))
+                           :value (or @local ""))]))))
