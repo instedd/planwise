@@ -37,7 +37,7 @@
   [type]
   (let [not-nan #(when-not (js/isNaN %) %)
         type (or type :integer)]
-    (cond (#{:integer} type) [(fn [e] (println "look res" (re-find #"\d+" e)) (re-find #"\d+" e)) (comp not-nan js/parseInt)]
+    (cond (#{:integer} type) [(fn [e] (re-find #"\d+" e)) (comp not-nan js/parseInt)]
           (#{:percentage} type) [(fn [e] (re-find #"(?u)100|\d{0,2}\.\d+|\d{0,2}\.|\d{0,2}" e)) (comp not-nan js/parseFloat)]
           (#{:float} type) [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (comp not-nan js/parseFloat)]
           :else [identity identity])))
@@ -46,13 +46,15 @@
   [props-input]
   (let [focus (r/atom false)
         id    (str (random-uuid))]
-    (fn [{:keys [label value focus-extra-class on-change] :as props-input}]
-      (println "value" value)
-      (let [props (dissoc props-input :label :focus-extra-class :on-change)]
+    (fn [{:keys [label value focus-extra-class on-change reset-local-value] :as props-input}]
+      (let [props (dissoc props-input :label :focus-extra-class :on-change :reset-local-value)]
         [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus (str "mdc-text-field--focused" focus-extra-class))}
          [:input.mdc-text-field__input (merge props {:id id
                                                      :on-focus #(reset! focus true)
-                                                     :on-blur  #(reset! focus false)
+                                                     :on-blur  #(do
+                                                                  (when reset-local-value (reset-local-value))
+                                                                  (on-change)
+                                                                  (reset! focus false))
                                                      :on-change on-change}
                                               (when @focus
                                                 {:placeholder nil}))]
@@ -72,6 +74,7 @@
         [text-field (assoc props :focus-extra-class (if (and wrong-input necessary?) " invalid-input" "")
                            :type "text"
                            :on-change #(do
-                                         (on-change (parse-fn (valid-fn @local)))
-                                         (reset! local (-> % .-target .-value)))
+                                         (reset! local (-> % .-target .-value str))
+                                         (on-change (parse-fn (valid-fn @local))))
+                           :reset-local-value #(reset! local (str (valid-fn @local)))
                            :value @local)]))))
