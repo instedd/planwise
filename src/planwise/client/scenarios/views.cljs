@@ -1,6 +1,7 @@
 (ns planwise.client.scenarios.views
   (:require [re-frame.core :refer [subscribe dispatch]]
             [reagent.core :as r]
+            [crate.core :as crate]
             [re-com.core :as rc]
             [leaflet.core :as l]
             [clojure.string :refer [join split]]
@@ -44,17 +45,24 @@
   (not (nil? (:action provider))))
 
 (defn- show-provider
-  [{{:keys [action name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand investment]} :elem :as ix-provider}]
-  (str "<b>" (utils/escape-html (if (provider-from-changeset? (:elem ix-provider))
-                                  (str "New provider " (:index ix-provider))
-                                  name)) "</b>"
-       "<br> Capacity: " (utils/format-number capacity)
-       "<br> Satisfied demand: " (utils/format-number satisfied-demand)
-       "<br> Unsatisfied demand: " (utils/format-number unsatisfied-demand)
-       "<br> Free capacity: " (utils/format-number free-capacity)
-       "<br> Required capacity: " (utils/format-number required-capacity)
-       (if (provider-from-changeset? (:elem ix-provider))
-         (str "<br><br> Click on panel for editing... "))))
+  [{{:keys [action disabled name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand investment]} :elem :as ix-provider}]
+    (crate/html
+     [:div
+      [:h3 (if (#{"create-provider"} action)
+             (str "New provider " (:index ix-provider))
+              name)]
+       [:p (str "Capacity: " (utils/format-number capacity))]
+       [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))]
+       [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
+       [:p (str "Free capacity: " (utils/format-number free-capacity))]
+       [:p (str "Required capacity: " (utils/format-number required-capacity))]
+        (cond
+          (#{"create-provider"} action)
+            [:button.edit-open-button {:id (:index ix-provider)} "Edit Provider"]
+            disabled
+            [:button.upgrade-open-button {:id (:index ix-provider)} "Upgrade Provider"]
+            :else
+            [:button.increase-open-button {:id (:index ix-provider)} "Increase Provider"])]))
 
 (defn- show-suggested-provider
   [suggestion]
@@ -80,8 +88,8 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
-                                                                                 :lon lon}]))
+        add-point           (fn [lat lon] (dispatch [:scenarios/provider-action :create {:lat lat
+                                                                                         :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
