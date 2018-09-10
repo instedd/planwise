@@ -52,9 +52,8 @@
          [:input.mdc-text-field__input (merge props {:id id
                                                      :on-focus #(reset! focus true)
                                                      :on-blur  #(do
-                                                                  (when reset-local-value (reset-local-value))
-                                                                  (on-change)
-                                                                  (reset! focus false))
+                                                                  (reset! focus false)
+                                                                  (when reset-local-value (reset-local-value)))
                                                      :on-change on-change}
                                               (when @focus
                                                 {:placeholder nil}))]
@@ -67,7 +66,7 @@
   [{:keys [value sub-type] :as props-input}]
   (let [local (r/atom (str value))
         [valid-fn parse-fn] (set-format sub-type)]
-    (fn [{:keys [on-change focus-extra-class] :as props-input}]
+    (fn [{:keys [value on-change focus-extra-class] :as props-input}]
       (let [props (dissoc props-input :sub-type :field)
             necessary? (not= focus-extra-class " invalid-input")
             wrong-input (not= (valid-fn @local) @local)]
@@ -76,5 +75,5 @@
                            :on-change #(do
                                          (reset! local (-> % .-target .-value str))
                                          (on-change (parse-fn (valid-fn @local))))
-                           :reset-local-value #(reset! local (str (valid-fn @local)))
+                           :reset-local-value #(reset! local (str value))
                            :value @local)]))))
