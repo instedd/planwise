@@ -9,10 +9,29 @@
    :list-scope               nil
    :list                     (asdf/new nil)})
 
-(defn initial-provider
+
+(defmulti initial-provider :action-name)
+
+(defmethod initial-provider :create
   [props]
   (merge {:action "create-provider"
           :investment 0
           :capacity 0
           :provider-id (str (random-uuid))}
+         props))
+
+(defmethod initial-provider :upgrade
+  [props]
+  (merge {:action "upgrade-provider"
+          :investment 0
+          :capacity 0
+          :provider-id (:id props)}
+         props))
+
+(defmethod initial-provider :increase
+  [props]
+  (merge {:action "increase-provider"
+          :investment 0
+          :capacity 0
+          :provider-id (:id props)}
          props))

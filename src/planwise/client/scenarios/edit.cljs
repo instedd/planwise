@@ -78,3 +78,13 @@
         [m/MenuItem
          {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
          "Get suggestions"]]])))
+
+(defn upgrade-provider-button
+  [provider]
+  [m/Fab [m/Icon "arrow_upward"]
+        {:on-click #(dispatch [:scenarios/provider-action :upgrade provider])}])
+
+(defn increase-provider-button
+  [provider]
+  [m/Fab [m/Icon "add"]
+    {:on-click #(dispatch [:scenarios/provider-action :increase provider])}])

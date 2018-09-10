@@ -58,7 +58,8 @@
        [:p (str "Required capacity: " (utils/format-number required-capacity))]
         (cond
           (#{"create-provider"} action)
-            [:button.edit-open-button {:id (:index ix-provider)} "Edit Provider"]
+            [:button.edit-open-button {:id (:index ix-provider)
+                                       :on-click #(dispatch [:scenarios/edit-change (:elem ix-provider)])} "Edit Provider"]
             disabled
             [:button.upgrade-open-button {:id (:index ix-provider)} "Upgrade Provider"]
             :else

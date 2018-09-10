@@ -136,11 +136,11 @@
                 (assoc-in [:view-state] :current-scenario))})))
 
 (rf/reg-event-fx
- :scenarios/create-provider
+ :scenarios/provider-action
  in-scenarios
- (fn [{:keys [db]} [_ {:keys [lat lon]}]]
+ (fn [{:keys [db]} [_ action {:keys [lat lon]}]]
    (let [{:keys [current-scenario]} db
-         new-provider (db/initial-provider {:location {:lat lat :lon lon}})
+         new-provider (db/initial-provider {:location {:lat lat :lon lon}} action)
          updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)
          new-provider-index (dec (count (:changeset updated-scenario)))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
@@ -167,7 +167,7 @@
          updated-changeset (get-in db [:changeset-dialog])
          updated-scenario  (assoc-in current-scenario [:changeset changeset-index] updated-changeset)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
-                   :on-success [:scenarios/update-demand-information])
+              :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc-in [:current-scenario] updated-scenario)
                 (assoc-in [:view-state] :current-scenario))})))
@@ -309,3 +309,11 @@
      {:db (-> db (assoc-in [:current-scenario :computing-best-locations :state] nil)
               (assoc :view-state :current-scenario))
       :api-abort request-key})))
+
+(rf/reg-event-db
+ :scenarios/edit-change
+ in-scenarios
+ (fn [db [_ provider]]
+   (assoc db
+          :view-state       :changeset-dialog
+          :changeset-dialog provider)))
