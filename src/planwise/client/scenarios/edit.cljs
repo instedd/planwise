@@ -30,15 +30,15 @@
   [{:keys [investment available-budget capacity]}]
   [:div
    [:h2 "Investment"]
-   [common2/text-field {:type "number"
-                        :on-change  #(dispatch [:scenarios/save-key [:changeset-dialog :investment] %])
-                        :focus-extra-class (when (< available-budget investment) " invalid-input")
-                        :value (or investment "")}]
+   [common2/numeric-text-field {:type "number"
+                                :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :investment] %])
+                                :focus-extra-class (when (< available-budget investment) " invalid-input")
+                                :value (or investment "")}]
 
    [:h2 "Capacity"]
-   [common2/text-field {:type "number"
-                        :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] %])
-                        :value (or capacity "")}]])
+   [common2/numeric-text-field {:type "number"
+                                :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] %])
+                                :value (or capacity "")}]])
 (defn changeset-dialog
   [scenario budget]
   (let [provider       (subscribe [:scenarios/changeset-dialog])
