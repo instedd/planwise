@@ -3,6 +3,7 @@
             [clojure.string :as s]
             [planwise.client.asdf :as asdf]
             [planwise.client.routes :as routes]
+            [planwise.client.utils :as utils]
             [planwise.client.scenarios.api :as api]
             [planwise.client.scenarios.db :as db]))
 
@@ -37,7 +38,7 @@
       :navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
-(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data :error-message :providers])
+(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :sources-data :error-message])
 
 (defn- dispatch-track-demand-information-if-needed
   [scenario]
@@ -52,6 +53,14 @@
 ;; and if the scenario is still in pending, schedule a next dispatch for tracking
 ;; the processing status
 
+(defn make-renderable-data-from-computation
+  [{:keys [providers changeset providers-data]}]
+ ;;TODO: when upgrade being made disabled-provider assumed to be considered provider
+  (reduce (fn [[providers changeset] data]
+            [(map (fn [p] (if (= (:id data) (:id p)) (merge p data) p)) providers)
+             (map (fn [p] (if (= (:id data) (:id p)) (merge p data) p)) changeset)])
+          [providers changeset] providers-data))
+
 (rf/reg-event-fx
  :scenarios/update-demand-information
  in-scenarios
@@ -60,7 +69,9 @@
          should-update    (= (:id current-scenario) (:id scenario))]
      (if should-update
        (merge {:db (assoc db :current-scenario
-                          (merge current-scenario (select-keys scenario demand-fields)))}
+                          (merge current-scenario
+                                 (select-keys scenario demand-fields)
+                                 (make-renderable-data-from-computation scenario)))}
               (dispatch-track-demand-information-if-needed scenario))
        {}))))
 
@@ -158,14 +169,22 @@
           :view-state-params {:changeset-index changeset-index}
           :changeset-dialog  (get-in db [:current-scenario :changeset changeset-index]))))
 
+(defn- update-providers-when-upgrade
+  [{:keys [providers disabled-providers]} provider]
+  {:providers (conj providers provider)
+   :disabled-providers (utils/remove-by-id disabled-providers (:id provider))})
+
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [current-scenario  (get-in db [:current-scenario])
          changeset-index   (get-in db [:view-state-params :changeset-index])
-         updated-changeset (get-in db [:changeset-dialog])
-         updated-scenario  (assoc-in current-scenario [:changeset changeset-index] updated-changeset)]
+         updated-change    (get-in db [:changeset-dialog])
+         updated-scenario  (merge
+                            (assoc-in current-scenario [:changeset changeset-index] updated-change)
+                            (when-not (:matches-filters updated-change)
+                              (update-providers-when-upgrade current-scenario updated-change)))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
