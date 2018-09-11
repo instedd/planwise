@@ -44,6 +44,12 @@
   [provider]
   (not (nil? (:action provider))))
 
+(defn- popup-connected-button
+  [label dispatch-vector]
+  (let [button (crate/html [:button label])]
+    (.addEventListener button "click" #(dispatch dispatch-vector))
+    button))
+
 (defn- show-provider
   [{{:keys [action disabled name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand investment]} :elem :as ix-provider}]
   (crate/html
@@ -57,13 +63,9 @@
     [:p (str "Free capacity: " (utils/format-number free-capacity))]
     [:p (str "Required capacity: " (utils/format-number required-capacity))]
     (cond
-      (#{"create-provider"} action)
-      [:button.edit-open-button {:id (:index ix-provider)
-                                 :on-click #(dispatch [:scenarios/edit-change (:elem ix-provider)])} "Edit Provider"]
-      disabled
-      [:button.upgrade-open-button {:id (:index ix-provider)} "Upgrade Provider"]
-      :else
-      [:button.increase-open-button {:id (:index ix-provider)} "Increase Provider"])]))
+      (#{"create-provider"} action) (popup-connected-button "Edit provider" [:scenarios/edit-change (:elem ix-provider)])
+      disabled (popup-connected-button "Upgrade provider" [:scenarios/edit-change (:elem ix-provider)])
+      :else (popup-connected-button "Increase provider" [:scenarios/edit-change (:elem ix-provider)]))]))
 
 (defn- show-suggested-provider
   [suggestion]
