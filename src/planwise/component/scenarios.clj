@@ -85,19 +85,6 @@
     {:providers (mapv #(select-fn % :initial) providers)
      :disabled-providers (mapv #(select-fn % :disabled) disabled-providers)}))
 
-(defn- update-provider-data
-  [provider updated-data]
-  (let [id    (:provider-id provider)
-        data  (dissoc (get updated-data id) :id)]
-    (merge provider data)))
-
-(defn- build-updated-data
-  [providers-data]
-  (reduce (fn [dic {:keys [id] :as provider}]
-            (assoc dic id (dissoc provider :id)))
-          {}
-          providers-data))
-
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
@@ -107,24 +94,16 @@
                                                  (if (empty? requested)
                                                    (get-initial-providers store provider-set-id provider-set-version filter-options)
                                                    requested))
-        ; providers
-        providers-data     (:providers-data scenario)
-        updated-data       (build-updated-data providers-data)
-        updated-providers  (map #(update-provider-data % updated-data)
-                                providers)
-        ;changeset
-        updated-changeset  (map #(update-provider-data % updated-data) (:changeset scenario))
         ;sources
         sources             (sources/list-sources-in-set (:sources-set store) source-set-id)
         get-source-info-fn  (fn [id] (select-keys (-> (filter #(= id (:id %)) sources) first) [:name]))
         updated-sources (map (fn [s] (merge s (get-source-info-fn (:id s)))) (:sources-data scenario))]
 
     (-> scenario
-        (assoc :providers updated-providers
-               :disabled-providers disabled-providers
-               :sources-data updated-sources
-               :changeset updated-changeset)
-        (dissoc :updated-at :providers-data :new-providers-geom))))
+        (assoc  :sources-data updated-sources
+                :providers providers
+                :disabled-providers disabled-providers)
+        (dissoc :updated-at :new-providers-geom))))
 
 (defn get-provider-geom
   [store project scenario provider-id]
