@@ -59,10 +59,10 @@
 
 (defn- compute-provider
   [props provider]
-  (let [{:keys [id provider-id action raster capacity]} provider
+  (let [{:keys [id action raster capacity]} provider
         {:keys [update? demand-raster project-capacity project-id provider-set-id]} props
         path (if action
-               (str "data/scenarios/" project-id "/coverage-cache/" provider-id ".tif")
+               (str "data/scenarios/" project-id "/coverage-cache/" id ".tif")
                (str "data/coverage/" provider-set-id "/" raster ".tif"))
         coverage-raster (raster/read-raster path)
         scaled-capacity (* capacity project-capacity)
@@ -71,17 +71,17 @@
 
     (if update?
       {:unsatisfied-demand population-reachable
-       :required-capacity (/ population-reachable project-capacity)}
+       :required-capacity  (/ population-reachable project-capacity)}
       (do
-        (debug "Subtracting" scaled-capacity "of provider" (or provider-id id) "reaching" population-reachable "people")
+        (debug "Subtracting" scaled-capacity "of provider" id "reaching" population-reachable "people")
         (when-not (zero? population-reachable)
           (let [factor (- 1 (min 1 (/ scaled-capacity population-reachable)))]
             (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor))))
-        {:id         (or id provider-id)
-         :satisfied-demand  satisfied
-         :capacity   capacity
-         :used-capacity (float (/ satisfied project-capacity))
-         :free-capacity (- capacity (float (/ satisfied project-capacity)))}))))
+        {:id               id
+         :satisfied-demand satisfied
+         :capacity         capacity
+         :used-capacity    (float (/ satisfied project-capacity))
+         :free-capacity    (- capacity (float (/ satisfied project-capacity)))}))))
 
 (defn- compute-providers-demand
   [set props]
@@ -232,10 +232,10 @@
                           :project-id       project-id
                           :demand-raster    demand-raster}
     ;; Compute coverage of providers that are not yet computed
-        changes-geom    (reduce (fn [changes-geom {:keys [provider-id] :as change}]
+        changes-geom    (reduce (fn [changes-geom {:keys [id] :as change}]
                                   (let [polygon (compute-coverage-for-new-provider (:coverage engine) project-id change criteria)]
                                     (if polygon
-                                      (assoc changes-geom (keyword provider-id) {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon (:region-id project)))})
+                                      (assoc changes-geom (keyword id) {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon (:region-id project)))})
                                       changes-geom))) {} changeset)]
 
     ;; Compute demand from initial scenario
@@ -270,9 +270,9 @@
                                                         filter-options))))
 
 (defn- change-to-provider
-  [{:keys [provider-id coverage-geom] :as change} coverage-fn new-providers-geom]
-  (let [coverage-geom ((keyword provider-id) new-providers-geom)
-        change (assoc (select-keys change [:capacity :location]) :id provider-id)]
+  [{:keys [id coverage-geom] :as change} coverage-fn new-providers-geom]
+  (let [coverage-geom ((keyword id) new-providers-geom)
+        change (assoc (select-keys change [:capacity :location]) :id id)]
     (if coverage-geom
       (merge change coverage-geom)
       (assoc change :coverage-geom (coverage-fn change)))))

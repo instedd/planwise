@@ -105,14 +105,14 @@
         (dissoc :updated-at :new-providers-geom))))
 
 (defn get-provider-geom
-  [store project scenario provider-id]
-  (if (re-matches #"\A[0-9]+\z" provider-id)
+  [store project scenario id]
+  (if (re-matches #"\A[0-9]+\z" id)
     {:coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
-                                                       (Integer/parseInt provider-id)
+                                                       (Integer/parseInt id)
                                                        {:algorithm (:coverage-algorithm project)
                                                         :filter-options (get-in project [:config :coverage :filter-options])
                                                         :region-id (:region-id project)}))}
-    ((keyword provider-id) (:new-providers-geom scenario))))
+    (get (:new-providers-geom scenario) (keyword id))))
 
 (defn list-scenarios
   [store project-id]

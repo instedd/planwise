@@ -21,15 +21,15 @@
 
 
 (defn raise-alert
-  [project {:keys [changeset]} {:keys [causes provider-id]}]
+  [project {:keys [changeset]} {:keys [causes id]}]
   (let [message ""]
     [:div.raise-alert
      [:div.card-message
       [:div.content
        [:h2.mdc-dialog__header__title "Oops...  something went wrong"]
        [:h3 message]]
-      (if provider-id
-        (let [index (first (keep-indexed #(if (= provider-id (:id %2)) %1) changeset))]
+      (if id
+        (let [index (first (keep-indexed #(if (= id (:id %2)) %1) changeset))]
           (when index
             [m/Button   {:class-name "bottom-button"
                          :on-click #(do (dispatch [:scenarios/delete-provider index])
