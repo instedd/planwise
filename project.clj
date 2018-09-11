@@ -159,6 +159,7 @@
                                   [kerodon "0.9.0"]
                                   [ring/ring-mock "0.3.0"]
                                   [com.gearswithingears/shrubbery "0.4.1"]
+                                  [org.clojure/test.check "0.9.0"]
 
                                   ; Helpers
                                   [day8.re-frame/re-frame-10x "0.2.0"]

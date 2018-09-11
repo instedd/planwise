@@ -8,7 +8,6 @@
             [planwise.engine.raster :as raster]
             [planwise.component.coverage.rasterize :as rasterize]
             [clojure.string :refer [join]]
-            [clojure.edn :refer [read-string]]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
             [integrant.core :as ig]

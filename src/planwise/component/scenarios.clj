@@ -62,12 +62,12 @@
 (defn- get-initial-providers-data
   [store project-id]
   (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
-      :providers-data read-string))
+      :providers-data edn/read-string))
 
 (defn- get-initial-sources-data
   [store project-id]
   (-> (db-get-initial-sources-data (get-db store) {:project-id project-id})
-      :sources-data read-string))
+      :sources-data edn/read-string))
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
@@ -121,7 +121,7 @@
   (let [list (db-list-scenarios (get-db store) {:project-id project-id})]
     (map (fn [{:keys [changeset] :as scenario}]
            (-> scenario
-               (assoc  :changeset-summary (build-changeset-summary (read-string changeset)))
+               (assoc  :changeset-summary (build-changeset-summary (edn/read-string changeset)))
                (dissoc :changeset)))
          list)))
 
@@ -217,7 +217,7 @@
 (defn- get-new-providers-geom
   [store scenario-id {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
   (let [{:keys [new-providers-geom]} (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})]
-    (when new-providers-geom (read-string new-providers-geom))))
+    (when new-providers-geom (edn/read-string new-providers-geom))))
 
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
@@ -387,8 +387,8 @@
   (def initial-demand   (:demand-coverage scenario))
   (def final-demand     (:demand-coverage initial-scenario))
 
-  (def initial-providers     (read-string (:providers-data initial-scenario)))
-  (def providers-and-changes (read-string (:providers-data scenario)))
+  (def initial-providers     (edn/read-string (:providers-data initial-scenario)))
+  (def providers-and-changes (edn/read-string (:providers-data scenario)))
   (def changes  (subvec providers-and-changes (count initial-providers)))
 
   (def capacity-sat    (Math/abs (- initial-demand final-demand)))
