@@ -52,7 +52,7 @@
                           :coverage-algorithm coverage-algorithm
                           :coverage-options   coverage-options
                           :tags tags}
-        providers         (providers-set/get-providers-with-coverage-in-region providers-set provider-set-id version filter-options)]
+        providers         (:providers (providers-set/get-providers-with-coverage-in-region providers-set provider-set-id version filter-options))]
     (->> providers
          (map #(select-keys % [:id :name :capacity :raster]))
          (sort-by :capacity)

@@ -71,15 +71,19 @@
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
-  (let [providers (providers-set/get-providers-with-coverage-in-region
-                   (:providers-set store) provider-set-id version filter-options)
-        select-fn (fn [{:keys [id name capacity lat lon]}]
-                    {:initial true
+  (let [{:keys [providers disabled-providers]} (providers-set/get-providers-with-coverage-in-region
+                                                (:providers-set store)
+                                                provider-set-id
+                                                version
+                                                filter-options)
+        select-fn (fn [{:keys [id name capacity lat lon]} key]
+                    {key true
                      :provider-id id ;(str id)
                      :name name
                      :capacity capacity
                      :location {:lat lat :lon lon}})]
-    (seq (map select-fn providers))))
+    {:providers (mapv #(select-fn % :initial) providers)
+     :disabled-providers (mapv #(select-fn % :disabled) disabled-providers)}))
 
 (defn- update-provider-data
   [provider updated-data]
@@ -99,11 +103,15 @@
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
+        {:keys [providers disabled-providers]} (let [requested (select-keys scenario [:providers :disabled-providers])]
+                                                 (if (empty? requested)
+                                                   (get-initial-providers store provider-set-id provider-set-version filter-options)
+                                                   requested))
         ; providers
         providers-data     (:providers-data scenario)
         updated-data       (build-updated-data providers-data)
         updated-providers  (map #(update-provider-data % updated-data)
-                                (get-initial-providers store provider-set-id provider-set-version filter-options))
+                                providers)
         ;changeset
         updated-changeset  (map #(update-provider-data % updated-data) (:changeset scenario))
         ;sources
@@ -113,6 +121,7 @@
 
     (-> scenario
         (assoc :providers updated-providers
+               :disabled-providers disabled-providers
                :sources-data updated-sources
                :changeset updated-changeset)
         (dissoc :updated-at :providers-data :new-providers-geom))))
@@ -289,6 +298,11 @@
            (cons name)
            (util-str/next-name))))
 
+(defn- disabled-providers-to-export
+  [disabled-providers]
+  (let [new-fields {:required-capacity 0 :used-capacity 0 :satisfied-demand 0 :unsatisfied-demand 0}]
+    (mapv #(merge % new-fields) disabled-providers)))
+
 (defn- changeset-to-export
   [changeset]
   (mapv (fn [{:keys [provider-id action capacity location]}]
@@ -301,24 +315,36 @@
            :tags ""}) changeset))
 
 (defn- providers-to-export
-  [store providers-data changeset]
+  [store providers-data changeset disabled-providers]
   (let [update-fn (fn [{:keys [id] :as provider}]
                     (let [initial-data  (if (int? id)
                                           (providers-set/get-provider (:providers-set store) id)
                                           (-> (filter (fn [{:keys [provider-id]}] (= id provider-id)) changeset)
                                               (first)
+                                              (assoc :id id)
                                               (dissoc :provider-id)))]
                       (merge initial-data
                              provider)))]
-    (map-indexed (fn [idx e] (assoc (update-fn e) :id idx)) providers-data)))
+    (into (mapv (fn [e] (update-fn e)) providers-data)
+          disabled-providers)))
 
 (defn export-providers-data
-  [store scenario-id]
-  (let [scenario       (get-scenario store scenario-id)
+  [store {:keys [provider-set-id config] :as project} scenario]
+  (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
+                           (assoc :tags (get-in config [:providers :tags])
+                                  :coverage-options (get-in config [:coverage :filter-options])))
+        disabled-providers (disabled-providers-to-export
+                            (:disabled-providers
+                             (providers-set/get-providers-with-coverage-in-region
+                              (:providers-set store)
+                              provider-set-id
+                              (:provider-set-version project)
+                              filter-options)))
         changes        (changeset-to-export (:changeset scenario))
-        providers-data (-> scenario :providers-data)
-        fields [:id :type :name :lat :lon :capacity :tags :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
-    (map->csv (providers-to-export store providers-data changes) fields)))
+        fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
+    (map->csv
+     (providers-to-export store (:providers-data scenario) changes disabled-providers)
+     fields)))
 
 (defn reset-scenarios
   [store project-id]
@@ -350,8 +376,8 @@
     (reset-scenarios store project-id))
   (get-scenario-for-project [store scenario project]
     (get-scenario-for-project store scenario project))
-  (export-providers-data [store scenario-id]
-    (export-providers-data store scenario-id))
+  (export-providers-data [store project scenario]
+    (export-providers-data store project scenario))
   (get-provider-suggestion [store project scenario]
     (get-provider-suggestion store project scenario))
   (get-provider-geom [store scenario project provider-id]

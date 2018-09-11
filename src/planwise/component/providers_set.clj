@@ -191,19 +191,25 @@
              (preprocess-provider! store provider-id options)))
     (info "Coverage algorithm not set for provider-set" provider-set-id)))
 
+(defn- provider-matches-tags?
+  [provider tags]
+  (or (empty? tags)
+      (not (empty? (clojure.set/intersection (set tags) (set (:tags provider)))))))
+
 (defn get-providers-with-coverage-in-region
   [store provider-set-id version filter-options]
   (let [db-spec   (get-db store)
-        region-id (:region-id filter-options)
-        algorithm (:coverage-algorithm filter-options)
-        options   (:coverage-options filter-options)
-        tags      (str/join " & " (:tags filter-options))]
-    (db-find-providers-with-coverage-in-region db-spec {:provider-set-id provider-set-id
-                                                        :version    version
-                                                        :region-id  region-id
-                                                        :algorithm  algorithm
-                                                        :options    (some-> options pr-str)
-                                                        :tags       tags})))
+        config {:provider-set-id provider-set-id
+                :version    version
+                :region-id  (:region-id filter-options)
+                :algorithm  (:coverage-algorithm filter-options)
+                :options    (some-> (:coverage-options filter-options) pr-str)}
+        all-providers (db-find-providers-with-coverage-in-region db-spec config)
+        providers-partition (group-by
+                             #(provider-matches-tags? % (:tags filter-options))
+                             all-providers)]
+    {:providers (or (get providers-partition true) [])
+     :disabled-providers (or (get providers-partition false) [])}))
 
 (defn count-providers-filter-by-tags
   ([store provider-set-id region-id tags]

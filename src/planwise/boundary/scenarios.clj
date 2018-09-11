@@ -27,8 +27,8 @@
   (get-scenario-for-project [this scenario project]
     "Sets configuration of scenario for current project")
 
-  (export-providers-data [this scenario-id]
-    "Create CSV file with scenario providers data and computed demand")
+  (export-providers-data [this project scenario]
+    "Create CSV file with scenario's demand information for computed and disabled providers")
 
   (get-provider-suggestion [store project scenario]
     "Get list of providers suggestions.")
