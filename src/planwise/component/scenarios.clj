@@ -112,7 +112,7 @@
                                                        {:algorithm (:coverage-algorithm project)
                                                         :filter-options (get-in project [:config :coverage :filter-options])
                                                         :region-id (:region-id project)}))}
-    (get (:new-providers-geom scenario) (keyword id))))
+    (get (:new-providers-geom scenario) id)))
 
 (defn list-scenarios
   [store project-id]

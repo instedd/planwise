@@ -178,8 +178,8 @@
                                   (assoc provider :unsatisfied-demand total-demand
                                          :required-capacity (float (/ total-demand project-capacity)))))
                               (:providers result-step1))]
-    (let [initial-quantities        (reduce (fn [tree {:keys [id quantity] :as source}] (assoc tree (keyword (str id)) quantity)) {} sources)
-          updated-sources           (map (fn [s] (assoc (select-keys s [:id :quantity :lat :lon]) :initial-quantity ((keyword (-> s :id str)) initial-quantities))) (:sources result-step1))
+    (let [initial-quantities        (reduce (fn [dic {:keys [id quantity] :as source}] (assoc dic id quantity)) {} sources)
+          updated-sources           (map (fn [s] (assoc (select-keys s [:id :quantity :lat :lon]) :initial-quantity (get initial-quantities (:id s)))) (:sources result-step1))
           updated-providers         result-step2
           total-sources-demand      (sum-map sources :quantity)
           total-satisfied-demand    (sum-map updated-providers :satisfied-demand)
@@ -235,7 +235,7 @@
         changes-geom    (reduce (fn [changes-geom {:keys [id] :as change}]
                                   (let [polygon (compute-coverage-for-new-provider (:coverage engine) project-id change criteria)]
                                     (if polygon
-                                      (assoc changes-geom (keyword id) {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon (:region-id project)))})
+                                      (assoc changes-geom id {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon (:region-id project)))})
                                       changes-geom))) {} changeset)]
 
     ;; Compute demand from initial scenario
@@ -271,7 +271,7 @@
 
 (defn- change-to-provider
   [{:keys [id coverage-geom] :as change} coverage-fn new-providers-geom]
-  (let [coverage-geom ((keyword id) new-providers-geom)
+  (let [coverage-geom (get new-providers-geom id)
         change (assoc (select-keys change [:capacity :location]) :id id)]
     (if coverage-geom
       (merge change coverage-geom)
@@ -319,7 +319,7 @@
     (let [updated-sources          (:sources result-step1)
           updated-providers        (map #(dissoc % :coverage-geom) result-step2)
           changes-geom             (reduce (fn [dic {:keys [id] :as provider}]
-                                             (when-not ((keyword id) dic) (assoc dic (keyword id) (select-keys provider [:coverage-geom]))))
+                                             (when-not (get dic id) (assoc dic id (select-keys provider [:coverage-geom]))))
                                            new-providers-geom providers)
           total-sources-demand     (sum-map sources :quantity)
           total-satisfied-demand   (sum-map updated-providers :satisfied-demand)
