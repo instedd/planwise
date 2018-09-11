@@ -201,13 +201,13 @@
       (compute-initial-scenario-by-raster engine project))))
 
 (defn compute-coverage-for-new-provider
-  [coverage project-id {:keys [provider-id location] :as change} criteria]
-  (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" (:provider-id change) ".tif")]
+  [coverage project-id {:keys [id location] :as change} criteria]
+  (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" id ".tif")]
     (when-not (.exists (io/as-file coverage-path))
       (try
         (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path}))
         (catch Exception e
-          (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id provider-id))))))))
+          (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :id id))))))))
 
 (defn compute-scenario-by-raster
   [engine project {:keys [changeset providers-data new-providers-geom] :as scenario}]
@@ -287,7 +287,7 @@
                            (try
                              (coverage/compute-coverage (:coverage engine) location criteria)
                              (catch Exception e
-                               (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :provider-id id))))))
+                               (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :id id))))))
         providers        (map #(change-to-provider % (comp as-geojson coverage-fn) new-providers-geom) changeset)
         sources          sources-data
         fn-sources-under (fn [provider] (sources-under engine (:source-set-id project) provider algorithm filter-options))

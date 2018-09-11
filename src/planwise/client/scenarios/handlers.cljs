@@ -176,6 +176,7 @@
 (rf/reg-event-fx
  :scenarios/delete-provider
  in-scenarios
+ ;; FIXME: remove by id
  (fn [{:keys [db]} [_ index]]
    (let [current-scenario (:current-scenario db)
          deleted-changeset (vec (keep-indexed #(if (not= %1 index) %2) (:changeset current-scenario)))
@@ -222,10 +223,10 @@
        suggestion?
        {:db (assoc db :selected-provider provider)}
 
-       (not= (:provider-id provider)
-             (get-in db [:selected-provider :provider-id]))
+       (not= (:id provider)
+             (get-in db [:selected-provider :id]))
        {:db (assoc db :selected-provider provider)
-        :api (assoc (api/get-provider-geom id (:provider-id provider))
+        :api (assoc (api/get-provider-geom id (:id provider))
                     :on-success [:scenarios/update-geometry])}))))
 
 (rf/reg-event-db

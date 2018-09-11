@@ -14,24 +14,22 @@
 
 (defmethod initial-provider :create
   [props]
-  (merge {:action "create-provider"
+  (merge {:action     "create-provider"
           :investment 0
-          :capacity 0
-          :provider-id (str (random-uuid))}
+          :capacity   0
+          :id         (str (random-uuid))}
          props))
 
 (defmethod initial-provider :upgrade
   [props]
-  (merge {:action "upgrade-provider"
-          :investment 0
-          :capacity 0
-          :provider-id (:id props)}
-         props))
+  {:action     "upgrade-provider"
+   :investment 0
+   :capacity   0
+   :id         (:id props)})
 
 (defmethod initial-provider :increase
   [props]
-  (merge {:action "increase-provider"
-          :investment 0
-          :capacity 0
-          :provider-id (:id props)}
-         props))
+  {:action     "increase-provider"
+   :investment 0
+   :capacity   0
+   :id         (:id props)})

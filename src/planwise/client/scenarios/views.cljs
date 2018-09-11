@@ -29,7 +29,7 @@
        [:h2.mdc-dialog__header__title "Oops...  something went wrong"]
        [:h3 message]]
       (if provider-id
-        (let [index (first (keep-indexed #(if (= provider-id (:provider-id %2)) %1) changeset))]
+        (let [index (first (keep-indexed #(if (= provider-id (:id %2)) %1) changeset))]
           (when index
             [m/Button   {:class-name "bottom-button"
                          :on-click #(do (dispatch [:scenarios/delete-provider index])
@@ -168,7 +168,7 @@
                                  :style-fn (fn [provider]
                                              (-> {}
                                                  (assoc :fillColor
-                                                        (if (= (:provider-id provider) (:provider-id @selected-provider))
+                                                        (if (= (:id provider) (:id @selected-provider))
                                                           :orange
                                                           "#444"))
                                                  (merge (when (provider-has-change? provider)

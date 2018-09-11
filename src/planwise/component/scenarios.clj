@@ -76,14 +76,13 @@
                                                 provider-set-id
                                                 version
                                                 filter-options)
-        select-fn (fn [{:keys [id name capacity lat lon]} key]
-                    {key true
-                     :provider-id id ;(str id)
-                     :name name
+        mapper-fn (fn [{:keys [id name capacity lat lon]}]
+                    {:id       id
+                     :name     name
                      :capacity capacity
                      :location {:lat lat :lon lon}})]
-    {:providers (mapv #(select-fn % :initial) providers)
-     :disabled-providers (mapv #(select-fn % :disabled) disabled-providers)}))
+    {:providers          (map mapper-fn providers)
+     :disabled-providers (map mapper-fn disabled-providers)}))
 
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
@@ -100,9 +99,9 @@
         updated-sources (map (fn [s] (merge s (get-source-info-fn (:id s)))) (:sources-data scenario))]
 
     (-> scenario
-        (assoc  :sources-data updated-sources
-                :providers providers
-                :disabled-providers disabled-providers)
+        (assoc :sources-data updated-sources
+               :providers providers
+               :disabled-providers disabled-providers)
         (dissoc :updated-at :new-providers-geom))))
 
 (defn get-provider-geom
@@ -178,7 +177,8 @@
 (defn create-scenario
   [store project {:keys [name changeset]}]
   (assert (s/valid? ::model/change-set changeset))
-  (let [changeset (map #(assoc % :provider-id (str (java.util.UUID/randomUUID))) changeset)
+  ;; FIXME: only update provider ids for new providers in the changeset
+  (let [changeset (map #(assoc % :id (str (java.util.UUID/randomUUID))) changeset)
         result (db-create-scenario! (get-db store)
                                     {:name name
                                      :project-id (:id project)
@@ -284,8 +284,8 @@
 
 (defn- changeset-to-export
   [changeset]
-  (mapv (fn [{:keys [provider-id action capacity location]}]
-          {:provider-id provider-id
+  (mapv (fn [{:keys [id action capacity location]}]
+          {:id id
            :type action
            :name ""
            :lat (:lat location)
@@ -298,10 +298,8 @@
   (let [update-fn (fn [{:keys [id] :as provider}]
                     (let [initial-data  (if (int? id)
                                           (providers-set/get-provider (:providers-set store) id)
-                                          (-> (filter (fn [{:keys [provider-id]}] (= id provider-id)) changeset)
-                                              (first)
-                                              (assoc :id id)
-                                              (dissoc :provider-id)))]
+                                          (-> (filter (fn [p] (= id (:id p))) changeset)
+                                              (first)))]
                       (merge initial-data
                              provider)))]
     (into (mapv (fn [e] (update-fn e)) providers-data)
