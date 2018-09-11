@@ -32,7 +32,7 @@
    [:h2 "Investment"]
    [common2/numeric-text-field {:type "number"
                                 :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :investment] %])
-                                :focus-extra-class (when (< available-budget investment) " invalid-input")
+                                :not-valid? (< available-budget investment)
                                 :value (or investment "")}]
 
    [:h2 "Capacity"]
@@ -46,7 +46,7 @@
         provider-index (subscribe [:scenarios/changeset-index])]
     (fn [scenario budget]
       (dialog {:open? (= @view-state :changeset-dialog)
-               :disable-accept-button (or (nil? (:capacity @provider)) (nil? (:investment @provider)))
+               :acceptable? (or (nil? (:capacity @provider)) (nil? (:investment @provider)))
                :title "Edit Provider"
                :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
                :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])

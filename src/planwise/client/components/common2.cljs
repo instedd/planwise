@@ -37,10 +37,11 @@
   [type]
   (let [not-nan #(when-not (js/isNaN %) %)
         type (or type :integer)]
-    (cond (#{:integer} type) [(fn [e] (re-find #"\d+" e)) (comp not-nan js/parseInt)]
-          (#{:percentage} type) [(fn [e] (re-find #"(?u)100|\d{0,2}\.\d+|\d{0,2}\.|\d{0,2}" e)) (comp not-nan js/parseFloat)]
-          (#{:float} type) [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (comp not-nan js/parseFloat)]
-          :else [identity identity])))
+    (case type
+      :integer [(fn [e] (re-find #"\d+" e)) (comp not-nan js/parseInt)]
+      :percentage [(fn [e] (re-find #"(?u)100|\d{0,2}\.\d+|\d{0,2}\.|\d{0,2}" e)) (comp not-nan js/parseFloat)]
+      :float [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (comp not-nan js/parseFloat)]
+      [identity identity])))
 
 (defn text-field
   [props-input]
@@ -66,11 +67,11 @@
   [{:keys [value sub-type] :as props-input}]
   (let [local (r/atom (str value))
         [valid-fn parse-fn] (set-format sub-type)]
-    (fn [{:keys [value on-change focus-extra-class] :as props-input}]
-      (let [props (dissoc props-input :sub-type :field)
-            necessary? (not= focus-extra-class " invalid-input")
+    (fn [{:keys [value on-change not-valid?] :as props-input}]
+      (let [props (dissoc props-input :sub-type :field :not-valid?)
             wrong-input (not= (valid-fn @local) @local)]
-        [text-field (assoc props :focus-extra-class (if (and wrong-input necessary?) " invalid-input" "")
+        [text-field (assoc props
+                           :focus-extra-class (when (or wrong-input not-valid?) " invalid-input")
                            :type "text"
                            :on-change #(do
                                          (reset! local (-> % .-target .-value str))
