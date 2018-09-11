@@ -119,6 +119,7 @@
  (fn [db [_]]
    (assoc db
           :view-state :current-scenario
+          :changeset-dialog nil
           :rename-dialog nil)))
 
 (rf/reg-event-fx
@@ -181,7 +182,8 @@
          updated-scenario (assoc current-scenario :changeset deleted-changeset)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
-      :db   (assoc db :current-scenario updated-scenario)
+      :db   (assoc db :current-scenario updated-scenario
+                   :changeset-dialog nil)
       :dispatch [:scenarios/cancel-dialog]})))
 
 ;; ----------------------------------------------------------------------------

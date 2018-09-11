@@ -30,27 +30,29 @@
   [{:keys [investment available-budget capacity]}]
   [:div
    [:h2 "Investment"]
-   [common2/text-field {:type "number"
-                        :on-change  #(dispatch [:scenarios/save-key [:changeset-dialog :investment] (-> % .-target .-value js/parseInt)])
-                        :focus-extra-class (when (< available-budget investment) " invalid-input")
-                        :value (or investment "")}]
+   [common2/numeric-text-field {:type "number"
+                                :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :investment] %])
+                                :not-valid? (< available-budget investment)
+                                :value (or investment "")}]
 
    [:h2 "Capacity"]
-   [common2/text-field {:type "number"
-                        :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] (-> % .-target .-value js/parseInt)])
-                        :value (or capacity "")}]])
+   [common2/numeric-text-field {:type "number"
+                                :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] %])
+                                :value (or capacity "")}]])
 (defn changeset-dialog
   [scenario budget]
   (let [provider       (subscribe [:scenarios/changeset-dialog])
         view-state     (subscribe [:scenarios/view-state])
         provider-index (subscribe [:scenarios/changeset-index])]
     (fn [scenario budget]
-      (dialog {:open? (= @view-state :changeset-dialog)
-               :title "Edit Provider"
-               :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
-               :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
-               :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
-               :cancel-fn #(dispatch [:scenarios/cancel-dialog])}))))
+      (when (= @view-state :changeset-dialog)
+        (dialog {:open? true
+                 :acceptable? (and ((fnil pos? 0) (:capacity @provider)) ((fnil pos? 0) (:investment @provider)))
+                 :title "Edit Provider"
+                 :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
+                 :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
+                 :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
+                 :cancel-fn #(dispatch [:scenarios/cancel-dialog])})))))
 
 (defn new-provider-button
   [state computing?]
