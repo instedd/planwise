@@ -174,11 +174,16 @@
      :task-fn task-fn
      :state   nil}))
 
+(defn create-provider-new-id-when-necessary
+  [provider]
+  (if (= (:action provider) "create-provider")
+    (assoc provider :id (str (java.util.UUID/randomUUID)))
+    provider))
+
 (defn create-scenario
   [store project {:keys [name changeset]}]
   (assert (s/valid? ::model/change-set changeset))
-  ;; FIXME: only update provider ids for new providers in the changeset
-  (let [changeset (map #(assoc % :id (str (java.util.UUID/randomUUID))) changeset)
+  (let [changeset (map create-provider-new-id-when-necessary changeset)
         result (db-create-scenario! (get-db store)
                                     {:name name
                                      :project-id (:id project)
