@@ -79,18 +79,32 @@
  (fn [view-state [_]]
    (= :show-options-to-create-provider view-state)))
 
-(defn group-providers
-  [{:keys [providers disabled-providers changeset] :as scenario}]
-  (let [changes                     (group-by :action changeset)
-        filtered-providers          (remove (fn [{:keys [id]}]
-                                              (= id (map :provider-id (get changes "increase-provider")))) providers)
-        filtered-disabled-providers (remove (fn [{:keys [id]}]
-                                              (= id (map :provider-id (get changes "upgrade-provider")))) disabled-providers)]
-    {:changeset changeset
-     :providers filtered-providers
-     :disabled-providers filtered-disabled-providers}))
+(defn new-provider-from-change
+  [change index]
+  {:provider-id    (:provider-id change)
+   :name           (str "New Provider " index)
+   :location       (:location change)
+   :matches-filter true
+   :change         change})
+
+(defn update-by-id
+  [providers id update-fn]
+  (map (fn [p] (if (= id (:provider-id p))
+                 (update-fn p)
+                 p))
+       providers))
+
+(defn apply-change
+  [providers [index change]]
+  (if (= (:action change) "create-provider")
+    (conj providers (new-provider-from-change change index))
+    (update-by-id providers (:provider-id change) #(assoc % :change change))))
 
 (rf/reg-sub
  :scenarios/all-providers :<- [:scenarios/current-scenario]
- (fn [scenario [_]]
-   (group-providers scenario)))
+ (fn [{:keys [providers disabled-providers changeset] :as scenario} _]
+   (let [providers' (concat (map #(assoc % :matches-filters true)
+                                 providers)
+                            (map #(assoc % :matches-filters false)
+                                 disabled-providers))]
+     (reduce apply-change providers' (map-indexed vector changeset)))))

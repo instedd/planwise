@@ -40,9 +40,9 @@
          "Go back to project settings"])]]))
 
 
-(defn- provider-from-changeset?
+(defn- provider-has-change?
   [provider]
-  (not (nil? (:action provider))))
+  (some? (:change provider)))
 
 (defn- popup-connected-button
   [label dispatch-vector]
@@ -51,21 +51,21 @@
     button))
 
 (defn- show-provider
-  [{{:keys [action disabled name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand investment]} :elem :as ix-provider}]
+  [{:keys [change matches-filter name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand] :as provider}]
   (crate/html
    [:div
-    [:h3 (if (#{"create-provider"} action)
-           (str "New provider " (:index ix-provider))
-           name)]
+    [:h3 name]
     [:p (str "Capacity: " (utils/format-number capacity))]
     [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))]
     [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
     [:p (str "Free capacity: " (utils/format-number free-capacity))]
     [:p (str "Required capacity: " (utils/format-number required-capacity))]
-    (cond
-      (#{"create-provider"} action) (popup-connected-button "Edit provider" [:scenarios/edit-change (:elem ix-provider)])
-      disabled (popup-connected-button "Upgrade provider" [:scenarios/edit-change (:elem ix-provider)])
-      :else (popup-connected-button "Increase provider" [:scenarios/edit-change (:elem ix-provider)]))]))
+    (popup-connected-button
+     (cond
+       (some? change)       "Edit provider"
+       (not matches-filter) "Upgrade provider"
+       :else                "Increase provider")
+     [:scenarios/edit-change provider])]))
 
 (defn- show-suggested-provider
   [suggestion]
@@ -96,8 +96,7 @@
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
-      (let [providers             (reduce into [(:providers @all-providers) (:disabled-providers @all-providers) changeset])
-            indexed-providers     (to-indexed-map providers)
+      (let [indexed-providers     (to-indexed-map @all-providers)
             indexed-sources       (to-indexed-map sources-data)
             pending-demand-raster raster]
         [:div.map-container (when error {:class "gray-filter"})
@@ -163,31 +162,28 @@
                                            (.closePopup this)
                                            (dispatch [:scenarios.map/unselect-provider suggestion]))}])
 
-          [providers-layer-type {:points indexed-providers
-                                 :lat-fn #(get-in % [:elem :location :lat])
-                                 :lon-fn #(get-in % [:elem :location :lon])
-                                 :options-fn #(select-keys % [:index])
-                                 :style-fn #(let [provider (:elem %)]
-                                              (-> {}
-                                                  (assoc :fillColor
-                                                         (if (= (:provider-id provider) (:provider-id @selected-provider))
-                                                           :orange
-                                                           "#444"))
-                                                  (merge (when (provider-from-changeset? provider)
-                                                           {:stroke true               ; style for providers created by user
-                                                            :color :blueviolet
-                                                            :weight 10
-                                                            :opacity 0.2}))))
+          [providers-layer-type {:points @all-providers
+                                 :lat-fn #(get-in % [:location :lat])
+                                 :lon-fn #(get-in % [:location :lon])
+                                 :style-fn (fn [provider]
+                                             (-> {}
+                                                 (assoc :fillColor
+                                                        (if (= (:provider-id provider) (:provider-id @selected-provider))
+                                                          :orange
+                                                          "#444"))
+                                                 (merge (when (provider-has-change? provider)
+                                                          {:stroke true               ; style for providers created/modified by user
+                                                           :color :blueviolet
+                                                           :weight 10
+                                                           :opacity 0.2}))))
                                  :radius 4
                                  :fillOpacity 0.9
                                  :stroke false
                                  :popup-fn #(show-provider %)
-                                 :onclick-fn (fn [e] (when (get-in e [:elem :action])
-                                                       (dispatch [:scenarios/open-changeset-dialog (-> e .-layer .-options .-index)])))
-                                 :mouseover-fn (fn [ix-provider]
-                                                 (dispatch [:scenarios.map/select-provider (:elem ix-provider)]))
-                                 :mouseout-fn (fn [ix-provider]
-                                                (dispatch [:scenarios.map/unselect-provider (:elem ix-provider)]))}]]]))))
+                                 :mouseover-fn (fn [provider]
+                                                 (dispatch [:scenarios.map/select-provider provider]))
+                                 :mouseout-fn (fn [provider]
+                                                (dispatch [:scenarios.map/unselect-provider provider]))}]]]))))
 
 (defn- create-new-scenario
   [current-scenario]

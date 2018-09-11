@@ -27,6 +27,7 @@
 (s/def ::actions (s/keys :req-un [::budget]
                          :opt-un [::build ::upgrade ::upgrade-budget]))
 (s/def ::coverage (s/keys :req-un [::filter-options]))
+(s/def ::capacity number?)
 (s/def ::providers (s/keys :req-un [::capacity]))
 
 (s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions ::coverage ::providers])))
