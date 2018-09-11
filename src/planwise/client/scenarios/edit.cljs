@@ -45,13 +45,14 @@
         view-state     (subscribe [:scenarios/view-state])
         provider-index (subscribe [:scenarios/changeset-index])]
     (fn [scenario budget]
-      (dialog {:open? (= @view-state :changeset-dialog)
-               :acceptable? (or (nil? (:capacity @provider)) (nil? (:investment @provider)))
-               :title "Edit Provider"
-               :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
-               :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
-               :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
-               :cancel-fn #(dispatch [:scenarios/cancel-dialog])}))))
+      (when (= @view-state :changeset-dialog)
+        (dialog {:open? true
+                 :acceptable? (and ((fnil pos? 0) (:capacity @provider)) ((fnil pos? 0) (:investment @provider)))
+                 :title "Edit Provider"
+                 :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
+                 :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
+                 :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
+                 :cancel-fn #(dispatch [:scenarios/cancel-dialog])})))))
 
 (defn new-provider-button
   [state computing?]

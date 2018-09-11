@@ -17,4 +17,4 @@
      (when (some? delete-fn) [m/Button {:on-click delete-fn} "Delete"])
      (when (some? cancel-fn) [m/DialogFooterButton {:cancel true} "Cancel"])
      (when (some? accept-fn) [m/DialogFooterButton {:accept true
-                                                    :disabled acceptable?} "OK"])]]])
+                                                    :disabled (not acceptable?)} "OK"])]]])
