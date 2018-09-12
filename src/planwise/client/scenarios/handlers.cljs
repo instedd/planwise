@@ -154,11 +154,12 @@
          new-action       (db/new-action props action)
          new-provider     (if (= :create action)
                             {:id (:id new-action)
+                             :name "New provider"
                              :location props
                              :change new-action}
                             props)
          updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)]
-     (println new-provider)
+
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db

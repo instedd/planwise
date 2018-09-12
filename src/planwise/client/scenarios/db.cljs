@@ -17,6 +17,7 @@
   {:action     "create-provider"
    :investment 0
    :capacity   0
+   :location   props
    :id         (str (random-uuid))})
 
 (defmethod new-action :upgrade

@@ -8,10 +8,10 @@
 (s/def ::location map?)
 
 (s/def ::base-change
-  (s/keys :req-un [::investment ::capacity ::location]))
+  (s/keys :req-un [::investment ::capacity]))
 
 (s/def ::create-provider
-  (s/keys :req-un [:planwise.scenarios.change/new-id]))
+  (s/keys :req-un [:planwise.scenarios.change/new-id ::location]))
 
 (s/def ::upgrade-provider
   (s/keys :req-un [:planwise.scenarios.change/id]))
