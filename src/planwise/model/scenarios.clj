@@ -3,7 +3,7 @@
 
 (s/def ::investment int?)
 (s/def ::capacity int?)
-(s/def :planwise.scenarios.change/new-id string?)
+(s/def :planwise.scenarios.new-change/id string?)
 (s/def :planwise.scenarios.change/id number?)
 (s/def ::location map?)
 
@@ -11,7 +11,7 @@
   (s/keys :req-un [::investment ::capacity]))
 
 (s/def ::create-provider
-  (s/keys :req-un [:planwise.scenarios.change/new-id ::location]))
+  (s/keys :req-un [:planwise.scenarios.new-change/id ::location]))
 
 (s/def ::upgrade-provider
   (s/keys :req-un [:planwise.scenarios.change/id]))

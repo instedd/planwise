@@ -109,14 +109,18 @@
   (are [x] (s/valid? ::model/change-set x)
     []
     [{:action "create-provider" :id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}}]
-    [{:action "create-provider" :id "new.2" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]))
+    [{:action "create-provider" :id "new.2" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
+    [{:action "create-provider" :id "new.3" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
+     {:action "upgrade-provider" :id 1 :investment 10000 :capacity 50}]))
 
 (deftest invalid-changeset
   (are [x] (not (s/valid? ::model/change-set x))
     [{:action "unknown-action"  :id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
     [{:action "create-provider" :id "new.1" :investment nil :capacity nil}]
     [{:action "create-provider" :id "new.1" :investment "" :capacity ""}]
-    [{:action "create-provider" :id "new.1"}]))
+    [{:action "create-provider" :id "new.1"}]
+    [{:action "create-provider" :id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}} {:action "upgrade-provider" :id "new.2"}]
+    [{:action "increase-provider" :location {:lat 0 :lon 0}}]))
 
 (deftest initial-scenario-read-only
   (test-system/with-system (test-config)
