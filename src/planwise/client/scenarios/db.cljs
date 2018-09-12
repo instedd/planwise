@@ -10,24 +10,23 @@
    :list                     (asdf/new nil)})
 
 
-(defmulti initial-provider :action-name)
+(defmulti new-action :action-name)
 
-(defmethod initial-provider :create
+(defmethod new-action :create
   [props]
-  (merge {:action     "create-provider"
-          :investment 0
-          :capacity   0
-          :id         (str (random-uuid))}
-         props))
+  {:action     "create-provider"
+   :investment 0
+   :capacity   0
+   :id         (str (random-uuid))})
 
-(defmethod initial-provider :upgrade
+(defmethod new-action :upgrade
   [props]
   {:action     "upgrade-provider"
    :investment 0
    :capacity   0
    :id         (:id props)})
 
-(defmethod initial-provider :increase
+(defmethod new-action :increase
   [props]
   {:action     "increase-provider"
    :investment 0

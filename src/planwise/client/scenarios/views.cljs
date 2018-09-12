@@ -50,20 +50,25 @@
 
 (defn- show-provider
   [{:keys [change matches-filter name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand] :as provider}]
-  (crate/html
-   [:div
-    [:h3 name]
-    [:p (str "Capacity: " (utils/format-number capacity))]
-    [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))]
-    [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
-    [:p (str "Free capacity: " (utils/format-number free-capacity))]
-    [:p (str "Required capacity: " (utils/format-number required-capacity))]
-    (popup-connected-button
-     (cond
-       (some? change)       "Edit provider"
-       (not matches-filter) "Upgrade provider"
-       :else                "Increase provider")
-     [:scenarios/edit-change provider])]))
+  ;FIXME: removable format-number, show disabled provider content
+  (let [format-number   (fnil utils/format-number 0)
+        change* (if (some? change)
+                  change
+                  (db/new-action provider (if (not matches-filter) :upgrade :increase)))]
+    (crate/html
+     [:div
+      [:h3 name]
+      [:p (str "Capacity: " (format-number capacity))]
+      [:p (str "Satisfied demand: " (format-number satisfied-demand))]
+      [:p (str "Unsatisfied demand: " (format-number unsatisfied-demand))]
+      [:p (str "Free capacity: " (format-number free-capacity))]
+      [:p (str "Required capacity: " (format-number required-capacity))]
+      (popup-connected-button
+       (cond
+         (some? change)       "Edit provider"
+         (not matches-filter) "Upgrade provider"
+         :else                "Increase provider")
+       [:scenarios/edit-change (assoc provider :change change*)])])))
 
 (defn- show-suggested-provider
   [suggestion]
@@ -83,8 +88,7 @@
 
 (defn simple-map
   [{:keys [bbox]} scenario state error]
-  (let [index               (subscribe [:scenarios/changeset-index])
-        selected-provider   (subscribe [:scenarios.map/selected-provider])
+  (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
