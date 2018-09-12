@@ -13,7 +13,7 @@
 
 (def action-icons
   {"create-provider" "domain"
-   "upgrade-provider" "arrow-upwards"
+   "upgrade-provider" "arrow_upward"
    "increase-provider" "add"})
 
 (defn- changeset-row

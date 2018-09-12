@@ -151,7 +151,7 @@
  in-scenarios
  (fn [{:keys [db]} [_ action props]]
    (let [{:keys [current-scenario]} db
-         new-action       (db/new-action {} action)
+         new-action       (db/new-action props action)
          new-provider     (if (= :create action)
                             {:id (:id new-action)
                              :location props
@@ -174,10 +174,10 @@
           :changeset-dialog  change)))
 
 (defn- update-providers-when-upgrade
-  [{:keys [providers disabled-providers]} change id]
+  [{:keys [providers disabled-providers]} {:keys [id change] :as provider}]
   (when (= (:action change) "upgrade-provider")
     (let [provider (utils/find-by-id disabled-providers id)]
-      {:providers (conj providers (assoc provider :change change))
+      {:providers (conj providers provider)
        :disabled-providers (utils/remove-by-id disabled-providers id)})))
 
 (rf/reg-event-fx
@@ -185,11 +185,11 @@
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [current-scenario  (get-in db [:current-scenario])
-         updated-change    (get-in db [:changeset-dialog])
-         changeset         (utils/remove-by-index (:changeset current-scenario) (:id updated-change))
+         updated-provider  (get-in db [:changeset-dialog])
+         changeset         (utils/remove-by-index (:changeset current-scenario) (:id updated-provider))
          updated-scenario  (merge
-                            (update current-scenario :changeset #(conj % updated-change))
-                            (update-providers-when-upgrade current-scenario updated-change (:id updated-change)))]
+                            (update current-scenario :changeset #(conj % (:change updated-provider)))
+                            (update-providers-when-upgrade current-scenario updated-provider))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
