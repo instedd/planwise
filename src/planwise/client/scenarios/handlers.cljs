@@ -55,7 +55,7 @@
 
 (defn make-renderable-data-from-computation
   [{:keys [providers changeset providers-data]}]
- ;;TODO: when upgrade being made disabled-provider assumed to be considered provider
+ ;;FIXME delete
   (reduce (fn [[providers changeset] data]
             [(map (fn [p] (if (= (:id data) (:id p)) (merge p data) p)) providers)
              (map (fn [p] (if (= (:id data) (:id p)) (merge p data) p)) changeset)])

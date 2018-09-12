@@ -49,7 +49,7 @@
     button))
 
 (defn- show-provider
-  [{:keys [change matches-filter name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand] :as provider}]
+  [read-only? {:keys [change matches-filter name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand] :as provider}]
   ;FIXME: removable format-number, show disabled provider content
   (let [format-number   (fnil utils/format-number 0)
         change* (if (some? change)
@@ -63,12 +63,13 @@
       [:p (str "Unsatisfied demand: " (format-number unsatisfied-demand))]
       [:p (str "Free capacity: " (format-number free-capacity))]
       [:p (str "Required capacity: " (format-number required-capacity))]
-      (popup-connected-button
-       (cond
-         (some? change)       "Edit provider"
-         (not matches-filter) "Upgrade provider"
-         :else                "Increase provider")
-       [:scenarios/edit-change (assoc provider :change change*)])])))
+      (when-not read-only?
+        (popup-connected-button
+         (cond
+           (some? change)       "Edit provider"
+           (not matches-filter) "Upgrade provider"
+           :else                "Increase provider")
+         [:scenarios/edit-change (assoc provider :change change*)]))])))
 
 (defn- show-suggested-provider
   [suggestion]
@@ -87,7 +88,7 @@
   (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
 
 (defn simple-map
-  [{:keys [bbox]} scenario state error]
+  [{:keys [bbox]} scenario state error read-only?]
   (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
         all-providers       (subscribe [:scenarios/all-providers])
@@ -181,7 +182,7 @@
                                  :radius 4
                                  :fillOpacity 0.9
                                  :stroke false
-                                 :popup-fn #(show-provider %)
+                                 :popup-fn #(show-provider read-only? %)
                                  :mouseover-fn (fn [provider]
                                                  (dispatch [:scenarios.map/select-provider provider]))
                                  :mouseout-fn (fn [provider]
@@ -257,7 +258,7 @@
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)
                              {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario @state @error]
+                              :main [simple-map current-project current-scenario @state @error @read-only?]
                               :title [:ul {:class-name "breadcrumb-menu"}
                                       [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
