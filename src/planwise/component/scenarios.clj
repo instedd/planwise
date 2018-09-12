@@ -59,16 +59,6 @@
             scenario
             [:changeset :sources-data :providers-data :new-providers-geom])))
 
-(defn- get-initial-providers-data
-  [store project-id]
-  (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
-      :providers-data edn/read-string))
-
-(defn- get-initial-sources-data
-  [store project-id]
-  (-> (db-get-initial-sources-data (get-db store) {:project-id project-id})
-      :sources-data edn/read-string))
-
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
   (let [{:keys [providers disabled-providers]} (providers-set/get-providers-with-coverage-in-region
@@ -155,13 +145,13 @@
                 (info "Initial scenario computed" result)
                 ;; TODO check if scenario didn't change from result
                 (db-update-scenario-state! (get-db store)
-                                           {:id              scenario-id
-                                            :raster          (:raster-path result)
-                                            :demand-coverage (:covered-demand result)
-                                            :providers-data  (pr-str (:providers-data result))
-                                            :sources-data    (pr-str (:sources-data result))
-                                            :new-providers-geom "{}"
-                                            :state           "done"})
+                                           {:id                 scenario-id
+                                            :raster             (:raster-path result)
+                                            :demand-coverage    (:covered-demand result)
+                                            :providers-data     (pr-str (:providers-data result))
+                                            :sources-data       (pr-str (:sources-data result))
+                                            :new-providers-geom (pr-str {})
+                                            :state              "done"})
                 (db-update-project-engine-config! (get-db store)
                                                   {:project-id    (:id project)
                                                    :engine-config (pr-str {:demand-quartiles           (:demand-quartiles result)
@@ -219,37 +209,25 @@
                   {:store store
                    :project project})))
 
-(defn- get-new-providers-geom
-  [store scenario-id {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
-  (let [{:keys [new-providers-geom]} (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})]
-    (when new-providers-geom (edn/read-string new-providers-geom))))
-
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
             (info "Computing scenario" scenario-id)
             (try
-              (let [engine            (:engine store)
-                    scenario          (get-scenario store scenario-id)
-                    initial-providers (get-initial-providers-data store (:project-id scenario))
-                    initial-sources   (get-initial-sources-data store (:project-id scenario))
-                    new-providers-geom (get-new-providers-geom store scenario-id project)
-                    scenario-with-data (assoc scenario
-                                              :providers-data initial-providers
-                                              :sources-data initial-sources
-                                              :new-providers-geom new-providers-geom)
-                    result             (engine/compute-scenario engine project scenario-with-data)]
+              (let [engine   (:engine store)
+                    scenario (get-scenario store scenario-id)
+                    result   (engine/compute-scenario engine project scenario)]
                 (info "Scenario computed" result)
                 ;; TODO check if scenario didn't change from result. If did, discard result.
                 ;; TODO remove previous raster files
                 (db-update-scenario-state! (get-db store)
-                                           {:id              scenario-id
-                                            :raster          (:raster-path result)
-                                            :demand-coverage (:covered-demand result)
-                                            :providers-data  (pr-str (:providers-data result))
-                                            :sources-data    (pr-str (:sources-data result))
+                                           {:id                 scenario-id
+                                            :raster             (:raster-path result)
+                                            :demand-coverage    (:covered-demand result)
+                                            :providers-data     (pr-str (:providers-data result))
+                                            :sources-data       (pr-str (:sources-data result))
                                             :new-providers-geom (pr-str (:new-providers-geom result))
-                                            :state           "done"})
+                                            :state              "done"})
                 (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)

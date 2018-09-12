@@ -85,20 +85,6 @@ SELECT upper(name) AS name FROM scenarios
   ORDER BY upper(name) DESC
   LIMIT 1
 
--- :name db-get-initial-providers-data :? :1
-SELECT "providers-data" FROM scenarios
-  WHERE "project-id" = :project-id
-  AND label = 'initial';
-
--- :name db-get-initial-sources-data :? :1
-SELECT "sources-data" FROM scenarios
-  WHERE "project-id" = :project-id
-  AND label = 'initial';
-
--- :name db-get-new-providers-geom :? :1
-SELECT "new-providers-geom" FROM scenarios
-  WHERE id = :scenario-id;
-
 -- :name db-mark-as-error :!
 UPDATE scenarios
     SET "error-message" = :msg,
