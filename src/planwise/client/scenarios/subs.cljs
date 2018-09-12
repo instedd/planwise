@@ -68,6 +68,13 @@
  (fn [view-state [_]]
    (= :show-options-to-create-provider view-state)))
 
+(defn update-capacity-and-demand
+  [provider providers-data]
+  (merge provider
+         (select-keys
+          (utils/find-by-id providers-data (:id provider))
+          [:satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])))
+
 (defn new-provider-from-change
   [change index]
   {:id             (:id change)
@@ -84,12 +91,14 @@
 
 (rf/reg-sub
  :scenarios/all-providers :<- [:scenarios/current-scenario]
- (fn [{:keys [providers disabled-providers changeset] :as scenario} _]
+ (fn [{:keys [providers disabled-providers changeset providers-data] :as scenario} _]
    (let [providers' (concat (map #(assoc % :matches-filters true)
                                  providers)
                             (map #(assoc % :matches-filters false)
                                  disabled-providers))]
-     (reduce apply-change providers' (map-indexed vector changeset)))))
+     (map
+      #(update-capacity-and-demand % providers-data)
+      (reduce apply-change providers' (map-indexed vector changeset))))))
 
 (rf/reg-sub
  :scenarios/providers-from-changeset :<- [:scenarios/all-providers]

@@ -38,7 +38,7 @@
       :navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
-(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :sources-data :error-message])
+(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :sources-data :providers-data :error-message])
 
 (defn- dispatch-track-demand-information-if-needed
   [scenario]
@@ -53,14 +53,6 @@
 ;; and if the scenario is still in pending, schedule a next dispatch for tracking
 ;; the processing status
 
-(defn make-renderable-data-from-computation
-  [{:keys [providers changeset providers-data]}]
- ;;FIXME delete
-  (reduce (fn [[providers changeset] data]
-            [(map (fn [p] (if (= (:id data) (:id p)) (merge p data) p)) providers)
-             (map (fn [p] (if (= (:id data) (:id p)) (merge p data) p)) changeset)])
-          [providers changeset] providers-data))
-
 (rf/reg-event-fx
  :scenarios/update-demand-information
  in-scenarios
@@ -70,8 +62,7 @@
      (if should-update
        (merge {:db (assoc db :current-scenario
                           (merge current-scenario
-                                 (select-keys scenario demand-fields)
-                                 (make-renderable-data-from-computation scenario)))}
+                                 (select-keys scenario demand-fields)))}
               (dispatch-track-demand-information-if-needed scenario))
        {}))))
 
