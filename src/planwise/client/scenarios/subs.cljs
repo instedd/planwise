@@ -29,11 +29,6 @@
    (get-in db [:scenarios :changeset-dialog])))
 
 (rf/reg-sub
- :scenarios/changeset-index
- (fn [db _]
-   (get-in db [:scenarios :view-state-params :changeset-index])))
-
-(rf/reg-sub
  :scenarios/list
  (fn [db _]
    (get-in db [:scenarios :list])))
@@ -42,13 +37,6 @@
  :scenarios/read-only? :<- [:scenarios/current-scenario]
  (fn [current-scenario [_]]
    (= (:label current-scenario) "initial")))
-
-;TODO necessary indexed changes?
-(rf/reg-sub
- :scenarios/providers-from-changeset :<- [:scenarios/current-scenario]
- (fn [current-scenario [_]]
-   (keep-indexed (fn [i provider] (when (:action provider) {:provider provider :index i}))
-                 (into (:providers current-scenario) (:changeset current-scenario)))))
 
 (rf/reg-sub
  :scenarios.map/selected-provider
@@ -102,3 +90,8 @@
                             (map #(assoc % :matches-filters false)
                                  disabled-providers))]
      (reduce apply-change providers' (map-indexed vector changeset)))))
+
+(rf/reg-sub
+ :scenarios/providers-from-changeset :<- [:scenarios/all-providers]
+ (fn [all-providers [_]]
+   (filter #(some? (:change %)) all-providers)))

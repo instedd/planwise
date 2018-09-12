@@ -11,21 +11,25 @@
             [clojure.string :as str]
             [planwise.client.ui.rmwc :as m]))
 
-(defn- changeset-row
-  [props prov-index {:keys [action investment]}]
+(def action-icons
+  {"create-provider" "domain"
+   "upgrade-provider" "arrow-upwards"
+   "increase-provider" "add"})
 
+(defn- changeset-row
+  [props {:keys [name investment change] :as provider}]
   [:div
    [:div {:class-name "section changeset-row"
-          :on-click #(dispatch [:scenarios/open-changeset-dialog (:key props)])}
+          :on-click #(dispatch [:scenarios/open-changeset-dialog change])}
     [:div {:class-name "icon-list"}
-     [m/Icon {} "domain"]
+     [m/Icon {} (get action-icons (:action change))]
      [:div {:class-name "icon-list-text"}
-      [:p {:class-name "strong"} (str "Create new provider " prov-index)]
+      [:p {:class-name "strong"} name]
       [:p {:class-name "grey-text"}  (str "K " (utils/format-number investment))]]]]
    [:hr]])
 
 (defn- listing-component
-  [providers]
+  [changes]
   [:div {:class-name "scroll-list"}
-   (map (fn [[idx {:keys [provider index]}]] [changeset-row {:key idx} index provider])
-        (map-indexed vector providers))])
+   (map (fn [{:keys [id] :as provider}] [changeset-row {:key id} provider])
+        changes)])

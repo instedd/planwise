@@ -149,25 +149,23 @@
 (rf/reg-event-fx
  :scenarios/provider-action
  in-scenarios
- (fn [{:keys [db]} [_ action {:keys [lat lon]}]]
+ (fn [{:keys [db]} [_ action props]]
    (let [{:keys [current-scenario]} db
-         new-provider (db/initial-provider {:location {:lat lat :lon lon}} action)
-         updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)
-         new-provider-index (dec (count (:changeset updated-scenario)))]
+         new-provider     (db/initial-provider props action)
+         updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc :current-scenario updated-scenario))
-      :dispatch [:scenarios/open-changeset-dialog new-provider-index]})))
+      :dispatch [:scenarios/open-changeset-dialog new-provider]})))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
  in-scenarios
- (fn [db [_ changeset-index]]
+ (fn [db [_ change]]
    (assoc db
           :view-state        :changeset-dialog
-          :view-state-params {:changeset-index changeset-index}
-          :changeset-dialog  (get-in db [:current-scenario :changeset changeset-index]))))
+          :changeset-dialog  change)))
 
 (defn- update-providers-when-upgrade
   [{:keys [providers disabled-providers]} provider]
@@ -179,8 +177,9 @@
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [current-scenario  (get-in db [:current-scenario])
-         changeset-index   (get-in db [:view-state-params :changeset-index])
          updated-change    (get-in db [:changeset-dialog])
+         ;FIXME messy  update of change
+         changeset-index   (.indexOf (map :id (:changeset current-scenario)) (:id updated-change))
          updated-scenario  (merge
                             (assoc-in current-scenario [:changeset changeset-index] updated-change)
                             (when-not (:matches-filters updated-change)
@@ -191,15 +190,14 @@
                 (assoc-in [:current-scenario] updated-scenario)
                 (assoc-in [:view-state] :current-scenario))})))
 
-
 (rf/reg-event-fx
  :scenarios/delete-provider
  in-scenarios
  ;; FIXME: remove by id
- (fn [{:keys [db]} [_ index]]
+ (fn [{:keys [db]} [_ id]]
    (let [current-scenario (:current-scenario db)
-         deleted-changeset (vec (keep-indexed #(if (not= %1 index) %2) (:changeset current-scenario)))
-         updated-scenario (assoc current-scenario :changeset deleted-changeset)]
+         modified-changeset (utils/remove-by-id (:changeset current-scenario) id)
+         updated-scenario (assoc current-scenario :changeset modified-changeset)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (assoc db :current-scenario updated-scenario

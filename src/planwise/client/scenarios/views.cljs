@@ -28,16 +28,14 @@
       [:div.content
        [:h2.mdc-dialog__header__title "Oops...  something went wrong"]
        [:h3 message]]
-      (if id
-        (let [index (first (keep-indexed #(if (= id (:id %2)) %1) changeset))]
-          (when index
-            [m/Button   {:class-name "bottom-button"
-                         :on-click #(do (dispatch [:scenarios/delete-provider index])
-                                        (dispatch [:scenarios/message-delivered]))}
-             "Remove last change"]))
-        [m/Button {:class-name "bottom-button"
-                   :on-click #(dispatch [:projects2/project-settings])}
-         "Go back to project settings"])]]))
+      (when id
+        [m/Button  {:class-name "bottom-button"
+                    :on-click #(do (dispatch [:scenarios/delete-provider id])
+                                   (dispatch [:scenarios/message-delivered]))}
+         "Remove last change"])
+      [m/Button {:class-name "bottom-button"
+                 :on-click #(dispatch [:projects2/project-settings])}
+       "Go back to project settings"]]]))
 
 
 (defn- provider-has-change?
