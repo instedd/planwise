@@ -17,7 +17,7 @@
    "increase-provider" "add"})
 
 (defn- changeset-row
-  [props {:keys [name investment change] :as provider}]
+  [props {:keys [name change] :as provider}]
   [:div
    [:div {:class-name "section changeset-row"
           :on-click #(dispatch [:scenarios/open-changeset-dialog provider])}
@@ -25,7 +25,7 @@
      [m/Icon {} (get action-icons (:action change))]
      [:div {:class-name "icon-list-text"}
       [:p {:class-name "strong"} name]
-      [:p {:class-name "grey-text"}  (str "K " (utils/format-number investment))]]]]
+      [:p {:class-name "grey-text"}  (str "K " (utils/format-number (:investment change)))]]]]
    [:hr]])
 
 (defn- listing-component

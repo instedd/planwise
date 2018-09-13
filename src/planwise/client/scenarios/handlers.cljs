@@ -143,7 +143,8 @@
  (fn [{:keys [db]} [_ props]]
    (let [{:keys [current-scenario]} db
          new-action   (db/new-action props :create)
-         index        (dec (count (:changeset current-scenario)))
+         number-of-changes (count (:changeset current-scenario))
+         index        (if (pos? number-of-changes) (dec number-of-changes) 0)
          updated-scenario (dissoc current-scenario
                                   :suggested-locations :computing-best-locations)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
@@ -165,8 +166,10 @@
  (fn [{:keys [db]} [_]]
    (let [current-scenario  (get-in db [:current-scenario])
          updated-provider  (get-in db [:changeset-dialog])
-         changeset         (utils/remove-by-index (:changeset current-scenario) (:id updated-provider))
-         updated-scenario  (update current-scenario :changeset #(conj % (:change updated-provider)))]
+         updated-scenario  (update current-scenario
+                            :changeset
+                            (fn [c] (conj (utils/remove-by-id c (:id updated-provider))
+                                          (:change updated-provider))))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db

@@ -30,8 +30,7 @@
        [:h3 message]]
       (when id
         [m/Button  {:class-name "bottom-button"
-                    :on-click #(do (dispatch [:scenarios/delete-change id])
-                                   (dispatch [:scenarios/message-delivered]))}
+                    :on-click #(dispatch [:scenarios/delete-change id])}
          "Remove last change"])
       [m/Button {:class-name "bottom-button"
                  :on-click #(dispatch [:projects2/project-settings])}
