@@ -37,7 +37,7 @@
 (defn new-provider-from-change
   [change index]
   {:id             (:id change)
-   :name           (str "New provider " index)
+   :name           (str "New Provider " index)
    :location       (:location change)
    :matches-filter true
    :change         change})

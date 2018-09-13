@@ -1,5 +1,5 @@
 (ns planwise.client.scenarios-test
-  (:require [planwise.client.scenarios.subs :as sut]
+  (:require [planwise.client.scenarios.db :as sut]
             [cljs.test :as t :refer-macros [deftest is]]))
 
 (deftest new-provider-from-change-test
