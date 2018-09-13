@@ -62,7 +62,7 @@
 
 (defn compute-population-quartiles
   [population]
-  (Algorithm/computeExactQuartiles (:data population) (:nodata population)))
+  (vec (Algorithm/computeExactQuartiles (:data population) (:nodata population))))
 
 (defn build-renderable-population
   [population quartiles]

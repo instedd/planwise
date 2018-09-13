@@ -18,6 +18,31 @@
 
 (timbre/refer-timbre)
 
+(defn source-raster-data-path
+  "Full path to the source raster clipped to a region."
+  [source-id region-id]
+  (str "data/populations/data/" source-id "/" region-id ".tif"))
+
+(defn provider-coverage-raster-path
+  "Full path to the raster coverage for a provider set, given the raster property of a provider."
+  [provider-set-id raster]
+  (str "data/coverage/" provider-set-id "/" raster ".tif"))
+
+(defn scenario-raster-data-path
+  "Full path to the data raster for a computed scenario."
+  [project-id scenario-filename]
+  (str "data/scenarios/" project-id "/" scenario-filename ".tif"))
+
+(defn scenario-raster-map-path
+ "Full path to the renderable raster for a computed scenario."
+  [project-id scenario-filename]
+  (str "data/scenarios/" project-id "/" scenario-filename ".map.tif"))
+
+(defn scenario-raster-path
+  "For persisting in the scenarios table"
+  [project-id scenario-filename]
+  (str "scenarios/" project-id "/" scenario-filename))
+
 ;; Computing a scenario:
 ;; - compute the initial scenario or retrieve a cached version
 ;; - apply the changeset actions in order
@@ -30,95 +55,153 @@
 ;;   by descending capacity
 ;; - subtract the capacity of each provider from the running unsatisfied demand
 
-(defn- project-base-demand
+(defn project-base-demand-raster
+  "Returns a mutable raster with the initial source demand for the project."
   [project]
-  (let [source-id              (:source-set-id project)
-        region-id              (:region-id project)
-        project-config         (:config project)
-        population-raster-file (str "data/populations/data/" source-id "/" region-id ".tif")
-        raster                 (raster/read-raster population-raster-file)
-        target-factor          (/ (get-in project-config [:demographics :target]) 100)]
+  (let [source-id          (:source-set-id project)
+        region-id          (:region-id project)
+        project-config     (:config project)
+        source-raster-file (source-raster-data-path source-id region-id)
+        raster             (raster/read-raster source-raster-file)
+        target-factor      (/ (get-in project-config [:demographics :target]) 100)]
     ;; scale raster demand according to project's target
     (doto raster
       (demand/multiply-population! (float target-factor)))))
 
-(defn- project-providers
-  [{:keys [providers-set]} {:keys [provider-set-id provider-set-version region-id coverage-algorithm config]}]
-  (let [version          (or provider-set-version (:last-version (providers-set/get-provider-set providers-set provider-set-id)))
-        coverage-options (get-in config [:coverage :filter-options])
-        tags             (get-in config [:providers :tags])
-        filter-options   {:region-id          region-id
-                          :coverage-algorithm coverage-algorithm
-                          :coverage-options   coverage-options
-                          :tags tags}
-        providers         (:providers (providers-set/get-providers-with-coverage-in-region providers-set provider-set-id version filter-options))]
+(defn- filter-options-for-project
+  "Filter options from project for usage in providers-set/get-providers-coverage-in-region."
+  [project]
+  (let [region-id          (:region-id project)
+        coverage-algorithm (:coverage-algorithm project)
+        project-config     (:config project)
+        coverage-options   (get-in project-config [:coverage :filter-options])
+        tags               (get-in project-config [:providers :tags])]
+    {:region-id          region-id
+     :coverage-algorithm coverage-algorithm
+     :coverage-options   coverage-options
+     :tags               tags}))
+
+(defn- provider-mapper
+  "Returns a mapper function for providers into the shape required for computing scenarios."
+  [provider-set-id applicable]
+  (fn [{:keys [id name capacity raster]}]
+    (let [coverage-raster-path (provider-coverage-raster-path provider-set-id raster)]
+      {:id                   id
+       :name                 name
+       :capacity             capacity
+       :applicable?          applicable
+       :coverage-raster-path coverage-raster-path})))
+
+;; TODO: It would be really nice if we could compute provider's coverage on
+;; demand here instead of ahead of time when importing the dataset
+;; TODO: in fact, this should return the providers filtered by region, without
+;; the raster coverage information; that should be added later if needed (by the
+;; project config), or compute the point sources under it
+(defn providers-in-project
+  "Fetches all providers in the project's region and builds a collection with an
+  extra attribute indicating if they apply (wrt. tag filtering). Returned
+  providers have :id, :name, :capacity, :applicable and :coverage-raster-path."
+  [providers-component project]
+  (let [provider-set-id (:provider-set-id project)
+        provider-set    (providers-set/get-provider-set providers-component provider-set-id)
+        version         (or (:provider-set-version project)
+                            (:last-version (providers-set/get-provider-set providers-component provider-set-id)))
+        filter-options  (filter-options-for-project project)
+        all-providers   (providers-set/get-providers-with-coverage-in-region providers-component
+                                                                             provider-set-id
+                                                                             version
+                                                                             filter-options)
+        applicable      (map (provider-mapper provider-set-id true) (:providers all-providers))
+        non-applicable  (map (provider-mapper provider-set-id false) (:disabled-providers all-providers))
+        providers       (concat applicable non-applicable)]
     (->> providers
-         (map #(select-keys % [:id :name :capacity :raster]))
          (sort-by :capacity)
          reverse)))
 
-(defn- compute-provider
-  [props provider]
-  (let [{:keys [id action raster capacity]} provider
-        {:keys [update? demand-raster project-capacity project-id provider-set-id]} props
-        path (if action
-               (str "data/scenarios/" project-id "/coverage-cache/" id ".tif")
-               (str "data/coverage/" provider-set-id "/" raster ".tif"))
-        coverage-raster (raster/read-raster path)
-        scaled-capacity (* capacity project-capacity)
-        population-reachable (demand/count-population-under-coverage demand-raster coverage-raster)
-        satisfied (min scaled-capacity population-reachable)]
+(defn raster-measure-provider
+  "Measures the unsatisfied demand and computes the required (extra) capacity
+  for a provider in the demand raster."
+  [demand-raster capacity-multiplier provider]
+  (let [coverage-raster  (raster/read-raster (:coverage-raster-path provider))
+        reachable-demand (demand/count-population-under-coverage demand-raster coverage-raster)]
+    {:id                 (:id provider)
+     :unsatisfied-demand reachable-demand
+     :required-capacity  (/ reachable-demand capacity-multiplier)}))
 
-    (if update?
-      {:unsatisfied-demand population-reachable
-       :required-capacity  (/ population-reachable project-capacity)}
-      (do
-        (debug "Subtracting" scaled-capacity "of provider" id "reaching" population-reachable "people")
-        (when-not (zero? population-reachable)
-          (let [factor (- 1 (min 1 (/ scaled-capacity population-reachable)))]
-            (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor))))
-        {:id               id
-         :satisfied-demand satisfied
-         :capacity         capacity
-         :used-capacity    (float (/ satisfied project-capacity))
-         :free-capacity    (- capacity (float (/ satisfied project-capacity)))}))))
+(defn raster-apply-provider!
+  "Mutates demand-raster by subtracting the capacity of the provider distributed
+  uniformily across the coverage, and returns the satisfied demand for this
+  provider as well as the used and remaining capacity."
+  [demand-raster capacity-multiplier provider]
+  (let [coverage-raster  (raster/read-raster (:coverage-raster-path provider))
+        capacity         (:capacity provider)
+        scaled-capacity  (* capacity capacity-multiplier)
+        reachable-demand (demand/count-population-under-coverage demand-raster coverage-raster)
+        satisfied-demand (min scaled-capacity reachable-demand)
+        used-capacity    (float (/ satisfied-demand capacity-multiplier))]
+    (debug "Applying provider" (:id provider) "with capacity" capacity
+           "- satisfies" satisfied-demand "over a total of" reachable-demand "demand units")
+    (when-not (zero? reachable-demand)
+      (let [factor (- 1 (/ satisfied-demand reachable-demand))]
+        (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor))))
+    {:id               (:id provider)
+     :satisfied-demand satisfied-demand
+     :used-capacity    used-capacity
+     :free-capacity    (- capacity used-capacity)}))
 
-(defn- compute-providers-demand
-  [set props]
-  (first
-   (reduce
-    (fn [[processed-providers props] provider]
-      [(conj processed-providers (compute-provider props provider)) props])
-    [[] props] set)))
+(defn do-providers!
+  "Process each provider in the collection *in order* by the function f
+  (presumably for side effects) and return a vector with the results; intended
+  to be used with raster-measure-provider or raster-apply-provider!
+
+  For example,
+  (do-providers! (filter :applicable? providers)
+                 (partial raster-apply-provider! demand-raster capacity-multiplier))
+  "
+  [providers f]
+  (reduce
+   (fn [results provider]
+     (conj results (f provider)))
+   []
+   providers))
+
+(defn merge-providers-data
+  [& colls]
+  (map (fn [[id same-id-providers]] (apply merge same-id-providers))
+       (group-by :id (sort-by :id (apply concat colls)))))
 
 (defn compute-initial-scenario-by-raster
   [engine project]
-  (let [demand-raster    (project-base-demand project)
-        providers        (project-providers engine project)
-        provider-set-id  (:provider-set-id project)
-        project-id       (:id project)
-        project-config   (:config project)
-        capacity         (get-in project-config [:providers :capacity])
-        source-demand    (demand/count-population demand-raster)
-        raster-full-path (files/create-temp-file (str "data/scenarios/" project-id) "initial-" ".tif")
-        raster-path      (get (re-find (re-pattern "^data/(.*)\\.tif$") raster-full-path) 1)
-        props            {:project-capacity capacity
-                          :provider-set-id  provider-set-id
-                          :project-id       project-id
-                          :demand-raster    demand-raster}]
-    (debug "Source population demand:" source-demand)
-    (let [processed-providers (compute-providers-demand providers props)
-          scenario-demand      (demand/count-population demand-raster)
-          quartiles           (vec (demand/compute-population-quartiles demand-raster))
-          update-providers    (compute-providers-demand providers (assoc props :update? true))]
-      (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
-      (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
-      {:raster-path      raster-path
-       :source-demand    source-demand
-       :pending-demand   scenario-demand
-       :covered-demand   (- source-demand scenario-demand)
+  (let [project-id           (:id project)
+        providers            (providers-in-project (:providers-set engine) project)
+        applicable-providers (filter :applicable? providers)
+        demand-raster        (project-base-demand-raster project)
+        base-demand          (demand/count-population demand-raster)
+        capacity-multiplier  (get-in (:config project) [:providers :capacity])
+        scenario-filename    (str "initial-" (java.util.UUID/randomUUID))]
+    (debug "Base scenario demand:" base-demand)
+    (debug "Applying" (count applicable-providers) "providers")
+
+    (let [applied-providers            (do-providers! applicable-providers
+                                                      (partial raster-apply-provider! demand-raster capacity-multiplier))
+          unsatisfied-demand           (demand/count-population demand-raster)
+          quartiles                    (demand/compute-population-quartiles demand-raster)
+          providers-unsatisfied-demand (do-providers! providers
+                                                      (partial raster-measure-provider demand-raster capacity-multiplier))
+          raster-data-path             (scenario-raster-data-path project-id scenario-filename)
+          raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
+      (raster/write-raster demand-raster raster-data-path)
+      (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
+
+      (debug "Wrote" raster-data-path)
+      (debug "Unsatisfied demand:" unsatisfied-demand)
+
+      {:raster-path      (scenario-raster-path project-id scenario-filename)
+       :source-demand    base-demand
+       :pending-demand   unsatisfied-demand
+       :covered-demand   (- base-demand unsatisfied-demand)
        :demand-quartiles quartiles
-       :providers-data   (mapv (fn [[a b]] (merge a b)) (map vector processed-providers update-providers))})))
+       :providers-data   (merge-providers-data applied-providers providers-unsatisfied-demand)})))
 
 (defn sum-map
   [coll f]
@@ -195,6 +278,7 @@
 
 (defn compute-initial-scenario
   [engine project]
+  (debug "Computing initial scenario for project" (:id project))
   (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))]
     (if (= (:type source-set) "points")
       (compute-initial-scenario-by-point engine project)
