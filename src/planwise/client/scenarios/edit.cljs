@@ -49,7 +49,7 @@
                  :acceptable? (and ((fnil pos? 0) (get-in @provider [:change :investment])) ((fnil pos? 0) (get-in @provider [:change :capacity])))
                  :title "Edit Provider"
                  :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
-                 :delete-fn #(dispatch [:scenarios/delete-provider (:id @provider)])
+                 :delete-fn #(dispatch [:scenarios/delete-change (:id @provider)])
                  :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
                  :cancel-fn #(dispatch [:scenarios/cancel-dialog])})))))
 

@@ -33,3 +33,11 @@
    :investment 0
    :capacity   0
    :id         (:id props)})
+
+(defn new-provider-from-change
+  [change index]
+  {:id             (:id change)
+   :name           (str "New provider " index)
+   :location       (:location change)
+   :matches-filter true
+   :change         change})

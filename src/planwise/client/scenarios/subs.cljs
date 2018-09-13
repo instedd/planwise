@@ -1,6 +1,7 @@
 (ns planwise.client.scenarios.subs
   (:require [re-frame.core :as rf]
             [planwise.client.utils :as utils]
+            [planwise.client.scenarios.db :as db]
             [cljs.reader]))
 
 (rf/reg-sub
@@ -75,18 +76,10 @@
           (utils/find-by-id providers-data (:id provider))
           [:satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])))
 
-(defn new-provider-from-change
-  [change index]
-  {:id             (:id change)
-   :name           (:name change)
-   :location       (:location change)
-   :matches-filter true
-   :change         change})
-
 (defn apply-change
   [providers [index change]]
   (if (= (:action change) "create-provider")
-    (conj providers (new-provider-from-change change index))
+    (conj providers (db/new-provider-from-change change index))
     (utils/update-by-id providers (:id change) assoc :change change)))
 
 (rf/reg-sub

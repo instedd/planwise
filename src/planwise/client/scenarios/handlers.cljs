@@ -138,24 +138,18 @@
                 (assoc-in [:view-state] :current-scenario))})))
 
 (rf/reg-event-fx
- :scenarios/provider-action
+ :scenarios/create-provider
  in-scenarios
- (fn [{:keys [db]} [_ action props]]
+ (fn [{:keys [db]} [_ props]]
    (let [{:keys [current-scenario]} db
-         new-action       (db/new-action props action)
-         new-provider     (if (= :create action)
-                            {:id (:id new-action)
-                             :name "New provider"
-                             :location props
-                             :change new-action}
-                            props)
-         updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)]
-
+         new-action   (db/new-action props :create)
+         index        (dec (count (:changeset current-scenario)))
+         updated-scenario (dissoc current-scenario
+                                  :suggested-locations :computing-best-locations)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
-      :db   (-> db
-                (assoc :current-scenario updated-scenario))
-      :dispatch [:scenarios/open-changeset-dialog new-provider]})))
+      :db   (assoc  db :current-scenario updated-scenario)
+      :dispatch [:scenarios/open-changeset-dialog (db/new-provider-from-change new-action index)]})))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
@@ -165,13 +159,6 @@
           :view-state        :changeset-dialog
           :changeset-dialog  change)))
 
-(defn- update-providers-when-upgrade
-  [{:keys [providers disabled-providers]} {:keys [id change] :as provider}]
-  (when (= (:action change) "upgrade-provider")
-    (let [provider (utils/find-by-id disabled-providers id)]
-      {:providers (conj providers provider)
-       :disabled-providers (utils/remove-by-id disabled-providers id)})))
-
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
  in-scenarios
@@ -179,9 +166,7 @@
    (let [current-scenario  (get-in db [:current-scenario])
          updated-provider  (get-in db [:changeset-dialog])
          changeset         (utils/remove-by-index (:changeset current-scenario) (:id updated-provider))
-         updated-scenario  (merge
-                            (update current-scenario :changeset #(conj % (:change updated-provider)))
-                            (update-providers-when-upgrade current-scenario updated-provider))]
+         updated-scenario  (update current-scenario :changeset #(conj % (:change updated-provider)))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
@@ -189,9 +174,8 @@
                 (assoc-in [:view-state] :current-scenario))})))
 
 (rf/reg-event-fx
- :scenarios/delete-provider
+ :scenarios/delete-change
  in-scenarios
- ;; FIXME: remove by id
  (fn [{:keys [db]} [_ id]]
    (let [current-scenario (:current-scenario db)
          modified-changeset (utils/remove-by-id (:changeset current-scenario) id)

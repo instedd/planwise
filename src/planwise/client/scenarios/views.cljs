@@ -30,7 +30,7 @@
        [:h3 message]]
       (when id
         [m/Button  {:class-name "bottom-button"
-                    :on-click #(do (dispatch [:scenarios/delete-provider id])
+                    :on-click #(do (dispatch [:scenarios/delete-change id])
                                    (dispatch [:scenarios/message-delivered]))}
          "Remove last change"])
       [m/Button {:class-name "bottom-button"
@@ -49,12 +49,11 @@
     button))
 
 (defn- show-provider
-  [read-only? {:keys [change matches-filter name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand] :as provider}]
-  ;FIXME: removable format-number, show disabled provider content
+  [read-only? {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand] :as provider}]
   (let [format-number   (fnil utils/format-number 0)
         change* (if (some? change)
                   change
-                  (db/new-action provider (if (not matches-filter) :upgrade :increase)))]
+                  (db/new-action provider (if (not matches-filters) :upgrade :increase)))]
     (crate/html
      [:div
       [:h3 name]
@@ -67,7 +66,7 @@
         (popup-connected-button
          (cond
            (some? change)       "Edit provider"
-           (not matches-filter) "Upgrade provider"
+           (not matches-filters) "Upgrade provider"
            :else                "Increase provider")
          [:scenarios/edit-change (assoc provider :change change*)]))])))
 
@@ -94,8 +93,8 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/provider-action :create {:lat lat
-                                                                                         :lon lon}]))
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
+                                                                                 :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]

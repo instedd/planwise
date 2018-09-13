@@ -20,7 +20,7 @@
   [props {:keys [name investment change] :as provider}]
   [:div
    [:div {:class-name "section changeset-row"
-          :on-click #(dispatch [:scenarios/open-changeset-dialog change])}
+          :on-click #(dispatch [:scenarios/open-changeset-dialog provider])}
     [:div {:class-name "icon-list"}
      [m/Icon {} (get action-icons (:action change))]
      [:div {:class-name "icon-list-text"}
@@ -29,7 +29,7 @@
    [:hr]])
 
 (defn- listing-component
-  [changes]
+  [providers]
   [:div {:class-name "scroll-list"}
-   (map (fn [{:keys [id] :as provider}] [changeset-row {:key id} provider])
-        changes)])
+   (map (fn [provider] [changeset-row {:key (str "provider-action" (:id provider))} provider])
+        providers)])
