@@ -57,10 +57,12 @@
      [:div
       [:h3 name]
       [:p (str "Capacity: " (format-number capacity))]
-      [:p (str "Satisfied demand: " (format-number satisfied-demand))]
       [:p (str "Unsatisfied demand: " (format-number unsatisfied-demand))]
-      [:p (str "Free capacity: " (format-number free-capacity))]
       [:p (str "Required capacity: " (format-number required-capacity))]
+      (when (or matches-filters change)
+        [:p (str "Satisfied demand: " (format-number satisfied-demand))])
+      (when (or matches-filters change)
+        [:p (str "Free capacity: " (format-number free-capacity))])
       (when-not read-only?
         (popup-connected-button
          (cond
@@ -171,10 +173,16 @@
                                                  (assoc :fillColor
                                                         (if (= (:id provider) (:id @selected-provider))
                                                           :orange
-                                                          "#444"))
+                                                          (cond  (and (not (:change provider))
+                                                                      (not (:matches-filters provider))) :gray
+                                                                 (zero? (:free-capacity provider)) "#d2122c"
+                                                                 (pos? (:free-capacity provider)) "#2568ea"
+                                                                 :else :blueviolet)))
                                                  (merge (when (provider-has-change? provider)
                                                           {:stroke true               ; style for providers created/modified by user
-                                                           :color :blueviolet
+                                                           :color (cond (zero? (:satisfied-demand provider)) :blueviolet
+                                                                        (zero? (:free-capacity provider)) "#d2122c"
+                                                                        (pos?  (:free-capacity provider)) "#2568ea")
                                                            :weight 10
                                                            :opacity 0.2}))))
                                  :radius 4

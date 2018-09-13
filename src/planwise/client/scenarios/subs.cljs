@@ -74,7 +74,7 @@
   (merge provider
          (select-keys
           (utils/find-by-id providers-data (:id provider))
-          [:satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])))
+          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])))
 
 (defn apply-change
   [providers [index change]]

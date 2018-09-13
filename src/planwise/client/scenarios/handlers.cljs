@@ -167,9 +167,9 @@
    (let [current-scenario  (get-in db [:current-scenario])
          updated-provider  (get-in db [:changeset-dialog])
          updated-scenario  (update current-scenario
-                            :changeset
-                            (fn [c] (conj (utils/remove-by-id c (:id updated-provider))
-                                          (:change updated-provider))))]
+                                   :changeset
+                                   (fn [c] (conj (utils/remove-by-id c (:id updated-provider))
+                                                 (:change updated-provider))))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
