@@ -51,13 +51,22 @@
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
+(defn- map-scenario
+  [scenario]
+  (reduce (fn [map key] (update map key edn/read-string))
+          scenario
+          [:changeset :sources-data :providers-data :new-providers-geom]))
+
 (defn get-scenario
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
   (let [scenario (db-find-scenario (get-db store) {:id scenario-id})]
-    (reduce (fn [map key] (update map key edn/read-string))
-            scenario
-            [:changeset :sources-data :providers-data :new-providers-geom])))
+    (map-scenario scenario)))
+
+(defn get-initial-scenario
+  [store project-id]
+  (let [scenario (db-find-initial-scenario (get-db store) {:project-id project-id})]
+    (map-scenario scenario)))
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
@@ -102,7 +111,7 @@
                                                        {:algorithm (:coverage-algorithm project)
                                                         :filter-options (get-in project [:config :coverage :filter-options])
                                                         :region-id (:region-id project)}))}
-    (get (:new-providers-geom scenario) id)))
+    {:coverage-geom (get (:new-providers-geom scenario) id)}))
 
 (defn list-scenarios
   [store project-id]
@@ -214,9 +223,10 @@
   (letfn [(task-fn []
             (info "Computing scenario" scenario-id)
             (try
-              (let [engine   (:engine store)
-                    scenario (get-scenario store scenario-id)
-                    result   (engine/compute-scenario engine project scenario)]
+              (let [engine           (:engine store)
+                    scenario         (get-scenario store scenario-id)
+                    initial-scenario (get-initial-scenario store (:id project))
+                    result           (engine/compute-scenario engine project initial-scenario scenario)]
                 (info "Scenario computed" result)
                 ;; TODO check if scenario didn't change from result. If did, discard result.
                 ;; TODO remove previous raster files

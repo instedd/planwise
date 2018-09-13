@@ -15,6 +15,9 @@
 
 (timbre/refer-timbre)
 
+;; PATH HELPERS
+;; -------------------------------------------------------------------------------------------------
+
 (defn source-raster-data-path
   "Full path to the source raster clipped to a region."
   [source-id region-id]
@@ -24,6 +27,11 @@
   "Full path to the raster coverage for a provider set, given the raster property of a provider."
   [provider-set-id raster]
   (str "data/coverage/" provider-set-id "/" raster ".tif"))
+
+(defn new-provider-coverage-raster-path
+  "Full path to the cached coverage of a provider from a create-provider scenario action."
+  [project-id id]
+  (str "data/scenarios/" project-id "/coverage-cache/" id ".tif"))
 
 (defn scenario-raster-data-path
   "Full path to the data raster for a computed scenario."
@@ -40,6 +48,11 @@
   [project-id scenario-filename]
   (str "scenarios/" project-id "/" scenario-filename))
 
+(defn scenario-raster-full-path
+  "Given a raser path from scenario-raster-path, return the full path to the raster file."
+  [raster-path]
+  (str "data/" raster-path ".tif"))
+
 ;; Computing a scenario:
 ;; - compute the initial scenario or retrieve a cached version
 ;; - apply the changeset actions in order
@@ -51,6 +64,9 @@
 ;; - retrieve the providers in the region, filtering by project parameters and order
 ;;   by descending capacity
 ;; - subtract the capacity of each provider from the running unsatisfied demand
+
+;; RASTER SCENARIOS
+;; -------------------------------------------------------------------------------------------------
 
 (defn project-base-demand-raster
   "Returns a mutable raster with the initial source demand for the project."
@@ -77,6 +93,14 @@
      :coverage-algorithm coverage-algorithm
      :coverage-options   coverage-options
      :tags               tags}))
+
+(defn- coverage-criteria-for-project
+  "Criteria options from project for usage in coverage/compute-coverage."
+  [project]
+  (let [coverage-algorithm (keyword (:coverage-algorithm project))
+        project-config     (:config project)
+        coverage-options   (get-in project-config [:coverage :filter-options])]
+    (assoc coverage-options :algorithm coverage-algorithm)))
 
 (defn- provider-mapper
   "Returns a mapper function for providers into the shape required for computing scenarios."
@@ -114,6 +138,57 @@
     (->> providers
          (sort-by :capacity)
          reverse)))
+
+(defn coverage-for-new-provider
+  "If the coverage raster file for the given new provider id doesn't exist or
+  the polygon is not present in the cache, compute the coverage raster and
+  return the coverage polygon clipped to the region of the project."
+  ([coverage project change]
+   (coverage-for-new-provider coverage project change {}))
+  ([coverage project {:keys [id location] :as change} geom-cache]
+   (let [project-id  (:id project)
+         raster-path (new-provider-coverage-raster-path project-id id)
+         cached-geom (get geom-cache id)]
+     (if (and (some? cached-geom) (.exists (io/as-file raster-path)))
+       ;; geometry already computed and raster file exists
+       {:geom        cached-geom
+        :raster-path raster-path}
+       ;; either geometry or raster file don't exist
+       (try
+         (io/delete-file raster-path true)
+         (let [criteria     (coverage-criteria-for-project project)
+               geom         (coverage/compute-coverage coverage location (assoc criteria :raster raster-path))
+               clipped-geom (:geom (coverage/geometry-intersected-with-project-region coverage geom (:region-id project)))]
+           {:geom        clipped-geom
+            :raster-path raster-path})
+         (catch Exception e
+           (throw (ex-info "New provider failed at computation"
+                           (assoc (ex-data e) :id id)
+                           e))))))))
+
+(defn resolve-coverages
+  [coverage project changeset {:keys [initial-providers scenario-geom-cache]}]
+  (let [providers-index (group-by :id initial-providers)]
+    (reduce (fn [{:keys [geom-cache changeset] :as accum} {:keys [id] :as change}]
+              (case (:action change)
+                "create-provider"
+                (let [result  (coverage-for-new-provider coverage project change geom-cache)
+                      change' (assoc change :coverage-raster-path (:raster-path result))]
+                  {:geom-cache (assoc geom-cache id (:geom result))
+                   :changeset  (conj changeset change')})
+
+                ("upgrade-provider" "increase-provider")
+                (let [initial-provider     (get providers-index id)
+                      coverage-raster-path (:coverage-raster-path initial-provider)
+                      change'              (assoc change :coverage-raster-path coverage-raster-path)]
+                  {:geom-cache geom-cache
+                   :changeset  (conj changeset change')})
+
+                accum))
+
+            {:geom-cache scenario-geom-cache
+             :changeset []}
+            changeset)))
 
 (defn raster-measure-provider
   "Measures the unsatisfied demand and computes the required (extra) capacity
@@ -162,10 +237,28 @@
    []
    providers))
 
-(defn merge-providers-data
-  [& colls]
-  (map (fn [[id same-id-providers]] (apply merge same-id-providers))
+(defn merge-collections-by-id
+  [merge-fn & colls]
+  (map (fn [[id same-id-maps]] (apply merge-fn same-id-maps))
        (group-by :id (sort-by :id (apply concat colls)))))
+
+(defn- add-key
+  [key & maps]
+  (apply + (filter some? (map key maps))))
+
+(defn merge-provider
+  [& providers]
+  (-> (apply merge providers)
+      (assoc :capacity (add-key :capacity providers)
+             :satisfied-demand (add-key :satisfied-demand providers)
+             :used-capacity (add-key :used-capacity providers)
+             :free-capacity (add-key :free-capacity providers))))
+
+(defn merge-providers
+  "Merge providers by id, but perform addition for the fields :capacity,
+  :satisfied-demand, :used-capacity and :free-capacity."
+  [& colls]
+  (apply merge-collections-by-id merge-provider colls))
 
 (defn compute-initial-scenario-by-raster
   [engine project]
@@ -187,6 +280,7 @@
                                                       (partial raster-measure-provider demand-raster capacity-multiplier))
           raster-data-path             (scenario-raster-data-path project-id scenario-filename)
           raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
+      (io/make-parents raster-data-path)
       (raster/write-raster demand-raster raster-data-path)
       (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
 
@@ -198,16 +292,61 @@
        :pending-demand   unsatisfied-demand
        :covered-demand   (- base-demand unsatisfied-demand)
        :demand-quartiles quartiles
-       :providers-data   (merge-providers-data applied-providers providers-unsatisfied-demand)})))
+       :providers-data   (merge-providers applied-providers providers-unsatisfied-demand)})))
+
+(defn compute-scenario-by-raster
+  [engine project initial-scenario scenario]
+  (let [project-id             (:id project)
+        scenario-id            (:id scenario)
+        initial-providers      (providers-in-project (:providers-set engine) project)
+        resolved-changeset     (resolve-coverages (:coverage engine)
+                                                  project
+                                                  (:changeset scenario)
+                                                  {:initial-providers   initial-providers
+                                                   :scenario-geom-cache (:new-providers-geom scenario)})
+        changed-providers      (:changeset resolved-changeset)
+        new-providers-geom     (:geom-cache resolved-changeset)
+        capacity-multiplier    (get-in (:config project) [:providers :capacity])
+        base-demand            (get-in project [:engine-config :source-demand])
+        quartiles              (get-in project [:engine-config :demand-quartiles])
+        demand-raster-name     (:raster initial-scenario)
+        demand-raster          (raster/read-raster (scenario-raster-full-path demand-raster-name))
+        initial-providers-data (:providers-data initial-scenario)
+        scenario-filename      (str (format "%03d-" scenario-id) (java.util.UUID/randomUUID))]
+
+    (debug "Base scenario demand:" base-demand)
+    (debug "Applying" (count changed-providers) "changes")
+
+    (let [applied-changes              (do-providers! changed-providers
+                                                      (partial raster-apply-provider! demand-raster capacity-multiplier))
+          unsatisfied-demand           (demand/count-population demand-raster)
+          providers-unsatisfied-demand (do-providers! (merge-providers initial-providers changed-providers)
+                                                      (partial raster-measure-provider demand-raster capacity-multiplier))
+          raster-data-path             (scenario-raster-data-path project-id scenario-filename)
+          raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
+      (raster/write-raster demand-raster raster-data-path)
+      (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
+
+      (debug "Wrote" raster-data-path)
+      (debug "Scenario unsatisfied demand:" unsatisfied-demand)
+
+      {:raster-path        (scenario-raster-path project-id scenario-filename)
+       :pending-demand     unsatisfied-demand
+       :covered-demand     (- base-demand unsatisfied-demand)
+       :new-providers-geom new-providers-geom
+       :providers-data     (merge-providers initial-providers-data applied-changes providers-unsatisfied-demand)})))
+
+;; POINT SCENARIOS
+;; -------------------------------------------------------------------------------------------------
 
 (defn sum-map
   [coll f]
-  (reduce + (map f coll))) ;another way: (apply + (map f coll))
+  (reduce + (map f coll)))
 
 (defn update-source
   [source provider total-demand project-capacity]
-  (let [ratio (float (/ (:quantity source) total-demand))
-        unsatisfied (double (max 0 (- (:quantity source) (* (* (:capacity provider) project-capacity) ratio))))
+  (let [ratio          (float (/ (:quantity source) total-demand))
+        unsatisfied    (double (max 0 (- (:quantity source) (* (* (:capacity provider) project-capacity) ratio))))
         updated-source (assoc source :quantity unsatisfied)]
     updated-source))
 
@@ -222,7 +361,7 @@
     (update-source source provider total-demand project-capacity)
     source))
 
-(defn compute-initial-scenario-by-point
+#_(defn compute-initial-scenario-by-point
   [engine project]
   (let [provider-set-id  (:provider-set-id project)
         providers        (project-providers engine project) ;sort by capacity
@@ -272,69 +411,6 @@
        :demand-quartiles  nil
        :providers-data    updated-providers
        :sources-data      updated-sources})))
-
-(defn compute-initial-scenario
-  [engine project]
-  (debug "Computing initial scenario for project" (:id project))
-  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))]
-    (if (= (:type source-set) "points")
-      (compute-initial-scenario-by-point engine project)
-      (compute-initial-scenario-by-raster engine project))))
-
-(defn compute-coverage-for-new-provider
-  [coverage project-id {:keys [id location] :as change} criteria]
-  (let [coverage-path (str "data/scenarios/" project-id "/coverage-cache/" id ".tif")]
-    (when-not (.exists (io/as-file coverage-path))
-      (try
-        (coverage/compute-coverage coverage location (merge criteria {:raster coverage-path}))
-        (catch Exception e
-          (throw (ex-info "New provider failed at computation" (assoc (ex-data e) :id id))))))))
-
-(defn compute-scenario-by-raster
-  [engine project {:keys [changeset providers-data new-providers-geom] :as scenario}]
-  (let [coverage        (:coverage engine)
-        providers       (project-providers engine project)
-        project-id      (:id project)
-        project-config  (:config project)
-        provider-set-id (:provider-set-id project)
-        scenario-id     (:id scenario)
-        algorithm       (keyword (:coverage-algorithm project))
-        filter-options  (get-in project [:config :coverage :filter-options])
-        criteria        (merge {:algorithm algorithm} filter-options)
-        capacity        (get-in project-config [:providers :capacity])
-        quartiles       (get-in project [:engine-config :demand-quartiles])
-        source-demand   (get-in project [:engine-config :source-demand])
-        ;; demand-raster starts with the initial-pending-demand
-        demand-raster    (raster/read-raster (str "data/" (get-in project [:engine-config :pending-demand-raster-path]) ".tif"))
-        raster-full-path (files/create-temp-file (str "data/scenarios/" project-id) (format "%03d-" scenario-id) ".tif")
-        raster-path      (get (re-find (re-pattern "^data/(.*)\\.tif$") raster-full-path) 1)
-        props            {:project-capacity capacity
-                          :provider-set-id  provider-set-id
-                          :project-id       project-id
-                          :demand-raster    demand-raster}
-    ;; Compute coverage of providers that are not yet computed
-        changes-geom    (reduce (fn [changes-geom {:keys [id] :as change}]
-                                  (let [polygon (compute-coverage-for-new-provider (:coverage engine) project-id change criteria)]
-                                    (if polygon
-                                      (assoc changes-geom id {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon (:region-id project)))})
-                                      changes-geom))) {} changeset)]
-
-    ;; Compute demand from initial scenario
-    ;; TODO refactor with initial-scenario loop
-    (let [processed-changes         (compute-providers-demand changeset props)
-          pending-demand            (demand/count-population demand-raster)
-          initial-providers-data    (mapv #(dissoc % :unsatisfied-demand) providers-data)
-          update-changes    (compute-providers-demand changeset (assoc props :update? true))
-          update-providers  (compute-providers-demand providers (assoc props :update? true))
-          updated-providers (mapv (fn [[a b]] (merge a b)) (map vector initial-providers-data update-providers))
-          updated-changes   (mapv (fn [[a b]] (merge a b)) (map vector processed-changes update-changes))]
-      (raster/write-raster demand-raster (str "data/" raster-path ".tif"))
-      (raster/write-raster (demand/build-renderable-population demand-raster quartiles) (str "data/" raster-path ".map.tif"))
-      {:raster-path      raster-path
-       :pending-demand   pending-demand
-       :covered-demand   (- source-demand pending-demand)
-       :providers-data   (into updated-providers updated-changes)
-       :new-providers-geom   (merge new-providers-geom changes-geom)})))
 
 (defn sources-under
   [engine set-id provider algorithm filter-options]
@@ -412,12 +488,24 @@
        :sources-data     updated-sources
        :new-providers-geom (merge new-providers-geom changes-geom)})))
 
-(defn compute-scenario
-  [engine project scenario]
+
+;; COMPONENT ENTRY POINTS
+;; -------------------------------------------------------------------------------------------------
+
+(defn compute-initial-scenario
+  [engine project]
+  (debug "Computing initial scenario for project" (:id project))
   (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))]
     (if (= (:type source-set) "points")
-      (compute-scenario-by-point engine project scenario)
-      (compute-scenario-by-raster engine project scenario))))
+      nil #_(compute-initial-scenario-by-point engine project)
+      (compute-initial-scenario-by-raster engine project))))
+
+(defn compute-scenario
+  [engine project initial-scenario scenario]
+  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))]
+    (if (= (:type source-set) "points")
+      (compute-scenario-by-point engine project initial-scenario scenario)
+      (compute-scenario-by-raster engine project initial-scenario scenario))))
 
 (defn clear-project-cache
   [this project-id]
@@ -430,8 +518,8 @@
     (compute-initial-scenario engine project))
   (clear-project-cache [engine project]
     (clear-project-cache engine project))
-  (compute-scenario [engine project scenario]
-    (compute-scenario engine project scenario))
+  (compute-scenario [engine project initial-scenario scenario]
+    (compute-scenario engine project initial-scenario scenario))
   (search-optimal-location [engine project source]
     (suggestions/search-optimal-location engine project source)))
 

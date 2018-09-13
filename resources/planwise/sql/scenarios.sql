@@ -33,6 +33,12 @@ FROM scenarios
 LEFT JOIN scenarios AS initial_scenario ON initial_scenario."project-id" = scenarios."project-id" AND initial_scenario.label = 'initial'
 WHERE scenarios.id = :id
 
+-- :name db-find-initial-scenario :? :1
+SELECT scenarios.*
+FROM scenarios
+WHERE scenarios."project-id" = :project-id
+AND scenarios."label" = 'initial';
+
 -- :name db-create-scenario! :<! :1
 INSERT INTO scenarios
   (name, "project-id", investment, "demand-coverage", changeset, label, "state", "updated-at")
