@@ -42,17 +42,19 @@
                                 :value (or (:capacity change) "")}]])
 (defn changeset-dialog
   [scenario budget]
-  (let [provider       (subscribe [:scenarios/changeset-dialog])
-        view-state     (subscribe [:scenarios/view-state])]
+  (let [provider   (subscribe [:scenarios/changeset-dialog])
+        view-state (subscribe [:scenarios/view-state])]
     (fn [scenario budget]
-      (when (= @view-state :changeset-dialog)
-        (dialog {:open? true
-                 :acceptable? (and ((fnil pos? 0) (get-in @provider [:change :investment])) ((fnil pos? 0) (get-in @provider [:change :capacity])))
-                 :title "Edit Provider"
-                 :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
-                 :delete-fn #(dispatch [:scenarios/delete-change (:id @provider)])
-                 :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
-                 :cancel-fn #(dispatch [:scenarios/cancel-dialog])})))))
+      (let [open? (= @view-state :changeset-dialog)]
+        (dialog {:open?       open?
+                 :acceptable? (and ((fnil pos? 0) (get-in @provider [:change :investment]))
+                                   ((fnil pos? 0) (get-in @provider [:change :capacity])))
+                 :title       "Edit Provider"
+                 :content     (when open?
+                                (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario)))))
+                 :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])
+                 :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
+                 :cancel-fn   #(dispatch [:scenarios/cancel-dialog])})))))
 
 (defn new-provider-button
   [state computing?]
