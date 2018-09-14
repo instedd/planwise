@@ -5,10 +5,9 @@
 (deftest new-provider-from-change-test
   (let [change {:id       "foo"
                 :action   "create-provider"
-                :name     "sample provider"
                 :location {:lat 0 :lon 0}}]
     (is (= {:id             "foo"
-            :name           "sample provider"
+            :name           "New Provider 1"
             :matches-filter true
             :location       {:lat 0 :lon 0}
             :change         change}
