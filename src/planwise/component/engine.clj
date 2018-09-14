@@ -9,6 +9,7 @@
             [planwise.engine.suggestions :as suggestions]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
+            [planwise.util.collections :refer [sum-by merge-collections-by]]
             [integrant.core :as ig]
             [clojure.java.io :as io]
             [taoensso.timbre :as timbre]))
@@ -65,21 +66,8 @@
 ;;   by descending capacity
 ;; - subtract the capacity of each provider from the running unsatisfied demand
 
-;; RASTER SCENARIOS
+;; PROVIDERS & COVERAGE RESOLUTION
 ;; -------------------------------------------------------------------------------------------------
-
-(defn project-base-demand-raster
-  "Returns a mutable raster with the initial source demand for the project."
-  [project]
-  (let [source-id          (:source-set-id project)
-        region-id          (:region-id project)
-        project-config     (:config project)
-        source-raster-file (source-raster-data-path source-id region-id)
-        raster             (raster/read-raster source-raster-file)
-        target-factor      (/ (get-in project-config [:demographics :target]) 100)]
-    ;; scale raster demand according to project's target
-    (doto raster
-      (demand/multiply-population! (float target-factor)))))
 
 (defn- filter-options-for-project
   "Filter options from project for usage in providers-set/get-providers-coverage-in-region."
@@ -190,6 +178,38 @@
              :changeset []}
             changeset)))
 
+(defn merge-provider
+  "Merge two or more provider-like maps, but sum their capacity related fields
+  and the satisfied demand."
+  [& providers]
+  (-> (apply merge providers)
+      (assoc :capacity (apply sum-by :capacity providers)
+             :satisfied-demand (apply sum-by :satisfied-demand providers)
+             :used-capacity (apply sum-by :used-capacity providers)
+             :free-capacity (apply sum-by :free-capacity providers))))
+
+(defn merge-providers
+  "Merge providers by id, but perform addition for the fields :capacity,
+  :satisfied-demand, :used-capacity and :free-capacity."
+  [& colls]
+  (apply merge-collections-by :id merge-provider colls))
+
+;; RASTER SCENARIOS
+;; -------------------------------------------------------------------------------------------------
+
+(defn project-base-demand-raster
+  "Returns a mutable raster with the initial source demand for the project."
+  [project]
+  (let [source-id          (:source-set-id project)
+        region-id          (:region-id project)
+        project-config     (:config project)
+        source-raster-file (source-raster-data-path source-id region-id)
+        raster             (raster/read-raster source-raster-file)
+        target-factor      (/ (get-in project-config [:demographics :target]) 100)]
+    ;; scale raster demand according to project's target
+    (doto raster
+      (demand/multiply-population! (float target-factor)))))
+
 (defn raster-measure-provider
   "Measures the unsatisfied demand and computes the required (extra) capacity
   for a provider in the demand raster."
@@ -222,14 +242,14 @@
      :used-capacity    used-capacity
      :free-capacity    (- capacity used-capacity)}))
 
-(defn do-providers!
+(defn raster-do-providers!
   "Process each provider in the collection *in order* by the function f
-  (presumably for side effects) and return a vector with the results; intended
+  (presumably with side effects) and return a vector with the results; intended
   to be used with raster-measure-provider or raster-apply-provider!
 
   For example,
-  (do-providers! (filter :applicable? providers)
-                 (partial raster-apply-provider! demand-raster capacity-multiplier))
+  (raster-do-providers! (filter :applicable? providers)
+                        (partial raster-apply-provider! demand-raster capacity-multiplier))
   "
   [providers f]
   (reduce
@@ -237,29 +257,6 @@
      (conj results (f provider)))
    []
    providers))
-
-(defn merge-collections-by-id
-  [merge-fn & colls]
-  (map (fn [[id same-id-maps]] (apply merge-fn same-id-maps))
-       (group-by :id (apply concat colls))))
-
-(defn- add-key
-  [key & maps]
-  (apply + (filter some? (map key maps))))
-
-(defn merge-provider
-  [& providers]
-  (-> (apply merge providers)
-      (assoc :capacity (apply add-key :capacity providers)
-             :satisfied-demand (apply add-key :satisfied-demand providers)
-             :used-capacity (apply add-key :used-capacity providers)
-             :free-capacity (apply add-key :free-capacity providers))))
-
-(defn merge-providers
-  "Merge providers by id, but perform addition for the fields :capacity,
-  :satisfied-demand, :used-capacity and :free-capacity."
-  [& colls]
-  (apply merge-collections-by-id merge-provider colls))
 
 (defn compute-initial-scenario-by-raster
   [engine project]
@@ -273,12 +270,12 @@
     (debug "Base scenario demand:" base-demand)
     (debug "Applying" (count applicable-providers) "providers")
 
-    (let [applied-providers            (do-providers! applicable-providers
-                                                      (partial raster-apply-provider! demand-raster capacity-multiplier))
+    (let [applied-providers            (raster-do-providers! applicable-providers
+                                                             (partial raster-apply-provider! demand-raster capacity-multiplier))
           unsatisfied-demand           (demand/count-population demand-raster)
           quartiles                    (demand/compute-population-quartiles demand-raster)
-          providers-unsatisfied-demand (do-providers! providers
-                                                      (partial raster-measure-provider demand-raster capacity-multiplier))
+          providers-unsatisfied-demand (raster-do-providers! providers
+                                                             (partial raster-measure-provider demand-raster capacity-multiplier))
           raster-data-path             (scenario-raster-data-path project-id scenario-filename)
           raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
       (io/make-parents raster-data-path)
@@ -318,11 +315,11 @@
     (debug "Base scenario demand:" base-demand)
     (debug "Applying" (count changed-providers) "changes")
 
-    (let [applied-changes              (do-providers! changed-providers
-                                                      (partial raster-apply-provider! demand-raster capacity-multiplier))
+    (let [applied-changes              (raster-do-providers! changed-providers
+                                                             (partial raster-apply-provider! demand-raster capacity-multiplier))
           unsatisfied-demand           (demand/count-population demand-raster)
-          providers-unsatisfied-demand (do-providers! (merge-providers initial-providers changed-providers)
-                                                      (partial raster-measure-provider demand-raster capacity-multiplier))
+          providers-unsatisfied-demand (raster-do-providers! (merge-providers initial-providers changed-providers)
+                                                             (partial raster-measure-provider demand-raster capacity-multiplier))
           raster-data-path             (scenario-raster-data-path project-id scenario-filename)
           raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
       (raster/write-raster demand-raster raster-data-path)
