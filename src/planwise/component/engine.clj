@@ -178,7 +178,7 @@
                    :changeset  (conj changeset change')})
 
                 ("upgrade-provider" "increase-provider")
-                (let [initial-provider     (get providers-index id)
+                (let [initial-provider     (first (get providers-index id))
                       coverage-raster-path (:coverage-raster-path initial-provider)
                       change'              (assoc change :coverage-raster-path coverage-raster-path)]
                   {:geom-cache geom-cache
@@ -240,7 +240,7 @@
 (defn merge-collections-by-id
   [merge-fn & colls]
   (map (fn [[id same-id-maps]] (apply merge-fn same-id-maps))
-       (group-by :id (sort-by :id (apply concat colls)))))
+       (group-by :id (apply concat colls))))
 
 (defn- add-key
   [key & maps]

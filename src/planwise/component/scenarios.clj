@@ -168,7 +168,7 @@
                                                                            :pending-demand-raster-path (:raster-path result)})}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)
-                (error "Scenario initial computation failed"))))]
+                (error e "Scenario initial computation failed"))))]
     {:task-id :initial
      :task-fn task-fn
      :state   nil}))
@@ -241,7 +241,7 @@
                 (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)
-                (error "Scenario computation failed" e))))]
+                (error e "Scenario computation failed"))))]
     {:task-id scenario-id
      :task-fn task-fn
      :state   nil}))
