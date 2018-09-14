@@ -218,6 +218,7 @@
         (demand/multiply-population-under-coverage! demand-raster coverage-raster (float factor))))
     {:id               (:id provider)
      :satisfied-demand satisfied-demand
+     :capacity         capacity
      :used-capacity    used-capacity
      :free-capacity    (- capacity used-capacity)}))
 
@@ -249,10 +250,10 @@
 (defn merge-provider
   [& providers]
   (-> (apply merge providers)
-      (assoc :capacity (add-key :capacity providers)
-             :satisfied-demand (add-key :satisfied-demand providers)
-             :used-capacity (add-key :used-capacity providers)
-             :free-capacity (add-key :free-capacity providers))))
+      (assoc :capacity (apply add-key :capacity providers)
+             :satisfied-demand (apply add-key :satisfied-demand providers)
+             :used-capacity (apply add-key :used-capacity providers)
+             :free-capacity (apply add-key :free-capacity providers))))
 
 (defn merge-providers
   "Merge providers by id, but perform addition for the fields :capacity,
