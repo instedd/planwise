@@ -15,16 +15,17 @@
 (defn rename-scenario-dialog
   []
   (let [rename-dialog (subscribe [:scenarios/rename-dialog])
-        view-state (subscribe [:scenarios/view-state])]
+        view-state    (subscribe [:scenarios/view-state])]
     (fn []
-      (dialog {:open? (= @view-state :rename-dialog)
-               :title "Rename scenario"
-               :content  [common2/text-field {:label "Name"
-                                              :value (str (:value @rename-dialog))
-                                              :on-change #(dispatch [:scenarios/save-key
-                                                                     [:rename-dialog :value] (-> % .-target .-value)])}]
-               :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
-               :cancel-fn  #(dispatch [:scenarios/cancel-dialog])}))))
+      (dialog {:open?       (= @view-state :rename-dialog)
+               :title       "Rename scenario"
+               :content     [common2/text-field {:label     "Name"
+                                                 :value     (str (:value @rename-dialog))
+                                                 :on-change #(dispatch [:scenarios/save-key
+                                                                        [:rename-dialog :value] (-> % .-target .-value)])}]
+               :acceptable? (seq (:value @rename-dialog))
+               :accept-fn   #(dispatch [:scenarios/accept-rename-dialog])
+               :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}))))
 
 (defn changeset-dialog-content
   [{:keys [available-budget change]}]

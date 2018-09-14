@@ -151,7 +151,8 @@
             (try
               (let [engine (:engine store)
                     result (engine/compute-initial-scenario engine project)]
-                (info "Initial scenario computed" result)
+                (info (str "Initial scenario " scenario-id " computed")
+                      (select-keys result [:raster-path :covered-demand :providers-data :sources-data]))
                 ;; TODO check if scenario didn't change from result
                 (db-update-scenario-state! (get-db store)
                                            {:id                 scenario-id
@@ -227,7 +228,8 @@
                     scenario         (get-scenario store scenario-id)
                     initial-scenario (get-initial-scenario store (:id project))
                     result           (engine/compute-scenario engine project initial-scenario scenario)]
-                (info "Scenario computed" result)
+                (info (str "Scenario " scenario-id " computed")
+                      (select-keys result [:raster-path :covered-demand :providers-data :sources-data]))
                 ;; TODO check if scenario didn't change from result. If did, discard result.
                 ;; TODO remove previous raster files
                 (db-update-scenario-state! (get-db store)
