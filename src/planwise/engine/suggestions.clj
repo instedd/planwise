@@ -16,7 +16,7 @@
   (if raster
     (let [coverage (raster/create-raster (rasterize/rasterize polygon))]
       (demand/count-population-under-coverage raster coverage))
-    (let [ids (set (map :id (sources-set/list-sources-under-coverage (:sources-set engine) source-set-id polygon)))]
+    (let [ids (set (sources-set/enum-sources-under-coverage (:sources-set engine) source-set-id polygon))]
       (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
 
 (defn update-visited

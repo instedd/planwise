@@ -40,7 +40,7 @@ SELECT * FROM providers
     AND version = :version;
 
 -- :name db-find-providers-with-coverage-in-region :?
-SELECT p.id, p.name, p.lat, p.lon, p.capacity, p.type, p.tags, pc.raster
+SELECT p.id, p.name, p.lat, p.lon, p.capacity, p.type, p.tags, pc.raster, pc.id AS "coverage-id"
     FROM providers p
     INNER JOIN providers_coverage pc
           ON p.id = pc."provider-id"

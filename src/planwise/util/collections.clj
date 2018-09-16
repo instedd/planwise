@@ -5,7 +5,7 @@
   (reduce #(when (= value (field %2)) (reduced %2)) nil coll))
 
 (defn sum-by
-  [key & coll]
+  [key coll]
   (reduce + (filter number? (map key coll))))
 
 (defn merge-collections-by

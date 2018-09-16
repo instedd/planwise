@@ -300,6 +300,7 @@
     (into (mapv (fn [e] (update-fn e)) providers-data)
           disabled-providers)))
 
+;; FIXME: merge providers and changes with the same id (upgrades and increases)
 (defn export-providers-data
   [store {:keys [provider-set-id config] :as project} scenario]
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
