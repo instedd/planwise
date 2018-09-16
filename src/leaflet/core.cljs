@@ -67,7 +67,7 @@
       (.on marker "mouseout" #(mouseout-fn marker % point)))
     marker))
 
-(defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+(defn create-point [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn shape], :or {lat-fn :lat, lon-fn :lon}, :as props}]
   (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
         attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         clickable (boolean popup-fn)
@@ -75,7 +75,11 @@
                    {:clickable clickable :radius 5}
                    attrs
                    (when style-fn (style-fn point)))
-        marker    (.circleMarker js/L latLng (clj->js style))]
+        square     (when (= :square shape)
+                     (.divIcon js/L (clj->js (icon-fn point))))
+        marker    (if (= :circle shape)
+                    (.circleMarker js/L latLng (clj->js style))
+                    (.marker js/L latLng (clj->js {:icon square})))]
     (if popup-fn
       (.bindPopup marker (popup-fn point)))
     (if mouseover-fn

@@ -120,26 +120,20 @@
                               :format "image/png"
                               :opacity 0.6}])
           [:point-layer {:points indexed-sources
+                         :shape :square
                          :lat-fn #(get-in % [:elem :lat])
                          :lon-fn #(get-in % [:elem :lon])
-                         :options-fn #(select-keys % [:index])
-                         :style-fn #(let [source (:elem %)
-                                          quantity-initial (:initial-quantity source)
-                                          quantity-current (:quantity source)
-                                          ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
-                                          color (cond
-                                                  (= 0 quantity-initial) {:fill :gray :stroke :lightgray}
-                                                  (<= ratio 0.25) {:fill :limegreen :stroke :limegreen}
-                                                  (< 0.25 ratio 0.5) {:fill :yellow :stroke :yellow}
-                                                  (<= 0.5 ratio 0.75) {:fill :orange :stroke :orange}
-                                                  (> ratio 0.75) {:fill :red :stroke :red})]
-                                      {:fillColor (:fill color)
-                                       :color (:stroke color)})
-                         :radius 7
-                         :fillOpacity 0.8
-                         :stroke true
-                         :weight 10
-                         :opacity 0.2
+                         :icon-fn #(let [source (:elem %)
+                                         quantity-initial (:initial-quantity source)
+                                         quantity-current (:quantity source)
+                                         ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
+                                         classname (cond
+                                                     (= 0 quantity-initial) "leaflet-square-icon-gray"
+                                                     (<= ratio 0.25) "leaflet-square-icon-green"
+                                                     (< 0.25 ratio 0.5) "leaflet-sqaure-icon-yellow"
+                                                     (<= 0.5 ratio 0.75) "leaflet-square-icon-orange"
+                                                     (> ratio 0.75) "leaflet-square-icon-red")]
+                                     {:className classname})
                          :popup-fn #(show-source %)}]
           (when @selected-provider
             [:geojson-layer {:data (:coverage-geom @selected-provider)
@@ -166,6 +160,7 @@
                                            (dispatch [:scenarios.map/unselect-provider suggestion]))}])
 
           [providers-layer-type {:points @all-providers
+                                 :shape :circle
                                  :lat-fn #(get-in % [:location :lat])
                                  :lon-fn #(get-in % [:location :lon])
                                  :style-fn (fn [provider]
@@ -176,8 +171,7 @@
                                                           (cond  (and (not (:change provider))
                                                                       (not (:matches-filters provider))) :gray
                                                                  (zero? (:free-capacity provider)) "#d2122c"
-                                                                 (pos? (:free-capacity provider)) "#2568ea"
-                                                                 :else :blueviolet)))
+                                                                 (pos? (:free-capacity provider)) "#2568ea")))
                                                  (merge (when (provider-has-change? provider)
                                                           {:stroke true               ; style for providers created/modified by user
                                                            :color (cond (zero? (:satisfied-demand provider)) :blueviolet

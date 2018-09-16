@@ -688,4 +688,29 @@ form.vertical, .fields-vertical {
     }
 }
 
+.leaflet-square-icon-gray {
+  border: 1px solid lightgrey;
+  background: gray;
+  }
+
+.leaflet-square-icon-green {
+  border: 1px solid rgb(192, 233, 156);
+  background: rgb(129, 203, 83);
+  }
+
+.leaflet-square-icon-yellow {
+  border: 1px solid lightgoldenrodyellow;
+  background: yellow;
+}
+
+.leaflet-square-icon-orange {
+  border: 1px solid rgb(245, 208, 140);
+  background: orange;
+}
+
+.leaflet-square-icon-red{
+  border: 1px solid lightcoral;
+  background: red;
+}
+
 
