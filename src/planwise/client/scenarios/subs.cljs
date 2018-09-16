@@ -1,5 +1,7 @@
 (ns planwise.client.scenarios.subs
   (:require [re-frame.core :as rf]
+            [planwise.client.utils :as utils]
+            [planwise.client.scenarios.db :as db]
             [cljs.reader]))
 
 (rf/reg-sub
@@ -28,11 +30,6 @@
    (get-in db [:scenarios :changeset-dialog])))
 
 (rf/reg-sub
- :scenarios/changeset-index
- (fn [db _]
-   (get-in db [:scenarios :view-state-params :changeset-index])))
-
-(rf/reg-sub
  :scenarios/list
  (fn [db _]
    (get-in db [:scenarios :list])))
@@ -41,12 +38,6 @@
  :scenarios/read-only? :<- [:scenarios/current-scenario]
  (fn [current-scenario [_]]
    (= (:label current-scenario) "initial")))
-
-(rf/reg-sub
- :scenarios/created-providers :<- [:scenarios/current-scenario]
- (fn [current-scenario [_]]
-   (keep-indexed (fn [i provider] (when (:action provider) {:provider provider :index i}))
-                 (into (:providers current-scenario) (:changeset current-scenario)))))
 
 (rf/reg-sub
  :scenarios.map/selected-provider
@@ -77,3 +68,32 @@
  :scenarios.new-provider/options :<- [:scenarios/view-state]
  (fn [view-state [_]]
    (= :show-options-to-create-provider view-state)))
+
+(defn update-capacity-and-demand
+  [provider providers-data]
+  (merge provider
+         (select-keys
+          (utils/find-by-id providers-data (:id provider))
+          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])))
+
+(defn apply-change
+  [providers [index change]]
+  (if (= (:action change) "create-provider")
+    (conj providers (db/new-provider-from-change change index))
+    (utils/update-by-id providers (:id change) assoc :change change)))
+
+(rf/reg-sub
+ :scenarios/all-providers :<- [:scenarios/current-scenario]
+ (fn [{:keys [providers disabled-providers changeset providers-data] :as scenario} _]
+   (let [providers' (concat (map #(assoc % :matches-filters true)
+                                 providers)
+                            (map #(assoc % :matches-filters false)
+                                 disabled-providers))]
+     (map
+      #(update-capacity-and-demand % providers-data)
+      (reduce apply-change providers' (map-indexed vector changeset))))))
+
+(rf/reg-sub
+ :scenarios/providers-from-changeset :<- [:scenarios/all-providers]
+ (fn [all-providers [_]]
+   (filter #(some? (:change %)) all-providers)))

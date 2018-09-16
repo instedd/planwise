@@ -81,7 +81,9 @@
     (if mouseover-fn
       (.on marker "mouseover" #(mouseover-fn point)))
     (if mouseout-fn
-      (.on marker "mouseout" #(mouseout-fn point)))
+      (do
+        (.on marker "mouseout" #(when-not (.isPopupOpen marker) (mouseout-fn point)))
+        (.on marker "popupclose" #(mouseout-fn point))))
     marker))
 
 (defn create-polygon [points {:keys [lat-fn lon-fn style-fn popup-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]

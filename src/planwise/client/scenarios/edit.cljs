@@ -15,44 +15,46 @@
 (defn rename-scenario-dialog
   []
   (let [rename-dialog (subscribe [:scenarios/rename-dialog])
-        view-state (subscribe [:scenarios/view-state])]
+        view-state    (subscribe [:scenarios/view-state])]
     (fn []
-      (dialog {:open? (= @view-state :rename-dialog)
-               :title "Rename scenario"
-               :content  [common2/text-field {:label "Name"
-                                              :value (str (:value @rename-dialog))
-                                              :on-change #(dispatch [:scenarios/save-key
-                                                                     [:rename-dialog :value] (-> % .-target .-value)])}]
-               :accept-fn  #(dispatch [:scenarios/accept-rename-dialog])
-               :cancel-fn  #(dispatch [:scenarios/cancel-dialog])}))))
+      (dialog {:open?       (= @view-state :rename-dialog)
+               :title       "Rename scenario"
+               :content     [common2/text-field {:label     "Name"
+                                                 :value     (str (:value @rename-dialog))
+                                                 :on-change #(dispatch [:scenarios/save-key
+                                                                        [:rename-dialog :value] (-> % .-target .-value)])}]
+               :acceptable? (seq (:value @rename-dialog))
+               :accept-fn   #(dispatch [:scenarios/accept-rename-dialog])
+               :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}))))
 
 (defn changeset-dialog-content
-  [{:keys [investment available-budget capacity]}]
+  [{:keys [available-budget change]}]
   [:div
    [:h2 "Investment"]
    [common2/numeric-text-field {:type "number"
-                                :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :investment] %])
-                                :not-valid? (< available-budget investment)
-                                :value (or investment "")}]
+                                :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
+                                :not-valid? (< available-budget (:investment change))
+                                :value (or (:investment change) "")}]
 
    [:h2 "Capacity"]
    [common2/numeric-text-field {:type "number"
-                                :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :capacity] %])
-                                :value (or capacity "")}]])
+                                :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
+                                :value (or (:capacity change) "")}]])
 (defn changeset-dialog
   [scenario budget]
-  (let [provider       (subscribe [:scenarios/changeset-dialog])
-        view-state     (subscribe [:scenarios/view-state])
-        provider-index (subscribe [:scenarios/changeset-index])]
+  (let [provider   (subscribe [:scenarios/changeset-dialog])
+        view-state (subscribe [:scenarios/view-state])]
     (fn [scenario budget]
-      (when (= @view-state :changeset-dialog)
-        (dialog {:open? true
-                 :acceptable? (and ((fnil pos? 0) (:capacity @provider)) ((fnil pos? 0) (:investment @provider)))
-                 :title "Edit Provider"
-                 :content (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario))))
-                 :delete-fn #(dispatch [:scenarios/delete-provider @provider-index])
-                 :accept-fn #(dispatch [:scenarios/accept-changeset-dialog])
-                 :cancel-fn #(dispatch [:scenarios/cancel-dialog])})))))
+      (let [open? (= @view-state :changeset-dialog)]
+        (dialog {:open?       open?
+                 :acceptable? (and ((fnil pos? 0) (get-in @provider [:change :investment]))
+                                   ((fnil pos? 0) (get-in @provider [:change :capacity])))
+                 :title       "Edit Provider"
+                 :content     (when open?
+                                (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario)))))
+                 :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])
+                 :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
+                 :cancel-fn   #(dispatch [:scenarios/cancel-dialog])})))))
 
 (defn new-provider-button
   [state computing?]
@@ -78,3 +80,13 @@
         [m/MenuItem
          {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
          "Get suggestions"]]])))
+
+(defn upgrade-provider-button
+  [provider]
+  [m/Fab [m/Icon "arrow_upward"]
+   {:on-click #(dispatch [:scenarios/provider-action :upgrade provider])}])
+
+(defn increase-provider-button
+  [provider]
+  [m/Fab [m/Icon "add"]
+   {:on-click #(dispatch [:scenarios/provider-action :increase provider])}])

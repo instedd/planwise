@@ -10,7 +10,8 @@
             [clojure.java.io :as io]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.set :as set]))
 
 (timbre/refer-timbre)
 
@@ -193,8 +194,10 @@
 
 (defn- provider-matches-tags?
   [provider tags]
-  (or (empty? tags)
-      (not (empty? (clojure.set/intersection (set tags) (set (:tags provider)))))))
+  (let [filter-tags (set tags)
+        provider-tags (set (str/split (:tags provider) #" "))]
+    (or (empty? tags)
+        (not (empty? (set/intersection filter-tags provider-tags))))))
 
 (defn get-providers-with-coverage-in-region
   [store provider-set-id version filter-options]

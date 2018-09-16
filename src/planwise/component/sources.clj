@@ -77,22 +77,35 @@
       (import-sources tx-store source-set-id csv-file)
       (get-source-set tx-store source-set-id owner-id))))
 
-(defn list-sources-under-provider-coverage
-  [store source-set-id provider-id algorithm filter-options]
-  (db-list-sources-under-provider-coverage (get-db store) {:source-set-id source-set-id
-                                                           :provider-id provider-id
-                                                           :algorithm algorithm
-                                                           :options (pr-str filter-options)}))
-
-(defn list-sources-under-coverage
-  [store source-set-id coverage-geom]
-  (let [key (if (= (pr-str (.getClass coverage-geom)) "org.postgis.PGgeometry") :coverage-geom :coverage-geojson)]
-    (db-list-sources-under-coverage (get-db store) {:source-set-id source-set-id
-                                                    key coverage-geom})))
-
 (defn list-sources-in-set
   [store source-set-id]
   (db-list-sources-in-set (get-db store) {:source-set-id source-set-id}))
+
+(defn get-sources-from-set-in-region
+  [store source-set-id region-id]
+  (db-get-sources-from-set-in-region (get-db store) {:source-set-id source-set-id
+                                                     :region-id     region-id}))
+
+(defn enum-sources-under-provider-coverage
+  [store source-set-id provider-coverage-id]
+  (map :id
+       (db-enum-sources-under-provider-coverage (get-db store)
+                                                {:source-set-id        source-set-id
+                                                 :provider-coverage-id provider-coverage-id})))
+
+(defn enum-sources-under-geojson-coverage
+  [store source-set-id coverage-geojson]
+  (map :id
+       (db-enum-sources-under-coverage-geojson (get-db store)
+                                               {:source-set-id    source-set-id
+                                                :coverage-geojson coverage-geojson})))
+
+(defn enum-sources-under-coverage
+  [store source-set-id coverage-geom]
+  (map :id
+       (db-enum-sources-under-coverage (get-db store)
+                                       {:source-set-id source-set-id
+                                        :coverage-geom coverage-geom})))
 
 ;; ----------------------------------------------------------------------
 ;; Store
@@ -105,12 +118,16 @@
     (import-from-csv store options csv-file))
   (get-source-set-by-id [store id]
     (get-source-set-by-id store id))
-  (list-sources-under-provider-coverage [this source-set-id provider-id algorithm filter-options]
-    (list-sources-under-provider-coverage this source-set-id provider-id algorithm filter-options))
-  (list-sources-under-coverage [this source-set-id coverage-geom]
-    (list-sources-under-coverage this source-set-id coverage-geom))
   (list-sources-in-set [this source-set-id]
-    (list-sources-in-set this source-set-id)))
+    (list-sources-in-set this source-set-id))
+  (get-sources-from-set-in-region [this source-set-id region-id]
+    (get-sources-from-set-in-region this source-set-id region-id))
+  (enum-sources-under-provider-coverage [this source-set-id provider-coverage-id]
+    (enum-sources-under-provider-coverage this source-set-id provider-coverage-id))
+  (enum-sources-under-geojson-coverage [this source-set-id coverage-geojson]
+    (enum-sources-under-geojson-coverage this source-set-id coverage-geojson))
+  (enum-sources-under-coverage [this source-set-id coverage-geom]
+    (enum-sources-under-coverage this source-set-id coverage-geom)))
 
 ;; ----------------------------------------------------------------------
 ;;

@@ -3,14 +3,32 @@
 
 (s/def ::investment int?)
 (s/def ::capacity int?)
-(s/def ::provider-id string?)
+(s/def :planwise.scenarios.new-change/id string?)
+(s/def :planwise.scenarios.change/id number?)
 (s/def ::location map?)
 
-(s/def ::action #{"create-provider"})
-(s/def ::initial boolean?)
+(s/def ::base-change
+  (s/keys :req-un [::investment ::capacity]))
 
 (s/def ::create-provider
-  (s/keys :req-un [::action ::investment ::capacity ::provider-id ::location]))
+  (s/keys :req-un [:planwise.scenarios.new-change/id ::location]))
+
+(s/def ::upgrade-provider
+  (s/keys :req-un [:planwise.scenarios.change/id]))
+
+(s/def ::increase-provider
+  (s/keys :req-un [:planwise.scenarios.change/id]))
+
+
+(defmulti change :action)
+(defmethod change "create-provider" [_]
+  (s/merge ::base-change ::create-provider))
+(defmethod change "upgrade-provider" [_]
+  (s/merge ::base-change ::upgrade-provider))
+(defmethod change "increase-provider" [_]
+  (s/merge ::base-change ::increase-provider))
+
+(s/def ::change (s/multi-spec change :action))
 
 (s/def ::change-set
-  (s/coll-of ::create-provider))
+  (s/coll-of ::change))

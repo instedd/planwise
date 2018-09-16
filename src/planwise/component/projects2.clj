@@ -49,7 +49,7 @@
 (defn get-project
   [store project-id]
   (let [{:keys [config provider-set-id region-id] :as project} (db-get-project (get-db store) {:id project-id})
-        tags    (when (some? config) (get-in (read-string config) [:providers :tags]))
+        tags    (when (some? config) (get-in (edn/read-string config) [:providers :tags]))
         number-of-providers (providers-set/count-providers-filter-by-tags (:providers-set store) provider-set-id region-id tags)]
     (regions/db->region
      (-> project

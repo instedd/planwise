@@ -3,6 +3,7 @@
             [clojure.string :as s]
             [planwise.client.asdf :as asdf]
             [planwise.client.routes :as routes]
+            [planwise.client.utils :as utils]
             [planwise.client.scenarios.api :as api]
             [planwise.client.scenarios.db :as db]))
 
@@ -37,7 +38,7 @@
       :navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
-(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :changeset :sources-data :error-message :providers])
+(def demand-fields [:state :demand-coverage :increase-coverage :investment :raster :label :sources-data :providers-data :error-message])
 
 (defn- dispatch-track-demand-information-if-needed
   [scenario]
@@ -60,7 +61,8 @@
          should-update    (= (:id current-scenario) (:id scenario))]
      (if should-update
        (merge {:db (assoc db :current-scenario
-                          (merge current-scenario (select-keys scenario demand-fields)))}
+                          (merge current-scenario
+                                 (select-keys scenario demand-fields)))}
               (dispatch-track-demand-information-if-needed scenario))
        {}))))
 
@@ -138,48 +140,49 @@
 (rf/reg-event-fx
  :scenarios/create-provider
  in-scenarios
- (fn [{:keys [db]} [_ {:keys [lat lon]}]]
+ (fn [{:keys [db]} [_ props]]
    (let [{:keys [current-scenario]} db
-         new-provider (db/initial-provider {:location {:lat lat :lon lon}})
-         updated-scenario (dissoc (update current-scenario :changeset #(conj % new-provider)) :suggested-locations :computing-best-locations)
-         new-provider-index (dec (count (:changeset updated-scenario)))]
+         new-action   (db/new-action props :create)
+         number-of-changes (count (:changeset current-scenario))
+         index        (if (pos? number-of-changes) (dec number-of-changes) 0)
+         updated-scenario (dissoc current-scenario
+                                  :suggested-locations :computing-best-locations)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
-      :db   (-> db
-                (assoc :current-scenario updated-scenario))
-      :dispatch [:scenarios/open-changeset-dialog new-provider-index]})))
+      :db   (assoc  db :current-scenario updated-scenario)
+      :dispatch [:scenarios/open-changeset-dialog (db/new-provider-from-change new-action index)]})))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
  in-scenarios
- (fn [db [_ changeset-index]]
+ (fn [db [_ change]]
    (assoc db
           :view-state        :changeset-dialog
-          :view-state-params {:changeset-index changeset-index}
-          :changeset-dialog  (get-in db [:current-scenario :changeset changeset-index]))))
+          :changeset-dialog  change)))
 
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [current-scenario  (get-in db [:current-scenario])
-         changeset-index   (get-in db [:view-state-params :changeset-index])
-         updated-changeset (get-in db [:changeset-dialog])
-         updated-scenario  (assoc-in current-scenario [:changeset changeset-index] updated-changeset)]
+         updated-provider  (get-in db [:changeset-dialog])
+         updated-scenario  (update current-scenario
+                                   :changeset
+                                   (fn [c] (conj (utils/remove-by-id c (:id updated-provider))
+                                                 (:change updated-provider))))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc-in [:current-scenario] updated-scenario)
                 (assoc-in [:view-state] :current-scenario))})))
 
-
 (rf/reg-event-fx
- :scenarios/delete-provider
+ :scenarios/delete-change
  in-scenarios
- (fn [{:keys [db]} [_ index]]
+ (fn [{:keys [db]} [_ id]]
    (let [current-scenario (:current-scenario db)
-         deleted-changeset (vec (keep-indexed #(if (not= %1 index) %2) (:changeset current-scenario)))
-         updated-scenario (assoc current-scenario :changeset deleted-changeset)]
+         modified-changeset (utils/remove-by-id (:changeset current-scenario) id)
+         updated-scenario (assoc current-scenario :changeset modified-changeset)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (assoc db :current-scenario updated-scenario
@@ -222,10 +225,10 @@
        suggestion?
        {:db (assoc db :selected-provider provider)}
 
-       (not= (:provider-id provider)
-             (get-in db [:selected-provider :provider-id]))
+       (not= (:id provider)
+             (get-in db [:selected-provider :id]))
        {:db (assoc db :selected-provider provider)
-        :api (assoc (api/get-provider-geom id (:provider-id provider))
+        :api (assoc (api/get-provider-geom id (:id provider))
                     :on-success [:scenarios/update-geometry])}))))
 
 (rf/reg-event-db
@@ -309,3 +312,11 @@
      {:db (-> db (assoc-in [:current-scenario :computing-best-locations :state] nil)
               (assoc :view-state :current-scenario))
       :api-abort request-key})))
+
+(rf/reg-event-db
+ :scenarios/edit-change
+ in-scenarios
+ (fn [db [_ change]]
+   (assoc db
+          :view-state       :changeset-dialog
+          :changeset-dialog change)))

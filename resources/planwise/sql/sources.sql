@@ -34,33 +34,6 @@ INSERT INTO sources
     VALUES (:set-id, :name, :type, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326), :quantity)
     RETURNING id;
 
--- :name db-list-sources-under-provider-coverage :?
-SELECT s.*
-  FROM
-    sources as s,
-    (SELECT geom
-      FROM providers_coverage
-      LEFT JOIN providers ON providers_coverage."provider-id" = providers.id
-      WHERE "provider-id" = :provider-id
-        AND algorithm = :algorithm
-        AND options = :options) AS pc
-  WHERE
-    s.set_id = :source-set-id AND
-    ST_CONTAINS(pc.geom, s.the_geom);
-
--- :name db-list-sources-under-coverage :?
-SELECT *
-  FROM
-    sources
-  WHERE
-    set_id = :source-set-id
-    /*~ (if (:coverage-geom params) */
-    AND ST_CONTAINS(:coverage-geom, the_geom);
-    /*~ ) ~*/
-    /*~ (if (:coverage-geojson params) */
-    AND ST_CONTAINS(ST_SetSRID(ST_GeomFromGeoJSON(:coverage-geojson), 4326), the_geom);
-    /*~ ) ~*/;
-
 -- :name db-list-sources-in-set :?
 SELECT *,
        ST_X(the_geom) AS lon,
@@ -69,3 +42,48 @@ SELECT *,
     sources
   WHERE
     set_id = :source-set-id;
+
+-- :name db-get-sources-from-set-in-region :?
+SELECT
+  s.id,
+  s.name,
+  s.type,
+  s.quantity,
+  ST_X(s.the_geom) AS lon,
+  ST_Y(s.the_geom) AS lat
+  FROM
+    sources s,
+    regions r
+  WHERE
+    s."set_id" = :source-set-id
+    AND r.id = :region-id
+    AND ST_Contains(r."the_geom", s."the_geom");
+
+-- :name db-enum-sources-under-provider-coverage :?
+SELECT
+  s.id
+  FROM
+    sources AS s,
+    providers_coverage AS pc
+  WHERE
+    s."set_id" = :source-set-id
+    AND pc.id = :provider-coverage-id
+    AND ST_Contains(pc.geom, s.the_geom);
+
+-- :name db-enum-sources-under-coverage-geojson :?
+SELECT
+  s.id
+  FROM
+    sources AS s
+  WHERE
+    set_id = :source-set-id
+    AND ST_Contains(ST_SetSRID(ST_GeomFromGeoJSON(:coverage-geojson), 4326), the_geom);
+
+-- :name db-enum-sources-under-coverage :?
+SELECT
+  s.id
+  FROM
+    sources AS s
+  WHERE
+    set_id = :source-set-id
+    AND ST_Contains(:coverage-geom, the_geom);

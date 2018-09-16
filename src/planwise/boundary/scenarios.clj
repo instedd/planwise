@@ -25,7 +25,10 @@
     "Reset scenarios information of project and clear engine state")
 
   (get-scenario-for-project [this scenario project]
-    "Sets configuration of scenario for current project")
+    "Gicen scenario retrieves same scenario with updated demand information and new field providers-data.
+     Providers data is a map of providers:
+     each provider with id, capacity and demand information updated to last computation.
+     If no computation is registered, providers-data is empty.")
 
   (export-providers-data [this project scenario]
     "Create CSV file with scenario's demand information for computed and disabled providers")

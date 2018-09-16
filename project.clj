@@ -58,6 +58,7 @@
                  [re-frame "0.10.5"]
                  [re-com "2.1.0"]
                  [day8.re-frame/http-fx "0.1.5"]
+                 [crate "0.2.4"]
                  [cljs-ajax "0.7.3"
                   :exclusions [commons-codec]]
                  [secretary "1.2.3"]
@@ -158,6 +159,7 @@
                                   [kerodon "0.9.0"]
                                   [ring/ring-mock "0.3.0"]
                                   [com.gearswithingears/shrubbery "0.4.1"]
+                                  [org.clojure/test.check "0.9.0"]
 
                                   ; Helpers
                                   [day8.re-frame/re-frame-10x "0.2.0"]
