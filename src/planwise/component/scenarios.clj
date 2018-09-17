@@ -10,7 +10,7 @@
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
-            [planwise.util.providers :refer [merge-providers merge-provider]]
+            [planwise.model.providers :refer [merge-providers]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
@@ -278,29 +278,44 @@
   (let [new-fields {:required-capacity 0 :used-capacity 0 :satisfied-demand 0 :unsatisfied-demand 0}]
     (mapv #(merge % new-fields) disabled-providers)))
 
-(defn- changeset-to-export
-  [changeset]
-  (mapv (fn [{:keys [id action capacity location]}]
-          {:id id
-           :type action
-           :name ""
-           :lat (:lat location)
-           :lon (:lon location)
-           :capacity capacity
-           :tags ""}) changeset))
+(defn- created-provider-to-export
+  [{:keys [id name action capacity location]}]
+  {:id id
+   :type action
+   :name (or name "")
+   :lat (:lat location)
+   :lon (:lon location)
+   :capacity capacity
+   :tags ""})
+
+(defn- upgraded-provider-to-export
+  [store {:keys [id action capacity] :as change}]
+  (-> (providers-set/get-provider (:providers-set store) id)
+      (merge change)
+      (assoc :capacity 0)
+      (update :type #(str % action))))
+
+(defn- increased-provider-to-export
+  [store {:keys [id action capacity] :as change}]
+  (-> (providers-set/get-provider (:providers-set store) id)
+      (merge change)
+      (update :type #(str % action))))
 
 (defn- providers-to-export
   [store providers-data changeset disabled-providers]
-  ;TODO merging type?
-  (let [grouped-changes (group-by :type changeset)
-        update-fn       (fn [{:keys [id] :as provider}]
-                          (let [initial-data  (if (int? id)
-                                                (providers-set/get-provider (:providers-set store) id)
-                                                (first (filter (fn [p] (= id (:id p))) (get grouped-changes "create-provider"))))]
-                            (merge initial-data
-                                   provider)))]
+  (let [get-change (fn [{:keys [id]}]
+                     (let [change (first (filter (fn [p] (= id (:id p))) changeset))]
+                       (when change (case (:action change)
+                                      "create-provider" (created-provider-to-export change)
+                                      "upgrade-provider" (upgraded-provider-to-export store change)
+                                      "increase-provider" (increased-provider-to-export)))))
+        update-fn (fn [{:keys [id] :as provider}]
+                    (let [initial-data  (or (get-change provider)
+                                            (providers-set/get-provider (:providers-set store) id))]
+                      (merge initial-data
+                             provider)))]
     (merge-providers
-     (mapv (fn [e] (update-fn e)) providers-data)
+     (mapv update-fn providers-data)
      disabled-providers)))
 
 ;; FIXME: merge providers and changes with the same id (upgrades and increases)
@@ -316,10 +331,9 @@
                               provider-set-id
                               (:provider-set-version project)
                               filter-options)))
-        changes        (changeset-to-export (:changeset scenario))
         fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
     (map->csv
-     (providers-to-export store (:providers-data scenario) changes disabled-providers)
+     (providers-to-export store (:providers-data scenario) (:changeset scenario) disabled-providers)
      fields)))
 
 (defn reset-scenarios

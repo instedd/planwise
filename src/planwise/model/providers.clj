@@ -1,4 +1,4 @@
-(ns planwise.util.providers
+(ns planwise.model.providers
   (:require [planwise.util.collections :refer [sum-by merge-collections-by]]))
 
 (defn merge-provider
