@@ -53,7 +53,7 @@
           (when (some? csv-file)
             [:span (.-name csv-file)])]
          [:a {:href (routes/download-sources-sample)
-              :data-trigger "false"} "Download sources sample"]
+              :data-trigger "false"} "Download a sample sources list"]
          [common2/text-field {:label "Unit"
                               :value unit
                               :on-change #(rf/dispatch [:sources.new/update {:unit (-> % .-target .-value)}])}]
@@ -72,7 +72,7 @@
           [ui/fixed-width (assoc (common2/nav-params)
                                  :action btn-new)
            [list-view sources]
-           [modal/modal-view {:title "New source"
+           [modal/modal-view {:title "New Sources List"
                               :accept-label "Create"
                               :accept-fn #(rf/dispatch [:sources.new/create])
                               :accept-enabled? @(rf/subscribe [:sources.new/valid?])
