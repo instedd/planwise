@@ -80,10 +80,15 @@
     {:dispatch [:scenarios/save-current-scenario scenario]}
     (dispatch-track-demand-information-if-needed scenario))))
 
+;; This event should be used when first loading the scenario, not for updating
+;; its contents
 (rf/reg-event-fx
  :scenarios/get-scenario
- (fn [_ [_ id]]
-   {:api (assoc (api/load-scenario id)
+ in-scenarios
+ (fn [{:keys [db]} [_ id]]
+   {:db  (assoc db :view-state :current-scenario)
+                                        ; reset view state to close any pending dialogs
+    :api (assoc (api/load-scenario id)
                 :on-success [:scenarios/save-current-scenario-and-track]
                 :on-failure [:scenarios/scenario-not-found])}))
 
