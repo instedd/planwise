@@ -10,6 +10,7 @@
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
+            [planwise.util.providers :refer [merge-providers merge-provider]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
@@ -290,15 +291,17 @@
 
 (defn- providers-to-export
   [store providers-data changeset disabled-providers]
-  (let [update-fn (fn [{:keys [id] :as provider}]
-                    (let [initial-data  (if (int? id)
-                                          (providers-set/get-provider (:providers-set store) id)
-                                          (-> (filter (fn [p] (= id (:id p))) changeset)
-                                              (first)))]
-                      (merge initial-data
-                             provider)))]
-    (into (mapv (fn [e] (update-fn e)) providers-data)
-          disabled-providers)))
+  ;TODO merging type?
+  (let [grouped-changes (group-by :type changeset)
+        update-fn       (fn [{:keys [id] :as provider}]
+                          (let [initial-data  (if (int? id)
+                                                (providers-set/get-provider (:providers-set store) id)
+                                                (first (filter (fn [p] (= id (:id p))) (get grouped-changes "create-provider"))))]
+                            (merge initial-data
+                                   provider)))]
+    (merge-providers
+     (mapv (fn [e] (update-fn e)) providers-data)
+     disabled-providers)))
 
 ;; FIXME: merge providers and changes with the same id (upgrades and increases)
 (defn export-providers-data
