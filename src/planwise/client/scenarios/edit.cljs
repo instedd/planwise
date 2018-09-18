@@ -28,28 +28,52 @@
                :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}))))
 
 (defn changeset-dialog-content
-  [{:keys [available-budget change]}]
-  [:div
-   [:h2 "Investment"]
-   [common2/numeric-text-field {:type "number"
-                                :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
-                                :not-valid? (< available-budget (:investment change))
-                                :value (or (:investment change) "")}]
+  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider}]
+  (let [increase? (= (get-in provider [:action :change]) "increase-provider")]
+    [:div
+     [common2/static-text {:label "Name"
+                           :class "show-static-text"
+                           :value name}]
+     [:div
+      (when increase?
+        [common2/static-text {:label "Original capacity"
+                              :value capacity}])
+      [common2/numeric-text-field {:type "number"
+                                   :label "Extra capacity"
+                                   :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
+                                   :value (or (:capacity change) "")}]
+      (let [original-capacity       (if increase? capacity 0)
+            initial-capacity        (- capacity free-capacity)
+            total-provider-capacity (+ original-capacity initial-capacity required-capacity)
+            extra-capacity          (:capacity change)
+            required                (- total-provider-capacity extra-capacity)]
+        (cond (not (neg? required)) [common2/static-text {:label "Required capacity"
+                                                          :value (utils/format-number required)}]
+              (neg? required)       [common2/static-text {:label "Free capacity"
+                                                          :value (utils/format-number (- required))}]))]
+     [:div
+      [common2/numeric-text-field {:type "number"
+                                   :label "Investment"
+                                   :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
+                                   :not-valid? (< available-budget (:investment change))
+                                   :value (or (:investment change) "")}]]]))
 
-   [:h2 "Capacity"]
-   [common2/numeric-text-field {:type "number"
-                                :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
-                                :value (or (:capacity change) "")}]])
+
+(defn- action->title
+  [name]
+  (str/join " " (map str/capitalize (str/split name #"-"))))
+
 (defn changeset-dialog
   [scenario budget]
   (let [provider   (subscribe [:scenarios/changeset-dialog])
         view-state (subscribe [:scenarios/view-state])]
     (fn [scenario budget]
-      (let [open? (= @view-state :changeset-dialog)]
+      (let [open? (= @view-state :changeset-dialog)
+            action (get-in @provider [:change :action])]
         (dialog {:open?       open?
                  :acceptable? (and ((fnil pos? 0) (get-in @provider [:change :investment]))
                                    ((fnil pos? 0) (get-in @provider [:change :capacity])))
-                 :title       "Edit Provider"
+                 :title       (action->title action)
                  :content     (when open?
                                 (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario)))))
                  :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])

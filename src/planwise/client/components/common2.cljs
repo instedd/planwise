@@ -43,6 +43,13 @@
       :float [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (comp not-nan js/parseFloat)]
       [identity identity])))
 
+(defn static-text
+  [{:keys [value label]}]
+  [:div.mdc-text-field
+   [:input.mdc-text-field__input {:value (str value)
+                                  :read-only true}]
+   [:label.mdc-floating-label.mdc-floating-label--float-above label]])
+
 (defn text-field
   [props-input]
   (let [focus (r/atom false)
