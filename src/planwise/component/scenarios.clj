@@ -282,43 +282,28 @@
   [{:keys [id name action capacity location]}]
   {:id id
    :type action
-   :name (or name "")
+   :name "New Provider"
    :lat (:lat location)
    :lon (:lon location)
    :capacity capacity
    :tags ""})
 
-(defn- upgraded-provider-to-export
-  [store {:keys [id action capacity] :as change}]
-  (-> (providers-set/get-provider (:providers-set store) id)
-      (merge change)
-      (assoc :capacity 0)
-      (update :type #(str % action))))
-
-(defn- increased-provider-to-export
-  [store {:keys [id action capacity] :as change}]
-  (-> (providers-set/get-provider (:providers-set store) id)
-      (merge change)
-      (update :type #(str % action))))
-
 (defn- providers-to-export
-  [store providers-data changeset disabled-providers]
-  (let [get-change (fn [{:keys [id]}]
-                     (let [change (first (filter (fn [p] (= id (:id p))) changeset))]
-                       (when change (case (:action change)
-                                      "create-provider" (created-provider-to-export change)
-                                      "upgrade-provider" (upgraded-provider-to-export store change)
-                                      "increase-provider" (increased-provider-to-export)))))
-        update-fn (fn [{:keys [id] :as provider}]
-                    (let [initial-data  (or (get-change provider)
-                                            (providers-set/get-provider (:providers-set store) id))]
-                      (merge initial-data
-                             provider)))]
+  [store {:keys [changeset providers-data] :as scenario} disabled-providers]
+  (let [get-change (fn [id]
+                     (let [change (first (filter #(= id (:id %)) changeset))]
+                       (created-provider-to-export change)))
+        initial-providers-and-changes   (map
+                                         (fn [{:keys [id]}]
+                                           (if (int? id)
+                                             (assoc (providers-set/get-provider (:providers-set store) id) :id id)
+                                             (get-change id)))
+                                         providers-data)]
     (merge-providers
-     (mapv update-fn providers-data)
-     disabled-providers)))
+     initial-providers-and-changes
+     disabled-providers
+     providers-data)))
 
-;; FIXME: merge providers and changes with the same id (upgrades and increases)
 (defn export-providers-data
   [store {:keys [provider-set-id config] :as project} scenario]
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
@@ -333,7 +318,7 @@
                               filter-options)))
         fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
     (map->csv
-     (providers-to-export store (:providers-data scenario) (:changeset scenario) disabled-providers)
+     (providers-to-export store scenario disabled-providers)
      fields)))
 
 (defn reset-scenarios
