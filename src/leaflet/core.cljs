@@ -71,15 +71,11 @@
   (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
         attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         clickable (boolean popup-fn)
-        style     (merge
-                   {:clickable clickable :radius 5}
-                   attrs
-                   (when style-fn (style-fn point)))
-        square     (when (= :square shape)
-                     (.divIcon js/L (clj->js (icon-fn point))))
-        marker    (if (= :circle shape)
-                    (.circleMarker js/L latLng (clj->js style))
-                    (.marker js/L latLng (clj->js {:icon square})))]
+        icon      (.divIcon js/L (clj->js (icon-fn point)))
+        attrs    {:clickable true
+                  :keyboard false
+                  :icon icon}
+        marker    (.marker js/L latLng (clj->js attrs))]
     (if popup-fn
       (.bindPopup marker (popup-fn point)))
     (if mouseover-fn
