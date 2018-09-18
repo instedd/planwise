@@ -10,6 +10,7 @@
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
+            [planwise.model.providers :refer [merge-providers]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
@@ -272,51 +273,35 @@
            (cons name)
            (util-str/next-name))))
 
-(defn- disabled-providers-to-export
-  [disabled-providers]
-  (let [new-fields {:required-capacity 0 :used-capacity 0 :satisfied-demand 0 :unsatisfied-demand 0}]
-    (mapv #(merge % new-fields) disabled-providers)))
+(defn- created-provider-to-export
+  [{:keys [id action capacity location]}]
+  {:id id
+   :type action
+   :name "New Provider"
+   :lat (:lat location)
+   :lon (:lon location)
+   :capacity capacity
+   :tags ""})
 
-(defn- changeset-to-export
+(defn- new-providers-to-export
   [changeset]
-  (mapv (fn [{:keys [id action capacity location]}]
-          {:id id
-           :type action
-           :name ""
-           :lat (:lat location)
-           :lon (:lon location)
-           :capacity capacity
-           :tags ""}) changeset))
+  (map created-provider-to-export (filter #(= (:action %) "create-provider") changeset)))
 
-(defn- providers-to-export
-  [store providers-data changeset disabled-providers]
-  (let [update-fn (fn [{:keys [id] :as provider}]
-                    (let [initial-data  (if (int? id)
-                                          (providers-set/get-provider (:providers-set store) id)
-                                          (-> (filter (fn [p] (= id (:id p))) changeset)
-                                              (first)))]
-                      (merge initial-data
-                             provider)))]
-    (into (mapv (fn [e] (update-fn e)) providers-data)
-          disabled-providers)))
-
-;; FIXME: merge providers and changes with the same id (upgrades and increases)
 (defn export-providers-data
   [store {:keys [provider-set-id config] :as project} scenario]
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
-        disabled-providers (disabled-providers-to-export
-                            (:disabled-providers
-                             (providers-set/get-providers-with-coverage-in-region
-                              (:providers-set store)
-                              provider-set-id
-                              (:provider-set-version project)
-                              filter-options)))
-        changes        (changeset-to-export (:changeset scenario))
+        {:keys [disabled-providers providers]} (providers-set/get-providers-with-coverage-in-region
+                                                (:providers-set store)
+                                                provider-set-id
+                                                (:provider-set-version project)
+                                                filter-options)
+        disabled-providers (map #(assoc % :capacity 0) disabled-providers)
+        new-providers      (new-providers-to-export (:changeset scenario))
         fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
     (map->csv
-     (providers-to-export store (:providers-data scenario) changes disabled-providers)
+     (merge-providers providers disabled-providers new-providers (:providers-data scenario))
      fields)))
 
 (defn reset-scenarios
