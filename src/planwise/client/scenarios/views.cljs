@@ -133,9 +133,9 @@
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
                                                     :popup-fn   #(show-suggested-provider %)
-                                                    :mouseover-fn (fn [this ev suggestion]
+                                                    :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-provider suggestion]))
-                                                    :mouseout-fn  (fn [this ev suggestion]
+                                                    :mouseout-fn  (fn [suggestion]
                                                                     (dispatch [:scenarios.map/unselect-provider suggestion]))}]
             providers-layer [providers-layer-type {:points @all-providers
                                                    :lat-fn #(get-in % [:location :lat])
