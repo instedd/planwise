@@ -47,21 +47,17 @@
                    (conj new-objects new-object)
                    (rest new-decls))))))))
 
-(defn create-marker [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn onclick-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+(defn create-marker [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
   (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
         attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
-        clickable (boolean popup-fn)
         icon      (if icon-fn
                     (.divIcon js/L (clj->js (icon-fn point)))
                     (js/L.Icon.Default.))
-        attrs    {:clickable true
-                  :keyboard false
+        attrs    {:keyword false
                   :icon icon}
         marker    (.marker js/L latLng (clj->js attrs))]
     (if popup-fn
       (.bindPopup marker (popup-fn point)))
-    (if onclick-fn
-      (.on marker "click" #(onclick-fn point)))
     (if mouseover-fn
       (.on marker "mouseover" #(mouseover-fn point)))
     (if mouseout-fn
