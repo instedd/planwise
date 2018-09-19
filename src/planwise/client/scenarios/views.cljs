@@ -73,9 +73,13 @@
 
 (defn- show-suggested-provider
   [suggestion]
-  (str "<b> Suggestion:" (:ranked suggestion) " </b>"
-       "<br> Needed capacity : " (:required-capacity suggestion)
-       "<br> Expected demand to satisfy : " (:coverage suggestion)))
+  (crate/html
+   [:div
+    [:p (str "Suggestion:" (:ranked suggestion))]
+    [:p (str "Needed capacity : " (:required-capacity suggestion))]
+    [:p (str "Expected demand to satisfy : " (:coverage suggestion))]
+    (popup-connected-button
+     "Create new provider" [:scenarios/create-provider (:location suggestion)])]))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
@@ -94,30 +98,29 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
-                                                                                 :lon lon}]))
+        add-point           (fn [location] (dispatch [:scenarios/create-provider location]))
         use-providers-clustering false
-        providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
+        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
       (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
             pending-demand-raster   raster
-            sources-layer           [:point-layer {:points indexed-sources
-                                                   :shape :square
-                                                   :lat-fn #(get-in % [:elem :lat])
-                                                   :lon-fn #(get-in % [:elem :lon])
-                                                   :icon-fn #(let [source (:elem %)
-                                                                   quantity-initial (:initial-quantity source)
-                                                                   quantity-current (:quantity source)
-                                                                   ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
-                                                                   classname (cond
-                                                                               (= 0 quantity-initial) "leaflet-square-icon-gray"
-                                                                               (<= ratio 0.25) "leaflet-square-icon-green"
-                                                                               (< 0.25 ratio 0.5) "leaflet-sqaure-icon-yellow"
-                                                                               (<= 0.5 ratio 0.75) "leaflet-square-icon-orange"
-                                                                               (> ratio 0.75) "leaflet-square-icon-red")]
-                                                               {:className classname})
-                                                   :popup-fn #(show-source %)}]
+            sources-layer           [:marker-layer {:points indexed-sources
+                                                    :shape :square
+                                                    :lat-fn #(get-in % [:elem :lat])
+                                                    :lon-fn #(get-in % [:elem :lon])
+                                                    :icon-fn #(let [source (:elem %)
+                                                                    quantity-initial (:initial-quantity source)
+                                                                    quantity-current (:quantity source)
+                                                                    ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
+                                                                    classname (cond
+                                                                                (= 0 quantity-initial) "leaflet-square-icon-gray"
+                                                                                (<= ratio 0.25) "leaflet-square-icon-green"
+                                                                                (< 0.25 ratio 0.5) "leaflet-sqaure-icon-yellow"
+                                                                                (<= 0.5 ratio 0.75) "leaflet-square-icon-orange"
+                                                                                (> ratio 0.75) "leaflet-square-icon-red")]
+                                                                {:className classname})
+                                                    :popup-fn #(show-source %)}]
             selected-provider-layer [:geojson-layer {:data  (:coverage-geom @selected-provider)
                                                      :group {:pane "tilePane"}
                                                      :lat-fn (fn [polygon-point] (:lat polygon-point))
@@ -130,13 +133,9 @@
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
                                                     :popup-fn   #(show-suggested-provider %)
-                                                    :onclick-fn  (fn [{:keys [location]}]
-                                                                   (add-point (:lat location) (:lon location)))
                                                     :mouseover-fn (fn [this ev suggestion]
-                                                                    (.openPopup this)
                                                                     (dispatch [:scenarios.map/select-provider suggestion]))
                                                     :mouseout-fn  (fn [this ev suggestion]
-                                                                    (.closePopup this)
                                                                     (dispatch [:scenarios.map/unselect-provider suggestion]))}]
             providers-layer [providers-layer-type {:points @all-providers
                                                    :lat-fn #(get-in % [:location :lat])
@@ -177,9 +176,9 @@
               :format "image/png"
               :opacity 0.6}])
           sources-layer
+          providers-layer
           (when @selected-provider selected-provider-layer)
-          (when @suggested-locations suggestions-layer)
-          providers-layer]]))))
+          (when @suggested-locations suggestions-layer)]]))))
 
 (defn- create-new-scenario
   [current-scenario]
