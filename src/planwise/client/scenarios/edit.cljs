@@ -33,13 +33,15 @@
         increase? (=  (:action change) "increase-provider")
         idle?     (pos? free-capacity)]
     [:div
-     [common2/static-text {:label "Name"
-                           :class "show-static-text"
+     [common2/text-field  {:label "Name"
+                           :read-only true
+                           :focus-extra-class "show-static-text"
                            :value name}]
      [:div
       (when increase?
-        [common2/static-text {:label "Original capacity"
-                              :value initial-capacity}])
+        [common2/text-field {:label "Original capacity"
+                             :read-only true
+                             :value initial-capacity}])
       [common2/numeric-text-field {:type "number"
                                    :label (if increase? "Extra capacity" "Capacity")
                                    :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
@@ -50,11 +52,13 @@
               extra-capacity          (:capacity change)
               required                (Math/ceil (- total-provider-capacity extra-capacity))]
           (cond (not (neg? required)) [:div.inline
-                                       [common2/static-text {:label "Required capacity"
-                                                             :value (utils/format-number required)}]
-                                       [:p "Unsatisfied demand: " (utils/format-number (* (:project-capacity props) required))]]
-                (neg? required)       [common2/static-text {:label "Free capacity"
-                                                            :value (utils/format-number (- required))}])))]
+                                       [common2/text-field {:label "Required capacity"
+                                                            :read-only true
+                                                            :value (utils/format-number required)}]
+                                       [:p.text-helper "Unsatisfied demand: " (utils/format-number (* (:project-capacity props) required))]]
+                (neg? required)       [common2/text-field {:label "Free capacity"
+                                                           :read-only true
+                                                           :value (utils/format-number (- required))}])))]
      [:div
       [common2/numeric-text-field {:type "number"
                                    :label "Investment"

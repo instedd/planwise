@@ -44,20 +44,15 @@
       :float [(fn [e] (re-find #"\d+\.\d+|\d+\.|\d+" e)) (comp not-nan js/parseFloat)]
       [identity identity])))
 
-(defn static-text
-  [{:keys [value class label]}]
-  [:div.mdc-text-field {:class class}
-   [:input.mdc-text-field__input {:value (str value)
-                                  :read-only true}]
-   [:label.mdc-floating-label.mdc-floating-label--float-above label]])
-
 (defn text-field
   [props-input]
   (let [focus (r/atom false)
         id    (str (random-uuid))]
     (fn [{:keys [label value focus-extra-class on-change reset-local-value] :as props-input}]
       (let [props (dissoc props-input :label :focus-extra-class :on-change :reset-local-value)]
-        [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus (str "mdc-text-field--focused" focus-extra-class))}
+        [:div.mdc-text-field.mdc-text-field--upgraded {:class (cond (:read-only props) focus-extra-class
+                                                                    @focus (str "mdc-text-field--focused" focus-extra-class)
+                                                                    :else nil)}
          [:input.mdc-text-field__input (merge props {:id id
                                                      :on-focus #(reset! focus true)
                                                      :on-blur  #(do

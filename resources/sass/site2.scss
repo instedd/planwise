@@ -740,5 +740,9 @@ form.vertical, .fields-vertical {
 }
 
 .inline {
-  display:  -webkit-inline-box;
+  display: inline-grid;
+}
+
+.text-helper {
+  font-size: 12px;
 }
