@@ -5,6 +5,7 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.routes :as routes]
             [accountant.core :as accountant]
+            [planwise.client.utils :as utils]
             [re-frame.core :refer [dispatch subscribe]]))
 
 (def current-user-email
@@ -44,8 +45,8 @@
       [identity identity])))
 
 (defn static-text
-  [{:keys [value label]}]
-  [:div.mdc-text-field
+  [{:keys [value class label]}]
+  [:div.mdc-text-field {:class class}
    [:input.mdc-text-field__input {:value (str value)
                                   :read-only true}]
    [:label.mdc-floating-label.mdc-floating-label--float-above label]])

@@ -28,7 +28,7 @@
                :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}))))
 
 (defn changeset-dialog-content
-  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider}]
+  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
   (let [increase? (= (get-in provider [:action :change]) "increase-provider")]
     [:div
      [common2/static-text {:label "Name"
@@ -47,8 +47,10 @@
             total-provider-capacity (+ original-capacity initial-capacity required-capacity)
             extra-capacity          (:capacity change)
             required                (- total-provider-capacity extra-capacity)]
-        (cond (not (neg? required)) [common2/static-text {:label "Required capacity"
-                                                          :value (utils/format-number required)}]
+        (cond (not (neg? required)) [:div.inline
+                                     [common2/static-text {:label "Required capacity"
+                                                           :value (utils/format-number required)}]
+                                     [:p "Unsatisfied demand: " (* (:project-capacity props) (utils/format-number required))]]
               (neg? required)       [common2/static-text {:label "Free capacity"
                                                           :value (utils/format-number (- required))}]))]
      [:div
@@ -64,9 +66,10 @@
   (str/join " " (map str/capitalize (str/split name #"-"))))
 
 (defn changeset-dialog
-  [scenario budget]
+  [project scenario]
   (let [provider   (subscribe [:scenarios/changeset-dialog])
-        view-state (subscribe [:scenarios/view-state])]
+        view-state (subscribe [:scenarios/view-state])
+        budget     (get-in project [:config :actions :budget])]
     (fn [scenario budget]
       (let [open? (= @view-state :changeset-dialog)
             action (get-in @provider [:change :action])]
@@ -75,7 +78,10 @@
                                    ((fnil pos? 0) (get-in @provider [:change :capacity])))
                  :title       (action->title action)
                  :content     (when open?
-                                (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario)))))
+                                (changeset-dialog-content
+                                 (assoc @provider
+                                        :available-budget (- budget (:investment scenario)))
+                                 {:project-capacity (get-in project [:config :providers :capacity])}))
                  :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])
                  :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
                  :cancel-fn   #(dispatch [:scenarios/cancel-dialog])})))))

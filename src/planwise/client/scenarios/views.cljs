@@ -266,7 +266,7 @@
        [:div (when-not @error {:class-name "fade inverted"})]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
-       [edit/changeset-dialog current-scenario (get-in current-project [:config :actions :budget])]])))
+       [edit/changeset-dialog current-project current-scenario]])))
 
 (defn scenarios-page
   []
