@@ -27,6 +27,27 @@
                :accept-fn   #(dispatch [:scenarios/accept-rename-dialog])
                :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}))))
 
+(defn- get-investment-from-project-config
+  [capacity building-costs]
+  (let [first (first building-costs)
+        last  (last building-costs)]
+    (cond
+      (<= capacity (:capacity first)) (:investment first)
+      (>= capacity (:capacity last))  (:investment last)
+      :else
+      (let [[a b] (take 2 (drop-while #(pos? (- (:capacity %) capacity)) building-costs))
+            m     (/ (- (:investment b) (:investment a)) (- (:capacity b) (:capacity a)))]
+        (+ (* m (- capacity (:capacity a))) (:investment first))))))
+
+(defn- suggest-investment
+  [{:keys [capacity action]} {:keys [upgrade-budget building-costs]}]
+  (let [investment (if (or (zero? capacity) (nil? capacity))
+                     0
+                     (get-investment-from-project-config capacity building-costs))]
+    (if (= action "upgrade-provider")
+      (+ investment upgrade-budget)
+      investment)))
+
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
   (let [new?      (and (= (:action change) "create-provider") (nil? required-capacity) (nil? free-capacity))
@@ -58,12 +79,18 @@
                 (neg? required)       [common2/text-field {:label "Free capacity"
                                                            :read-only true
                                                            :value (utils/format-number (Math/abs required))}])))]
-     [:div
-      [common2/numeric-text-field {:type "number"
-                                   :label "Investment"
-                                   :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
-                                   :not-valid? (< available-budget (:investment change))
-                                   :value (or (:investment change) "")}]]]))
+     (let [onchange-budget (- available-budget (:investment change))]
+       [:div
+        [common2/numeric-text-field {:type "number"
+                                     :label "Investment"
+                                     :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
+                                     :not-valid? (< available-budget (:investment change))
+                                     :value (or (:investment change) "")}]
+        [common2/text-field {:label "Available budget"
+                             :read-only true
+                             :value (if (pos? onchange-budget) onchange-budget 0)}]
+        [:p.text-helper {:on-click [:scenarios/update-]}
+         "Suggested investment according to project configuration: " (suggest-investment change props)]])]))
 
 
 (defn- action->title
@@ -73,11 +100,11 @@
 (defn changeset-dialog
   [project scenario]
   (let [provider   (subscribe [:scenarios/changeset-dialog])
-        view-state (subscribe [:scenarios/view-state])
-        budget     (get-in project [:config :actions :budget])]
-    (fn [scenario budget]
+        view-state (subscribe [:scenarios/view-state])]
+    (fn [{:keys [config] :as project} scenario]
       (let [open? (= @view-state :changeset-dialog)
-            action (get-in @provider [:change :action])]
+            action (get-in @provider [:change :action])
+            budget (get-in config [:actions :budget])]
         (dialog {:open?       open?
                  :acceptable? (and ((fnil pos? 0) (get-in @provider [:change :investment]))
                                    ((fnil pos? 0) (get-in @provider [:change :capacity])))
@@ -86,7 +113,9 @@
                                 (changeset-dialog-content
                                  (assoc @provider
                                         :available-budget (- budget (:investment scenario)))
-                                 {:project-capacity (get-in project [:config :providers :capacity])}))
+                                 {:project-capacity (get-in config [:providers :capacity])
+                                  :upgrade-budget   (get-in config [:actions :upgrade-budget])
+                                  :building-costs   (sort-by :capacity (get-in config [:actions :build]))}))
                  :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])
                  :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
                  :cancel-fn   #(dispatch [:scenarios/cancel-dialog])})))))
