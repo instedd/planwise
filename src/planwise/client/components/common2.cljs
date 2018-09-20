@@ -5,6 +5,7 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.routes :as routes]
             [accountant.core :as accountant]
+            [planwise.client.utils :as utils]
             [re-frame.core :refer [dispatch subscribe]]))
 
 (def current-user-email
@@ -49,7 +50,9 @@
         id    (str (random-uuid))]
     (fn [{:keys [label value focus-extra-class on-change reset-local-value] :as props-input}]
       (let [props (dissoc props-input :label :focus-extra-class :on-change :reset-local-value)]
-        [:div.mdc-text-field.mdc-text-field--upgraded {:class (when @focus (str "mdc-text-field--focused" focus-extra-class))}
+        [:div.mdc-text-field.mdc-text-field--upgraded {:class (cond (:read-only props) focus-extra-class
+                                                                    @focus (str "mdc-text-field--focused" focus-extra-class)
+                                                                    :else nil)}
          [:input.mdc-text-field__input (merge props {:id id
                                                      :on-focus #(reset! focus true)
                                                      :on-blur  #(do

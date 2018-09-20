@@ -28,30 +28,66 @@
                :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}))))
 
 (defn changeset-dialog-content
-  [{:keys [available-budget change]}]
-  [:div
-   [:h2 "Investment"]
-   [common2/numeric-text-field {:type "number"
-                                :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
-                                :not-valid? (< available-budget (:investment change))
-                                :value (or (:investment change) "")}]
+  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
+  (let [new?      (and (= (:action change) "create-provider") (nil? required-capacity) (nil? free-capacity))
+        increase? (=  (:action change) "increase-provider")
+        idle?     (pos? free-capacity)]
+    [:div
+     [common2/text-field  {:label "Name"
+                           :read-only true
+                           :focus-extra-class "show-static-text"
+                           :value name}]
+     [:div
+      (when increase?
+        [common2/text-field {:label "Original capacity"
+                             :read-only true
+                             :value initial-capacity}])
+      [common2/numeric-text-field {:type "number"
+                                   :label (if increase? "Extra capacity" "Capacity")
+                                   :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
+                                   :value (or (:capacity change) "")}]
+      (when-not new?
+        (let [current-capacity        (if increase? (- capacity initial-capacity) capacity)
+              total-provider-capacity (if idle? (- current-capacity free-capacity) (+ capacity required-capacity))
+              extra-capacity          (:capacity change)
+              required                (Math/ceil (- total-provider-capacity extra-capacity))]
+          (cond (not (neg? required)) [:div.inline
+                                       [common2/text-field {:label "Required capacity"
+                                                            :read-only true
+                                                            :value (utils/format-number required)}]
+                                       [:p.text-helper "Unsatisfied demand: " (utils/format-number (* (:project-capacity props) required))]]
+                (neg? required)       [common2/text-field {:label "Free capacity"
+                                                           :read-only true
+                                                           :value (utils/format-number (- required))}])))]
+     [:div
+      [common2/numeric-text-field {:type "number"
+                                   :label "Investment"
+                                   :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
+                                   :not-valid? (< available-budget (:investment change))
+                                   :value (or (:investment change) "")}]]]))
 
-   [:h2 "Capacity"]
-   [common2/numeric-text-field {:type "number"
-                                :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
-                                :value (or (:capacity change) "")}]])
+
+(defn- action->title
+  [name]
+  (str/join " " (map str/capitalize (str/split name #"-"))))
+
 (defn changeset-dialog
-  [scenario budget]
+  [project scenario]
   (let [provider   (subscribe [:scenarios/changeset-dialog])
-        view-state (subscribe [:scenarios/view-state])]
+        view-state (subscribe [:scenarios/view-state])
+        budget     (get-in project [:config :actions :budget])]
     (fn [scenario budget]
-      (let [open? (= @view-state :changeset-dialog)]
+      (let [open? (= @view-state :changeset-dialog)
+            action (get-in @provider [:change :action])]
         (dialog {:open?       open?
                  :acceptable? (and ((fnil pos? 0) (get-in @provider [:change :investment]))
                                    ((fnil pos? 0) (get-in @provider [:change :capacity])))
-                 :title       "Edit Provider"
+                 :title       (action->title action)
                  :content     (when open?
-                                (changeset-dialog-content (assoc @provider :available-budget (- budget (:investment scenario)))))
+                                (changeset-dialog-content
+                                 (assoc @provider
+                                        :available-budget (- budget (:investment scenario)))
+                                 {:project-capacity (get-in project [:config :providers :capacity])}))
                  :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])
                  :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
                  :cancel-fn   #(dispatch [:scenarios/cancel-dialog])})))))

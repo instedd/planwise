@@ -58,11 +58,11 @@
       [:h3 name]
       [:p (str "Capacity: " (format-number capacity))]
       [:p (str "Unsatisfied demand: " (format-number unsatisfied-demand))]
-      [:p (str "Required capacity: " (format-number required-capacity))]
+      [:p (str "Required capacity: " (Math/ceil (format-number required-capacity)))]
       (when (or matches-filters change)
         [:p (str "Satisfied demand: " (format-number satisfied-demand))])
       (when (or matches-filters change)
-        [:p (str "Free capacity: " (format-number free-capacity))])
+        [:p (str "Free capacity: " (Math/floor (format-number free-capacity)))])
       (when-not read-only?
         (popup-connected-button
          (cond
@@ -98,7 +98,7 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [location] (dispatch [:scenarios/create-provider location]))
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
@@ -266,7 +266,7 @@
        [:div (when-not @error {:class-name "fade inverted"})]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
-       [edit/changeset-dialog current-scenario (get-in current-project [:config :actions :budget])]])))
+       [edit/changeset-dialog current-project current-scenario]])))
 
 (defn scenarios-page
   []

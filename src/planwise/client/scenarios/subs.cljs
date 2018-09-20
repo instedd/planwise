@@ -70,11 +70,12 @@
    (= :show-options-to-create-provider view-state)))
 
 (defn update-capacity-and-demand
-  [provider providers-data]
+  [{:keys [capacity] :as provider} providers-data]
   (merge provider
          (select-keys
           (utils/find-by-id providers-data (:id provider))
-          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])))
+          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])
+         {:initial-capacity capacity}))
 
 (defn apply-change
   [providers [index change]]
