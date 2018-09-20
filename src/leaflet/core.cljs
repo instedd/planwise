@@ -47,24 +47,23 @@
                    (conj new-objects new-object)
                    (rest new-decls))))))))
 
-(defn create-marker [point {:keys [lat-fn lon-fn icon-fn popup-fn options-fn onclick-fn mouseover-fn mouseout-fn], :or {lat-fn :lat lon-fn :lon}}]
-  (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
-        icon   (if icon-fn
-                 (.divIcon js/L #js {:className (icon-fn point)})
-                 (js/L.Icon.Default.))
-        attrs {:clickable true
-               :keyboard false
-               :icon icon}
-        new-attrs (if (some? options-fn) (merge  attrs (options-fn point)) attrs)
-        marker   (.marker js/L latLng (clj->js new-attrs))]
+(defn create-marker [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+  (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
+        attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
+        icon      (if icon-fn
+                    (.divIcon js/L (clj->js (icon-fn point)))
+                    (js/L.Icon.Default.))
+        attrs    {:keyword false
+                  :icon icon}
+        marker    (.marker js/L latLng (clj->js attrs))]
     (if popup-fn
       (.bindPopup marker (popup-fn point)))
-    (if onclick-fn
-      (.on marker "click" #(onclick-fn point)))
     (if mouseover-fn
-      (.on marker "mouseover" #(mouseover-fn marker % point)))
+      (.on marker "mouseover" #(mouseover-fn point)))
     (if mouseout-fn
-      (.on marker "mouseout" #(mouseout-fn marker % point)))
+      (do
+        (.on marker "mouseout" #(when-not (.isPopupOpen marker) (mouseout-fn point)))
+        (.on marker "popupclose" #(mouseout-fn point))))
     marker))
 
 (defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
@@ -85,6 +84,7 @@
         (.on marker "mouseout" #(when-not (.isPopupOpen marker) (mouseout-fn point)))
         (.on marker "popupclose" #(mouseout-fn point))))
     marker))
+
 
 (defn create-polygon [points {:keys [lat-fn lon-fn style-fn popup-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
   (let [attrs     (dissoc props :lat-fn :lon-fn :popup-fn)

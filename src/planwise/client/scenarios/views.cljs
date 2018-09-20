@@ -73,9 +73,13 @@
 
 (defn- show-suggested-provider
   [suggestion]
-  (str "<b> Suggestion:" (:ranked suggestion) " </b>"
-       "<br> Needed capacity : " (:required-capacity suggestion)
-       "<br> Expected demand to satisfy : " (:coverage suggestion)))
+  (crate/html
+   [:div
+    [:p (str "Suggestion:" (:ranked suggestion))]
+    [:p (str "Needed capacity : " (:required-capacity suggestion))]
+    [:p (str "Expected demand to satisfy : " (:coverage suggestion))]
+    (popup-connected-button
+     "Create new provider" [:scenarios/create-provider (:location suggestion)])]))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
@@ -94,105 +98,87 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat
-                                                                                 :lon lon}]))
+        add-point           (fn [location] (dispatch [:scenarios/create-provider location]))
         use-providers-clustering false
-        providers-layer-type     (if use-providers-clustering :cluster-layer :point-layer)]
+        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
-      (let [indexed-providers     (to-indexed-map @all-providers)
-            indexed-sources       (to-indexed-map sources-data)
-            pending-demand-raster raster]
+      (let [indexed-providers       (to-indexed-map @all-providers)
+            indexed-sources         (to-indexed-map sources-data)
+            pending-demand-raster   raster
+            sources-layer           [:marker-layer {:points indexed-sources
+                                                    :shape :square
+                                                    :lat-fn #(get-in % [:elem :lat])
+                                                    :lon-fn #(get-in % [:elem :lon])
+                                                    :icon-fn #(let [source (:elem %)
+                                                                    quantity-initial (:initial-quantity source)
+                                                                    quantity-current (:quantity source)
+                                                                    ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
+                                                                    classname (cond
+                                                                                (= 0 quantity-initial) "leaflet-square-icon-gray"
+                                                                                (<= ratio 0.25) "leaflet-square-icon-green"
+                                                                                (< 0.25 ratio 0.5) "leaflet-sqaure-icon-yellow"
+                                                                                (<= 0.5 ratio 0.75) "leaflet-square-icon-orange"
+                                                                                (> ratio 0.75) "leaflet-square-icon-red")]
+                                                                {:className classname})
+                                                    :popup-fn #(show-source %)}]
+            selected-provider-layer [:geojson-layer {:data  (:coverage-geom @selected-provider)
+                                                     :group {:pane "tilePane"}
+                                                     :lat-fn (fn [polygon-point] (:lat polygon-point))
+                                                     :lon-fn (fn [polygon-point] (:lon polygon-point))
+                                                     :color :orange
+                                                     :stroke true}]
+            suggestions-layer       [:marker-layer {:points (map-indexed (fn [ix suggestion]
+                                                                           (assoc suggestion :ranked (inc ix)))
+                                                                         @suggested-locations)
+                                                    :lat-fn #(get-in % [:location :lat])
+                                                    :lon-fn #(get-in % [:location :lon])
+                                                    :popup-fn   #(show-suggested-provider %)
+                                                    :mouseover-fn (fn [suggestion]
+                                                                    (dispatch [:scenarios.map/select-provider suggestion]))
+                                                    :mouseout-fn  (fn [suggestion]
+                                                                    (dispatch [:scenarios.map/unselect-provider suggestion]))}]
+            providers-layer [providers-layer-type {:points @all-providers
+                                                   :lat-fn #(get-in % [:location :lat])
+                                                   :lon-fn #(get-in % [:location :lon])
+                                                   :icon-fn (fn [provider]
+                                                              (let [{:keys [id change matches-filter free-capacity satisfied-demand]} provider]
+                                                                {:className
+                                                                 (str
+                                                                  (cond
+                                                                    (= id  (:id @selected-provider)) "leaflet-circle-icon-orange"
+                                                                    (and (not change)
+                                                                         (not matches-filter)) "leaflet-circle-icon-gray"
+                                                                    (zero? free-capacity) "leaflet-circle-icon-red"
+                                                                    (pos? free-capacity) "leaflet-circle-icon-blue")
+                                                                  (when (provider-has-change? provider)
+                                                                    " leaflet-circle-for-change"))}))
+                                                   :popup-fn     #(show-provider read-only? %)
+                                                   :mouseover-fn (fn [provider]
+                                                                   (dispatch [:scenarios.map/select-provider provider]))
+                                                   :mouseout-fn  (fn [provider]
+                                                                   (dispatch [:scenarios.map/unselect-provider provider]))}]]
         [:div.map-container (when error {:class "gray-filter"})
          [l/map-widget {:zoom @zoom
                         :position @position
                         :on-position-changed #(reset! position %)
                         :on-zoom-changed #(reset! zoom %)
-                        :on-click (cond  (= state :new-provider) add-point)
+                        :on-click (cond (= state :new-provider) add-point)
                         :controls []
                         :initial-bbox bbox
                         :pointer-class (cond (= state :new-provider) "crosshair-pointer")}
           mapping/default-base-tile-layer
           (when pending-demand-raster
-            [:wms-tile-layer {:url config/mapserver-url
-                              :transparent true
-                              :layers "scenario"
-                              :DATAFILE (str pending-demand-raster ".map")
-                              :format "image/png"
-                              :opacity 0.6}])
-          [:point-layer {:points indexed-sources
-                         :lat-fn #(get-in % [:elem :lat])
-                         :lon-fn #(get-in % [:elem :lon])
-                         :options-fn #(select-keys % [:index])
-                         :style-fn #(let [source (:elem %)
-                                          quantity-initial (:initial-quantity source)
-                                          quantity-current (:quantity source)
-                                          ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
-                                          color (cond
-                                                  (= 0 quantity-initial) {:fill :gray :stroke :lightgray}
-                                                  (<= ratio 0.25) {:fill :limegreen :stroke :limegreen}
-                                                  (< 0.25 ratio 0.5) {:fill :yellow :stroke :yellow}
-                                                  (<= 0.5 ratio 0.75) {:fill :orange :stroke :orange}
-                                                  (> ratio 0.75) {:fill :red :stroke :red})]
-                                      {:fillColor (:fill color)
-                                       :color (:stroke color)})
-                         :radius 7
-                         :fillOpacity 0.8
-                         :stroke true
-                         :weight 10
-                         :opacity 0.2
-                         :popup-fn #(show-source %)}]
-          (when @selected-provider
-            [:geojson-layer {:data (:coverage-geom @selected-provider)
-                             :group {:pane "tilePane"}
-                             :lat-fn (fn [polygon-point] (:lat polygon-point))
-                             :lon-fn (fn [polygon-point] (:lon polygon-point))
-                             :color :orange
-                             :stroke true}])
-
-          (when @suggested-locations
-            [:marker-layer {:points (map-indexed (fn [ix suggestion]
-                                                   (assoc suggestion :ranked (inc ix)))
-                                                 @suggested-locations)
-                            :lat-fn #(get-in % [:location :lat])
-                            :lon-fn #(get-in % [:location :lon])
-                            :popup-fn #(show-suggested-provider %)
-                            :onclick-fn (fn [{:keys [location]}]
-                                          (add-point (:lat location) (:lon location)))
-                            :mouseover-fn (fn [this ev suggestion]
-                                            (.openPopup this)
-                                            (dispatch [:scenarios.map/select-provider suggestion]))
-                            :mouseout-fn (fn [this ev suggestion]
-                                           (.closePopup this)
-                                           (dispatch [:scenarios.map/unselect-provider suggestion]))}])
-
-          [providers-layer-type {:points @all-providers
-                                 :lat-fn #(get-in % [:location :lat])
-                                 :lon-fn #(get-in % [:location :lon])
-                                 :style-fn (fn [provider]
-                                             (-> {}
-                                                 (assoc :fillColor
-                                                        (if (= (:id provider) (:id @selected-provider))
-                                                          :orange
-                                                          (cond  (and (not (:change provider))
-                                                                      (not (:matches-filters provider))) :gray
-                                                                 (zero? (:free-capacity provider)) "#d2122c"
-                                                                 (pos? (:free-capacity provider)) "#2568ea"
-                                                                 :else :blueviolet)))
-                                                 (merge (when (provider-has-change? provider)
-                                                          {:stroke true               ; style for providers created/modified by user
-                                                           :color (cond (zero? (:satisfied-demand provider)) :blueviolet
-                                                                        (zero? (:free-capacity provider)) "#d2122c"
-                                                                        (pos?  (:free-capacity provider)) "#2568ea")
-                                                           :weight 10
-                                                           :opacity 0.2}))))
-                                 :radius 4
-                                 :fillOpacity 0.9
-                                 :stroke false
-                                 :popup-fn #(show-provider read-only? %)
-                                 :mouseover-fn (fn [provider]
-                                                 (dispatch [:scenarios.map/select-provider provider]))
-                                 :mouseout-fn (fn [provider]
-                                                (dispatch [:scenarios.map/unselect-provider provider]))}]]]))))
+            [:wms-tile-layer
+             {:url config/mapserver-url
+              :transparent true
+              :layers "scenario"
+              :DATAFILE (str pending-demand-raster ".map")
+              :format "image/png"
+              :opacity 0.6}])
+          sources-layer
+          providers-layer
+          (when @selected-provider selected-provider-layer)
+          (when @suggested-locations suggestions-layer)]]))))
 
 (defn- create-new-scenario
   [current-scenario]
