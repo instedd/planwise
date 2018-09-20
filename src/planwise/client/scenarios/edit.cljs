@@ -29,7 +29,8 @@
 
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
-  (let [increase? (= (get-in provider [:action :change]) "increase-provider")]
+  (let [increase? (= (get-in provider [:change :action]) "increase-provider")
+        idle?     (pos? free-capacity)]
     [:div
      [common2/static-text {:label "Name"
                            :class "show-static-text"
@@ -37,14 +38,13 @@
      [:div
       (when increase?
         [common2/static-text {:label "Original capacity"
-                              :value capacity}])
+                              :value initial-capacity}])
       [common2/numeric-text-field {:type "number"
                                    :label "Extra capacity"
                                    :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
                                    :value (or (:capacity change) "")}]
-      (let [original-capacity       (if increase? capacity 0)
-            initial-capacity        (- capacity free-capacity)
-            total-provider-capacity (+ original-capacity initial-capacity required-capacity)
+      (let [current-capacity        (if increase? (- capacity initial-capacity) capacity)
+            total-provider-capacity (if idle? (- current-capacity free-capacity) (+ capacity required-capacity))
             extra-capacity          (:capacity change)
             required                (- total-provider-capacity extra-capacity)]
         (cond (not (neg? required)) [:div.inline
