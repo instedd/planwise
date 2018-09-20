@@ -98,7 +98,7 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [location] (dispatch [:scenarios/create-provider location]))
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
