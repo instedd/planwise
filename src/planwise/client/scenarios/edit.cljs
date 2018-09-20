@@ -29,7 +29,8 @@
 
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
-  (let [increase? (= (get-in provider [:change :action]) "increase-provider")
+  (let [new?      (and (= (:action change) "create-provider") (nil? required-capacity) (nil? free-capacity))
+        increase? (=  (:action change) "increase-provider")
         idle?     (pos? free-capacity)]
     [:div
      [common2/static-text {:label "Name"
@@ -40,19 +41,20 @@
         [common2/static-text {:label "Original capacity"
                               :value initial-capacity}])
       [common2/numeric-text-field {:type "number"
-                                   :label "Extra capacity"
+                                   :label (if increase? "Extra capacity" "Capacity")
                                    :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
                                    :value (or (:capacity change) "")}]
-      (let [current-capacity        (if increase? (- capacity initial-capacity) capacity)
-            total-provider-capacity (if idle? (- current-capacity free-capacity) (+ capacity required-capacity))
-            extra-capacity          (:capacity change)
-            required                (- total-provider-capacity extra-capacity)]
-        (cond (not (neg? required)) [:div.inline
-                                     [common2/static-text {:label "Required capacity"
-                                                           :value (utils/format-number required)}]
-                                     [:p "Unsatisfied demand: " (* (:project-capacity props) (utils/format-number required))]]
-              (neg? required)       [common2/static-text {:label "Free capacity"
-                                                          :value (utils/format-number (- required))}]))]
+      (when-not new?
+        (let [current-capacity        (if increase? (- capacity initial-capacity) capacity)
+              total-provider-capacity (if idle? (- current-capacity free-capacity) (+ capacity required-capacity))
+              extra-capacity          (:capacity change)
+              required                (Math/ceil (- total-provider-capacity extra-capacity))]
+          (cond (not (neg? required)) [:div.inline
+                                       [common2/static-text {:label "Required capacity"
+                                                             :value (utils/format-number required)}]
+                                       [:p "Unsatisfied demand: " (utils/format-number (* (:project-capacity props) required))]]
+                (neg? required)       [common2/static-text {:label "Free capacity"
+                                                            :value (utils/format-number (- required))}])))]
      [:div
       [common2/numeric-text-field {:type "number"
                                    :label "Investment"
