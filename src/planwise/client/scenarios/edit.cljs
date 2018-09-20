@@ -47,10 +47,9 @@
                                    :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
                                    :value (or (:capacity change) "")}]
       (when-not new?
-        (let [current-capacity        (if increase? (- capacity initial-capacity) capacity)
-              total-provider-capacity (if idle? (- current-capacity free-capacity) (+ capacity required-capacity))
-              extra-capacity          (:capacity change)
-              required                (Math/ceil (- total-provider-capacity extra-capacity))]
+        (let [extra-capacity          (:capacity change)
+              total-required-capacity (if idle? (- capacity free-capacity) (+ capacity required-capacity))
+              required                (Math/ceil (- total-required-capacity initial-capacity extra-capacity))]
           (cond (not (neg? required)) [:div.inline
                                        [common2/text-field {:label "Required capacity"
                                                             :read-only true

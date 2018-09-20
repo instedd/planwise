@@ -141,14 +141,14 @@
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
                                                    :icon-fn (fn [provider]
-                                                              (let [{:keys [id change matches-filters free-capacity satisfied-demand]} provider]
+                                                              (let [{:keys [id change matches-filters required-capacity satisfied-demand]} provider]
                                                                 {:className
                                                                  (str
                                                                   (cond
                                                                     (= id  (:id @selected-provider)) "leaflet-circle-icon-orange"
                                                                     (and (not change)
                                                                          (not matches-filters)) "leaflet-circle-icon-gray"
-                                                                    (pos? free-capacity) "leaflet-circle-icon-blue"
+                                                                    (zero? required-capacity) "leaflet-circle-icon-blue"
                                                                     :else "leaflet-circle-icon-red")
                                                                   (when (provider-has-change? provider)
                                                                     " leaflet-circle-for-change"))}))

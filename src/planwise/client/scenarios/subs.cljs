@@ -88,7 +88,7 @@
  (fn [{:keys [providers disabled-providers changeset providers-data] :as scenario} _]
    (let [providers' (concat (map #(assoc % :matches-filters true)
                                  providers)
-                            (map #(assoc % :matches-filters false)
+                            (map #(assoc % :matches-filters false :capacity 0)
                                  disabled-providers))]
      (map
       #(update-capacity-and-demand % providers-data)
