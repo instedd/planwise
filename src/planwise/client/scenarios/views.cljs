@@ -58,11 +58,11 @@
       [:h3 name]
       [:p (str "Capacity: " (format-number capacity))]
       [:p (str "Unsatisfied demand: " (format-number unsatisfied-demand))]
-      [:p (str "Required capacity: " (format-number required-capacity))]
+      [:p (str "Required capacity: " (Math/ceil (format-number required-capacity)))]
       (when (or matches-filters change)
         [:p (str "Satisfied demand: " (format-number satisfied-demand))])
       (when (or matches-filters change)
-        [:p (str "Free capacity: " (format-number free-capacity))])
+        [:p (str "Free capacity: " (Math/floor (format-number free-capacity)))])
       (when-not read-only?
         (popup-connected-button
          (cond
