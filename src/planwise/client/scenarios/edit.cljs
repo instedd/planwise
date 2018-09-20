@@ -54,11 +54,11 @@
           (cond (not (neg? required)) [:div.inline
                                        [common2/text-field {:label "Required capacity"
                                                             :read-only true
-                                                            :value (utils/format-number required)}]
-                                       [:p.text-helper "Unsatisfied demand: " (utils/format-number (* (:project-capacity props) required))]]
+                                                            :value (utils/format-number (Math/abs required))}]
+                                       [:p.text-helper "Unsatisfied demand: " (utils/format-number (* (:project-capacity props) (Math/abs required)))]]
                 (neg? required)       [common2/text-field {:label "Free capacity"
                                                            :read-only true
-                                                           :value (utils/format-number (- required))}])))]
+                                                           :value (utils/format-number (Math/abs required))}])))]
      [:div
       [common2/numeric-text-field {:type "number"
                                    :label "Investment"
