@@ -80,7 +80,7 @@
 (defn apply-change
   [providers [index change]]
   (if (= (:action change) "create-provider")
-    (conj providers (db/new-provider-from-change change index))
+    (conj providers (db/new-provider-from-change change))
     (utils/update-by-id providers (:id change) assoc :change change)))
 
 (rf/reg-sub
@@ -95,6 +95,9 @@
       (reduce apply-change providers' (map-indexed vector changeset))))))
 
 (rf/reg-sub
- :scenarios/providers-from-changeset :<- [:scenarios/all-providers]
- (fn [all-providers [_]]
-   (filter #(some? (:change %)) all-providers)))
+ :scenarios/providers-from-changeset
+ (fn [_]
+   [(rf/subscribe [:scenarios/all-providers])
+    (rf/subscribe [:scenarios/current-scenario])])
+ (fn [[all-providers {:keys [changeset]}] _]
+   (map #(utils/find-by-id all-providers (:id %)) changeset)))
