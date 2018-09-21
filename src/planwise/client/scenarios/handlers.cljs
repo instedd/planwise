@@ -178,10 +178,14 @@
  (fn [{:keys [db]} [_]]
    (let [current-scenario  (get-in db [:current-scenario])
          updated-provider  (get-in db [:changeset-dialog])
+         new-change?       (empty? (filter #(= (:id %) (:id updated-provider)) (:changeset current-scenario)))
          updated-scenario  (update current-scenario
                                    :changeset
-                                   (fn [c] (conj (utils/remove-by-id c (:id updated-provider))
-                                                 (:change updated-provider))))]
+                                   (fn [c]
+                                    (if new-change?
+                                     (conj (vec c) (:change updated-provider))
+                                     (utils/replace-by-id c (:change updated-provider))
+                                     )))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
