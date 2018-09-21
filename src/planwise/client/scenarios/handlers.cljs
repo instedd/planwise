@@ -142,13 +142,13 @@
                 (assoc-in [:current-scenario :name] name)
                 (assoc-in [:view-state] :current-scenario))})))
 
-(defn next-new-provider
+(defn new-provider-name
   [changeset]
   (let [new-providers (filter #(= (:action %) "create-provider") changeset)]
     (if (empty? new-providers)
-        "New provider 0"
-        (let [vals (mapv (fn [p] (->> (:name p) (re-find #"\d+") js/parseInt)) new-providers)]
-         (str "New provider " (inc (apply max vals)))))))
+      "New provider 0"
+      (let [vals (mapv (fn [p] (->> (:name p) (re-find #"\d+") js/parseInt)) new-providers)]
+        (str "New provider " (inc (apply max vals)))))))
 
 (rf/reg-event-fx
  :scenarios/create-provider
@@ -156,7 +156,7 @@
  (fn [{:keys [db]} [_ location]]
    (let [{:keys [current-scenario]} db
          new-action   (db/new-action {:location location
-                                      :name (next-new-provider (:changeset current-scenario))} :create)
+                                      :name (new-provider-name (:changeset current-scenario))} :create)
          updated-scenario (dissoc current-scenario
                                   :suggested-locations :computing-best-locations)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
@@ -182,10 +182,9 @@
          updated-scenario  (update current-scenario
                                    :changeset
                                    (fn [c]
-                                    (if new-change?
-                                     (conj (vec c) (:change updated-provider))
-                                     (utils/replace-by-id c (:change updated-provider))
-                                     )))]
+                                     (if new-change?
+                                       (conj (vec c) (:change updated-provider))
+                                       (utils/replace-by-id c (:change updated-provider)))))]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
