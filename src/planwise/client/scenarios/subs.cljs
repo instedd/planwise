@@ -101,3 +101,8 @@
     (rf/subscribe [:scenarios/current-scenario])])
  (fn [[all-providers {:keys [changeset]}] _]
    (map #(utils/find-by-id all-providers (:id %)) changeset)))
+
+(rf/reg-sub
+ :scenarios/show-settings :<- [:scenarios/view-state]
+ (fn [view-state [_]]
+   (= :show-scenario-settings view-state)))

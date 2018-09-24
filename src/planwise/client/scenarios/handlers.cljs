@@ -268,6 +268,7 @@
          getting-suggestions? (get-in db [:current-scenario :computing-best-locations :state])
          next-state (case actual-state
                       :current-scenario :show-options-to-create-provider
+                      :show-scenario-settings :show-options-to-create-provider
                       :show-options-to-create-provider :current-scenario
                       :new-provider :current-scenario
                       :get-suggestions :current-scenario
@@ -335,3 +336,44 @@
    (assoc db
           :view-state       :changeset-dialog
           :changeset-dialog change)))
+
+(rf/reg-event-db
+ :scenarios/edit-change
+ in-scenarios
+ (fn [db [_ change]]
+   (assoc db
+          :view-state       :changeset-dialog
+          :changeset-dialog change)))
+
+(rf/reg-event-fx
+ :scenarios/delete-current-scenario
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   (let [id (get-in db [:current-scenario :id])]
+     {:db  (assoc db :view-state :delete-scenario)
+      :api (assoc (api/delete-scenario id)
+                  :on-success [:scenarios/load-scenarios])})))
+
+(rf/reg-event-db
+ :scenarios/open-delete-dialog
+ in-scenarios
+ (fn [db [_]]
+   (assoc db
+          :view-state :delete-scenario)))
+
+(rf/reg-event-db
+ :scenarios/open-delete-dialog
+ in-scenarios
+ (fn [db [_]]
+   (assoc db
+          :view-state :delete-scenario)))
+
+;ASK state for showing settings
+(rf/reg-event-db
+ :scenarios/show-scenario-settings
+ in-scenarios
+ (fn [db [_]]
+   (let [state (:view-state db)]
+     (assoc db :view-state (case state
+                             :show-scenario-settings :current-scenario
+                             :show-scenario-settings)))))

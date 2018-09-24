@@ -141,22 +141,32 @@
   [state computing?]
   (let [open (subscribe [:scenarios.new-provider/options])]
     (fn [state computing?]
-      [m/MenuAnchor
+      [:div.scenario-settings
        [new-provider-button state computing?]
-       [m/Menu (when @open {:class "options-menu mdc-menu--open"})
-        [m/MenuItem
-         {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
-         "Create one"]
-        [m/MenuItem
-         {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
-         "Get suggestions"]]])))
+       [m/MenuAnchor
+        [:div.options-menu]
+        [m/Menu (when @open {:class "mdc-menu--open"})
+         [m/MenuItem
+          {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
+          "Create one"]
+         [m/MenuItem
+          {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
+          "Get suggestions"]]]])))
 
-(defn upgrade-provider-button
-  [provider]
-  [m/Fab [m/Icon "arrow_upward"]
-   {:on-click #(dispatch [:scenarios/provider-action :upgrade provider])}])
-
-(defn increase-provider-button
-  [provider]
-  [m/Fab [m/Icon "add"]
-   {:on-click #(dispatch [:scenarios/provider-action :increase provider])}])
+(defn scenario-settings
+  [state]
+  (let [open (subscribe [:scenarios/show-settings])]
+    (fn [state]
+      [:div.scenario-settings
+       [m/Button
+        {:on-click #(dispatch [:scenarios/show-scenario-settings])}
+        [m/Icon "settings"]]
+       [m/MenuAnchor
+        [:div]
+        [m/Menu (when @open {:class "mdc-menu--open"})
+         [m/MenuItem
+          {:on-click  #(dispatch [:scenarios/open-rename-dialog])}
+          "Rename scenario"]
+         [m/MenuItem
+          {:on-click #(dispatch [:scenarios/open-delete-dialog])}
+          "Delete scenario"]]]])))

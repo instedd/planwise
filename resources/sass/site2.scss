@@ -355,12 +355,6 @@ form.vertical, .fields-vertical {
   }
   */
 
-  .options-menu{
-    left: 196px;
-    background-color: rgba(255, 255, 255, 0);
-    margin-top: -0.5rem;
-  }
-
   .scroll-list {
     max-height: 280px;
     width: 100%;
@@ -746,3 +740,14 @@ form.vertical, .fields-vertical {
 .text-helper {
   font-size: 12px;
 }
+
+.scenario-settings {
+  margin-left: 18rem;
+  button {
+    padding: 6px;
+  }
+}
+
+.options-menu {
+   padding: 10px;
+  }

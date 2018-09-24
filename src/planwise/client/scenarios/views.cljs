@@ -211,9 +211,9 @@
         view-state                (subscribe [:scenarios/view-state])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
       [:div
-       [:div {:class-name "section"
-              :on-click  #(dispatch [:scenarios/open-rename-dialog])}
+       [:div {:class-name "section"}
         [:h1 {:class-name "title-icon"} name]]
+       [edit/scenario-settings @view-state]
        [:hr]
        [:div {:class-name "section"}
         [:h1 {:class-name "large"}
@@ -266,7 +266,13 @@
        [:div (when-not @error {:class-name "fade inverted"})]
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
-       [edit/changeset-dialog current-project current-scenario]])))
+       [edit/changeset-dialog current-project current-scenario]
+       [dialog {:open? (= @state :delete-scenario)
+                :title (str "Delete " (:name current-scenario))
+                :cancel-fn #(dispatch [:scenarios/cancel-dialog])
+                :acceptable? true
+                :accept-fn #(dispatch [:scenarios/delete-current-scenario])
+                :content [:p "Do you want to remove current scenario from project?"]}]])))
 
 (defn scenarios-page
   []
