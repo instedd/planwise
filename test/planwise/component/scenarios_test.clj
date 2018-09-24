@@ -80,8 +80,8 @@
   (test-system/with-system (test-config)
     (let [store       (:planwise.component/scenarios system)
           projects2   (:planwise.component/projects2 system)
-          first-action {:action "create-provider" :id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
-          second-action {:action "create-provider" :id "new.2" :investment 5000 :capacity 20 :location {:lat 0 :lon 0}}
+          first-action {:action "create-provider" :name "New provider 0" :id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
+          second-action {:action "create-provider" :name "New provider 1" :id "new.2" :investment 5000 :capacity 20 :location {:lat 0 :lon 0}}
           props       {:name "Foo" :changeset [first-action second-action]}
           project     (projects2/get-project projects2 project-id)
           scenario-id (:id (scenarios/create-scenario store project props))
@@ -108,9 +108,9 @@
 (deftest valid-changeset
   (are [x] (s/valid? ::model/change-set x)
     []
-    [{:action "create-provider" :id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}}]
-    [{:action "create-provider" :id "new.2" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
-    [{:action "create-provider" :id "new.3" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
+    [{:action "create-provider" :name "New provider 1" :id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}}]
+    [{:action "create-provider" :name "New provider 2" :id "new.2" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
+    [{:action "create-provider" :name "New provider 3" :id "new.3" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
      {:action "upgrade-provider" :id 1 :investment 10000 :capacity 50}]))
 
 (deftest invalid-changeset
