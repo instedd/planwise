@@ -15,9 +15,10 @@
 (defmethod new-action :create
   [props]
   {:action     "create-provider"
+   :name       (:name props)
    :investment 0
    :capacity   0
-   :location   props
+   :location   (:location props)
    :id         (str (random-uuid))})
 
 (defmethod new-action :upgrade
@@ -35,9 +36,9 @@
    :id         (:id props)})
 
 (defn new-provider-from-change
-  [change index]
+  [change]
   {:id             (:id change)
-   :name           (str "New Provider " index)
+   :name           (:name change)
    :location       (:location change)
    :matches-filter true
    :change         change})
