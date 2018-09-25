@@ -345,7 +345,7 @@
   (get-provider-geom [store scenario project provider-id]
     (get-provider-geom store scenario project provider-id))
   (delete-scenario [store scenario-id]
-    (delete-scenario [store scenario-id])))
+    (delete-scenario store scenario-id)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
