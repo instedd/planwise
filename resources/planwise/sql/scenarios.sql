@@ -99,4 +99,5 @@ UPDATE scenarios
 
 -- :name db-delete-scenario! :!
 DELETE FROM "scenarios"
-  WHERE id = :scenario-id;
+  WHERE "id" = :id
+  AND (label <> 'initial' OR label IS NULL);

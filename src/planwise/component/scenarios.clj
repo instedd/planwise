@@ -62,7 +62,7 @@
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
   (let [scenario (db-find-scenario (get-db store) {:id scenario-id})]
-    (map-scenario scenario)))
+    (when scenario (map-scenario scenario))))
 
 (defn delete-scenario
   [store scenario-id]
