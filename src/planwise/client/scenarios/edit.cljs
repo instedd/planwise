@@ -29,15 +29,16 @@
 
 (defn- get-investment-from-project-config
   [capacity building-costs]
-  (let [first (first building-costs)
-        last  (last building-costs)]
+  (let [first     (first building-costs)
+        last      (last building-costs)
+        intervals (map vector building-costs (drop 1 building-costs))]
     (cond
       (<= capacity (:capacity first)) (:investment first)
       (>= capacity (:capacity last))  (:investment last)
       :else
-      (let [[a b] (take 2 (drop-while #(pos? (- (:capacity %) capacity)) building-costs))
+      (let [[[a b]] (drop-while (fn [[_ b]] (< (:capacity b) capacity)) intervals)
             m     (/ (- (:investment b) (:investment a)) (- (:capacity b) (:capacity a)))]
-        (+ (* m (- capacity (:capacity a))) (:investment first))))))
+        (+ (* m (- capacity (:capacity a))) (:investment a))))))
 
 (defn- suggest-investment
   [{:keys [capacity action]} {:keys [upgrade-budget building-costs]}]
