@@ -267,12 +267,7 @@
        [create-new-scenario current-scenario]
        [edit/rename-scenario-dialog]
        [edit/changeset-dialog current-project current-scenario]
-       [dialog {:open? (= @state :delete-scenario)
-                :title (str "Delete " (:name current-scenario))
-                :cancel-fn #(dispatch [:scenarios/cancel-dialog])
-                :acceptable? true
-                :accept-fn #(dispatch [:scenarios/delete-current-scenario])
-                :content [:p "Do you want to remove current scenario from project?"]}]])))
+       [edit/delete-scenario-dialog @state current-scenario]])))
 
 (defn scenarios-page
   []

@@ -155,7 +155,7 @@
 
 (defn scenario-settings
   [state]
-  (let [open (subscribe [:scenarios/show-settings])]
+  (let [open (subscribe [:scenarios/scenario-menu-settings])]
     (fn [state]
       [:div.scenario-settings
        [m/Button
@@ -170,3 +170,11 @@
          [m/MenuItem
           {:on-click #(dispatch [:scenarios/open-delete-dialog])}
           "Delete scenario"]]]])))
+
+(defn delete-scenario-dialog
+  [state current-scenario]
+  [dialog {:open? (= state :delete-scenario)
+           :title (str "Delete " (:name current-scenario))
+           :cancel-fn #(dispatch [:scenarios/cancel-dialog])
+           :delete-fn #(dispatch [:scenarios/delete-current-scenario])
+           :content [:p "Do you want to remove current scenario from project?"]}])
