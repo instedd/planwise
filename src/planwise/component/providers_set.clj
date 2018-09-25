@@ -244,6 +244,28 @@
                                              :options (pr-str filter-options)
                                              :region-id region-id}))
 
+(defn delete-referenced-providers-coverage
+  [store provider-set-id]
+  (db-delete-providers-coverage! (get-db store) provider-set-id))
+
+(defn delete-referenced-providers
+  [store provider-set-id]
+  (db-delete-providers! (get-db store) provider-set-id))
+
+(defn delete-provider-set
+  [store provider-set-id]
+  (db-delete-provider-set! (get-db store) provider-set-id))
+
+(defn delete-referenced-provider-set
+  [store provider-set-id]
+  (jdbc/with-db-transaction [tx (get-db store)]
+    (let [tx-store        (assoc-in store [:db :spec] tx)
+          provider-set-id {:provider-set-id provider-set-id}]
+      (delete-referenced-providers-coverage tx-store provider-set-id)
+      (delete-referenced-providers tx-store provider-set-id)
+      (delete-provider-set tx-store provider-set-id))))
+
+
 (defrecord ProvidersStore [db coverage]
   boundary/ProvidersSet
   (list-providers-set [store owner-id]
@@ -265,7 +287,9 @@
   (get-radius-from-computed-coverage [store criteria provider-set-id]
     (get-radius-from-computed-coverage store criteria provider-set-id))
   (get-coverage [store provider-id coverage-options]
-    (get-coverage store provider-id coverage-options)))
+    (get-coverage store provider-id coverage-options))
+  (delete-referenced-provider-set [store provider-set-id]
+    (delete-referenced-provider-set store provider-set-id)))
 
 (defmethod ig/init-key :planwise.component/providers-set
   [_ config]

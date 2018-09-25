@@ -111,3 +111,15 @@ SELECT
 /*~ (if (:region-id params) */
     AND regions.id = :region-id;
 /*~ ) ~*/;
+
+-- :name db-delete-providers-coverage! :!
+DELETE FROM "providers_coverage" pc
+    WHERE pc."provider-id" = @(SELECT id FROM providers p WHERE p."provider-set-id" = :provider-set-id AND pc."provider-id" = p.id);
+
+-- :name db-delete-providers! :!
+DELETE FROM "providers"
+    WHERE "provider-set-id" = :provider-set-id;
+
+-- :name db-delete-provider-set! :!
+DELETE FROM "providers_set"
+    WHERE id = :provider-set-id;
