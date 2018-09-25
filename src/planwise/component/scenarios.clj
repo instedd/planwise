@@ -64,6 +64,10 @@
   (let [scenario (db-find-scenario (get-db store) {:id scenario-id})]
     (map-scenario scenario)))
 
+(defn delete-scenario
+  [store scenario-id]
+  (db-delete-scenario! (get-db store) {:id scenario-id}))
+
 (defn get-initial-scenario
   [store project-id]
   (let [scenario (db-find-initial-scenario (get-db store) {:project-id project-id})]
@@ -339,7 +343,9 @@
   (get-provider-suggestion [store project scenario]
     (get-provider-suggestion store project scenario))
   (get-provider-geom [store scenario project provider-id]
-    (get-provider-geom store scenario project provider-id)))
+    (get-provider-geom store scenario project provider-id))
+  (delete-scenario [store scenario-id]
+    (delete-scenario [store scenario-id])))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
