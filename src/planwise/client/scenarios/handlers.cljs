@@ -147,7 +147,7 @@
   (let [new-providers (filter #(= (:action %) "create-provider") changeset)]
     (if (empty? new-providers)
       "New provider 0"
-      (let [vals (mapv (fn [p] (->> (:name p) (re-find #"\d+") js/parseInt)) new-providers)]
+      (let [vals (mapv (fn [p] (->> (:name p) (re-find #"\d+") int)) new-providers)]
         (str "New provider " (inc (apply max vals)))))))
 
 (rf/reg-event-fx
@@ -178,7 +178,7 @@
  (fn [{:keys [db]} [_]]
    (let [current-scenario  (get-in db [:current-scenario])
          updated-provider  (get-in db [:changeset-dialog])
-         new-change?       (empty? (filter #(= (:id %) (:id updated-provider)) (:changeset current-scenario)))
+         new-change?       (nil? (utils/find-by-id (:changeset current-scenario) (:id updated-provider)))
          updated-scenario  (update current-scenario
                                    :changeset
                                    (fn [c]
