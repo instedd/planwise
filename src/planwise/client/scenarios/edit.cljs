@@ -81,6 +81,9 @@
                                                            :read-only true
                                                            :value (utils/format-number (Math/abs required))}])))]
      (let [remaining-budget (- available-budget (:investment change))
+           building-costs-for-action? (case (:action change)
+                                        "upgrade-provider" (and (pos? (:upgrade-budget props)) (some? (:building-costs props)))
+                                        (some? (:building-costs props)))
            suggested-cost   (suggest-investment change props)]
        [:div
         [common2/numeric-text-field {:type "number"
@@ -91,8 +94,9 @@
         [common2/text-field {:label "Available budget"
                              :read-only true
                              :value (if (pos? remaining-budget) remaining-budget 0)}]
-        [:p.text-helper {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] suggested-cost])}
-         "Suggested investment according to project configuration: " suggested-cost]])]))
+        (when building-costs-for-action?
+          [:p.text-helper {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] suggested-cost])}
+           "Suggested investment according to project configuration: " suggested-cost])])]))
 
 
 (defn- action->title
