@@ -80,7 +80,14 @@
        (if (or (nil? project) (nil? scenario))
          (not-found {:error "Scenario not found"})
          (response (scenarios/create-scenario service project {:name next-name
-                                                               :changeset changeset})))))))
+                                                               :changeset changeset})))))
+
+   (DELETE "/:id" [id :as request]
+     (let [user-id           (util/request-user-id request)
+           scenario-id       (Integer. id)
+           scenario   (scenarios/get-scenario service scenario-id)]
+       (when scenario
+         (scenarios/delete-scenario service scenario-id))))))
 
 (defn scenarios-endpoint
   [config]

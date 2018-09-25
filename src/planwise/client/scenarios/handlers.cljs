@@ -337,29 +337,14 @@
           :view-state       :changeset-dialog
           :changeset-dialog change)))
 
-(rf/reg-event-db
- :scenarios/edit-change
- in-scenarios
- (fn [db [_ change]]
-   (assoc db
-          :view-state       :changeset-dialog
-          :changeset-dialog change)))
-
 (rf/reg-event-fx
  :scenarios/delete-current-scenario
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [id (get-in db [:current-scenario :id])]
-     {:db  (assoc db :view-state :delete-scenario)
-      :api (assoc (api/delete-scenario id)
-                  :on-success [:scenarios/load-scenarios])})))
-
-(rf/reg-event-db
- :scenarios/open-delete-dialog
- in-scenarios
- (fn [db [_]]
-   (assoc db
-          :view-state :delete-scenario)))
+     {:api (assoc (api/delete-scenario id)
+                  :on-success [:projects2/project-scenarios])
+      :dispatch [:scenarios/load-scenarios]})))
 
 (rf/reg-event-db
  :scenarios/open-delete-dialog
