@@ -353,7 +353,6 @@
    (assoc db
           :view-state :delete-scenario)))
 
-;ASK state for showing settings
 (rf/reg-event-db
  :scenarios/show-scenario-settings
  in-scenarios
