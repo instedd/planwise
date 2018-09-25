@@ -72,12 +72,14 @@
         [valid-fn parse-fn] (set-format sub-type)]
     (fn [{:keys [value on-change not-valid?] :as props-input}]
       (let [props (dissoc props-input :sub-type :field :not-valid?)
-            wrong-input (not= (valid-fn @local) @local)]
+            wrong-input (not= (valid-fn @local) @local)
+            reset-local-value #(reset! local (str value))]
+        (when (not= @local value) (reset-local-value))
         [text-field (assoc props
                            :focus-extra-class (when (or wrong-input not-valid?) " invalid-input")
                            :type "text"
                            :on-change #(do
                                          (reset! local (-> % .-target .-value str))
                                          (on-change (parse-fn (valid-fn @local))))
-                           :reset-local-value #(reset! local (str value))
+                           :reset-local-value reset-local-value
                            :value (or @local ""))]))))
