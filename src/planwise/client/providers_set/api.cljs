@@ -16,3 +16,8 @@
     {:method    :post
      :uri       "/api/providers"
      :body      form-data}))
+
+(defn delete-provider-set
+  [id]
+  {:method :delete
+   :uri     "/api/providers"})

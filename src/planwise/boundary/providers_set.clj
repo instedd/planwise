@@ -36,6 +36,7 @@
      a region-id to clip the returned geometry.
      Returns the result as GeoJSON string")
 
+;TODO: delete created files
   (delete-referenced-provider-set
     [this provider-set-id]
     "Delete provider-set given a provider-set-id.

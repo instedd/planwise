@@ -88,12 +88,13 @@
           :view-state :delete-dialog
           :selected-provider provider-set)))
 
-;FIXME
-(rf/reg-event-db
+(rf/reg-event-fx
  :providers-set/delete-provider-set
  in-providers-set
- (fn [db [_ provider-set]]
-   (db)))
+ (fn [{:keys [db]}  [_]]
+   {:api (assoc api/delete-provider-set
+                :on-success [:providers-set/cancel-delete-dialog])
+    :db  (update db :list asdf/reload!)}))
 
 (rf/reg-event-db
  :providers-set/cancel-delete-dialog

@@ -31,7 +31,14 @@
          (jobrunner/queue-job jobrunner
                               [::providers-set/preprocess-provider-set provider-set-id]
                               (providers-set/new-processing-job service provider-set-id))
-         (response result))))))
+         (response result))))
+
+  ;TODO response 400 for error
+   (DELETE "/" [id :as request]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)]
+      ;(providers-set/delete-referenced-provider-set service id)
+))))
 
 
 (defn providers-set-endpoint

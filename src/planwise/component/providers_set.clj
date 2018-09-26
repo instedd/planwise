@@ -256,6 +256,7 @@
   [store provider-set-id]
   (db-delete-provider-set! (get-db store) provider-set-id))
 
+;TODO add catch exception for handling message error
 (defn delete-referenced-provider-set
   [store provider-set-id]
   (jdbc/with-db-transaction [tx (get-db store)]
