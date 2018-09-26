@@ -79,3 +79,26 @@
    (assoc db
           :view-state :create-dialog
           :last-error (:status-text err))))
+
+(rf/reg-event-db
+ :providers-set/select-provider-set
+ in-providers-set
+ (fn [db [_ provider-set]]
+   (assoc db
+          :view-state :delete-dialog
+          :selected-provider provider-set)))
+
+;FIXME
+(rf/reg-event-db
+ :providers-set/delete-provider-set
+ in-providers-set
+ (fn [db [_ provider-set]]
+   (db)))
+
+(rf/reg-event-db
+ :providers-set/cancel-delete-dialog
+ in-providers-set
+ (fn [db [_]]
+   (assoc db
+          :view-state :list
+          :selected-provider nil)))
