@@ -82,10 +82,14 @@
   (into [:section.card-list props] children))
 
 (defn card
-  [{:keys [href primary title subtitle status]}]
+  [{:keys [href primary title subtitle status action-button]}]
   [:a {:className "card-item" :href href}
    [:div.card-primary primary]
    [:div.card-secondary
     [:h1 {} title]
-    [:h2 {} subtitle]
+    (if action-button
+      [:div.actions
+       [:h2 {} subtitle]
+       action-button]
+      [:h2 {} subtitle])
     [:div.status {} status]]])

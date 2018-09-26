@@ -24,7 +24,8 @@
   (let [name (:name provider-set)
         provider-count (:provider-count provider-set 0)]
     [ui/card {:title name
-              :subtitle (utils/pluralize provider-count "provider")}]))
+              :subtitle (utils/pluralize provider-count "provider")
+              :action-button [m/Button {} "Delete"]}]))
 
 (defn providers-set-list
   [providers-set]

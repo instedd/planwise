@@ -212,8 +212,12 @@ filter: grayscale(100%);
 
     .card-secondary {
       padding: 1em;
+      .actions {
+        justify-content: space-between;
+        display: flex;
+      }
+      }
     }
-  }
 }
 
 .panel {
