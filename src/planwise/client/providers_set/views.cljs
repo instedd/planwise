@@ -30,15 +30,17 @@
            :cancel-fn #(rf/dispatch [:providers-set/cancel-delete-dialog])
            :content [:p "Do you want to delete this provider set?"]}])
 
-;TODO; showing-button depends on provider-sets state
 (defn provider-set-card
-  [props provider-set]
+  [props {:keys [depending-projects] :as provider-set}]
   (let [name (:name provider-set)
-        provider-count (:provider-count provider-set 0)]
-    [ui/card {:title name
-              :subtitle (utils/pluralize provider-count "provider")
-              :action-button (when (zero? (:depending-projects provider-set))
-                               [m/Button {:on-click #(rf/dispatch [:providers-set/select-provider-set provider-set])} "Delete"])}]))
+        provider-count (:provider-count provider-set 0)
+        no-projects? (zero? depending-projects)]
+    [ui/card (merge {:title name}
+                    (if no-projects?
+                      {:subtitle (utils/pluralize provider-count "provider")
+                       :action-button [m/Button {:on-click #(rf/dispatch [:providers-set/select-provider-set provider-set])} "Delete"]}
+                      {:subtitles [(utils/pluralize provider-count "provider")
+                                   (str (utils/pluralize depending-projects "project") " depends on this set")]}))]))
 
 (defn providers-set-list
   [providers-set]
