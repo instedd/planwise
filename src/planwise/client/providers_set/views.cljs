@@ -37,7 +37,8 @@
         provider-count (:provider-count provider-set 0)]
     [ui/card {:title name
               :subtitle (utils/pluralize provider-count "provider")
-              :action-button [m/Button {:on-click #(rf/dispatch [:providers-set/select-provider-set provider-set])} "Delete"]}]))
+              :action-button (when (zero? (:depending-projects provider-set))
+                               [m/Button {:on-click #(rf/dispatch [:providers-set/select-provider-set provider-set])} "Delete"])}]))
 
 (defn providers-set-list
   [providers-set]
