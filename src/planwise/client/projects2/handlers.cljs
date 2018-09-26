@@ -93,6 +93,7 @@
  (fn [{:keys [db]} [_ id]]
    {:api       (api/delete-project! id)
     :navigate  (routes/projects2)
+    :dispatch [:providers-set/load-providers-set]
     :db   (-> db
               (assoc :current-project nil)
               (update :list #(seq (utils/remove-by-id % id))))}))
