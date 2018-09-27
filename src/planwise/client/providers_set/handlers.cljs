@@ -1,6 +1,7 @@
 (ns planwise.client.providers-set.handlers
   (:require [re-frame.core :refer [register-handler dispatch] :as rf]
             [planwise.client.asdf :as asdf]
+            [planwise.client.utils :as utils]
             [planwise.client.providers-set.api :as api]
             [planwise.client.providers-set.db :as db]))
 
@@ -91,15 +92,27 @@
 (rf/reg-event-fx
  :providers-set/delete-provider-set
  in-providers-set
- (fn [{:keys [db]}  [_]]
-   {:api (assoc api/delete-provider-set
-                :on-success [:providers-set/cancel-delete-dialog])
-    :db  (update db :list asdf/reload!)}))
+ (fn [{:keys [db]} [_]]
+   (let [id (get-in db [:selected-provider :id])]
+     {:api (assoc (api/delete-provider-set id)
+                  :on-success [:providers-set/cancel-delete-dialog]
+                  :on-failure [:providers-set/alert-delete-dialog])})))
 
 (rf/reg-event-db
  :providers-set/cancel-delete-dialog
  in-providers-set
  (fn [db [_]]
-   (assoc db
-          :view-state :list
-          :selected-provider nil)))
+   (-> db
+       (assoc :view-state :list
+              :selected-provider nil)
+       (update :list asdf/reload!))))
+
+(rf/reg-event-db
+ :providers-set/alert-delete-dialog
+ in-providers-set
+ (fn [db [_ {:keys [response]}]]
+   (let [list (asdf/value (:list db))
+         name (:name (utils/find-by-id list (:provider-set-id response)))]
+     (js/alert (str "Can not delete " name))
+     (assoc db :view-state :list
+            :selected-provider nil))))

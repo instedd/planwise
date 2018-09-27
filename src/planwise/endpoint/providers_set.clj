@@ -33,12 +33,15 @@
                               (providers-set/new-processing-job service provider-set-id))
          (response result))))
 
-  ;TODO response 400 for error
    (DELETE "/" [id :as request]
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)]
-      ;(providers-set/delete-referenced-provider-set service id)
-))))
+       (try
+         (providers-set/delete-referenced-provider-set service id)
+         (catch Exception e
+           {:status  400
+            :headers {}
+            :body    (ex-data e)}))))))
 
 
 (defn providers-set-endpoint
