@@ -10,6 +10,7 @@
             [clojure.java.io :as io]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
+            [planwise.util.files :as files]
             [clojure.string :as str]
             [clojure.set :as set]))
 
@@ -268,7 +269,10 @@
     (catch Exception e
       (throw (ex-info "Provider set can not be deleted"
                       {:provider-set-id provider-set-id}
-                      e)))))
+                      e)))
+    (finally (files/delete-files-recursively
+              (str "data/coverage/" provider-set-id)
+              true))))
 
 
 (defrecord ProvidersStore [db coverage]

@@ -36,11 +36,11 @@
      a region-id to clip the returned geometry.
      Returns the result as GeoJSON string")
 
-;TODO: delete created files
   (delete-referenced-provider-set
     [this provider-set-id]
     "Delete provider-set given a provider-set-id.
      Providers and providers coverage referenced from provider-set are also deleted.
-     When provider set is referenced from valid project an exception is thrown."))
+     When provider set is referenced from valid project an exception is thrown.
+     If provider set is deleted all created files are deleted."))
 
 ;; Preprocessing provider-set job type: ::preprocess-provider-set
