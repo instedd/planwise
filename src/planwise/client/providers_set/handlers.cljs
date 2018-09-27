@@ -65,13 +65,12 @@
                 :view-state :creating
                 :last-error nil)}))
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :providers-set/provider-set-created
  in-providers-set
- (fn [db [_ provider-set]]
-   (-> db
-       (assoc :view-state :list)
-       (update :list asdf/swap! into [provider-set]))))
+ (fn [{:keys [db]} [_ provider-set]]
+   {:db (assoc db :view-state :list)
+    :dispatch [:providers-set/load-providers-set]}))
 
 (rf/reg-event-db
  :providers-set/provider-set-not-created
@@ -98,14 +97,13 @@
                   :on-success [:providers-set/cancel-delete-dialog]
                   :on-failure [:providers-set/alert-delete-dialog])})))
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :providers-set/cancel-delete-dialog
  in-providers-set
- (fn [db [_]]
-   (-> db
-       (assoc :view-state :list
-              :selected-provider nil)
-       (update :list asdf/reload!))))
+ (fn [{:keys [db]} [_]]
+   {:db (assoc db :view-state :list
+               :selected-provider nil)
+    :dispatch [:providers-set/load-providers-set]}))
 
 (rf/reg-event-db
  :providers-set/alert-delete-dialog
@@ -114,5 +112,6 @@
    (let [list (asdf/value (:list db))
          name (:name (utils/find-by-id list (:provider-set-id response)))]
      (js/alert (str "Can not delete " name))
-     (assoc db :view-state :list
+     (assoc db
+            :view-state :list
             :selected-provider nil))))
