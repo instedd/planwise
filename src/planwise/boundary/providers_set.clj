@@ -36,7 +36,7 @@
      a region-id to clip the returned geometry.
      Returns the result as GeoJSON string")
 
-  (delete-referenced-provider-set
+  (delete-provider-set
     [this provider-set-id]
     "Delete provider-set given a provider-set-id.
      Providers and providers coverage referenced from provider-set are also deleted.

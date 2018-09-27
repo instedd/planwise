@@ -103,7 +103,7 @@
    (test-config fixture-user))
   ([data]
    (test-system/config
-    {:planwise.test/fixtures           {:fixtures data}
+    {:planwise.test/fixtures       {:fixtures data}
      :planwise.component/providers-set {:db (ig/ref :duct.database/sql)}})))
 
 ;; ----------------------------------------------------------------------
@@ -183,7 +183,7 @@
 (defn- delete-provider-set-and-catch-exception
   [store id]
   (try
-    (providers-set/delete-referenced-provider-set store id)
+    (providers-set/delete-provider-set store id)
     (catch Exception e
       (ex-data e))))
 

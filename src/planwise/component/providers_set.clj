@@ -253,11 +253,11 @@
   [store provider-set-id]
   (db-delete-providers! (get-db store) provider-set-id))
 
-(defn delete-provider-set
+(defn delete-referenced-provider-set
   [store provider-set-id]
   (db-delete-provider-set! (get-db store) provider-set-id))
 
-(defn delete-referenced-provider-set
+(defn delete-provider-set
   [store provider-set-id]
   (try
     (jdbc/with-db-transaction [tx (get-db store)]
@@ -265,7 +265,7 @@
             provider-set-id {:provider-set-id provider-set-id}]
         (delete-referenced-providers-coverage tx-store provider-set-id)
         (delete-referenced-providers tx-store provider-set-id)
-        (delete-provider-set tx-store provider-set-id)))
+        (delete-referenced-provider-set tx-store provider-set-id)))
     (catch Exception e
       (throw (ex-info "Provider set can not be deleted"
                       {:provider-set-id provider-set-id}
@@ -297,8 +297,8 @@
     (get-radius-from-computed-coverage store criteria provider-set-id))
   (get-coverage [store provider-id coverage-options]
     (get-coverage store provider-id coverage-options))
-  (delete-referenced-provider-set [store provider-set-id]
-    (delete-referenced-provider-set store provider-set-id)))
+  (delete-provider-set [store provider-set-id]
+    (delete-provider-set store provider-set-id)))
 
 (defmethod ig/init-key :planwise.component/providers-set
   [_ config]

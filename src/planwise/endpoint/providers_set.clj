@@ -37,7 +37,7 @@
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)]
        (try
-         (providers-set/delete-referenced-provider-set service id)
+         (providers-set/delete-provider-set service id)
          (catch Exception e
            {:status  400
             :headers {}
