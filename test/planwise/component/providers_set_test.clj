@@ -180,17 +180,21 @@
 ;; ----------------------------------------------------------------------
 ;; Testing deleting provider-set
 
-;Fixme// catching exception for provider set used in projects
+(defn- delete-provider-set-and-catch-exception
+  [store id]
+  (try
+    (providers-set/delete-referenced-provider-set store id)
+    (catch Exception e
+      (ex-data e))))
+
 (deftest delete-provider-set
   (test-system/with-system (test-config fixture-delete-provider-set)
     (let [store            (:planwise.component/providers-set system)
           provider-set-id2 (providers-set/get-provider-set store 2)]
       (= (some? provider-set-id2))
-      (let [_                (providers-set/delete-referenced-provider-set store 2)
+      (let [_                (delete-provider-set-and-catch-exception store 2)
             provider-set-id2 (providers-set/get-provider-set store 2)
-          ;  _                (providers-set/delete-referenced-provider-set store 1)
-          ;  provider-set-id1 (providers-set/get-provider-set store 1)
-]
+            _                (delete-provider-set-and-catch-exception store 1)
+            provider-set-id1 (providers-set/get-provider-set store 1)]
         (= (nil? provider-set-id2))
-       ;(= (not (nil? provider-set-id1)))
-))))
+        (= (map? provider-set-id1))))))

@@ -256,15 +256,19 @@
   [store provider-set-id]
   (db-delete-provider-set! (get-db store) provider-set-id))
 
-;TODO add catch exception for handling message error
 (defn delete-referenced-provider-set
   [store provider-set-id]
-  (jdbc/with-db-transaction [tx (get-db store)]
-    (let [tx-store        (assoc-in store [:db :spec] tx)
-          provider-set-id {:provider-set-id provider-set-id}]
-      (delete-referenced-providers-coverage tx-store provider-set-id)
-      (delete-referenced-providers tx-store provider-set-id)
-      (delete-provider-set tx-store provider-set-id))))
+  (try
+    (jdbc/with-db-transaction [tx (get-db store)]
+      (let [tx-store        (assoc-in store [:db :spec] tx)
+            provider-set-id {:provider-set-id provider-set-id}]
+        (delete-referenced-providers-coverage tx-store provider-set-id)
+        (delete-referenced-providers tx-store provider-set-id)
+        (delete-provider-set tx-store provider-set-id)))
+    (catch Exception e
+      (throw (ex-info "Provider set can not be deleted"
+                      {:provider-set-id provider-set-id}
+                      e)))))
 
 
 (defrecord ProvidersStore [db coverage]
