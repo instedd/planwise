@@ -20,4 +20,5 @@
 (defn delete-provider-set
   [id]
   {:method :delete
+   :params {:id id}
    :uri     "/api/providers"})
