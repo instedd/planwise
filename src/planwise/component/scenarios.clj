@@ -49,6 +49,15 @@
         data   (cons (mapv name fields) rows)]
     (with-out-str (csv/write-csv *out* data))))
 
+(defn delete-files-on-condition
+  [path condition-fn]
+  (let [directory (clojure.java.io/file path)]
+    (reduce (fn [ans file]
+              (and ans (if (condition-fn file)
+                         (clojure.java.io/delete-file file)
+                         true)))
+            true (.listFiles directory))))
+
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
@@ -66,7 +75,21 @@
 
 (defn delete-scenario
   [store scenario-id]
-  (db-delete-scenario! (get-db store) {:id scenario-id}))
+  (let [{:keys [project-id raster] :as scenario} (db-find-scenario (get-db store) {:id scenario-id})]
+    (try
+      (db-delete-scenario! (get-db store) {:id scenario-id})
+      (catch Exception e
+        (ex-info "Can not delete current scenario" {:id scenario-id} e))
+      (finally
+        (when raster
+          (let [path              (str "data/scenarios/" project-id "/")
+                scenario-filename (last (str/split raster #"/"))
+                condition-fn      (fn [file]
+                                    (when (and (.exists file) (not (.isDirectory file)))
+                                      (let [file-name (last (str/split (.getPath file) #"/"))
+                                            id        (re-find #"\d+" file-name)]
+                                        (= id (str (:id scenario))))))]
+            (delete-files-on-condition path condition-fn)))))))
 
 (defn get-initial-scenario
   [store project-id]

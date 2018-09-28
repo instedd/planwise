@@ -84,10 +84,9 @@
 
    (DELETE "/:id" [id :as request]
      (let [user-id           (util/request-user-id request)
-           scenario-id       (Integer. id)
-           scenario   (scenarios/get-scenario service scenario-id)]
-       (when scenario
-         (scenarios/delete-scenario service scenario-id))))))
+           scenario-id       (Integer. id)]
+      ;TODO catch exceptions
+       (scenarios/delete-scenario service scenario-id)))))
 
 (defn scenarios-endpoint
   [config]

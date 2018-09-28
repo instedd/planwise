@@ -40,4 +40,5 @@
     "Retrieves provider coverage geometries")
 
   (delete-scenario [store scenario-id]
-    "Delete scenario by id"))
+    "Delete scenario by id.
+     Delete scenario's created files."))
