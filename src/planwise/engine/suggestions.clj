@@ -4,6 +4,7 @@
             [planwise.component.coverage.greedy-search :as gs]
             [planwise.boundary.coverage :as coverage]
             [planwise.engine.raster :as raster]
+            [planwise.engine.common :as common]
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
@@ -46,19 +47,28 @@
     (coverage/locations-outside-polygon (:coverage engine) polygon (:demand get-update))))
 
 (defn get-coverage-for-suggestion
-  [engine {:keys [criteria region-id project-capacity]} {:keys [sources-data search-path] :as source} {:keys [coord get-avg get-update]}]
-  (let [criteria              (if sources-data criteria (merge criteria {:raster search-path}))
+  [engine {:keys [criteria region-id project-capacity]} {:keys [sources-data search-path] :as source} {:keys [provider-id coord get-avg get-update]}]
+  (let [updated-criteria      (if sources-data criteria (merge criteria {:raster search-path}))
         [lon lat :as coord]   coord
-        polygon               (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} criteria)
+        polygon               (if coord
+                                (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} updated-criteria)
+                                (:geom (providers-set/get-coverage
+                                        (:providers-set engine)
+                                        provider-id
+                                        {:algorithm (name (:algorithm criteria))
+                                         :region-id region-id
+                                         :filter-options (dissoc criteria :algorithm)})))
         population-reacheable (count-under-geometry engine polygon source)
-        info   {:coverage population-reacheable
-                :required-capacity (/ population-reacheable project-capacity)
-                :coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon region-id))
-                :location {:lat lat :lon lon}}]
-    (cond get-avg {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
-          get-update {:location-info info
+        coverage-info   {:coverage population-reacheable
+                         :required-capacity (/ population-reacheable project-capacity)}
+        extra-info-for-new-provider {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon region-id))
+                                     :location {:lat lat :lon lon}}]
+
+    (cond get-avg    {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
+          get-update {:location-info (merge coverage-info extra-info-for-new-provider)
                       :updated-demand (get-demand-source-updated engine source polygon get-update)}
-          :other info)))
+          provider-id coverage-info
+          :other     (merge coverage-info extra-info-for-new-provider))))
 
 (defn search-optimal-location
   [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
@@ -84,6 +94,89 @@
     (let [bound    (when provider-set-id (:avg-max (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id)))
           locations (gs/greedy-search 10 source coverage-fn demand-quartiles {:bound bound :n 20})]
       locations)))
+
+;TODO; shared code with client
+(defn- get-investment-from-project-config
+  [capacity building-costs]
+  (let [first     (first building-costs)
+        last      (last building-costs)
+        intervals (mapv vector building-costs (drop 1 building-costs))]
+    (cond
+      (<= capacity (:capacity first)) (:investment first)
+      :else
+      (let [[[a b] :as interval] (drop-while (fn [[_ b]] (and (not= last b) (< (:capacity b) capacity))) intervals)
+            m     (/ (- (:investment b) (:investment a)) (- (:capacity b) (:capacity a)))]
+        (+ (* m (- capacity (:capacity a))) (:investment a))))))
+
+(defn- get-building-cost
+  [{:keys [capacity action]} {:keys [upgrade-budget building-costs]}]
+  (let [investment (if (or (zero? capacity) (nil? capacity))
+                     0
+                     (get-investment-from-project-config capacity building-costs))]
+    (if (= action "upgrade-provider")
+      (+ investment (or upgrade-budget 0))
+      investment)))
+
+(defn get-provider-capacity-and-cost
+  [provider settings]
+  (debug "Provider " provider)
+  (let [required-capacity      (/ (:capacity provider) (:project-capacity settings))
+        max-available-capacity (:original-capacity provider)
+        action-cost       (get-building-cost
+                           {:action (if (:applicable? provider)
+                                      "increase-provider"
+                                      "upgrade-provider")
+                            :capacity (min required-capacity max-available-capacity)}
+                           settings)]
+    (debug "Show action-cost" action-cost)
+    (cond
+      (< (:available-budget settings) action-cost) nil
+      :else {:capacity required-capacity :investment action-cost})))
+
+(defn- get-current-investment
+  [changeset]
+  (reduce + (map :investment changeset)))
+
+; de mayor a menor
+(defn insert-in-sorted-coll
+  [sorted-coll value criteria]
+  (if value
+    (let [[s0 s1] (split-with #(< (get % criteria) (get value criteria)) sorted-coll)
+          coll    (concat s1 [value] s0)]
+      coll)
+    sorted-coll))
+
+(defn get-sorted-interventions
+  [engine project {:keys [raster changeset] :as scenario}]
+  (let [{:keys [engine-config config provider-set-id region-id coverage-algorithm]} project
+        raster       (when raster (raster/read-raster (str "data/" raster ".tif")))
+        criteria     (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
+        source        (assoc (select-keys scenario [:raster :sources-data])
+                             :raster raster
+                             :search-path   (str "data/" raster ".tif")
+                             :source-set-id (:source-set-id project))
+        coverage-fn   #(common/get-coverage raster (get-in project [:config :providers :capacity]) %)
+        providers-collection        (common/providers-in-project (:providers-set engine) project)
+        settings {:project-capacity (get-in config [:providers :capacity])
+                  :available-budget (- (get-in config [:actions :budget])
+                                       (get-current-investment (:changeset scenario)))
+                  :building-costs   (sort-by :capacity (get-in config [:actions :build]))
+                  :upgrade-budget   (get-in config [:actions :upgrade-budget])}]
+    (reduce
+     (fn [suggestions provider]
+       (debug "Provider " provider)
+       (insert-in-sorted-coll
+        suggestions
+        (when-let [intervention (get-provider-capacity-and-cost
+                                 (merge provider
+                                        (coverage-fn provider)
+                                        {:original-capacity (:capacity provider)})
+                                 settings)]
+          (debug "Show intervention: " intervention)
+          (merge provider intervention {:ratio (/ (:capacity intervention) (:investment intervention))}))
+        :ratio))
+     []
+     providers-collection)))
 
 (comment
   ;REPL testing
@@ -185,3 +278,11 @@
 
   (def project-test (generate-project raster-test criteria))
   (search-optimal-location engine project-test {} raster-test))
+
+; (def engine (:planwise.component/engine system))
+; (def project   (planwise.component.projects2/get-project (:planwise.component/projects2 system) 181))
+; (def scenario  (planwise.component.scenarios/get-scenario (:planwise.component/scenarios system) 1496))
+; (planwise.engine.suggestions/get-sorted-interventions engine project scenario)
+; (planwise.component.providers-set/get-providers-with-coverage-in-region
+; (:planwise.component/providers-set system)
+; 16 1 {:walking-time 120, :algorithm "walking-friction", :region-id 85})
