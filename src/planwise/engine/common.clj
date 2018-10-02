@@ -6,6 +6,8 @@
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
+            [clojure.set :as set]
+            [planwise.util.collections :refer [sum-by]]
             [taoensso.timbre :as timbre]))
 
 (timbre/refer-timbre)
@@ -66,12 +68,61 @@
          (sort-by :capacity)
          reverse)))
 
-(defn get-coverage
-  [demand-raster capacity-multiplier provider]
+(defn resolve-covered-sources
+  "For each provider, find the sources covered by it (how depends on whether the provider is new or
+  from the provider set) and assoc them to it for later."
+  [sources-component source-set-id providers sources]
+  (debug "sources" (keys sources))
+  (let [source-ids     (set (keys sources))
+        covered-ids-fn (fn [{:keys [coverage-id coverage-geojson] :as provider}]
+                         (if (some? coverage-geojson)
+                           (sources-set/enum-sources-under-geojson-coverage sources-component
+                                                                            source-set-id
+                                                                            coverage-geojson)
+                           (sources-set/enum-sources-under-provider-coverage sources-component
+                                                                             source-set-id
+                                                                             coverage-id)))]
+    (map (fn [provider]
+           (let [covered-ids             (set (covered-ids-fn provider))
+                 covered-ids-in-scenario (set/intersection source-ids covered-ids)]
+             (assoc provider :covered-source-ids covered-ids-in-scenario)))
+         providers)))
+
+(defn point-apply-provider!
+  "Distributes capacity of provider over all covered sources proportionally to their demand over the
+  total provider reachable demand."
+  [capacity-multiplier provider sources]
+  (let [reachable-sources (map sources (:covered-source-ids provider))
+        capacity          (:capacity provider)
+        scaled-capacity   (* capacity capacity-multiplier)
+        reachable-demand  (sum-by :quantity reachable-sources)
+        satisfied-demand  (min scaled-capacity reachable-demand)
+        used-capacity     (float (/ satisfied-demand capacity-multiplier))]
+    (debug "Applying provider" (:id provider) "with capacity" capacity
+           "- satisfies" satisfied-demand "over a total of" reachable-demand "demand units")
+    (let [sources' (if (zero? reachable-demand)
+                     sources
+                     (let [factor (float (- 1 (/ satisfied-demand reachable-demand)))]
+                       (reduce (fn [sources id]
+                                 (update-in sources [id :quantity] * factor))
+                               sources
+                               (:covered-source-ids provider))))]
+      [{:id               (:id provider)
+        :satisfied-demand satisfied-demand
+        :capacity         capacity
+        :used-capacity    used-capacity
+        :free-capacity    (- capacity used-capacity)}
+       sources'])))
+
+(defn provider-coverage-raster-demand
+  [capacity-multiplier provider demand-raster]
   (let [coverage-raster (raster/read-raster (:coverage-raster-path provider))
         capacity        (:capacity provider)
         scaled-capacity (* capacity capacity-multiplier)
         reachable-demand (demand/count-population-under-coverage demand-raster coverage-raster)
         satisfied-demand (min scaled-capacity reachable-demand)
         used-capacity    (float (/ satisfied-demand capacity-multiplier))]
-    {:capacity used-capacity}))
+    (debug "Used capacity " used-capacity " for satisfying " satisfied-demand
+           "with a reachable demand of " reachable-demand)
+    {:required-capacity used-capacity
+     :expected-covered-demand satisfied-demand}))
