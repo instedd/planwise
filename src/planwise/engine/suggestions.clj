@@ -131,7 +131,8 @@
     (debug "Show action-cost" action-cost)
     (cond
       (< (:available-budget settings) action-cost) nil
-      :else {:capacity required-capacity :investment action-cost})))
+      :else {:required-capacity required-capacity
+             :required-investment action-cost})))
 
 (defn- get-current-investment
   [changeset]
@@ -146,7 +147,7 @@
       coll)
     sorted-coll))
 
-(defn get-sorted-interventions
+(defn get-sorted-providers-interventions
   [engine project {:keys [raster changeset] :as scenario}]
   (let [{:keys [engine-config config provider-set-id region-id coverage-algorithm]} project
         raster       (when raster (raster/read-raster (str "data/" raster ".tif")))
@@ -173,7 +174,7 @@
                                         {:original-capacity (:capacity provider)})
                                  settings)]
           (debug "Show intervention: " intervention)
-          (merge provider intervention {:ratio (/ (:capacity intervention) (:investment intervention))}))
+          (merge provider intervention {:ratio (/ (:required-capacity intervention) (:required-investment intervention))}))
         :ratio))
      []
      providers-collection)))

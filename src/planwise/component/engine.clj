@@ -477,8 +477,10 @@
     (clear-project-cache engine project))
   (compute-scenario [engine project initial-scenario scenario]
     (compute-scenario engine project initial-scenario scenario))
-  (search-optimal-location [engine project source]
-    (suggestions/search-optimal-location engine project source)))
+  (search-optimal-locations [engine project source]
+    (suggestions/search-optimal-location engine project source))
+  (search-optimal-interventions [engine project scenario]
+    (suggestions/get-sorted-providers-interventions engine project scenario)))
 
 (defmethod ig/init-key :planwise.component/engine
   [_ config]

@@ -44,9 +44,19 @@
            id       (Integer. id)
            {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
            project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
-           result (scenarios/get-provider-suggestion service project scenario)]
+           result   (scenarios/get-suggestions-for-new-provider-location service project scenario)]
        (if (empty? result)
          (not-found {:error "Can not find optimal locations"})
+         (response result))))
+
+   (GET "/:id/suggested-providers" [id :as request]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
+           result   (scenarios/get-suggestions-for-improving-providers service project scenario)]
+       (if (empty? result)
+         (not-found {:error "Can not find optimal improvements"})
          (response result))))
 
    (GET "/:id/geometry/:provider-id" [id provider-id :as request]

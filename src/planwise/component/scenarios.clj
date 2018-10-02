@@ -320,11 +320,18 @@
   (db-delete-scenarios! (get-db store) {:project-id project-id})
   (engine/clear-project-cache (:engine store) project-id))
 
-(defn get-provider-suggestion
+(defn get-suggestions-for-new-provider-location
   [store {:keys [sources-set-id] :as project} {:keys [raster sources-data] :as scenario}]
-  (engine/search-optimal-location (:engine store) project  {:raster raster
-                                                            :sources-data sources-data
-                                                            :sources-set-id sources-set-id}))
+  (engine/search-optimal-locations (:engine store) project  {:raster raster
+                                                             :sources-data sources-data
+                                                             :sources-set-id sources-set-id}))
+
+(defn get-suggestions-for-improving-providers
+  [store {:keys [sources-set-id] :as project} {:keys [raster sources-data] :as scenario}]
+  (take 20
+        (map
+         #(select-keys % [:id :required-investment :required-capacity])
+         (engine/search-optimal-interventions (:engine store) project scenario))))
 
 
 (defrecord ScenariosStore [db engine jobrunner providers-set sources-set]
@@ -347,12 +354,14 @@
     (get-scenario-for-project store scenario project))
   (export-providers-data [store project scenario]
     (export-providers-data store project scenario))
-  (get-provider-suggestion [store project scenario]
-    (get-provider-suggestion store project scenario))
+  (get-suggestions-for-new-provider-location [store project scenario]
+    (get-suggestions-for-new-provider-location store project scenario))
   (get-provider-geom [store scenario project provider-id]
     (get-provider-geom store scenario project provider-id))
   (delete-scenario [store scenario-id]
-    (delete-scenario store scenario-id)))
+    (delete-scenario store scenario-id))
+  (get-suggestions-for-improving-providers [store project scenario]
+    (get-suggestions-for-improving-providers store project scenario)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
