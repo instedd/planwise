@@ -260,6 +260,7 @@
 
 ;;Creating new-providers
 
+;TODO; check when pending state for resquested suggestions
 (rf/reg-event-fx
  :scenarios.new-action/toggle-options
  in-scenarios

@@ -51,7 +51,7 @@
 
 (rf/reg-sub
  :scenarios.new-intervention/suggested-providers
-  (fn [db _]
+ (fn [db _]
    (get-in db [:scenarios :current-scenario :suggested-providers])))
 
 (rf/reg-sub
@@ -70,13 +70,13 @@
 (rf/reg-sub
  :scenarios.new-provider/computing-best-locations?
  (fn [db _]
-  (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
+   (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
 
 
 (rf/reg-sub
  :scenarios.new-intervention/computing-best-improvements?
  (fn [db _]
-  (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
+   (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
 
 (rf/reg-sub
  :scenarios.new-action/options :<- [:scenarios/view-state]

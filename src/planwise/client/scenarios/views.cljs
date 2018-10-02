@@ -235,8 +235,8 @@
        (if (or @computing-best-locations? @computing-best-improvements?)
          [:div {:class-name "info-computing-best-location"}
           [:small (if @computing-best-locations?
-                      "Computing best locations ..."
-                      "Computing best improvements...")]])])))
+                    "Computing best locations ..."
+                    "Computing best improvements...")]])])))
 
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]
