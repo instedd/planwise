@@ -56,13 +56,13 @@
     (crate/html
      [:div
       [:h3 name]
-      [:p (str "Capacity: " (format-number capacity))]
-      [:p (str "Unsatisfied demand: " (format-number unsatisfied-demand))]
-      [:p (str "Required capacity: " (format-number (Math/ceil required-capacity)))]
+      [:p (str "Capacity: " (utils/format-number capacity))]
+      [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
+      [:p (str "Required capacity: " (utils/format-number (Math/ceil required-capacity)))]
       (when (or matches-filters change)
-        [:p (str "Satisfied demand: " (format-number satisfied-demand))])
+        [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))])
       (when (or matches-filters change)
-        [:p (str "Free capacity: " (format-number (Math/floor free-capacity)))])
+        [:p (str "Free capacity: " (utils/format-number (Math/floor free-capacity)))])
       (when-not read-only?
         (popup-connected-button
          (cond
@@ -91,11 +91,11 @@
     (crate/html
      [:div
       [:p (str "Suggestion:" (:ranked suggestion))]
-      [:p (str "Needed capacity : " (:required-capacity suggestion))]
+      [:p (str "Needed capacity : " (utils/format-number (:required-capacity suggestion)))]
       (when new-provider?
-        [:p (str "Expected demand to satisfy : " (:coverage suggestion))])
+        [:p (str "Expected demand to satisfy : " (utils/format-number (:coverage suggestion)))])
       (when-not new-provider?
-        [:p (str "Investment according to project configuration : " (:required-investment suggestion))])
+        [:p (str "Investment according to project configuration : " (utils/format-number (:required-investment suggestion)))])
       (button-for-suggestion suggestion action)])))
 
 (defn- show-source
