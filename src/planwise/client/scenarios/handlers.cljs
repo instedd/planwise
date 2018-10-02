@@ -272,6 +272,7 @@
                       :show-options-to-create-provider :current-scenario
                       :new-provider :current-scenario
                       :get-suggestions :current-scenario
+                      :get-suggestions-for-improvements :current-scenario
                       actual-state)]
      (merge
       {:db       (-> db (assoc :view-state next-state)
@@ -361,3 +362,15 @@
      (assoc db :view-state (case state
                              :show-scenario-settings :current-scenario
                              :show-scenario-settings)))))
+ :scenarios.new-action/fetch-suggested-providers-to-improve
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   {:db  (-> db
+             (assoc-in [:current-scenario :computing-best-improvements :state] :suggestions-request)
+             (assoc :view-state :get-suggestions-for-improvements))
+    ; :api (assoc (api/suggested-providers-to-improve
+    ;               (get-in db [:current-scenario :id]))
+    ;       :on-success [:scenarios/suggested-interventions]
+    ;       :on-failure [:scenarios/no-suggested-interventions]
+    ;       :key :suggestions-request)
+          }))

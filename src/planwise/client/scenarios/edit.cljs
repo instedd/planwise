@@ -143,15 +143,16 @@
     (fn [state computing?]
       [:div.scenario-settings
        [new-provider-button state computing?]
-       [m/MenuAnchor
-        [:div.options-menu]
-        [m/Menu (when @open {:class "mdc-menu--open"})
+       [m/Menu (when @open {:class "options-menu mdc-menu--open"})
+        [m/MenuItem
+         {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
+         "Create one"]
+        [m/MenuItem
+         {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
+         "Get suggestions for new provider"]
          [m/MenuItem
-          {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
-          "Create one"]
-         [m/MenuItem
-          {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
-          "Get suggestions"]]]])))
+         {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
+         "Get suggestions for improve existing provider"]]])))
 
 (defn scenario-settings
   [state]
