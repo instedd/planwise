@@ -16,6 +16,6 @@
      returns suggestions for creating new provider")
 
   (search-optimal-interventions
-    [engine project scenario]
+    [engine project scenario settings]
     "Returns suggestions for either upgrading or increasing existing providers in project"))
 

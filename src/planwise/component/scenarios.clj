@@ -325,13 +325,23 @@
   (engine/search-optimal-locations (:engine store) project  {:raster raster
                                                              :sources-data sources-data
                                                              :sources-set-id sources-set-id}))
+;TODO;Check if already existed
+(defn- get-current-investment
+  [changeset]
+  (reduce + (map :investment changeset)))
 
 (defn get-suggestions-for-improving-providers
-  [store {:keys [sources-set-id] :as project} {:keys [raster sources-data] :as scenario}]
-  (take 20
-        (map
-         #(select-keys % [:id :required-investment :required-capacity])
-         (engine/search-optimal-interventions (:engine store) project scenario))))
+  [store {:keys [sources-set-id config] :as project} {:keys [raster sources-data] :as scenario}]
+  (let [settings {:project-capacity (get-in config [:providers :capacity])
+                  :available-budget (- (get-in config [:actions :budget])
+                                       (get-current-investment (:changeset scenario)))
+                  :building-costs   (sort-by :capacity (get-in config [:actions :build]))
+                  :upgrade-budget   (get-in config [:actions :upgrade-budget])}]
+ ;TODO; model to validate setting (no suggestions with no costs?)
+    (take 10
+          (map
+           #(select-keys % [:id :required-investment :required-capacity])
+           (engine/search-optimal-interventions (:engine store) project scenario settings)))))
 
 
 (defrecord ScenariosStore [db engine jobrunner providers-set sources-set]
