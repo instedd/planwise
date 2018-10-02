@@ -45,15 +45,20 @@
    (get-in db [:scenarios :selected-provider])))
 
 (rf/reg-sub
- :scenarios.new-provider/suggested-locations
+ :scenarios.new-provider/new-suggested-locations
  (fn [db _]
    (get-in db [:scenarios :current-scenario :suggested-locations])))
+
+(rf/reg-sub
+ :scenarios.new-intervention/suggested-providers
+  (fn [db _]
+   (get-in db [:scenarios :current-scenario :suggested-providers])))
 
 (rf/reg-sub
  :scenarios.new-provider/suggested-locations
  (fn [_]
    [(rf/subscribe [:scenarios/view-state])
-    (rf/subscribe [:scenarios.new-provider/suggested-locations])
+    (rf/subscribe [:scenarios.new-provider/new-suggested-locations])
     (rf/subscribe [:scenarios.new-intervention/suggested-providers])])
  (fn [[view-state suggested-locations suggested-providers] _]
    (case view-state
@@ -61,10 +66,17 @@
      :new-intervention suggested-providers
      nil)))
 
+
 (rf/reg-sub
  :scenarios.new-provider/computing-best-locations?
  (fn [db _]
-   (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
+  (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
+
+
+(rf/reg-sub
+ :scenarios.new-intervention/computing-best-improvements?
+ (fn [db _]
+  (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
 
 (rf/reg-sub
  :scenarios.new-action/options :<- [:scenarios/view-state]

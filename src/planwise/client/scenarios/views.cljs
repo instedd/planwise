@@ -207,8 +207,9 @@
 
 (defn side-panel-view
   [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
-  (let [computing-best-locations? (subscribe [:scenarios.new-provider/computing-best-locations?])
-        view-state                (subscribe [:scenarios/view-state])]
+  (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
+        computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
+        view-state                   (subscribe [:scenarios/view-state])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
       [:div
        [:div {:class-name "section"}
@@ -230,10 +231,12 @@
          [:small "Investment required"]
          "K " (utils/format-number investment)]]
        [:hr]
-       [edit/create-new-action-component @view-state @computing-best-locations?]
-       (if @computing-best-locations?
+       [edit/create-new-action-component @view-state (or @computing-best-locations? @computing-best-improvements?)]
+       (if (or @computing-best-locations? @computing-best-improvements?)
          [:div {:class-name "info-computing-best-location"}
-          [:small "Computing best locations ..."]])])))
+          [:small (if @computing-best-locations?
+                      "Computing best locations ..."
+                      "Computing best improvements...")]])])))
 
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]

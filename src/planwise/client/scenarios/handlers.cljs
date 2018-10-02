@@ -369,13 +369,32 @@
    {:db  (-> db
              (assoc-in [:current-scenario :computing-best-improvements :state] :suggestions-request)
              (assoc :view-state :get-suggestions-for-improvements))
-    ; :api (assoc (api/suggested-providers-to-improve
-    ;               (get-in db [:current-scenario :id]))
-    ;       :on-success [:scenarios/suggested-interventions]
-    ;       :on-failure [:scenarios/no-suggested-interventions]
-    ;       :key :suggestions-request)
-<<<<<<< refs/remotes/origin/master
-          }))
-=======
-    }))
->>>>>>> Rename existing components and subscriptions
+    :api (assoc (api/suggested-providers-to-improve
+                 (get-in db [:current-scenario :id]))
+                :on-success [:scenarios/suggested-interventions]
+                :on-failure [:scenarios/no-suggested-interventions]
+                :key :suggestions-request)}))
+
+(rf/reg-event-db
+ :scenarios/suggested-interventions
+ (fn [db [_ suggestions]]
+   (let [state (get-in db [:scenarios :current-scenario :computing-best-improvements :state])]
+     (if (some? state)
+       (-> db
+           (assoc-in [:scenarios :view-state] :new-intervention)
+           (assoc-in [:scenarios :current-scenario :suggested-providers] suggestions)
+           (assoc-in [:scenarios :current-scenario :computing-best-improvements :state] nil))
+       db))))
+
+(rf/reg-event-db
+ :scenarios/no-suggested-interventions
+ in-scenarios
+ (fn [db [_ {:keys [response]}]]
+   (let [state (get-in db [:scenarios :current-scenario :computing-best-improvements :state])]
+     (if (some? state)
+       (do
+         (js/alert (or (:error response) "Could not compute suggestions"))
+         (-> db
+             (assoc-in [:view-state] :current-scenario)
+             (assoc-in [:current-scenario :computing-best-improvements :state] nil)))
+       db))))

@@ -27,6 +27,12 @@
    :timeout   90000
    :uri       (str "/api/scenarios/" id "/suggested-locations")})
 
+(defn- suggested-providers-to-improve
+  [id]
+  {:method    :get
+   :timeout   90000
+   :uri       (str "/api/scenarios/" id "/suggested-providers")})
+
 (defn- get-provider-geom
   [id provider-id]
   {:method :get
