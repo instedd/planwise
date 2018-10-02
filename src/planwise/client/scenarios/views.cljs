@@ -66,20 +66,37 @@
       (when-not read-only?
         (popup-connected-button
          (cond
-           (some? change)       "Edit provider"
+           (some? change)        "Edit provider"
            (not matches-filters) "Upgrade provider"
            :else                "Increase provider")
          [:scenarios/edit-change (assoc provider :change change*)]))])))
 
+(defn- button-for-suggestion
+  [provider action]
+  (case action
+    :create (popup-connected-button "Create new provider"
+                                    [:scenarios/create-provider (:location provider)])
+    :upgrade (popup-connected-button "Upgrade provider"
+                                     [:scenarios/edit-change (assoc provider :change (db/new-action provider :upgrade))])
+    :increase (popup-connected-button "Upgrade provider"
+                                      [:scenarios/edit-change (assoc provider :change (db/new-action provider :increase))])))
+
 (defn- show-suggested-provider
-  [suggestion]
-  (crate/html
-   [:div
-    [:p (str "Suggestion:" (:ranked suggestion))]
-    [:p (str "Needed capacity : " (:required-capacity suggestion))]
-    [:p (str "Expected demand to satisfy : " (:coverage suggestion))]
-    (popup-connected-button
-     "Create new provider" [:scenarios/create-provider (:location suggestion)])]))
+  [suggestion state]
+  (let [new-provider? (= state :new-provider)
+        action        (cond
+                        new-provider?                 :create
+                        (:matches-filters suggestion) :increase
+                        :else                         :upgrade)]
+    (crate/html
+     [:div
+      [:p (str "Suggestion:" (:ranked suggestion))]
+      [:p (str "Needed capacity : " (:required-capacity suggestion))]
+      (when new-provider?
+        [:p (str "Expected demand to satisfy : " (:coverage suggestion))])
+      (when-not new-provider?
+        [:p (str "Investment according to project configuration : " (:required-investment suggestion))])
+      (button-for-suggestion suggestion action)])))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
@@ -132,7 +149,7 @@
                                                                          @suggested-locations)
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
-                                                    :popup-fn   #(show-suggested-provider %)
+                                                    :popup-fn   #(show-suggested-provider % state)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-provider suggestion]))
                                                     :mouseout-fn  (fn [suggestion]

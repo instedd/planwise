@@ -59,11 +59,15 @@
  (fn [_]
    [(rf/subscribe [:scenarios/view-state])
     (rf/subscribe [:scenarios.new-provider/new-suggested-locations])
-    (rf/subscribe [:scenarios.new-intervention/suggested-providers])])
- (fn [[view-state suggested-locations suggested-providers] _]
+    (rf/subscribe [:scenarios.new-intervention/suggested-providers])
+    (rf/subscribe [:scenarios/all-providers])])
+ (fn [[view-state suggested-locations suggested-providers all-providers] _]
    (case view-state
      :new-provider     suggested-locations
-     :new-intervention suggested-providers
+     :new-intervention (map
+                        (fn [p]
+                          (merge (utils/find-by-id all-providers (:id p)) p))
+                        suggested-providers)
      nil)))
 
 

@@ -266,7 +266,9 @@
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [actual-state (:view-state db)
-         getting-suggestions? (get-in db [:current-scenario :computing-best-locations :state])
+         getting-suggested-locations? (get-in db [:current-scenario :computing-best-locations :state])
+         getting-suggested-providers? (get-in db [:current-scenario :computing-best-improvements :state])
+         dispatch-event               (fn [e] {:dispatch [:scenarios.new-action/abort-fetching-suggestions e]})
          next-state (case actual-state
                       :current-scenario       :show-options-to-create-provider
                       :show-scenario-settings :show-options-to-create-provider
@@ -278,8 +280,9 @@
      (merge
       {:db       (-> db (assoc :view-state next-state)
                      (assoc-in [:current-scenario :suggested-locations] nil))}
-      (when getting-suggestions?
-        {:dispatch  [:scenarios.new-provider/abort-fetching-suggestions]})))))
+      (cond
+        getting-suggested-locations? (dispatch-event :computing-best-locations)
+        getting-suggested-providers? (dispatch-event :computing-best-improvements))))))
 
 (rf/reg-event-fx
  :scenarios.new-provider/fetch-suggested-locations
@@ -324,11 +327,11 @@
    (-> db (assoc :view-state :new-provider))))
 
 (rf/reg-event-fx
- :scenarios.new-provider/abort-fetching-suggestions
+ :scenarios.new-action/abort-fetching-suggestions
  in-scenarios
- (fn [{:keys [db]} [_]]
-   (let [request-key (get-in db [:current-scenario :computing-best-locations :state])]
-     {:db (-> db (assoc-in [:current-scenario :computing-best-locations :state] nil)
+ (fn [{:keys [db]} [_ request-action-name]]
+   (let [request-key (get-in db [:current-scenario request-action-name :state])]
+     {:db (-> db (assoc-in [:current-scenario request-action-name :state] nil)
               (assoc :view-state :current-scenario))
       :api-abort request-key})))
 
