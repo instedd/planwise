@@ -21,11 +21,11 @@
   {:method    :get
    :uri       (str "/api/projects2/" id "/scenarios")})
 
-(defn- suggested-providers
+(defn- suggested-locations-for-new-provider
   [id]
   {:method    :get
    :timeout   90000
-   :uri       (str "/api/scenarios/" id "/suggested-providers")})
+   :uri       (str "/api/scenarios/" id "/suggested-locations")})
 
 (defn- get-provider-geom
   [id provider-id]

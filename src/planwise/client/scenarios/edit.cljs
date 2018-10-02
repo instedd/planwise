@@ -132,25 +132,25 @@
           {:class-name "border-btn-floating border-btn-floating-animated"}
           {:class-name "border-btn-floating"})
    [m/Fab {:class-name "btn-floating"
-           :on-click #(dispatch [:scenarios.new-provider/toggle-options])}
+           :on-click #(dispatch [:scenarios.new-action/toggle-options])}
     (cond computing? "stop"
           (= state :new-provider) "cancel"
           :default "domain")]])
 
-(defn create-new-provider-component
+(defn create-new-action-component
   [state computing?]
-  (let [open (subscribe [:scenarios.new-provider/options])]
+  (let [open (subscribe [:scenarios.new-action/options])]
     (fn [state computing?]
       [:div.scenario-settings
        [new-provider-button state computing?]
        [m/Menu (when @open {:class "options-menu mdc-menu--open"})
         [m/MenuItem
-         {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
+         {:on-click #(dispatch [:scenarios.new-action/simple-create-provider])}
          "Create one"]
         [m/MenuItem
          {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
          "Get suggestions for new provider"]
-         [m/MenuItem
+        [m/MenuItem
          {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
          "Get suggestions for improve existing provider"]]])))
 

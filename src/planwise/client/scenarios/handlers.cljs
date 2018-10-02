@@ -261,17 +261,17 @@
 ;;Creating new-providers
 
 (rf/reg-event-fx
- :scenarios.new-provider/toggle-options
+ :scenarios.new-action/toggle-options
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [actual-state (:view-state db)
          getting-suggestions? (get-in db [:current-scenario :computing-best-locations :state])
          next-state (case actual-state
-                      :current-scenario :show-options-to-create-provider
+                      :current-scenario       :show-options-to-create-provider
                       :show-scenario-settings :show-options-to-create-provider
-                      :show-options-to-create-provider :current-scenario
-                      :new-provider :current-scenario
-                      :get-suggestions :current-scenario
+                      :show-options-to-create-provider  :current-scenario
+                      :new-provider                     :current-scenario
+                      :get-suggestions-for-new-provider :current-scenario
                       :get-suggestions-for-improvements :current-scenario
                       actual-state)]
      (merge
@@ -285,14 +285,15 @@
  in-scenarios
  (fn [{:keys [db]} [_]]
    {:db  (-> db (assoc-in [:current-scenario :computing-best-locations :state] :suggestions-request)
-             (assoc :view-state :get-suggestions))
-    :api (assoc (api/suggested-providers (get-in db [:current-scenario :id]))
-                :on-success [:scenarios/suggested-providers]
-                :on-failure [:scenarios/no-suggested-providers]
+             (assoc :view-state :get-suggestions-for-new-provider))
+    :api (assoc (api/suggested-locations-for-new-provider
+                 (get-in db [:current-scenario :id]))
+                :on-success [:scenarios/suggested-locations]
+                :on-failure [:scenarios/no-suggested-locations]
                 :key :suggestions-request)}))
 
 (rf/reg-event-db
- :scenarios/suggested-providers
+ :scenarios/suggested-locations
  (fn [db [_ suggestions]]
    (let [state (get-in db [:scenarios :current-scenario :computing-best-locations :state])]
      (if (some? state)
@@ -303,7 +304,7 @@
        db))))
 
 (rf/reg-event-db
- :scenarios/no-suggested-providers
+ :scenarios/no-suggested-locations
  in-scenarios
  (fn [db [_ {:keys [response]}]]
    (let [state (get-in db [:scenarios :current-scenario :computing-best-locations :state])]
@@ -316,7 +317,7 @@
        db))))
 
 (rf/reg-event-db
- :scenarios.new-provider/simple-creation
+ :scenarios.new-action/simple-create-provider
  in-scenarios
  (fn [db [_]]
    (-> db (assoc :view-state :new-provider))))
@@ -373,4 +374,8 @@
     ;       :on-success [:scenarios/suggested-interventions]
     ;       :on-failure [:scenarios/no-suggested-interventions]
     ;       :key :suggestions-request)
+<<<<<<< refs/remotes/origin/master
           }))
+=======
+    }))
+>>>>>>> Rename existing components and subscriptions

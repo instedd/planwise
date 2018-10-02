@@ -39,7 +39,7 @@
            response (response (scenarios/export-providers-data service project scenario))]
        (header response "Content-Disposition" (str "attachment; filename=" csv-name))))
 
-   (GET "/:id/suggested-providers" [id :as request]
+   (GET "/:id/suggested-locations" [id :as request]
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)
            {:keys [project-id] :as scenario} (scenarios/get-scenario service id)

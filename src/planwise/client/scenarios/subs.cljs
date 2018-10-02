@@ -45,7 +45,7 @@
    (get-in db [:scenarios :selected-provider])))
 
 (rf/reg-sub
- :scenarios.new-provider/new-suggested-locations
+ :scenarios.new-provider/suggested-locations
  (fn [db _]
    (get-in db [:scenarios :current-scenario :suggested-locations])))
 
@@ -53,10 +53,12 @@
  :scenarios.new-provider/suggested-locations
  (fn [_]
    [(rf/subscribe [:scenarios/view-state])
-    (rf/subscribe [:scenarios.new-provider/new-suggested-locations])])
- (fn [[view-state suggestions] _]
-   (if (= view-state :new-provider)
-     suggestions
+    (rf/subscribe [:scenarios.new-provider/suggested-locations])
+    (rf/subscribe [:scenarios.new-intervention/suggested-providers])])
+ (fn [[view-state suggested-locations suggested-providers] _]
+   (case view-state
+     :new-provider     suggested-locations
+     :new-intervention suggested-providers
      nil)))
 
 (rf/reg-sub
@@ -65,7 +67,7 @@
    (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
 
 (rf/reg-sub
- :scenarios.new-provider/options :<- [:scenarios/view-state]
+ :scenarios.new-action/options :<- [:scenarios/view-state]
  (fn [view-state [_]]
    (= :show-options-to-create-provider view-state)))
 

@@ -230,7 +230,7 @@
          [:small "Investment required"]
          "K " (utils/format-number investment)]]
        [:hr]
-       [edit/create-new-provider-component @view-state @computing-best-locations?]
+       [edit/create-new-action-component @view-state @computing-best-locations?]
        (if @computing-best-locations?
          [:div {:class-name "info-computing-best-location"}
           [:small "Computing best locations ..."]])])))
