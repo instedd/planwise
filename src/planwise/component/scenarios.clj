@@ -62,7 +62,18 @@
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
   (let [scenario (db-find-scenario (get-db store) {:id scenario-id})]
-    (map-scenario scenario)))
+    (when scenario (map-scenario scenario))))
+
+(defn delete-scenario
+  [store scenario-id]
+  (let [{:keys [project-id raster] :as scenario} (db-find-scenario (get-db store) {:id scenario-id})]
+    (try
+      (db-delete-scenario! (get-db store) {:id scenario-id})
+      (when raster
+        (io/delete-file (io/file (str "data/" raster ".tif")))
+        (io/delete-file (io/file (str "data/" raster ".map.tif"))))
+      (catch Exception e
+        (ex-info "Can not delete current scenario" {:id scenario-id} e)))))
 
 (defn get-initial-scenario
   [store project-id]
@@ -339,7 +350,9 @@
   (get-provider-suggestion [store project scenario]
     (get-provider-suggestion store project scenario))
   (get-provider-geom [store scenario project provider-id]
-    (get-provider-geom store scenario project provider-id)))
+    (get-provider-geom store scenario project provider-id))
+  (delete-scenario [store scenario-id]
+    (delete-scenario store scenario-id)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]

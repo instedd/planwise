@@ -96,3 +96,8 @@ UPDATE scenarios
     SET "error-message" = :msg,
         state = 'error'
     WHERE id = :id;
+
+-- :name db-delete-scenario! :!
+DELETE FROM "scenarios"
+  WHERE "id" = :id
+  AND (label <> 'initial' OR label IS NULL);

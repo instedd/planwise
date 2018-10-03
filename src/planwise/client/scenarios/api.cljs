@@ -31,3 +31,8 @@
   [id provider-id]
   {:method :get
    :uri    (str "/api/scenarios/" id "/geometry/" provider-id)})
+
+(defn- delete-scenario
+  [id]
+  {:method    :delete
+   :uri  (str "/api/scenarios/" id)})

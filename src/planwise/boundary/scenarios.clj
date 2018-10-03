@@ -37,4 +37,8 @@
     "Get list of providers suggestions.")
 
   (get-provider-geom [store scenario project provider-id]
-    "Retrieves provider coverage geometries"))
+    "Retrieves provider coverage geometries")
+
+  (delete-scenario [store scenario-id]
+    "Delete scenario by id.
+     Delete scenario's created files."))

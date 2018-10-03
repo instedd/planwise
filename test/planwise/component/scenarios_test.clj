@@ -138,3 +138,19 @@
         (let [updated-scenario (scenarios/get-scenario store scenario-id)
               check-key (fn [key] (= (-> updated-scenario key) (-> scenario key)))]
           (is (map check-key [:id :changeset :investment :state])))))))
+
+
+(deftest delete-current-scenario
+  (test-system/with-system (test-config fixture-with-scenarios)
+    (let [store       (:planwise.component/scenarios system)
+          projects2   (:planwise.component/projects2 system)
+          initial-scenario (scenarios/get-scenario store initial-scenario-id)
+          scenario    (scenarios/get-scenario store other-scenario-id)]
+      (is (some? scenario))
+      (is (some? initial-scenario))
+      (let [_        (scenarios/delete-scenario store other-scenario-id)
+            _        (scenarios/delete-scenario store initial-scenario-id)
+            scenario (scenarios/get-scenario store other-scenario-id)
+            initial-scenario (scenarios/get-scenario store initial-scenario-id)]
+        (is (nil? scenario))
+        (is (map? initial-scenario))))))
