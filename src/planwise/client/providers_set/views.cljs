@@ -19,7 +19,7 @@
   [:div.empty-list-container
    [:div.empty-list
     [common/icon :box]
-    [:p "You have no providers-set yet"]]])
+    [:p "You have no providers yet"]]])
 
 
 (defn delete-provider-set-dialog
