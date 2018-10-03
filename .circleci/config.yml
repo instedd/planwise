@@ -27,7 +27,7 @@ jobs:
       - run: docker-compose up -d db
       - run: docker-compose build
       - run: sleep 10
-      - run: docker-compose exec db createdb planwise-test -Uplanwise
+      - run: docker-compose exec db createdb planwise-test -Upostgres
       - run: docker-compose run --rm app lein test
       - run: docker-compose run --rm app npm install
       - run: docker-compose run --rm app lein test-cljs once

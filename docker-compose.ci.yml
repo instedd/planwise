@@ -5,3 +5,11 @@ services:
     volumes:
       - .:/app
       - ~/cache/.m2:/root/.m2
+    environment:
+      DATABASE_URL: "jdbc:postgresql://db/planwise?user=postgres&password=planwise"
+      TEST_DATABASE_URL: "jdbc:postgresql://db/planwise-test?user=postgres&password=planwise"
+      POSTGRES_USER: postgres
+
+  db:
+    environment:
+      POSTGRES_USER: postgres
