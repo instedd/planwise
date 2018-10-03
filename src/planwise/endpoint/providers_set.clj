@@ -38,7 +38,9 @@
            id       (Integer. id)]
        (try
          (providers-set/delete-provider-set service id)
+         {:status 204}
          (catch Exception e
+           (error e "Failed to delete provider set")
            {:status  400
             :headers {}
             :body    (ex-data e)}))))))
