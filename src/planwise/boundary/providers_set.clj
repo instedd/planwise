@@ -34,6 +34,13 @@
     "Finds the provider's coverage
      coverage-options must contain algorithm and filter-options and optionally
      a region-id to clip the returned geometry.
-     Returns the result as GeoJSON string"))
+     Returns the result as GeoJSON string")
+
+  (delete-provider-set
+    [this provider-set-id]
+    "Delete provider-set given a provider-set-id.
+     Providers and providers coverage referenced from provider-set are also deleted.
+     When provider set is referenced from valid project an exception is thrown.
+     If provider set is deleted all created files are deleted."))
 
 ;; Preprocessing provider-set job type: ::preprocess-provider-set

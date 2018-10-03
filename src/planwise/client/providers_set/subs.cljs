@@ -43,3 +43,8 @@
  :providers-set/new-provider-set-coverage
  (fn [db _]
    (get-in db [:providers-set :new-provider-set :coverage])))
+
+(rf/reg-sub
+ :providers-set/delete-selected-provider-set
+ (fn [db _]
+   (get-in db [:providers-set :selected-provider])))

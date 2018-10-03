@@ -72,7 +72,8 @@
  :projects2/start-project
  in-projects2
  (fn [{:keys [db]} [_ id]]
-   {:dispatch [:scenarios/invalidate-scenarios]
+   {:dispatch-n [[:scenarios/invalidate-scenarios]
+                 [:providers-set/load-providers-set]]
     :api (assoc (api/start-project! id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
@@ -93,6 +94,7 @@
  (fn [{:keys [db]} [_ id]]
    {:api       (api/delete-project! id)
     :navigate  (routes/projects2)
+    :dispatch [:providers-set/load-providers-set]
     :db   (-> db
               (assoc :current-project nil)
               (update :list #(seq (utils/remove-by-id % id))))}))

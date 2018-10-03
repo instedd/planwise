@@ -212,8 +212,12 @@ filter: grayscale(100%);
 
     .card-secondary {
       padding: 1em;
+      .actions {
+        justify-content: space-between;
+        display: flex;
+      }
+      }
     }
-  }
 }
 
 .panel {
@@ -264,7 +268,7 @@ form.vertical, .fields-vertical {
 
 .set-list {
   .card-item {
-    height: 120px;
+    height: 160px;
     width: 300px;
     margin-bottom: 20px;
 

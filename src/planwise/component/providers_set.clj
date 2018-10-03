@@ -10,6 +10,7 @@
             [clojure.java.io :as io]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
+            [planwise.util.files :as files]
             [clojure.string :as str]
             [clojure.set :as set]))
 
@@ -244,6 +245,24 @@
                                              :options (pr-str filter-options)
                                              :region-id region-id}))
 
+(defn delete-provider-set
+  [store provider-set-id]
+  (try
+    (jdbc/with-db-transaction [tx (get-db store)]
+      (let [tx-store        (assoc-in store [:db :spec] tx)
+            params          {:provider-set-id provider-set-id}]
+        (db-delete-providers-coverage! tx params)
+        (db-delete-providers! tx params)
+        (db-delete-provider-set! tx params)))
+    (files/delete-files-recursively
+     (str "data/coverage/" provider-set-id)
+     true)
+    (catch Exception e
+      (throw (ex-info "Provider set can not be deleted"
+                      {:provider-set-id provider-set-id}
+                      e)))))
+
+
 (defrecord ProvidersStore [db coverage]
   boundary/ProvidersSet
   (list-providers-set [store owner-id]
@@ -265,7 +284,9 @@
   (get-radius-from-computed-coverage [store criteria provider-set-id]
     (get-radius-from-computed-coverage store criteria provider-set-id))
   (get-coverage [store provider-id coverage-options]
-    (get-coverage store provider-id coverage-options)))
+    (get-coverage store provider-id coverage-options))
+  (delete-provider-set [store provider-set-id]
+    (delete-provider-set store provider-set-id)))
 
 (defmethod ig/init-key :planwise.component/providers-set
   [_ config]
