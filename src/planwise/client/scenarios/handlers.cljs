@@ -367,6 +367,8 @@
      (assoc db :view-state (case state
                              :show-scenario-settings :current-scenario
                              :show-scenario-settings)))))
+
+(rf/reg-event-fx
  :scenarios.new-action/fetch-suggested-providers-to-improve
  in-scenarios
  (fn [{:keys [db]} [_]]

@@ -84,7 +84,7 @@
            building-costs-for-action? (case (:action change)
                                         "upgrade-provider" (and (pos? (:upgrade-budget props)) (some? (:building-costs props)))
                                         (some? (:building-costs props)))
-           suggested-cost   (suggest-investment change props)]
+           suggested-cost   (or (utils/format-number (:required-investment provider)) (suggest-investment change props))]
        [:div
         [common2/numeric-text-field {:type "number"
                                      :label "Investment"
@@ -96,7 +96,7 @@
                              :value (if (pos? remaining-budget) remaining-budget 0)}]
         (when (or building-costs-for-action? (:required-investment provider))
           [:p.text-helper {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] suggested-cost])}
-           "Suggested investment according to project configuration: " (or suggested-cost (:required-investment provider))])])]))
+           "Suggested investment according to project configuration: " suggested-cost])])]))
 
 
 (defn- action->title
