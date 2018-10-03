@@ -245,34 +245,22 @@
                                              :options (pr-str filter-options)
                                              :region-id region-id}))
 
-(defn delete-referenced-providers-coverage
-  [store provider-set-id]
-  (db-delete-providers-coverage! (get-db store) provider-set-id))
-
-(defn delete-referenced-providers
-  [store provider-set-id]
-  (db-delete-providers! (get-db store) provider-set-id))
-
-(defn delete-referenced-provider-set
-  [store provider-set-id]
-  (db-delete-provider-set! (get-db store) provider-set-id))
-
 (defn delete-provider-set
   [store provider-set-id]
   (try
     (jdbc/with-db-transaction [tx (get-db store)]
       (let [tx-store        (assoc-in store [:db :spec] tx)
-            provider-set-id {:provider-set-id provider-set-id}]
-        (delete-referenced-providers-coverage tx-store provider-set-id)
-        (delete-referenced-providers tx-store provider-set-id)
-        (delete-referenced-provider-set tx-store provider-set-id)))
+            params          {:provider-set-id provider-set-id}]
+        (db-delete-providers-coverage! tx params)
+        (db-delete-providers! tx params)
+        (db-delete-provider-set! tx params)))
+    (files/delete-files-recursively
+     (str "data/coverage/" provider-set-id)
+     true)
     (catch Exception e
       (throw (ex-info "Provider set can not be deleted"
                       {:provider-set-id provider-set-id}
-                      e)))
-    (finally (files/delete-files-recursively
-              (str "data/coverage/" provider-set-id)
-              true))))
+                      e)))))
 
 
 (defrecord ProvidersStore [db coverage]

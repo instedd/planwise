@@ -81,7 +81,7 @@
           :last-error (:status-text err))))
 
 (rf/reg-event-db
- :providers-set/select-provider-set
+ :providers-set/confirm-delete-provider-set
  in-providers-set
  (fn [db [_ provider-set]]
    (assoc db
@@ -94,11 +94,11 @@
  (fn [{:keys [db]} [_]]
    (let [id (get-in db [:selected-provider :id])]
      {:api (assoc (api/delete-provider-set id)
-                  :on-success [:providers-set/cancel-delete-dialog]
-                  :on-failure [:providers-set/alert-delete-dialog])})))
+                  :on-success [:providers-set/close-delete-dialog]
+                  :on-failure [:providers-set/delete-provider-set-failure])})))
 
 (rf/reg-event-fx
- :providers-set/cancel-delete-dialog
+ :providers-set/close-delete-dialog
  in-providers-set
  (fn [{:keys [db]} [_]]
    {:db (assoc db :view-state :list
@@ -106,7 +106,7 @@
     :dispatch [:providers-set/load-providers-set]}))
 
 (rf/reg-event-db
- :providers-set/alert-delete-dialog
+ :providers-set/delete-provider-set-failure
  in-providers-set
  (fn [db [_ {:keys [response]}]]
    (let [list (asdf/value (:list db))

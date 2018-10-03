@@ -82,15 +82,12 @@
   (into [:section.card-list props] children))
 
 (defn card
-  [{:keys [href primary title subtitle subtitles status action-button]}]
-  (let [subtitle-component (map (fn [sub] [:h2 {} sub]) (or subtitles [subtitle]))]
-    [:a {:className "card-item" :href href}
-     [:div.card-primary primary]
-     [:div.card-secondary (when subtitles {:class-name "card-multiple-subtitles"})
-      [:h1 {} title]
-      (if action-button
-        [:div.actions
-         subtitle-component
-         action-button]
-        subtitle-component)
-      [:div.status {} status]]]))
+  [{:keys [href primary title subtitles status action-button]}]
+  [:a {:className "card-item" :href href}
+   [:div.card-primary primary]
+   [:div.card-secondary
+    [:h1 {} title]
+    (map (fn [a] [:h2 {} a]) subtitles)
+    [:div.status {} status]
+    (when action-button
+      [:div.actions action-button])]])

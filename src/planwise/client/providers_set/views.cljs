@@ -27,7 +27,7 @@
   [dialog {:open? (some? selected-provider-set)
            :title (str "Delete " (:name selected-provider-set))
            :delete-fn #(rf/dispatch [:providers-set/delete-provider-set])
-           :cancel-fn #(rf/dispatch [:providers-set/cancel-delete-dialog])
+           :cancel-fn #(rf/dispatch [:providers-set/close-delete-dialog])
            :content [:p "Do you want to delete this provider set?"]}])
 
 (defn provider-set-card
@@ -37,8 +37,8 @@
         no-projects? (zero? depending-projects)]
     [ui/card (merge {:title name}
                     (if no-projects?
-                      {:subtitle (utils/pluralize provider-count "provider")
-                       :action-button [m/Button {:on-click #(rf/dispatch [:providers-set/select-provider-set provider-set])} "Delete"]}
+                      {:subtitles [(utils/pluralize provider-count "provider")]
+                       :action-button [m/Button {:on-click #(rf/dispatch [:providers-set/confirm-delete-provider-set provider-set])} "Delete"]}
                       {:subtitles [(utils/pluralize provider-count "provider")
                                    (str (utils/pluralize depending-projects "project") " depends on this set")]}))]))
 
