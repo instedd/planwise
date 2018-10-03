@@ -85,8 +85,11 @@
    (DELETE "/:id" [id :as request]
      (let [user-id           (util/request-user-id request)
            scenario-id       (Integer. id)]
-      ;TODO catch exceptions
-       (scenarios/delete-scenario service scenario-id)))))
+       (try
+         (scenarios/delete-scenario service scenario-id)
+         {:status 204}
+         (catch Exception e
+           {:status 400}))))))
 
 (defn scenarios-endpoint
   [config]
