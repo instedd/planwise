@@ -94,9 +94,9 @@
         [common2/text-field {:label "Available budget"
                              :read-only true
                              :value (if (pos? remaining-budget) remaining-budget 0)}]
-        (when building-costs-for-action?
+        (when (or building-costs-for-action? (:required-investment provider))
           [:p.text-helper {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] suggested-cost])}
-           "Suggested investment according to project configuration: " suggested-cost])])]))
+           "Suggested investment according to project configuration: " (or suggested-cost (:required-investment provider))])])]))
 
 
 (defn- action->title

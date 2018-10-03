@@ -77,9 +77,9 @@
     :create (popup-connected-button "Create new provider"
                                     [:scenarios/create-provider (:location provider)])
     :upgrade (popup-connected-button "Upgrade provider"
-                                     [:scenarios/edit-change (assoc provider :change (db/new-action provider :upgrade))])
-    :increase (popup-connected-button "Upgrade provider"
-                                      [:scenarios/edit-change (assoc provider :change (db/new-action provider :increase))])))
+                                     [:scenarios/edit-change provider])
+    :increase (popup-connected-button "Increase provider"
+                                      [:scenarios/edit-change provider])))
 
 (defn- show-suggested-provider
   [suggestion state]
