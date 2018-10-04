@@ -28,26 +28,27 @@
                :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}))))
 
 (defn- get-investment-from-project-config
-  [capacity building-costs]
-  (let [first     (first building-costs)
-        last      (last building-costs)
-        intervals (map vector building-costs (drop 1 building-costs))]
-    (cond
-      (<= capacity (:capacity first)) (:investment first)
-      (>= capacity (:capacity last))  (:investment last)
-      :else
-      (let [[[a b]] (drop-while (fn [[_ b]] (< (:capacity b) capacity)) intervals)
-            m     (/ (- (:investment b) (:investment a)) (- (:capacity b) (:capacity a)))]
-        (+ (* m (- capacity (:capacity a))) (:investment a))))))
+  [capacity costs]
+  (if (or (zero? capacity) (nil? capacity))
+    0
+    (let [first     (first costs)
+          last      (last costs)
+          intervals (map vector costs (drop 1 costs))]
+      (cond
+        (<= capacity (:capacity first)) (:investment first)
+        (>= capacity (:capacity last))  (:investment last)
+        :else
+        (let [[[a b]] (drop-while (fn [[_ b]] (< (:capacity b) capacity)) intervals)
+              m     (/ (- (:investment b) (:investment a)) (- (:capacity b) (:capacity a)))]
+          (+ (* m (- capacity (:capacity a))) (:investment a)))))))
 
 (defn- suggest-investment
-  [{:keys [capacity action]} {:keys [upgrade-budget building-costs]}]
-  (let [investment (if (or (zero? capacity) (nil? capacity))
-                     0
-                     (get-investment-from-project-config capacity building-costs))]
-    (if (= action "upgrade-provider")
-      (+ investment upgrade-budget)
-      investment)))
+  [{:keys [capacity action]} {:keys [upgrade-budget building-costs increasing-costs]}]
+  (case action
+    "upgrade-provider"    (+ (get-investment-from-project-config capacity increasing-costs)
+                             upgrade-budget)
+    "increasing-provider" (get-investment-from-project-config capacity increasing-costs)
+    "create-provider"     (get-investment-from-project-config capacity building-costs)))
 
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
@@ -80,21 +81,23 @@
                 (neg? required)       [common2/text-field {:label "Free capacity"
                                                            :read-only true
                                                            :value (utils/format-number (Math/abs required))}])))]
-     (let [remaining-budget (- available-budget (:investment change))
+     (let [remaining-budget           (- available-budget (:investment change))
            building-costs-for-action? (case (:action change)
-                                        "upgrade-provider" (and (pos? (:upgrade-budget props)) (some? (:building-costs props)))
+                                        "increase-provider" (not (empty? (:increasing-costs props)))
+                                        "upgrade-provider" (and (pos? (:upgrade-budget props)) (not (empty? (:increasing-costs props))))
                                         (some? (:building-costs props)))
-           suggested-cost   (suggest-investment change props)]
+           suggested-cost             (suggest-investment change props)]
        [:div
         [common2/numeric-text-field {:type "number"
                                      :label "Investment"
                                      :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
                                      :not-valid? (< available-budget (:investment change))
                                      :value (or (:investment change) "")}]
-        [common2/text-field {:label "Available budget"
-                             :read-only true
-                             :value (if (pos? remaining-budget) remaining-budget 0)}]
-        (when building-costs-for-action?
+        [common2/numeric-text-field {:label "Available budget"
+                                     :type "number"
+                                     :read-only true
+                                     :value (if (pos? remaining-budget) remaining-budget 0)}]
+        (when (or building-costs-for-action? (:action-cost provider))
           [:p.text-helper {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] suggested-cost])}
            "Suggested investment according to project configuration: " suggested-cost])])]))
 
@@ -121,7 +124,8 @@
                                         :available-budget (- budget (:investment scenario)))
                                  {:project-capacity (get-in config [:providers :capacity])
                                   :upgrade-budget   (get-in config [:actions :upgrade-budget])
-                                  :building-costs   (sort-by :capacity (get-in config [:actions :build]))}))
+                                  :building-costs   (sort-by :capacity (get-in config [:actions :build]))
+                                  :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))}))
                  :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])
                  :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
                  :cancel-fn   #(dispatch [:scenarios/cancel-dialog])})))))
@@ -132,26 +136,27 @@
           {:class-name "border-btn-floating border-btn-floating-animated"}
           {:class-name "border-btn-floating"})
    [m/Fab {:class-name "btn-floating"
-           :on-click #(dispatch [:scenarios.new-provider/toggle-options])}
+           :on-click #(dispatch [:scenarios.new-action/toggle-options])}
     (cond computing? "stop"
           (= state :new-provider) "cancel"
           :default "domain")]])
 
-(defn create-new-provider-component
+(defn create-new-action-component
   [state computing?]
-  (let [open (subscribe [:scenarios.new-provider/options])]
+  (let [open (subscribe [:scenarios.new-action/options])]
     (fn [state computing?]
       [:div.scenario-settings
        [new-provider-button state computing?]
-       [m/MenuAnchor
-        [:div.options-menu]
-        [m/Menu (when @open {:class "mdc-menu--open"})
-         [m/MenuItem
-          {:on-click #(dispatch [:scenarios.new-provider/simple-creation])}
-          "Create one"]
-         [m/MenuItem
-          {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
-          "Get suggestions"]]]])))
+       [m/Menu (when @open {:class "options-menu mdc-menu--open"})
+        [m/MenuItem
+         {:on-click #(dispatch [:scenarios.new-action/simple-create-provider])}
+         "Create one"]
+        [m/MenuItem
+         {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
+         "Get suggestions for new provider"]
+        [m/MenuItem
+         {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
+         "Get suggestions for improve existing provider"]]])))
 
 (defn scenario-settings
   [state]

@@ -56,30 +56,49 @@
     (crate/html
      [:div
       [:h3 name]
-      [:p (str "Capacity: " (format-number capacity))]
-      [:p (str "Unsatisfied demand: " (format-number unsatisfied-demand))]
-      [:p (str "Required capacity: " (format-number (Math/ceil required-capacity)))]
+      [:p (str "Capacity: " (utils/format-number capacity))]
+      [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
+      [:p (str "Required capacity: " (utils/format-number (Math/ceil required-capacity)))]
       (when (or matches-filters change)
-        [:p (str "Satisfied demand: " (format-number satisfied-demand))])
+        [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))])
       (when (or matches-filters change)
-        [:p (str "Free capacity: " (format-number (Math/floor free-capacity)))])
+        [:p (str "Free capacity: " (utils/format-number (Math/floor free-capacity)))])
       (when-not read-only?
         (popup-connected-button
          (cond
-           (some? change)       "Edit provider"
+           (some? change)        "Edit provider"
            (not matches-filters) "Upgrade provider"
            :else                "Increase provider")
          [:scenarios/edit-change (assoc provider :change change*)]))])))
 
+(defn- button-for-suggestion
+  [provider action]
+  (case action
+    :create (popup-connected-button "Create new provider"
+                                    [:scenarios/create-provider (:location provider)])
+    :upgrade (popup-connected-button "Upgrade provider"
+                                     [:scenarios/edit-change provider])
+    :increase (popup-connected-button "Increase provider"
+                                      [:scenarios/edit-change provider])))
+
 (defn- show-suggested-provider
-  [suggestion]
-  (crate/html
-   [:div
-    [:p (str "Suggestion:" (:ranked suggestion))]
-    [:p (str "Needed capacity : " (:required-capacity suggestion))]
-    [:p (str "Expected demand to satisfy : " (:coverage suggestion))]
-    (popup-connected-button
-     "Create new provider" [:scenarios/create-provider (:location suggestion)])]))
+  [suggestion state]
+  (let [new-provider? (= state :new-provider)
+        action        (cond
+                        new-provider?                 :create
+                        (:matches-filters suggestion) :increase
+                        :else                         :upgrade)]
+    (crate/html
+     [:div
+      [:p (str "Suggestion:" (:ranked suggestion))]
+      [:p (str "Needed capacity : " (utils/format-number (:action-capacity suggestion)))]
+      (when new-provider?
+        [:p (str "Expected demand to satisfy : " (utils/format-number (:coverage suggestion)))])
+      (when-not new-provider?
+        (let [action-cost (:action-cost suggestion)]
+          (when action-cost
+            [:p (str "Investment according to project configuration : " (utils/format-number action-cost))])))
+      (button-for-suggestion suggestion action)])))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
@@ -132,7 +151,7 @@
                                                                          @suggested-locations)
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
-                                                    :popup-fn   #(show-suggested-provider %)
+                                                    :popup-fn   #(show-suggested-provider % state)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-provider suggestion]))
                                                     :mouseout-fn  (fn [suggestion]
@@ -207,8 +226,9 @@
 
 (defn side-panel-view
   [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
-  (let [computing-best-locations? (subscribe [:scenarios.new-provider/computing-best-locations?])
-        view-state                (subscribe [:scenarios/view-state])]
+  (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
+        computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
+        view-state                   (subscribe [:scenarios/view-state])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
       [:div
        [:div {:class-name "section"}
@@ -230,10 +250,12 @@
          [:small "Investment required"]
          "K " (utils/format-number investment)]]
        [:hr]
-       [edit/create-new-provider-component @view-state @computing-best-locations?]
-       (if @computing-best-locations?
+       [edit/create-new-action-component @view-state (or @computing-best-locations? @computing-best-improvements?)]
+       (if (or @computing-best-locations? @computing-best-improvements?)
          [:div {:class-name "info-computing-best-location"}
-          [:small "Computing best locations ..."]])])))
+          [:small (if @computing-best-locations?
+                    "Computing best locations ..."
+                    "Computing best improvements...")]])])))
 
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]

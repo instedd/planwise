@@ -50,22 +50,55 @@
    (get-in db [:scenarios :current-scenario :suggested-locations])))
 
 (rf/reg-sub
+ :scenarios.new-intervention/suggested-providers
+ (fn [db _]
+   (get-in db [:scenarios :current-scenario :suggested-providers])))
+
+(defn update-action-with-suggestion
+  [provider suggestion]
+  (assoc-in provider [:change :capacity] (Math/ceil (:action-capacity suggestion))))
+
+(defn apply-suggestion-to-provider
+  [suggestion all-providers changes]
+  (let [provider             (utils/find-by-id all-providers (:id suggestion))
+        already-in-changeset (utils/find-by-id changes (:id suggestion))
+        provider-with-action (if already-in-changeset
+                               provider
+                               (assoc provider :change (db/new-action provider (if (not (:matches-filters provider)) :upgrade :increase))))]
+    (merge
+     (update-action-with-suggestion provider-with-action suggestion)
+     suggestion)))
+
+(rf/reg-sub
  :scenarios.new-provider/suggested-locations
  (fn [_]
    [(rf/subscribe [:scenarios/view-state])
-    (rf/subscribe [:scenarios.new-provider/new-suggested-locations])])
- (fn [[view-state suggestions] _]
-   (if (= view-state :new-provider)
-     suggestions
+    (rf/subscribe [:scenarios.new-provider/new-suggested-locations])
+    (rf/subscribe [:scenarios.new-intervention/suggested-providers])
+    (rf/subscribe [:scenarios/all-providers])
+    (rf/subscribe [:scenarios/providers-from-changeset])])
+ (fn [[view-state suggested-locations suggested-providers all-providers providers-from-changeset] _]
+   (case view-state
+     :new-provider     suggested-locations
+     :new-intervention (map
+                        #(apply-suggestion-to-provider % all-providers providers-from-changeset)
+                        suggested-providers)
      nil)))
+
 
 (rf/reg-sub
  :scenarios.new-provider/computing-best-locations?
  (fn [db _]
    (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
 
+
 (rf/reg-sub
- :scenarios.new-provider/options :<- [:scenarios/view-state]
+ :scenarios.new-intervention/computing-best-improvements?
+ (fn [db _]
+   (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
+
+(rf/reg-sub
+ :scenarios.new-action/options :<- [:scenarios/view-state]
  (fn [view-state [_]]
    (= :show-options-to-create-provider view-state)))
 

@@ -33,12 +33,15 @@
   (export-providers-data [this project scenario]
     "Create CSV file with scenario's demand information for computed and disabled providers")
 
-  (get-provider-suggestion [store project scenario]
-    "Get list of providers suggestions.")
+  (get-suggestions-for-new-provider-location [store project scenario]
+    "Get list of locations suggested for creating new provider")
 
   (get-provider-geom [store scenario project provider-id]
     "Retrieves provider coverage geometries")
 
   (delete-scenario [store scenario-id]
     "Delete scenario by id.
-     Delete scenario's created files."))
+     Delete scenario's created files.")
+
+  (get-suggestions-for-improving-providers [store project scenario]
+    "Get list of providers suggested for improvements"))

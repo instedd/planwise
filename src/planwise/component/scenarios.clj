@@ -320,11 +320,34 @@
   (db-delete-scenarios! (get-db store) {:project-id project-id})
   (engine/clear-project-cache (:engine store) project-id))
 
-(defn get-provider-suggestion
+(defn get-suggestions-for-new-provider-location
   [store {:keys [sources-set-id] :as project} {:keys [raster sources-data] :as scenario}]
-  (engine/search-optimal-location (:engine store) project  {:raster raster
-                                                            :sources-data sources-data
-                                                            :sources-set-id sources-set-id}))
+  (engine/search-optimal-locations (:engine store) project  {:raster raster
+                                                             :sources-data sources-data
+                                                             :sources-set-id sources-set-id}))
+
+(defn- get-current-investment
+  [changeset]
+  (reduce + (map :investment changeset)))
+
+(defn get-suggestions-for-improving-providers
+  [store {:keys [sources-set-id config] :as project} {:keys [raster sources-data] :as scenario}]
+  (let [increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))
+        upgrade-budget   (get-in config [:actions :upgrade-budget])
+        costs-config?    (and (not (empty? increasing-costs)) (some? upgrade-budget))
+        settings         (merge
+                          {:available-budget (- (get-in config [:actions :budget])
+                                                (get-current-investment (:changeset scenario)))}
+                          (if costs-config?
+                            {:max-capacity     (:capacity (last increasing-costs))
+                             :increasing-costs increasing-costs
+                             :upgrade-budget   (get-in config [:actions :upgrade-budget])}
+                            {:no-action-costs true}))
+        show-keys (conj [:id :action-capacity] (when costs-config? :action-cost))]
+    (take 5
+          (map
+           #(select-keys % show-keys)
+           (engine/search-optimal-interventions (:engine store) project scenario settings)))))
 
 
 (defrecord ScenariosStore [db engine jobrunner providers-set sources-set]
@@ -347,12 +370,14 @@
     (get-scenario-for-project store scenario project))
   (export-providers-data [store project scenario]
     (export-providers-data store project scenario))
-  (get-provider-suggestion [store project scenario]
-    (get-provider-suggestion store project scenario))
+  (get-suggestions-for-new-provider-location [store project scenario]
+    (get-suggestions-for-new-provider-location store project scenario))
   (get-provider-geom [store scenario project provider-id]
     (get-provider-geom store scenario project provider-id))
   (delete-scenario [store scenario-id]
-    (delete-scenario store scenario-id)))
+    (delete-scenario store scenario-id))
+  (get-suggestions-for-improving-providers [store project scenario]
+    (get-suggestions-for-improving-providers store project scenario)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
