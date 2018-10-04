@@ -63,8 +63,8 @@
   (let [provider             (utils/find-by-id all-providers (:id suggestion))
         already-in-changeset (utils/find-by-id changes (:id suggestion))
         provider-with-action (if already-in-changeset
-                              provider
-                             (assoc provider :change (db/new-action provider (if (not (:matches-filters provider)) :upgrade :increase))))]
+                               provider
+                               (assoc provider :change (db/new-action provider (if (not (:matches-filters provider)) :upgrade :increase))))]
     (merge
      (update-action-with-suggestion provider-with-action suggestion)
      suggestion)))

@@ -95,7 +95,9 @@
       (when new-provider?
         [:p (str "Expected demand to satisfy : " (utils/format-number (:coverage suggestion)))])
       (when-not new-provider?
-        [:p (str "Investment according to project configuration : " (utils/format-number (:action-cost suggestion)))])
+        (let [action-cost (:action-cost suggestion)]
+          (when action-cost
+            [:p (str "Investment according to project configuration : " (utils/format-number action-cost))])))
       (button-for-suggestion suggestion action)])))
 
 (defn- show-source
