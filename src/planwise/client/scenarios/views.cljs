@@ -91,11 +91,11 @@
     (crate/html
      [:div
       [:p (str "Suggestion:" (:ranked suggestion))]
-      [:p (str "Needed capacity : " (utils/format-number (:required-capacity suggestion)))]
+      [:p (str "Needed capacity : " (utils/format-number (:action-capacity suggestion)))]
       (when new-provider?
         [:p (str "Expected demand to satisfy : " (utils/format-number (:coverage suggestion)))])
       (when-not new-provider?
-        [:p (str "Investment according to project configuration : " (utils/format-number (:required-investment suggestion)))])
+        [:p (str "Investment according to project configuration : " (utils/format-number (:action-cost suggestion)))])
       (button-for-suggestion suggestion action)])))
 
 (defn- show-source

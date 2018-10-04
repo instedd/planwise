@@ -133,13 +133,13 @@
 
 (defn insert-in-sorted-coll
   [coll value criteria]
-  (sort-by :ratio > (conj coll value)))
+  (sort-by criteria > (conj coll value)))
 
 (defn get-information-from-demand
   [all-providers id]
   (select-keys
-   (filter #(= id (:id %)) all-providers)
-   [:required-capacity :required-demand]))
+   (first (filter #(= id (:id %)) all-providers))
+   [:required-capacity]))
 
 (defn get-sorted-providers-interventions
   [engine project {:keys [providers-data changeset] :as scenario} settings]

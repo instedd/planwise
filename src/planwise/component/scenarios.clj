@@ -341,7 +341,7 @@
                   :upgrade-budget   (get-in config [:actions :upgrade-budget])}]
     (take 10
           (map
-           #(select-keys % [:id :required-investment :required-capacity])
+           #(select-keys % [:id :action-cost :action-capacity])
            (engine/search-optimal-interventions (:engine store) project scenario settings)))))
 
 
