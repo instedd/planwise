@@ -97,10 +97,10 @@
 
 ;TODO; shared code with client
 (defn- get-investment-from-project-config
-  [capacity building-costs]
-  (let [first     (first building-costs)
-        last      (last building-costs)
-        intervals (mapv vector building-costs (drop 1 building-costs))]
+  [capacity increasing-costs]
+  (let [first     (first increasing-costs)
+        last      (last increasing-costs)
+        intervals (mapv vector increasing-costs (drop 1 increasing-costs))]
     (cond
       (<= capacity (:capacity first)) (:investment first)
       :else
@@ -108,77 +108,57 @@
             m     (/ (- (:investment b) (:investment a)) (- (:capacity b) (:capacity a)))]
         (+ (* m (- capacity (:capacity a))) (:investment a))))))
 
-(defn- get-building-cost
-  [{:keys [capacity action]} {:keys [upgrade-budget building-costs]}]
+(defn- get-increasing-cost
+  [{:keys [capacity action]} {:keys [upgrade-budget increasing-costs]}]
   (let [investment (if (or (zero? capacity) (nil? capacity))
                      0
-                     (get-investment-from-project-config capacity building-costs))]
+                     (get-investment-from-project-config capacity increasing-costs))]
     (if (= action "upgrade-provider")
       (+ investment (or upgrade-budget 0))
       investment)))
 
 (defn get-provider-capacity-and-cost
   [provider settings]
-  (let [required-capacity      (:required-capacity provider)
-        max-available-capacity (:capacity provider)
-        action-cost       (get-building-cost
+  (let [action-capacity   (min (:required-capacity provider) (:max-capacity settings))
+        action-cost       (get-increasing-cost
                            {:action (if (:applicable? provider)
                                       "increase-provider"
                                       "upgrade-provider")
-                            :capacity (min required-capacity max-available-capacity)}
+                            :capacity action-capacity}
                            settings)]
     (cond
       (< (:available-budget settings) action-cost) nil
-      :else {:required-capacity required-capacity
-             :required-investment action-cost})))
+      :else {:action-capacity action-capacity
+             :action-cost     action-cost})))
 
-; Sorted in decreasing order
 (defn insert-in-sorted-coll
-  [sorted-coll value criteria]
-  (if value
-    (let [[s0 s1] (split-with #(< (get % criteria) (get value criteria)) sorted-coll)
-          coll    (concat s1 [value] s0)]
-      coll)
-    sorted-coll))
+  [coll value criteria]
+  (sort-by :ratio > (conj coll value)))
+
+(defn get-information-from-demand
+  [all-providers id]
+  (select-keys
+   (filter #(= id (:id %)) all-providers)
+   [:required-capacity :required-demand]))
 
 (defn get-sorted-providers-interventions
-  [engine project {:keys [raster sources-data changeset] :as scenario} settings]
+  [engine project {:keys [providers-data changeset] :as scenario} settings]
   (let [{:keys [engine-config config provider-set-id region-id coverage-algorithm]} project
-        raster                      (when raster (raster/read-raster (str "data/" raster ".tif")))
-        sources                     (when sources-data (into {} (map (juxt :id identity) sources-data)))
-        criteria                    (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
-        capacity-multiplier         (get-in project [:config :providers :capacity])
-        providers                   (common/providers-in-project (:providers-set engine) project)
-        providers-collection        (if raster
-                                      providers
-                                      (common/resolve-covered-sources
-                                       (:sources-set engine)
-                                       (:source-set-id project)
-                                       providers
-                                       sources))
-        get-information-from-demand (fn [p]
-                                      (if raster
-                                        (common/provider-coverage-raster-demand capacity-multiplier p raster)
-                                        (let [[{:keys [used-capacity satisfied-demand]} _] (common/point-apply-provider! capacity-multiplier p sources)]
-                                          {:required-capacity used-capacity
-                                           :expected-covered-demand satisfied-demand})))]
-
+        providers-collection (common/providers-in-project (:providers-set engine) project)]
     (reduce
      (fn [suggestions provider]
-       (debug "Provider with id: " (:id provider) " and orginal capacity of" (:capacity provider))
        (insert-in-sorted-coll
         suggestions
         (when-let [intervention (get-provider-capacity-and-cost
                                  (merge provider
-                                        (get-information-from-demand provider))
+                                        (get-information-from-demand providers-data (:id provider)))
                                  settings)]
           (merge
            provider
            intervention
-           (let [{:keys [required-capacity required-investment]} intervention]
-             (debug "Has suggested intervention to satistisfy " required-capacity "with a cost of " required-investment)
-             {:ratio (if (not (zero? required-investment))
-                       (/ required-capacity required-investment)
+           (let [{:keys [action-capacity action-cost]} intervention]
+             {:ratio (if (not (zero? action-cost))
+                       (/ action-capacity action-cost)
                        0)})))
         :ratio))
      []
