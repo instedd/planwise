@@ -54,16 +54,20 @@
  (fn [db _]
    (get-in db [:scenarios :current-scenario :suggested-providers])))
 
+(defn update-action-with-suggestion
+  [provider suggestion]
+  (assoc-in provider [:change :capacity] (Math/ceil (:action-capacity suggestion))))
 
 (defn apply-suggestion-to-provider
   [suggestion all-providers changes]
   (let [provider             (utils/find-by-id all-providers (:id suggestion))
-        already-in-changeset (utils/find-by-id changes (:id suggestion))]
+        already-in-changeset (utils/find-by-id changes (:id suggestion))
+        provider-with-action (if already-in-changeset
+                              provider
+                             (assoc provider :change (db/new-action provider (if (not (:matches-filters provider)) :upgrade :increase))))]
     (merge
-     suggestion
-     (if already-in-changeset
-       provider
-       (assoc provider :change (db/new-action provider (if (not (:matches-filters provider)) :upgrade :increase)))))))
+     (update-action-with-suggestion provider-with-action suggestion)
+     suggestion)))
 
 (rf/reg-sub
  :scenarios.new-provider/suggested-locations
