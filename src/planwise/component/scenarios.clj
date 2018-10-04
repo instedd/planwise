@@ -333,15 +333,20 @@
 (defn get-suggestions-for-improving-providers
   [store {:keys [sources-set-id config] :as project} {:keys [raster sources-data] :as scenario}]
   (let [increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))
-        settings {:project-capacity (get-in config [:providers :capacity])
-                  :available-budget (- (get-in config [:actions :budget])
-                                       (get-current-investment (:changeset scenario)))
-                  :max-capacity     (:capacity (last increasing-costs))
-                  :increasing-costs increasing-costs
-                  :upgrade-budget   (get-in config [:actions :upgrade-budget])}]
-    (take 10
+        upgrade-budget   (get-in config [:actions :upgrade-budget])
+        costs-config?    (and (not (empty? increasing-costs)) (some? upgrade-budget))
+        settings         (merge
+                          {:available-budget (- (get-in config [:actions :budget])
+                                                (get-current-investment (:changeset scenario)))}
+                          (if costs-config?
+                            {:max-capacity     (:capacity (last increasing-costs))
+                             :increasing-costs increasing-costs
+                             :upgrade-budget   (get-in config [:actions :upgrade-budget])}
+                            {:no-action-costs true}))
+        show-keys (conj [:id :action-capacity] (when costs-config? :action-cost))]
+    (take 5
           (map
-           #(select-keys % [:id :action-cost :action-capacity])
+           #(select-keys % show-keys)
            (engine/search-optimal-interventions (:engine store) project scenario settings)))))
 
 

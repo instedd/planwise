@@ -109,17 +109,21 @@
         (+ (* m (- capacity (:capacity a))) (:investment a))))))
 
 (defn- get-increasing-cost
-  [{:keys [capacity action]} {:keys [upgrade-budget increasing-costs]}]
-  (let [investment (if (or (zero? capacity) (nil? capacity))
-                     0
-                     (get-investment-from-project-config capacity increasing-costs))]
-    (if (= action "upgrade-provider")
-      (+ investment (or upgrade-budget 0))
-      investment)))
+  [{:keys [capacity action]} {:keys [upgrade-budget increasing-costs no-action-costs]}]
+  (let [investment (when-not no-action-costs
+                     (if (or (zero? capacity) (nil? capacity))
+                       0
+                       (get-investment-from-project-config capacity increasing-costs)))]
+    (cond no-action-costs 1
+          (= action "upgrade-provider") (+ investment (or upgrade-budget 0))
+          :else investment)))
 
 (defn get-provider-capacity-and-cost
   [provider settings]
-  (let [action-capacity   (min (:required-capacity provider) (:max-capacity settings))
+  (let [max-capacity      (:max-capacity settings)
+        action-capacity   (if max-capacity
+                            (min (:required-capacity provider) (:max-capacity settings))
+                            (:required-capacity provider))
         action-cost       (get-increasing-cost
                            {:action (if (:applicable? provider)
                                       "increase-provider"
