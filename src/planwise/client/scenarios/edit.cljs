@@ -45,10 +45,10 @@
 (defn- suggest-investment
   [{:keys [capacity action]} {:keys [upgrade-budget building-costs increasing-costs]}]
   (case action
-    "upgrade-provider"    (+ (get-investment-from-project-config capacity increasing-costs)
-                             upgrade-budget)
-    "increasing-provider" (get-investment-from-project-config capacity increasing-costs)
-    "create-provider"     (get-investment-from-project-config capacity building-costs)))
+    "upgrade-provider"  (+ (get-investment-from-project-config capacity increasing-costs)
+                           upgrade-budget)
+    "increase-provider" (get-investment-from-project-config capacity increasing-costs)
+    "create-provider"   (get-investment-from-project-config capacity building-costs)))
 
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
