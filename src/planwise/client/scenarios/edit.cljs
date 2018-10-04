@@ -65,10 +65,10 @@
         [common2/text-field {:label "Original capacity"
                              :read-only true
                              :value initial-capacity}])
-      [common2/numeric-text-field {:type "number"
-                                   :label (if increase? "Extra capacity" "Capacity")
-                                   :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
-                                   :value (or (:capacity change) "")}]
+      [common2/numeric-field {:type "number"
+                              :label (if increase? "Extra capacity" "Capacity")
+                              :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
+                              :value (or (:capacity change) "")}]
       (when-not new?
         (let [extra-capacity          (:capacity change)
               total-required-capacity (if idle? (- capacity free-capacity) (+ capacity required-capacity))
@@ -88,15 +88,15 @@
                                         (some? (:building-costs props)))
            suggested-cost             (suggest-investment change props)]
        [:div
-        [common2/numeric-text-field {:type "number"
-                                     :label "Investment"
-                                     :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
-                                     :not-valid? (< available-budget (:investment change))
-                                     :value (or (:investment change) "")}]
-        [common2/numeric-text-field {:label "Available budget"
-                                     :type "number"
-                                     :read-only true
-                                     :value (if (pos? remaining-budget) remaining-budget 0)}]
+        [common2/numeric-field {:type "number"
+                                :label "Investment"
+                                :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
+                                :not-valid? (< available-budget (:investment change))
+                                :value (or (:investment change) "")}]
+        [common2/numeric-field {:label "Available budget"
+                                :type "number"
+                                :read-only true
+                                :value (if (pos? remaining-budget) remaining-budget 0)}]
         (when (or building-costs-for-action? (:action-cost provider))
           [:p.text-helper {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] suggested-cost])}
            "Suggested investment according to project configuration: " suggested-cost])])]))
