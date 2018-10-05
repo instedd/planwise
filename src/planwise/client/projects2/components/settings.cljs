@@ -43,7 +43,7 @@
                        :on-change (comp change-fn (fn [e] (-> e .-target .-value)))
                        :value     value})]
      (case type
-       "number" [common2/numeric-text-field (assoc props :on-change change-fn)]
+       "number" [common2/numeric-field (assoc props :on-change change-fn)]
        [common2/text-field props]))))
 
 (defn- project-start-button
