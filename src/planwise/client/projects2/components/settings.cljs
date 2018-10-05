@@ -100,23 +100,26 @@
 ;-------------------------------------------------------------------------------------------
 ; Actions
 (defn- show-action
-  [_ {:keys [idx action-name capacity investment] :as action}]
+  [_ {:keys [idx action-name capacity investment] :as action} props]
   [:div {:class "project-setting"}
-   [m/Button {:type "button"
-              :theme    ["text-secondary-on-secondary-light"]
-              :on-click #(dispatch [:projects2/delete-action action-name idx])}
+   [m/Button (merge
+              {:type "button"
+               :theme    ["text-secondary-on-secondary-light"]
+               :on-click #(dispatch [:projects2/delete-action action-name idx])}
+              props)
     [m/Icon "clear"]]
    (when (= action-name :build) "with a capacity of ")
-   [current-project-input "" [:config :actions action-name idx :capacity] "number" {:class "action-input"}]
+   [current-project-input "" [:config :actions action-name idx :capacity] "number" (merge {:class "action-input"} props)]
    "would cost"
-   [current-project-input "" [:config :actions action-name idx :investment] "number" {:class "action-input"}]])
+   [current-project-input "" [:config :actions action-name idx :investment] "number" (merge {:class "action-input"} props)]])
 
 (defn- listing-actions
-  [action-name list]
+  [{:keys [read-only? action-name list]}]
   [:div
    (for [[index action] (map-indexed vector list)]
-     [show-action {:key (str action-name "-" index)} (assoc action :action-name action-name :idx index)])
+     [show-action {:key (str action-name "-" index)} (assoc action :action-name action-name :idx index) {:disabled read-only?}])
    [m/Button  {:type "button"
+               :disabled read-only?
                :theme    ["text-secondary-on-secondary-light"]
                :on-click #(dispatch [:projects2/create-action action-name])} [m/Icon "add"] "Add Option"]])
 
@@ -181,13 +184,17 @@
           [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
           [:div [:p [m/Icon "domain"] "Building a new provider..."]]
-          [listing-actions :build @build-actions]
+          [listing-actions {:read-only?  read-only
+                            :action-name :build
+                            :list        @build-actions}]
 
           [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
           [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
 
           [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
-          [listing-actions :upgrade @upgrade-actions]]]]])))
+          [listing-actions {:read-only?   read-only
+                            :action-name :upgrade
+                            :list        @upgrade-actions}]]]]])))
 
 
 (defn edit-current-project
