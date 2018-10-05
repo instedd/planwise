@@ -88,15 +88,15 @@
                                         (some? (:building-costs props)))
            suggested-cost             (suggest-investment change props)]
        [:div
-        [common2/numeric-field {:type "number"
-                                :label "Investment"
-                                :on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
-                                :not-valid? (< available-budget (:investment change))
-                                :value (or (:investment change) "")}]
-        [common2/numeric-field {:label "Available budget"
-                                :type "number"
-                                :read-only true
-                                :value (if (pos? remaining-budget) remaining-budget 0)}]
+        [common2/numeric-field {:type           "number"
+                                :label         "Investment"
+                                :on-change     #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
+                                :invalid-input (< available-budget (:investment change))
+                                :value         (or (:investment change) "")}]
+        [common2/numeric-field {:label         "Available budget"
+                                :type          "number"
+                                :read-only     true
+                                :value        (if (pos? remaining-budget) remaining-budget 0)}]
         (when (or building-costs-for-action? (:action-cost provider))
           [:p.text-helper {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] suggested-cost])}
            "Suggested investment according to project configuration: " suggested-cost])])]))
