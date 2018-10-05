@@ -62,7 +62,7 @@
       (let [component-props (assoc (select-keys props extra-keys)
                                    :id id
                                    :focus focus)
-            props           (dissoc props extra-keys)]
+            props           (apply dissoc props extra-keys)]
         [mdc-input-field props component-props]))))
 
 (defn- set-numeric-format
@@ -88,9 +88,9 @@
                               :focus focus
                               :focus-extra-class (when wrong-input " invalid-input")})
             on-change-fn    (:on-change props)
-            global-value    (:value props)
+            global-value    (str (:value props))
             props           (merge
-                             (dissoc props extra-keys)
+                             (apply dissoc props extra-keys)
                              {:on-change #(do
                                             (reset! local-value (-> % .-target .-value str))
                                             (on-change-fn (parse-fn (validate-fn @local-value))))

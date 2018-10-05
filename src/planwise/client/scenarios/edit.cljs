@@ -53,10 +53,10 @@
 (defn configured-costs?
   [props]
   (case (get-in props [:change :action])
-    "increase-provider" (not (empty? (:increasing-costs props)))
+    "increase-provider" (seq (:increasing-costs props))
     "upgrade-provider"  (and (pos? (:upgrade-budget props))
-                             (not (empty? (:increasing-costs props))))
-    (some? (:building-costs props))))
+                             (seq (:increasing-costs props)))
+    (seq (:building-costs props))))
 
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
@@ -75,7 +75,7 @@
                              :value initial-capacity}])
       [common2/numeric-field {:label (if increase? "Extra capacity" "Capacity")
                               :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
-                              :value (or (:capacity change) "")}]
+                              :value (:capacity change)}]
       (when-not new?
         (let [extra-capacity          (:capacity change)
               total-required-capacity (if idle? (- capacity free-capacity) (+ capacity required-capacity))
@@ -97,7 +97,7 @@
                                 :sub-type      :float
                                 :on-change     #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
                                 :invalid-input (< available-budget (:investment change))
-                                :value         (or (:investment change) "")}]
+                                :value         (:investment change)}]
         [common2/numeric-field {:label         "Available budget"
                                 :sub-type      :float
                                 :read-only     true
