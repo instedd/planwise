@@ -50,6 +50,14 @@
     "increase-provider" (get-investment-from-project-config capacity increasing-costs)
     "create-provider"   (get-investment-from-project-config capacity building-costs)))
 
+(defn configured-costs?
+  [props]
+  (case (get-in props [:change :action])
+    "increase-provider" (not (empty? (:increasing-costs props)))
+    "upgrade-provider"  (and (pos? (:upgrade-budget props))
+                             (not (empty? (:increasing-costs props))))
+    (some? (:building-costs props))))
+
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
   (let [new?      (and (= (:action change) "create-provider") (nil? required-capacity) (nil? free-capacity))
@@ -65,8 +73,7 @@
         [common2/text-field {:label "Original capacity"
                              :read-only true
                              :value initial-capacity}])
-      [common2/numeric-field {:type "number"
-                              :label (if increase? "Extra capacity" "Capacity")
+      [common2/numeric-field {:label (if increase? "Extra capacity" "Capacity")
                               :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
                               :value (or (:capacity change) "")}]
       (when-not new?
@@ -82,24 +89,23 @@
                                                            :read-only true
                                                            :value (utils/format-number (Math/abs required))}])))]
      (let [remaining-budget           (- available-budget (:investment change))
-           building-costs-for-action? (case (:action change)
-                                        "increase-provider" (not (empty? (:increasing-costs props)))
-                                        "upgrade-provider" (and (pos? (:upgrade-budget props)) (not (empty? (:increasing-costs props))))
-                                        (some? (:building-costs props)))
-           suggested-cost             (suggest-investment change props)]
+           suggested-cost             (suggest-investment change props)
+           show-suggested-cost        (or (configured-costs? props)
+                                          (:action-cost provider))]
        [:div
-        [common2/numeric-field {:type           "number"
-                                :label         "Investment"
+        [common2/numeric-field {:label         "Investment"
+                                :sub-type      :float
                                 :on-change     #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
                                 :invalid-input (< available-budget (:investment change))
                                 :value         (or (:investment change) "")}]
         [common2/numeric-field {:label         "Available budget"
-                                :type          "number"
+                                :sub-type      :float
                                 :read-only     true
                                 :value        (if (pos? remaining-budget) remaining-budget 0)}]
-        (when (or building-costs-for-action? (:action-cost provider))
-          [:p.text-helper {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] suggested-cost])}
-           "Suggested investment according to project configuration: " suggested-cost])])]))
+        (when show-suggested-cost
+          [:p.text-helper
+           {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] (min suggested-cost remaining-budget)])}
+           "Suggested investment according to project configuration: " (- suggested-cost (:investment change))])])]))
 
 
 (defn- action->title

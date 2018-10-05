@@ -87,14 +87,16 @@
                              {:id    (str (random-uuid))
                               :focus focus
                               :focus-extra-class (when wrong-input " invalid-input")})
-            on-change       (:on-change props)
+            on-change-fn    (:on-change props)
             global-value    (:value props)
             props           (merge
                              (dissoc props extra-keys)
                              {:on-change #(do
                                             (reset! local-value (-> % .-target .-value str))
-                                            (on-change (parse-fn (validate-fn @local-value))))
+                                            (on-change-fn (parse-fn (validate-fn @local-value))))
                               :value (if @focus @local-value global-value)})]
-        (when-not (or @focus (= @local-value global-value))
-          (reset! local-value (str global-value)))
+        (let [changed-global-value? (and (not @focus)
+                                         (not= @local-value global-value))]
+          (when changed-global-value?
+            (reset! local-value (str global-value))))
         [mdc-input-field props component-props]))))
