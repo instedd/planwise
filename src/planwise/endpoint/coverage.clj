@@ -10,7 +10,8 @@
   [service]
   (routes
    (GET "/algorithms" req
-     (response (coverage/supported-algorithms service)))))
+     (response
+      (dissoc (coverage/supported-algorithms service) :pgrouting-alpha)))))
 
 (defmethod ig/init-key :planwise.endpoint/coverage
   [_ {:keys [coverage]}]
