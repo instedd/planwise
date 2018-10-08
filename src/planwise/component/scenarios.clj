@@ -17,7 +17,8 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.data.csv :as csv]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [clojure.set :as set]))
 
 (timbre/refer-timbre)
 
@@ -231,11 +232,17 @@
                   {:store store
                    :project project})))
 
-(defn remove-unused-scenario-raster-files
+(defn remove-unused-scenario-files
   [{:keys [id raster] :as scenario} scenario-result-after-computation]
   (when (some? raster)
     (io/delete-file (io/file (str "data/" raster ".tif")))
-    (io/delete-file (io/file (str "data/" raster ".map.tif")))))
+    (io/delete-file (io/file (str "data/" raster ".map.tif")))
+    (let [old-provider-ids (set (keys (:new-providers-geom scenario)))
+          new-provider-ids (set (keys (:new-providers-geom scenario-result-after-computation)))
+          removed-ids  (set/difference old-provider-ids new-provider-ids)]
+      (doall (for [change removed-ids]
+               (let [coverage-path (str "data/scenarios/" (:project-id scenario) "/coverage-cache/" change ".tif")]
+                 (io/delete-file (io/file coverage-path))))))))
 
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
@@ -257,7 +264,7 @@
                                             :sources-data       (pr-str (:sources-data result))
                                             :new-providers-geom (pr-str (:new-providers-geom result))
                                             :state              "done"})
-                (remove-unused-scenario-raster-files scenario result)
+                (remove-unused-scenario-files scenario result)
                 (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)
