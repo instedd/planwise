@@ -231,6 +231,12 @@
                   {:store store
                    :project project})))
 
+(defn remove-unused-scenario-raster-files
+  [{:keys [id raster] :as scenario} scenario-result-after-computation]
+  (when (some? raster)
+    (io/delete-file (io/file (str "data/" raster ".tif")))
+    (io/delete-file (io/file (str "data/" raster ".map.tif")))))
+
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
@@ -243,7 +249,6 @@
                 (info (str "Scenario " scenario-id " computed")
                       (select-keys result [:raster-path :covered-demand :providers-data :sources-data]))
                 ;; TODO check if scenario didn't change from result. If did, discard result.
-                ;; TODO remove previous raster files
                 (db-update-scenario-state! (get-db store)
                                            {:id                 scenario-id
                                             :raster             (:raster-path result)
@@ -252,6 +257,7 @@
                                             :sources-data       (pr-str (:sources-data result))
                                             :new-providers-geom (pr-str (:new-providers-geom result))
                                             :state              "done"})
+                (remove-unused-scenario-raster-files scenario result)
                 (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)
