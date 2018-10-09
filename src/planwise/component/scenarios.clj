@@ -50,6 +50,18 @@
         data   (cons (mapv name fields) rows)]
     (with-out-str (csv/write-csv *out* data))))
 
+(defn remove-unused-scenario-files
+  [{:keys [id raster] :as scenario} scenario-result-after-computation]
+  (when (some? raster)
+    (io/delete-file (io/file (str "data/" raster ".tif")))
+    (io/delete-file (io/file (str "data/" raster ".map.tif")))
+    (let [old-provider-ids (set (keys (:new-providers-geom scenario)))
+          new-provider-ids (set (keys (:new-providers-geom scenario-result-after-computation)))
+          removed-ids  (set/difference old-provider-ids new-provider-ids)]
+      (doall (for [change removed-ids]
+               (let [coverage-path (str "data/scenarios/" (:project-id scenario) "/coverage-cache/" change ".tif")]
+                 (io/delete-file (io/file coverage-path))))))))
+
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
@@ -67,12 +79,11 @@
 
 (defn delete-scenario
   [store scenario-id]
-  (let [{:keys [project-id raster] :as scenario} (db-find-scenario (get-db store) {:id scenario-id})]
+  (let [{:keys [project-id raster] :as scenario} (get-scenario store scenario-id)]
     (try
       (db-delete-scenario! (get-db store) {:id scenario-id})
       (when raster
-        (io/delete-file (io/file (str "data/" raster ".tif")))
-        (io/delete-file (io/file (str "data/" raster ".map.tif"))))
+        (remove-unused-scenario-files scenario {}))
       (catch Exception e
         (ex-info "Can not delete current scenario" {:id scenario-id} e)))))
 
@@ -231,18 +242,6 @@
                   [::boundary/compute-scenario id]
                   {:store store
                    :project project})))
-
-(defn remove-unused-scenario-files
-  [{:keys [id raster] :as scenario} scenario-result-after-computation]
-  (when (some? raster)
-    (io/delete-file (io/file (str "data/" raster ".tif")))
-    (io/delete-file (io/file (str "data/" raster ".map.tif")))
-    (let [old-provider-ids (set (keys (:new-providers-geom scenario)))
-          new-provider-ids (set (keys (:new-providers-geom scenario-result-after-computation)))
-          removed-ids  (set/difference old-provider-ids new-provider-ids)]
-      (doall (for [change removed-ids]
-               (let [coverage-path (str "data/scenarios/" (:project-id scenario) "/coverage-cache/" change ".tif")]
-                 (io/delete-file (io/file coverage-path))))))))
 
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
