@@ -57,7 +57,7 @@
                                            {:value 120 :label "2 hours"}]}}}
 
    :driving-friction
-   {:label       "Travel by car (friction)"
+   {:label       "Travel by car"
     :description "Computes reachable isochrone using a friction raster layer"
     :criteria    {:driving-time {:label   "Driving time"
                                  :type    :enum
