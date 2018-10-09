@@ -80,8 +80,8 @@
   (test-system/with-system (test-config)
     (let [store       (:planwise.component/scenarios system)
           projects2   (:planwise.component/projects2 system)
-          first-action {:action "create-provider" :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
-          second-action {:action "create-provider" :provider-id "new.2" :investment 5000 :capacity 20 :location {:lat 0 :lon 0}}
+          first-action {:action "create-provider" :name "New provider 0" :id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
+          second-action {:action "create-provider" :name "New provider 1" :id "new.2" :investment 5000 :capacity 20 :location {:lat 0 :lon 0}}
           props       {:name "Foo" :changeset [first-action second-action]}
           project     (projects2/get-project projects2 project-id)
           scenario-id (:id (scenarios/create-scenario store project props))
@@ -89,7 +89,7 @@
       (is (= (:name scenario) (:name props)))
       (is (= (:project-id scenario) project-id))
       (is (= (:state scenario) "pending"))
-      (is (= (map #(dissoc % :provider-id) (:changeset scenario)) (map #(dissoc % :provider-id) (:changeset props))))
+      (is (= (map #(dissoc % :id) (:changeset scenario)) (map #(dissoc % :id) (:changeset props))))
 
       ;; computes sum of investments of actions
       (is (= (:investment scenario) 15000M)))))
@@ -108,15 +108,19 @@
 (deftest valid-changeset
   (are [x] (s/valid? ::model/change-set x)
     []
-    [{:action "create-provider" :provider-id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}}]
-    [{:action "create-provider" :provider-id "new.2" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]))
+    [{:action "create-provider" :name "New provider 1" :id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}}]
+    [{:action "create-provider" :name "New provider 2" :id "new.2" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
+    [{:action "create-provider" :name "New provider 3" :id "new.3" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}
+     {:action "upgrade-provider" :id 1 :investment 10000 :capacity 50}]))
 
 (deftest invalid-changeset
   (are [x] (not (s/valid? ::model/change-set x))
-    [{:action "unknown-action"  :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
-    [{:action "create-provider" :provider-id "new.1" :investment nil :capacity nil}]
-    [{:action "create-provider" :provider-id "new.1" :investment "" :capacity ""}]
-    [{:action "create-provider" :provider-id "new.1"}]))
+    [{:action "unknown-action"  :id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
+    [{:action "create-provider" :id "new.1" :investment nil :capacity nil}]
+    [{:action "create-provider" :id "new.1" :investment "" :capacity ""}]
+    [{:action "create-provider" :id "new.1"}]
+    [{:action "create-provider" :id "new.1" :investment 1000 :capacity 50 :location {:lat 0 :lon 0}} {:action "upgrade-provider" :id "new.2"}]
+    [{:action "increase-provider" :location {:lat 0 :lon 0}}]))
 
 (deftest initial-scenario-read-only
   (test-system/with-system (test-config)
@@ -126,7 +130,7 @@
           scenario-id (scenarios/create-initial-scenario store project)
           scenario    (scenarios/get-scenario store scenario-id)
           new-scenario (assoc scenario
-                              :changeset [{:action "create-provider" :provider-id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
+                              :changeset [{:action "create-provider" :id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
                               :label "sub-optimal"
                               :investment 10000)]
       (do
@@ -134,3 +138,19 @@
         (let [updated-scenario (scenarios/get-scenario store scenario-id)
               check-key (fn [key] (= (-> updated-scenario key) (-> scenario key)))]
           (is (map check-key [:id :changeset :investment :state])))))))
+
+
+(deftest delete-current-scenario
+  (test-system/with-system (test-config fixture-with-scenarios)
+    (let [store       (:planwise.component/scenarios system)
+          projects2   (:planwise.component/projects2 system)
+          initial-scenario (scenarios/get-scenario store initial-scenario-id)
+          scenario    (scenarios/get-scenario store other-scenario-id)]
+      (is (some? scenario))
+      (is (some? initial-scenario))
+      (let [_        (scenarios/delete-scenario store other-scenario-id)
+            _        (scenarios/delete-scenario store initial-scenario-id)
+            scenario (scenarios/get-scenario store other-scenario-id)
+            initial-scenario (scenarios/get-scenario store initial-scenario-id)]
+        (is (nil? scenario))
+        (is (map? initial-scenario))))))

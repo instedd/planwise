@@ -212,8 +212,12 @@ filter: grayscale(100%);
 
     .card-secondary {
       padding: 1em;
+      .actions {
+        justify-content: space-between;
+        display: flex;
+      }
+      }
     }
-  }
 }
 
 .panel {
@@ -264,7 +268,7 @@ form.vertical, .fields-vertical {
 
 .set-list {
   .card-item {
-    height: 120px;
+    height: 160px;
     width: 300px;
     margin-bottom: 20px;
 
@@ -355,12 +359,6 @@ form.vertical, .fields-vertical {
   }
   */
 
-  .options-menu{
-    left: 196px;
-    background-color: rgba(255, 255, 255, 0);
-    margin-top: -0.5rem;
-  }
-
   .scroll-list {
     max-height: 280px;
     width: 100%;
@@ -422,10 +420,18 @@ form.vertical, .fields-vertical {
 
   table {
     border-spacing: 0;
-    font-size: 18px;
+    font-size: 16px;
     margin: 0;
     padding: 0;
     width: 100%;
+
+    caption{
+      padding: 32px 72px;
+      color: #000000;
+      font-size: 20px;
+      text-align: left;
+
+    }
 
     thead {
 
@@ -435,9 +441,10 @@ form.vertical, .fields-vertical {
       }
 
       th {
-        color: #bbb;
+        color: #999999;
+        text-align: left;
+        padding: 24px 20px;
         font-weight: 500;
-        padding: 35px 30px;
       }
     }
 
@@ -452,30 +459,28 @@ form.vertical, .fields-vertical {
     tr > td {
       border-bottom: 1px solid #eee;
       padding: 20px;
+      height: 50px;
     }
 
-    .col1 {
+
+    .col1{
+      width: 15%;
       text-align: left;
-      width: 105px;
     }
 
-    .col2 {
-      text-align: left;
-      width: 150px;
-    }
-
-    .col3 {
+    .col2{
+      width: 10%;
       text-align: right;
-      width: 170px;
     }
 
-    .col4 {
+    .col3{
+      width: 15%;
       text-align: right;
-      width: 120px;
     }
 
-    .col5 {
+    .col4{
       text-align: left;
+      width: 60%;
     }
   }
 }
@@ -681,22 +686,91 @@ form.vertical, .fields-vertical {
     }
 }
 
-
-  .loader {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    z-index: 1;
-    border: 6px solid #f5f5f5;
-    border-top: 6px solid   #ff7710;
-    border-radius: 50%;
-    width: 42px;
-    height: 42px;
-    -webkit-animation: spin 2s linear infinite;
-    animation: spin 2s linear infinite;
+.leaflet-square-icon-gray {
+  border: 1px solid rgba(211, 211, 211, 0.53) !important;
+  background: rgba(189, 187, 187, 0.447);
   }
 
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+.leaflet-square-icon-green {
+  border: 1px solid rgb(192, 233, 156) !important;
+  background: rgb(129, 203, 83);
   }
+
+.leaflet-square-icon-yellow {
+  border: 1px solid lightgoldenrodyellow !important;
+  background: yellow;
+}
+
+.leaflet-square-icon-orange {
+  border: 1px solid rgb(245, 208, 140) !important;
+  background: orange;
+}
+
+.leaflet-square-icon-red{
+  border: 1px solid lightcoral !important;
+  background: red ;
+}
+
+.leaflet-circle-icon-gray {
+  background-color: gray;
+  border-radius: 50%;
+}
+.leaflet-circle-icon-orange {
+  background-color: orange;
+  border-radius: 50%;;
+}
+
+.leaflet-circle-icon-red{
+  background-color: red;
+  border-radius: 50%;;
+  }
+
+.leaflet-circle-icon-blue{
+  background-color: blue;
+  border-radius: 50%;;
+  }
+
+.leaflet-circle-for-change{
+  border: 3px solid rgba(255, 255, 255, 0.756) !important;
+}
+.show-static-text {
+  width: 50%;
+}
+
+.inline {
+  display: inline-grid;
+}
+
+.text-helper {
+  font-size: 12px;
+}
+
+.scenario-settings {
+  margin-left: 18rem;
+  button {
+    padding: 6px;
+  }
+}
+
+.options-menu {
+   padding: 10px;
+}
+
+.loader {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  border: 6px solid #f5f5f5;
+  border-top: 6px solid   #ff7710;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

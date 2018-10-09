@@ -20,10 +20,11 @@
   (dispatch [:navigate {:page :design}]))
 (defroute design-section "/_design/:section" [section query-params]
   (dispatch [:navigate {:page :design, :section (keyword section), :query-params query-params}]))
-(defroute download-sample "/sample.csv" [])
+(defroute download-providers-sample "/providers-sample.csv" [])
 (defroute scenarios "/projects2/:project-id/scenarios/:id" [project-id id]
   (dispatch [:navigate {:page :scenarios, :id (js/parseInt id), :project-id (js/parseInt project-id)}]))
 (defroute projects2-scenarios "/projects2/:id/scenarios" [id]
   (dispatch [:navigate {:page :projects2, :id (js/parseInt id), :section :project-scenarios}]))
 (defroute projects2-settings "/projects2/:id/settings" [id]
   (dispatch [:navigate {:page :projects2, :id (js/parseInt id), :section :project-settings}]))
+(defroute download-sources-sample "/sources-sample.csv" [])

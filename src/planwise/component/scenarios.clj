@@ -10,6 +10,7 @@
             [planwise.util.str :as util-str]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
+            [planwise.model.providers :refer [merge-providers]]
             [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
@@ -43,90 +44,86 @@
         (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
 
 (defn- map->csv
-  [coll]
-  (let [fields (keys (first coll))
-        rows   (map #(map % fields) coll)
+  [coll fields]
+  (let [rows   (map #(map % fields) coll)
         data   (cons (mapv name fields) rows)]
     (with-out-str (csv/write-csv *out* data))))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
 
+(defn- map-scenario
+  [scenario]
+  (reduce (fn [map key] (update map key edn/read-string))
+          scenario
+          [:changeset :sources-data :providers-data :new-providers-geom]))
+
 (defn get-scenario
   [store scenario-id]
   ;; TODO compute % coverage from initial scenario/projects
   (let [scenario (db-find-scenario (get-db store) {:id scenario-id})]
-    (reduce (fn [map key] (update map key edn/read-string))
-            scenario
-            [:changeset :sources-data :providers-data :new-providers-geom])))
+    (when scenario (map-scenario scenario))))
 
-(defn- get-initial-providers-data
-  [store project-id]
-  (-> (db-get-initial-providers-data (get-db store) {:project-id project-id})
-      :providers-data read-string))
+(defn delete-scenario
+  [store scenario-id]
+  (let [{:keys [project-id raster] :as scenario} (db-find-scenario (get-db store) {:id scenario-id})]
+    (try
+      (db-delete-scenario! (get-db store) {:id scenario-id})
+      (when raster
+        (io/delete-file (io/file (str "data/" raster ".tif")))
+        (io/delete-file (io/file (str "data/" raster ".map.tif"))))
+      (catch Exception e
+        (ex-info "Can not delete current scenario" {:id scenario-id} e)))))
 
-(defn- get-initial-sources-data
+(defn get-initial-scenario
   [store project-id]
-  (-> (db-get-initial-sources-data (get-db store) {:project-id project-id})
-      :sources-data read-string))
+  (let [scenario (db-find-initial-scenario (get-db store) {:project-id project-id})]
+    (map-scenario scenario)))
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
-  (let [providers (providers-set/get-providers-with-coverage-in-region
-                   (:providers-set store) provider-set-id version filter-options)
-        select-fn (fn [{:keys [id name capacity lat lon]}]
-                    {:initial true
-                     :provider-id id ;(str id)
-                     :name name
+  (let [{:keys [providers disabled-providers]} (providers-set/get-providers-with-coverage-in-region
+                                                (:providers-set store)
+                                                provider-set-id
+                                                version
+                                                filter-options)
+        mapper-fn (fn [{:keys [id name capacity lat lon]}]
+                    {:id       id
+                     :name     name
                      :capacity capacity
                      :location {:lat lat :lon lon}})]
-    (seq (map select-fn providers))))
-
-(defn- update-provider-data
-  [provider updated-data]
-  (let [id    (:provider-id provider)
-        data  (select-keys (get updated-data id) [:satisfied :unsatisfied :coverage-geom])]
-    (merge provider data)))
-
-(defn- build-updated-data
-  [providers-data]
-  (reduce (fn [dic {:keys [id] :as provider}]
-            (assoc dic id (dissoc provider :id)))
-          {}
-          providers-data))
+    {:providers          (map mapper-fn providers)
+     :disabled-providers (map mapper-fn disabled-providers)}))
 
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
   (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                            (assoc :tags (get-in config [:providers :tags])
                                   :coverage-options (get-in config [:coverage :filter-options])))
-        ; providers
-        providers-data     (:providers-data scenario)
-        updated-data       (build-updated-data providers-data)
-        updated-providers  (map #(update-provider-data % updated-data)
-                                (get-initial-providers store provider-set-id provider-set-version filter-options))
-        ;changeset
-        updated-changeset  (map #(update-provider-data % updated-data) (:changeset scenario))
+        {:keys [providers disabled-providers]} (let [requested (select-keys scenario [:providers :disabled-providers])]
+                                                 (if (empty? requested)
+                                                   (get-initial-providers store provider-set-id provider-set-version filter-options)
+                                                   requested))
         ;sources
         sources             (sources/list-sources-in-set (:sources-set store) source-set-id)
         get-source-info-fn  (fn [id] (select-keys (-> (filter #(= id (:id %)) sources) first) [:name]))
         updated-sources (map (fn [s] (merge s (get-source-info-fn (:id s)))) (:sources-data scenario))]
 
     (-> scenario
-        (assoc :providers updated-providers
-               :sources-data updated-sources
-               :changeset updated-changeset)
-        (dissoc :updated-at :providers-data :new-providers-geom))))
+        (assoc :sources-data updated-sources
+               :providers providers
+               :disabled-providers disabled-providers)
+        (dissoc :updated-at :new-providers-geom))))
 
 (defn get-provider-geom
-  [store project scenario provider-id]
-  (if (re-matches #"\A[0-9]+\z" provider-id)
+  [store project scenario id]
+  (if (re-matches #"\A[0-9]+\z" id)
     {:coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
-                                                       (Integer/parseInt provider-id)
+                                                       (Integer/parseInt id)
                                                        {:algorithm (:coverage-algorithm project)
                                                         :filter-options (get-in project [:config :coverage :filter-options])
                                                         :region-id (:region-id project)}))}
-    ((keyword provider-id) (:new-providers-geom scenario))))
+    {:coverage-geom (get (:new-providers-geom scenario) id)}))
 
 (defn list-scenarios
   [store project-id]
@@ -134,7 +131,7 @@
   (let [list (db-list-scenarios (get-db store) {:project-id project-id})]
     (map (fn [{:keys [changeset] :as scenario}]
            (-> scenario
-               (assoc  :changeset-summary (build-changeset-summary (read-string changeset)))
+               (assoc  :changeset-summary (build-changeset-summary (edn/read-string changeset)))
                (dissoc :changeset)))
          list)))
 
@@ -166,16 +163,17 @@
             (try
               (let [engine (:engine store)
                     result (engine/compute-initial-scenario engine project)]
-                (info "Initial scenario computed" result)
+                (info (str "Initial scenario " scenario-id " computed")
+                      (select-keys result [:raster-path :covered-demand :providers-data :sources-data]))
                 ;; TODO check if scenario didn't change from result
                 (db-update-scenario-state! (get-db store)
-                                           {:id              scenario-id
-                                            :raster          (:raster-path result)
-                                            :demand-coverage (:covered-demand result)
-                                            :providers-data  (pr-str (:providers-data result))
-                                            :sources-data    (pr-str (:sources-data result))
-                                            :new-providers-geom "{}"
-                                            :state           "done"})
+                                           {:id                 scenario-id
+                                            :raster             (:raster-path result)
+                                            :demand-coverage    (:covered-demand result)
+                                            :providers-data     (pr-str (:providers-data result))
+                                            :sources-data       (pr-str (:sources-data result))
+                                            :new-providers-geom (pr-str {})
+                                            :state              "done"})
                 (db-update-project-engine-config! (get-db store)
                                                   {:project-id    (:id project)
                                                    :engine-config (pr-str {:demand-quartiles           (:demand-quartiles result)
@@ -183,15 +181,21 @@
                                                                            :pending-demand-raster-path (:raster-path result)})}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)
-                (error "Scenario initial computation failed"))))]
+                (error e "Scenario initial computation failed"))))]
     {:task-id :initial
      :task-fn task-fn
      :state   nil}))
 
+(defn create-provider-new-id-when-necessary
+  [provider]
+  (if (= (:action provider) "create-provider")
+    (assoc provider :id (str (java.util.UUID/randomUUID)))
+    provider))
+
 (defn create-scenario
   [store project {:keys [name changeset]}]
   (assert (s/valid? ::model/change-set changeset))
-  (let [changeset (map #(assoc % :provider-id (str (java.util.UUID/randomUUID))) changeset)
+  (let [changeset (map create-provider-new-id-when-necessary changeset)
         result (db-create-scenario! (get-db store)
                                     {:name name
                                      :project-id (:id project)
@@ -227,41 +231,31 @@
                   {:store store
                    :project project})))
 
-(defn- get-new-providers-geom
-  [store scenario-id {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
-  (let [{:keys [new-providers-geom]} (db-get-new-providers-geom (get-db store) {:scenario-id scenario-id})]
-    (when new-providers-geom (read-string new-providers-geom))))
-
 (defmethod jr/job-next-task ::boundary/compute-scenario
   [[_ scenario-id] {:keys [store project] :as state}]
   (letfn [(task-fn []
             (info "Computing scenario" scenario-id)
             (try
-              (let [engine            (:engine store)
-                    scenario          (get-scenario store scenario-id)
-                    initial-providers (get-initial-providers-data store (:project-id scenario))
-                    initial-sources   (get-initial-sources-data store (:project-id scenario))
-                    new-providers-geom (get-new-providers-geom store scenario-id project)
-                    scenario-with-data (assoc scenario
-                                              :providers-data initial-providers
-                                              :sources-data initial-sources
-                                              :new-providers-geom new-providers-geom)
-                    result             (engine/compute-scenario engine project scenario-with-data)]
-                (info "Scenario computed" result)
+              (let [engine           (:engine store)
+                    scenario         (get-scenario store scenario-id)
+                    initial-scenario (get-initial-scenario store (:id project))
+                    result           (engine/compute-scenario engine project initial-scenario scenario)]
+                (info (str "Scenario " scenario-id " computed")
+                      (select-keys result [:raster-path :covered-demand :providers-data :sources-data]))
                 ;; TODO check if scenario didn't change from result. If did, discard result.
                 ;; TODO remove previous raster files
                 (db-update-scenario-state! (get-db store)
-                                           {:id              scenario-id
-                                            :raster          (:raster-path result)
-                                            :demand-coverage (:covered-demand result)
-                                            :providers-data  (pr-str (:providers-data result))
-                                            :sources-data    (pr-str (:sources-data result))
+                                           {:id                 scenario-id
+                                            :raster             (:raster-path result)
+                                            :demand-coverage    (:covered-demand result)
+                                            :providers-data     (pr-str (:providers-data result))
+                                            :sources-data       (pr-str (:sources-data result))
                                             :new-providers-geom (pr-str (:new-providers-geom result))
-                                            :state           "done"})
+                                            :state              "done"})
                 (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)
-                (error "Scenario computation failed" e))))]
+                (error e "Scenario computation failed"))))]
     {:task-id scenario-id
      :task-fn task-fn
      :state   nil}))
@@ -290,45 +284,70 @@
            (cons name)
            (util-str/next-name))))
 
-(defn- changeset-to-export
-  [changeset]
-  (mapv (fn [{:keys [provider-id action capacity location]}]
-          {:provider-id provider-id
-           :type action
-           :name ""
-           :lat (:lat location)
-           :lon (:lon location)
-           :capacity capacity
-           :tags ""}) changeset))
+(defn- created-provider-to-export
+  [{:keys [id action capacity location]}]
+  {:id id
+   :type action
+   :name "New Provider"
+   :lat (:lat location)
+   :lon (:lon location)
+   :capacity capacity
+   :tags ""})
 
-(defn- providers-to-export
-  [store providers-data changeset]
-  (let [update-fn (fn [{:keys [id capacity satisfied unsatisfied]}]
-                    (let [provider  (if (int? id) (providers-set/get-provider (:providers-set store) id)
-                                        (-> (filter (fn [{:keys [provider-id]}] (= id provider-id)) changeset)
-                                            (first)
-                                            (dissoc :provider-id)))]
-                      (assoc provider
-                             :capacity capacity :satisfied satisfied :unsatisfied unsatisfied)))]
-    (map-indexed (fn [idx e] (merge {:id idx} (update-fn e))) providers-data)))
+(defn- new-providers-to-export
+  [changeset]
+  (map created-provider-to-export (filter #(= (:action %) "create-provider") changeset)))
 
 (defn export-providers-data
-  [store scenario-id]
-  (let [scenario       (get-scenario store scenario-id)
-        changes        (changeset-to-export (:changeset scenario))
-        providers-data (-> scenario :providers-data)]
-    (map->csv (providers-to-export store providers-data changes))))
+  [store {:keys [provider-set-id config] :as project} scenario]
+  (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
+                           (assoc :tags (get-in config [:providers :tags])
+                                  :coverage-options (get-in config [:coverage :filter-options])))
+        {:keys [disabled-providers providers]} (providers-set/get-providers-with-coverage-in-region
+                                                (:providers-set store)
+                                                provider-set-id
+                                                (:provider-set-version project)
+                                                filter-options)
+        disabled-providers (map #(assoc % :capacity 0) disabled-providers)
+        new-providers      (new-providers-to-export (:changeset scenario))
+        fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
+    (map->csv
+     (merge-providers providers disabled-providers new-providers (:providers-data scenario))
+     fields)))
 
 (defn reset-scenarios
   [store project-id]
   (db-delete-scenarios! (get-db store) {:project-id project-id})
   (engine/clear-project-cache (:engine store) project-id))
 
-(defn get-provider-suggestion
+(defn get-suggestions-for-new-provider-location
   [store {:keys [sources-set-id] :as project} {:keys [raster sources-data] :as scenario}]
-  (engine/search-optimal-location (:engine store) project  {:raster raster
-                                                            :sources-data sources-data
-                                                            :sources-set-id sources-set-id}))
+  (engine/search-optimal-locations (:engine store) project  {:raster raster
+                                                             :sources-data sources-data
+                                                             :sources-set-id sources-set-id}))
+
+(defn- get-current-investment
+  [changeset]
+  (reduce + (map :investment changeset)))
+
+(defn get-suggestions-for-improving-providers
+  [store {:keys [sources-set-id config] :as project} {:keys [raster sources-data] :as scenario}]
+  (let [increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))
+        upgrade-budget   (get-in config [:actions :upgrade-budget])
+        costs-config?    (and (not (empty? increasing-costs)) (some? upgrade-budget))
+        settings         (merge
+                          {:available-budget (- (get-in config [:actions :budget])
+                                                (get-current-investment (:changeset scenario)))}
+                          (if costs-config?
+                            {:max-capacity     (:capacity (last increasing-costs))
+                             :increasing-costs increasing-costs
+                             :upgrade-budget   (get-in config [:actions :upgrade-budget])}
+                            {:no-action-costs true}))
+        show-keys (conj [:id :action-capacity] (when costs-config? :action-cost))]
+    (take 5
+          (map
+           #(select-keys % show-keys)
+           (engine/search-optimal-interventions (:engine store) project scenario settings)))))
 
 
 (defrecord ScenariosStore [db engine jobrunner providers-set sources-set]
@@ -349,12 +368,16 @@
     (reset-scenarios store project-id))
   (get-scenario-for-project [store scenario project]
     (get-scenario-for-project store scenario project))
-  (export-providers-data [store scenario-id]
-    (export-providers-data store scenario-id))
-  (get-provider-suggestion [store project scenario]
-    (get-provider-suggestion store project scenario))
+  (export-providers-data [store project scenario]
+    (export-providers-data store project scenario))
+  (get-suggestions-for-new-provider-location [store project scenario]
+    (get-suggestions-for-new-provider-location store project scenario))
   (get-provider-geom [store scenario project provider-id]
-    (get-provider-geom store scenario project provider-id)))
+    (get-provider-geom store scenario project provider-id))
+  (delete-scenario [store scenario-id]
+    (delete-scenario store scenario-id))
+  (get-suggestions-for-improving-providers [store project scenario]
+    (get-suggestions-for-improving-providers store project scenario)))
 
 (defmethod ig/init-key :planwise.component/scenarios
   [_ config]
@@ -381,8 +404,8 @@
   (def initial-demand   (:demand-coverage scenario))
   (def final-demand     (:demand-coverage initial-scenario))
 
-  (def initial-providers     (read-string (:providers-data initial-scenario)))
-  (def providers-and-changes (read-string (:providers-data scenario)))
+  (def initial-providers     (edn/read-string (:providers-data initial-scenario)))
+  (def providers-and-changes (edn/read-string (:providers-data scenario)))
   (def changes  (subvec providers-and-changes (count initial-providers)))
 
   (def capacity-sat    (Math/abs (- initial-demand final-demand)))

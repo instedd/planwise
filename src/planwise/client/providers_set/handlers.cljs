@@ -1,6 +1,7 @@
 (ns planwise.client.providers-set.handlers
   (:require [re-frame.core :refer [register-handler dispatch] :as rf]
             [planwise.client.asdf :as asdf]
+            [planwise.client.utils :as utils]
             [planwise.client.providers-set.api :as api]
             [planwise.client.providers-set.db :as db]))
 
@@ -64,13 +65,12 @@
                 :view-state :creating
                 :last-error nil)}))
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :providers-set/provider-set-created
  in-providers-set
- (fn [db [_ provider-set]]
-   (-> db
-       (assoc :view-state :list)
-       (update :list asdf/swap! into [provider-set]))))
+ (fn [{:keys [db]} [_ provider-set]]
+   {:db (assoc db :view-state :list)
+    :dispatch [:providers-set/load-providers-set]}))
 
 (rf/reg-event-db
  :providers-set/provider-set-not-created
@@ -79,3 +79,39 @@
    (assoc db
           :view-state :create-dialog
           :last-error (:status-text err))))
+
+(rf/reg-event-db
+ :providers-set/confirm-delete-provider-set
+ in-providers-set
+ (fn [db [_ provider-set]]
+   (assoc db
+          :view-state :delete-dialog
+          :selected-provider provider-set)))
+
+(rf/reg-event-fx
+ :providers-set/delete-provider-set
+ in-providers-set
+ (fn [{:keys [db]} [_]]
+   (let [id (get-in db [:selected-provider :id])]
+     {:api (assoc (api/delete-provider-set id)
+                  :on-success [:providers-set/close-delete-dialog]
+                  :on-failure [:providers-set/delete-provider-set-failure])})))
+
+(rf/reg-event-fx
+ :providers-set/close-delete-dialog
+ in-providers-set
+ (fn [{:keys [db]} [_]]
+   {:db (assoc db :view-state :list
+               :selected-provider nil)
+    :dispatch [:providers-set/load-providers-set]}))
+
+(rf/reg-event-db
+ :providers-set/delete-provider-set-failure
+ in-providers-set
+ (fn [db [_ {:keys [response]}]]
+   (let [list (asdf/value (:list db))
+         name (:name (utils/find-by-id list (:provider-set-id response)))]
+     (js/alert (str "Can not delete " name))
+     (assoc db
+            :view-state :list
+            :selected-provider nil))))

@@ -72,7 +72,8 @@
  :projects2/start-project
  in-projects2
  (fn [{:keys [db]} [_ id]]
-   {:dispatch [:scenarios/invalidate-scenarios]
+   {:dispatch-n [[:scenarios/invalidate-scenarios]
+                 [:providers-set/load-providers-set]]
     :api (assoc (api/start-project! id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
@@ -93,6 +94,7 @@
  (fn [{:keys [db]} [_ id]]
    {:api       (api/delete-project! id)
     :navigate  (routes/projects2)
+    :dispatch [:providers-set/load-providers-set]
     :db   (-> db
               (assoc :current-project nil)
               (update :list #(seq (utils/remove-by-id % id))))}))
@@ -127,14 +129,19 @@
 (rf/reg-event-fx
  :projects2/update-current-project-from-server
  in-projects2
- (fn [{:keys [db]} [_ project]]
+ (fn [{:keys [db]} [_ {:keys [config] :as project}]]
    (let [current-project (:current-project db)]
      (if (= (:id project) (:id current-project))
         ;; keep current values of current-project except the once that could be updated from server
         ;; to prevent replacing data that have not been saved in server yet
-       (let [updated-project (-> current-project
+       (let [update-config-if-necessary (if (= (:coverage-algorithm current-project)
+                                               (:coverage-algorithm project))
+                                          (:config current-project)
+                                          config)
+             updated-project (-> current-project
                                  (assoc :providers (:providers project))
-                                 (assoc :coverage-algorithm (:coverage-algorithm project)))]
+                                 (assoc :coverage-algorithm (:coverage-algorithm project))
+                                 (assoc :config update-config-if-necessary))]
          {:dispatch [:projects2/save-project-data updated-project]})))))
 
 

@@ -10,7 +10,9 @@
             [clojure.java.io :as io]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
-            [clojure.string :as str]))
+            [planwise.util.files :as files]
+            [clojure.string :as str]
+            [clojure.set :as set]))
 
 (timbre/refer-timbre)
 
@@ -191,19 +193,27 @@
              (preprocess-provider! store provider-id options)))
     (info "Coverage algorithm not set for provider-set" provider-set-id)))
 
+(defn- provider-matches-tags?
+  [provider tags]
+  (let [filter-tags (set tags)
+        provider-tags (set (str/split (:tags provider) #" "))]
+    (or (empty? tags)
+        (not (empty? (set/intersection filter-tags provider-tags))))))
+
 (defn get-providers-with-coverage-in-region
   [store provider-set-id version filter-options]
   (let [db-spec   (get-db store)
-        region-id (:region-id filter-options)
-        algorithm (:coverage-algorithm filter-options)
-        options   (:coverage-options filter-options)
-        tags      (str/join " & " (:tags filter-options))]
-    (db-find-providers-with-coverage-in-region db-spec {:provider-set-id provider-set-id
-                                                        :version    version
-                                                        :region-id  region-id
-                                                        :algorithm  algorithm
-                                                        :options    (some-> options pr-str)
-                                                        :tags       tags})))
+        config {:provider-set-id provider-set-id
+                :version    version
+                :region-id  (:region-id filter-options)
+                :algorithm  (:coverage-algorithm filter-options)
+                :options    (some-> (:coverage-options filter-options) pr-str)}
+        all-providers (db-find-providers-with-coverage-in-region db-spec config)
+        providers-partition (group-by
+                             #(provider-matches-tags? % (:tags filter-options))
+                             all-providers)]
+    {:providers (or (get providers-partition true) [])
+     :disabled-providers (or (get providers-partition false) [])}))
 
 (defn count-providers-filter-by-tags
   ([store provider-set-id region-id tags]
@@ -235,6 +245,24 @@
                                              :options (pr-str filter-options)
                                              :region-id region-id}))
 
+(defn delete-provider-set
+  [store provider-set-id]
+  (try
+    (jdbc/with-db-transaction [tx (get-db store)]
+      (let [tx-store        (assoc-in store [:db :spec] tx)
+            params          {:provider-set-id provider-set-id}]
+        (db-delete-providers-coverage! tx params)
+        (db-delete-providers! tx params)
+        (db-delete-provider-set! tx params)))
+    (files/delete-files-recursively
+     (str "data/coverage/" provider-set-id)
+     true)
+    (catch Exception e
+      (throw (ex-info "Provider set can not be deleted"
+                      {:provider-set-id provider-set-id}
+                      e)))))
+
+
 (defrecord ProvidersStore [db coverage]
   boundary/ProvidersSet
   (list-providers-set [store owner-id]
@@ -256,7 +284,9 @@
   (get-radius-from-computed-coverage [store criteria provider-set-id]
     (get-radius-from-computed-coverage store criteria provider-set-id))
   (get-coverage [store provider-id coverage-options]
-    (get-coverage store provider-id coverage-options)))
+    (get-coverage store provider-id coverage-options))
+  (delete-provider-set [store provider-set-id]
+    (delete-provider-set store provider-set-id)))
 
 (defmethod ig/init-key :planwise.component/providers-set
   [_ config]

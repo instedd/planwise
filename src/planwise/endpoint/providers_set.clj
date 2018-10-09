@@ -31,7 +31,19 @@
          (jobrunner/queue-job jobrunner
                               [::providers-set/preprocess-provider-set provider-set-id]
                               (providers-set/new-processing-job service provider-set-id))
-         (response result))))))
+         (response result))))
+
+   (DELETE "/" [id :as request]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)]
+       (try
+         (providers-set/delete-provider-set service id)
+         {:status 204}
+         (catch Exception e
+           (error e "Failed to delete provider set")
+           {:status  400
+            :headers {}
+            :body    (ex-data e)}))))))
 
 
 (defn providers-set-endpoint

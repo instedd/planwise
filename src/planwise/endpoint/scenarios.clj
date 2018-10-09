@@ -3,7 +3,7 @@
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.spec.alpha :as s]
-            [ring.util.response :refer [response status not-found]]
+            [ring.util.response :refer [response status not-found header]]
             [planwise.util.ring :as util]
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
@@ -31,16 +31,32 @@
          (response (scenarios/get-scenario-for-project service scenario project)))))
 
    (GET "/:id/csv" [id :as request]
-     (response (scenarios/export-providers-data service (Integer. id))))
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
+           csv-name (str (:id project) "-" id "-" (:name scenario) ".csv")
+           response (response (scenarios/export-providers-data service project scenario))]
+       (header response "Content-Disposition" (str "attachment; filename=" csv-name))))
+
+   (GET "/:id/suggested-locations" [id :as request]
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
+           result   (scenarios/get-suggestions-for-new-provider-location service project scenario)]
+       (if (empty? result)
+         (not-found {:error "Can not find optimal locations"})
+         (response result))))
 
    (GET "/:id/suggested-providers" [id :as request]
      (let [user-id  (util/request-user-id request)
            id       (Integer. id)
            {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
            project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)
-           result (scenarios/get-provider-suggestion service project scenario)]
+           result   (scenarios/get-suggestions-for-improving-providers service project scenario)]
        (if (empty? result)
-         (not-found {:error "Can not find optimal locations"})
+         (not-found {:error "Can not find optimal improvements"})
          (response result))))
 
    (GET "/:id/geometry/:provider-id" [id provider-id :as request]
@@ -74,7 +90,16 @@
        (if (or (nil? project) (nil? scenario))
          (not-found {:error "Scenario not found"})
          (response (scenarios/create-scenario service project {:name next-name
-                                                               :changeset changeset})))))))
+                                                               :changeset changeset})))))
+
+   (DELETE "/:id" [id :as request]
+     (let [user-id           (util/request-user-id request)
+           scenario-id       (Integer. id)]
+       (try
+         (scenarios/delete-scenario service scenario-id)
+         {:status 204}
+         (catch Exception e
+           {:status 400}))))))
 
 (defn scenarios-endpoint
   [config]

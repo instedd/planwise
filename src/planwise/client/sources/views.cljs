@@ -4,6 +4,7 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.components.common2 :as common2]
             [planwise.client.components.common :as common]
+            [planwise.client.routes :as routes]
             [planwise.client.modal.modal :as modal]))
 
 ;; ----------------------------------------------------------------------------
@@ -42,11 +43,6 @@
          [common2/text-field {:label "Name"
                               :value name
                               :on-change #(rf/dispatch [:sources.new/update {:name (-> % .-target .-value)}])}]
-
-         [common2/text-field {:label "Unit"
-                              :value unit
-                              :on-change #(rf/dispatch [:sources.new/update {:unit (-> % .-target .-value)}])}]
-
          [:label.file-input-wrapper
           [:div "Import sources from CSV"]
           [:input {:id "file-upload"
@@ -56,7 +52,11 @@
                    :on-change  #(rf/dispatch [:sources.new/update {:csv-file (-> (.-currentTarget %) .-files (aget 0))}])}]
           (when (some? csv-file)
             [:span (.-name csv-file)])]
-
+         [:a {:href (routes/download-sources-sample)
+              :data-trigger "false"} "Download a sample sources list"]
+         [common2/text-field {:label "Unit"
+                              :value unit
+                              :on-change #(rf/dispatch [:sources.new/update {:unit (-> % .-target .-value)}])}]
          (when-let [current-error @(rf/subscribe [:sources.new/current-error])]
            [:div.error-message
             (str current-error)])]))))
@@ -72,7 +72,7 @@
           [ui/fixed-width (assoc (common2/nav-params)
                                  :action btn-new)
            [list-view sources]
-           [modal/modal-view {:title "New source"
+           [modal/modal-view {:title "New Sources List"
                               :accept-label "Create"
                               :accept-fn #(rf/dispatch [:sources.new/create])
                               :accept-enabled? @(rf/subscribe [:sources.new/valid?])

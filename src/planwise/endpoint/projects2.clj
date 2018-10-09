@@ -59,16 +59,20 @@
    (POST "/:id/start" [id :as request]
      (let [user-id       (util/request-user-id request)
            id            (Integer. id)
-           project       (filter-owned-by (projects2/get-project service id) user-id)]
+           project       (filter-owned-by (projects2/get-project service id) user-id)
+           invalid-starting-project {:status  400
+                                     :headers {}
+                                     :body    {:error "Invalid starting project"}}]
        ;; TODO validate permission
        (cond
          (nil? project) (not-found {:error "Project not found"})
-         (not (s/valid? :planwise.model.project/starting project)) ({:status  400
-                                                                     :headers {}
-                                                                     :body    {:error "Invalid starting project"}})
-         :else (do
+         (not (s/valid? :planwise.model.project/starting project)) invalid-starting-project
+         :else (try
                  (projects2/start-project service id)
-                 (response (api-project (projects2/get-project service id)))))))
+                 (response (api-project (projects2/get-project service id)))
+                 (catch Exception e
+                   (when (:invalid-starting-project (ex-data e))
+                     invalid-starting-project))))))
 
    (POST "/:id/reset" [id :as request]
      (let [user-id       (util/request-user-id request)

@@ -23,7 +23,9 @@ SELECT p.type, p.name, p.lat, p.lon, p.capacity, p.tags
 SELECT id,
        name,
        "last-version",
-       (SELECT COUNT(*) FROM "providers" WHERE providers."provider-set-id" = "providers_set".id) AS "provider-count"
+       (SELECT COUNT(*) FROM "providers" WHERE providers."provider-set-id" = "providers_set".id) AS "provider-count",
+       (SELECT COUNT(*) FROM "projects2" WHERE projects2."provider-set-id" = "providers_set".id
+                                           AND projects2."deleted-at" IS NULL) AS "depending-projects"
     FROM providers_set
     WHERE "owner-id" = :owner-id;
 
@@ -40,7 +42,7 @@ SELECT * FROM providers
     AND version = :version;
 
 -- :name db-find-providers-with-coverage-in-region :?
-SELECT p.id, p.name, p.lat, p.lon, p.capacity, p.type, p.tags, pc.raster
+SELECT p.id, p.name, p.lat, p.lon, p.capacity, p.type, p.tags, pc.raster, pc.id AS "coverage-id"
     FROM providers p
     INNER JOIN providers_coverage pc
           ON p.id = pc."provider-id"
@@ -111,3 +113,15 @@ SELECT
 /*~ (if (:region-id params) */
     AND regions.id = :region-id;
 /*~ ) ~*/;
+
+-- :name db-delete-providers-coverage! :!
+DELETE FROM "providers_coverage" pc
+    WHERE pc."provider-id" = @(SELECT id FROM providers p WHERE p."provider-set-id" = :provider-set-id AND pc."provider-id" = p.id);
+
+-- :name db-delete-providers! :!
+DELETE FROM "providers"
+    WHERE "provider-set-id" = :provider-set-id;
+
+-- :name db-delete-provider-set! :!
+DELETE FROM "providers_set"
+    WHERE id = :provider-set-id;

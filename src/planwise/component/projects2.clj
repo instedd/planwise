@@ -3,6 +3,8 @@
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.scenarios :as scenarios]
             [planwise.component.regions :as regions]
+            [planwise.component.coverage :as coverage]
+            [clojure.spec.alpha :as s]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [clojure.java.jdbc :as jdbc]
@@ -32,15 +34,22 @@
                                       :state "draft"}))
 
 (defn update-project
-  [store project]
-  (db-update-project (get-db store) (-> project
-                                        (update :config pr-str)
-                                        (dissoc :state))))
+  [store {:keys [config provider-set-id] :as project}]
+  (let [algorithm (-> (providers-set/get-provider-set (:providers-set store) provider-set-id)
+                      :coverage-algorithm
+                      keyword)
+        valid-criteria? (s/valid? ::coverage/criteria
+                                  (assoc (get-in project [:config :coverage :filter-options])
+                                         :algorithm algorithm))
+        updated-config   (if valid-criteria? config (assoc-in config [:coverage :filter-options] {}))]
+    (db-update-project (get-db store) (-> project
+                                          (assoc :config (pr-str updated-config))
+                                          (dissoc :state)))))
 
 (defn get-project
   [store project-id]
   (let [{:keys [config provider-set-id region-id] :as project} (db-get-project (get-db store) {:id project-id})
-        tags    (when (some? config) (get-in (read-string config) [:providers :tags]))
+        tags    (when (some? config) (get-in (edn/read-string config) [:providers :tags]))
         number-of-providers (providers-set/count-providers-filter-by-tags (:providers-set store) provider-set-id region-id tags)]
     (regions/db->region
      (-> project
@@ -56,8 +65,16 @@
 (defn start-project
   [store project-id]
   (db-start-project! (get-db store) {:id project-id})
-  (let [project (get-project store project-id)]
-    (scenarios/create-initial-scenario (:scenarios store) project)))
+  (let [{:keys [provider-set-id] :as project} (get-project store project-id)
+        algorithm (-> (providers-set/get-provider-set (:providers-set store) provider-set-id)
+                      :coverage-algorithm
+                      keyword)
+        valid-criteria? (s/valid? ::coverage/criteria
+                                  (assoc (get-in project [:config :coverage :filter-options])
+                                         :algorithm algorithm))]
+    (if valid-criteria?
+      (scenarios/create-initial-scenario (:scenarios store) project)
+      (throw (ex-info "Invalid starting project" {:invalid-starting-project true})))))
 
 (defn reset-project
   [store project-id]

@@ -33,7 +33,7 @@
                :on-close cancel-fn}
      [m/DialogSurface
       [m/DialogHeader
-       [m/DialogHeaderTitle "New provider-set"]]
+       [m/DialogHeaderTitle "New Providers List"]]
       [m/DialogBody
        [:form.vertical
         [common2/text-field {:label "Name"
@@ -50,8 +50,8 @@
                                              :js-file (-> (.-currentTarget %) .-files (aget 0))])}]
          (when (some? @js-file)
            [:span (.-name @js-file)])]
-        [:a {:href (routes/download-sample)
-             :data-trigger "false"} "Download samples providers"]
+        [:a {:href (routes/download-providers-sample)
+             :data-trigger "false"} "Download a sample providers list"]
         [m/Select {:label "Coverage algorithm"
                    :value @coverage
                    :options @algorithms

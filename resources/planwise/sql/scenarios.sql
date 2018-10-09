@@ -33,6 +33,12 @@ FROM scenarios
 LEFT JOIN scenarios AS initial_scenario ON initial_scenario."project-id" = scenarios."project-id" AND initial_scenario.label = 'initial'
 WHERE scenarios.id = :id
 
+-- :name db-find-initial-scenario :? :1
+SELECT scenarios.*
+FROM scenarios
+WHERE scenarios."project-id" = :project-id
+AND scenarios."label" = 'initial';
+
 -- :name db-create-scenario! :<! :1
 INSERT INTO scenarios
   (name, "project-id", investment, "demand-coverage", changeset, label, "state", "updated-at")
@@ -85,22 +91,13 @@ SELECT upper(name) AS name FROM scenarios
   ORDER BY upper(name) DESC
   LIMIT 1
 
--- :name db-get-initial-providers-data :? :1
-SELECT "providers-data" FROM scenarios
-  WHERE "project-id" = :project-id
-  AND label = 'initial';
-
--- :name db-get-initial-sources-data :? :1
-SELECT "sources-data" FROM scenarios
-  WHERE "project-id" = :project-id
-  AND label = 'initial';
-
--- :name db-get-new-providers-geom :? :1
-SELECT "new-providers-geom" FROM scenarios
-  WHERE id = :scenario-id;
-
 -- :name db-mark-as-error :!
 UPDATE scenarios
     SET "error-message" = :msg,
         state = 'error'
     WHERE id = :id;
+
+-- :name db-delete-scenario! :!
+DELETE FROM "scenarios"
+  WHERE "id" = :id
+  AND (label <> 'initial' OR label IS NULL);
