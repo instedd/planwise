@@ -96,7 +96,6 @@
   [:div {:class-name "step-header"}
    [:h2 [:span title]]])
 
-
 ;-------------------------------------------------------------------------------------------
 ; Actions
 (defn- show-action
@@ -124,6 +123,110 @@
                :on-click #(dispatch [:projects2/create-action action-name])} [m/Icon "add"] "Add Option"]])
 
 ;-------------------------------------------------------------------------------------------
+(defn config-goal
+  [current-project read-only]
+  [:section {:class-name "project-settings-section"}
+   [section-header 1 "Goal"]
+   [current-project-input "Goal" [:name] "text"]
+   [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
+
+   [regions-dropdown-component {:label     "Location"
+                                :on-change #(dispatch [:projects2/save-key :region-id %])
+                                :model     (:region-id current-project)
+                                :disabled? read-only}]])
+
+(defn config-consumers
+  [current-project read-only]
+  [:section {:class-name "project-settings-section"}
+   [section-header 2 "Consumers"]
+   [sources-dropdown-component {:label     "Source"
+                                :value     (:source-set-id current-project)
+                                :on-change #(dispatch [:projects2/save-key :source-set-id %])
+                                :disabled?  read-only}]
+   [current-project-input "Consumers unit" [:config :demographics :source-unit-name] "text" {:disabled read-only}]
+   [m/TextFieldHelperText {:persistent true} "How do you refer to the filtered population? ( eg. \" women of childbearing age \" )"]
+   [:div.fixed-input-and-text
+    [:div.small-sized-input
+     (let [target-props {:disabled read-only
+                         :disable-floating-label true
+                         :sub-type :percentage
+                         :extra-content [:i.mdc-text-field__input.icon "%"]}]
+       [current-project-input "Target" [:config :demographics :target] "number" target-props])]
+    [:div.text-helper (str " of population that should be considered "
+                           (get-in current-project [:config :demographics :source-unit-name]))]]
+   [current-project-input "Demand unit" [:config :demographics :demand-unit-name] "text" {:disabled read-only}]
+   [m/TextFieldHelperText {:persistent true}  "How do you refer to the unit in your demand? (eg. \" visits per month \" )"]])
+
+(defn config-providers
+  [current-project read-only tags]
+  (let [provider-unit (get-in current-project [:config :providers :provider-unit])
+        demand-unit   (get-in current-project [:config :demographics :demand-unit-name])
+        capacity-unit (get-in current-project [:config :providers :capacity-unit])]
+    [:section {:class-name "project-settings-section"}
+     [section-header 3 "Providers"]
+     [providers-set-dropdown-component {:label     "Dataset"
+                                        :value     (:provider-set-id current-project)
+                                        :on-change #(dispatch [:projects2/save-key :provider-set-id %])
+                                        :disabled? read-only}]
+
+     [current-project-input "Providers unit" [:config :providers :provider-unit] "text" {:disabled read-only}]
+     [m/TextFieldHelperText {:persistent true} "How do you refer to your providers? (eg. \"hospitals \" )"]
+
+     [current-project-input "Capacity unit" [:config :providers :capacity-unit] "text" {:disabled read-only}]
+     (when provider-unit
+       [m/TextFieldHelperText {:persistent true} "What's the unit of capacity for " provider-unit " ? (eg. \"beds \" )"])
+
+     [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
+     [m/TextFieldHelperText {:persistent true} (str "How many " (get-in current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
+     [:div.fixed-input-and-text
+;;Singularize capacity unit
+      [:div.text-helper (str "Each " capacity-unit " in a " provider-unit " will provide service for   ")]
+      [:div.small-sized-input
+       (let [props {:disabled read-only
+                    :disable-floating-label true
+                    :sub-type :float}]
+         [current-project-input "" [:config :demographics :target] "number" props])]
+      [:div.text-helper (str demand-unit  " per year ")]]]))
+
+  ; (when-not read-only [tag-input])
+  ; [:label "Tags: " [tag-set tags read-only]]
+  ; [count-providers tags current-project]])
+
+(defn config-coverage
+  [current-project read-only]
+  [:section {:class-name "project-settings-section"}
+   [section-header 4 "Coverage"]
+   [:p.step-text-helper "Potential actions to increase access to services.
+   Planwise will use these to explore and recommend the best alternatives."]
+   [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm current-project)
+                                       :value              (get-in current-project [:config :coverage :filter-options])
+                                       :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
+                                       :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
+                                       :disabled?          read-only}]])
+
+(defn config-building-options
+  [read-only build-actions upgrade-actions]
+  [:section {:class-name "project-settings-section"}
+   [section-header 5 "Actions"]
+   [:p.step-text-helper
+    "Potential actions to increase access to services.
+   Planwise will use these to explore and recommend the best alternatives."]
+   [:div [:p [m/Icon "account_balance"] "Available budget"]]
+   [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
+   [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
+
+   [:div [:p [m/Icon "domain"] "Building a new provider..."]]
+   [listing-actions {:read-only?  read-only
+                     :action-name :build
+                     :list        build-actions}]
+
+   [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
+   [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
+
+   [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
+   [listing-actions {:read-only?   read-only
+                     :action-name :upgrade
+                     :list        upgrade-actions}]])
 
 (defn current-project-settings-view
   [{:keys [read-only]}]
@@ -135,74 +238,11 @@
       [m/Grid {}
        [m/GridCell {:span 6}
         [:form.vertical
-         [:section {:class-name "project-settings-section"}
-          [section-header 1 "Goal"]
-          [current-project-input "Goal" [:name] "text"]
-          [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
-
-          [regions-dropdown-component {:label     "Region"
-                                       :on-change #(dispatch [:projects2/save-key :region-id %])
-                                       :model     (:region-id @current-project)
-                                       :disabled? read-only}]]
-
-         [:section {:class-name "project-settings-section"}
-          [section-header 2 "Demand"]
-          [sources-dropdown-component {:label     "Sources"
-                                       :value     (:source-set-id @current-project)
-                                       :on-change #(dispatch [:projects2/save-key :source-set-id %])
-                                       :disabled?  read-only}]
-
-          [current-project-input "Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
-          [:div.show-target
-           [:div.percentage
-            [current-project-input "Target"
-             [:config :demographics :target]
-             "number"
-             {:disabled read-only
-              :disable-floating-label true
-              :sub-type :percentage
-              :extra-content [:i.mdc-text-field__input.percentage-icon "%"]}]]
-           [:div.text-helper (str " of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]]
-
-         [:section {:class-name "project-settings-section"}
-          [section-header 3 "Providers"]
-          [providers-set-dropdown-component {:label     "Provider Set"
-                                             :value     (:provider-set-id @current-project)
-                                             :on-change #(dispatch [:projects2/save-key :provider-set-id %])
-                                             :disabled? read-only}]
-
-          [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-          [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
-
-          (when-not read-only [tag-input])
-          [:label "Tags: " [tag-set @tags read-only]]
-          [count-providers @tags @current-project]]
-
-         [:section {:class-name "project-settings-section"}
-          [section-header 4 "Coverage"]
-          [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
-                                              :value              (get-in @current-project [:config :coverage :filter-options])
-                                              :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-                                              :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
-                                              :disabled?          read-only}]]
-
-         [:section {:class-name "project-settings-section"}
-          [:div [:p [m/Icon "account_balance"] "Available budget"]]
-          [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
-          [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
-
-          [:div [:p [m/Icon "domain"] "Building a new provider..."]]
-          [listing-actions {:read-only?  read-only
-                            :action-name :build
-                            :list        @build-actions}]
-
-          [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
-          [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
-
-          [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
-          [listing-actions {:read-only?   read-only
-                            :action-name :upgrade
-                            :list        @upgrade-actions}]]]]])))
+         [config-goal @current-project read-only]
+         [config-consumers @current-project read-only]
+         [config-providers @current-project read-only @tags]
+         [config-coverage @current-project read-only]
+         [config-building-options read-only @build-actions @upgrade-actions]]]])))
 
 
 (defn edit-current-project
