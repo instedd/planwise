@@ -516,6 +516,12 @@ form.vertical, .fields-vertical {
       margin-bottom: 0;
     }
   }
+  .section-text {
+      font-size: 16px;
+      font-family: Roboto;
+      text-align: justify;
+      max-width: 554px;
+    }
 
   .mdc-select {
     margin-top: 16px;
@@ -775,14 +781,14 @@ form.vertical, .fields-vertical {
   100% { transform: rotate(360deg); }
 }
 
-.show-target {
+.fixed-input-and-text{
   display: flex;
   flex-direction: row;
   align-items: baseline;
 
-  .percentage{
+  .small-sized-input{
     width: 54px;
-    .percentage-icon{
+    .icon{
         width: 13px;
         color: #999999;
         font-family: Roboto;
@@ -794,8 +800,9 @@ form.vertical, .fields-vertical {
     font-family: Roboto;
     font-size: 16px;
     margin-left: 5px;
-    width: 469px;
+    width: 554px;
     line-height: 24px;
+    max-width: max-content;
   }
 }
 
