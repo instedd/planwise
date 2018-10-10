@@ -38,7 +38,7 @@
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
          change-fn       #(rf/dispatch-sync [:projects2/save-key path %])
-         props (merge (select-keys other-props [:class :disabled :sub-type])
+         props (merge other-props
                       {:label     label
                        :on-change (comp change-fn (fn [e] (-> e .-target .-value)))
                        :value     value})]
@@ -153,8 +153,16 @@
                                        :disabled?  read-only}]
 
           [current-project-input "Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
-          [current-project-input "Target" [:config :demographics :target] "number" {:disabled read-only :sub-type :percentage}]
-          [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
+          [:div.show-target
+           [:div.percentage
+            [current-project-input "Target"
+             [:config :demographics :target]
+             "number"
+             {:disabled read-only
+              :disable-floating-label true
+              :sub-type :percentage
+              :extra-content [:i.mdc-text-field__input.percentage-icon "%"]}]]
+           [:div.text-helper (str " of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]]
 
          [:section {:class-name "project-settings-section"}
           [section-header 3 "Providers"]

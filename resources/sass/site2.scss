@@ -774,3 +774,28 @@ form.vertical, .fields-vertical {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.show-target {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+
+  .percentage{
+    width: 54px;
+    .percentage-icon{
+        width: 13px;
+        color: #999999;
+        font-family: Roboto;
+        text-align: right;
+        }
+    }
+
+  .text-helper{
+    font-family: Roboto;
+    font-size: 16px;
+    margin-left: 5px;
+    width: 469px;
+    line-height: 24px;
+  }
+}
+

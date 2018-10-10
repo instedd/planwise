@@ -35,7 +35,8 @@
 
 (defn mdc-input-field
   [props component-props]
-  (let [{:keys [id focus focus-extra-class label]} component-props]
+  (let [{:keys [id focus focus-extra-class label]} component-props
+        not-blank-value? (not (blank? (str (:value props))))]
     [:div.mdc-text-field.mdc-text-field--upgraded {:class (cond
                                                             (:read-only props) focus-extra-class
                                                             @focus (str "mdc-text-field--focused" focus-extra-class))}
@@ -44,14 +45,18 @@
                                                  :on-blur  #(reset! focus false)}
                                           (when @focus
                                             {:placeholder nil}))]
+     (:extra-content component-props)
      [:label.mdc-floating-label {:for id
-                                 :class (when (or (not (blank? (str (:value props))))
-                                                  @focus) "mdc-floating-label--float-above")}
+                                 :class (str (when (or (:disable-floating-label component-props)
+                                                       not-blank-value?
+                                                       @focus)
+                                               "mdc-floating-label--float-above")
+                                             focus-extra-class)}
       label]
      [:div.mdc-line-ripple {:class (when @focus "mdc-line-ripple--active")}]]))
 
 (def extra-keys
-  [:label :focus-extra-class :sub-type :invalid-input :type])
+  [:label :focus-extra-class :sub-type :invalid-input :type  :extra-content :disable-floating-label])
 
 (defn text-field
   [props]
