@@ -47,6 +47,5 @@ UPDATE "projects2" AS p2
   WHERE "id" = :id;
 
 -- :name db-delete-project! :!
-UPDATE projects2
-  SET "deleted-at" = NOW()
+DELETE FROM projects2
   WHERE id = :id;

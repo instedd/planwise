@@ -24,8 +24,7 @@ SELECT id,
        name,
        "last-version",
        (SELECT COUNT(*) FROM "providers" WHERE providers."provider-set-id" = "providers_set".id) AS "provider-count",
-       (SELECT COUNT(*) FROM "projects2" WHERE projects2."provider-set-id" = "providers_set".id
-                                           AND projects2."deleted-at" IS NULL) AS "depending-projects"
+       (SELECT COUNT(*) FROM "projects2" WHERE projects2."provider-set-id" = "providers_set".id) AS "depending-projects"
     FROM providers_set
     WHERE "owner-id" = :owner-id;
 

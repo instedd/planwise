@@ -84,6 +84,7 @@
 
 (defn delete-project
   [store project-id]
+  (scenarios/reset-scenarios (:scenarios store) project-id)
   (db-delete-project! (get-db store) {:id project-id}))
 
 (defrecord ProjectsStore [db scenarios providers-set]

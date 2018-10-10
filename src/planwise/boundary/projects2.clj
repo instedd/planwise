@@ -19,7 +19,8 @@
     "Starts project.")
 
   (delete-project [this project-id]
-    "Registers when project is deleted.")
+    "Delete project for given ID.
+    Also deletes scenarios and files created in project")
 
   (reset-project [this project-id]
     "Resets project to draft."))
