@@ -86,7 +86,7 @@
          raster-path (when (= (:type-of-source-demand project) "raster")
                        (new-provider-coverage-raster-path project-id id))
          cached-geom (get geom-cache id)]
-     (if (and (some? cached-geom) (.exists (io/as-file raster-path)))
+     (if (and (some? cached-geom) (if-some [file (io/as-file raster-path)] (.exists file) true))
        ;; geometry already computed and raster file exists
        {:geom        cached-geom
         :raster-path raster-path}
