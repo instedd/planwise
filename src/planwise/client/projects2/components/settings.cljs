@@ -100,14 +100,14 @@
 ; Actions
 (defn- show-action
   [_ {:keys [idx action-name capacity investment] :as action} props]
-  [:div {:class "project-setting"}
+  [:div.fixed-input-and-text
    [m/Button (merge
               {:type "button"
                :theme    ["text-secondary-on-secondary-light"]
                :on-click #(dispatch [:projects2/delete-action action-name idx])}
               props)
     [m/Icon "clear"]]
-   (when (= action-name :build) "with a capacity of ")
+   (when (= action-name :buprojild) "with a capacity of ")
    [current-project-input "" [:config :actions action-name idx :capacity] "number" (merge {:class "action-input"} props)]
    "would cost"
    [current-project-input "" [:config :actions action-name idx :investment] "number" (merge {:class "action-input"} props)]])
@@ -127,7 +127,7 @@
   [current-project read-only]
   [:section {:class-name "project-settings-section"}
    [section-header 1 "Goal"]
-   [current-project-input "Goal" [:name] "text"]
+   [current-project-input "Goal" [:name] "text" {:component-class "min-content"}]
    [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
 
    [regions-dropdown-component {:label     "Location"
@@ -152,7 +152,7 @@
                          :sub-type :percentage
                          :extra-content [:i.mdc-text-field__input.icon "%"]}]
        [current-project-input "Target" [:config :demographics :target] "number" target-props])]
-    [:div.text-helper (str " of population that should be considered "
+    [:div.fixed-text (str " of population that should be considered "
                            (get-in current-project [:config :demographics :source-unit-name]))]]
    [current-project-input "Demand unit" [:config :demographics :demand-unit-name] "text" {:disabled read-only}]
    [m/TextFieldHelperText {:persistent true}  "How do you refer to the unit in your demand? (eg. \" visits per month \" )"]])
@@ -180,13 +180,14 @@
      [m/TextFieldHelperText {:persistent true} (str "How many " (get-in current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
      [:div.fixed-input-and-text
 ;;Singularize capacity unit
-      [:div.text-helper (str "Each " capacity-unit " in a " provider-unit " will provide service for   ")]
+      [:div.fixed-text (str "Each " capacity-unit " in a " provider-unit " will provide service for   ")]
       [:div.small-sized-input
        (let [props {:disabled read-only
                     :disable-floating-label true
-                    :sub-type :float}]
+                    :sub-type :float
+                    :class-name "centered-text"}]
          [current-project-input "" [:config :demographics :target] "number" props])]
-      [:div.text-helper (str demand-unit  " per year ")]]]))
+      [:div.fixed-text (str demand-unit  " per year ")]]]))
 
   ; (when-not read-only [tag-input])
   ; [:label "Tags: " [tag-set tags read-only]]
@@ -196,37 +197,53 @@
   [current-project read-only]
   [:section {:class-name "project-settings-section"}
    [section-header 4 "Coverage"]
-   [:p.step-text-helper "Potential actions to increase access to services.
-   Planwise will use these to explore and recommend the best alternatives."]
+   [:div.text-introduction
+    "These values will be used to estimate the geographic coverage that your current sites are providing.
+      That in turn will allow Planwise to calculate areas out of reach."]
    [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm current-project)
                                        :value              (get-in current-project [:config :coverage :filter-options])
                                        :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
                                        :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
                                        :disabled?          read-only}]])
 
+(defn action-container
+  [{:keys [title icon content]}]
+  [:div.container
+   [:div.action-title [m/Icon {:class-name "action-icon"} icon] title]
+   [:div.action-content
+    content]])
+
 (defn config-building-options
   [read-only build-actions upgrade-actions]
   [:section {:class-name "project-settings-section"}
    [section-header 5 "Actions"]
-   [:p.step-text-helper
+   [:div.text-introduction
     "Potential actions to increase access to services.
-   Planwise will use these to explore and recommend the best alternatives."]
-   [:div [:p [m/Icon "account_balance"] "Available budget"]]
-   [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
-   [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
-
-   [:div [:p [m/Icon "domain"] "Building a new provider..."]]
-   [listing-actions {:read-only?  read-only
-                     :action-name :build
-                     :list        build-actions}]
-
-   [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
-   [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
-
-   [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
-   [listing-actions {:read-only?   read-only
-                     :action-name :upgrade
-                     :list        upgrade-actions}]])
+     Planwise will use these to explore and recommend the best alternatives."]
+   [:div.actions-form
+    [action-container
+     {:icon "account_balance"
+      :title "Available budget"
+      :content [:div
+                [current-project-input "" [:config :actions :budget] "number" {:disabled read-only}]
+                [m/TextFieldHelperText {:persistent true}
+                 "Planwise will keep explored scenarios below this maximum budget"]]}]
+    [action-container
+     {:icon "domain"
+      :title "Building a new provider..."
+      :content [listing-actions {:read-only?  read-only
+                                 :action-name :build
+                                 :list        build-actions}]}]
+    [action-container
+     {:icon "arrow_upward"
+      :title "Upgrading a provider so that it can satisfy demand would cost..."
+      :content [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only}]}]
+    [action-container
+     {:icon "add"
+      :title "Increase the capactiy of a provider by..."
+      :content [listing-actions {:read-only?   read-only
+                                 :action-name :upgrade
+                                 :list        upgrade-actions}]}]]])
 
 (defn current-project-settings-view
   [{:keys [read-only]}]
