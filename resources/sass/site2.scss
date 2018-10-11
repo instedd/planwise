@@ -507,36 +507,34 @@ form.vertical, .fields-vertical {
 }
 
 .project-settings-section {
-  display: inherit;
-  flex-flow: inherit;
+  display: flex;
+  flex-direction: column;
   margin: 0 0 50px;
 
   .step-header {
     h2 {
-      margin-bottom: 0;
+     margin-bottom: 16px;
     }
   }
-  .section-text {
-      font-size: 16px;
-      font-family: Roboto;
-      text-align: justify;
-      max-width: 554px;
+  .text-introduction {
+    padding: 0px 0px 24px 0px;
+    text-align: justify;
+    line-height: 30px;
     }
 
   .mdc-select {
-    margin-top: 16px;
+    margin-top: 0px;
     margin-bottom: 10px;
   }
-
   .no-provider-set-selected {
     color: rgba(0, 0, 0, 0.6);
     margin: 25px 0 0;
   }
 }
 
+
 .project-settings-actions {
   text-align: right;
-
   padding: 25px 35px;
   border-top: 1px solid #e0e0e0;
 
@@ -581,14 +579,6 @@ form.vertical, .fields-vertical {
   margin-top: 15px;
   margin-left: 16px;
   margin-right: 15px;
-}
-
-.project-setting{
-  width: 554px;
-}
-
-.action-input{
-  width: 110px;
 }
 
 //empty projects
@@ -781,28 +771,59 @@ form.vertical, .fields-vertical {
   100% { transform: rotate(360deg); }
 }
 
+
 .fixed-input-and-text{
   display: flex;
   flex-direction: row;
   align-items: baseline;
+  font-family: Roboto;
+  font-size: 16px;
 
   .small-sized-input{
     width: 54px;
     .icon{
-        width: 13px;
+        margin-right: 6px;
+        width: 10px;
         color: #999999;
-        font-family: Roboto;
         text-align: right;
         }
     }
-
-  .text-helper{
-    font-family: Roboto;
-    font-size: 16px;
-    margin-left: 5px;
-    width: 554px;
+  .fixed-text {
+    width: min-content;
+    display: contents;
     line-height: 24px;
-    max-width: max-content;
+    max-width: 554px;
   }
 }
 
+.actions-form{
+  display: flex;
+  flex-direction: column;
+  align-items: baseline;
+
+  .container {
+    padding: 12px 0px;
+    .action-title {
+    margin-bottom: 6px;
+    .action-icon{
+        padding: 0px 12px;
+    }
+  }
+
+  .action-content{
+   display: inherit;
+   margin-left:24px;
+    .action-input{
+     width: 110px;
+    }
+   }
+  }
+}
+
+
+.centered-text{
+  text-align: -webkit-center;
+}
+.min-content{
+  height: min-content !important;
+}
