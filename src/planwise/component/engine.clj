@@ -83,17 +83,18 @@
    (coverage-for-new-provider coverage project change {}))
   ([coverage project {:keys [id location] :as change} geom-cache]
    (let [project-id  (:id project)
-         raster-path (new-provider-coverage-raster-path project-id id)
+         raster-path (when (= (:type-of-source-demand project) "raster")
+                       (new-provider-coverage-raster-path project-id id))
          cached-geom (get geom-cache id)]
-     (if (and (some? cached-geom) (.exists (io/as-file raster-path)))
+     (if (and (some? cached-geom) (if-some [file (io/as-file raster-path)] (.exists file) true))
        ;; geometry already computed and raster file exists
        {:geom        cached-geom
         :raster-path raster-path}
        ;; either geometry or raster file don't exist
        (try
-         (io/delete-file raster-path true)
-         (let [criteria     (coverage-criteria-for-project project)
-               geom         (coverage/compute-coverage coverage location (assoc criteria :raster raster-path))
+         (when raster-path (io/delete-file raster-path true))
+         (let [criteria     (merge (coverage-criteria-for-project project) (when raster-path {:raster raster-path}))
+               geom         (coverage/compute-coverage coverage location criteria)
                clipped-geom (:geom (coverage/geometry-intersected-with-project-region coverage geom (:region-id project)))]
            {:geom        clipped-geom
             :raster-path raster-path})
@@ -244,7 +245,7 @@
         scenario-id            (:id scenario)
         initial-providers      (providers-in-project (:providers-set engine) project)
         changed-providers      (resolve-coverages (:coverage engine)
-                                                  project
+                                                  (assoc project :type-of-source-demand "raster")
                                                   (:changeset scenario)
                                                   {:initial-providers   initial-providers
                                                    :scenario-geom-cache (:new-providers-geom scenario)})
