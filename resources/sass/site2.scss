@@ -304,9 +304,24 @@ form.vertical, .fields-vertical {
   margin-right: 5px;
 }
 
-.tags {
-  display: inline-block;
+.tags{
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  .tag-set {
+    flex-flow: inherit;
+    border-bottom: 1px solid;
+    border-bottom-color: rgba(0, 0, 0, 0.5);
+  }
+  .tag-input{
+   flex-grow: 1;
+  }
+  .tag-input input {
+    flex-grow: 1;
+  }
+
 }
+
 
 
 
@@ -551,11 +566,22 @@ form.vertical, .fields-vertical {
     }
       .action-content{
       margin-left:24px;
-      }
-      }
+      .add-action-button{
+        margin: 24px 48px 0px;
+       }
+       .display-icon{
+        color: grey;
+        transform: scale(0.8)translateY(5px)translateX(-6px);
+       }
       }
     }
+   }
   }
+ }
+ .display-icon:hover{
+  cursor: pointer;
+  background-color: lighten( #ff561c , 40%);
+ }
 
 
 .project-settings-actions>div{
@@ -564,6 +590,13 @@ form.vertical, .fields-vertical {
 
 .actions-form div{
   width: 100%;
+}
+.add-padding{
+  padding: 6px;
+ }
+
+.add-action-button {
+  color: grey;
 }
 
 
@@ -805,6 +838,11 @@ form.vertical, .fields-vertical {
   100% { transform: rotate(360deg); }
 }
 
+  .floating-label{
+    color: rgba(0, 0, 0, 0.6);
+    transform: scale(0.75)translateY(36px);
+    transform-origin: left top;
+  }
 
 .fixed-input-and-text{
   display: flex;
@@ -818,7 +856,8 @@ form.vertical, .fields-vertical {
     }
 
   .fixed-icon{
-    width: 10px;
+    display: inline;
+    width: min-content;
     color: #999999 !important;
     padding: 8px;
     }
@@ -828,13 +867,14 @@ form.vertical, .fields-vertical {
     display: contents;
     align-self: auto;
   }
-  .text-shrink{
-    flex-shrink: 1.1;
+  .text-passage {
+    max-width: 80px;
   }
 }
 
-
-
+.fixed-icon button{
+  display: contents;
+}
 .centered-text{
   text-align: -webkit-center;
 }
