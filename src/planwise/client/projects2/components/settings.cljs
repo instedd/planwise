@@ -254,7 +254,7 @@
      [action-container
       {:icon "account_balance"
        :title "Available budget"
-       :content [:div.simple-display
+       :content [:div
                  [:div.fixed-input-and-text
                   [current-project-input "" [:config :actions :budget] "number" {:disabled read-only
                                                                                  :sub-type :float
@@ -270,9 +270,11 @@
      [action-container
       {:icon "arrow_upward"
        :title "Upgrading a provider so that it can satisfy demand would cost..."
-       :content [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only
-                                                                                       :sub-type :float
-                                                                                       :extra-left-content [:i.mdc-text-field__input.fixed-icon "K  "]}]}]
+       :content [:div
+                 [:div.fixed-input-and-text
+                  [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only
+                                                                                         :sub-type :float
+                                                                                         :extra-left-content [:i.mdc-text-field__input.fixed-icon "K  "]}]]]}]
      [action-container
       {:icon "add"
        :title "Increase the capactiy of a provider by..."

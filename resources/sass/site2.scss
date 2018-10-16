@@ -572,15 +572,15 @@ form.vertical, .fields-vertical {
        .display-icon{
         color: grey;
         transform: scale(0.8)translateY(5px)translateX(-6px);
+        &:hover {
+          cursor: pointer;
+          background-color: lighten( #ff561c , 40%);
+        }
        }
       }
     }
    }
   }
- }
- .display-icon:hover{
-  cursor: pointer;
-  background-color: lighten( #ff561c , 40%);
  }
 
 
@@ -591,6 +591,7 @@ form.vertical, .fields-vertical {
 .actions-form div{
   width: 100%;
 }
+
 .add-padding{
   padding: 6px;
  }
@@ -598,7 +599,6 @@ form.vertical, .fields-vertical {
 .add-action-button {
   color: grey;
 }
-
 
 .project-settings-actions {
   text-align: right;
