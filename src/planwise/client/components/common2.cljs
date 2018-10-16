@@ -37,17 +37,17 @@
   [props component-props]
   (let [{:keys [id focus focus-extra-class label]} component-props
         not-blank-value? (not (blank? (str (:value props))))]
-    [:div.mdc-text-field.mdc-text-field--upgraded {:class (str (:class-name component-props)
-                                                               (cond
+    [:div.mdc-text-field.mdc-text-field--upgraded {:class (str (cond
                                                                  (:read-only props) focus-extra-class
-                                                                 @focus (str "mdc-text-field--focused" focus-extra-class)))}
-     (:extra-right-content component-props)
+                                                                 @focus (str "mdc-text-field--focused" focus-extra-class))
+                                                               " " (:class-name component-props))}
+     (:extra-left-content component-props)
      [:input.mdc-text-field__input (merge props {:id id
                                                  :on-focus #(reset! focus true)
                                                  :on-blur  #(reset! focus false)}
                                           (when @focus
                                             {:placeholder nil}))]
-     (:extra-left-content component-props)
+     (:extra-right-content component-props)
      [:label.mdc-floating-label {:for id
                                  :class (str (when (or (:disable-floating-label component-props)
                                                        not-blank-value?
@@ -58,7 +58,7 @@
      [:div.mdc-line-ripple {:class (when @focus "mdc-line-ripple--active")}]]))
 
 (def extra-keys
-  [:label :focus-extra-class :sub-type :invalid-input :type  :extra-right-content :disable-floating-label :class-name :extra-left-content])
+  [:label :focus-extra-class :sub-type :invalid-input :type :extra-right-content :disable-floating-label :extra-left-content :component-class])
 
 (defn text-field
   [props]
@@ -67,7 +67,8 @@
     (fn [props]
       (let [component-props (assoc (select-keys props extra-keys)
                                    :id id
-                                   :focus focus)
+                                   :focus focus
+                                   :class-name (:component-class props))
             props           (apply dissoc props extra-keys)]
         [mdc-input-field props component-props]))))
 
