@@ -507,19 +507,24 @@ form.vertical, .fields-vertical {
 }
 
 .project-settings-section {
-  display: flex;
-  flex-direction: column;
+  display: inherit;
+  flex-flow: inherit;
   margin: 0 0 50px;
 
   .step-header {
     h2 {
-     margin-bottom: 16px;
+     margin-bottom: 0;
     }
   }
-  .text-introduction {
-    padding: 0px 0px 24px 0px;
-    text-align: justify;
-    line-height: 30px;
+
+  .section-body {
+    margin-top: 16px;
+    display: inherit;
+    flex-flow: inherit;
+    .text-introduction {
+      padding: 0px 0px 24px 0px;
+      text-align: justify;
+      line-height: 30px;
     }
 
   .mdc-select {
@@ -530,6 +535,35 @@ form.vertical, .fields-vertical {
     color: rgba(0, 0, 0, 0.6);
     margin: 25px 0 0;
   }
+
+  .actions-form{
+    display: inherit;
+    flex-flow: inherit;
+    align-items: baseline;
+
+    .container {
+    margin-bottom: 30px;
+      .action-title {
+      margin-bottom: 6px;
+      .action-icon{
+          padding: 0px 12px;
+      }
+    }
+      .action-content{
+      margin-left:24px;
+      }
+      }
+      }
+    }
+  }
+
+
+.project-settings-actions>div{
+  display: contents;
+}
+
+.actions-form div{
+  width: 100%;
 }
 
 
@@ -781,49 +815,26 @@ form.vertical, .fields-vertical {
 
   .small-sized-input{
     width: 54px;
-    .icon{
-        margin-right: 6px;
-        width: 10px;
-        color: #999999;
-        text-align: right;
-        }
     }
+
+  .fixed-icon{
+    width: 10px;
+    color: #999999 !important;
+    padding: 8px;
+    }
+
   .fixed-text {
     width: min-content;
     display: contents;
-    line-height: 24px;
-    max-width: 554px;
+    align-self: auto;
+  }
+  .text-shrink{
+    flex-shrink: 1.1;
   }
 }
 
-.actions-form{
-  display: flex;
-  flex-direction: column;
-  align-items: baseline;
-
-  .container {
-    padding: 12px 0px;
-    .action-title {
-    margin-bottom: 6px;
-    .action-icon{
-        padding: 0px 12px;
-    }
-  }
-
-  .action-content{
-   display: inherit;
-   margin-left:24px;
-    .action-input{
-     width: 110px;
-    }
-   }
-  }
-}
 
 
 .centered-text{
   text-align: -webkit-center;
-}
-.min-content{
-  height: min-content !important;
 }
