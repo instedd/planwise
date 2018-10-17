@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
+            [leaflet.core :as l]
             [clojure.string :refer [blank?]]
             [planwise.client.asdf :as asdf]
             [planwise.client.dialog :refer [dialog]]
@@ -10,7 +11,7 @@
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]
             [planwise.client.providers-set.components.dropdown :refer [providers-set-dropdown-component]]
             [planwise.client.sources.components.dropdown :refer [sources-dropdown-component]]
-            [planwise.client.mapping :refer [static-image fullmap-region-geo]]
+            [planwise.client.mapping :refer [static-image fullmap-region-geo] :as mapping]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.filter-select :as filter-select]
@@ -56,6 +57,20 @@
              :on-click #(reset! state true)} "Delete"])
 
 (def map-preview-size {:height 615 :width 570})
+
+(defn- show-region-map
+ [{:keys [bbox]}]
+ (let [zoom     (r/atom 3)
+       position (r/atom mapping/map-preview-position)]
+  (fn [{:keys [bbox]}]
+  [:div.project-settings-map
+   [l/map-widget {:zoom @zoom
+                  :position @position
+                  :on-position-changed #(reset! position %)
+                  :on-zoom-changed #(reset! zoom %)
+                  :controls []
+                  :initial-bbox bbox}
+                  mapping/default-base-tile-layer]])))
 
 ;;------------------------------------------------------------------------
 ;; Project sections configuration
@@ -314,9 +329,10 @@
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
-
+        [:div
         [current-project-settings-view {:read-only false}]
-
+        (when-let [region-id (:region-id @current-project)]
+        [show-region-map @current-project])]
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]
          [project-start-button {} @current-project]]]
