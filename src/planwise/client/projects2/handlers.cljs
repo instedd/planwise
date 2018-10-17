@@ -239,3 +239,9 @@
                                       disabled-providers)
                                  (map select-fn providers))]
      (assoc db :providers-layer providers-layer))))
+
+(rf/reg-event-db
+ :projects2/save-settings-map-class-name
+ in-projects2
+ (fn [db [_ class-name]]
+   (assoc-in db [:current-project :display-settings] class-name)))

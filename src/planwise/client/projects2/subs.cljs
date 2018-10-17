@@ -51,3 +51,8 @@
        nil (and (:provider-set-id project) (:provider-set-version project))
        actual-config false
        false))))
+
+(rf/reg-sub
+ :projects2/map-settings-class-name
+ (fn [db _]
+   (str (get-in db [:projects2 :current-project :display-settings]))))

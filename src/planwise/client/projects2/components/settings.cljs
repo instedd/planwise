@@ -11,12 +11,14 @@
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]
             [planwise.client.providers-set.components.dropdown :refer [providers-set-dropdown-component]]
             [planwise.client.sources.components.dropdown :refer [sources-dropdown-component]]
-            [planwise.client.mapping :refer [static-image fullmap-region-geo] :as mapping]
+            [planwise.client.projects2.components.settings.map :refer [show-region-map]]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.filter-select :as filter-select]
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
+            [leaflet.core :as l]
+            [planwise.client.mapping :refer [static-image fullmap-region-geo] :as mapping]
             [clojure.spec.alpha :as s]))
 
 ;; Auxiliary and utility functions
@@ -56,34 +58,33 @@
              :theme    ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
-(def map-preview-size {:height 615 :width 570})
-
-(defn- show-region-map
-  [{:keys [bbox provider-set-id]}]
-  (let [zoom      (r/atom 3)
-        position  (r/atom mapping/map-preview-position)
-        providers (rf/subscribe [:projects2/providers-layer])
-        should-get-providers? (rf/subscribe [:projects2/should-get-providers?])]
-    (fn [{:keys [bbox]}]
-      (let [providers-layer [:marker-layer  {:points @providers
-                                             :lat-fn #(:lat %)
-                                             :lon-fn #(:lon %)
-                                             :icon-fn (fn [p]
-                                                        {:className
-                                                         (str
-                                                          (if (:disabled? p)
-                                                            "leaflet-circle-icon-gray"
-                                                            "leaflet-circle-icon-orange"))})}]]
-        (when @should-get-providers? (rf/dispatch [:projects2/get-providers-for-project]))
-        [:div.project-settings-map
-         [l/map-widget {:zoom @zoom
-                        :position @position
-                        :on-position-changed #(reset! position %)
-                        :on-zoom-changed #(reset! zoom %)
-                        :controls []
-                        :initial-bbox bbox}
-          mapping/default-base-tile-layer
-          providers-layer]]))))
+; (defn show-region-map
+;   [{:keys [bbox provider-set-id]}]
+;   (let [zoom      (r/atom 3)
+;         position  (r/atom mapping/map-preview-position)
+;         providers (rf/subscribe [:projects2/providers-layer])
+;         should-get-providers? (rf/subscribe [:projects2/should-get-providers?])
+;         ]
+;     (fn [{:keys [bbox]}]
+;       (let [providers-layer [:marker-layer  {:points @providers
+;                                              :lat-fn #(:lat %)
+;                                              :lon-fn #(:lon %)
+;                                              :icon-fn (fn [p]
+;                                                         {:className
+;                                                          (str
+;                                                           (if (:disabled? p)
+;                                                             "leaflet-circle-icon-gray"
+;                                                             "leaflet-circle-icon-orange"))})}]]
+;         (when @should-get-providers? (rf/dispatch [:projects2/get-providers-for-project]))
+;         [:div.settings-map
+;          [l/map-widget {:zoom @zoom
+;                         :position @position
+;                         :on-position-changed #(reset! position %)
+;                         :on-zoom-changed #(reset! zoom %)
+;                         :controls []
+;                         :initial-bbox bbox}
+;           mapping/default-base-tile-layer
+;           providers-layer]]))))
 
 ;;------------------------------------------------------------------------
 ;; Project sections configuration
@@ -331,7 +332,10 @@
          [config-consumers @current-project read-only]
          [config-providers @current-project read-only show-tags? @tags]
          [config-coverage @current-project read-only]
-         [config-building-options @current-project read-only @build-actions @upgrade-actions]]]])))
+         [config-building-options @current-project read-only @build-actions @upgrade-actions]]]
+       [m/GridCell {:span 6}
+        (when-let [region-id (:region-id @current-project)]
+          [show-region-map @current-project])]])))
 
 
 (defn edit-current-project
@@ -342,10 +346,7 @@
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
-        [:div
-         [current-project-settings-view {:read-only false}]
-         (when-let [region-id (:region-id @current-project)]
-           [show-region-map @current-project])]
+        [current-project-settings-view {:read-only false}]
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]
          [project-start-button {} @current-project]]]
