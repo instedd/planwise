@@ -18,18 +18,12 @@
             [planwise.client.utils :as utils]
             [clojure.spec.alpha :as s]))
 
-;;------------------------------------------------------------------------
-;;Current Project updating
+;; Auxiliary and utility functions
 
-(defn- regions-dropdown-component
-  [attrs]
-  (let [props (merge {:choices   @(rf/subscribe [:regions/list])
-                      :label-fn  :name
-                      :render-fn (fn [region] [:div
-                                               [:span (:name region)]
-                                               [:span.option-context (:country-name region)]])}
-                     attrs)]
-    (into [filter-select/single-dropdown] (mapcat identity props))))
+(defn- section-header
+  [number title]
+  [:div {:class-name "step-header"}
+   [:h2 [:span title]]])
 
 (defn- current-project-input
   ([label path type]
@@ -61,6 +55,59 @@
              :theme    ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
+(def map-preview-size {:height 615 :width 570})
+
+;;------------------------------------------------------------------------
+;; Project sections configuration
+  ;; Goal
+(defn- regions-dropdown-component
+  [attrs]
+  (let [props (merge {:choices   @(rf/subscribe [:regions/list])
+                      :label-fn  :name
+                      :render-fn (fn [region] [:div
+                                               [:span (:name region)]
+                                               [:span.option-context (:country-name region)]])}
+                     attrs)]
+    (into [filter-select/single-dropdown] (mapcat identity props))))
+
+(defn config-goal
+  [current-project read-only]
+  [:section {:class-name "project-settings-section"}
+   [section-header 1 "Goal"]
+   [current-project-input "Goal" [:name] "text"]
+   [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
+
+   [regions-dropdown-component {:label     "Location"
+                                :on-change #(dispatch [:projects2/save-key :region-id %])
+                                :model     (:region-id current-project)
+                                :disabled? read-only}]])
+
+  ;; Consumers
+(defn config-consumers
+  [current-project read-only]
+  [:section {:class-name "project-settings-section"}
+   [section-header 2 "Consumers"]
+   [:div.section-body
+    [sources-dropdown-component {:label     "Source"
+                                 :value     (:source-set-id current-project)
+                                 :on-change #(dispatch [:projects2/save-key :source-set-id %])
+                                 :disabled?  read-only}]
+    [current-project-input "Consumers unit" [:config :demographics :source-unit-name] "text" {:disabled read-only}]
+    [m/TextFieldHelperText {:persistent true} "How do you refer to the filtered population? (eg. \" women of childbearing age \")"]
+    [:div.fixed-input-and-text
+     [:div.small-sized-input
+      (let [target-props {:disabled read-only
+                          :disable-floating-label true
+                          :sub-type :percentage
+                          :extra-right-content [:i.mdc-text-field__input.fixed-icon " %  "]}]
+        [current-project-input "Target" [:config :demographics :target] "number" target-props])]
+     [:div.fixed-text (str " of population that should be considered "
+                           (get-in current-project [:config :demographics :source-unit-name]))]]
+
+    [current-project-input "Demand unit" [:config :demographics :demand-unit-name] "text" {:disabled read-only}]
+    [m/TextFieldHelperText {:persistent true}  "How do you refer to the unit in your demand? (eg. \" visits per month \")"]]])
+
+   ;; Providers
 (defn- tag-chip
   [props index input read-only]
   [m/Chip props [m/ChipText input]
@@ -98,81 +145,6 @@
    [:div.tags
     (when-not read-only [tag-input {:extra-left-content [tag-set tags read-only]}])]
    [count-providers tags project]])
-
-(defn- section-header
-  [number title]
-  [:div {:class-name "step-header"}
-   [:h2 [:span title]]])
-
-;-------------------------------------------------------------------------------------------
-; Actions
-(defn- show-action
-  [_ {:keys [idx action-name capacity investment capacity-unit] :as action} props]
-  [:div.fixed-input-and-text
-   [:p (merge
-        {:on-click #(dispatch [:projects2/delete-action action-name idx])}
-        props)
-    [m/Icon {:class-name "display-icon add-padding"} "clear"]]
-   (when (= action-name :build) [:div "with a capacity of "])
-   [current-project-input "" [:config :actions action-name idx :capacity] "number"
-    (assoc props :extra-right-content [:i.mdc-text-field__input.fixed-icon (str "  " capacity-unit)])]
-   [:div.text-passage "would cost"]
-   [current-project-input "" [:config :actions action-name idx :investment] "number"
-    (assoc props :extra-left-content [:i.mdc-text-field__input.fixed-icon "K  "])]])
-
-(defn- listing-actions
-  [project {:keys [read-only? action-name list]}]
-  [:div
-   (for [[index action] (map-indexed vector list)]
-     [show-action {:key (str action-name "-" index)}
-      (assoc action :action-name action-name
-             :idx index
-             :capacity-unit (get-in project [:config :providers :capacity-unit]))
-      {:disabled read-only?}])
-   [:div.add-action-button
-    [m/Button  {:type "button"
-                :disabled read-only?
-                :theme    ["text-secondary-on-secondary-light"]
-                :on-click #(dispatch [:projects2/create-action action-name])}
-     [m/Icon {:class-name "display-icon"} "add"]
-     "Add Option"]]])
-
-;-------------------------------------------------------------------------------------------
-(defn config-goal
-  [current-project read-only]
-  [:section {:class-name "project-settings-section"}
-   [section-header 1 "Goal"]
-   [current-project-input "Goal" [:name] "text"]
-   [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
-
-   [regions-dropdown-component {:label     "Location"
-                                :on-change #(dispatch [:projects2/save-key :region-id %])
-                                :model     (:region-id current-project)
-                                :disabled? read-only}]])
-
-(defn config-consumers
-  [current-project read-only]
-  [:section {:class-name "project-settings-section"}
-   [section-header 2 "Consumers"]
-   [:div.section-body
-    [sources-dropdown-component {:label     "Source"
-                                 :value     (:source-set-id current-project)
-                                 :on-change #(dispatch [:projects2/save-key :source-set-id %])
-                                 :disabled?  read-only}]
-    [current-project-input "Consumers unit" [:config :demographics :source-unit-name] "text" {:disabled read-only}]
-    [m/TextFieldHelperText {:persistent true} "How do you refer to the filtered population? (eg. \" women of childbearing age \")"]
-    [:div.fixed-input-and-text
-     [:div.small-sized-input
-      (let [target-props {:disabled read-only
-                          :disable-floating-label true
-                          :sub-type :percentage
-                          :extra-right-content [:i.mdc-text-field__input.fixed-icon " %  "]}]
-        [current-project-input "Target" [:config :demographics :target] "number" target-props])]
-     [:div.fixed-text (str " of population that should be considered "
-                           (get-in current-project [:config :demographics :source-unit-name]))]]
-
-    [current-project-input "Demand unit" [:config :demographics :demand-unit-name] "text" {:disabled read-only}]
-    [m/TextFieldHelperText {:persistent true}  "How do you refer to the unit in your demand? (eg. \" visits per month \")"]]])
 
 (defn config-providers
   [current-project read-only tags? tags]
@@ -221,6 +193,7 @@
        "Only some provider units can provide the service"]
       (when @tags? [create-and-show-tags current-project tags read-only])]]))
 
+  ;; Coverage
 (defn config-coverage
   [current-project read-only]
   [:section {:class-name "project-settings-section"}
@@ -234,6 +207,38 @@
                                         :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
                                         :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
                                         :disabled?          read-only}]]])
+
+  ;; Actions
+(defn- show-action
+  [_ {:keys [idx action-name capacity investment capacity-unit] :as action} props]
+  [:div.fixed-input-and-text
+   [:p (merge
+        {:on-click #(dispatch [:projects2/delete-action action-name idx])}
+        props)
+    [m/Icon {:class-name "display-icon add-padding"} "clear"]]
+   (when (= action-name :build) [:div "with a capacity of "])
+   [current-project-input "" [:config :actions action-name idx :capacity] "number"
+    (assoc props :extra-right-content [:i.mdc-text-field__input.fixed-icon (str "  " capacity-unit)])]
+   [:div.text-passage "would cost"]
+   [current-project-input "" [:config :actions action-name idx :investment] "number"
+    (assoc props :extra-left-content [:i.mdc-text-field__input.fixed-icon "K  "])]])
+
+(defn- listing-actions
+  [project {:keys [read-only? action-name list]}]
+  [:div
+   (for [[index action] (map-indexed vector list)]
+     [show-action {:key (str action-name "-" index)}
+      (assoc action :action-name action-name
+             :idx index
+             :capacity-unit (get-in project [:config :providers :capacity-unit]))
+      {:disabled read-only?}])
+   [:div.add-action-button
+    [m/Button  {:type "button"
+                :disabled read-only?
+                :theme    ["text-secondary-on-secondary-light"]
+                :on-click #(dispatch [:projects2/create-action action-name])}
+     [m/Icon {:class-name "display-icon"} "add"]
+     "Add Option"]]])
 
 (defn action-container
   [{:keys [title icon content]}]
@@ -282,6 +287,7 @@
                                           :action-name :upgrade
                                           :list        upgrade-actions}]}]]]])
 
+;-------------------------------------------------------------------------------------------
 (defn current-project-settings-view
   [{:keys [read-only]}]
   (let [current-project (subscribe [:projects2/current-project])
