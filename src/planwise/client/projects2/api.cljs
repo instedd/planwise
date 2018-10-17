@@ -41,3 +41,8 @@
   [project-id]
   {:method    :delete
    :uri  (str "/api/projects2/" project-id)})
+
+(defn- get-providers
+  [project-id]
+  {:method    :get
+   :uri       (str "/api/projects2/" project-id "/providers")})

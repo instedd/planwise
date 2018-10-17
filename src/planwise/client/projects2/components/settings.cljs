@@ -59,18 +59,31 @@
 (def map-preview-size {:height 615 :width 570})
 
 (defn- show-region-map
- [{:keys [bbox]}]
- (let [zoom     (r/atom 3)
-       position (r/atom mapping/map-preview-position)]
-  (fn [{:keys [bbox]}]
-  [:div.project-settings-map
-   [l/map-widget {:zoom @zoom
-                  :position @position
-                  :on-position-changed #(reset! position %)
-                  :on-zoom-changed #(reset! zoom %)
-                  :controls []
-                  :initial-bbox bbox}
-                  mapping/default-base-tile-layer]])))
+  [{:keys [bbox provider-set-id]}]
+  (let [zoom      (r/atom 3)
+        position  (r/atom mapping/map-preview-position)
+        providers (rf/subscribe [:projects2/providers-layer])
+        should-get-providers? (rf/subscribe [:projects2/should-get-providers?])]
+    (fn [{:keys [bbox]}]
+      (let [providers-layer [:marker-layer  {:points @providers
+                                             :lat-fn #(:lat %)
+                                             :lon-fn #(:lon %)
+                                             :icon-fn (fn [p]
+                                                        {:className
+                                                         (str
+                                                          (if (:disabled? p)
+                                                            "leaflet-circle-icon-gray"
+                                                            "leaflet-circle-icon-orange"))})}]]
+        (when @should-get-providers? (rf/dispatch [:projects2/get-providers-for-project]))
+        [:div.project-settings-map
+         [l/map-widget {:zoom @zoom
+                        :position @position
+                        :on-position-changed #(reset! position %)
+                        :on-zoom-changed #(reset! zoom %)
+                        :controls []
+                        :initial-bbox bbox}
+          mapping/default-base-tile-layer
+          providers-layer]]))))
 
 ;;------------------------------------------------------------------------
 ;; Project sections configuration
@@ -330,9 +343,9 @@
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
         [:div
-        [current-project-settings-view {:read-only false}]
-        (when-let [region-id (:region-id @current-project)]
-        [show-region-map @current-project])]
+         [current-project-settings-view {:read-only false}]
+         (when-let [region-id (:region-id @current-project)]
+           [show-region-map @current-project])]
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]
          [project-start-button {} @current-project]]]

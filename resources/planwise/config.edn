@@ -113,7 +113,8 @@
 
  :planwise.endpoint/projects2
  {:projects2  #ig/ref :planwise.component/projects2
-  :scenarios  #ig/ref :planwise.component/scenarios}
+  :scenarios  #ig/ref :planwise.component/scenarios
+  :providers-set #ig/ref :planwise.component/providers-set}
 
  :planwise.endpoint/regions
  {:regions    #ig/ref :planwise.component/regions}

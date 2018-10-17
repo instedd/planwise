@@ -217,3 +217,25 @@
          actions* (utils/remove-by-index (get-in db path) index)]
      {:db       (assoc-in db path actions*)
       :dispatch [:projects2/persist-current-project]})))
+
+(rf/reg-event-fx
+ :projects2/get-providers-for-project
+ (fn [{:keys [db]} [_]]
+   (let [project (get-in db [:projects2 :current-project])
+         options (-> (select-keys project [:projects2 :region-id :coverage-algorithm])
+                     (assoc :tags (get-in project [:config :providers :tags])
+                            :coverage-options (get-in project [:config :coverage :filter-options])))]
+     {:api  (assoc (api/get-providers (:id project))
+                   :on-success [:projects2/save-providers])
+      db    (assoc-in db  [:projects2 :config-for-requested-providers] options)})))
+
+(rf/reg-event-db
+ :projects2/save-providers
+ in-projects2
+ (fn [db [_ all-providers]]
+   (let [{:keys [disabled-providers providers]} all-providers
+         select-fn #(select-keys % [:lat :lon])
+         providers-layer (concat (map (fn [a] (assoc (select-fn a) :disabled? true))
+                                      disabled-providers)
+                                 (map select-fn providers))]
+     (assoc db :providers-layer providers-layer))))

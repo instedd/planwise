@@ -23,7 +23,7 @@
   (when (= (:owner-id project) owner-id) project))
 
 (defn- projects2-routes
-  [{service :projects2 service-scenarios :scenarios}]
+  [{service :projects2 service-scenarios :scenarios service-providers-set :providers-set}]
   (routes
 
    (POST "/" request
@@ -101,7 +101,18 @@
            scenarios     (scenarios/list-scenarios service-scenarios id)]
        (if (nil? project)
          (not-found {:error "Project not found"})
-         (response scenarios))))))
+         (response scenarios))))
+
+   (GET "/:id/providers" [id :as request]
+     (let [user-id   (util/request-user-id request)
+           project   (filter-owned-by (projects2/get-project service (Integer. id)) user-id)
+           provider-set-id (:provider-set-id project)
+           version    (:provider-set-version project)
+           filter-options (-> (select-keys project [:region-id :coverage-algorithm])
+                              (assoc :tags (get-in project [:config :providers :tags])
+                                     :coverage-options (get-in project [:config :coverage :filter-options])))
+           providers (providers-set/get-providers-with-coverage-in-region service-providers-set provider-set-id version filter-options)]
+       (response providers)))))
 
 (defn projects2-endpoint
   [config]
