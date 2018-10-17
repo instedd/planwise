@@ -18,18 +18,12 @@
             [planwise.client.utils :as utils]
             [clojure.spec.alpha :as s]))
 
-;;------------------------------------------------------------------------
-;;Current Project updating
+;; Auxiliary and utility functions
 
-(defn- regions-dropdown-component
-  [attrs]
-  (let [props (merge {:choices   @(rf/subscribe [:regions/list])
-                      :label-fn  :name
-                      :render-fn (fn [region] [:div
-                                               [:span (:name region)]
-                                               [:span.option-context (:country-name region)]])}
-                     attrs)]
-    (into [filter-select/single-dropdown] (mapcat identity props))))
+(defn- section-header
+  [number title]
+  [:div {:class-name "step-header"}
+   [:h2 [:span title]]])
 
 (defn- current-project-input
   ([label path type]
@@ -61,6 +55,57 @@
              :theme    ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
+;;------------------------------------------------------------------------
+;; Project sections configuration
+  ;; Goal
+(defn- regions-dropdown-component
+  [attrs]
+  (let [props (merge {:choices   @(rf/subscribe [:regions/list])
+                      :label-fn  :name
+                      :render-fn (fn [region] [:div
+                                               [:span (:name region)]
+                                               [:span.option-context (:country-name region)]])}
+                     attrs)]
+    (into [filter-select/single-dropdown] (mapcat identity props))))
+
+(defn config-goal
+  [current-project read-only]
+  [:section {:class-name "project-settings-section"}
+   [section-header 1 "Goal"]
+   [current-project-input "Goal" [:name] "text"]
+   [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
+
+   [regions-dropdown-component {:label     "Location"
+                                :on-change #(dispatch [:projects2/save-key :region-id %])
+                                :model     (:region-id current-project)
+                                :disabled? read-only}]])
+
+  ;; Consumers
+(defn config-consumers
+  [current-project read-only]
+  [:section {:class-name "project-settings-section"}
+   [section-header 2 "Consumers"]
+   [:div.section-body
+    [sources-dropdown-component {:label     "Source"
+                                 :value     (:source-set-id current-project)
+                                 :on-change #(dispatch [:projects2/save-key :source-set-id %])
+                                 :disabled?  read-only}]
+    [current-project-input "Consumers unit" [:config :demographics :source-unit-name] "text" {:disabled read-only}]
+    [m/TextFieldHelperText {:persistent true} "How do you refer to the filtered population? (eg. \" women of childbearing age \")"]
+    [:div.fixed-input-and-text
+     [:div.small-sized-input
+      (let [target-props {:disabled read-only
+                          :disable-floating-label true
+                          :sub-type :percentage
+                          :extra-right-content [:i.mdc-text-field__input.fixed-icon " %  "]}]
+        [current-project-input "Target" [:config :demographics :target] "number" target-props])]
+     [:div.fixed-text (str " of population that should be considered "
+                           (get-in current-project [:config :demographics :source-unit-name]))]]
+
+    [current-project-input "Demand unit" [:config :demographics :demand-unit-name] "text" {:disabled read-only}]
+    [m/TextFieldHelperText {:persistent true}  "How do you refer to the unit in your demand? (eg. \" visits per month \")"]]])
+
+   ;; Providers
 (defn- tag-chip
   [props index input read-only]
   [m/Chip props [m/ChipText input]
@@ -99,13 +144,70 @@
     (when-not read-only [tag-input {:extra-left-content [tag-set tags read-only]}])]
    [count-providers tags project]])
 
-(defn- section-header
-  [number title]
-  [:div {:class-name "step-header"}
-   [:h2 [:span title]]])
+(defn config-providers
+  [current-project read-only tags? tags]
+  (let [provider-unit (get-in current-project [:config :providers :provider-unit])
+        demand-unit   (get-in current-project [:config :demographics :demand-unit-name])
+        capacity-unit (get-in current-project [:config :providers :capacity-unit])]
+    [:section {:class-name "project-settings-section"}
+     [section-header 3 "Providers"]
+     [:div.section-body
+      [providers-set-dropdown-component {:label     "Dataset"
+                                         :value     (:provider-set-id current-project)
+                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
+                                         :disabled? read-only}]
 
-;-------------------------------------------------------------------------------------------
-; Actions
+      [current-project-input "Providers unit" [:config :providers :provider-unit] "text" {:disabled read-only}]
+      [m/TextFieldHelperText {:persistent true} "How do you refer to your providers? (eg. \"hospitals \")"]
+
+      [current-project-input "Capacity unit" [:config :providers :capacity-unit] "text" {:disabled read-only}]
+      (when provider-unit
+        [m/TextFieldHelperText {:persistent true} "What's the unit of capacity for " provider-unit " ? (eg. \"beds \")"])
+
+      [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
+      [m/TextFieldHelperText {:persistent true} (str "How many " (get-in current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
+      [:div
+       [:div.floating-label "Capacity factor"]
+       [:div.fixed-input-and-text
+;;TODO
+;;Singularize capacity unit
+        [:div.fixed-text
+         (str "Each " capacity-unit " in a " provider-unit " will provide service for   ")]
+        [:div.small-sized-input
+         (let [props {:disabled read-only
+                      :disable-floating-label true
+                      :sub-type :float
+                      :class-name "centered-text"}]
+           [current-project-input "" [:config :demographics :target] "number" props])]
+        [:div.fixed-text (str demand-unit  " per year ")]]]
+      [m/Radio {:checked (false? @tags?)
+                :disabled read-only
+                :value "no-tags"
+                :on-click #(reset! tags? false)}
+       "All provider units in the dataset can provide the service"]
+      [m/Radio {:checked @tags?
+                :disabled read-only
+                :value "tags"
+                :on-click #(reset! tags? true)}
+       "Only some provider units can provide the service"]
+      (when @tags? [create-and-show-tags current-project tags read-only])]]))
+
+  ;; Coverage
+(defn config-coverage
+  [current-project read-only]
+  [:section {:class-name "project-settings-section"}
+   [section-header 4 "Coverage"]
+   [:div.section-body
+    [:div.text-introduction
+     "These values will be used to estimate the geographic coverage that your current sites are providing.
+      That in turn will allow Planwise to calculate areas out of reach."]
+    [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm current-project)
+                                        :value              (get-in current-project [:config :coverage :filter-options])
+                                        :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
+                                        :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
+                                        :disabled?          read-only}]]])
+
+  ;; Actions
 (defn- show-action
   [_ {:keys [idx action-name capacity investment capacity-unit] :as action} props]
   [:div.fixed-input-and-text
@@ -136,104 +238,6 @@
                 :on-click #(dispatch [:projects2/create-action action-name])}
      [m/Icon {:class-name "display-icon"} "add"]
      "Add Option"]]])
-
-;-------------------------------------------------------------------------------------------
-(defn config-goal
-  [current-project read-only]
-  [:section {:class-name "project-settings-section"}
-   [section-header 1 "Goal"]
-   [current-project-input "Goal" [:name] "text"]
-   [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
-
-   [regions-dropdown-component {:label     "Location"
-                                :on-change #(dispatch [:projects2/save-key :region-id %])
-                                :model     (:region-id current-project)
-                                :disabled? read-only}]])
-
-(defn config-consumers
-  [current-project read-only]
-  [:section {:class-name "project-settings-section"}
-   [section-header 2 "Consumers"]
-   [:div.section-body
-    [sources-dropdown-component {:label     "Source"
-                                 :value     (:source-set-id current-project)
-                                 :on-change #(dispatch [:projects2/save-key :source-set-id %])
-                                 :disabled?  read-only}]
-    [current-project-input "Consumers unit" [:config :demographics :source-unit-name] "text" {:disabled read-only}]
-    [m/TextFieldHelperText {:persistent true} "How do you refer to the filtered population? (eg. \" women of childbearing age \")"]
-    [:div.fixed-input-and-text
-     [:div.small-sized-input
-      (let [target-props {:disabled read-only
-                          :disable-floating-label true
-                          :sub-type :percentage
-                          :extra-right-content [:i.mdc-text-field__input.fixed-icon " %  "]}]
-        [current-project-input "Target" [:config :demographics :target] "number" target-props])]
-     [:div.fixed-text (str " of population that should be considered "
-                           (get-in current-project [:config :demographics :source-unit-name]))]]
-
-    [current-project-input "Demand unit" [:config :demographics :demand-unit-name] "text" {:disabled read-only}]
-    [m/TextFieldHelperText {:persistent true}  "How do you refer to the unit in your demand? (eg. \" visits per month \")"]]])
-
-(defn config-providers
-  [current-project read-only tags? tags]
-  (let [provider-unit (get-in current-project [:config :providers :provider-unit])
-        demand-unit   (get-in current-project [:config :demographics :demand-unit-name])
-        capacity-unit (get-in current-project [:config :providers :capacity-unit])]
-    [:section {:class-name "project-settings-section"}
-     [section-header 3 "Providers"]
-     [:div.section-body
-      [providers-set-dropdown-component {:label     "Dataset"
-                                         :value     (:provider-set-id current-project)
-                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
-                                         :disabled? read-only}]
-
-      [current-project-input "Providers unit" [:config :providers :provider-unit] "text" {:disabled read-only}]
-      [m/TextFieldHelperText {:persistent true} "How do you refer to your providers? (eg. \"hospitals \")"]
-
-      [current-project-input "Capacity unit" [:config :providers :capacity-unit] "text" {:disabled read-only}]
-      (when provider-unit
-        [m/TextFieldHelperText {:persistent true} "What's the unit of capacity for " provider-unit " ? (eg. \"beds \")"])
-
-      [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-      [m/TextFieldHelperText {:persistent true} (str "How many " (get-in current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
-      [:div
-       [:div.floating-label "Capacity factor"]
-       [:div.fixed-input-and-text
-;;Singularize capacity unit
-        [:div.fixed-text
-         (str "Each " capacity-unit " in a " provider-unit " will provide service for   ")]
-        [:div.small-sized-input
-         (let [props {:disabled read-only
-                      :disable-floating-label true
-                      :sub-type :float
-                      :class-name "centered-text"}]
-           [current-project-input "" [:config :demographics :target] "number" props])]
-        [:div.fixed-text (str demand-unit  " per year ")]]]
-      [m/Radio {:checked (false? @tags?)
-                :disabled read-only
-                :value "no-tags"
-                :on-click #(reset! tags? false)}
-       "All provider units in the dataset can provide the service"]
-      [m/Radio {:checked @tags?
-                :disabled read-only
-                :value "tags"
-                :on-click #(reset! tags? true)}
-       "Only some provider units can provide the service"]
-      (when @tags? [create-and-show-tags current-project tags read-only])]]))
-
-(defn config-coverage
-  [current-project read-only]
-  [:section {:class-name "project-settings-section"}
-   [section-header 4 "Coverage"]
-   [:div.section-body
-    [:div.text-introduction
-     "These values will be used to estimate the geographic coverage that your current sites are providing.
-      That in turn will allow Planwise to calculate areas out of reach."]
-    [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm current-project)
-                                        :value              (get-in current-project [:config :coverage :filter-options])
-                                        :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-                                        :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
-                                        :disabled?          read-only}]]])
 
 (defn action-container
   [{:keys [title icon content]}]
@@ -282,6 +286,7 @@
                                           :action-name :upgrade
                                           :list        upgrade-actions}]}]]]])
 
+;-------------------------------------------------------------------------------------------
 (defn current-project-settings-view
   [{:keys [read-only]}]
   (let [current-project (subscribe [:projects2/current-project])
