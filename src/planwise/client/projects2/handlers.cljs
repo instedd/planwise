@@ -141,7 +141,8 @@
              updated-project (-> current-project
                                  (assoc :providers (:providers project))
                                  (assoc :coverage-algorithm (:coverage-algorithm project))
-                                 (assoc :config update-config-if-necessary))]
+                                 (assoc :config update-config-if-necessary)
+                                 (assoc :bbox (:bbox project)))]
          {:dispatch [:projects2/save-project-data updated-project]})))))
 
 
