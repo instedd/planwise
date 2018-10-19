@@ -878,10 +878,7 @@ form.vertical, .fields-vertical {
   text-align: -webkit-center;
 }
 
-// TODO; fix width and height when zooming
  #settings-map{
-  top: 0;
-  left: 0;
   > div{
   width: 100%;
   height: 100vh;
@@ -891,16 +888,16 @@ form.vertical, .fields-vertical {
   .floating#settings-map{
     position: fixed;
     top: 0;
-    left: 50.80%;
+    left: 50.8%;
     width: 554px;
   }
 
   .static#settings-map{
-    position: relative;
+   top: 0;
+   left: 0;
+   position: relative;
   }
 
   .fixed-lower-bound#settings-map {
-    > div{
-      height: 82.3vh !important;
-  }
-}
+    position: sticky;
+   }
