@@ -347,13 +347,25 @@
         leaflet (:map state)]
     (.remove leaflet)))
 
+(defn leaflet-update-bounds
+  [this old-argv]
+  (let [bounds (:initial-bbox (nth old-argv 1))
+        state  (reagent/state this)
+        current-bbox (:initial-bbox (reagent/props this))]
+    (when-not (= current-bbox bounds)
+      (let [leaflet (:map state)
+            [[s w] [n e]] current-bbox
+            lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
+        (.fitBounds leaflet lat-lng-bounds)))))
+
 (defn leaflet-did-update [this old-argv]
   (let [state (reagent/state this)
         leaflet (:map state)]
 
     (leaflet-update-layers this)
     (leaflet-update-options this)
-    (leaflet-update-viewport this)))
+    (leaflet-update-viewport this)
+    (leaflet-update-bounds this old-argv)))
 
 (defn size-style [width height]
   (into {} (map (fn [k v] (when v) [k (if (number? v) (str v "px") v)])
