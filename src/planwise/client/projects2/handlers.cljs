@@ -228,7 +228,7 @@
                             :coverage-options (get-in project [:config :coverage :filter-options])))]
      {:api  (assoc (api/get-providers (:id project))
                    :on-success [:projects2/save-providers])
-      db    (assoc-in db  [:projects2 :config-for-requested-providers] options)})))
+      :db    (assoc-in db  [:projects2 :map-settings :config-for-requested-providers] options)})))
 
 (rf/reg-event-db
  :projects2/save-providers
@@ -239,7 +239,7 @@
          providers-layer (concat (map (fn [a] (assoc (select-fn a) :disabled? true))
                                       disabled-providers)
                                  (map select-fn providers))]
-     (assoc db :providers-layer providers-layer))))
+     (assoc-in db [:map-settings :providers-layer] providers-layer))))
 
 (rf/reg-event-db
  :projects2/save-settings-map-class-name

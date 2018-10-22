@@ -33,7 +33,7 @@
 (rf/reg-sub
  :projects2/providers-layer
  (fn [db []]
-   (get-in db [:projects2 :providers-layer])))
+   (get-in db [:projects2 :map-settings :providers-layer])))
 
 (defn- get-filter-options
   [project]
@@ -44,13 +44,13 @@
 (rf/reg-sub
  :projects2/should-get-providers?
  (fn [db []]
-   (let [last-config (get-in db [:projects2 :config-for-requested-providers])
+   (let [last-config (get-in db [:projects2 :map-settings :config-for-requested-providers])
          project     (get-in db [:projects2 :current-project])
-         actual-config (get-filter-options project)]
-     (case last-config
-       nil (and (:provider-set-id project) (:provider-set-version project))
-       actual-config false
-       false))))
+         actual-config (get-filter-options project)
+         providers (get-in db [:projects2 :map-settings :providers-layer])]
+     (cond
+       (nil? last-config) (and (:provider-set-id project) (not (empty? (get-in project [:config :coverage :filter-options]))))
+       (or (not= last-config actual-config) (empty? providers)) true))))
 
 (rf/reg-sub
  :projects2/map-settings-class-name
