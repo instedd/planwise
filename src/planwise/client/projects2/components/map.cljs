@@ -51,12 +51,12 @@
 (def classes {false "static" true "floating"})
 
 (defn show-region-map
-  [{:keys [bbox provider-set-id]}]
+  [{:keys [bbox provider-set-id region-id]}]
   (let [zoom      (r/atom 3)
         position  (r/atom mapping/map-preview-position)
-        providers (rf/subscribe [:projects2/providers-layer])
-        should-get-providers? (rf/subscribe [:projects2/should-get-providers?])
-        class-name (rf/subscribe [:projects2/map-settings-class-name])]
+        providers (rf/subscribe [:projects2.map-settings/providers-layer])
+        should-get-providers? (rf/subscribe [:projects2.map-settings/should-get-providers?])
+        class-name (rf/subscribe [:projects2.map-settings/class-name])]
     (fn [{:keys [bbox]}]
       (let [providers-layer [:marker-layer  {:points @providers
                                              :lat-fn #(:lat %)

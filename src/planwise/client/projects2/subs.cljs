@@ -31,7 +31,7 @@
    (get-in current-project [:config :actions :upgrade])))
 
 (rf/reg-sub
- :projects2/providers-layer
+ :projects2.map-settings/providers-layer
  (fn [db []]
    (get-in db [:projects2 :map-settings :providers-layer])))
 
@@ -42,7 +42,7 @@
              :coverage-options (get-in project [:config :coverage :filter-options]))))
 
 (rf/reg-sub
- :projects2/should-get-providers?
+ :projects2.map-settings/should-get-providers?
  (fn [db []]
    (let [last-config (get-in db [:projects2 :map-settings :config-for-requested-providers])
          project     (get-in db [:projects2 :current-project])
@@ -53,6 +53,11 @@
        (or (not= last-config actual-config) (empty? providers)) true))))
 
 (rf/reg-sub
- :projects2/map-settings-class-name
+ :projects2.map-settings/class-name
  (fn [db _]
-   (str (get-in db [:projects2 :current-project :display-settings]))))
+   (str (get-in db [:projects2 :map-settings :class-name]))))
+
+(rf/reg-sub
+ :projects2.map-settings/original-demand
+ (fn [db _]
+   (str (get-in db [:projects2 :map-settings :demand-file]))))

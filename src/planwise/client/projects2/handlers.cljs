@@ -245,4 +245,4 @@
  :projects2/save-settings-map-class-name
  in-projects2
  (fn [db [_ class-name]]
-   (assoc-in db [:current-project :display-settings] class-name)))
+   (assoc-in db [:map-settings :class-name] class-name)))
