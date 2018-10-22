@@ -107,7 +107,7 @@
      (let [user-id   (util/request-user-id request)
            project   (filter-owned-by (projects2/get-project service (Integer. id)) user-id)
            provider-set-id (:provider-set-id project)
-           version    (:provider-set-version project)
+           version         (:last-version (providers-set/get-provider-set service-providers-set provider-set-id))
            filter-options (-> (select-keys project [:region-id :coverage-algorithm])
                               (assoc :tags (get-in project [:config :providers :tags])
                                      :coverage-options (get-in project [:config :coverage :filter-options])))
