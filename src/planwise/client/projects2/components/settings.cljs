@@ -307,8 +307,7 @@
          [config-coverage @current-project read-only]
          [config-building-options @current-project read-only @build-actions @upgrade-actions]]]
        [m/GridCell {:span 6}
-        (when-let [region-id (:region-id @current-project)]
-          [show-region-map @current-project])]])))
+        [show-region-map @current-project]]])))
 
 
 (defn edit-current-project
