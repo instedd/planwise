@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
-            [clojure.string :refer [blank?]]
+            [clojure.string :refer [blank? capitalize]]
             [planwise.client.asdf :as asdf]
             [planwise.client.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
@@ -99,8 +99,8 @@
                           :sub-type :percentage
                           :extra-right-content [:i.mdc-text-field__input.fixed-icon " %  "]}]
         [current-project-input "Target" [:config :demographics :target] "number" target-props])]
-     [:div.fixed-text (str " of population that should be considered "
-                           (get-in current-project [:config :demographics :source-unit-name]))]]
+     (when-let [source-unit-name (get-in current-project [:config :demographics :source-unit-name])]
+       [:div.fixed-text (str " of population that should be considered " source-unit-name)])]
 
     [current-project-input "Demand unit" [:config :demographics :demand-unit-name] "text" {:disabled read-only}]
     [m/TextFieldHelperText {:persistent true}  "How do you refer to the unit in your demand? (eg. \" visits per month \")"]]])
@@ -118,11 +118,12 @@
    (for [[index tag] (map-indexed vector tags)]
      [tag-chip {:key (str "tag-" index)} index tag read-only])])
 
-(defn tag-input [props]
+(defn tag-input
+  [props providers-unit]
   (let [value (r/atom "")]
     (fn [props]
       [common2/text-field (merge props
-                                 {:placeholder "Type tag for filtering providers"
+                                 {:placeholder (str "Type tag for filtering " (or providers-unit "providers"))
                                   :component-class "tag-input"
                                   :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (not (blank? @value)))
                                                           (dispatch [:projects2/save-tag @value])
@@ -131,24 +132,26 @@
                                   :value @value})])))
 
 (defn- count-providers
-  [tags {:keys [provider-set-id providers region-id]}]
+  [tags {:keys [provider-set-id providers region-id providers-unit]}]
   (let [{:keys [total filtered]} providers]
     (cond (nil? region-id) [:p "Select region first."]
           (nil? provider-set-id) [:p "Select provider set first."]
-          :else [m/TextFieldHelperText {:persistent true :class-name "grey-text"} "Selected providers: " filtered " / " total])))
+          :else [m/TextFieldHelperText {:persistent true :class-name "grey-text"}
+                 (str "Selected " (or providers-unit "providers") ": " filtered " / " total)])))
 
 (defn- create-and-show-tags
   [project tags read-only]
-  [:div
-   [:div.tags
-    (when-not read-only [tag-input {:extra-left-content [tag-set tags read-only]}])]
-   [count-providers tags project]])
+  (let [providers-unit (get-in project [:config :providers :providers-unit])]
+    [:div
+     [:div.tags
+      (when-not read-only [tag-input {:extra-left-content [tag-set tags read-only]} providers-unit])]
+     [count-providers tags project (assoc project :providers-unit providers-unit)]]))
 
 (defn config-providers
   [current-project read-only tags? tags]
-  (let [provider-unit (get-in current-project [:config :providers :provider-unit])
+  (let [providers-unit (or (get-in current-project [:config :providers :providers-unit]) "providers")
         demand-unit   (get-in current-project [:config :demographics :demand-unit-name])
-        capacity-unit (get-in current-project [:config :providers :capacity-unit])]
+        capacity-unit (or (get-in current-project [:config :providers :capacity-unit]) "")]
     [:section {:class-name "project-settings-section"}
      [section-header 3 "Providers"]
      [:div.section-body
@@ -157,22 +160,22 @@
                                          :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                          :disabled? read-only}]
 
-      [current-project-input "Providers unit" [:config :providers :provider-unit] "text" {:disabled read-only}]
+      [current-project-input "Providers unit" [:config :providers :providers-unit] "text" {:disabled read-only}]
       [m/TextFieldHelperText {:persistent true} "How do you refer to your providers? (eg. \"hospitals \")"]
 
       [current-project-input "Capacity unit" [:config :providers :capacity-unit] "text" {:disabled read-only}]
-      (when provider-unit
-        [m/TextFieldHelperText {:persistent true} "What's the unit of capacity for " provider-unit " ? (eg. \"beds \")"])
+      (when providers-unit
+        [m/TextFieldHelperText {:persistent true} "What's the unit of capacity for " providers-unit " ? (eg. \"beds \")"])
 
       [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-      [m/TextFieldHelperText {:persistent true} (str "How many " (get-in current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
+      [m/TextFieldHelperText {:persistent true} (str "How many " demand-unit " can be handled per " providers-unit "capacity")]
       [:div
        [:div.floating-label "Capacity factor"]
        [:div.fixed-input-and-text
 ;;TODO
 ;;Singularize capacity unit
         [:div.fixed-text
-         (str "Each " capacity-unit " in a " provider-unit " will provide service for   ")]
+         (str (capitalize capacity-unit) " in " providers-unit " will provide service for   ")]
         [:div.small-sized-input
          (let [props {:disabled read-only
                       :disable-floating-label true
@@ -184,12 +187,12 @@
                 :disabled read-only
                 :value "no-tags"
                 :on-click #(reset! tags? false)}
-       "All provider units in the dataset can provide the service"]
+       "All " providers-unit " in the dataset can provide the service"]
       [m/Radio {:checked @tags?
                 :disabled read-only
                 :value "tags"
                 :on-click #(reset! tags? true)}
-       "Only some provider units can provide the service"]
+       "Only some " providers-unit " can provide the service"]
       (when @tags? [create-and-show-tags current-project tags read-only])]]))
 
   ;; Coverage

@@ -13,8 +13,8 @@
 ;; Demographics
 (s/def ::source-set-id number?)
 (s/def ::target number?)
-(s/def ::unit-name (comp not blank?))
-(s/def ::demographics (s/keys :req-un [::unit-name ::target]))
+(s/def ::demand-unit-name (comp not blank?))
+(s/def ::demographics (s/keys :req-un [::demand-unit-name ::target]))
 
 ;; Providers
 (s/def ::provider-set-id number?)

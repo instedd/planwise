@@ -62,7 +62,7 @@
        [:tr
         [:th]
         [:th.col1 "Name"]
-        [:th.col2 (str (capitalize (get-in current-project [:config :demographics :unit-name])) " coverage")]
+        [:th.col2 (str (capitalize (get-in current-project [:config :demographics :demand-unit-name])) " coverage")]
         [:th.col3  "Investment"]
         [:th.col4 "Actions"]]]
       [:tbody
