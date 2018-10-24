@@ -1,7 +1,7 @@
 -- :name db-create-project! :<! :1
 INSERT INTO projects2
-  ("owner-id", name, config, "provider-set-id", state, "deleted-at")
-  VALUES (:owner-id, :name, NULL, NULL, :state, NULL)
+  ("owner-id", name, config, "provider-set-id", state)
+  VALUES (:owner-id, :name, NULL, NULL, :state)
   RETURNING id;
 
 -- :name db-update-project :!
@@ -26,8 +26,7 @@ SELECT projects2.*, providers_set."coverage-algorithm", regions_bbox.bbox
 
 -- :name db-list-projects :?
 SELECT id, name, "region-id", state FROM projects2
-    WHERE "deleted-at" is NULL
-    AND "owner-id" = :owner-id
+    WHERE "owner-id" = :owner-id
     ORDER BY name;
 
 -- :name db-update-state-project :!
