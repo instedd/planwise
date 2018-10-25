@@ -167,22 +167,20 @@
       (when providers-unit
         [m/TextFieldHelperText {:persistent true} "What's the unit of capacity for " providers-unit " ? (eg. \"beds \")"])
 
-      [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-      [m/TextFieldHelperText {:persistent true} (str "How many " demand-unit " can be handled per " providers-unit "capacity")]
       [:div
        [:div.floating-label "Capacity factor"]
        [:div.fixed-input-and-text
 ;;TODO
 ;;Singularize capacity unit
         [:div.fixed-text
-         (str (capitalize capacity-unit) " in " providers-unit " will provide service for   ")]
-        [:div.small-sized-input
-         (let [props {:disabled read-only
-                      :disable-floating-label true
-                      :sub-type :float
-                      :class-name "centered-text"}]
-           [current-project-input "" [:config :demographics :target] "number" props])]
-        [:div.fixed-text (str demand-unit  " per year ")]]]
+         (str (some-> capacity-unit capitalize) " in " providers-unit " will provide service for ")
+         [:div.small-sized-input
+          (let [props {:disabled read-only
+                       :disable-floating-label true
+                       :sub-type :float
+                       :class-name "centered-text"}]
+            [current-project-input "" [:config :providers :capacity] "number" props])]
+         [:div.fixed-text (str demand-unit  " per year")]]]]
       [m/Radio {:checked (false? @tags?)
                 :disabled read-only
                 :value "no-tags"
