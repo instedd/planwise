@@ -80,15 +80,15 @@
              auth-state   (:openid-state state-claims)
              url          (request-url request)
              params       (:params request)]
-     (if auth-state
-       (if-let [authentication (guisso/auth-validate manager auth-state url params)]
-         authentication
-         (do
-           (info "Authentication failure")
-           nil))
-       (do
-         (warn "No OpenID request in session found")
-         nil)))
+         (if auth-state
+           (if-let [authentication (guisso/auth-validate manager auth-state url params)]
+             authentication
+             (do
+               (info "Authentication failure")
+               nil))
+           (do
+             (warn "No OpenID request in session found")
+             nil)))
        (catch ExceptionInfo e
          (warn e "Authentication failure" (ex-data e))
          nil)))
