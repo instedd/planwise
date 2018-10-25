@@ -12,9 +12,23 @@
             [buddy.sign.jwt :as jwt]
             [oauthentic.core :as oauth]
             [slingshot.slingshot :refer [try+ throw+]]
-            [planwise.util.ring :refer [absolute-url]]))
+            [planwise.util.ring :refer [absolute-url]])
+  (:import [clojure.lang ExceptionInfo]))
 
 (timbre/refer-timbre)
+
+;; Cookie to save the authentication state; this is set during the start of the
+;; flow and used/validated on the callback; it is cleared when the login
+;; completes successfully. Contents are a JWT encrypted with the same
+;; key as the identity JWT (which can be used for API calls). State JWT
+;; expiration is set to 5 minutes.
+;;
+;; NB. in theory we could use the session to store the auth state, but it will
+;; stop working if we later decide to change the same-site setting of the
+;; session cookie to strict (since it's not sent across redirects). Another
+;; possibility is to store the auth state server-side, but that of course
+;; complicates horizontal scalabiliy.
+(def state-cookie-name "planwise-auth-state")
 
 ;; ----------------------------------------------------------------------
 ;; Service implementation
@@ -42,32 +56,42 @@
   (let [manager         (:manager service)
         realm           (or (:realm service) (absolute-url "/" request))
         identifier      (openid-identifier service)
-        session         (:session request)
         return-url      (absolute-url return-location request)
         auth-request    (guisso/auth-request manager identifier return-url realm)
         destination-url (:destination-url auth-request)
-        auth-state      (:auth-state auth-request)]
-    (assoc (resp/redirect destination-url)
-           :session (merge session {:openid-state auth-state}))))
+        auth-state      (:auth-state auth-request)
+        state-claims    {:openid-state auth-state
+                         :exp          (time/plus (time/now) (time/minutes 5))}
+        state-cookie    (jwt/encrypt state-claims
+                                     (:jwe-secret service)
+                                     (:jwe-options service))]
+    (-> (resp/redirect destination-url)
+        (resp/set-cookie state-cookie-name state-cookie {:same-site :lax
+                                                         :http-only true}))))
 
 (defn openid-validate
   "Validates that the request contains a positive OpenID assertion and the
   authenticated user information"
   [service request]
-  (let [manager    (:manager service)
-        session    (:session request)
-        auth-state (:openid-state session)
-        url        (request-url request)
-        params     (:params request)]
-    (if auth-state
-      (if-let [authentication (guisso/auth-validate manager auth-state url params)]
-        authentication
-        (do
-          (info "Authentication failure")
-          nil))
-      (do
-        (warn "No OpenID request in session found")
-        nil))))
+  (try (let [manager      (:manager service)
+             state-cookie (get-in request [:cookies state-cookie-name :value])
+             state-claims (some-> state-cookie (jwt/decrypt (:jwe-secret service)
+                                                            (:jwe-options service)))
+             auth-state   (:openid-state state-claims)
+             url          (request-url request)
+             params       (:params request)]
+     (if auth-state
+       (if-let [authentication (guisso/auth-validate manager auth-state url params)]
+         authentication
+         (do
+           (info "Authentication failure")
+           nil))
+       (do
+         (warn "No OpenID request in session found")
+         nil)))
+       (catch ExceptionInfo e
+         (warn e "Authentication failure" (ex-data e))
+         nil)))
 
 (defn login
   "Updates the response to alter the session to include the authenticated user"
@@ -79,7 +103,13 @@
                         (assoc :identity (ident/user->ident user)))]
     (info (str "User " user-email " (id=" (:id user) ") authenticated successfully"))
     (users/update-user-last-login! users-store (:id user))
-    (assoc response :session session)))
+    (-> response
+        (assoc :session session
+               ;; NB. this is so the cookie gets forwarded on the GET after
+               ;; redirect; if this is set to :strict, the cookie *will not* be
+               ;; sent after the redirect and thus the login flow will restart
+               :session-cookie-attrs {:same-site :lax})
+        (resp/set-cookie state-cookie-name "" {:max-age 0}))))
 
 (defn logout
   "Modifies the response to logout the currently authenticated user"

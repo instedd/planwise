@@ -32,9 +32,31 @@
         (response/content-type "application/json"))))
 
 (def session-config
+  ;; NB. while setting this to :lax is not entirely secure (does not fully
+  ;; protect against CSRF attacks)[1], the downside of setting this to :strict
+  ;; is that then the session cookie *will not* be sent on certain valid
+  ;; requests.
+  ;;
+  ;; Eg. the user logs in through Guisso, which lands her on the home page after
+  ;; a series of redirects. Since the redirect is not considered a "same-site"
+  ;; request, a strict same-site cookie will not be sent on that initial
+  ;; request, and *neither* from a page refresh.
+  ;;
+  ;; We bypass the initial navigation limitation by forcefully setting the
+  ;; cookie to :lax during the login (see planwise.component.auth/login). But,
+  ;; if the session cookie is set to strict during the last request of that
+  ;; flow, then page refresh from the browser will make a new request which
+  ;; doesn't send the cookie, triggering the authentication flow again.
+  ;;
+  ;; [1] https://tools.ietf.org/html/draft-ietf-httpbis-cookie-same-site-00#section-4.1.1
+  ;;
+  ;; Additional resources:
+  ;; - https://www.owasp.org/index.php/SameSite
+  ;; - https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-02#section-8.8
   {:cookies true
-   :session {:cookie-attrs {:max-age (* 24 3600)}
-             :cookie-name "planwise-session"}})
+   :session {:cookie-attrs {:max-age   (* 24 3600)
+                            :same-site :lax}
+             :cookie-name  "planwise-session"}})
 
 ;; TODO: hide and log errors in production environment
 ;; Old code (was in main.clj):
