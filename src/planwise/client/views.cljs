@@ -52,9 +52,9 @@
                                                            :email config/user-email
                                                            :name config/user-email}])
 
-(defn planwise-app []  
+(defn planwise-app []
   (let [current-page (subscribe [:current-page])]
     (fn []
       [:div
-        [content-pane @current-page]
-        [intercom]])))
+       [content-pane @current-page]
+       [intercom]])))
