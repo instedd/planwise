@@ -8,7 +8,9 @@
             [planwise.client.providers-set.views :as providers-set]
             [planwise.client.sources.views :as sources]
             [planwise.client.scenarios.views :as scenarios]
-            [planwise.client.design.views :as design]))
+            [planwise.client.design.views :as design]
+            [react-intercom :as react-intercom]
+            [reagent.core :as reagent]))
 
 
 (def current-user-email
@@ -44,7 +46,15 @@
 (defmethod content-pane :scenarios []
   [scenarios/scenarios-page])
 
-(defn planwise-app []
+(defn intercom []
+  [(reagent/adapt-react-class (.-default react-intercom)) {:appID config/intercom-app-id
+                                                           :user_id config/user-email
+                                                           :email config/user-email
+                                                           :name config/user-email}])
+
+(defn planwise-app []  
   (let [current-page (subscribe [:current-page])]
     (fn []
-      [content-pane @current-page])))
+      [:div
+        [content-pane @current-page]
+        [intercom]])))

@@ -38,7 +38,8 @@
  :signout
  (fn [_ [_]]
    {:api (assoc api/signout
-                :on-success [:after-signout])}))
+                :on-success [:after-signout])
+    :intercom-logout true}))
 
 (rf/reg-event-fx
  :after-signout

@@ -103,7 +103,8 @@
 
  :planwise.endpoint/home
  {:maps       #ig/ref :planwise.component/maps
-  :auth       #ig/ref :planwise.component/auth}
+  :auth       #ig/ref :planwise.component/auth
+  :intercom-app-id #duct/env ["INTERCOM_APP_ID" Str :or ""]}
 
  :planwise.endpoint/monitor
  {}

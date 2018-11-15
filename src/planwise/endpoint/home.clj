@@ -32,7 +32,7 @@
    [:link {:href "https://fonts.googleapis.com/icon?family=Material+Icons" :rel "stylesheet"}]])
 
 (defn client-config
-  [{:keys [auth request maps globals]}]
+  [{:keys [auth request maps intercom-app-id]}]
   (let [mapserver-url (maps/mapserver-url maps)
         default-capacity (maps/default-capacity maps)
         calculate-demand (maps/calculate-demand? maps)
@@ -45,7 +45,8 @@
                 :mapserver-url mapserver-url
                 :app-version app-version
                 :facilities-default-capacity default-capacity
-                :calculate-demand calculate-demand}]
+                :calculate-demand calculate-demand
+                :intercom-app-id intercom-app-id}]
 
     [:script (str "var _CONFIG=" (json/generate-string config) ";")]))
 
