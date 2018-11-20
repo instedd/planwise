@@ -5,6 +5,7 @@
     "material-components-web": "^0.32.0",
     "react": "=15.5.4",
     "react-dom": "=15.5.4",
+    "react-intercom": "^1.0.15",
     "rmwc": "^1.4.1"
   }
 }

@@ -3,7 +3,8 @@
             [re-frame.db :as rf-db]
             [ajax.core :as ajax]
             [day8.re-frame.http-fx :as http-fx]
-            [accountant.core :as accountant]))
+            [accountant.core :as accountant]
+            [react-intercom :as react-intercom]))
 
 (rf/reg-fx
  :navigate
@@ -27,6 +28,11 @@
  :location
  (fn [url]
    (set! (.-location js/window) url)))
+
+(rf/reg-fx
+ :intercom-logout
+ (fn [_]
+   (.Intercom js/window "shutdown")))
 
 (def default-xhrio-options
   {:timeout         10000
