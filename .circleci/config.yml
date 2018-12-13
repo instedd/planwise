@@ -58,7 +58,12 @@ workflows:
   version: 2
   ci:
     jobs:
-      - test
+      - test:
+          filters:
+            branches:
+              only: /.*/
+            tags:
+              only: /.*/
       - deploy:
           requires:
             - test
