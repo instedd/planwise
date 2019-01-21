@@ -32,7 +32,7 @@ BEGIN
     simplify := (simplify_a + simplify_b) / 2;
     iter := iter + 1;
 
-    SELECT LENGTH(ST_AsGeoJSON(ST_Simplify(the_geom, simplify), 15, 3))
+    SELECT LENGTH(ST_AsGeoJSON(ST_SimplifyPreserveTopology(the_geom, simplify), 15, 3))
     FROM regions WHERE id = region_id
     INTO current;
 
@@ -43,7 +43,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  UPDATE regions SET preview_geom = ST_Simplify(the_geom, simplify) WHERE id = region_id;
+  UPDATE regions SET preview_geom = ST_Multi(ST_SimplifyPreserveTopology(the_geom, simplify)) WHERE id = region_id;
   RETURN current;
 END;
 $$ LANGUAGE plpgsql;
