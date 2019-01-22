@@ -23,7 +23,8 @@
 (timbre/merge-config! {:level :debug
                        :ns-blacklist ["com.zaxxer.hikari.*"
                                       "org.apache.http.*"
-                                      "org.eclipse.jetty.*"]})
+                                      "org.eclipse.jetty.*"
+                                      "org.openid4java.*"]})
 
 (defn read-config []
   (duct/read-config (io/resource "dev.edn")))
