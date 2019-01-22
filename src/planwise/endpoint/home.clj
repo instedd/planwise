@@ -117,9 +117,7 @@
          [:b "What is Planwise?"]
          [:br]
          "PlanWise is a new tool that helps planners and responders in low-resource settings see how
-          they can serve as many people as they can, as cost-effectively as they can."
-         ]
-        ]
+          they can serve as many people as they can, as cost-effectively as they can."]]
        [:div.cell
         [:img.right.responsive-img.mwidth100 {:src "/images/illustration.svg"}]]]]
      [:div.section
@@ -129,8 +127,7 @@
          [:span "Identify "]
          "most impactful interventions"]]
        [:div.cell
-        [:img.responsive-img {:src "/images/project-thumbnail1@2x.png"}]
-        ]]]
+        [:img.responsive-img {:src "/images/project-thumbnail1@2x.png"}]]]]
      [:hr]
      [:div.section.centerTablet.no-padd-right.v-height
       [:div.grid.x2
@@ -205,8 +202,7 @@
            document.getElementById(\"Sidenav\").style.transform = \"translateX(-100%)\";
            document.getElementById(\"Overlay\").style.visibility = \"hidden\";
        }
-     "
-     ]]))
+     "]]))
 
 (defn home-page
   [endpoint request]
