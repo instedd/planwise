@@ -32,7 +32,8 @@
 (rf/reg-fx
  :intercom-logout
  (fn [_]
-   (.Intercom js/window "shutdown")))
+   (if (aget js/window "Intercom")
+     (.Intercom js/window "shutdown"))))
 
 (def default-xhrio-options
   {:timeout         10000
