@@ -118,8 +118,9 @@
 
 (defn after-logout-url
   "Returns the URL to redirect the user to after a successful logout"
-  [service]
-  (guisso-url service "/users/sign_out"))
+  [service request]
+  (guisso-url service (str "/users/sign_out?after_sign_out_url="
+                           (absolute-url "/" request))))
 
 (defn create-jwe-token
   "Create a JWE token for the client to authenticate for API calls"

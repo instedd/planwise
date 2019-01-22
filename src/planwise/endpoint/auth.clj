@@ -69,8 +69,8 @@
          (content-type "text/html")
          (auth/logout service)))
 
-   (DELETE "/logout" []
-     (let [redirect-after-logout (auth/after-logout-url service)]
+   (DELETE "/logout" req
+     (let [redirect-after-logout (auth/after-logout-url service req)]
        (-> (response (json/generate-string {:redirect-to redirect-after-logout}))
            (content-type "application/json")
            (auth/logout service))))))
