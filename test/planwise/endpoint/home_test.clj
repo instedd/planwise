@@ -34,8 +34,7 @@
       :planwise.endpoint/home
       (wrap-authorization (backends/session))))
 
-(def home-paths ["/"
-                 "/providers"
+(def home-paths ["/providers"
                  "/sources"
                  "/projects2/1"
                  "/projects2/1/scenarios"
@@ -58,3 +57,16 @@
             (visit path :identity {:user-id 1 :user-email "foo@example.com"})
             (has (status? 200))
             (has (some-text? "Loading Application")))))))
+
+(deftest root-renders-landing-or-application
+  (let [handler (handler)]
+    (testing "root renders landing if not authenticated"
+      (-> (session handler)
+          (visit "/")
+          (has (status? 200))
+          (has (some-text? "What is Planwise?"))))
+    (testing "root renders application if authenticated"
+      (-> (session handler)
+          (visit "/" :identity {:user-id 1 :user-email "foo@example.com"})
+          (has (status? 200))
+          (has (some-text? "Loading Application"))))))
