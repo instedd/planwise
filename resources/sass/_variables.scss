@@ -1,0 +1,32 @@
+/* =============================================================================
+  VARIABLES
+============================================================================= */
+
+@import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700');
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+
+
+$sans-family: "Roboto", sans-serif;
+
+$primary-color: #FF5722;
+$secondary-color: #5D5D5D;
+
+$black: #000000;
+$white: #FFFFFF;
+
+$gray: #9E9E9E;
+$gray-medium: #cdcdcd;
+$gray-light: #E5E5E5;
+$gray-lighten: #f1f1f1;
+$gray-dark: #424242;
+$gray-darker: #333333;
+$blue-link: #2196F3;
+
+$btn-outline: $primary-color;
+$btn-outline-dark: darken($primary-color, 10%);
+
+$header: 100px;
+$side-padd: 5%;
+
+$error-red: #F1453D;

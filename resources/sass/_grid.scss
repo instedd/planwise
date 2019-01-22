@@ -1,0 +1,46 @@
+/* =============================================================================
+  GRID
+============================================================================= */
+
+.grid {
+  display: grid;
+  position: relative;
+  grid-gap: 3rem;
+  &.x2 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "c1 c2";
+  }
+  &.x3 {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas: "c1 c2 c3";
+  }
+  &.x4 {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-areas: "c1 c2 c3 c4";
+  }
+  &.centered {
+    justify-content: center;
+  }
+  &.v-centered {
+    align-items: center;
+    height: 100%;
+  }
+  .section {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+.cell {
+  padding: .5rem 0;
+  &.span2 {
+    grid-area: auto / auto / auto / span 2;
+  }
+  &.span3 {
+    grid-area: auto / auto / auto / span 3;
+  }
+  &.span4 {
+    grid-area: auto / auto / auto / span 4;
+  }
+}
+

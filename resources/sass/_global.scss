@@ -1,0 +1,202 @@
+/* =============================================================================
+  GLOBAL STYLES
+============================================================================= */
+
+h1 {
+  font-size: 2.8rem;
+  font-weight: 300;
+  span {
+    font-weight: 400;
+  }
+}
+h2 {
+  font-size: 1.8rem;
+  font-weight: 400;
+}
+h3 {
+  font-size: 1.4rem;
+  font-weight: 300;
+  margin-bottom: 1.2rem;
+}
+p {
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+img {
+  max-width: 70%;
+}
+hr {
+  border-top: 1px solid $gray-light;
+}
+.btn {
+  font-size: .9rem;
+  font-family: $sans-family;
+  text-transform: uppercase;
+  text-align: center;
+  display: inline-block;
+  padding: .65rem 1.4rem;
+  transition: all ease-in .2s;
+  outline: none !important;
+
+  &.block {
+    width: 100%;
+  }
+}
+
+.btn-outline {
+  @extend .btn;
+  color: $btn-outline;
+  border-radius: 3px;
+  border: 2px solid $btn-outline;
+  &:hover {
+    color: $btn-outline-dark;
+    border-color: $btn-outline-dark;
+  }
+}
+
+.icon {
+  font-size: 24px;
+  font-family: 'Material Icons' !important;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: normal;
+  display: inline-block;
+  vertical-align: middle;
+  word-wrap: normal;
+  white-space: normal;
+  direction: ltr;
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+  /* Support for IE. */
+  font-feature-settings: 'liga';
+
+  &.large-icon {
+    font-size: 5.4rem;
+  }
+  &.outline {
+    position: relative;
+    line-height: 8rem;
+    width: 9rem;
+    margin: 2rem 2.5rem;
+    &:before {
+      content: '';
+      display: block;
+      border-radius: 50%;
+      border: 4px solid $gray-light;
+      height: 9rem;
+      width: 9rem;
+      position: absolute;
+      left: 0px;
+      top: -6px;
+    }
+  } 
+}
+
+/*------------- Helpers ---------------*/
+
+.sans {
+  font-family: $sans-family;
+}
+.strong {
+  font-weight: 700;
+}
+.small-text {
+  font-size: .8rem;
+}
+.center-text {
+  text-align: center;
+}
+.right-text {
+  text-align: right;
+}
+.v-middle {
+  vertical-align: middle;
+}
+.pull-left {
+  float: left;
+}
+.pull-right {
+  float: right;
+}
+.inline {
+  display: inline-block;
+}
+.nowrap {
+  white-space: nowrap;
+}
+.mwidth100 {
+  max-width: 100% !important;
+}
+.text-black {
+  color: $black !important;
+}
+.text-white {
+  color: $white !important;
+}
+.text-gray {
+  color: $gray !important;
+}
+.text-gray-dark {
+  color: $gray-dark !important;
+}
+.text-gray-light {
+  color: $gray-light !important;
+}
+.text-gray-lighten {
+  color: $gray-lighten !important;
+}
+.black {
+  background: $black !important;
+}
+.white {
+  background: $white !important;
+}
+.gray {
+  background: $gray !important;
+}
+.gray-dark {
+  background: $gray-dark !important;
+}
+.gray-darker {
+  background: $gray-darker !important;
+}
+.gray-light {
+  background: $gray-light !important;
+}
+.gray-lighten {
+  background: $gray-lighten !important;
+}
+.v-height {
+  min-height: 480px;
+  height: calc(100vh - 100px); 
+}
+.margin {
+  margin: 2rem 0;
+}
+.truncate {
+  max-width: 100%;
+  overflow: hidden!important;
+  text-overflow: ellipsis!important;
+  white-space: nowrap!important;
+  word-wrap: normal!important;
+}
+.clearfix {
+  display: inline-block;
+  &:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+  }
+}
+.shadow {
+  box-shadow: 0 12px 35px 3px rgba(0, 0, 0, 0.2);
+}
