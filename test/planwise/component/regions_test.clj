@@ -35,3 +35,9 @@
     (let [service (:planwise.component/regions system)
           [kenya & rest] (regions/list-regions-with-geo service [1] 0.5)]
       (is (= 1000 (:total-population kenya))))))
+
+(deftest enum-regions-inside-envelope-test
+  (test-system/with-system (test-config)
+    (let [service (:planwise.component/regions system)]
+      (is (empty? (regions/enum-regions-inside-envelope service {:min-lat 1 :max-lat 2 :min-lon 1 :max-lon 2})))
+      (is (= [1] (regions/enum-regions-inside-envelope service {:min-lat 0 :max-lat 2 :min-lon 0 :max-lon 2}))))))

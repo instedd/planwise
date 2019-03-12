@@ -33,7 +33,10 @@
          (select-regions-with-geo-given-ids (:spec db)
                                             {:ids ids :simplify simplify})))
   (find-region [{:keys [db]} id]
-    (db->region (select-region (:spec db) {:id id}))))
+    (db->region (select-region (:spec db) {:id id})))
+
+  (enum-regions-inside-envelope [{:keys [db]} envelope]
+    (map :id (region-ids-inside-envelope (:spec db) envelope))))
 
 
 ;; ----------------------------------------------------------------------

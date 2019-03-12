@@ -16,4 +16,7 @@
 
   (find-region [this id]
     "Returns region by ID, or nil if not found, without including any
-    geometries"))
+    geometries")
+
+  (enum-regions-inside-envelope [this envelope]
+    "Return region ids which are fully contained in the given envelope"))
