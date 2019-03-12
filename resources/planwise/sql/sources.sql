@@ -16,6 +16,7 @@ INSERT INTO source_set
 SELECT id,
        name,
        type,
+       raster_file AS "raster-file",
        (SELECT COUNT(*) FROM sources WHERE sources.set_id = source_set.id) AS "sources-count"
   FROM source_set
   WHERE id = :id AND "owner-id" = :owner-id;
@@ -24,6 +25,7 @@ SELECT id,
 SELECT id,
        name,
        type,
+       raster_file AS "raster-file",
        (SELECT COUNT(*) FROM sources WHERE sources.set_id = source_set.id) AS "sources-count"
   FROM source_set
   WHERE id = :id;

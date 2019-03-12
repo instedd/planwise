@@ -4,6 +4,7 @@
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.sources :as sources-set]
             [planwise.boundary.coverage :as coverage]
+            [planwise.boundary.regions :as regions]
             [planwise.engine.raster :as raster]
             [planwise.engine.common :refer [provider-coverage-raster-path providers-in-project]]
             [planwise.component.coverage.rasterize :as rasterize]
@@ -15,12 +16,18 @@
             [integrant.core :as ig]
             [clojure.java.io :as io]
             [taoensso.timbre :as timbre]
-            [clojure.set :as set]))
+            [clojure.set :as set])
+  (:import [clojure.lang ExceptionInfo]))
 
 (timbre/refer-timbre)
 
 ;; PATH HELPERS
 ;; -------------------------------------------------------------------------------------------------
+
+(defn source-set-raster-path
+  "Full path to the original source set raster file."
+  [{:keys [raster-file]}]
+  (str "data/" raster-file))
 
 (defn source-raster-data-path
   "Full path to the source raster clipped to a region."
@@ -143,6 +150,21 @@
 
 ;; RASTER SCENARIOS
 ;; -------------------------------------------------------------------------------------------------
+
+(defn read-raster-from-source-set
+  [source-set]
+  (let [raster-path (source-set-raster-path source-set)]
+    (try
+      (raster/read-raster-without-data raster-path)
+      (catch ExceptionInfo e
+        (warn "Failed to load source set raster file" {:source-set source-set})))))
+
+(defn region-inside-raster?
+  [regions region-id raster]
+  (let [buffer-pixels 10
+        envelope      (raster/raster-envelope raster buffer-pixels)
+        region-ids    (set (regions/enum-regions-inside-envelope regions envelope))]
+    (contains? region-ids region-id)))
 
 (defn project-base-demand-raster
   "Returns a mutable raster with the initial source demand for the project."
@@ -446,7 +468,8 @@
 (defn compute-initial-scenario
   [engine project]
   (debug "Computing initial scenario for project" (:id project))
-  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))]
+  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))
+        project    (assoc project :source-set source-set)]
     (case (:type source-set)
       "points" (compute-initial-scenario-by-point engine project)
       "raster" (compute-initial-scenario-by-raster engine project)
@@ -471,7 +494,7 @@
   (let [scenarios-path (str "data/scenarios/" project-id)]
     (files/delete-files-recursively scenarios-path true)))
 
-(defrecord Engine [providers-set sources-set coverage]
+(defrecord Engine [providers-set sources-set coverage regions]
   boundary/Engine
   (compute-initial-scenario [engine project]
     (compute-initial-scenario engine project))

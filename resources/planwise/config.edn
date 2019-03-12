@@ -143,8 +143,9 @@
 
  :planwise.component/engine
  {:providers-set #ig/ref :planwise.component/providers-set
-  :sources-set #ig/ref :planwise.component/sources
-  :coverage    #ig/ref :planwise.component/coverage}
+  :sources-set   #ig/ref :planwise.component/sources
+  :coverage      #ig/ref :planwise.component/coverage
+  :regions       #ig/ref :planwise.component/regions}
 
  :planwise.component/jobrunner
  {:concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
