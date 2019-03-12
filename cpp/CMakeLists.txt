@@ -30,8 +30,5 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11")
 add_executable(aggregate-population aggregate-population.cpp)
 target_link_libraries(aggregate-population ${GDAL_LIBS} ${Boost_LIBRARIES})
 
-add_executable(calculate-demand calculate-demand.cpp)
-target_link_libraries(calculate-demand ${GDAL_LIBS} ${Boost_LIBRARIES})
-
 add_executable(walking-coverage walking-coverage.cpp)
 target_link_libraries(walking-coverage ${GDAL_LIBS} ${Boost_LIBRARIES})

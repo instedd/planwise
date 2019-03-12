@@ -70,9 +70,7 @@ Beyond that, there are three main dimensions for scaling PlanWise:
 ### Data Sources
 
 The production deployment of [PlanWise](http://planwise.instedd.org) uses
-geospatial routing information
-from [OpenStreetMap](http://www.openstreetmap.org/about) and demographics
-datasets from [WorldPop](http://www.worldpop.org.uk/).
+demographics datasets from [WorldPop](http://www.worldpop.org.uk/).
 
 
 ## Developing
@@ -100,22 +98,9 @@ if import-osm is run inside a container.
 ### Mapserver
 
 The mapserver and mapcache containers for development will use the map data in
-the `data` folder. Download [KEN_popmap15_v2b.zip](http://www.worldpop.org.uk/data/files/index.php?dataset=129&zip_title=Kenya%20100m%20Population&action=group) from
-[worldpop.org.uk](http://www.worldpop.org.uk/data/summary/?doi=10.5258/SOTON/WP00124),
-and extract it's content there. Refer to the README in the `mapserver` folder for more information.
+the `data` folder.
 
-```
-data
-├── KEN_popmap15_v2b.tfw
-├── KEN_popmap15_v2b.tif
-├── KEN_popmap15_v2b.tif.aux.xml
-├── demands
-├── isochrones
-├── populations
-└── regions
-```
-
-### Bootstrap the map data
+### Bootstrap the database
 
 Run inside the `app` container:
 
@@ -348,26 +333,8 @@ lein test
 
 ### Importing a new country
 
-1. Download the OpenStreetMap data for the country from
-   http://download.geofabrik.de/index.html (the `.osm.bz2` version) and
-   uncompress it
-1. Copy the extracted `.osm` file to `/tmp/$COUNTRY.osm`
-  1. If you are part of InSTEDD, recompress it as `.gz` and upload it to S3
-     (`https://s3.amazonws.com/planwise/data/$COUNTRY.osm.gz`) to make it
-     available to others.
-  1. If you are not part of InSTEDD, include a link to download the file in your
-     PR so we can re-upload it
-1. Add the file name to the `COUNTRIES` list in `import-osm`
-1. Download population data file from
-   [WorldPop](http://www.worldpop.org.uk/data/get_data/)
-  1. Search for the country and download its dataset
-  1. Extract it and look for the population `.tif` file
-  1. Copy it to `data/` directory
-    1. Upload it to AWS or another host, zipped as `.gz` to share it
-  1. Add an `elif` branch to fill `POPULATION_FILE` variable in
-     `scripts/isochrone-population`
-  1. Add another `case` branch in `base-raster` function of
-     `scripts/regions-population`
+See `scripts/population/README.md`.
+
 
 ### Intercom
 

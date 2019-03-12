@@ -3,7 +3,7 @@ FROM openjdk:8-jre
 # Install package dependencies and add precompiled binary
 RUN for i in {1..5}; do \
        (apt-get update \
-        && apt-get -y install postgresql-client gdal-bin python-gdal libgdal-java osm2pgrouting \
+        && apt-get -y install postgresql-client gdal-bin python-gdal libgdal-java \
         && break) \
        || (sleep 5; false); done \
   && apt-get clean \
@@ -14,7 +14,6 @@ ADD scripts/ /app/scripts/
 ENV SCRIPTS_PATH /app/scripts/
 
 # Add project compiled binaries
-ADD cpp/build-linux-x86_64/calculate-demand /app/bin/calculate-demand
 ADD cpp/build-linux-x86_64/aggregate-population /app/bin/aggregate-population
 ADD cpp/build-linux-x86_64/walking-coverage /app/bin/walking-coverage
 ENV BIN_PATH /app/bin/

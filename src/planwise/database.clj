@@ -23,10 +23,6 @@
   (doseq [source (resauce/resource-dir "planwise/plpgsql")]
     (load-and-execute-sql database source)))
 
-(defn create-osm2pgr-tables
-  [database]
-  (load-and-execute-sql database "test/scripts/osm2pgr-tables.sql"))
-
 (defn table-exists?
   [database table]
   (-> (:spec database)

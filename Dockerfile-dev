@@ -6,7 +6,7 @@ RUN apt update && \
                    libboost-filesystem-dev \
                    libpq-dev libgdal-dev postgresql-client libpq-dev \
                    gdal-bin python-gdal libgdal-java \
-                   osm2pgrouting && \
+                   && \
     curl -sL https://deb.nodesource.com/setup_9.x | bash - && \
     apt-get install -y nodejs
 

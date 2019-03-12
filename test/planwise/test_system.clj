@@ -35,7 +35,6 @@
 ;; initialized *before* running the migrations
 (defmethod ig/init-key :planwise.test/db-pre-setup
   [_ {:keys [db]}]
-  (database/create-osm2pgr-tables db)
   (database/load-sql-functions db))
 
 (defn- load-table!
