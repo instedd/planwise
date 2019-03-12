@@ -1,9 +1,13 @@
 (ns planwise.engine.raster
   (:require [clojure.spec.alpha :as s]
-            [planwise.util.numbers :refer [float=]])
+            [planwise.util.numbers :refer [float= abs]])
   (:import [org.gdal.gdal gdal]
            [org.gdal.gdalconst gdalconst]
            [org.gdal.osr SpatialReference]))
+
+;;
+;; WARNING: all operations in this file assume raster files that have no rotation/tilting
+;;
 
 (gdal/AllRegister)
 
@@ -93,7 +97,13 @@
        (let [projection   (.GetProjection dataset)
              geotransform (.GetGeoTransform dataset)
              raster-count (.GetRasterCount dataset)]
-         (if (<= 1 band-number raster-count)
+         (cond
+           (nil? band-number)
+           (let [xsize (.GetRasterXSize dataset)
+                 ysize (.GetRasterYSize dataset)]
+             (->Raster projection geotransform xsize ysize nil nil nil))
+
+           (<= 1 band-number raster-count)
            (let [band      (.GetRasterBand dataset band-number)
                  data-type (.GetRasterDataType band)
                  xsize     (.GetXSize band)
@@ -101,10 +111,16 @@
                  nodata    (read-nodata-value band)
                  data      (read-band-data band 0 0 xsize ysize)]
              (->Raster projection geotransform xsize ysize data-type nodata data))
+
+           :else
            (throw (ex-info "Invalid band number"
                            {:filename   path
                             :band       band-number
                             :band-count raster-count}))))))))
+
+(defn read-raster-without-data
+  [path]
+  (read-raster path nil))
 
 (defn- compute-band-histogram
   [band num-buckets]
@@ -151,6 +167,8 @@
 
 (defn write-raster-file
   [{:keys [xsize ysize data-type nodata data projection geotransform] :as raster} output-path]
+  (when (nil? data)
+    (throw (ex-info "Cannot write raster with nil data" {:raster raster})))
   (let [driver      (gdal/GetDriverByName "GTiff")
         options     (into-array String (raster-options data-type))
         dataset     (.Create driver output-path xsize ysize 1 data-type options)]
@@ -222,6 +240,19 @@
       {:dst [dst-left dst-top (dec dst-right) (dec dst-bottom)]
        :src [src-left src-top (dec src-right) (dec src-bottom)]})))
 
+(defn raster-envelope
+  "Computes the envelope of the raster file assuming no rotation in the
+  geotransform matrix; applies buffer as measured in pixels"
+  [{:keys [geotransform xsize ysize]} buffer-pixels]
+  (let [[x1 xres _ y1 _ yres] geotransform
+        x2                    (+ x1 (* xres xsize))
+        y2                    (+ y1 (* yres ysize))]
+
+    {:min-lat (- (min y1 y2) (* buffer-pixels (abs yres)))
+     :max-lat (+ (max y1 y2) (* buffer-pixels (abs yres)))
+     :min-lon (- (min x1 x2) (* buffer-pixels (abs xres)))
+     :max-lon (+ (max x1 x2) (* buffer-pixels (abs xres)))}))
+
 (defprotocol RasterOps
   (compatible? [r1 r2]
     "Returns true if both rasters are compatible, as in having equivalent
@@ -231,7 +262,9 @@
   (clipped-coordinates [r1 r2]
     "Returns the grid bounds of r2 in r1 buffer coordinate space")
   (write-raster [r path]
-    "Writes the raster into a TIF file"))
+    "Writes the raster into a TIF file")
+  (envelope [r]
+    "Returns a map with the bounding box coordinates of latitude and longitude :min-lat :max-lat :min-lon :max-lon"))
 
 (extend-type Raster
   RasterOps
@@ -259,7 +292,10 @@
     (grid-clipped-coordinates r1 r2))
 
   (write-raster [r path]
-    (write-raster-file r path)))
+    (write-raster-file r path))
+
+  (envelope [r]
+    (raster-envelope r 0)))
 
 (comment
   (def raster1 (time (read-raster "data/populations/data/20/42.tif")))

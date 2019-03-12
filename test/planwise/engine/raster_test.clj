@@ -1,6 +1,10 @@
 (ns planwise.engine.raster-test
   (:require [planwise.engine.raster :as sut]
+            [planwise.util.numbers :refer [float=]]
             [clojure.test :refer :all]))
+
+(def sample-float-raster-path "test/resources/pointe-noire-float.tif")
+(def sample-byte-raster-path "test/resources/pointe-noire-byte.tif")
 
 (def identity-xf (double-array [0 1 0 0 0 1]))
 
@@ -36,3 +40,25 @@
           {:geotransform (double-array [10.0 0.1 0 -5.0 0 -0.1]) :xsize 100 :ysize 100}
           {:geotransform (double-array [12.5 0.1 0 -7.5 0 -0.1]) :xsize 100 :ysize 50}))
       "works for arbitrary transformations"))
+
+(deftest read-raster-without-data-test
+  (let [raster (sut/read-raster-without-data sample-float-raster-path)]
+    (is (some? raster))
+    (is (= [107 102] [(:xsize raster) (:ysize raster)]))))
+
+(deftest envelope-test
+  (let [raster   (sut/read-raster-without-data sample-float-raster-path)
+        envelope (sut/envelope raster)]
+    (is (float= (:min-lat envelope) -4.8314734 10e-6))
+    (is (float= (:max-lat envelope) -4.7464768 10e-6))
+    (is (float= (:min-lon envelope) 11.8228604 10e-6))
+    (is (float= (:max-lon envelope) 11.9120235 10e-6))))
+
+(deftest raster-envelope-with-buffer
+  (let [raster     (sut/read-raster-without-data sample-float-raster-path)
+        env        (sut/raster-envelope raster 0)
+        env-buffer (sut/raster-envelope raster 2)]
+    (is (< (:min-lat env-buffer) (:min-lat env)))
+    (is (> (:max-lat env-buffer) (:max-lat env)))
+    (is (< (:min-lon env-buffer) (:min-lon env)))
+    (is (> (:max-lon env-buffer) (:max-lon env)))))
