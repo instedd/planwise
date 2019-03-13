@@ -4,7 +4,7 @@
             [planwise.component.coverage.simple :as simple]
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.component.coverage.friction :as friction]
-            [planwise.util.pg :as pg]
+            [planwise.util.geo :as geo]
             [integrant.core :as ig]
             [clojure.spec.alpha :as s]
             [clojure.java.io :as io]
@@ -97,7 +97,7 @@
 (defmethod compute-coverage-polygon :pgrouting-alpha
   [{:keys [db]} coords criteria]
   (let [db-spec   (:spec db)
-        pg-point  (pg/make-point coords)
+        pg-point  (geo/make-pg-point coords)
         threshold (:driving-time criteria)
         result    (pgrouting/compute-coverage db-spec pg-point threshold)]
     (case (:result result)
@@ -107,7 +107,7 @@
 (defmethod compute-coverage-polygon :simple-buffer
   [{:keys [db]} coords criteria]
   (let [db-spec  (:spec db)
-        pg-point (pg/make-point coords)
+        pg-point (geo/make-pg-point coords)
         distance (* 1000 (:distance criteria))
         result   (simple/compute-coverage db-spec pg-point distance)]
     (case (:result result)
@@ -166,7 +166,7 @@
   (supported-algorithms [this]
     supported-algorithms)
   (compute-coverage [this coords criteria]
-    (s/assert ::pg/coords coords)
+    (s/assert ::geo/coords coords)
     (s/assert ::criteria criteria)
     (let [polygon (compute-coverage-polygon this coords criteria)
           raster-options (merge default-grid-align-options criteria)]

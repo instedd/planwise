@@ -2,7 +2,7 @@
   (:require [hugsql.core :as hugsql]
             [clojure.string :as str]
             [taoensso.timbre :as timbre]
-            [planwise.util.pg :as pg]
+            [planwise.util.geo :as geo]
             [planwise.boundary.runner :as runner])
   (:import [org.postgis PGgeometry]))
 
@@ -12,7 +12,7 @@
 
 (defn find-friction-raster
   [db-spec coords]
-  (let [pg-point (pg/make-point coords)
+  (let [pg-point (geo/make-pg-point coords)
         result   (find-country-region-with-point db-spec {:point pg-point})]
     (when-let [region-id (:id result)]
       ;; TODO: parameterize data folder

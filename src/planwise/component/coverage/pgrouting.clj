@@ -1,6 +1,6 @@
 (ns planwise.component.coverage.pgrouting
   (:require [hugsql.core :as hugsql]
-            [planwise.util.pg :as pg]
+            [planwise.util.geo :as geo]
             [clojure.spec.alpha :as s]
             [clojure.java.jdbc.spec :as sjdbc]))
 
@@ -11,7 +11,7 @@
 (defn compute-coverage
   [db-spec point threshold]
   {:pre [(s/valid? ::sjdbc/db-spec db-spec)
-         (s/valid? ::pg/point point)
+         (s/valid? ::geo/point point)
          (s/valid? ::threshold threshold)]}
   (compute-pgr-alpha-coverage db-spec {:point point :threshold threshold}))
 

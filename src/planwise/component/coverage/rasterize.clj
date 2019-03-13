@@ -1,7 +1,8 @@
 (ns planwise.component.coverage.rasterize
   (:require [clojure.spec.alpha :as s]
-            [planwise.util.pg :as pg])
+            [planwise.util.geo :as geo])
   (:import [org.gdal.gdal gdal]
+           [org.gdal.ogr ogr]
            [org.gdal.ogr ogr Feature FeatureDefn Geometry]
            [org.gdal.gdalconst gdalconst]
            [org.gdal.osr osrConstants SpatialReference]
@@ -16,21 +17,6 @@
   ([name]
    (let [driver (ogr/GetDriverByName "Memory")]
      (.CreateDataSource driver name))))
-
-(defn srs-from-epsg
-  [epsg]
-  (doto (SpatialReference.)
-    (.ImportFromEPSG epsg)))
-
-(defn srs-from-pg
-  [pg]
-  (let [srid (.. pg (getGeometry) (getSrid))]
-    (srs-from-epsg srid)))
-
-(defn pg->geometry
-  [pg]
-  (let [wkt (second (PGgeometry/splitSRID (str pg)))]
-    (Geometry/CreateFromWkt wkt)))
 
 (defn build-datasource-from-geometry
   [srs geometry]
@@ -71,16 +57,6 @@
     (.. dataset (GetRasterBand 1) (SetNoDataValue 0.0))
     dataset))
 
-(defn envelope
-  [geom]
-  (let [env (double-array 4)]
-    (.GetEnvelope geom env)
-    (let [[min-lon max-lon min-lat max-lat] env]
-      {:min-lon min-lon
-       :min-lat min-lat
-       :max-lon max-lon
-       :max-lat max-lat})))
-
 (defn compute-aligned-raster-extent
   [{:keys [min-lon min-lat max-lon max-lat] :as envelope}
    {ref-lat :lat ref-lon :lon}
@@ -100,7 +76,7 @@
      :geotransform [ul-lon x-res         0
                     ul-lat     0 (- y-res)]}))
 
-(s/def ::ref-coords ::pg/coords)
+(s/def ::ref-coords ::geo/coords)
 (s/def ::pixel-resolution number?)
 (s/def ::x-res ::pixel-resolution)
 (s/def ::y-res ::pixel-resolution)
@@ -109,12 +85,12 @@
 
 (defn rasterize
   ([polygon output-path {:keys [ref-coords resolution] :as options}]
-   {:pre [(s/valid? ::pg/polygon polygon)
+   {:pre [(s/valid? ::geo/pg-polygon polygon)
           (s/valid? string? output-path)
           (s/valid? ::rasterize-options options)]}
-   (let [srs            (srs-from-pg polygon)
-         geometry       (pg->geometry polygon)
-         envelope       (envelope geometry)
+   (let [srs            (geo/pg->srs polygon)
+         geometry       (geo/pg->geometry polygon)
+         envelope       (geo/geometry->envelope geometry)
          aligned-extent (compute-aligned-raster-extent envelope ref-coords resolution)
          datasource     (build-datasource-from-geometry srs geometry)
          layer          (.GetLayer datasource 0)
@@ -131,12 +107,12 @@
      (.delete srs)))
 
   ([polygon]
-   {:pre [(s/valid? ::pg/polygon polygon)]}
+   {:pre [(s/valid? ::geo/pg-polygon polygon)]}
    (let [ref-coords     {:lat 0 :lon 0}
          resolution     {:x-res 1/1200 :y-res 1/1200}
-         srs            (srs-from-pg polygon)
-         geometry       (pg->geometry polygon)
-         envelope       (envelope geometry)
+         srs            (geo/pg->srs polygon)
+         geometry       (geo/pg->geometry polygon)
+         envelope       (geo/geometry->envelope geometry)
          aligned-extent (compute-aligned-raster-extent envelope ref-coords resolution)
          datasource     (build-datasource-from-geometry srs geometry)
          layer          (.GetLayer datasource 0)
