@@ -19,4 +19,7 @@
     geometries")
 
   (enum-regions-inside-envelope [this envelope]
-    "Return region ids which are fully contained in the given envelope"))
+    "Return region ids which are fully contained in the given envelope")
+
+  (get-region-geometry [this id]
+    "Return the region geometry and bounding box as GeoJSON"))

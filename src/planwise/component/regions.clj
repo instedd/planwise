@@ -36,7 +36,10 @@
     (db->region (select-region (:spec db) {:id id})))
 
   (enum-regions-inside-envelope [{:keys [db]} envelope]
-    (map :id (region-ids-inside-envelope (:spec db) envelope))))
+    (map :id (region-ids-inside-envelope (:spec db) envelope)))
+
+  (get-region-geometry [{:keys [db]} id]
+    (db->region (select-region-geometry (:spec db) {:id id}))))
 
 
 ;; ----------------------------------------------------------------------
