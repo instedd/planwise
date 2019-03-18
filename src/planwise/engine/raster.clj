@@ -155,8 +155,8 @@
 
 (defn- raster-options
   [data-type]
-  (let [block-xsize   128
-        block-ysize   128
+  (let [block-xsize   256
+        block-ysize   256
         base-options  ["TILED=YES"
                        (str "BLOCKXSIZE=" block-xsize)
                        (str "BLOCKYSIZE=" block-ysize)]

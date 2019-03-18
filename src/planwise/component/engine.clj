@@ -214,6 +214,7 @@
           args                (map str ["-i" input-path
                                         "-o" output-path
                                         "-r" (* scale-factor xres) (* scale-factor yres)])]
+      (io/make-parents output-path)
       (io/delete-file output-path :silent)
       (runner/run-external (:runner engine) :scripts *script-timeout-ms* "resize-raster" args)
       (raster/read-raster-without-data output-path))))
@@ -229,6 +230,7 @@
                                       "-o" output-path
                                       "-c" cutline-path
                                       "-r" xres yres])]
+    (io/make-parents cutline-path)
     (spit cutline-path geojson)
     (io/delete-file output-path :silent)
     (runner/run-external (:runner engine) :scripts *script-timeout-ms* "crop-source-raster" args)
@@ -311,8 +313,9 @@
                 target-factor  (/ (get-in project-config [:demographics :target]) 100)
                 project-raster (raster/read-raster (:file-path cropped-raster))]
 
-            (doto project-raster
-              (demand/multiply-population! (float (* resize-demand-factor target-factor))))))))))
+            (-> project-raster
+                (doto (demand/multiply-population! (float (* resize-demand-factor target-factor))))
+                (assoc :scaling-factor resize-demand-factor))))))))
 
 (defn raster-measure-provider
   "Measures the unsatisfied demand and computes the required (extra) capacity
@@ -390,12 +393,14 @@
       (debug "Wrote" raster-data-path)
       (debug "Unsatisfied demand:" unsatisfied-demand)
 
-      {:raster-path      (scenario-raster-path project-id scenario-filename)
-       :source-demand    base-demand
-       :pending-demand   unsatisfied-demand
-       :covered-demand   (- base-demand unsatisfied-demand)
-       :demand-quartiles quartiles
-       :providers-data   (merge-providers applied-providers providers-unsatisfied-demand)})))
+      {:raster-path       (scenario-raster-path project-id scenario-filename)
+       :raster-resolution (raster/raster-resolution demand-raster)
+       :scaling-factor    (:scaling-factor demand-raster)
+       :source-demand     base-demand
+       :pending-demand    unsatisfied-demand
+       :covered-demand    (- base-demand unsatisfied-demand)
+       :demand-quartiles  quartiles
+       :providers-data    (merge-providers applied-providers providers-unsatisfied-demand)})))
 
 (defn compute-scenario-by-raster
   [engine project initial-scenario scenario]

@@ -190,7 +190,10 @@
                                                   {:project-id    (:id project)
                                                    :engine-config (pr-str {:demand-quartiles           (:demand-quartiles result)
                                                                            :source-demand              (:source-demand result)
-                                                                           :pending-demand-raster-path (:raster-path result)})}))
+                                                                           :pending-demand-raster-path (:raster-path result)
+                                                                           ;; only relevant for raster scenarios
+                                                                           :raster-resolution          (:raster-resolution result)
+                                                                           :scaling-factor             (:scaling-factor result)})}))
               (catch Exception e
                 (scenario-mark-as-error store scenario-id e)
                 (error e "Scenario initial computation failed"))))]
