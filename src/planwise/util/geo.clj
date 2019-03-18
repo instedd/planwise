@@ -59,3 +59,12 @@
        :min-lat min-lat
        :max-lon max-lon
        :max-lat max-lat})))
+
+(defn bbox->envelope
+  [[c1 c2]]
+  (let [[lat1 lon1] (vec c1)
+        [lat2 lon2] (vec c2)]
+    {:min-lon (min lon1 lon2)
+     :max-lon (max lon1 lon2)
+     :min-lat (min lat1 lat2)
+     :max-lat (max lat1 lat2)}))

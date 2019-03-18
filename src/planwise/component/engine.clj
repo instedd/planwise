@@ -5,21 +5,32 @@
             [planwise.boundary.sources :as sources-set]
             [planwise.boundary.coverage :as coverage]
             [planwise.boundary.regions :as regions]
+            [planwise.boundary.runner :as runner]
             [planwise.engine.raster :as raster]
             [planwise.engine.common :refer [provider-coverage-raster-path providers-in-project]]
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.engine.suggestions :as suggestions]
             [planwise.engine.demand :as demand]
+            [planwise.util.geo :as geo]
             [planwise.util.files :as files]
+            [planwise.util.numbers :refer [abs float=]]
             [planwise.model.providers :refer [merge-providers merge-provider]]
             [planwise.util.collections :refer [sum-by merge-collections-by]]
             [integrant.core :as ig]
             [clojure.java.io :as io]
             [taoensso.timbre :as timbre]
-            [clojure.set :as set])
+            [clojure.set :as set]
+            [clojure.string :as str])
   (:import [clojure.lang ExceptionInfo]))
 
 (timbre/refer-timbre)
+
+(def max-pixels-threshold
+  "Maximum number of pixels for raster scenarios. Sources will be scaled down by
+  integer factors for the resulting number of pixels to be below this threshold"
+  (* 25 1024 1024))
+(def ^:dynamic *script-timeout-ms* 30000)
+(def ^:dynamic *bin-timeout-ms* 10000)
 
 ;; PATH HELPERS
 ;; -------------------------------------------------------------------------------------------------
@@ -28,11 +39,6 @@
   "Full path to the original source set raster file."
   [{:keys [raster-file]}]
   (str "data/" raster-file))
-
-(defn source-raster-data-path
-  "Full path to the source raster clipped to a region."
-  [source-id region-id]
-  (str "data/populations/data/" source-id "/" region-id ".tif"))
 
 (defn new-provider-coverage-raster-path
   "Full path to the cached coverage of a provider from a create-provider scenario action."
@@ -55,9 +61,18 @@
   (str "scenarios/" project-id "/" scenario-filename))
 
 (defn scenario-raster-full-path
-  "Given a raser path from scenario-raster-path, return the full path to the raster file."
+  "Given a raster path from scenario-raster-path, return the full path to the raster file."
   [raster-path]
   (str "data/" raster-path ".tif"))
+
+(defn project-file-path
+  "Prefixes a filename with the full path to the project data directory"
+  [project-id file-path]
+  (str "data/scenarios/" project-id "/" file-path))
+
+(defn project-directory
+  [project-id]
+  (project-file-path project-id ""))
 
 ;; Computing a scenario:
 ;; - compute the initial scenario or retrieve a cached version
@@ -152,32 +167,152 @@
 ;; -------------------------------------------------------------------------------------------------
 
 (defn read-raster-from-source-set
+  "Given a source set, return the raster basic information (path, pixel size,
+  transformation matrix) to the original Tiff."
   [source-set]
+  (debug (str "Reading raster " (:raster-file source-set) " from source set " (:id source-set)))
   (let [raster-path (source-set-raster-path source-set)]
     (try
-      (raster/read-raster-without-data raster-path)
+      (let [source-raster (raster/read-raster-without-data raster-path)]
+        (debug (str "Raster file is " (:xsize source-raster) "x" (:ysize source-raster)))
+        source-raster)
       (catch ExceptionInfo e
         (warn "Failed to load source set raster file" {:source-set source-set})))))
 
 (defn region-inside-raster?
+  "Check if region is fully contained inside the bounding box of a source raster."
   [regions region-id raster]
   (let [buffer-pixels 10
         envelope      (raster/raster-envelope raster buffer-pixels)
         region-ids    (set (regions/enum-regions-inside-envelope regions envelope))]
     (contains? region-ids region-id)))
 
-(defn project-base-demand-raster
-  "Returns a mutable raster with the initial source demand for the project."
-  [project]
-  (let [source-id          (:source-set-id project)
-        region-id          (:region-id project)
-        project-config     (:config project)
-        source-raster-file (source-raster-data-path source-id region-id)
-        raster             (raster/read-raster source-raster-file)
-        target-factor      (/ (get-in project-config [:demographics :target]) 100)]
-    ;; scale raster demand according to project's target
-    (doto raster
-      (demand/multiply-population! (float target-factor)))))
+(defn estimate-envelope-raster-size
+  "Compute the approximate size (in pixels) for an area given an envelope and a
+  raster to get the resolution."
+  [raster envelope]
+  (let [{:keys [xres yres]}                       (raster/raster-resolution raster)
+        {:keys [min-lon max-lon min-lat max-lat]} envelope]
+    {:xsize (Math/ceil (/ (- max-lon min-lon) (abs xres)))
+     :ysize (Math/ceil (/ (- max-lat min-lat) (abs yres)))}))
+
+(defn compute-down-scaling-factor
+  "Compute an integer down-scaling factor to reduce a raster size to a maximum
+  number of pixels. Scale should be applied uniformily to width and height."
+  [{:keys [xsize ysize]}]
+  (Math/ceil (Math/sqrt (/ (* xsize ysize) max-pixels-threshold))))
+
+(defn resize-raster
+  "Resize a raster by a scale factor using external tool gdalwarp. Returns the
+  original raster if scale factor is 1."
+  [engine raster scale-factor work-dir]
+  (if (float= 1.0 scale-factor)
+    raster
+    (let [input-path          (:file-path raster)
+          output-path         (str work-dir "/source-scaled.tif")
+          {:keys [xres yres]} (raster/raster-resolution raster)
+          args                (map str ["-i" input-path
+                                        "-o" output-path
+                                        "-r" (* scale-factor xres) (* scale-factor yres)])]
+      (io/delete-file output-path :silent)
+      (runner/run-external (:runner engine) :scripts *script-timeout-ms* "resize-raster" args)
+      (raster/read-raster-without-data output-path))))
+
+(defn crop-raster-by-cutline
+  "Crop a raster by a given GeoJSON contour using external tool gdalwarp."
+  [engine raster geojson work-dir]
+  (let [cutline-path        (str work-dir "/cutline.geojson")
+        input-path          (:file-path raster)
+        output-path         (str work-dir "/source-cropped.tif")
+        {:keys [xres yres]} (raster/raster-resolution raster)
+        args                (map str ["-i" input-path
+                                      "-o" output-path
+                                      "-c" cutline-path
+                                      "-r" xres yres])]
+    (spit cutline-path geojson)
+    (io/delete-file output-path :silent)
+    (runner/run-external (:runner engine) :scripts *script-timeout-ms* "crop-source-raster" args)
+    (raster/read-raster-without-data output-path)))
+
+(defn count-raster-demand
+  "Using the external binary aggregate-population, compute the sum of all values
+  of the given raster."
+  [engine raster]
+  (let [input-path (:file-path raster)
+        args       [input-path]
+        output     (runner/run-external (:runner engine) :bin *bin-timeout-ms* "aggregate-population" args)]
+    (-> output
+        (str/split #"\s+")
+        first
+        Long/parseLong)))
+
+(defn compute-resize-factor
+  "Given two rasters (presumably the second being a down-scaled version of the
+  first), compute the scaling factor to apply to each pixel such that the
+  aggregate of the values of the pixels are equal.
+  Since we are using PPP (population per pixel) rasters, we need this to account
+  for the down-scaling done for optimization."
+  [engine original-raster resized-raster]
+  (if (= original-raster resized-raster)
+    1.0
+    (let [original-demand (count-raster-demand engine original-raster)
+          resized-demand (count-raster-demand engine resized-raster)]
+      (double (/ original-demand resized-demand)))))
+
+(defn process-base-demand-raster
+  "Reads the source original raster file, resizes to a manageable resolution,
+  crops to the project region and applies scaling and project target factor.
+  Returns the modified resulting raster in-memory for further use in computing
+  the initial scenario.
+  May output temporary files in the project scenarios data directory."
+  [engine project]
+  (let [project-id      (:id project)
+        project-path    (project-directory project-id)
+        source-set      (:source-set project)
+        source-raster   (read-raster-from-source-set source-set)
+        regions-service (:regions engine)
+        region-id       (:region-id project)]
+
+    ;; Check that the source raster is readable
+    (when (nil? source-raster)
+      (throw (ex-info "Source raster is not readable" {:project-id project-id
+                                                       :source-set source-set})))
+
+    ;; Check that the raster contains the project region
+    (when-not (region-inside-raster? regions-service region-id source-raster)
+      (throw (ex-info "Region is not contained in source raster. Cannot compute scenario."
+                      {:project-id project-id
+                       :region-id  region-id
+                       :source-set source-set})))
+
+    ;; Estimate project raster size without scaling down source raster
+    (let [region          (regions/get-region-geometry regions-service region-id)
+          region-envelope (geo/bbox->envelope (:bbox region))
+          estimated-size  (estimate-envelope-raster-size source-raster region-envelope)
+          scale-factor    (compute-down-scaling-factor estimated-size)]
+      (debug (str "Region envelope: " (pr-str region-envelope)))
+      (debug (str "Estimated raster size (before scaling): " (pr-str estimated-size)))
+      (debug (str "Down scale factor to apply: " scale-factor))
+
+      ;; Scale down the source raster if necessary
+      (let [resized-raster       (resize-raster engine source-raster scale-factor project-path)
+            resize-demand-factor (compute-resize-factor engine source-raster resized-raster)]
+        (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
+        (debug (str "Need to apply a resize factor of " resize-demand-factor))
+
+        ;; Cut the source raster using the region outline
+        (let [cropped-raster (crop-raster-by-cutline engine resized-raster (:geojson region) project-path)]
+          (debug "Cropped source raster to working region:" (:file-path cropped-raster))
+          (debug (str "Project raster is " (:xsize cropped-raster) "x" (:ysize cropped-raster)))
+
+          ;; Read the final cropped raster and apply the resize factor and the
+          ;; project's target factor
+          (let [project-config (:config project)
+                target-factor  (/ (get-in project-config [:demographics :target]) 100)
+                project-raster (raster/read-raster (:file-path cropped-raster))]
+
+            (doto project-raster
+              (demand/multiply-population! (float (* resize-demand-factor target-factor))))))))))
 
 (defn raster-measure-provider
   "Measures the unsatisfied demand and computes the required (extra) capacity
@@ -232,10 +367,11 @@
   (let [project-id           (:id project)
         providers            (providers-in-project (:providers-set engine) project)
         applicable-providers (filter :applicable? providers)
-        demand-raster        (project-base-demand-raster project)
+        demand-raster        (process-base-demand-raster engine project)
         base-demand          (demand/count-population demand-raster)
         capacity-multiplier  (get-in (:config project) [:providers :capacity])
         scenario-filename    (str "initial-" (java.util.UUID/randomUUID))]
+
     (debug "Base scenario demand:" base-demand)
     (debug "Applying" (count applicable-providers) "providers")
 
@@ -494,7 +630,7 @@
   (let [scenarios-path (str "data/scenarios/" project-id)]
     (files/delete-files-recursively scenarios-path true)))
 
-(defrecord Engine [providers-set sources-set coverage regions]
+(defrecord Engine [providers-set sources-set coverage regions runner]
   boundary/Engine
   (compute-initial-scenario [engine project]
     (compute-initial-scenario engine project))
@@ -530,5 +666,7 @@
 
   (compute-initial-scenario (new-engine) (projects2/get-project projects2 5))
   (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 30))
-  nil)
 
+  (compute-initial-scenario (dev/engine) (projects2/get-project (dev/projects2) 2))
+
+  nil)

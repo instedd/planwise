@@ -1,7 +1,8 @@
 (ns planwise.engine.raster-test
   (:require [planwise.engine.raster :as sut]
             [planwise.util.numbers :refer [float=]]
-            [clojure.test :refer :all]))
+            [clojure.test :refer :all])
+  (:import  [org.gdal.gdalconst gdalconst]))
 
 (def sample-float-raster-path "test/resources/pointe-noire-float.tif")
 (def sample-byte-raster-path "test/resources/pointe-noire-byte.tif")
@@ -41,18 +42,28 @@
           {:geotransform (double-array [12.5 0.1 0 -7.5 0 -0.1]) :xsize 100 :ysize 50}))
       "works for arbitrary transformations"))
 
+(deftest read-raster-test
+  (let [raster (sut/read-raster sample-float-raster-path)]
+    (is (some? raster))
+    (is (= [107 102] [(:xsize raster) (:ysize raster)]))
+    (is (= sample-float-raster-path (:file-path raster)))
+    (is (some? (:data raster)))
+    (is (= gdalconst/GDT_Float32 (:data-type raster)))
+    (is (float= -3.402823E38 (:nodata raster)))))
+
 (deftest read-raster-without-data-test
   (let [raster (sut/read-raster-without-data sample-float-raster-path)]
     (is (some? raster))
-    (is (= [107 102] [(:xsize raster) (:ysize raster)]))))
+    (is (= [107 102] [(:xsize raster) (:ysize raster)]))
+    (is (= sample-float-raster-path (:file-path raster)))))
 
 (deftest envelope-test
   (let [raster   (sut/read-raster-without-data sample-float-raster-path)
         envelope (sut/envelope raster)]
-    (is (float= (:min-lat envelope) -4.8314734 10e-6))
-    (is (float= (:max-lat envelope) -4.7464768 10e-6))
-    (is (float= (:min-lon envelope) 11.8228604 10e-6))
-    (is (float= (:max-lon envelope) 11.9120235 10e-6))))
+    (is (float= (:min-lat envelope) -4.8314734))
+    (is (float= (:max-lat envelope) -4.7464768))
+    (is (float= (:min-lon envelope) 11.8228604))
+    (is (float= (:max-lon envelope) 11.9120235))))
 
 (deftest raster-envelope-with-buffer
   (let [raster     (sut/read-raster-without-data sample-float-raster-path)

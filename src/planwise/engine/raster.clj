@@ -101,7 +101,8 @@
            (nil? band-number)
            (let [xsize (.GetRasterXSize dataset)
                  ysize (.GetRasterYSize dataset)]
-             (->Raster projection geotransform xsize ysize nil nil nil))
+             (-> (->Raster projection geotransform xsize ysize nil nil nil)
+                 (assoc :file-path path)))
 
            (<= 1 band-number raster-count)
            (let [band      (.GetRasterBand dataset band-number)
@@ -110,7 +111,8 @@
                  ysize     (.GetYSize band)
                  nodata    (read-nodata-value band)
                  data      (read-band-data band 0 0 xsize ysize)]
-             (->Raster projection geotransform xsize ysize data-type nodata data))
+             (-> (->Raster projection geotransform xsize ysize data-type nodata data)
+                 (assoc :file-path path)))
 
            :else
            (throw (ex-info "Invalid band number"
@@ -252,6 +254,11 @@
      :max-lat (+ (max y1 y2) (* buffer-pixels (abs yres)))
      :min-lon (- (min x1 x2) (* buffer-pixels (abs xres)))
      :max-lon (+ (max x1 x2) (* buffer-pixels (abs xres)))}))
+
+(defn raster-resolution
+  [{:keys [geotransform]}]
+  (let [[_ xres _ _ _ yres] geotransform]
+    {:xres xres :yres yres}))
 
 (defprotocol RasterOps
   (compatible? [r1 r2]

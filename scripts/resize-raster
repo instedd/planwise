@@ -1,0 +1,46 @@
+#!/bin/sh
+
+QUIET=-q
+
+while [ $# -ge 1 ]; do
+    case $1 in
+        -i|--input)
+            INPUT=$2
+            shift
+            ;;
+        -o|--output)
+            OUTPUT=$2
+            shift
+            ;;
+        -r|--resolution)
+            XRES=$2
+            YRES=$3
+            shift 2
+            ;;
+        -v|--verbose)
+            QUIET=""
+            ;;
+        *)
+            echo Unknown option $1
+            exit 1
+            ;;
+    esac;
+    shift
+done
+
+if [ -z "$INPUT" -o -z "$OUTPUT" -o -z "$XRES" -o -z "$YRES" ]; then
+    echo Missing parameters
+    exit 1
+fi
+
+if [ ! -f $INPUT ]; then
+    echo Cannot read input raster
+    exit 1
+fi
+
+gdalwarp $QUIET \
+         -tap \
+         -tr $XRES $YRES \
+         -r average \
+         -co "TILED=YES" -co "COMPRESS=LZW" \
+         $INPUT $OUTPUT
