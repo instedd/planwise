@@ -30,7 +30,7 @@
      :coverage-options   coverage-options
      :tags               tags}))
 
-(defn provider-mapper
+(defn- provider-mapper
   "Returns a mapper function for providers into the shape required for computing scenarios."
   [provider-set-id applicable]
   (fn [{:keys [id name capacity raster coverage-id]}]

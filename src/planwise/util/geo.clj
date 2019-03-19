@@ -15,8 +15,8 @@
 (s/def ::envelope (s/keys :req-un [::min-lat ::min-lon ::max-lat ::max-lon]))
 
 (s/def ::pg-geometry #(instance? PGgeometry %))
-(s/def ::pg-point   (s/and ::geometry #(= org.postgis.Geometry/POINT   (.getGeoType %))))
-(s/def ::pg-polygon (s/and ::geometry #(= org.postgis.Geometry/POLYGON (.getGeoType %))))
+(s/def ::pg-point   (s/and ::pg-geometry #(= org.postgis.Geometry/POINT   (.getGeoType %))))
+(s/def ::pg-polygon (s/and ::pg-geometry #(= org.postgis.Geometry/POLYGON (.getGeoType %))))
 
 (defn make-pg-point*
   [lat lon]

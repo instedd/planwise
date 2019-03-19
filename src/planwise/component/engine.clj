@@ -371,6 +371,7 @@
         providers            (providers-in-project (:providers-set engine) project)
         applicable-providers (filter :applicable? providers)
         demand-raster        (process-base-demand-raster engine project)
+        raster-resolution    (raster/raster-resolution demand-raster)
         base-demand          (demand/count-population demand-raster)
         capacity-multiplier  (get-in (:config project) [:providers :capacity])
         scenario-filename    (str "initial-" (java.util.UUID/randomUUID))]
@@ -394,7 +395,8 @@
       (debug "Unsatisfied demand:" unsatisfied-demand)
 
       {:raster-path       (scenario-raster-path project-id scenario-filename)
-       :raster-resolution (raster/raster-resolution demand-raster)
+       :raster-resolution raster-resolution
+                                        ; NB. this datum is not needed, only saved for convenience
        :scaling-factor    (:scaling-factor demand-raster)
        :source-demand     base-demand
        :pending-demand    unsatisfied-demand
