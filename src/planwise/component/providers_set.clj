@@ -298,15 +298,11 @@
   (def store (:planwise.component/providers-set integrant.repl.state/system))
 
   (get-providers-with-coverage-in-region store 19 1 {:region-id 42
-                                                     :coverage-algorithm "pgrouting-alpha"
+                                                     :coverage-algorithm "driving-friction"
                                                      :coverage-options {:driving-time 60}})
 
   (preprocess-provider! store 1 {:algorithm :simple-buffer
                                  :options-list [{:distance 5} {:distance 10}]
-                                 :raster-dir "data/coverage/11"})
-
-  (preprocess-provider! store 1 {:algorithm :pgrouting-alpha
-                                 :options-list [{:driving-time 30} {:driving-time 60}]
                                  :raster-dir "data/coverage/11"})
 
   (preprocess-provider-set! store 11))

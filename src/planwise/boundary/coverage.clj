@@ -38,4 +38,4 @@
 (comment
   (def service (:planwise.component/coverage integrant.repl.state/system))
 
-  (enumerate-algorithm-options service :pgrouting-alpha))
+  (enumerate-algorithm-options service :walking-friction))

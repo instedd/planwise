@@ -1,6 +1,5 @@
 (ns planwise.component.coverage
   (:require [planwise.boundary.coverage :as boundary]
-            [planwise.component.coverage.pgrouting :as pgrouting]
             [planwise.component.coverage.simple :as simple]
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.component.coverage.friction :as friction]
@@ -21,7 +20,6 @@
                                :opt-un [::raster ::rasterize/ref-coords ::rasterize/resolution]))
 
 (s/def ::driving-time #{30 60 90 120})
-(s/def ::pgrouting-alpha-criteria (s/keys :req-un [::driving-time]))
 (s/def ::driving-friction-criteria (s/keys :req-un [::driving-time]))
 
 (s/def ::distance #{5 10 20 50 100})
@@ -31,8 +29,6 @@
 (s/def ::walking-friction-criteria (s/keys :req-un [::walking-time]))
 
 (defmulti criteria-algo :algorithm)
-(defmethod criteria-algo :pgrouting-alpha [_]
-  (s/merge ::base-criteria ::pgrouting-alpha-criteria))
 (defmethod criteria-algo :simple-buffer [_]
   (s/merge ::base-criteria ::simple-buffer-criteria))
 (defmethod criteria-algo :walking-friction [_]
@@ -46,17 +42,7 @@
 ;; Supported algorithm description
 
 (def supported-algorithms
-  {:pgrouting-alpha
-   {:label       "Travel by car (pgRouting)"
-    :description "Computes all reachable OSM nodes from the nearest to the starting point and then applies the alpha shape algorithm to the resulting points"
-    :criteria    {:driving-time {:label   "Driving time"
-                                 :type    :enum
-                                 :options [{:value 30  :label "30 minutes"}
-                                           {:value 60  :label "1 hour"}
-                                           {:value 90  :label "1:30 hours"}
-                                           {:value 120 :label "2 hours"}]}}}
-
-   :driving-friction
+  {:driving-friction
    {:label       "Travel by car"
     :description "Computes reachable isochrone using a friction raster layer"
     :criteria    {:driving-time {:label   "Driving time"
@@ -93,16 +79,6 @@
 (defmethod compute-coverage-polygon :default
   [service coords criteria]
   (throw (IllegalArgumentException. "Missing or invalid coverage algorithm")))
-
-(defmethod compute-coverage-polygon :pgrouting-alpha
-  [{:keys [db]} coords criteria]
-  (let [db-spec   (:spec db)
-        pg-point  (geo/make-pg-point coords)
-        threshold (:driving-time criteria)
-        result    (pgrouting/compute-coverage db-spec pg-point threshold)]
-    (case (:result result)
-      "ok" (:polygon result)
-      (throw (ex-info "pgRouting coverage computation failed"  {:causes (:result result) :coords coords})))))
 
 (defmethod compute-coverage-polygon :simple-buffer
   [{:keys [db]} coords criteria]
@@ -161,6 +137,10 @@
   {:ref-coords {:lat 0 :lon 0}
    :resolution {:x-res 1/1200 :y-res 1/1200}})
 
+;;
+;; Service definition
+;;
+
 (defrecord CoverageService [db runner]
   boundary/CoverageService
   (supported-algorithms [this]
@@ -200,13 +180,6 @@
   (time
    (boundary/compute-coverage service
                               {:lat -3.0361 :lon 40.1333}
-                              {:algorithm :pgrouting-alpha
-                               :driving-time 60
-                               :raster "/tmp/pgr.tif"}))
-
-  (time
-   (boundary/compute-coverage service
-                              {:lat -3.0361 :lon 40.1333}
                               {:algorithm :simple-buffer
                                :distance 20
                                :raster "/tmp/buffer.tif"}))
@@ -214,7 +187,7 @@
   (time
    (boundary/compute-coverage service
                               {:lat -1.2741 :lon 36.7931}
-                              {:algorithm :pgrouting-alpha
+                              {:algorithm :driving-friction
                                :driving-time 60
                                :raster "/tmp/nairobi.tif"
                                :ref-coords {:lat 5.4706946 :lon 33.9126084}
