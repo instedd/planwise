@@ -66,24 +66,12 @@
 (defn bbox-center [[[s w] [n e]]]
   [(/ (+ s n) 2.0) (/ (+ e w) 2.0)])
 
-(defn demand-map
-  "Returns the full DATAFILE value to provide to mapserver to render a demand map,
-   given a demand map key obtained from planwise.component.maps/demand-map-key"
-  [map-key]
-  (some->> map-key
-           (str "demands/")))
-
 (defn region-map
   "Returns the full DATAFILE value to provide to mapserver to render a population region map,
    given the id of the region"
   [region-id]
   (some->> region-id
            (str "populations/maps/")))
-
-(defn calculate-demand-for-admin-level?
-  [admin-level]
-  (and config/calculate-demand
-       (> admin-level 2)))
 
 (def fullmap-region-geo
   "{

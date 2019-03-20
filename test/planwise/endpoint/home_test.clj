@@ -19,9 +19,7 @@
 
 (def mock-maps-service
   (reify maps/Maps
-    (mapserver-url [service] "http://mapserver")
-    (default-capacity [service] 1)
-    (calculate-demand? [service] true)))
+    (mapserver-url [service] "http://mapserver")))
 
 (def test-config
   {:planwise.endpoint/home

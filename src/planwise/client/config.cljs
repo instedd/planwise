@@ -16,8 +16,5 @@
 (def app-version
   (aget global-config "app-version"))
 
-(def calculate-demand
-  (aget global-config "calculate-demand"))
-
 (def intercom-app-id
   (aget global-config "intercom-app-id"))

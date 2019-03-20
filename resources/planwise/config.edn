@@ -160,11 +160,7 @@
                           :port #duct/env ["SMTP_PORT" Int]}}}
 
  :planwise.component/maps
- {:regions     #ig/ref :planwise.component/regions
-  :runner      #ig/ref :planwise.component/runner
-  :config      {:mapserver-url       #duct/env ["MAPSERVER_URL" Str :or "http://localhost:5002/mapcache?"]
-                :facilities-capacity #duct/env ["FACILITIES_CAPACITY" Int :or 100000]
-                :calculate-demand    #duct/env ["CALCULATE_DEMAND" Bool :or true]
+ {:config      {:mapserver-url       #duct/env ["MAPSERVER_URL" Str :or "http://localhost:5002/mapcache?"]
                 :data                #duct/env ["DATA_PATH" Str :or "data/"]}}
 
  :planwise.component/sources

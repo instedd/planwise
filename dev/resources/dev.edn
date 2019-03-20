@@ -39,4 +39,4 @@
  {:config {:mock? true}}
 
  :planwise.component/maps
- {:config {:facilities-capacity 1000000}}}
+ {:config {}}}
