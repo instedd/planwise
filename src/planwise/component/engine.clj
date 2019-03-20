@@ -90,7 +90,7 @@
 ;; -------------------------------------------------------------------------------------------------
 
 (defn- coverage-criteria-for-project
-  "Criteria options from project for usage in coverage/compute-coverage."
+  "Criteria options from project for usage in coverage/compute-coverage-polygon."
   [project]
   (let [coverage-algorithm (keyword (:coverage-algorithm project))
         project-config     (:config project)
@@ -116,7 +116,7 @@
        (try
          (when raster-path (io/delete-file raster-path true))
          (let [criteria     (merge (coverage-criteria-for-project project) (when raster-path {:raster raster-path}))
-               geom         (coverage/compute-coverage coverage location criteria)
+               geom         (coverage/compute-coverage-polygon coverage location criteria)
                clipped-geom (:geom (coverage/geometry-intersected-with-project-region coverage geom (:region-id project)))]
            {:geom        clipped-geom
             :raster-path raster-path})

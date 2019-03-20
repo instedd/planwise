@@ -11,13 +11,8 @@
 
 (hugsql/def-db-fns "planwise/sql/coverage/coverage.sql")
 
-;; Specs
-
-(s/def ::algorithm keyword?)
-(s/def ::raster string?)
-
-(s/def ::base-criteria (s/keys :req-un [::algorithm]
-                               :opt-un [::raster ::rasterize/ref-coords ::rasterize/resolution]))
+;; Specs =====================================================================
+;;
 
 (s/def ::driving-time #{30 60 90 120})
 (s/def ::driving-friction-criteria (s/keys :req-un [::driving-time]))
@@ -28,18 +23,16 @@
 (s/def ::walking-time #{60 120 180})
 (s/def ::walking-friction-criteria (s/keys :req-un [::walking-time]))
 
-(defmulti criteria-algo :algorithm)
-(defmethod criteria-algo :simple-buffer [_]
-  (s/merge ::base-criteria ::simple-buffer-criteria))
-(defmethod criteria-algo :walking-friction [_]
-  (s/merge ::base-criteria ::walking-friction-criteria))
-(defmethod criteria-algo :driving-friction [_]
-  (s/merge ::base-criteria ::driving-friction-criteria))
-
-(s/def ::criteria (s/multi-spec criteria-algo :algorithm))
+(defmethod boundary/criteria-algo :simple-buffer [_]
+  (s/merge ::boundary/base-criteria ::simple-buffer-criteria))
+(defmethod boundary/criteria-algo :walking-friction [_]
+  (s/merge ::boundary/base-criteria ::walking-friction-criteria))
+(defmethod boundary/criteria-algo :driving-friction [_]
+  (s/merge ::boundary/base-criteria ::driving-friction-criteria))
 
 
-;; Supported algorithm description
+;; Supported algorithm description ===========================================
+;;
 
 (def supported-algorithms
   {:driving-friction
@@ -72,7 +65,9 @@
                                        {:value 50  :label "50 km"}
                                        {:value 100 :label "100 km"}]}}}})
 
-;; Coverage computation
+
+;; Coverage algorithms =======================================================
+;;
 
 (defmulti compute-coverage-polygon (fn [service coords criteria] (:algorithm criteria)))
 
@@ -110,6 +105,10 @@
       (friction/compute-polygon runner friction-raster coords max-time min-friction)
       (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
 
+
+;; Other utility functions ===================================================
+;;
+
 (defn geometry-intersected-with-project-region
   [{:keys [db]} geometry region-id]
   (let [db-spec (:spec db)]
@@ -135,39 +134,58 @@
 
 (def default-grid-align-options
   {:ref-coords {:lat 0 :lon 0}
-   :resolution {:x-res 1/1200 :y-res 1/1200}})
+   :resolution {:xres 1/1200 :yres -1/1200}})
 
+
+;; Context related functionality =============================================
 ;;
-;; Service definition
+
+
+
+;; Service definition ========================================================
 ;;
 
-(defrecord CoverageService [db runner]
-  boundary/CoverageService
-  (supported-algorithms [this]
-    supported-algorithms)
-  (compute-coverage [this coords criteria]
-    (s/assert ::geo/coords coords)
-    (s/assert ::criteria criteria)
-    (let [polygon (compute-coverage-polygon this coords criteria)
-          raster-options (merge default-grid-align-options criteria)]
-      (when-let [raster-path (:raster criteria)]
-        (io/make-parents raster-path)
-        (rasterize/rasterize polygon raster-path raster-options))
-      polygon))
-  (geometry-intersected-with-project-region [this geometry region-id]
-    (geometry-intersected-with-project-region this geometry region-id))
-  (locations-outside-polygon [this polygon locations]
-    (locations-outside-polygon this polygon locations))
-  (get-max-distance-from-geometry [this geometry]
-    (get-max-distance-from-geometry this geometry)))
-
+(defrecord CoverageService [db runner])
 
 (defmethod ig/init-key :planwise.component/coverage
   [_ config]
   (map->CoverageService config))
 
 
-;; REPL testing
+(extend-protocol boundary/CoverageService
+  CoverageService
+  (supported-algorithms [this]
+    supported-algorithms)
+  (compute-coverage-polygon [this coords criteria]
+    (compute-coverage-polygon this coords criteria)))
+
+(extend-protocol boundary/CoverageUtilities
+  CoverageService
+  (locations-outside-polygon [this polygon locations]
+    (locations-outside-polygon this polygon locations))
+  (geometry-intersected-with-project-region [this geometry region-id]
+    (geometry-intersected-with-project-region this geometry region-id))
+  (get-max-distance-from-geometry [this geometry]
+    (get-max-distance-from-geometry this geometry)))
+
+
+(extend-protocol boundary/CoverageContexts
+  CoverageService
+  (setup-context [this context-id options]
+    )
+
+  (delete-context [this context-id]
+    )
+
+  (resolve-coverages! [this context-id locations]
+    )
+
+  (query-coverages [this context-id ids query]
+    ))
+
+
+;; REPL testing ==============================================================
+;;
 
 (comment
 
@@ -191,4 +209,4 @@
                                :driving-time 60
                                :raster "/tmp/nairobi.tif"
                                :ref-coords {:lat 5.4706946 :lon 33.9126084}
-                               :resolution {:x-res 0.0008333 :y-res 0.0008333}})))
+                               :resolution {:xres 0.0008333 :yres 0.0008333}})))

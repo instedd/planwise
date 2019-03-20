@@ -51,7 +51,7 @@
   (let [updated-criteria      (if sources-data criteria (merge criteria {:raster search-path}))
         [lon lat :as coord]   coord
         polygon               (if coord
-                                (coverage/compute-coverage (:coverage engine) {:lat lat :lon lon} updated-criteria)
+                                (coverage/compute-coverage-polygon (:coverage engine) {:lat lat :lon lon} updated-criteria)
                                 (:geom (providers-set/get-coverage
                                         (:providers-set engine)
                                         provider-id
@@ -224,7 +224,7 @@
     [coverage locations criteria]
     (let [kilifi-pop (raster/read-raster "data/kilifi.tif")
           new-pop    (raster/read-raster "data/cerozing.tif")
-          dataset-fn (fn [loc] (let [polygon (coverage/compute-coverage coverage loc criteria)] (rasterize/rasterize polygon)))
+          dataset-fn (fn [loc] (let [polygon (coverage/compute-coverage-polygon coverage loc criteria)] (rasterize/rasterize polygon)))
           get-index  (fn [dataset] (vec (demand/get-coverage kilifi-pop (raster/create-raster dataset))))
           same-values (fn [set] (map (fn [i] [i (aget (:data kilifi-pop) i)]) set))
           set         (reduce into (mapv #(-> % dataset-fn get-index same-values) locations))

@@ -108,7 +108,7 @@
           criteria        (merge {:algorithm algorithm
                                   :raster    raster-path}
                                  options)
-          polygon         (coverage/compute-coverage coverage coords criteria)
+          polygon         nil ;; FIXME: remove all this cruft (coverage/compute-coverage coverage coords criteria)
           provider-coverage   {:provider-id   provider-id
                                :algorithm (name algorithm)
                                :options   (pr-str options)

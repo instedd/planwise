@@ -1,5 +1,6 @@
 (ns planwise.component.coverage.rasterize
   (:require [clojure.spec.alpha :as s]
+            [planwise.boundary.coverage :as boundary]
             [planwise.util.geo :as geo])
   (:import [org.gdal.gdal gdal]
            [org.gdal.ogr ogr]
@@ -7,6 +8,10 @@
            [org.gdal.gdalconst gdalconst]
            [org.gdal.osr osrConstants SpatialReference]
            [org.postgis PGgeometry]))
+
+(s/def ::resolution ::boundary/raster-resolution)
+(s/def ::ref-coords ::geo/coords)
+(s/def ::rasterize-options (s/keys :req-un [::ref-coords ::resolution]))
 
 (gdal/AllRegister)
 (ogr/RegisterAll)
@@ -60,28 +65,21 @@
 (defn compute-aligned-raster-extent
   [{:keys [min-lon min-lat max-lon max-lat] :as envelope}
    {ref-lat :lat ref-lon :lon}
-   {:keys [x-res y-res]}]
+   {:keys [xres yres]}]
   (let [off-lon    (- min-lon ref-lon)
         off-lat    (- max-lat ref-lat)
-        off-width  (Math/floor (/ off-lon x-res))
-        off-height (Math/ceil (/ off-lat y-res))
-        ul-lon     (+ ref-lon (* x-res off-width))
-        ul-lat     (+ ref-lat (* y-res off-height))
+        off-width  (Math/floor (/ off-lon xres))
+        off-height (Math/ceil (/ off-lat yres))
+        ul-lon     (+ ref-lon (* xres off-width))
+        ul-lat     (+ ref-lat (* yres off-height))
         env-width  (- max-lon ul-lon)
-        env-height (- ul-lat min-lat)
-        width      (inc (int (Math/ceil (/ env-width x-res))))
-        height     (inc (int (Math/ceil (/ env-height y-res))))]
+        env-height (- max-lat ul-lat)
+        width      (inc (int (Math/ceil (/ env-width (Math/abs xres)))))
+        height     (inc (int (Math/ceil (/ env-height (Math/abs yres)))))]
     {:width        width
      :height       height
-     :geotransform [ul-lon x-res         0
-                    ul-lat     0 (- y-res)]}))
-
-(s/def ::ref-coords ::geo/coords)
-(s/def ::pixel-resolution number?)
-(s/def ::x-res ::pixel-resolution)
-(s/def ::y-res ::pixel-resolution)
-(s/def ::resolution (s/keys :req-un [::x-res ::y-res]))
-(s/def ::rasterize-options (s/keys :req-un [::ref-coords ::resolution]))
+     :geotransform [ul-lon xres    0
+                    ul-lat    0 yres]}))
 
 (defn rasterize
   ([polygon output-path {:keys [ref-coords resolution] :as options}]
@@ -109,7 +107,7 @@
   ([polygon]
    {:pre [(s/valid? ::geo/pg-polygon polygon)]}
    (let [ref-coords     {:lat 0 :lon 0}
-         resolution     {:x-res 1/1200 :y-res 1/1200}
+         resolution     {:xres 1/1200 :yres -1/1200}
          srs            (geo/pg->srs polygon)
          geometry       (geo/pg->geometry polygon)
          envelope       (geo/geometry->envelope geometry)
@@ -131,7 +129,7 @@
 
   ;; (def ref-coords {:lat 5.470694601152364 :lon 33.912608425216725})
   (def ref-coords {:lon 39.727577500000002 :lat -2.631561400000000})
-  ;; (def pixel-resolution {:x-res 8.333000000000001E-4 :y-res 8.333000000000001E-4})
-  (def pixel-resolution {:x-res 1/1200 :y-res 1/1200})
+  ;; (def pixel-resolution {:xres 8.333000000000001E-4 :yres -8.333000000000001E-4})
+  (def pixel-resolution {:xres 1/1200 :yres -1/1200})
 
   (rasterize pg "test.tif" {:ref-coords ref-coords :resolution pixel-resolution}))
