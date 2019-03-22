@@ -7,6 +7,7 @@
             [integrant.core :as ig]
             [clojure.spec.alpha :as s]
             [clojure.java.io :as io]
+            [clojure.edn :as edn]
             [hugsql.core :as hugsql]))
 
 (hugsql/def-db-fns "planwise/sql/coverage/coverage.sql")
@@ -140,6 +141,66 @@
 ;; Context related functionality =============================================
 ;;
 
+(defn- build-sql-id
+  [id]
+  (let [sql-id (if (string? id) id (pr-str id))]
+    (when (> (count sql-id) 254)
+      (throw (ex-info "Coverage key too large" {:id id :sql-id sql-id})))
+    sql-id))
+
+(defn- db->context
+  [context]
+  (-> context
+      (update :options edn/read-string)))
+
+(defn- context->db
+  [context]
+  (-> context
+      (update :options pr-str)))
+
+(defn- select-context
+  [db cid]
+  (some->
+   (db-select-context (:spec db) {:id cid})
+   db->context))
+
+(defn- insert-context
+  [db context]
+  (db-insert-context! (:spec db) (context->db context))
+  context)
+
+(defn- destroy-context
+  [{:keys [db]} context-id]
+  (let [cid (build-sql-id context-id)]
+    ;; TODO: remove any coverage raster files associated with the context
+    (let [result (db-delete-context! (:spec db) {:id cid})]
+      (= 1 (first result)))))
+
+(defn- setup-context
+  [{:keys [db] :as service} context-id options]
+  (let [cid              (build-sql-id context-id)
+        new-context      {:id cid :options options}
+        existing-context (db-select-context (:spec db) {:id cid})]
+    (s/assert ::boundary/context-options options)
+    (cond
+      (and existing-context (= options (:options existing-context)))
+      existing-context
+
+      (some? existing-context)
+      (do
+        (destroy-context service context-id)
+        (insert-context db new-context))
+
+      :else
+      (insert-context db new-context))))
+
+(defn- resolve-coverages
+  [{:keys [db]} context-id locations]
+  (let [cid     (build-sql-id context-id)
+        context (select-context cid)]
+    (when (nil? context)
+      (throw (ex-info "Context has not been setup; cannot resolve coverages" {:context-id context-id})))
+    ))
 
 
 ;; Service definition ========================================================
@@ -172,16 +233,14 @@
 (extend-protocol boundary/CoverageContexts
   CoverageService
   (setup-context [this context-id options]
-    )
+    (setup-context this context-id options))
 
-  (delete-context [this context-id]
-    )
+  (destroy-context [this context-id]
+    (destroy-context this context-id))
 
-  (resolve-coverages! [this context-id locations]
-    )
+  (resolve-coverages! [this context-id locations])
 
-  (query-coverages [this context-id ids query]
-    ))
+  (query-coverages [this context-id ids query]))
 
 
 ;; REPL testing ==============================================================
@@ -209,4 +268,15 @@
                                :driving-time 60
                                :raster "/tmp/nairobi.tif"
                                :ref-coords {:lat 5.4706946 :lon 33.9126084}
-                               :resolution {:xres 0.0008333 :yres 0.0008333}})))
+                               :resolution {:xres 0.0008333 :yres 0.0008333}}))
+
+  (boundary/setup-context (dev/coverage) [:project 1]
+                          {:region-id 1 :coverage-criteria {:algorithm :driving-friction :driving-time 30}})
+
+  (boundary/destroy-context (dev/coverage) [:project 1])
+
+  (boundary/resolve-coverages! (dev/coverage) [:project 1]
+                               [{:id [:provider 1] :lat 8.5 :lon 18.1}
+                                {:id [:provider 2] :lat 9.1 :lon 16.3}])
+
+  nil)

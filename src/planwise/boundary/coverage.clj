@@ -1,5 +1,6 @@
 (ns planwise.boundary.coverage
-  (:require [clojure.spec.alpha :as s]
+  (:require [planwise.util.geo :as geo]
+            [clojure.spec.alpha :as s]
             [clojure.math.combinatorics :as combo]))
 
 ;; Specs =====================================================================
@@ -16,8 +17,14 @@
 (s/def ::yres ::pixel-resolution)
 (s/def ::raster-resolution (s/keys :req-un [::xres ::yres]))
 
+(s/def ::region-id nat-int?)
 (s/def ::context-options (s/keys :req-un [::region-id ::coverage-criteria]
                                  :opt-un [::raster-resolution]))
+
+(s/def ::id some?)
+(s/def ::location (s/merge ::geo/coords (s/keys :req-un [::id])))
+(s/def ::locations (s/coll-of ::location))
+
 
 ;; Protocol defintions =======================================================
 ;;
@@ -60,7 +67,7 @@
     - coverage algorithm and its options
     - region id to intersect the coverage")
 
-  (delete-context [this context-id]
+  (destroy-context [this context-id]
     "Deletes a coverage context with all related computed coverages")
 
   (resolve-coverages! [this context-id locations]

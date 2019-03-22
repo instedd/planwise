@@ -11,6 +11,11 @@ SELECT
     WHERE regions.id = :region-id;
 
 
+-- :name db-select-context :? :1
+SELECT *
+  FROM coverage_contexts
+ WHERE id = :id;
+
 -- :name db-insert-context! :! :1
 INSERT
  INTO coverage_contexts (id, options)
