@@ -8,7 +8,11 @@
             [clojure.spec.alpha :as s]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [hugsql.core :as hugsql]))
+            [clojure.set :refer [rename-keys]]
+            [hugsql.core :as hugsql]
+            [taoensso.timbre :as timbre]))
+
+(timbre/refer-timbre)
 
 (hugsql/def-db-fns "planwise/sql/coverage/coverage.sql")
 
@@ -151,6 +155,7 @@
 (defn- db->context
   [context]
   (-> context
+      (rename-keys {:region_id :region-id})
       (update :options edn/read-string)))
 
 (defn- context->db
@@ -161,7 +166,7 @@
 (defn- select-context
   [db cid]
   (some->
-   (db-select-context (:spec db) {:id cid})
+   (db-select-context (:spec db) {:cid cid})
    db->context))
 
 (defn- insert-context
@@ -173,15 +178,16 @@
   [{:keys [db]} context-id]
   (let [cid (build-sql-id context-id)]
     ;; TODO: remove any coverage raster files associated with the context
-    (let [result (db-delete-context! (:spec db) {:id cid})]
+    (let [result (db-delete-context! (:spec db) {:cid cid})]
       (= 1 (first result)))))
 
 (defn- setup-context
   [{:keys [db] :as service} context-id options]
+  (s/assert ::boundary/context-options options)
   (let [cid              (build-sql-id context-id)
-        new-context      {:id cid :options options}
-        existing-context (db-select-context (:spec db) {:id cid})]
-    (s/assert ::boundary/context-options options)
+        region-id        (:region-id options)
+        new-context      {:cid cid :region-id region-id :options options}
+        existing-context (select-context db cid)]
     (cond
       (and existing-context (= options (:options existing-context)))
       existing-context
@@ -194,13 +200,56 @@
       :else
       (insert-context db new-context))))
 
-(defn- resolve-coverages
-  [{:keys [db]} context-id locations]
+(defn- check-coverage-exists?
+  [db coverage]
+  (let [result (db-check-coverage (:spec db) coverage)]
+    (and (some? result) (< (:distance result) 10e-5))))
+
+(defn- check-outside-region?
+  [db coverage]
+  (let [result (db-check-inside-region (:spec db) coverage)]
+    (not (:inside result))))
+
+(defn- upsert-coverage!
+  [db coverage]
+  (db-upsert-coverage! (:spec db) coverage))
+
+(defn- resolve-coverage!
+  [{:keys [db] :as service} context location]
+  (let [id         (:id location)
+        context-id (:id context)
+        lid        (build-sql-id id)
+        point      (geo/make-pg-point location)
+        coverage   {:context-id context-id
+                    :lid        lid
+                    :location   point}]
+    (cond
+      (check-coverage-exists? db coverage)
+      {:id id :resolved true :extra :cached}
+
+      (check-outside-region? db coverage)
+      {:id id :resolved false :extra :outside-region}
+
+      :else
+      (try
+        (let [criteria (get-in context [:options :coverage-criteria])
+              polygon  (compute-coverage-polygon service location criteria)]
+          (upsert-coverage! db (assoc coverage
+                                      :coverage polygon
+                                      :raster-path nil))
+          {:id id :resolved true :extra :computed})
+        (catch Exception e
+          (warn e "failed to compute coverage" {:location location :context context})
+          {:id id :resolved false :extra :failed})))))
+
+(defn- resolve-coverages!
+  [{:keys [db] :as service} context-id locations]
+  (s/assert ::boundary/locations locations)
   (let [cid     (build-sql-id context-id)
-        context (select-context cid)]
+        context (select-context db cid)]
     (when (nil? context)
       (throw (ex-info "Context has not been setup; cannot resolve coverages" {:context-id context-id})))
-    ))
+    (doall (map (partial resolve-coverage! service context) locations))))
 
 
 ;; Service definition ========================================================
@@ -238,7 +287,8 @@
   (destroy-context [this context-id]
     (destroy-context this context-id))
 
-  (resolve-coverages! [this context-id locations])
+  (resolve-coverages! [this context-id locations]
+    (resolve-coverages! this context-id locations))
 
   (query-coverages [this context-id ids query]))
 
@@ -258,25 +308,26 @@
    (boundary/compute-coverage service
                               {:lat -3.0361 :lon 40.1333}
                               {:algorithm :simple-buffer
-                               :distance 20
-                               :raster "/tmp/buffer.tif"}))
+                               :distance  20
+                               :raster    "/tmp/buffer.tif"}))
 
   (time
    (boundary/compute-coverage service
                               {:lat -1.2741 :lon 36.7931}
-                              {:algorithm :driving-friction
+                              {:algorithm    :driving-friction
                                :driving-time 60
-                               :raster "/tmp/nairobi.tif"
-                               :ref-coords {:lat 5.4706946 :lon 33.9126084}
-                               :resolution {:xres 0.0008333 :yres 0.0008333}}))
+                               :raster       "/tmp/nairobi.tif"
+                               :ref-coords   {:lat 5.4706946 :lon 33.9126084}
+                               :resolution   {:xres 0.0008333 :yres 0.0008333}}))
 
-  (boundary/setup-context (dev/coverage) [:project 1]
-                          {:region-id 1 :coverage-criteria {:algorithm :driving-friction :driving-time 30}})
+  (setup-context (dev/coverage) [:project 1]
+                 {:region-id 1 :coverage-criteria {:algorithm :driving-friction :driving-time 120}})
 
-  (boundary/destroy-context (dev/coverage) [:project 1])
+  (destroy-context (dev/coverage) [:project 1])
 
-  (boundary/resolve-coverages! (dev/coverage) [:project 1]
-                               [{:id [:provider 1] :lat 8.5 :lon 18.1}
-                                {:id [:provider 2] :lat 9.1 :lon 16.3}])
+  (resolve-coverages! (dev/coverage) [:project 1]
+                      [{:id [:provider 1] :lat 6.5 :lon 18.27}
+                       {:id [:provider 2] :lat 4.95 :lon 15.85}
+                       {:id [:provider 3] :lat -4 :lon 18}])
 
   nil)

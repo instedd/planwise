@@ -14,23 +14,38 @@ SELECT
 -- :name db-select-context :? :1
 SELECT *
   FROM coverage_contexts
- WHERE id = :id;
+ WHERE cid = :cid;
 
 -- :name db-insert-context! :! :1
 INSERT
- INTO coverage_contexts (id, options)
+ INTO coverage_contexts (cid, region_id, options)
 VALUES
- (:id, :options);
+ (:cid, :region-id, :options);
 
 -- :name db-delete-context! :!
-DELETE FROM coverage_contexts WHERE id = :id;
+DELETE FROM coverage_contexts WHERE cid = :cid;
+
+-- :name db-check-coverage :? :1
+SELECT
+  lid, ST_Distance(location, :location) AS distance
+  FROM coverages
+ WHERE context_id = :context-id
+   AND lid = :lid;
+
+-- :name db-check-inside-region :? :1
+SELECT
+  ST_Contains(regions.the_geom, :location) AS inside
+  FROM regions
+         INNER JOIN coverage_contexts
+             ON regions.id = coverage_contexts.region_id
+ WHERE coverage_contexts.id = :context-id;
 
 -- :name db-upsert-coverage! :!
 INSERT
-  INTO coverages (context_id, id, location, coverage, raster_path)
+  INTO coverages (context_id, lid, location, coverage, raster_path)
 VALUES
- (:context-id, :id, :location, :coverage, :raster-path)
- ON CONFLICT DO
+ (:context-id, :lid, :location, :coverage, :raster-path)
+ ON CONFLICT (context_id, lid) DO
  UPDATE SET location = :location, coverage = :coverage, raster_path = :raster-path;
 
 -- :name db-select-coverages :?
@@ -38,7 +53,7 @@ SELECT
   id, location, coverage, raster_path AS "raster-path"
   FROM coverages
  WHERE context_id = :context-id
-  /*~ (when (:ids params) */
-       AND id IN (:v*:ids)
+  /*~ (when (:lids params) */
+       AND lid IN (:v*:lids)
   /*~ ) ~*/
        ;
