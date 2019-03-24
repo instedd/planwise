@@ -92,36 +92,36 @@
  ;; Endpoints
 
  :planwise.endpoint/auth
- {:auth       #ig/ref :planwise.component/auth}
+ {:auth            #ig/ref :planwise.component/auth}
 
  :planwise.endpoint/coverage
- {:coverage   #ig/ref :planwise.component/coverage}
+ {:coverage        #ig/ref :planwise.component/coverage}
 
  :planwise.endpoint/providers-set
- {:providers-set  #ig/ref :planwise.component/providers-set
-  :jobrunner      #ig/ref :planwise.component/jobrunner}
+ {:providers-set   #ig/ref :planwise.component/providers-set
+  :jobrunner       #ig/ref :planwise.component/jobrunner}
 
  :planwise.endpoint/home
- {:maps       #ig/ref :planwise.component/maps
-  :auth       #ig/ref :planwise.component/auth
+ {:maps            #ig/ref :planwise.component/maps
+  :auth            #ig/ref :planwise.component/auth
   :intercom-app-id #duct/env ["INTERCOM_APP_ID" Str :or ""]}
 
  :planwise.endpoint/monitor
  {}
 
  :planwise.endpoint/sources
- {:sources  #ig/ref :planwise.component/sources}
+ {:sources         #ig/ref :planwise.component/sources}
 
  :planwise.endpoint/projects2
- {:projects2  #ig/ref :planwise.component/projects2
-  :scenarios  #ig/ref :planwise.component/scenarios}
+ {:projects2       #ig/ref :planwise.component/projects2
+  :scenarios       #ig/ref :planwise.component/scenarios}
 
  :planwise.endpoint/regions
- {:regions    #ig/ref :planwise.component/regions}
+ {:regions         #ig/ref :planwise.component/regions}
 
  :planwise.endpoint/scenarios
- {:projects2     #ig/ref :planwise.component/projects2
-  :scenarios     #ig/ref :planwise.component/scenarios}
+ {:projects2       #ig/ref :planwise.component/projects2
+  :scenarios       #ig/ref :planwise.component/scenarios}
 
  ;; Components
 
@@ -135,11 +135,8 @@
 
  :planwise.component/coverage
  {:db          #ig/ref :duct.database/sql
+  :file-store  #ig/ref :planwise.component/file-store
   :runner      #ig/ref :planwise.component/runner}
-
- :planwise.component/providers-set
- {:db          #ig/ref :duct.database/sql
-  :coverage    #ig/ref :planwise.component/coverage}
 
  :planwise.component/engine
  {:providers-set #ig/ref :planwise.component/providers-set
@@ -148,35 +145,39 @@
   :regions       #ig/ref :planwise.component/regions
   :runner        #ig/ref :planwise.component/runner}
 
+ :planwise.component/file-store
+ {:data-path     #duct/env ["DATA_PATH" Str :or "data/"]}
+
  :planwise.component/jobrunner
  {:concurrent-workers #duct/env ["CONCURRENT_WORKERS" Int :or 2]}
 
  :planwise.component/mailer
- {:config       {:sender #duct/env ["MAILER_SENDER" Str :or "planwise@instedd.org"]
-                 :smtp   {:host #duct/env ["SMTP_HOST" Str]
-                          :user #duct/env ["SMTP_USER" Str]
-                          :pass #duct/env ["SMTP_PASS" Str]
-                          :ssl  #duct/env ["SMTP_SSL" Bool]
-                          :port #duct/env ["SMTP_PORT" Int]}}}
+ {:config {:sender        #duct/env ["MAILER_SENDER" Str :or "planwise@instedd.org"]
+           :smtp          {:host #duct/env ["SMTP_HOST" Str]
+                           :user #duct/env ["SMTP_USER" Str]
+                           :pass #duct/env ["SMTP_PASS" Str]
+                           :ssl  #duct/env ["SMTP_SSL" Bool]
+                           :port #duct/env ["SMTP_PORT" Int]}}}
 
  :planwise.component/maps
- {:config      {:mapserver-url       #duct/env ["MAPSERVER_URL" Str :or "http://localhost:5002/mapcache?"]
-                :data                #duct/env ["DATA_PATH" Str :or "data/"]}}
-
- :planwise.component/sources
- {:db          #ig/ref :duct.database/sql}
+ {:config {:mapserver-url #duct/env ["MAPSERVER_URL" Str :or "http://localhost:5002/mapcache?"]
+           :data          #duct/env ["DATA_PATH" Str :or "data/"]}}
 
  :planwise.component/projects2
  {:db             #ig/ref :duct.database/sql
   :providers-set  #ig/ref :planwise.component/providers-set
   :scenarios      #ig/ref :planwise.component/scenarios}
 
+ :planwise.component/providers-set
+ {:db             #ig/ref :duct.database/sql
+  :coverage       #ig/ref :planwise.component/coverage}
+
  :planwise.component/regions
- {:db          #ig/ref :duct.database/sql}
+ {:db             #ig/ref :duct.database/sql}
 
  :planwise.component/runner
- {:bin         #duct/env ["BIN_PATH" Str :or "bin/"]
-  :scripts     #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
+ {:bin            #duct/env ["BIN_PATH" Str :or "bin/"]
+  :scripts        #duct/env ["SCRIPTS_PATH" Str :or "scripts/"]}
 
  :planwise.component/scenarios
  {:db             #ig/ref :duct.database/sql
@@ -184,6 +185,9 @@
   :sources-set    #ig/ref :planwise.component/sources
   :engine         #ig/ref :planwise.component/engine
   :jobrunner      #ig/ref :planwise.component/jobrunner}
+
+ :planwise.component/sources
+ {:db          #ig/ref :duct.database/sql}
 
  :planwise.component/users
  {:db          #ig/ref :duct.database/sql}}
