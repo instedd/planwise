@@ -1,5 +1,6 @@
 (ns planwise.component.coverage
   (:require [planwise.boundary.coverage :as boundary]
+            [planwise.boundary.file-store :as file-store]
             [planwise.component.coverage.simple :as simple]
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.component.coverage.friction :as friction]
@@ -9,6 +10,7 @@
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.set :refer [rename-keys]]
+            [clojure.string :as str]
             [hugsql.core :as hugsql]
             [taoensso.timbre :as timbre]))
 
@@ -152,6 +154,10 @@
       (throw (ex-info "Coverage key too large" {:id id :sql-id sql-id})))
     sql-id))
 
+(defn- raster-file-name
+  [id]
+  (str (file-store/build-file-id id) ".tif"))
+
 (defn- db->context
   [context]
   (-> context
@@ -175,9 +181,9 @@
   context)
 
 (defn- destroy-context
-  [{:keys [db]} context-id]
+  [{:keys [db file-store]} context-id]
   (let [cid (build-sql-id context-id)]
-    ;; TODO: remove any coverage raster files associated with the context
+    (file-store/destroy-collection file-store :coverages context-id)
     (let [result (db-delete-context! (:spec db) {:cid cid})]
       (= 1 (first result)))))
 
@@ -214,17 +220,35 @@
   [db coverage]
   (db-upsert-coverage! (:spec db) coverage))
 
+(defn- clip-polygon
+  [db context polygon]
+  (let [region-id (:region-id context)
+        result    (db-clip-polygon (:spec db) {:region-id region-id
+                                               :polygon   polygon})]
+    (if result
+      (:clipped-polygon result)
+      (throw (ex-info "failed to clip polygon to context region" {:context context
+                                                                  :polygon polygon})))))
+
 (defn- resolve-coverage!
   [{:keys [db] :as service} context location]
-  (let [id         (:id location)
-        context-id (:id context)
-        lid        (build-sql-id id)
-        point      (geo/make-pg-point location)
-        coverage   {:context-id context-id
-                    :lid        lid
-                    :location   point}]
+  (let [id                (:id location)
+        context-id        (:id context)
+        lid               (build-sql-id id)
+        point             (geo/make-pg-point location)
+        coverage          {:context-id context-id
+                           :lid        lid
+                           :location   point}
+        raster-resolution (get-in context [:options :raster-resolution])
+        with-raster?      (some? raster-resolution)
+        raster-file       (when with-raster?
+                            (raster-file-name id))
+        raster-path       (when with-raster?
+                            (file-store/full-path (:context-store-path context) raster-file))]
     (cond
-      (check-coverage-exists? db coverage)
+      (and (check-coverage-exists? db coverage)
+           (or (not with-raster?)
+               (file-store/exists? raster-path)))
       {:id id :resolved true :extra :cached}
 
       (check-outside-region? db coverage)
@@ -232,30 +256,38 @@
 
       :else
       (try
-        (let [criteria (get-in context [:options :coverage-criteria])
-              polygon  (compute-coverage-polygon service location criteria)]
+        (let [criteria         (get-in context [:options :coverage-criteria])
+              polygon          (compute-coverage-polygon service location criteria)
+              clipped-polygon  (clip-polygon db context polygon)]
+          (when raster-file
+            (rasterize/rasterize clipped-polygon
+                                 raster-path
+                                 {:ref-coords {:lat 0 :lon 0}
+                                  :resolution raster-resolution}))
           (upsert-coverage! db (assoc coverage
-                                      :coverage polygon
-                                      :raster-path nil))
+                                      :coverage clipped-polygon
+                                      :raster-file raster-file))
           {:id id :resolved true :extra :computed})
         (catch Exception e
           (warn e "failed to compute coverage" {:location location :context context})
           {:id id :resolved false :extra :failed})))))
 
 (defn- resolve-coverages!
-  [{:keys [db] :as service} context-id locations]
+  [{:keys [db file-store] :as service} context-id locations]
   (s/assert ::boundary/locations locations)
   (let [cid     (build-sql-id context-id)
         context (select-context db cid)]
     (when (nil? context)
       (throw (ex-info "Context has not been setup; cannot resolve coverages" {:context-id context-id})))
-    (doall (map (partial resolve-coverage! service context) locations))))
+    (let [context-store-path (file-store/setup-collection file-store :coverages context-id)
+          context            (assoc context :context-store-path context-store-path)]
+      (doall (map (partial resolve-coverage! service context) locations)))))
 
 
 ;; Service definition ========================================================
 ;;
 
-(defrecord CoverageService [db runner])
+(defrecord CoverageService [db file-store runner])
 
 (defmethod ig/init-key :planwise.component/coverage
   [_ config]
@@ -321,13 +353,16 @@
                                :resolution   {:xres 0.0008333 :yres 0.0008333}}))
 
   (setup-context (dev/coverage) [:project 1]
-                 {:region-id 1 :coverage-criteria {:algorithm :driving-friction :driving-time 120}})
+                 {:region-id 1
+                  :raster-resolution {:xres (double 1/400) :yres (double -1/400)}
+                  :coverage-criteria {:algorithm :driving-friction :driving-time 120}})
 
   (destroy-context (dev/coverage) [:project 1])
 
   (resolve-coverages! (dev/coverage) [:project 1]
                       [{:id [:provider 1] :lat 6.5 :lon 18.27}
                        {:id [:provider 2] :lat 4.95 :lon 15.85}
-                       {:id [:provider 3] :lat -4 :lon 18}])
+                       {:id [:provider 3] :lat -4 :lon 18}
+                       {:id [:provider 4] :lat 7.37 :lon 15.48}])
 
   nil)

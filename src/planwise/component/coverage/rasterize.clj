@@ -73,7 +73,7 @@
         ul-lon     (+ ref-lon (* xres off-width))
         ul-lat     (+ ref-lat (* yres off-height))
         env-width  (- max-lon ul-lon)
-        env-height (- max-lat ul-lat)
+        env-height (- ul-lat min-lat)
         width      (inc (int (Math/ceil (/ env-width (Math/abs xres)))))
         height     (inc (int (Math/ceil (/ env-height (Math/abs yres)))))]
     {:width        width
@@ -83,9 +83,9 @@
 
 (defn rasterize
   ([polygon output-path {:keys [ref-coords resolution] :as options}]
-   {:pre [(s/valid? ::geo/pg-polygon polygon)
-          (s/valid? string? output-path)
-          (s/valid? ::rasterize-options options)]}
+   (s/assert (s/or :polygon ::geo/pg-polygon :multipolygon ::geo/pg-multipolygon) polygon)
+   (s/assert string? output-path)
+   (s/assert ::rasterize-options options)
    (let [srs            (geo/pg->srs polygon)
          geometry       (geo/pg->geometry polygon)
          envelope       (geo/geometry->envelope geometry)
@@ -105,9 +105,9 @@
      (.delete srs)))
 
   ([polygon]
-   {:pre [(s/valid? ::geo/pg-polygon polygon)]}
+   (s/assert (s/or :polygon ::geo/pg-polygon :multipolygon ::geo/pg-multipolygon) polygon)
    (let [ref-coords     {:lat 0 :lon 0}
-         resolution     {:xres 1/1200 :yres -1/1200}
+         resolution     {:xres (double 1/1200) :yres (double -1/1200)}
          srs            (geo/pg->srs polygon)
          geometry       (geo/pg->geometry polygon)
          envelope       (geo/geometry->envelope geometry)
@@ -130,6 +130,6 @@
   ;; (def ref-coords {:lat 5.470694601152364 :lon 33.912608425216725})
   (def ref-coords {:lon 39.727577500000002 :lat -2.631561400000000})
   ;; (def pixel-resolution {:xres 8.333000000000001E-4 :yres -8.333000000000001E-4})
-  (def pixel-resolution {:xres 1/1200 :yres -1/1200})
+  (def pixel-resolution {:xres (double 1/1200) :yres (double -1/1200)})
 
   (rasterize pg "test.tif" {:ref-coords ref-coords :resolution pixel-resolution}))

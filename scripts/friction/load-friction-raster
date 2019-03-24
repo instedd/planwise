@@ -44,6 +44,8 @@ regions="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES
 for region in $regions; do
     echo Clipping for region $region
     rm -f $OUTPUT_PATH/$region.tif
+    # TODO: we may want to cut by the envelope (even buffer it a little) instead
+    # of the region itself to avoid errors and abrupt cuts in the region border
     gdalwarp -co COMPRESS=DEFLATE \
              -dstnodata -3.4e+38 \
              -crop_to_cutline -csql "SELECT the_geom FROM regions WHERE id = ${region}" \

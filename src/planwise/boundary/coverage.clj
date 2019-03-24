@@ -12,7 +12,7 @@
 (defmulti criteria-algo :algorithm)
 (s/def ::coverage-criteria (s/multi-spec criteria-algo :algorithm))
 
-(s/def ::pixel-resolution number?)
+(s/def ::pixel-resolution float?)
 (s/def ::xres ::pixel-resolution)
 (s/def ::yres ::pixel-resolution)
 (s/def ::raster-resolution (s/keys :req-un [::xres ::yres]))
