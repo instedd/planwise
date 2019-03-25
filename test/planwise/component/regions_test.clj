@@ -39,5 +39,6 @@
 (deftest enum-regions-intersecting-envelope-test
   (test-system/with-system (test-config)
     (let [service (:planwise.component/regions system)]
-      (is (empty? (regions/enum-regions-intersecting-envelope service {:min-lat 1 :max-lat 2 :min-lon 1 :max-lon 2})))
-      (is (= [1] (regions/enum-regions-intersecting-envelope service {:min-lat 0 :max-lat 2 :min-lon 0 :max-lon 2}))))))
+      (is (empty? (regions/enum-regions-intersecting-envelope service {:min-lat 2 :max-lat 3 :min-lon 1 :max-lon 2})))
+      (is (= [1] (regions/enum-regions-intersecting-envelope service {:min-lat 0 :max-lat 2 :min-lon 0 :max-lon 2})))
+      (is (= [1] (regions/enum-regions-intersecting-envelope service {:min-lat 0.5 :max-lat 2 :min-lon 0.5 :max-lon 2}))))))
