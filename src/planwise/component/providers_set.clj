@@ -200,19 +200,17 @@
     (or (empty? tags)
         (not (empty? (set/intersection filter-tags provider-tags))))))
 
-(defn get-providers-with-coverage-in-region
+(defn get-providers-in-region
   [store provider-set-id version filter-options]
-  (let [db-spec   (get-db store)
-        config {:provider-set-id provider-set-id
-                :version    version
-                :region-id  (:region-id filter-options)
-                :algorithm  (:coverage-algorithm filter-options)
-                :options    (some-> (:coverage-options filter-options) pr-str)}
-        all-providers (db-find-providers-with-coverage-in-region db-spec config)
+  (let [db-spec             (get-db store)
+        config              {:provider-set-id provider-set-id
+                             :version         version
+                             :region-id       (:region-id filter-options)}
+        all-providers       (db-find-providers-in-region db-spec config)
         providers-partition (group-by
                              #(provider-matches-tags? % (:tags filter-options))
                              all-providers)]
-    {:providers (or (get providers-partition true) [])
+    {:providers          (or (get providers-partition true) [])
      :disabled-providers (or (get providers-partition false) [])}))
 
 (defn count-providers-filter-by-tags
@@ -275,8 +273,8 @@
     (create-and-import-providers store options csv-file))
   (new-processing-job [store provider-set-id]
     (new-processing-job store provider-set-id))
-  (get-providers-with-coverage-in-region [store provider-set-id version filter-options]
-    (get-providers-with-coverage-in-region store provider-set-id version filter-options))
+  (get-providers-in-region [store provider-set-id version filter-options]
+    (get-providers-in-region store provider-set-id version filter-options))
   (count-providers-filter-by-tags [store provider-set-id region-id tags]
     (count-providers-filter-by-tags store provider-set-id region-id tags))
   (count-providers-filter-by-tags [store provider-set-id region-id tags version]

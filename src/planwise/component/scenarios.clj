@@ -94,7 +94,7 @@
 
 (defn- get-initial-providers
   [store provider-set-id version filter-options]
-  (let [{:keys [providers disabled-providers]} (providers-set/get-providers-with-coverage-in-region
+  (let [{:keys [providers disabled-providers]} (providers-set/get-providers-in-region
                                                 (:providers-set store)
                                                 provider-set-id
                                                 version
@@ -109,17 +109,16 @@
 
 (defn get-scenario-for-project
   [store scenario {:keys [provider-set-id provider-set-version config source-set-id] :as project}]
-  (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
-                           (assoc :tags (get-in config [:providers :tags])
-                                  :coverage-options (get-in config [:coverage :filter-options])))
+  (let [filter-options                         {:region-id (:region-id project)
+                                                :tags      (get-in project [:config :providers :tags])}
         {:keys [providers disabled-providers]} (let [requested (select-keys scenario [:providers :disabled-providers])]
                                                  (if (empty? requested)
                                                    (get-initial-providers store provider-set-id provider-set-version filter-options)
                                                    requested))
-        ;sources
-        sources             (sources/list-sources-in-set (:sources-set store) source-set-id)
-        get-source-info-fn  (fn [id] (select-keys (-> (filter #(= id (:id %)) sources) first) [:name]))
-        updated-sources (map (fn [s] (merge s (get-source-info-fn (:id s)))) (:sources-data scenario))]
+                                        ;sources
+        sources                                (sources/list-sources-in-set (:sources-set store) source-set-id)
+        get-source-info-fn                     (fn [id] (select-keys (-> (filter #(= id (:id %)) sources) first) [:name]))
+        updated-sources                        (map (fn [s] (merge s (get-source-info-fn (:id s)))) (:sources-data scenario))]
 
     (-> scenario
         (assoc :sources-data updated-sources
@@ -315,17 +314,16 @@
 
 (defn export-providers-data
   [store {:keys [provider-set-id config] :as project} scenario]
-  (let [filter-options (-> (select-keys project [:region-id :coverage-algorithm])
-                           (assoc :tags (get-in config [:providers :tags])
-                                  :coverage-options (get-in config [:coverage :filter-options])))
-        {:keys [disabled-providers providers]} (providers-set/get-providers-with-coverage-in-region
+  (let [filter-options                         {:region-id (:region-id project)
+                                                :tags      (get-in project [:config :providers :tags])}
+        {:keys [disabled-providers providers]} (providers-set/get-providers-in-region
                                                 (:providers-set store)
                                                 provider-set-id
                                                 (:provider-set-version project)
                                                 filter-options)
-        disabled-providers (map #(assoc % :capacity 0) disabled-providers)
-        new-providers      (new-providers-to-export (:changeset scenario))
-        fields [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
+        disabled-providers                     (map #(assoc % :capacity 0) disabled-providers)
+        new-providers                          (new-providers-to-export (:changeset scenario))
+        fields                                 [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
     (map->csv
      (merge-providers providers disabled-providers new-providers (:providers-data scenario))
      fields)))

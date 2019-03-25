@@ -40,16 +40,12 @@ SELECT * FROM providers
     WHERE "provider-set-id" = :provider-set-id
     AND version = :version;
 
--- :name db-find-providers-with-coverage-in-region :?
-SELECT p.id, p.name, p.lat, p.lon, p.capacity, p.type, p.tags, pc.raster, pc.id AS "coverage-id"
+-- :name db-find-providers-in-region :?
+SELECT p.id, p.name, p.lat, p.lon, p.capacity, p.type, p.tags
     FROM providers p
-    INNER JOIN providers_coverage pc
-          ON p.id = pc."provider-id"
     WHERE "provider-set-id" = :provider-set-id
           AND version = :version
           AND p."the_geom" @ (SELECT "the_geom" FROM regions WHERE id = :region-id)
-          AND pc.algorithm = :algorithm
-          AND pc.options = :options
          /*~ (if (seq (:tags params)) */
           AND p.tags::tsvector @@ :tags::tsquery;
          /*~ ) ~*/;

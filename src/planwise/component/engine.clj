@@ -367,42 +367,42 @@
 
 (defn compute-initial-scenario-by-raster
   [engine project]
-  (let [project-id           (:id project)
-        providers            (providers-in-project (:providers-set engine) project)
-        applicable-providers (filter :applicable? providers)
-        demand-raster        (process-base-demand-raster engine project)
-        raster-resolution    (raster/raster-resolution demand-raster)
-        base-demand          (demand/count-population demand-raster)
-        capacity-multiplier  (get-in (:config project) [:providers :capacity])
-        scenario-filename    (str "initial-" (java.util.UUID/randomUUID))]
+  (let [project-id          (:id project)
+        demand-raster       (process-base-demand-raster engine project)
+        base-demand         (demand/count-population demand-raster)
+        capacity-multiplier (get-in (:config project) [:providers :capacity])
+        scenario-filename   (str "initial-" (java.util.UUID/randomUUID))]
 
-    (debug "Base scenario demand:" base-demand)
-    (debug "Applying" (count applicable-providers) "providers")
+    (debug (str "Base scenario demand: " base-demand))
 
-    (let [applied-providers            (raster-do-providers! applicable-providers
-                                                             (partial raster-apply-provider! demand-raster capacity-multiplier))
-          unsatisfied-demand           (demand/count-population demand-raster)
-          quartiles                    (demand/compute-population-quartiles demand-raster)
-          providers-unsatisfied-demand (raster-do-providers! providers
-                                                             (partial raster-measure-provider demand-raster capacity-multiplier))
-          raster-data-path             (scenario-raster-data-path project-id scenario-filename)
-          raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
-      (io/make-parents raster-data-path)
-      (raster/write-raster demand-raster raster-data-path)
-      (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
+    (let [providers            (providers-in-project (:providers-set engine) project)
+          applicable-providers (filter :applicable? providers)]
+      (debug (str "Applying " (count applicable-providers) " providers"))
 
-      (debug "Wrote" raster-data-path)
-      (debug "Unsatisfied demand:" unsatisfied-demand)
+      (let [applied-providers            (raster-do-providers! applicable-providers
+                                                               (partial raster-apply-provider! demand-raster capacity-multiplier))
+            unsatisfied-demand           (demand/count-population demand-raster)
+            quartiles                    (demand/compute-population-quartiles demand-raster)
+            providers-unsatisfied-demand (raster-do-providers! providers
+                                                               (partial raster-measure-provider demand-raster capacity-multiplier))
+            raster-data-path             (scenario-raster-data-path project-id scenario-filename)
+            raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
+        (io/make-parents raster-data-path)
+        (raster/write-raster demand-raster raster-data-path)
+        (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
 
-      {:raster-path       (scenario-raster-path project-id scenario-filename)
-       :raster-resolution raster-resolution
-                                        ; NB. this datum is not needed, only saved for convenience
-       :scaling-factor    (:scaling-factor demand-raster)
-       :source-demand     base-demand
-       :pending-demand    unsatisfied-demand
-       :covered-demand    (- base-demand unsatisfied-demand)
-       :demand-quartiles  quartiles
-       :providers-data    (merge-providers applied-providers providers-unsatisfied-demand)})))
+        (debug (str "Wrote " raster-data-path))
+        (debug (str "Unsatisfied demand: " unsatisfied-demand))
+
+        {:raster-path       (scenario-raster-path project-id scenario-filename)
+         :raster-resolution (raster/raster-resolution demand-raster)
+                                        ; NB. the scaling factor is not needed, only saved for convenience
+         :scaling-factor    (:scaling-factor demand-raster)
+         :source-demand     base-demand
+         :pending-demand    unsatisfied-demand
+         :covered-demand    (- base-demand unsatisfied-demand)
+         :demand-quartiles  quartiles
+         :providers-data    (merge-providers applied-providers providers-unsatisfied-demand)}))))
 
 (defn compute-scenario-by-raster
   [engine project initial-scenario scenario]

@@ -43,6 +43,8 @@ BEGIN
     END IF;
   END LOOP;
 
+  -- FIXME: ST_SimplifyPreserveTopology doesn't always simplify and reduce the size of the resulting GeoJSON
+  -- OTOH, ST_Simplify will produce invalid geometries sometimes (Dire Dawa in Ethiopia)
   UPDATE regions SET preview_geom = ST_Multi(ST_SimplifyPreserveTopology(the_geom, simplify)) WHERE id = region_id;
   RETURN current;
 END;

@@ -269,10 +269,3 @@
   (def project-test (generate-project raster-test criteria))
   (search-optimal-location engine project-test {} raster-test))
 
-; (def engine (:planwise.component/engine system))
-; (def project   (planwise.component.projects2/get-project (:planwise.component/projects2 system) 181))
-; (def scenario  (planwise.component.scenarios/get-scenario (:planwise.component/scenarios system) 1496))
-; (planwise.engine.suggestions/get-sorted-interventions engine project scenario)
-; (planwise.component.providers-set/get-providers-with-coverage-in-region
-; (:planwise.component/providers-set system)
-; 16 1 {:walking-time 120, :algorithm "walking-friction", :region-id 85})

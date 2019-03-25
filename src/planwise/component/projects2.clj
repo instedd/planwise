@@ -2,8 +2,8 @@
   (:require [planwise.boundary.projects2 :as boundary]
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.scenarios :as scenarios]
+            [planwise.boundary.coverage :as coverage]
             [planwise.component.regions :as regions]
-            [planwise.component.coverage :as coverage]
             [clojure.spec.alpha :as s]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
@@ -38,7 +38,7 @@
   (let [algorithm (-> (providers-set/get-provider-set (:providers-set store) provider-set-id)
                       :coverage-algorithm
                       keyword)
-        valid-criteria? (s/valid? ::coverage/criteria
+        valid-criteria? (s/valid? ::coverage/coverage-criteria
                                   (assoc (get-in project [:config :coverage :filter-options])
                                          :algorithm algorithm))
         updated-config   (if valid-criteria? config (assoc-in config [:coverage :filter-options] {}))]
@@ -69,7 +69,7 @@
         algorithm (-> (providers-set/get-provider-set (:providers-set store) provider-set-id)
                       :coverage-algorithm
                       keyword)
-        valid-criteria? (s/valid? ::coverage/criteria
+        valid-criteria? (s/valid? ::coverage/coverage-criteria
                                   (assoc (get-in project [:config :coverage :filter-options])
                                          :algorithm algorithm))]
     (if valid-criteria?
