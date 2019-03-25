@@ -315,9 +315,10 @@
   (let [query-params {:context-id    (:id context)
                       :source-set-id source-set-id
                       :lids          lids}]
-    (->> (db-sources-covered-by-coverages (:spec db) query-params)
-         (group-by :lid)
-         (collections/map-vals #(map :sid %)))))
+    (if (seq lids)
+      (->> (db-sources-covered-by-coverages (:spec db) query-params)
+           (group-by :lid)
+           (collections/map-vals #(map :sid %))))))
 
 (defn- select-coverages
   ([db context ids]

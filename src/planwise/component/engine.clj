@@ -109,8 +109,10 @@
    (setup-coverage-context! engine project nil))
   ([engine project raster-resolution]
    (let [options {:region-id         (:region-id project)
-                  :raster-resolution raster-resolution
-                  :coverage-criteria (coverage-criteria-for-project project)}]
+                  :coverage-criteria (coverage-criteria-for-project project)}
+         options (if (some? raster-resolution)
+                   (assoc options :raster-resolution raster-resolution)
+                   options)]
      (coverage/setup-context (:coverage engine) (coverage-context project) options))))
 
 (defn- provider->location
@@ -143,7 +145,7 @@
         ids               (map (fn [provider] [:provider (:id provider)]) providers)
         is-raster?        (is-project-raster? project)
         query-type        (if is-raster? :raster [:sources-covered (:source-set-id project)])
-        coverages         (coverage/query-coverages (:coverage engine) context-id :raster ids)
+        coverages         (coverage/query-coverages (:coverage engine) context-id query-type ids)
         assoc-raster-path (fn [provider coverage-result]
                             (if (:resolved coverage-result)
                               (assoc provider
@@ -524,9 +526,7 @@
 (defn point-do-providers!
   [providers f sources]
   (reduce (fn [[result sources'] provider]
-            (println "sources'" sources')
             (let [[provider' sources''] (f provider sources')]
-              (println "sources''" sources'')
               [(conj result provider') sources'']))
           [[] sources]
           providers))
