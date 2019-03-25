@@ -5,6 +5,7 @@
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.component.coverage.friction :as friction]
             [planwise.util.geo :as geo]
+            [planwise.util.collections :as collections]
             [integrant.core :as ig]
             [clojure.spec.alpha :as s]
             [clojure.java.io :as io]
@@ -302,13 +303,11 @@
   (let [query-params {:context-id    (:id context)
                       :lids          lids
                       :with-geojson? with-geojson?}]
-    (->> (db-select-coverages (:spec db) query-params)
-         (map db->coverage)
-         (into {} (map (juxt :lid identity))))))
-
-(defn- map-vals
-  [f m]
-  (reduce-kv (fn [acc k v] (assoc acc k (f v))) {} m))
+    (if (seq lids)
+      (->> (db-select-coverages (:spec db) query-params)
+           (map db->coverage)
+           (into {} (map (juxt :lid identity))))
+      [])))
 
 (defn- compute-covered-sources-by-lid
   [db context source-set-id lids]
@@ -317,7 +316,7 @@
                       :lids          lids}]
     (->> (db-sources-covered-by-coverages (:spec db) query-params)
          (group-by :lid)
-         (map-vals #(map :sid %)))))
+         (collections/map-vals #(map :sid %)))))
 
 (defn- select-coverages
   ([db context ids]
@@ -447,8 +446,12 @@
                        {:id [:provider 3] :lat -4 :lon 18}
                        {:id [:provider 4] :lat 7.37 :lon 15.48}])
 
+  (resolve-coverages! (dev/coverage) [:project 1] [])
+
   (query-coverages (dev/coverage) [:project 1] :raster
                    [[:provider 1] [:provider 2]])
+
+  (query-coverages (dev/coverage) [:project 1] :raster [])
 
   (query-coverages (dev/coverage) [:project 1] [:sources-covered 5]
                    [[:provider 1] [:provider 2]])

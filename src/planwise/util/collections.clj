@@ -12,3 +12,7 @@
   [key merge-fn & colls]
   (map (fn [[id same-key-maps]] (apply merge-fn same-key-maps))
        (group-by key (apply concat colls))))
+
+(defn map-vals
+  [f m]
+  (reduce-kv (fn [acc k v] (assoc acc k (f v))) {} m))
