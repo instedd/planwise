@@ -128,13 +128,12 @@
 
 (defn get-provider-geom
   [store project scenario id]
-  (if (re-matches #"\A[0-9]+\z" id)
-    {:coverage-geom (:geom (providers-set/get-coverage (:providers-set store)
-                                                       (Integer/parseInt id)
-                                                       {:algorithm (:coverage-algorithm project)
-                                                        :filter-options (get-in project [:config :coverage :filter-options])
-                                                        :region-id (:region-id project)}))}
-    {:coverage-geom (get (:new-providers-geom scenario) id)}))
+  (let [context-id   [:project (:id project)]
+        id           (if (re-matches #"\A[0-9]+\z" id) (Long/parseLong id) id)
+        query-id     [:provider id]
+        query-result (first (coverage/query-coverages (:coverage store) context-id :geojson [query-id]))]
+    (when (:resolved query-result)
+      {:coverage-geom (:geojson query-result)})))
 
 (defn list-scenarios
   [store project-id]
@@ -363,7 +362,7 @@
            (engine/search-optimal-interventions (:engine store) project scenario settings)))))
 
 
-(defrecord ScenariosStore [db engine jobrunner providers-set sources-set]
+(defrecord ScenariosStore [db engine jobrunner providers-set sources-set coverage]
   boundary/Scenarios
   (list-scenarios [store project-id]
     (list-scenarios store project-id))

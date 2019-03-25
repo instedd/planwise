@@ -185,7 +185,8 @@
   :providers-set  #ig/ref :planwise.component/providers-set
   :sources-set    #ig/ref :planwise.component/sources
   :engine         #ig/ref :planwise.component/engine
-  :jobrunner      #ig/ref :planwise.component/jobrunner}
+  :jobrunner      #ig/ref :planwise.component/jobrunner
+  :coverage       #ig/ref :planwise.component/coverage}
 
  :planwise.component/sources
  {:db          #ig/ref :duct.database/sql}
