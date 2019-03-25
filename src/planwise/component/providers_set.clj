@@ -33,16 +33,20 @@
 
 (defn- import-provider
   [store provider-set-id version csv-provider-data]
-  (let [data {:source-id (Integer. (:id csv-provider-data))
-              :type (:type csv-provider-data)
-              :version version
-              :provider-set-id provider-set-id
-              :name (:name csv-provider-data)
-              :lat  (Double. (:lat csv-provider-data))
-              :lon  (Double. (:lon csv-provider-data))
-              :capacity (Integer. (:capacity csv-provider-data))
-              :tags (:tags csv-provider-data)}]
-    (db-create-provider! (get-db store) data)))
+  (try
+    (let [data {:source-id (Integer. (:id csv-provider-data))
+                :type (:type csv-provider-data)
+                :version version
+                :provider-set-id provider-set-id
+                :name (:name csv-provider-data)
+                :lat  (Double. (:lat csv-provider-data))
+                :lon  (Double. (:lon csv-provider-data))
+                :capacity (Integer. (:capacity csv-provider-data))
+                :tags (:tags csv-provider-data)}]
+      (db-create-provider! (get-db store) data))
+    (catch Exception e
+      (warn "Failed to import provider " csv-provider-data)
+      (throw e))))
 
 (defn csv-to-providers
   "Generates providers from a provider-set-id and a csv file"
