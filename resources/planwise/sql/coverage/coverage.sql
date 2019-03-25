@@ -30,10 +30,10 @@ DELETE FROM coverage_contexts WHERE cid = :cid;
 
 -- :name db-check-coverage :? :1
 -- :doc Checks if a coverage already exists and if it does, returns the distance
---  from the saved location to the given as parameter (used to check if the
---  geographical location changed)
+--      from the saved location to the given as parameter (used to check if the
+--      geographical location changed)
 SELECT
-  lid, ST_Distance(location, :location) AS distance
+  lid, ST_Distance(location, :location) AS distance, raster_file
   FROM coverages
  WHERE context_id = :context-id
    AND lid = :lid;
@@ -63,16 +63,27 @@ SELECT
   FROM regions
  WHERE regions.id = :region-id;
 
-
-
-
-
 -- :name db-select-coverages :?
+-- :doc Returns coverage records for the specified context and lids, optionally
+--      including a GeoJSON export of the coverage
 SELECT
-  id, location, coverage, raster_file
+  lid, location, raster_file
+  /*~ (when (:with-geojson? params) */
+    , ST_AsGeoJSON(coverage) AS geojson
+  /*~ ) ~*/
   FROM coverages
  WHERE context_id = :context-id
-  /*~ (when (:lids params) */
-       AND lid IN (:v*:lids)
-  /*~ ) ~*/
-       ;
+   AND lid IN (:v*:lids);
+
+-- :name db-sources-covered-by-coverages :?
+-- :doc Returns the ids of the sources in the source set which are covered by
+--      the given lids in the context
+SELECT
+  sources.id AS sid,
+  coverages.lid AS lid
+  FROM sources,
+       coverages
+ WHERE sources.set_id = :source-set-id
+   AND coverages.context_id = :context-id
+   AND coverages.lid IN (:v*:lids)
+   AND ST_Contains(coverages.coverage, sources.the_geom);

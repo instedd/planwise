@@ -25,6 +25,12 @@
 (s/def ::location (s/merge ::geo/coords (s/keys :req-un [::id])))
 (s/def ::locations (s/coll-of ::location))
 
+(s/def ::source-set-id nat-int?)
+(s/def ::query (s/or :status nil?
+                     :raster #{:raster}
+                     :geojson #{:geojson}
+                     :sources-covered (s/tuple #{:sources-covered} ::source-set-id)))
+
 
 ;; Protocol defintions =======================================================
 ;;
@@ -79,7 +85,7 @@
     longitude. Checks previously computed coverages if they exist and computes
     new ones.")
 
-  (query-coverages [this context-id ids query]
+  (query-coverages [this context-id query ids]
     "Performs a query over the given coverage ids; returned values depend on the
     value of the query parameter
 

@@ -18,6 +18,7 @@
 
 (hugsql/def-db-fns "planwise/sql/coverage/coverage.sql")
 
+
 ;; Specs =====================================================================
 ;;
 
@@ -169,6 +170,11 @@
   (-> context
       (update :options pr-str)))
 
+(defn- db->coverage
+  [coverage]
+  (-> coverage
+      (rename-keys {:raster_file :raster-file})))
+
 (defn- select-context
   [db cid]
   (some->
@@ -207,9 +213,16 @@
       (insert-context db new-context))))
 
 (defn- check-coverage-exists?
-  [db coverage]
-  (let [result (db-check-coverage (:spec db) coverage)]
-    (and (some? result) (< (:distance result) 10e-5))))
+  [db context coverage]
+  (let [with-raster?       (some? (get-in context [:options :raster-resolution]))
+        context-store-path (:context-store-path context)
+        result             (db->coverage (db-check-coverage (:spec db) coverage))
+        raster-file        (:raster-file result)]
+    (and (some? result)
+         (< (:distance result) 10e-5)
+         (or (not with-raster?)
+             (and (some? raster-file)
+                  (file-store/exists? (file-store/full-path context-store-path raster-file)))))))
 
 (defn- check-outside-region?
   [db coverage]
@@ -240,15 +253,9 @@
                            :lid        lid
                            :location   point}
         raster-resolution (get-in context [:options :raster-resolution])
-        with-raster?      (some? raster-resolution)
-        raster-file       (when with-raster?
-                            (raster-file-name id))
-        raster-path       (when with-raster?
-                            (file-store/full-path (:context-store-path context) raster-file))]
+        with-raster?      (some? raster-resolution)]
     (cond
-      (and (check-coverage-exists? db coverage)
-           (or (not with-raster?)
-               (file-store/exists? raster-path)))
+      (check-coverage-exists? db context coverage)
       {:id id :resolved true :extra :cached}
 
       (check-outside-region? db coverage)
@@ -256,14 +263,16 @@
 
       :else
       (try
-        (let [criteria         (get-in context [:options :coverage-criteria])
-              polygon          (compute-coverage-polygon service location criteria)
-              clipped-polygon  (clip-polygon db context polygon)]
-          (when raster-file
-            (rasterize/rasterize clipped-polygon
-                                 raster-path
-                                 {:ref-coords {:lat 0 :lon 0}
-                                  :resolution raster-resolution}))
+        (let [criteria        (get-in context [:options :coverage-criteria])
+              polygon         (compute-coverage-polygon service location criteria)
+              clipped-polygon (clip-polygon db context polygon)
+              raster-file     (when with-raster? (raster-file-name id))]
+          (when with-raster?
+            (let [raster-path (file-store/full-path (:context-store-path context) raster-file)]
+              (rasterize/rasterize clipped-polygon
+                                   raster-path
+                                   {:ref-coords {:lat 0 :lon 0}
+                                    :resolution raster-resolution})))
           (upsert-coverage! db (assoc coverage
                                       :coverage clipped-polygon
                                       :raster-file raster-file))
@@ -272,17 +281,92 @@
           (warn e "failed to compute coverage" {:location location :context context})
           {:id id :resolved false :extra :failed})))))
 
-(defn- resolve-coverages!
-  [{:keys [db file-store] :as service} context-id locations]
-  (s/assert ::boundary/locations locations)
+(defn- ensure-context
+  [{:keys [db file-store]} context-id]
   (let [cid     (build-sql-id context-id)
         context (select-context db cid)]
     (when (nil? context)
-      (throw (ex-info "Context has not been setup; cannot resolve coverages" {:context-id context-id})))
-    (let [context-store-path (file-store/setup-collection file-store :coverages context-id)
-          context            (assoc context :context-store-path context-store-path)]
-      (doall (map (partial resolve-coverage! service context) locations)))))
+      (throw (ex-info "Context has not been setup" {:context-id context-id})))
+    (let [context-store-path (file-store/setup-collection file-store :coverages context-id)]
+      (assoc context :context-store-path context-store-path))))
 
+(defn- resolve-coverages!
+  [service context-id locations]
+  (s/assert ::boundary/id context-id)
+  (s/assert ::boundary/locations locations)
+  (let [context (ensure-context service context-id)]
+    (doall (map (partial resolve-coverage! service context) locations))))
+
+(defn- select-coverages-by-lid
+  [db context lids with-geojson?]
+  (let [query-params {:context-id    (:id context)
+                      :lids          lids
+                      :with-geojson? with-geojson?}]
+    (->> (db-select-coverages (:spec db) query-params)
+         (map db->coverage)
+         (into {} (map (juxt :lid identity))))))
+
+(defn- map-vals
+  [f m]
+  (reduce-kv (fn [acc k v] (assoc acc k (f v))) {} m))
+
+(defn- compute-covered-sources-by-lid
+  [db context source-set-id lids]
+  (let [query-params {:context-id    (:id context)
+                      :source-set-id source-set-id
+                      :lids          lids}]
+    (->> (db-sources-covered-by-coverages (:spec db) query-params)
+         (group-by :lid)
+         (map-vals #(map :sid %)))))
+
+(defn- select-coverages
+  ([db context ids]
+   (select-coverages db context ids nil))
+  ([db context ids extra-query]
+   (debug (str "Querying coverages in " (:cid context) " with extra " (pr-str extra-query)))
+   (let [id->lid            (into {} (map (juxt identity build-sql-id) ids))
+         lids               (vals id->lid)
+         with-raster?       (some? (get-in context [:options :raster-resolution]))
+         context-store-path (:context-store-path context)
+         coverages-by-lid   (select-coverages-by-lid db context lids (:with-geojson extra-query))
+         sources-by-lid     (when-let [source-set-id (:source-set-id extra-query)]
+                              (compute-covered-sources-by-lid db context source-set-id lids))]
+     (map (fn [id]
+            (let [lid (id->lid id)]
+              (if-let [found (get coverages-by-lid lid)]
+                (let [raster-file (:raster-file found)
+                      raster-path (when (and with-raster? raster-file)
+                                    (file-store/full-path context-store-path raster-file))]
+                  (merge found
+                         {:id              id
+                          :raster-path     raster-path
+                          :resolved        (or (not with-raster?) (file-store/exists? raster-path))
+                          :sources-covered (get sources-by-lid lid)}))
+                {:id id :resolved false})))
+          ids))))
+
+(defn- query-coverages
+  [{:keys [db] :as service} context-id query ids]
+  (s/assert ::boundary/query query)
+  (s/assert (s/coll-of ::boundary/id) ids)
+  (let [context                   (ensure-context service context-id)
+        [query-type query-params] (s/conform ::boundary/query query)]
+    (case query-type
+      :status
+      (let [coverages (select-coverages db context ids)]
+        (map #(select-keys % [:id :resolved]) coverages))
+
+      :raster
+      (let [coverages (select-coverages db context ids)]
+        (map #(select-keys % [:id :resolved :raster-path]) coverages))
+
+      :geojson
+      (let [coverages (select-coverages db context ids {:with-geojson true})]
+        (map #(select-keys % [:id :resolved :geojson]) coverages))
+
+      :sources-covered
+      (let [coverages (select-coverages db context ids {:source-set-id (second query-params)})]
+        (map #(select-keys % [:id :resolved :sources-covered]) coverages)))))
 
 ;; Service definition ========================================================
 ;;
@@ -322,7 +406,8 @@
   (resolve-coverages! [this context-id locations]
     (resolve-coverages! this context-id locations))
 
-  (query-coverages [this context-id ids query]))
+  (query-coverages [this context-id query ids]
+    (query-coverages this context-id query ids)))
 
 
 ;; REPL testing ==============================================================
@@ -364,5 +449,11 @@
                        {:id [:provider 2] :lat 4.95 :lon 15.85}
                        {:id [:provider 3] :lat -4 :lon 18}
                        {:id [:provider 4] :lat 7.37 :lon 15.48}])
+
+  (query-coverages (dev/coverage) [:project 1] :raster
+                   [[:provider 1] [:provider 2]])
+
+  (query-coverages (dev/coverage) [:project 1] [:sources-covered 5]
+                   [[:provider 1] [:provider 2]])
 
   nil)
