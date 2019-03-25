@@ -143,7 +143,8 @@
   :sources-set   #ig/ref :planwise.component/sources
   :coverage      #ig/ref :planwise.component/coverage
   :regions       #ig/ref :planwise.component/regions
-  :runner        #ig/ref :planwise.component/runner}
+  :runner        #ig/ref :planwise.component/runner
+  :file-store    #ig/ref :planwise.component/file-store}
 
  :planwise.component/file-store
  {:data-path     #duct/env ["DATA_PATH" Str :or "data/"]}

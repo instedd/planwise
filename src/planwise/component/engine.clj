@@ -637,7 +637,7 @@
   (let [scenarios-path (str "data/scenarios/" project-id)]
     (files/delete-files-recursively scenarios-path true)))
 
-(defrecord Engine [providers-set sources-set coverage regions runner]
+(defrecord Engine [providers-set sources-set coverage regions runner file-store]
   boundary/Engine
   (compute-initial-scenario [engine project]
     (compute-initial-scenario engine project))

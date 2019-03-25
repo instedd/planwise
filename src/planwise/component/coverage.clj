@@ -422,23 +422,20 @@
   (boundary/supported-algorithms service)
 
   (time
-   (boundary/compute-coverage service
-                              {:lat -3.0361 :lon 40.1333}
-                              {:algorithm :simple-buffer
-                               :distance  20
-                               :raster    "/tmp/buffer.tif"}))
+   (boundary/compute-coverage-polygon service
+                                      {:lat -3.0361
+                                       :lon 40.1333}
+                                      {:algorithm :simple-buffer
+                                       :distance  20}))
 
   (time
-   (boundary/compute-coverage service
-                              {:lat -1.2741 :lon 36.7931}
-                              {:algorithm    :driving-friction
-                               :driving-time 60
-                               :raster       "/tmp/nairobi.tif"
-                               :ref-coords   {:lat 5.4706946 :lon 33.9126084}
-                               :resolution   {:xres 0.0008333 :yres 0.0008333}}))
+   (boundary/compute-coverage-polygon service
+                                      {:lat -1.2741 :lon 36.7931}
+                                      {:algorithm    :driving-friction
+                                       :driving-time 60}))
 
   (setup-context (dev/coverage) [:project 1]
-                 {:region-id 1
+                 {:region-id         1
                   :raster-resolution {:xres (double 1/400) :yres (double -1/400)}
                   :coverage-criteria {:algorithm :driving-friction :driving-time 120}})
 
