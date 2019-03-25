@@ -30,7 +30,7 @@
   [provider-set-id applicable]
   (fn [provider]
     (-> provider
-        (select-keys [:id :name :capacity])
+        (select-keys [:id :lat :lon :name :capacity])
         (assoc :applicable? applicable))))
 
 (defn providers-in-project

@@ -270,6 +270,7 @@
               raster-file     (when with-raster? (raster-file-name id))]
           (when with-raster?
             (let [raster-path (file-store/full-path (:context-store-path context) raster-file)]
+              (io/delete-file raster-path :silent)
               (rasterize/rasterize clipped-polygon
                                    raster-path
                                    {:ref-coords {:lat 0 :lon 0}
