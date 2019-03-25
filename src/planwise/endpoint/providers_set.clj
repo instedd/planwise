@@ -1,6 +1,5 @@
 (ns planwise.endpoint.providers-set
   (:require [planwise.boundary.providers-set :as providers-set]
-            [planwise.boundary.jobrunner :as jobrunner]
             [compojure.core :refer :all]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
@@ -12,7 +11,7 @@
 (timbre/refer-timbre)
 
 (defn- providers-set-routes
-  [{service :providers-set jobrunner :jobrunner}]
+  [{service :providers-set}]
   (routes
 
    (GET "/" request
@@ -28,9 +27,6 @@
                          :coverage-algorithm coverage-algorithm}
              result     (providers-set/create-and-import-providers service options csv-file)
              provider-set-id (:id result)]
-         (jobrunner/queue-job jobrunner
-                              [::providers-set/preprocess-provider-set provider-set-id]
-                              (providers-set/new-processing-job service provider-set-id))
          (response result))))
 
    (DELETE "/" [id :as request]

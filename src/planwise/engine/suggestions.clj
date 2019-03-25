@@ -12,6 +12,9 @@
 
 (timbre/refer-timbre)
 
+;; Location suggestions algorithm =============================================
+;;
+
 (defn count-under-geometry
   [engine polygon {:keys [raster original-sources source-set-id geom-set]}]
   (if raster
@@ -52,7 +55,8 @@
         [lon lat :as coord]   coord
         polygon               (if coord
                                 (coverage/compute-coverage-polygon (:coverage engine) {:lat lat :lon lon} updated-criteria)
-                                (:geom (providers-set/get-coverage
+                                ;; FIXME
+                                nil #_(:geom (providers-set/get-coverage
                                         (:providers-set engine)
                                         provider-id
                                         {:algorithm (name (:algorithm criteria))
@@ -91,9 +95,14 @@
                                       (catch Exception e
                                         (warn (str "Failed to compute coverage for coordinates " val) e))))]
     (when raster (raster/write-raster-file raster search-path))
-    (let [bound    (when provider-set-id (:avg-max (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id)))
+    ;; FIXME
+    (let [bound    nil #_(when provider-set-id (:avg-max (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id)))
           locations (gs/greedy-search 10 source coverage-fn demand-quartiles {:bound bound :n 20})]
       locations)))
+
+
+;; Intervention suggestions algorithm =========================================
+;;
 
 ;TODO; shared code with client
 (defn- get-investment-from-project-config
@@ -175,7 +184,6 @@
   (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
   (def criteria {:algorithm :simple-buffer :distance 20})
   (def val 1072404)
-  (def f (fn [val] (engine/get-coverage (:coverage engine) {:idx val} raster criteria)))
   (f val) ;idx:  1072404 | total:  17580.679855613736  |demand:  17580
           ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
 )

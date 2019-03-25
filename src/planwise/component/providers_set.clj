@@ -1,7 +1,5 @@
 (ns planwise.component.providers-set
   (:require [planwise.boundary.providers-set :as boundary]
-            [planwise.boundary.coverage :as coverage]
-            [planwise.boundary.jobrunner :as jr]
             [integrant.core :as ig]
             [clojure.string :refer [includes?]]
             [taoensso.timbre :as timbre]
@@ -95,103 +93,6 @@
 ;;; Pre-processing job implementation
 ;;;
 
-(defn compute-provider-coverage!
-  [store provider {:keys [algorithm options raster-dir]}]
-  (try
-    (let [db-spec         (get-db store)
-          coverage        (:coverage store)
-          coords          (select-keys provider [:lat :lon])
-          provider-id         (:id provider)
-          raster-basename (str/join "_" (flatten [provider-id (name algorithm) (vals options)]))
-          raster-filename (str raster-basename ".tif")
-          raster-path     (str (io/file raster-dir raster-filename))
-          criteria        (merge {:algorithm algorithm
-                                  :raster    raster-path}
-                                 options)
-          polygon         nil ;; FIXME: remove all this cruft (coverage/compute-coverage coverage coords criteria)
-          provider-coverage   {:provider-id   provider-id
-                               :algorithm (name algorithm)
-                               :options   (pr-str options)
-                               :geom      polygon
-                               :raster    raster-basename}
-          result          (db-create-provider-coverage! db-spec provider-coverage)]
-      {:ok (:id result)})
-    (catch RuntimeException e
-      (warn "Error" (.getMessage e) "processing coverage for provider" (:id provider)
-            "using algorithm" algorithm "with options" (pr-str options))
-      {:error (.getMessage e)})))
-
-(defn preprocess-provider!
-  [store provider-id {:keys [algorithm options-list raster-dir]}]
-  {:pre [(some? algorithm)]}
-  (let [db-spec    (get-db store)
-        provider       (db-fetch-provider-by-id db-spec {:id provider-id})]
-    (if (nil? (:processing-status provider))
-      (do
-        (info "Pre-processing provider" provider-id)
-        ;; TODO: delete old raster as well as the database records
-        (db-delete-algorithm-coverages-by-provider-id! db-spec {:provider-id provider-id :algorithm (name algorithm)})
-        (let [results (doall (for [options options-list]
-                               (compute-provider-coverage! store provider {:algorithm algorithm
-                                                                           :options options
-                                                                           :raster-dir raster-dir})))]
-          (let [total     (count options-list)
-                succeeded (count (filter (comp some? :ok) results))
-                result    (condp = succeeded
-                            total :ok
-                            0 :error
-                            :partial)]
-            (db-update-provider-processing-status! db-spec {:id provider-id
-                                                            :processing-status (str result)}))))
-      (info "Skipping provider" provider-id
-            "since it's already processed with status" (:processing-status provider)))))
-
-(defn new-processing-job
-  "Returns the initial job state to pre-process the providers-set' providers"
-  [store provider-set-id]
-  (let [db-spec      (get-db store)
-        coverage     (:coverage store)
-        provider-set      (db-find-provider-set db-spec {:id provider-set-id})
-        last-version (:last-version provider-set)
-        algorithm    (keyword (:coverage-algorithm provider-set))
-        providers        (db-enum-provider-ids db-spec {:provider-set-id provider-set-id :version last-version})
-        options-list (coverage/enumerate-algorithm-options coverage algorithm)
-        ;; TODO: configure the raster-dir in the component
-        raster-dir   (str (io/file "data/coverage" (str provider-set-id)))]
-
-    (cond
-      (some? algorithm)
-      {:store   store
-       :options {:algorithm    algorithm
-                 :options-list options-list
-                 :raster-dir   raster-dir}
-       :providers   providers}
-
-      :else
-      (do
-        (warn "Coverage algorithm not set for provider-set" provider-set-id)
-        nil))))
-
-(defmethod jr/job-next-task ::boundary/preprocess-provider-set
-  [[_ provider-set-id] {:keys [store options providers] :as state}]
-  (let [next-provider (first providers)
-        providers'    (next providers)
-        state'    (when providers' (assoc state :providers providers'))]
-    (if (some? next-provider)
-      (let [provider-id (:id next-provider)]
-        {:state state'
-         :task-id provider-id
-         :task-fn (fn [] (preprocess-provider! store provider-id options))})
-      {:state state'})))
-
-(defn preprocess-provider-set!
-  "Manually trigger the synchronous pre-processing of a provider-set"
-  [store provider-set-id]
-  (info "Pre-processing providers for provider-set" provider-set-id)
-  (if-let [{:keys [providers options]} (new-processing-job store provider-set-id)]
-    (dorun (for [provider-id (map :id providers)]
-             (preprocess-provider! store provider-id options)))
-    (info "Coverage algorithm not set for provider-set" provider-set-id)))
 
 (defn- provider-matches-tags?
   [provider tags]
@@ -229,39 +130,21 @@
          response {:total total :filtered total}]
      (if (str/blank? tags) response (assoc response :filtered (count-fn tags version))))))
 
-(defn get-radius-from-computed-coverage
-  [store {:keys [algorithm] :as criteria} provider-set-id]
-  (let [options (dissoc criteria :algorithm)]
-    {:avg-max (:avg (db-avg-max-distance (get-db store) {:algorithm (name algorithm)
-                                                         :provider-set-id provider-set-id
-                                                         :options (str options)}))}))
-
-(defn get-coverage
-  [store provider-id {:keys [algorithm region-id filter-options]}]
-  (db-find-provider-coverage (get-db store) {:provider-id provider-id
-                                             :algorithm algorithm
-                                             :options (pr-str filter-options)
-                                             :region-id region-id}))
-
 (defn delete-provider-set
   [store provider-set-id]
   (try
     (jdbc/with-db-transaction [tx (get-db store)]
       (let [tx-store        (assoc-in store [:db :spec] tx)
             params          {:provider-set-id provider-set-id}]
-        (db-delete-providers-coverage! tx params)
         (db-delete-providers! tx params)
         (db-delete-provider-set! tx params)))
-    (files/delete-files-recursively
-     (str "data/coverage/" provider-set-id)
-     true)
     (catch Exception e
       (throw (ex-info "Provider set can not be deleted"
                       {:provider-set-id provider-set-id}
                       e)))))
 
 
-(defrecord ProvidersStore [db coverage]
+(defrecord ProvidersStore [db]
   boundary/ProvidersSet
   (list-providers-set [store owner-id]
     (list-providers-set store owner-id))
@@ -271,18 +154,12 @@
     (get-provider store provider-id))
   (create-and-import-providers [store options csv-file]
     (create-and-import-providers store options csv-file))
-  (new-processing-job [store provider-set-id]
-    (new-processing-job store provider-set-id))
   (get-providers-in-region [store provider-set-id version filter-options]
     (get-providers-in-region store provider-set-id version filter-options))
   (count-providers-filter-by-tags [store provider-set-id region-id tags]
     (count-providers-filter-by-tags store provider-set-id region-id tags))
   (count-providers-filter-by-tags [store provider-set-id region-id tags version]
     (count-providers-filter-by-tags store provider-set-id region-id tags version))
-  (get-radius-from-computed-coverage [store criteria provider-set-id]
-    (get-radius-from-computed-coverage store criteria provider-set-id))
-  (get-coverage [store provider-id coverage-options]
-    (get-coverage store provider-id coverage-options))
   (delete-provider-set [store provider-set-id]
     (delete-provider-set store provider-set-id)))
 
@@ -290,17 +167,3 @@
   [_ config]
   (map->ProvidersStore config))
 
-(comment
-  ;; REPL testing
-
-  (def store (:planwise.component/providers-set integrant.repl.state/system))
-
-  (get-providers-with-coverage-in-region store 19 1 {:region-id 42
-                                                     :coverage-algorithm "driving-friction"
-                                                     :coverage-options {:driving-time 60}})
-
-  (preprocess-provider! store 1 {:algorithm :simple-buffer
-                                 :options-list [{:distance 5} {:distance 10}]
-                                 :raster-dir "data/coverage/11"})
-
-  (preprocess-provider-set! store 11))

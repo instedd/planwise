@@ -98,8 +98,7 @@
  {:coverage        #ig/ref :planwise.component/coverage}
 
  :planwise.endpoint/providers-set
- {:providers-set   #ig/ref :planwise.component/providers-set
-  :jobrunner       #ig/ref :planwise.component/jobrunner}
+ {:providers-set   #ig/ref :planwise.component/providers-set}
 
  :planwise.endpoint/home
  {:maps            #ig/ref :planwise.component/maps
