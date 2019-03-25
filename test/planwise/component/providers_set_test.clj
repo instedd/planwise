@@ -90,12 +90,7 @@
       :type "hospital" :lat -1.293856 :capacity 356 :name "The Nairobi Women's Hospital"}
      {:id 17 :lon 36.80772 :version 2 :the_geom (point "SRID=4326;POINT(36.80772 -1.3017)")
       "source-id" 4 "processing-status" ":ok" "provider-set-id" 2 :tags "public surgical-services general-medicine"
-      :type "hospital" :lat -1.3017 :capacity 1800 :name "Kenyatta National Hospital"}]]
-   [:providers_coverage
-    [{:id 1 :provider-id 13 :algorithm "simple-buffer" :options (pr-str {:distance 10}) :geom sample-polygon :raster "1_foo"}
-     {:id 2 :provider-id 14 :algorithm "simple-buffer" :options (pr-str {:distance 10}) :geom sample-polygon :raster "2_foo"}
-     {:id 3 :provider-id 16 :algorithm "simple-buffer" :options (pr-str {:distance 10}) :geom sample-polygon :raster "3_foo"}
-     {:id 4 :provider-id 17 :algorithm "simple-buffer" :options (pr-str {:distance 10}) :geom sample-polygon :raster "4_foo"}]]])
+      :type "hospital" :lat -1.3017 :capacity 1800 :name "Kenyatta National Hospital"}]]])
 
 
 (defn test-config

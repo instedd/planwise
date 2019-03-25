@@ -69,50 +69,6 @@ SELECT "id", "source-id", "provider-set-id", "version", "name", "lat", "lon", "p
        FROM "providers"
        WHERE "id" = :id;
 
--- :name db-update-provider-processing-status! :! :n
-UPDATE "providers"
-       SET "processing-status" = :processing-status
-       WHERE "id" = :id;
-
--- :name db-delete-algorithm-coverages-by-provider-id! :! :n
-DELETE FROM "providers_coverage"
-       WHERE "provider-id" = :provider-id
-       AND "algorithm" = :algorithm;
-
--- :name db-create-provider-coverage! :<! :1
-INSERT INTO "providers_coverage"
-       ("provider-id", "algorithm", "options", "geom", "raster")
-       VALUES (:provider-id, :algorithm, :options, :geom, :raster)
-       RETURNING "id";
-
--- :name db-avg-max-distance :? :1
-SELECT AVG(ST_MaxDistance(geom, geom))
-	FROM providers_coverage pc
-	WHERE algorithm = :algorithm
-	AND pc."provider-id" IN (SELECT id FROM "providers" p WHERE p."provider-set-id" = :provider-set-id)
-	AND options = :options;
-
--- :name db-find-provider-coverage :? :1
-SELECT
-    St_AsGEOJSON(
-        /*~ (if (:region-id params) */
-        St_Intersection(St_MakeValid(pc.geom), regions.the_geom)
-        /*~*/
-        St_MakeValid(pc.geom)
-        /*~ ) ~*/
-    ) AS geom
-    FROM providers_coverage pc, regions
-    WHERE pc."provider-id" = :provider-id
-    AND pc.algorithm = :algorithm
-    AND pc.options =  :options
-/*~ (if (:region-id params) */
-    AND regions.id = :region-id;
-/*~ ) ~*/;
-
--- :name db-delete-providers-coverage! :!
-DELETE FROM "providers_coverage" pc
-    WHERE pc."provider-id" = @(SELECT id FROM providers p WHERE p."provider-set-id" = :provider-set-id AND pc."provider-id" = p.id);
-
 -- :name db-delete-providers! :!
 DELETE FROM "providers"
     WHERE "provider-set-id" = :provider-set-id;

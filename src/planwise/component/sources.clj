@@ -86,20 +86,6 @@
   (db-get-sources-from-set-in-region (get-db store) {:source-set-id source-set-id
                                                      :region-id     region-id}))
 
-(defn enum-sources-under-provider-coverage
-  [store source-set-id provider-coverage-id]
-  (map :id
-       (db-enum-sources-under-provider-coverage (get-db store)
-                                                {:source-set-id        source-set-id
-                                                 :provider-coverage-id provider-coverage-id})))
-
-(defn enum-sources-under-geojson-coverage
-  [store source-set-id coverage-geojson]
-  (map :id
-       (db-enum-sources-under-coverage-geojson (get-db store)
-                                               {:source-set-id    source-set-id
-                                                :coverage-geojson coverage-geojson})))
-
 (defn enum-sources-under-coverage
   [store source-set-id coverage-geom]
   (map :id
@@ -122,10 +108,6 @@
     (list-sources-in-set this source-set-id))
   (get-sources-from-set-in-region [this source-set-id region-id]
     (get-sources-from-set-in-region this source-set-id region-id))
-  (enum-sources-under-provider-coverage [this source-set-id provider-coverage-id]
-    (enum-sources-under-provider-coverage this source-set-id provider-coverage-id))
-  (enum-sources-under-geojson-coverage [this source-set-id coverage-geojson]
-    (enum-sources-under-geojson-coverage this source-set-id coverage-geojson))
   (enum-sources-under-coverage [this source-set-id coverage-geom]
     (enum-sources-under-coverage this source-set-id coverage-geom)))
 

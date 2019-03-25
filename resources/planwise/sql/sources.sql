@@ -61,26 +61,6 @@ SELECT
     AND r.id = :region-id
     AND ST_Contains(r."the_geom", s."the_geom");
 
--- :name db-enum-sources-under-provider-coverage :?
-SELECT
-  s.id
-  FROM
-    sources AS s,
-    providers_coverage AS pc
-  WHERE
-    s."set_id" = :source-set-id
-    AND pc.id = :provider-coverage-id
-    AND ST_Contains(pc.geom, s.the_geom);
-
--- :name db-enum-sources-under-coverage-geojson :?
-SELECT
-  s.id
-  FROM
-    sources AS s
-  WHERE
-    set_id = :source-set-id
-    AND ST_Contains(ST_SetSRID(ST_GeomFromGeoJSON(:coverage-geojson), 4326), the_geom);
-
 -- :name db-enum-sources-under-coverage :?
 SELECT
   s.id
