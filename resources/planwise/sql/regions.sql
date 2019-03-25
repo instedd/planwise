@@ -36,10 +36,10 @@ SELECT id,
   FROM regions
  WHERE id = :id;
 
--- :name region-ids-inside-envelope :? :*
+-- :name region-ids-intersecting-envelope :? :*
 SELECT id
   FROM regions
- WHERE ST_Contains(ST_MakeEnvelope(:min-lon, :min-lat, :max-lon, :max-lat, 4326), the_geom) = TRUE;
+ WHERE ST_Intersects(ST_MakeEnvelope(:min-lon, :min-lat, :max-lon, :max-lat, 4326), the_geom) = TRUE;
 
 -- :name select-region-geometry :? :1
 SELECT id,
