@@ -6,7 +6,7 @@ RETURNS void AS $$
 DECLARE
   r_id INTEGER;
 BEGIN
-  FOR r_id IN SELECT r.id FROM regions r LOOP
+  FOR r_id IN SELECT r.id FROM regions r WHERE r.preview_geom IS NULL LOOP
     PERFORM calculate_region_preview(r_id);
   END LOOP;
 END;
