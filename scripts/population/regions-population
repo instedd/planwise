@@ -2,6 +2,11 @@
 set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
+# SCRIPT IS NO LONGER NEEDED
+# Scenario computation now resizes and crops the source rasters as needed
+echo "WARNING: this script is obsolete. You don't need to run it anymore"
+exit 0
+
 source $(dirname "${BASH_SOURCE}")/env-vars
 
 # Creates raster files data/populations/(data|maps)/REGIONID.tif with the population

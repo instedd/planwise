@@ -66,12 +66,6 @@
 (defn bbox-center [[[s w] [n e]]]
   [(/ (+ s n) 2.0) (/ (+ e w) 2.0)])
 
-(defn region-map
-  "Returns the full DATAFILE value to provide to mapserver to render a population region map,
-   given the id of the region"
-  [region-id]
-  (some->> region-id
-           (str "populations/maps/")))
 
 (def fullmap-region-geo
   "{
