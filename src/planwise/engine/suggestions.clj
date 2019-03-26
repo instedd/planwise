@@ -57,11 +57,11 @@
                                 (coverage/compute-coverage-polygon (:coverage engine) {:lat lat :lon lon} updated-criteria)
                                 ;; FIXME
                                 nil #_(:geom (providers-set/get-coverage
-                                        (:providers-set engine)
-                                        provider-id
-                                        {:algorithm (name (:algorithm criteria))
-                                         :region-id region-id
-                                         :filter-options (dissoc criteria :algorithm)})))
+                                              (:providers-set engine)
+                                              provider-id
+                                              {:algorithm (name (:algorithm criteria))
+                                               :region-id region-id
+                                               :filter-options (dissoc criteria :algorithm)})))
         population-reacheable (count-under-geometry engine polygon source)
         coverage-info   {:coverage population-reacheable
                          :required-capacity (/ population-reacheable project-capacity)}
