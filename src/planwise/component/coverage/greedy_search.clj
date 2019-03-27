@@ -76,13 +76,6 @@
         saturated-indices (Algorithm/filterAndSortIndices data nodata cutoff)]
     (Algorithm/locateIndices data saturated-indices xsize geotransform)))
 
-;; old implementation; fails with OOM for big rasters
-(defn slow-raster-saturated-locations
-  [raster cutoff]
-  (let [indexed-data (map-indexed vector (vec (:data raster)))
-        initial-set  (sort-by last > (filter (fn [[_ val]] (> val cutoff)) indexed-data))]
-    (mapv (fn [[idx val]] (conj (get-geo idx raster) val)) initial-set)))
-
 (defn get-saturated-locations
   [{:keys [raster sources-data]} [_ b0 b1 b2 _ :as demand-quartiles]]
   (if raster

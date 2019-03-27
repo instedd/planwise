@@ -25,11 +25,10 @@
 
 (timbre/refer-timbre)
 
-(def max-pixels-threshold
+(def compute-max-pixels
   "Maximum number of pixels for raster scenarios. Sources will be scaled down by
   integer factors for the resulting number of pixels to be below this threshold"
   (* 25 1024 1024))
-(def ^:dynamic *script-timeout-ms* 30000)
 (def ^:dynamic *bin-timeout-ms* 20000)
 
 ;; PATH HELPERS
@@ -90,14 +89,6 @@
     (when (nil? type) (throw (ex-info "Missing source set/project type" {:project project})))
     (= "raster" type)))
 
-(defn- coverage-criteria-for-project
-  "Criteria options from project for usage in coverage/compute-coverage-polygon."
-  [project]
-  (let [coverage-algorithm (keyword (:coverage-algorithm project))
-        project-config     (:config project)
-        coverage-options   (get-in project-config [:coverage :filter-options])]
-    (assoc coverage-options :algorithm coverage-algorithm)))
-
 (defn- coverage-context
   "Returns the coverage context that should be used for this project"
   [project]
@@ -109,7 +100,7 @@
    (setup-coverage-context! engine project nil))
   ([engine project raster-resolution]
    (let [options {:region-id         (:region-id project)
-                  :coverage-criteria (coverage-criteria-for-project project)}
+                  :coverage-criteria (common/coverage-criteria-for-project project)}
          options (if (some? raster-resolution)
                    (assoc options :raster-resolution raster-resolution)
                    options)]
@@ -209,55 +200,6 @@
         region-ids    (set (regions/enum-regions-intersecting-envelope regions envelope))]
     (contains? region-ids region-id)))
 
-(defn estimate-envelope-raster-size
-  "Compute the approximate size (in pixels) for an area given an envelope and a
-  raster to get the resolution."
-  [raster envelope]
-  (let [{:keys [xres yres]}                       (raster/raster-resolution raster)
-        {:keys [min-lon max-lon min-lat max-lat]} envelope]
-    {:xsize (Math/ceil (/ (- max-lon min-lon) (abs xres)))
-     :ysize (Math/ceil (/ (- max-lat min-lat) (abs yres)))}))
-
-(defn compute-down-scaling-factor
-  "Compute an integer down-scaling factor to reduce a raster size to a maximum
-  number of pixels. Scale should be applied uniformily to width and height."
-  [{:keys [xsize ysize]}]
-  (Math/ceil (Math/sqrt (/ (* xsize ysize) max-pixels-threshold))))
-
-(defn resize-raster
-  "Resize a raster by a scale factor using external tool gdalwarp. Returns the
-  original raster if scale factor is 1."
-  [engine raster scale-factor work-dir]
-  (if (float= 1.0 scale-factor)
-    raster
-    (let [input-path          (:file-path raster)
-          output-path         (str work-dir "/source-scaled.tif")
-          {:keys [xres yres]} (raster/raster-resolution raster)
-          args                (map str ["-i" input-path
-                                        "-o" output-path
-                                        "-r" (* scale-factor xres) (* scale-factor yres)])]
-      (io/make-parents output-path)
-      (io/delete-file output-path :silent)
-      (runner/run-external (:runner engine) :scripts *script-timeout-ms* "resize-raster" args)
-      (raster/read-raster-without-data output-path))))
-
-(defn crop-raster-by-cutline
-  "Crop a raster by a given GeoJSON contour using external tool gdalwarp."
-  [engine raster geojson work-dir]
-  (let [cutline-path        (str work-dir "/cutline.geojson")
-        input-path          (:file-path raster)
-        output-path         (str work-dir "/source-cropped.tif")
-        {:keys [xres yres]} (raster/raster-resolution raster)
-        args                (map str ["-i" input-path
-                                      "-o" output-path
-                                      "-c" cutline-path
-                                      "-r" xres yres])]
-    (io/make-parents cutline-path)
-    (spit cutline-path geojson)
-    (io/delete-file output-path :silent)
-    (runner/run-external (:runner engine) :scripts *script-timeout-ms* "crop-source-raster" args)
-    (raster/read-raster-without-data output-path)))
-
 (defn count-raster-demand
   "Using the external binary aggregate-population, compute the sum of all values
   of the given raster."
@@ -312,20 +254,20 @@
     ;; Estimate project raster size without scaling down source raster
     (let [region          (regions/get-region-geometry regions-service region-id)
           region-envelope (geo/bbox->envelope (:bbox region))
-          estimated-size  (estimate-envelope-raster-size source-raster region-envelope)
-          scale-factor    (compute-down-scaling-factor estimated-size)]
+          estimated-size  (common/estimate-envelope-raster-size source-raster region-envelope)
+          scale-factor    (common/compute-down-scaling-factor estimated-size compute-max-pixels)]
       (debug (str "Region envelope: " (pr-str region-envelope)))
       (debug (str "Estimated raster size (before scaling): " (pr-str estimated-size)))
       (debug (str "Down scale factor to apply: " scale-factor))
 
       ;; Scale down the source raster if necessary
-      (let [resized-raster       (resize-raster engine source-raster scale-factor project-path)
+      (let [resized-raster       (common/resize-raster (:runner engine) source-raster scale-factor project-path)
             resize-demand-factor (compute-resize-factor engine source-raster resized-raster)]
         (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
         (debug (str "Need to apply a resize factor of " resize-demand-factor))
 
         ;; Cut the source raster using the region outline
-        (let [cropped-raster (crop-raster-by-cutline engine resized-raster (:geojson region) project-path)]
+        (let [cropped-raster (common/crop-raster-by-cutline (:runner engine) resized-raster (:geojson region) project-path)]
           (debug "Cropped source raster to working region:" (:file-path cropped-raster))
           (debug (str "Project raster is " (:xsize cropped-raster) "x" (:ysize cropped-raster)))
 

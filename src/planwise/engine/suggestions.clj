@@ -12,6 +12,11 @@
 
 (timbre/refer-timbre)
 
+(def suggest-max-pixels
+  "Maximum number of pixels for rasters used for running the suggest location
+  algorithms"
+  (* 1024 1024))
+
 ;; Location suggestions algorithm =============================================
 ;;
 
@@ -176,104 +181,3 @@
         :ratio))
      []
      providers-collection)))
-
-(comment
-  ;REPL testing
-  ;Correctnes of coverage
-
-  (def raster (raster/read-raster "data/scenarios/44/initial-5903759294895159612.tif"))
-  (def criteria {:algorithm :simple-buffer :distance 20})
-  (def val 1072404)
-  (f val) ;idx:  1072404 | total:  17580.679855613736  |demand:  17580
-          ;where total: (total-sum (vec (demand/get-coverage raster coverage)) data)
-)
-
-(comment
-    ;REPL testing
-    ;Timing
-        ;Assuming computed providers
-
-  (def projects2 (:planwise.component/projects2 integrant.repl.state/system))
-  (def scenarios (:planwise.component/scenarios integrant.repl.state/system))
-  (def providers-set (:planwise.component/providers-set integrant.repl.state/system))
-  (def coverage (:planwise.component/coverage integrant.repl.state/system))
-  (defn new-engine []
-    (map->Engine {:providers-set providers-set :coverage coverage}))
-
-  (new-engine)
-  (require '[planwise.boundary.scenarios :as scenarios])
-
-    ;Criteria: walking friction
-  (def project   (projects2/get-project projects2 51))
-  (def scenario (scenarios/get-scenario scenarios 362))
-  (time (search-optimal-location (new-engine) project scenario)); "Elapsed time: 30125.428086 msecs"
-
-    ;Criteria: driving friction
-  (def project   (projects2/get-project projects2 57))
-  (def scenario (scenarios/get-scenario scenarios 399))
-  (time (search-optimal-location (new-engine) project scenario));"Elapsed time: 28535.980406 msecs"
-
-    ;Criteria: pg-routing
-  (def project   (projects2/get-project projects2 53))
-  (def scenario  (scenarios/get-scenario scenarios 380))
-  (time (search-optimal-location (new-engine) project scenario)); "Elapsed time: 16058.839293 msecs"
-
-  ;Criteria: simple buffer
-  (def project   (projects2/get-project projects2 55))
-  (def scenario  (scenarios/get-scenario scenarios 382))
-  (time (search-optimal-location (new-engine) project scenario)));"Elapsed time: 36028.555081 msecs"
-
-;Testing over Kilifi
-  ;;Efficiency
-    ;;Images
-
-(comment
-  (defn generate-raster-sample
-    [coverage locations criteria]
-    (let [kilifi-pop (raster/read-raster "data/kilifi.tif")
-          new-pop    (raster/read-raster "data/cerozing.tif")
-          dataset-fn (fn [loc] (let [polygon (coverage/compute-coverage-polygon coverage loc criteria)] (rasterize/rasterize polygon)))
-          get-index  (fn [dataset] (vec (demand/get-coverage kilifi-pop (raster/create-raster dataset))))
-          same-values (fn [set] (map (fn [i] [i (aget (:data kilifi-pop) i)]) set))
-          set         (reduce into (mapv #(-> % dataset-fn get-index same-values) locations))
-          new-data    (reduce (fn [new-data [idx val]] (assoc new-data idx val)) (vec (:data new-pop)) set)
-          raster      (raster/create-raster-from-existing kilifi-pop (float-array new-data))]
-      raster))
-
-  (defn generate-project
-    [raster {:keys [algorithm] :as criteria}]
-    (let [demand-quartiles (vec (demand/compute-population-quartiles raster))
-          provider-set-id {:walking-friction 5 :pgrouting-alpha 7
-                           :driving-friction 8 :simple-buffer 4}]
-      {:bbox '[(-3.9910888671875 40.2415275573733) (-2.3092041015625 39.0872802734376)]
-       :region-id 85, :config {:coverage {:filter-options (dissoc criteria :algorithm)}}
-       :provider-set-id (algorithm provider-set-id) :source-set-id 2 :owner-id 1
-       :engine-config {:demand-quartiles demand-quartiles
-                       :source-demand 1311728}
-       :coverage-algorithm (name algorithm)}))
-
-
-;;For visualizing effectiveness
-  (def criteria {:algorithm :walking-friction, :walking-time 120})
-  (def criteria {:algorithm :pgrouting-alpha :driving-time 60})
-  (def criteria {:algorithm :driving-friction :driving-time 90})
-
- ;Test 0
-  (def locations0 [{:lon 39.672257821715334, :lat -3.8315073359981278}])
-  (def raster-test0 (generate-raster-sample coverage locations criteria))
-
-  ;Test 1
-  (def locations1 [{:lon 39.863 :lat -3.097} {:lon 39.672257821715334, :lat -3.8315073359981278}])
-  (def raster-test1 (generate-raster-sample coverage locations1 criteria))
-
-  ;Test 2
-  (def locations2 [{:lon 39.672257821715334, :lat -3.8315073359981278} {:lon 39.863 :lat -3.097} {:lon 39.602 :lat -3.830}])
-  (def raster-test2 (generate-raster-sample coverage locations2 criteria))
-
-  ;Test 3
-  (def locations3 [{:lon 39.672257821715334, :lat -3.8315073359981278} {:lon 39.863 :lat -3.097} {:lon 39.479 :lat -3.407}])
-  (def raster-test3 (generate-raster-sample coverage locations3 criteria))
-
-  (def project-test (generate-project raster-test criteria))
-  (search-optimal-location engine project-test {} raster-test))
-

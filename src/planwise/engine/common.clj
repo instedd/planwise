@@ -1,21 +1,26 @@
 (ns planwise.engine.common
   (:require [planwise.boundary.providers-set :as providers-set]
-            [planwise.boundary.sources :as sources-set]
-            [planwise.boundary.coverage :as coverage]
+            [planwise.boundary.runner :as runner]
             [planwise.engine.raster :as raster]
-            [planwise.component.coverage.rasterize :as rasterize]
-            [planwise.engine.demand :as demand]
-            [planwise.util.files :as files]
+            [planwise.util.numbers :refer [abs float=]]
+            [clojure.java.io :as io]
             [clojure.set :as set]
-            [planwise.util.collections :refer [sum-by]]
             [taoensso.timbre :as timbre]))
+
+(def ^:dynamic *script-timeout-ms* 30000)
 
 (timbre/refer-timbre)
 
-(defn provider-coverage-raster-path
-  "Full path to the raster coverage for a provider set, given the raster property of a provider."
-  [provider-set-id raster]
-  (str "data/coverage/" provider-set-id "/" raster ".tif"))
+;; Project configuration ======================================================
+;;
+
+(defn coverage-criteria-for-project
+  "Criteria options from project for usage in coverage/compute-coverage-polygon."
+  [project]
+  (let [coverage-algorithm (keyword (:coverage-algorithm project))
+        project-config     (:config project)
+        coverage-options   (get-in project-config [:coverage :filter-options])]
+    (assoc coverage-options :algorithm coverage-algorithm)))
 
 (defn filter-options-for-project
   "Filter options from project for usage in providers-set/get-providers-in-region."
@@ -24,6 +29,10 @@
         tags      (get-in project [:config :providers :tags])]
     {:region-id region-id
      :tags      tags}))
+
+
+;; Provider selection =========================================================
+;;
 
 (defn- provider-mapper
   "Returns a mapper function for providers into the shape required for computing scenarios."
@@ -53,3 +62,56 @@
     (->> providers
          (sort-by :capacity)
          reverse)))
+
+
+;; Raster related functions ===================================================
+;;
+
+(defn estimate-envelope-raster-size
+  "Compute the approximate size (in pixels) for an area given an envelope and a
+  raster to get the resolution."
+  [raster envelope]
+  (let [{:keys [xres yres]}                       (raster/raster-resolution raster)
+        {:keys [min-lon max-lon min-lat max-lat]} envelope]
+    {:xsize (Math/ceil (/ (- max-lon min-lon) (abs xres)))
+     :ysize (Math/ceil (/ (- max-lat min-lat) (abs yres)))}))
+
+(defn compute-down-scaling-factor
+  "Compute an integer down-scaling factor to reduce a raster size to a maximum
+  number of pixels. Scale should be applied uniformily to width and height."
+  [{:keys [xsize ysize]} max-pixels]
+  (Math/ceil (Math/sqrt (/ (* xsize ysize) max-pixels))))
+
+(defn resize-raster
+  "Resize a raster by a scale factor using external tool gdalwarp. Returns the
+  original raster if scale factor is 1."
+  [runner raster scale-factor work-dir]
+  (if (float= 1.0 scale-factor)
+    raster
+    (let [input-path          (:file-path raster)
+          output-path         (str work-dir "/source-scaled.tif")
+          {:keys [xres yres]} (raster/raster-resolution raster)
+          args                (map str ["-i" input-path
+                                        "-o" output-path
+                                        "-r" (* scale-factor xres) (* scale-factor yres)])]
+      (io/make-parents output-path)
+      (io/delete-file output-path :silent)
+      (runner/run-external runner :scripts *script-timeout-ms* "resize-raster" args)
+      (raster/read-raster-without-data output-path))))
+
+(defn crop-raster-by-cutline
+  "Crop a raster by a given GeoJSON contour using external tool gdalwarp."
+  [runner raster geojson work-dir]
+  (let [cutline-path        (str work-dir "/cutline.geojson")
+        input-path          (:file-path raster)
+        output-path         (str work-dir "/source-cropped.tif")
+        {:keys [xres yres]} (raster/raster-resolution raster)
+        args                (map str ["-i" input-path
+                                      "-o" output-path
+                                      "-c" cutline-path
+                                      "-r" xres yres])]
+    (io/make-parents cutline-path)
+    (spit cutline-path geojson)
+    (io/delete-file output-path :silent)
+    (runner/run-external runner :scripts *script-timeout-ms* "crop-source-raster" args)
+    (raster/read-raster-without-data output-path)))
