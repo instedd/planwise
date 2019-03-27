@@ -30,7 +30,7 @@
   integer factors for the resulting number of pixels to be below this threshold"
   (* 25 1024 1024))
 (def ^:dynamic *script-timeout-ms* 30000)
-(def ^:dynamic *bin-timeout-ms* 10000)
+(def ^:dynamic *bin-timeout-ms* 20000)
 
 ;; PATH HELPERS
 ;; -------------------------------------------------------------------------------------------------
