@@ -369,6 +369,16 @@
       (let [coverages (select-coverages db context ids {:source-set-id (second query-params)})]
         (map #(select-keys % [:id :resolved :sources-covered]) coverages)))))
 
+(defn- query-all
+  [{:keys [db] :as service} context-id query]
+  (s/assert ::boundary/query-all query)
+  (let [context (ensure-context service context-id)]
+    (case query
+      :avg-max-distance
+      (let [result (db-coverages-avg-max-distance (:spec db) {:context-id (:id context)})]
+        (:avg-max-distance result)))))
+
+
 ;; Service definition ========================================================
 ;;
 
@@ -400,15 +410,14 @@
   CoverageService
   (setup-context [this context-id options]
     (setup-context this context-id options))
-
   (destroy-context [this context-id]
     (destroy-context this context-id))
-
   (resolve-coverages! [this context-id locations]
     (resolve-coverages! this context-id locations))
-
   (query-coverages [this context-id query ids]
-    (query-coverages this context-id query ids)))
+    (query-coverages this context-id query ids))
+  (query-all [this context-id query]
+    (query-all this context-id query)))
 
 
 ;; REPL testing ==============================================================
@@ -457,5 +466,7 @@
 
   (query-coverages (dev/coverage) [:project 1] [:sources-covered 5]
                    [[:provider 1] [:provider 2]])
+
+  (query-all (dev/coverage) [:project 1] :avg-max-distance)
 
   nil)

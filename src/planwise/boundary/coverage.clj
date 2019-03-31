@@ -30,6 +30,7 @@
                      :raster #{:raster}
                      :geojson #{:geojson}
                      :sources-covered (s/tuple #{:sources-covered} ::source-set-id)))
+(s/def ::query-all #{:avg-max-distance})
 
 
 ;; Protocol defintions =======================================================
@@ -98,7 +99,15 @@
         returns the GeoJSON for the selected locations
     - [:sources-covered <source-set-id>]
         returns an enumeration of the sources from the source set which are
-        covered by each coverage"))
+        covered by each coverage")
+
+  (query-all [this context-id query]
+    "Performs some query over all registered coverages
+
+    Query indicates the data requested:
+    - :avg-max-distance
+        computes the max distance between point of the geometry of all
+        registered coverages and returns an average"))
 
 
 ;; Auxiliary functions =======================================================

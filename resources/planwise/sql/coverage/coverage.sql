@@ -87,3 +87,11 @@ SELECT
    AND coverages.context_id = :context-id
    AND coverages.lid IN (:v*:lids)
    AND ST_Contains(coverages.coverage, sources.the_geom);
+
+-- :name db-coverages-avg-max-distance :? :1
+-- :doc Returns the average of the ST_MaxDistance() for all coverages in a
+--      context
+SELECT
+  AVG(ST_MaxDistance(coverage, coverage)) AS "avg-max-distance"
+  FROM coverages
+ WHERE context_id = :context-id;
