@@ -8,7 +8,8 @@
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre])
+  (:import [planwise.engine Algorithm]))
 
 (timbre/refer-timbre)
 
@@ -28,19 +29,26 @@
     (let [ids (set (sources-set/enum-sources-under-coverage (:sources-set engine) source-set-id polygon))]
       (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
 
+(defn- project-and-filter-raster-cells
+  [{:keys [data nodata xsize geotransform]} cutoff]
+  (let [cell-indices (Algorithm/filterAndSortIndices data nodata cutoff)]
+    (Algorithm/locateIndices data cell-indices xsize geotransform)))
+
 (defn update-visited
   [{:keys [xsize geotransform data] :as raster} visited]
   (if (empty? (vec visited))
     raster
-    (let [idxs (mapv (fn [coord] (let [[x y] (gs/coord->pixel geotransform coord)]
-                                   (+ (* y xsize) x))) (remove empty? (vec visited)))]
+    (let [idxs (mapv (fn [coord]
+                       (let [[x y] (gs/coord->pixel geotransform coord)]
+                         (+ (* y xsize) x)))
+                     (remove empty? (vec visited)))]
       (doseq [i idxs]
         (aset data i (float 0)))
       (assert (every? zero? (map #(aget data %) idxs)))
       (raster/create-raster-from-existing raster data))))
 
 (defn get-demand-source-updated
-  [engine {:keys [sources-data search-path demand-quartiles]} polygon get-update]
+  [engine {:keys [sources-data search-path cutoff]} polygon get-update]
   (if search-path
 
     (let [{:keys [demand visited]} get-update
@@ -50,7 +58,7 @@
       (demand/multiply-population-under-coverage! raster coverage-raster (float 0))
       (assert (zero? (count-under-geometry engine polygon {:raster raster})))
       (raster/write-raster raster search-path)
-      (gs/get-saturated-locations {:raster raster} demand-quartiles))
+      (project-and-filter-raster-cells raster cutoff))
 
     (coverage/locations-outside-polygon (:coverage engine) polygon (:demand get-update))))
 
@@ -79,31 +87,71 @@
           provider-id coverage-info
           :other     (merge coverage-info extra-info-for-new-provider))))
 
-(defn search-optimal-location
-  [engine {:keys [engine-config config provider-set-id coverage-algorithm] :as project} {:keys [raster sources-data] :as source}]
-  (let [raster        (when raster (raster/read-raster (str "data/" (:raster source) ".tif")))
-        search-path   (when raster (files/create-temp-file (str "data/scenarios/" (:id project) "/coverage-cache/") "new-provider-" ".tif"))
-        demand-quartiles (:demand-quartiles engine-config)
-        source        (assoc source :raster raster
-                             :initial-set (when raster (gs/get-saturated-locations {:raster raster} demand-quartiles))
-                             :search-path search-path
-                             :demand-quartiles demand-quartiles
-                             :source-set-id (:source-set-id project)
-                             :original-sources sources-data
-                             :sources-data (gs/get-saturated-locations {:sources-data (remove #(-> % :quantity zero?) sources-data)} nil))
-        criteria  (assoc (get-in config [:coverage :filter-options]) :algorithm (keyword coverage-algorithm))
-        project-info {:criteria criteria
-                      :region-id (:region-id project)
-                      :project-capacity (get-in config [:providers :capacity])}
-        coverage-fn (fn [val props] (try
-                                      (get-coverage-for-suggestion engine project-info source (assoc props :coord val))
-                                      (catch Exception e
-                                        (warn (str "Failed to compute coverage for coordinates " val) e))))]
-    (when raster (raster/write-raster-file raster search-path))
-    ;; FIXME
-    (let [bound    nil #_(when provider-set-id (:avg-max (providers-set/get-radius-from-computed-coverage (:providers-set engine) criteria provider-set-id)))
-          locations (gs/greedy-search 10 source coverage-fn demand-quartiles {:bound bound :n 20})]
-      locations)))
+(defn- scenario-work-path
+  [project scenario]
+  (str "data/scenarios/" (:id project) "/" (:id scenario) "/resized-raster.tif"))
+
+(defn- setup-context-for-suggestions!
+  "Setups the coverage context for the search algorithm"
+  ([engine project]
+   (setup-context-for-suggestions! engine project nil))
+  ([engine project raster-resolution]
+   (let [context-id [:suggestions (java.util.UUID/randomUUID)]
+         options    {:region-id         (:region-id project)
+                     :coverage-criteria (common/coverage-criteria-for-project project)}
+         options    (if (some? raster-resolution)
+                      (assoc options :raster-resolution raster-resolution)
+                      options)]
+     (coverage/setup-context (:coverage engine) context-id options)
+     context-id)))
+
+(defmulti prep-for-suggestions (fn [engine project scenario] (:source-type project)))
+
+(defmethod prep-for-suggestions "raster" [engine project scenario]
+  (debug (str "Resizing raster for suggestions algorithm in scenario " (:id scenario)))
+  (let [scenario-raster-name (:raster scenario)
+        scenario-raster-path (common/scenario-raster-full-path scenario-raster-name)
+        scenario-raster      (raster/read-raster-without-data scenario-raster-path)
+        scale-factor         (common/compute-down-scaling-factor scenario-raster suggest-max-pixels)
+        resized-raster-path  (scenario-work-path project scenario)
+        resized-raster       (common/resize-raster (:runner engine) scenario-raster resized-raster-path scale-factor)]
+    (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
+
+    (let [resized-raster (raster/read-raster resized-raster)
+          quartiles      (demand/compute-population-quartiles resized-raster)
+          cutoff         (nth quartiles 3)
+          initial-set    (project-and-filter-raster-cells resized-raster cutoff)]
+      (debug (str "Working set has " (count initial-set) " points"))
+      {:initial-set initial-set
+       :cutoff      cutoff
+       :context-id  (setup-context-for-suggestions! engine project resized-raster)})))
+
+(defmethod prep-for-suggestions "points" [engine project scenario]
+  (let [sources-data (->> (:sources-data scenario)
+                          (remove (comp :quantity zero?))
+                          (sort-by :quantity >))
+        initial-set  (mapv (fn [{:keys [lon lat quantity]}] [lon lat quantity]) sources-data)]
+    {:initial-set initial-set
+     :context-id  (setup-context-for-suggestions! engine project)}))
+
+(defn search-optimal-locations
+  [engine project scenario]
+  (let [source             (prep-for-suggestions engine project scenario)
+        coverage-service   (:coverage engine)
+        project-context-id (common/coverage-context project)
+        search-context-id  (:context-id source)
+        bound              (coverage/query-all coverage-service project-context-id :avg-max-distance)
+        coverage-fn        (fn [val props]
+                             (try
+                               (let [project-info {:region-id (:region-id project)
+                                                   :criteria  (common/coverage-criteria-for-project project)
+                                                   :project-capacity (get-in project [:config :providers :capacity])}]
+                                 (get-coverage-for-suggestion engine project-info source (assoc props :coord val)))
+                               (catch Exception e
+                                 (warn (str "Failed to compute coverage for coordinates " val) e))))
+        locations          (gs/greedy-search 10 source coverage-fn {:bound bound :n 20})]
+    (coverage/destroy-context coverage-service search-context-id)
+    locations))
 
 
 ;; Intervention suggestions algorithm =========================================

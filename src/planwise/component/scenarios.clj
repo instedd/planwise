@@ -333,10 +333,8 @@
   (engine/clear-project-cache (:engine store) project-id))
 
 (defn get-suggestions-for-new-provider-location
-  [store {:keys [sources-set-id] :as project} {:keys [raster sources-data] :as scenario}]
-  (engine/search-optimal-locations (:engine store) project  {:raster raster
-                                                             :sources-data sources-data
-                                                             :sources-set-id sources-set-id}))
+  [store project {:keys [raster sources-data] :as scenario}]
+  (engine/search-optimal-locations (:engine store) project  scenario))
 
 (defn- get-current-investment
   [changeset]

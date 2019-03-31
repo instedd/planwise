@@ -70,26 +70,6 @@
         [r0 r1] (reduce (fn [[r0 r1] [l0 l1]] [(+ r0 l0) (+ r1 l1)]) [0 0] set-points)]
     (if (pos? total) (map #(/ % total) [r0 r1]) (first set-points))))
 
-(defn fast-raster-saturated-locations
-  [raster cutoff]
-  (let [{:keys [data nodata xsize geotransform]} raster
-        saturated-indices (Algorithm/filterAndSortIndices data nodata cutoff)]
-    (Algorithm/locateIndices data saturated-indices xsize geotransform)))
-
-(defn get-saturated-locations
-  [{:keys [raster sources-data]} [_ b0 b1 b2 _ :as demand-quartiles]]
-  (if raster
-    (fast-raster-saturated-locations raster b2)
-    (mapv (fn [{:keys [lon lat quantity]}] [lon lat quantity]) (sort-by :quantity > sources-data))))
-
-(defn mean-initial-data
-  [n demand coverage-fn]
-  (let [locations (take n (random-sample 0.8 demand))
-        total-max (reduce (fn [tm location]
-                            (let [{:keys [max]} (or (coverage-fn (drop-last location) {:get-avg true}) {:max 0})]
-                              (+ tm max))) 0 locations)]
-    {:avg-max (/ total-max n)}))
-
 (defn neighbour-fn
   ([coord bound]
    (fn [[lon lat _]] (< (euclidean-distance (drop-last coord) [lon lat]) bound)))
@@ -170,10 +150,9 @@
           (recur (inc times) locations (first demand*) (rest demand*)))))))
 
 (defn greedy-search
-  [sample {:keys [search-path initial-set sources-data] :as source} coverage-fn demand-quartiles {:keys [n bound]}]
-  (info "Starting greedy search for " (first sources-data))
-  (let [[max & remain :as initial-set] (or initial-set sources-data)
-        bound        (or bound (:avg-max (mean-initial-data 30 initial-set coverage-fn)))
+  [sample {:keys [initial-set] :as source} coverage-fn {:keys [n bound]}]
+  (info "Starting greedy search")
+  (let [[max & remain :as initial-set] initial-set
+        ;; FIXME: estimate bound if not given (ie. the project has zero providers yet)
         locations    (get-locations coverage-fn source max initial-set (/ bound 2) sample)]
-    (when search-path (clojure.java.io/delete-file search-path true))
     (sort-by :coverage > locations)))
