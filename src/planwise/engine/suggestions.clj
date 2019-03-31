@@ -21,6 +21,31 @@
 ;; Location suggestions algorithm =============================================
 ;;
 
+;; Algorithm description
+;;
+;; Given:
+;; - D the set of unsatisfied demand points
+;; - N a natural number of suggestions to find
+;;
+;; 1. Find the source point (or raster pixel) Pmax from the set D with the most
+;;    unsatisfied demand, and make P = Pmax
+;; 2. Compute coverage C starting from P
+;; 3. Compute the intersection between the coverage C and the sources in D
+;;    We will relax this intersection to just intersect the coverage to _the
+;;    extent_ of the points reached by C.
+;;    For computing the extent in the raster case, consider only the most
+;;    relevant source points (eg. those in the last quartile)
+;;    For computing the extent in the point case, if the coverage reaches only
+;;    one source, extend the search area by including the nearest source point
+;;    to the coverage
+;; 4. Find the closest point Pclosest *in the coverage* to the centroid of the
+;;    intersection
+;; 5. Repeat from 2. until a local maxima is found for the covered demand
+;; 6. Add P to the list of suggestions, preserving order by the demand covered
+;; 7. Remove the source points from D covered by C
+;; 8. Repeat from 1. until the demand is completely satisfied or N+1 suggestions
+;;    have been found
+
 (defn count-under-geometry
   [engine polygon {:keys [raster original-sources source-set-id geom-set]}]
   (if raster
