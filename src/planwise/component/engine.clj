@@ -54,11 +54,6 @@
   [project-id scenario-filename]
   (str "scenarios/" project-id "/" scenario-filename))
 
-(defn scenario-raster-full-path
-  "Given a raster path from scenario-raster-path, return the full path to the raster file."
-  [raster-path]
-  (str "data/" raster-path ".tif"))
-
 (defn project-file-path
   "Prefixes a filename with the full path to the project data directory"
   [project-id file-path]
@@ -83,17 +78,6 @@
 ;; PROVIDERS & COVERAGE RESOLUTION
 ;; -------------------------------------------------------------------------------------------------
 
-(defn- is-project-raster?
-  [project]
-  (let [type (get-in project [:source-set :type])]
-    (when (nil? type) (throw (ex-info "Missing source set/project type" {:project project})))
-    (= "raster" type)))
-
-(defn- coverage-context
-  "Returns the coverage context that should be used for this project"
-  [project]
-  [:project (:id project)])
-
 (defn- setup-coverage-context!
   "Setups the coverage context for the project"
   ([engine project]
@@ -104,7 +88,7 @@
          options (if (some? raster-resolution)
                    (assoc options :raster-resolution raster-resolution)
                    options)]
-     (coverage/setup-context (:coverage engine) (coverage-context project) options))))
+     (coverage/setup-context (:coverage engine) (common/coverage-context project) options))))
 
 (defn- provider->location
   [provider]
@@ -123,7 +107,7 @@
 (defn- resolve-providers-in-project!
   "Retrieves project providers and resolved their coverages"
   [engine project]
-  (let [context-id (coverage-context project)
+  (let [context-id (common/coverage-context project)
         providers  (common/providers-in-project (:providers-set engine) project)
         locations  (map provider->location providers)
         result     (coverage/resolve-coverages! (:coverage engine) context-id locations)]
@@ -132,9 +116,9 @@
 (defn- query-provider-coverages
   "Queries the coverage service for coverage info for the providers"
   [engine project providers]
-  (let [context-id        (coverage-context project)
+  (let [context-id        (common/coverage-context project)
         ids               (map (fn [provider] [:provider (:id provider)]) providers)
-        is-raster?        (is-project-raster? project)
+        is-raster?        (common/is-project-raster? project)
         query-type        (if is-raster? :raster [:sources-covered (:source-set-id project)])
         coverages         (coverage/query-coverages (:coverage engine) context-id query-type ids)
         assoc-raster-path (fn [provider coverage-result]
@@ -164,7 +148,7 @@
 (defn- resolve-new-providers!
   "Resolve coverage for newly created providers in the changeset"
   [engine project changeset]
-  (let [context-id        (coverage-context project)
+  (let [context-id        (common/coverage-context project)
         created-providers (filter is-new-provider? changeset)
         new-locations     (map change->location created-providers)
         result            (coverage/resolve-coverages! (:coverage engine) context-id new-locations)]
@@ -234,7 +218,7 @@
   [engine project]
   (let [project-id      (:id project)
         project-path    (project-directory project-id)
-        source-set      (:source-set project)
+        source-set      (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))
         source-raster   (read-raster-from-source-set source-set)
         regions-service (:regions engine)
         region-id       (:region-id project)]
@@ -261,7 +245,8 @@
       (debug (str "Down scale factor to apply: " scale-factor))
 
       ;; Scale down the source raster if necessary
-      (let [resized-raster       (common/resize-raster (:runner engine) source-raster scale-factor project-path)
+      (let [resized-raster-path  (str project-path "/source-scaled.tif")
+            resized-raster       (common/resize-raster (:runner engine) source-raster resized-raster-path scale-factor)
             resize-demand-factor (compute-resize-factor engine source-raster resized-raster)]
         (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
         (debug (str "Need to apply a resize factor of " resize-demand-factor))
@@ -385,7 +370,7 @@
           base-demand            (get-in project [:engine-config :source-demand])
           quartiles              (get-in project [:engine-config :demand-quartiles])
           demand-raster-name     (:raster initial-scenario)
-          demand-raster          (raster/read-raster (scenario-raster-full-path demand-raster-name))
+          demand-raster          (raster/read-raster (common/scenario-raster-full-path demand-raster-name))
           initial-providers-data (:providers-data initial-scenario)
           scenario-filename      (str (format "%03d-" scenario-id) (java.util.UUID/randomUUID))]
 
@@ -545,27 +530,23 @@
 (defn compute-initial-scenario
   [engine project]
   (debug "Computing initial scenario for project" (:id project))
-  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))
-        project    (assoc project :source-set source-set)]
-    (case (:type source-set)
-      "points" (compute-initial-scenario-by-point engine project)
-      "raster" (compute-initial-scenario-by-raster engine project)
-      (throw (ex-info "Invalid source set type for scenario computation" {:project-id      (:id project)
-                                                                          :source-set-id   (:source-set-id project)
-                                                                          :source-set-type (:type source-set)})))))
+  (case (:source-type project)
+    "points" (compute-initial-scenario-by-point engine project)
+    "raster" (compute-initial-scenario-by-raster engine project)
+    (throw (ex-info "Invalid source set type for scenario computation" {:project-id      (:id project)
+                                                                        :source-set-id   (:source-set-id project)
+                                                                        :source-set-type (:source-type project)}))))
 
 (defn compute-scenario
   [engine project initial-scenario scenario]
   (debug "Computing scenario" (:id scenario) "for project" (:id project))
-  (let [source-set (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))
-        project    (assoc project :source-set source-set)]
-    (case (:type source-set)
-      "points" (compute-scenario-by-point engine project initial-scenario scenario)
-      "raster" (compute-scenario-by-raster engine project initial-scenario scenario)
-      (throw (ex-info "Invalid source set type for scenario computation" {:project-id      (:id project)
-                                                                          :scenario-id     (:id scenario)
-                                                                          :source-set-id   (:source-set-id project)
-                                                                          :source-set-type (:type source-set)})))))
+  (case (:source-type project)
+    "points" (compute-scenario-by-point engine project initial-scenario scenario)
+    "raster" (compute-scenario-by-raster engine project initial-scenario scenario)
+    (throw (ex-info "Invalid source set type for scenario computation" {:project-id      (:id project)
+                                                                        :scenario-id     (:id scenario)
+                                                                        :source-set-id   (:source-set-id project)
+                                                                        :source-set-type (:source-type project)}))))
 
 (defn clear-project-cache
   [this project-id]
@@ -581,8 +562,8 @@
     (clear-project-cache engine project))
   (compute-scenario [engine project initial-scenario scenario]
     (compute-scenario engine project initial-scenario scenario))
-  (search-optimal-locations [engine project source]
-    (suggestions/search-optimal-location engine project source))
+  (search-optimal-locations [engine project scenario]
+    (suggestions/search-optimal-locations engine project scenario))
   (search-optimal-interventions [engine project scenario settings]
     (suggestions/get-sorted-providers-interventions engine project scenario settings)))
 

@@ -14,6 +14,17 @@
 ;; Project configuration ======================================================
 ;;
 
+(defn is-project-raster?
+  [project]
+  (let [type (:source-type project)]
+    (when (nil? type) (throw (ex-info "Missing source set/project type" {:project project})))
+    (= "raster" type)))
+
+(defn coverage-context
+  "Returns the coverage context that should be used for this project"
+  [project]
+  [:project (:id project)])
+
 (defn coverage-criteria-for-project
   "Criteria options from project for usage in coverage/compute-coverage-polygon."
   [project]
@@ -29,6 +40,15 @@
         tags      (get-in project [:config :providers :tags])]
     {:region-id region-id
      :tags      tags}))
+
+
+;; Path helpers ===============================================================
+;; TODO: migrate these to file-store
+
+(defn scenario-raster-full-path
+  "Given a raster path from scenario-raster-path, return the full path to the raster file."
+  [raster-name]
+  (str "data/" raster-name".tif"))
 
 
 ;; Provider selection =========================================================
@@ -85,11 +105,10 @@
 (defn resize-raster
   "Resize a raster by a scale factor using external tool gdalwarp. Returns the
   original raster if scale factor is 1."
-  [runner raster scale-factor work-dir]
+  [runner raster output-path scale-factor]
   (if (float= 1.0 scale-factor)
     raster
     (let [input-path          (:file-path raster)
-          output-path         (str work-dir "/source-scaled.tif")
           {:keys [xres yres]} (raster/raster-resolution raster)
           args                (map str ["-i" input-path
                                         "-o" output-path

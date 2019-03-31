@@ -13,16 +13,16 @@ UPDATE projects2
   WHERE id = :id;
 
 -- :name db-get-project :? :1
-SELECT projects2.*, providers_set."coverage-algorithm", regions_bbox.bbox
-  FROM (
-    SELECT projects2.id, ST_AsGeoJSON(ST_Extent(regions."preview_geom")) AS bbox
-      FROM regions
-        RIGHT JOIN projects2 ON projects2."region-id" = regions.id
-      WHERE projects2.id = :id
-      GROUP BY projects2.id) AS regions_bbox
-  LEFT JOIN projects2 ON projects2.id = regions_bbox.id
-  LEFT JOIN providers_set ON projects2."provider-set-id" = providers_set.id
-  WHERE projects2.id = :id;
+SELECT
+  projects2.*,
+  providers_set."coverage-algorithm",
+  ST_AsGeoJSON(ST_Envelope(regions.the_geom)) AS bbox,
+  source_set.type AS "source-type"
+  FROM projects2
+         LEFT JOIN regions ON projects2."region-id" = regions.id
+         LEFT JOIN providers_set ON projects2."provider-set-id" = providers_set.id
+         LEFT JOIN source_set ON projects2."source-set-id" = source_set.id
+ WHERE projects2.id = :id;
 
 -- :name db-list-projects :?
 SELECT id, name, "region-id", state FROM projects2
