@@ -158,20 +158,37 @@
   (debug (str "Erasing point " (pr-str point) " from search space"))
   (aset (:data raster) (:index point) (:nodata raster)))
 
+(defn- raster-refine-suggested-location
+  "Starting from p, attempt to find a geographic point such that its coverage
+  maximizes the covered demand while still covering p. If successful, returns
+  the point coordinates, the coverage resolution and the demand covered."
+  [engine run-data p]
+  (let [iter-id    [:iteration (:iteration run-data)]
+        context-id (:context-id run-data)
+        raster     (:raster run-data)
+        location   (assoc p :id iter-id)
+        result     (coverage/resolve-single (:coverage engine) context-id location :raster)]
+    (if (:resolved result)
+      (let [p-coverage     (raster/read-raster (:raster-path result))
+            demand-covered (demand/count-population-under-coverage raster p-coverage)]
+        (assoc result
+               :demand-covered demand-covered
+               :p-coverage p-coverage
+               :lat (:lat p)
+               :lon (:lon p)))
+      result)))
+
 (defn- raster-find-optimal-location
   [engine {:keys [raster context-id iteration] :as run-data}]
   (let [p-max (demand/find-max-demand raster)]
     (if (and p-max (pos? (:value p-max)))
-      (let [iter-id  [:iteration iteration]
-            p        p-max
-            location (assoc p :id iter-id)
-            result   (coverage/resolve-single (:coverage engine) context-id location :raster)]
+      (let [result (raster-refine-suggested-location engine run-data p-max)]
         (if (:resolved result)
-          (let [p-coverage     (raster/read-raster (:raster-path result))
-                demand-covered (demand/count-population-under-coverage raster p-coverage)]
+          (let [p-coverage     (:p-coverage result)
+                demand-covered (:demand-covered result)]
             (demand/multiply-population-under-coverage! raster p-coverage 0.0)
-            (remove-demand-point! raster p)
-            {:location {:location (select-keys p [:lat :lon])
+            (remove-demand-point! raster p-max)
+            {:location {:location (select-keys result [:lat :lon])
                         :coverage demand-covered}
              :run-data run-data})
           (do
@@ -228,28 +245,46 @@
          (map :value)
          (reduce + 0))))
 
+(defn- points-refine-suggested-location
+  "Starting from p, attempt to find a geographic point such that its coverage
+  maximizes the covered demand while still covering p. If successful, returns
+  the point coordinates, the coverage resolution and the demand covered."
+  [engine run-data p]
+  (let [iter-id       [:iteration (:iteration run-data)]
+        context-id    (:context-id run-data)
+        source-set-id (:source-set-id run-data)
+        sources       (:sources run-data)
+        location      (assoc p :id iter-id)
+        result        (coverage/resolve-single (:coverage engine) context-id location [:sources-covered source-set-id])]
+    (if (:resolved result)
+      (let [sources-covered (:sources-covered result)
+            demand-covered  (sum-sources-covered sources sources-covered)]
+        (assoc result
+               :demand-covered demand-covered
+               :lat (:lat p)
+               :lon (:lon p)))
+      result)))
+
 (defn- points-find-optimal-location
   [engine run-data]
+  ;; Pre-condition: expects (:sources run-data) to be sorted by value descending
   (let [source-set-id (:source-set-id run-data)
         context-id    (:context-id run-data)
         sources       (:sources run-data)
         iteration     (:iteration run-data)
         p-max         (first sources)]
     (if (and p-max (pos? (:value p-max)))
-      (let [iter-id  [:iteration iteration]
-            p        p-max
-            location (assoc p :id iter-id)
-            result   (coverage/resolve-single (:coverage engine) context-id location [:sources-covered source-set-id])]
+      (let [result (points-refine-suggested-location engine run-data p-max)]
         (if (:resolved result)
           (let [sources-covered (:sources-covered result)
-                demand-covered  (sum-sources-covered sources sources-covered)
-                new-sources     (remove-sources-covered sources (conj sources-covered (:id p)))]
-            {:location {:location (select-keys p [:lat :lon])
+                demand-covered  (:demand-covered result)
+                new-sources     (remove-sources-covered sources (conj sources-covered (:id p-max)))]
+            {:location {:location (select-keys result [:lat :lon])
                         :coverage demand-covered}
              :run-data (assoc run-data :sources new-sources)})
           (do
             ;; coverage for point cannot be resolved; remove it from the set and continue
-            (let [new-sources (remove-sources-covered sources [(:id p)])]
+            (let [new-sources (remove-sources-covered sources [(:id p-max)])]
               (recur engine (assoc run-data :sources new-sources))))))
       {:location nil
        :run-data run-data})))
