@@ -19,6 +19,12 @@
 (s/def ::pg-polygon      (s/and ::pg-geometry #(= org.postgis.Geometry/POLYGON      (.getGeoType %))))
 (s/def ::pg-multipolygon (s/and ::pg-geometry #(= org.postgis.Geometry/MULTIPOLYGON (.getGeoType %))))
 
+(defn empty-geometry?
+  [geometry]
+  (or (nil? geometry)
+      (and (= org.postgis.Geometry/GEOMETRYCOLLECTION (.getGeoType geometry))
+           (zero? (.. geometry getGeometry numGeoms)))))
+
 (defn make-pg-point*
   [lat lon]
   (PGgeometry. (str "SRID=4326;POINT(" lon " " lat ")")))

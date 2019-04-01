@@ -125,6 +125,14 @@
              (apply combo/cartesian-product)
              (map (partial into {})))))
 
+(defn resolve-single
+  "Resolve and query a single location at once
+  Returns the result of the query, or from the resolution if failed"
+  [service context-id location query]
+  (let [resolve (first (resolve-coverages! service context-id [location]))]
+    (if (:resolved resolve)
+      (first (query-coverages service context-id query [(:id resolve)]))
+      resolve)))
 
 ;; REPL testing ==============================================================
 ;;

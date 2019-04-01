@@ -268,17 +268,20 @@
               polygon         (compute-coverage-polygon service location criteria)
               clipped-polygon (clip-polygon db context polygon)
               raster-file     (when with-raster? (raster-file-name id))]
-          (when with-raster?
-            (let [raster-path (file-store/full-path (:context-store-path context) raster-file)]
-              (io/delete-file raster-path :silent)
-              (rasterize/rasterize clipped-polygon
-                                   raster-path
-                                   {:ref-coords {:lat 0 :lon 0}
-                                    :resolution raster-resolution})))
-          (upsert-coverage! db (assoc coverage
-                                      :coverage clipped-polygon
-                                      :raster-file raster-file))
-          {:id id :resolved true :extra :computed})
+          (if (geo/empty-geometry? clipped-polygon)
+            {:id id :resolved false :extra :empty-geometry}
+            (do
+              (when with-raster?
+                (let [raster-path (file-store/full-path (:context-store-path context) raster-file)]
+                  (io/delete-file raster-path :silent)
+                  (rasterize/rasterize clipped-polygon
+                                       raster-path
+                                       {:ref-coords {:lat 0 :lon 0}
+                                        :resolution raster-resolution})))
+              (upsert-coverage! db (assoc coverage
+                                          :coverage clipped-polygon
+                                          :raster-file raster-file))
+              {:id id :resolved true :extra :computed})))
         (catch Exception e
           (warn e "failed to compute coverage" {:location location :context context})
           {:id id :resolved false :extra :failed})))))
