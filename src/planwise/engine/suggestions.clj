@@ -8,6 +8,7 @@
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
+            [planwise.util.geo :as geo]
             [clojure.set :refer [rename-keys]]
             [taoensso.timbre :as timbre])
   (:import [planwise.engine Algorithm]))
@@ -68,8 +69,8 @@
                                               (:coverage known)))
                                top-locations)]
     (if is-top-location?
-     (take limit (insert-keep-order locations new-location))
-     (conj (vec locations) new-location))))
+      (take limit (insert-keep-order locations new-location))
+      (conj (vec locations) new-location))))
 
 (defn- compute-suggestions
   "Compute up-to limit suggestions for locations and return them in a vector
@@ -245,12 +246,9 @@
          (map :value)
          (reduce + 0))))
 
-(defn- points-refine-suggested-location
-  "Starting from p, attempt to find a geographic point such that its coverage
-  maximizes the covered demand while still covering p. If successful, returns
-  the point coordinates, the coverage resolution and the demand covered."
-  [engine run-data p]
-  (let [iter-id       [:iteration (:iteration run-data)]
+(defn- points-resolve-location
+  [engine run-data iter p]
+  (let [iter-id       [:iteration (:iteration run-data) iter]
         context-id    (:context-id run-data)
         source-set-id (:source-set-id run-data)
         sources       (:sources run-data)
@@ -264,6 +262,39 @@
                :lat (:lat p)
                :lon (:lon p)))
       result)))
+
+(defn- compute-centroid-in-coverage
+  [engine run-data p result]
+  (let [context-id (:context-id run-data)
+        extent     (sources-set/get-sources-extent (:sources-set engine) (:sources-covered result))]
+    (if (and extent (geo/is-polygon? extent))
+      (let [centroid (coverage/compute-coverage-centroid (:coverage engine) context-id (:id result) extent)]
+        (assoc centroid :id (:id p)))
+      p)))
+
+(defn- points-refine-suggested-location
+  "Starting from p, attempt to find a geographic point such that its coverage
+  maximizes the covered demand while still covering p. If successful, returns
+  the point coordinates, the coverage resolution and the demand covered."
+  [engine run-data p0]
+  (let [initial-result (points-resolve-location engine run-data 0 p0)
+        max-iter       3]
+    (loop [iter   1
+           p      p0
+           result initial-result]
+      (if (and (:resolved result)
+               (< iter max-iter))
+        (let [p'      (compute-centroid-in-coverage engine run-data p result)
+              result' (points-resolve-location engine run-data iter p')]
+          (if (and (:resolved result')
+                   (> (:demand-covered result') (:demand-covered result)))
+            (recur (inc iter) p' result')
+            (do
+              (info (str "Not improved, iterated " iter " times on " p0))
+              result')))
+        (do
+          (info (str "Cannot resolve or max iterations reached, iterated " iter " times on " p0))
+          result)))))
 
 (defn- points-find-optimal-location
   [engine run-data]
