@@ -48,7 +48,7 @@
 (defn scenario-raster-full-path
   "Given a raster path from scenario-raster-path, return the full path to the raster file."
   [raster-name]
-  (str "data/" raster-name".tif"))
+  (str "data/" raster-name ".tif"))
 
 
 ;; Provider selection =========================================================
