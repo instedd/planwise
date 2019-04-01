@@ -23,7 +23,7 @@
   (s/assert ::boundary/coll-type coll-type)
   (s/assert ::boundary/coll-id coll-id)
   (let [coll-path (build-collection-path service coll-type coll-id)]
-    (debug (str "Setting up file store collection " [coll-type coll-id] " at " coll-path))
+    #_(debug (str "Setting up file store collection " [coll-type coll-id] " at " coll-path))
     (io/make-parents (boundary/full-path coll-path "dummy"))
     coll-path))
 
@@ -32,7 +32,7 @@
   (s/assert ::boundary/coll-type coll-type)
   (s/assert ::boundary/coll-id coll-id)
   (let [coll-path (build-collection-path service coll-type coll-id)]
-    (debug (str "Destroying file store collection " [coll-type coll-id] " at " coll-path))
+    #_(debug (str "Destroying file store collection " [coll-type coll-id] " at " coll-path))
     (files/delete-files-recursively coll-path :silent)))
 
 
