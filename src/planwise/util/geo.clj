@@ -25,6 +25,22 @@
       (and (= org.postgis.Geometry/GEOMETRYCOLLECTION (.getGeoType geometry))
            (zero? (.. geometry getGeometry numGeoms)))))
 
+(defn is-polygon?
+  [geometry]
+  (and (instance? PGgeometry geometry)
+       (= org.postgis.Geometry/POLYGON (.getGeoType geometry))))
+
+(defn is-point?
+  [geometry]
+  (and (instance? PGgeometry geometry)
+       (= org.postgis.Geometry/POINT (.getGeoType geometry))))
+
+(defn pg->coords
+  [geometry]
+  (when (is-point? geometry)
+    {:lat (.. geometry getGeometry getY)
+     :lon (.. geometry getGeometry getX)}))
+
 (defn make-pg-point*
   [lat lon]
   (PGgeometry. (str "SRID=4326;POINT(" lon " " lat ")")))
