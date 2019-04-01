@@ -8,15 +8,13 @@
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.engine.demand :as demand]
             [planwise.util.files :as files]
+            [clojure.set :refer [rename-keys]]
             [taoensso.timbre :as timbre])
   (:import [planwise.engine Algorithm]))
 
 (timbre/refer-timbre)
 
-(def suggest-max-pixels
-  "Maximum number of pixels for rasters used for running the suggest location
-  algorithms"
-  (* 1024 1024))
+(defmulti search-optimal-locations (fn [engine project scenario] (:source-type project)))
 
 ;; Location suggestions algorithm =============================================
 ;;
@@ -73,6 +71,11 @@
   [project scenario]
   (str "data/scenarios/" (:id project) "/" (:id scenario) "/resized-raster.tif"))
 
+(def suggest-max-pixels
+  "Maximum number of pixels for rasters used for running the suggest location
+  algorithms"
+  (* 1024 1024))
+
 (defn- prep-raster-for-search
   [engine project scenario]
   (debug (str "Resizing raster for suggestions algorithm in scenario " (:id scenario)))
@@ -95,12 +98,12 @@
        :resize-factor (* scale-factor scale-factor)
        :context-id    (setup-context-for-suggestions! engine project scenario raster-resolution)})))
 
-(defn- remove-demand-point
+(defn- remove-demand-point!
   [raster point]
   (debug (str "Erasing point " (pr-str point) " from search space"))
   (aset (:data raster) (:index point) (:nodata raster)))
 
-(defn- find-optimal-location
+(defn- raster-find-optimal-location
   [engine {:keys [raster context-id iteration] :as run-data}]
   (let [p-max (demand/find-max-demand raster)]
     (when (and p-max (pos? (:value p-max)))
@@ -112,12 +115,12 @@
           (let [p-coverage     (raster/read-raster (:raster-path result))
                 demand-covered (demand/count-population-under-coverage raster p-coverage)]
             (demand/multiply-population-under-coverage! raster p-coverage 0.0)
-            (remove-demand-point raster p)
+            (remove-demand-point! raster p)
             {:location (select-keys p [:lat :lon])
              :coverage demand-covered})
           (do
             ;; coverage for point cannot be resolved; remove it from the set and continue
-            (remove-demand-point raster p-max)
+            (remove-demand-point! raster p-max)
             (recur engine run-data)))))))
 
 (defn- insert-keep-order
@@ -134,12 +137,12 @@
     (take limit (insert-keep-order locations new-location))
     (conj (vec locations) new-location)))
 
-(defn- compute-suggestions
+(defn- raster-compute-suggestions
   "Compute up-to limit suggestions for locations and return them in a vector ordered by coverage provided"
   [engine run-data limit]
   (loop [suggestions []
          iteration   1]
-    (let [new-location (find-optimal-location engine (assoc run-data :iteration iteration))]
+    (let [new-location (raster-find-optimal-location engine (assoc run-data :iteration iteration))]
       (if new-location
         (let [suggestions' (insert-location-if-better suggestions new-location limit)]
           ;; if list of locations has grown beyond twice the limit, we don't
@@ -155,8 +158,6 @@
           (info (str "No more locations found; iterated " iteration "times"))
           suggestions)))))
 
-(defmulti search-optimal-locations (fn [engine project scenario] (:source-type project)))
-
 (defmethod search-optimal-locations "raster"
   [engine project scenario]
   (let [run-data         (prep-raster-for-search engine project scenario)
@@ -164,7 +165,7 @@
         resize-factor    (:resize-factor run-data)
         project-capacity (get-in project [:config :providers :capacity])]
     (let [limit       5
-          suggestions (->> (compute-suggestions engine run-data limit)
+          suggestions (->> (raster-compute-suggestions engine run-data limit)
                            (filter #(pos? (:coverage %)))
                            (take limit))]
       (info (str "Found " (count suggestions) " locations"))
@@ -177,10 +178,97 @@
                       :action-capacity required-capacity)))
            suggestions))))
 
+
+(defn- prep-points-for-search
+  [engine project scenario]
+  (let [sources (->> (get-in scenario [:sources-data])
+                     (map #(select-keys % [:id :lat :lon :quantity]))
+                     (map #(rename-keys % {:quantity :value}))
+                     (sort-by :value >))]
+    {:sources       sources
+     :source-set-id (:source-set-id project)
+     :context-id    (setup-context-for-suggestions! engine project scenario)}))
+
+(defn- remove-sources-covered
+  [sources ids]
+  (let [ids (set ids)]
+    (remove #(contains? ids (:id %)) sources)))
+
+(defn- sum-sources-covered
+  [sources ids]
+  (let [ids (set ids)]
+    (->> sources
+         (filter #(contains? ids (:id %)))
+         (map :value)
+         (reduce + 0))))
+
+(defn- points-find-optimal-location
+  [engine run-data]
+  (let [source-set-id (:source-set-id run-data)
+        context-id    (:context-id run-data)
+        sources       (:sources run-data)
+        iteration     (:iteration run-data)
+        p-max         (first sources)]
+    (if (and p-max (pos? (:value p-max)))
+      (let [iter-id  [:iteration iteration]
+            p        p-max
+            location (assoc p :id iter-id)
+            result   (coverage/resolve-single (:coverage engine) context-id location [:sources-covered source-set-id])]
+        (if (:resolved result)
+          (let [sources-covered (:sources-covered result)
+                demand-covered  (sum-sources-covered sources sources-covered)
+                new-sources     (remove-sources-covered sources (conj sources-covered (:id p)))]
+            {:location {:location (select-keys p [:lat :lon])
+                        :coverage demand-covered}
+             :run-data (assoc run-data :sources new-sources)})
+          (do
+            ;; coverage for point cannot be resolved; remove it from the set and continue
+            (let [new-sources (remove-sources-covered sources [(:id p)])]
+              (recur engine (assoc run-data :sources new-sources))))))
+      {:location nil
+       :run-data run-data})))
+
+(defn- points-compute-suggestions
+  "Compute up-to limit suggestions for locations and return them in a vector ordered by coverage provided"
+  [engine run-data limit]
+  (info (str "Searching for optimal locations to cover " (count (:sources run-data)) " sources"))
+  (loop [suggestions []
+         run-data    run-data
+         iteration   1]
+    (let [{new-location :location new-run-data :run-data} (points-find-optimal-location engine (assoc run-data :iteration iteration))]
+      (if new-location
+        (let [suggestions' (insert-location-if-better suggestions new-location limit)]
+          ;; if list of locations has grown beyond twice the limit, we don't
+          ;; expect to find improvements down the line; otherwise keep exploring
+          (if (and (< (count suggestions') (* 3 limit))
+                   (< iteration (* 10 limit)))
+            (recur suggestions' new-run-data (inc iteration))
+            (do
+              (info (str "Cutting search short; iterated " iteration " times"))
+              {:suggestions suggestions'
+               :run-data    new-run-data})))
+        ;; no more locations can be found
+        (do
+          (info (str "No more locations found; iterated " iteration " times"))
+          {:suggestions suggestions
+           :run-data    new-run-data})))))
+
 (defmethod search-optimal-locations "points"
   [engine project scenario]
-  (warn (str "NOT IMPLEMENTED YED"))
-  [])
+  (let [run-data         (prep-points-for-search engine project scenario)
+        context-id       (:context-id run-data)
+        project-capacity (get-in project [:config :providers :capacity])]
+    (let [limit                 5
+          {:keys [suggestions]} (points-compute-suggestions engine run-data limit)
+          suggestions           (->> suggestions
+                                     (filter #(pos? (:coverage %)))
+                                     (take limit))]
+      (info (str "Found " (count suggestions) " locations"))
+      #_(coverage/destroy-context (:coverage engine) context-id)
+      (map (fn [sugg]
+             (let [required-capacity (Math/ceil (/ (:coverage sugg) project-capacity))]
+               (assoc sugg :action-capacity required-capacity)))
+           suggestions))))
 
 
 ;; Intervention suggestions algorithm =========================================
@@ -270,5 +358,7 @@
     (search-optimal-locations (dev/engine) project scenario))
 
   (coverage/resolve-single (dev/coverage) [:suggestions 2] {:id 2 :lon 18.77 :lat 4.4} :raster)
+
+  (first (:sources-data (planwise.boundary.scenarios/get-scenario (dev/scenarios) 33)))
 
   nil)
