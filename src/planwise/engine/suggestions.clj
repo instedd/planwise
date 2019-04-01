@@ -30,6 +30,8 @@
 ;; 1. Find the source point (or raster pixel) Pmax from the set D with the most
 ;;    unsatisfied demand, and make P = Pmax
 ;; 2. Compute coverage C starting from P
+
+;;          vvvv optional vvvv
 ;; 3. Compute the intersection between the coverage C and the sources in D
 ;;    We will relax this intersection to just intersect the coverage to _the
 ;;    extent_ of the points reached by C.
@@ -41,142 +43,144 @@
 ;; 4. Find the closest point Pclosest *in the coverage* to the centroid of the
 ;;    intersection
 ;; 5. Repeat from 2. until a local maxima is found for the covered demand
+;;          ^^^^ optional ^^^^
+
 ;; 6. Add P to the list of suggestions, preserving order by the demand covered
 ;; 7. Remove the source points from D covered by C
-;; 8. Repeat from 1. until the demand is completely satisfied or N+1 suggestions
-;;    have been found
-
-(defn count-under-geometry
-  [engine polygon {:keys [raster original-sources source-set-id geom-set]}]
-  (if raster
-    (let [coverage (raster/create-raster (rasterize/rasterize polygon))]
-      (demand/count-population-under-coverage raster coverage))
-    (let [ids (set (sources-set/enum-sources-under-coverage (:sources-set engine) source-set-id polygon))]
-      (reduce (fn [sum {:keys [quantity id]}] (+ sum (if (ids id) quantity 0))) 0 original-sources))))
-
-(defn- project-and-filter-raster-cells
-  [{:keys [data nodata xsize geotransform]} cutoff]
-  (let [cell-indices (Algorithm/filterAndSortIndices data nodata cutoff)]
-    (Algorithm/locateIndices data cell-indices xsize geotransform)))
-
-(defn update-visited
-  [{:keys [xsize geotransform data] :as raster} visited]
-  (if (empty? (vec visited))
-    raster
-    (let [idxs (mapv (fn [coord]
-                       (let [[x y] (gs/coord->pixel geotransform coord)]
-                         (+ (* y xsize) x)))
-                     (remove empty? (vec visited)))]
-      (doseq [i idxs]
-        (aset data i (float 0)))
-      (assert (every? zero? (map #(aget data %) idxs)))
-      (raster/create-raster-from-existing raster data))))
-
-(defn get-demand-source-updated
-  [engine {:keys [sources-data search-path cutoff]} polygon get-update]
-  (if search-path
-
-    (let [{:keys [demand visited]} get-update
-          raster (update-visited (raster/read-raster search-path) visited)
-          coverage-raster (raster/create-raster (rasterize/rasterize polygon))]
-
-      (demand/multiply-population-under-coverage! raster coverage-raster (float 0))
-      (assert (zero? (count-under-geometry engine polygon {:raster raster})))
-      (raster/write-raster raster search-path)
-      (project-and-filter-raster-cells raster cutoff))
-
-    (coverage/locations-outside-polygon (:coverage engine) polygon (:demand get-update))))
-
-(defn get-coverage-for-suggestion
-  [engine {:keys [criteria region-id project-capacity]} {:keys [sources-data search-path] :as source} {:keys [provider-id coord get-avg get-update]}]
-  (let [updated-criteria      (if sources-data criteria (merge criteria {:raster search-path}))
-        [lon lat :as coord]   coord
-        polygon               (if coord
-                                (coverage/compute-coverage-polygon (:coverage engine) {:lat lat :lon lon} updated-criteria)
-                                ;; FIXME
-                                nil #_(:geom (providers-set/get-coverage
-                                              (:providers-set engine)
-                                              provider-id
-                                              {:algorithm (name (:algorithm criteria))
-                                               :region-id region-id
-                                               :filter-options (dissoc criteria :algorithm)})))
-        population-reacheable (count-under-geometry engine polygon source)
-        coverage-info   {:coverage population-reacheable
-                         :required-capacity (/ population-reacheable project-capacity)}
-        extra-info-for-new-provider {:coverage-geom (:geom (coverage/geometry-intersected-with-project-region (:coverage engine) polygon region-id))
-                                     :location {:lat lat :lon lon}}]
-
-    (cond get-avg    {:max (coverage/get-max-distance-from-geometry (:coverage engine) polygon)}
-          get-update {:location-info (merge coverage-info extra-info-for-new-provider)
-                      :updated-demand (get-demand-source-updated engine source polygon get-update)}
-          provider-id coverage-info
-          :other     (merge coverage-info extra-info-for-new-provider))))
-
-(defn- scenario-work-path
-  [project scenario]
-  (str "data/scenarios/" (:id project) "/" (:id scenario) "/resized-raster.tif"))
+;; 8. Repeat from 1. until no more locations can be found, or 2*N locations
+;;    have been found (the factor 2 is a guess here; the idea is to keep on
+;;    searching to find better solutions down the line)
 
 (defn- setup-context-for-suggestions!
   "Setups the coverage context for the search algorithm"
-  ([engine project]
-   (setup-context-for-suggestions! engine project nil))
-  ([engine project raster-resolution]
-   (let [context-id [:suggestions (java.util.UUID/randomUUID)]
+  ([engine project scenario]
+   (setup-context-for-suggestions! engine project scenario nil))
+  ([engine project scenario raster-resolution]
+   ;; FIXME: this will work for now, but it's very re-entrant britle
+   (let [context-id [:suggestions (:id project) (:id scenario)]
          options    {:region-id         (:region-id project)
-                     :coverage-criteria (common/coverage-criteria-for-project project)}
+                     :coverage-criteria (common/coverage-criteria-for-project project)
+                     :updated-at        (str (:updated-at scenario))}
          options    (if (some? raster-resolution)
                       (assoc options :raster-resolution raster-resolution)
                       options)]
+     #_(coverage/destroy-context (:coverage engine) context-id)
      (coverage/setup-context (:coverage engine) context-id options)
      context-id)))
 
-(defmulti prep-for-suggestions (fn [engine project scenario] (:source-type project)))
+;; FIXME: move this to the file-store component
+(defn- scenario-raster-work-path
+  [project scenario]
+  (str "data/scenarios/" (:id project) "/" (:id scenario) "/resized-raster.tif"))
 
-(defmethod prep-for-suggestions "raster" [engine project scenario]
+(defn- prep-raster-for-search
+  [engine project scenario]
   (debug (str "Resizing raster for suggestions algorithm in scenario " (:id scenario)))
   (let [scenario-raster-name (:raster scenario)
         scenario-raster-path (common/scenario-raster-full-path scenario-raster-name)
         scenario-raster      (raster/read-raster-without-data scenario-raster-path)
         scale-factor         (common/compute-down-scaling-factor scenario-raster suggest-max-pixels)
-        resized-raster-path  (scenario-work-path project scenario)
+        resized-raster-path  (scenario-raster-work-path project scenario)
         resized-raster       (common/resize-raster (:runner engine) scenario-raster resized-raster-path scale-factor)]
     (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
 
-    (let [resized-raster (raster/read-raster resized-raster)
-          quartiles      (demand/compute-population-quartiles resized-raster)
-          cutoff         (nth quartiles 3)
-          initial-set    (project-and-filter-raster-cells resized-raster cutoff)]
-      (debug (str "Working set has " (count initial-set) " points"))
-      {:initial-set initial-set
-       :cutoff      cutoff
-       :context-id  (setup-context-for-suggestions! engine project resized-raster)})))
+    (let [resized-raster    (raster/read-raster (:file-path resized-raster))
+                                        ; re-read raster with data this time
+          raster-resolution (raster/raster-resolution resized-raster)
+          quartiles         (demand/compute-population-quartiles resized-raster)
+          cutoff            (nth quartiles 3)]
+      (debug (str "Raster quartiles computed as " quartiles))
+      {:raster        resized-raster
+       :demand-cutoff cutoff
+       :resize-factor (* scale-factor scale-factor)
+       :context-id    (setup-context-for-suggestions! engine project scenario raster-resolution)})))
 
-(defmethod prep-for-suggestions "points" [engine project scenario]
-  (let [sources-data (->> (:sources-data scenario)
-                          (remove (comp :quantity zero?))
-                          (sort-by :quantity >))
-        initial-set  (mapv (fn [{:keys [lon lat quantity]}] [lon lat quantity]) sources-data)]
-    {:initial-set initial-set
-     :context-id  (setup-context-for-suggestions! engine project)}))
+(defn- remove-demand-point
+  [raster point]
+  (debug (str "Erasing point " (pr-str point) " from search space"))
+  (aset (:data raster) (:index point) (:nodata raster)))
 
-(defn search-optimal-locations
+(defn- find-optimal-location
+  [engine {:keys [raster context-id iteration] :as run-data}]
+  (let [p-max (demand/find-max-demand raster)]
+    (when (and p-max (pos? (:value p-max)))
+      (let [iter-id [:iteration iteration]
+            p           p-max
+            location    (assoc p :id iter-id)
+            result      (coverage/resolve-single (:coverage engine) context-id location :raster)]
+        (if (:resolved result)
+          (let [p-coverage     (raster/read-raster (:raster-path result))
+                demand-covered (demand/count-population-under-coverage raster p-coverage)]
+            (demand/multiply-population-under-coverage! raster p-coverage 0.0)
+            (remove-demand-point raster p)
+            {:location (select-keys p [:lat :lon])
+             :coverage demand-covered})
+          (do
+            ;; coverage for point cannot be resolved; remove it from the set and continue
+            (remove-demand-point raster p-max)
+            (recur engine run-data)))))))
+
+(defn- insert-keep-order
+  "Inserts a new location suggestion into the collection, preserving order of coverage provided"
+  [locations new-location]
+  (sort-by :coverage > (conj locations new-location)))
+
+(defn- insert-location-if-better
+  "If the location is an improvement over what is already known, insert in order
+  and keep collection limited to limit items. Otherwise, append at the end and
+  allow the collection to grow."
+  [locations new-location limit]
+  (if (some (fn [known] (> (:coverage new-location) (:coverage known))) (take limit locations))
+    (take limit (insert-keep-order locations new-location))
+    (conj (vec locations) new-location)))
+
+(defn- compute-suggestions
+  "Compute up-to limit suggestions for locations and return them in a vector ordered by coverage provided"
+  [engine run-data limit]
+  (loop [suggestions []
+         iteration   1]
+    (let [new-location (find-optimal-location engine (assoc run-data :iteration iteration))]
+      (if new-location
+        (let [suggestions' (insert-location-if-better suggestions new-location limit)]
+          ;; if list of locations has grown beyond twice the limit, we don't
+          ;; expect to find improvements down the line; otherwise keep exploring
+          (if (and (< (count suggestions') (* 3 limit))
+                   (< iteration (* 10 limit)))
+            (recur suggestions' (inc iteration))
+            (do
+              (info (str "Cutting search short; iterated " iteration " times"))
+              suggestions')))
+        ;; no more locations can be found
+        (do
+          (info (str "No more locations found; iterated " iteration "times"))
+          suggestions)))))
+
+(defmulti search-optimal-locations (fn [engine project scenario] (:source-type project)))
+
+(defmethod search-optimal-locations "raster"
   [engine project scenario]
-  (let [source             (prep-for-suggestions engine project scenario)
-        coverage-service   (:coverage engine)
-        project-context-id (common/coverage-context project)
-        search-context-id  (:context-id source)
-        bound              (coverage/query-all coverage-service project-context-id :avg-max-distance)
-        coverage-fn        (fn [val props]
-                             (try
-                               (let [project-info {:region-id (:region-id project)
-                                                   :criteria  (common/coverage-criteria-for-project project)
-                                                   :project-capacity (get-in project [:config :providers :capacity])}]
-                                 (get-coverage-for-suggestion engine project-info source (assoc props :coord val)))
-                               (catch Exception e
-                                 (warn (str "Failed to compute coverage for coordinates " val) e))))
-        locations          (gs/greedy-search 10 source coverage-fn {:bound bound :n 20})]
-    (coverage/destroy-context coverage-service search-context-id)
-    locations))
+  (let [run-data         (prep-raster-for-search engine project scenario)
+        context-id       (:context-id run-data)
+        resize-factor    (:resize-factor run-data)
+        project-capacity (get-in project [:config :providers :capacity])]
+    (let [limit       5
+          suggestions (->> (compute-suggestions engine run-data limit)
+                           (filter #(pos? (:coverage %)))
+                           (take limit))]
+      (info (str "Found " (count suggestions) " locations"))
+      #_(coverage/destroy-context (:coverage engine) context-id)
+      (map (fn [sugg]
+             (let [scaled-coverage   (* resize-factor (:coverage sugg))
+                   required-capacity (Math/ceil (/ scaled-coverage project-capacity))]
+               (assoc sugg
+                      :coverage scaled-coverage
+                      :action-capacity required-capacity)))
+           suggestions))))
+
+(defmethod search-optimal-locations "points"
+  [engine project scenario]
+  (warn (str "NOT IMPLEMENTED YED"))
+  [])
 
 
 ;; Intervention suggestions algorithm =========================================
@@ -254,3 +258,17 @@
         :ratio))
      []
      providers-collection)))
+
+
+;; REPL testing ===============================================================
+;;
+
+(comment
+
+  (let [project  (planwise.boundary.projects2/get-project (dev/projects2) 2)
+        scenario (planwise.boundary.scenarios/get-scenario (dev/scenarios) 18)]
+    (search-optimal-locations (dev/engine) project scenario))
+
+  (coverage/resolve-single (dev/coverage) [:suggestions 2] {:id 2 :lon 18.77 :lat 4.4} :raster)
+
+  nil)

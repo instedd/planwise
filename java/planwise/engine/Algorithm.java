@@ -166,6 +166,20 @@ public class Algorithm {
         }
     }
 
+    public static int findMaxIndex(float[] values,
+                                   float nodata) {
+        int found = -1;
+        float maxValue = nodata;
+
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] != nodata && (values[i] > maxValue || maxValue == nodata)) {
+                found = i;
+                maxValue = values[i];
+            }
+        }
+        return found;
+    }
+
     public static int[] filterAndSortIndices(float[] values,
                                              float nodata,
                                              float cutoff) {

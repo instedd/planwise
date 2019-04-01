@@ -77,6 +77,22 @@
                                :nodata nodata
                                :data-type gdalconst/GDT_Byte))))
 
+(defn find-max-demand
+  [demand]
+  (let [index (Algorithm/findMaxIndex (:data demand) (:nodata demand))]
+    (when (> index 0)
+      (let [xsize                     (:xsize demand)
+            x                         (mod index xsize)
+            y                         (Math/floor (float (/ index xsize)))
+            [xoff xres _ yoff _ yres] (:geotransform demand)
+            lon                       (+ xoff (* xres x))
+            lat                       (+ yoff (* yres y))
+            value                     (aget (:data demand) index)]
+        {:lon   lon
+         :lat   lat
+         :index index
+         :value value}))))
+
 
 (comment
   (def raster1 (raster/read-raster "data/populations/data/20/42.tif"))
