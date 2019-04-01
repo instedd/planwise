@@ -95,3 +95,12 @@ SELECT
   AVG(ST_MaxDistance(coverage, coverage)) AS "avg-max-distance"
   FROM coverages
  WHERE context_id = :context-id;
+
+-- :name db-compute-coverage-centroid :? :1
+-- :doc Clips the coverage to the extent and returns the closest point to the
+--      computed centroid
+SELECT
+  ST_ClosestPoint(coverage, ST_Centroid(ST_Intersection(coverage, :extent))) AS "pseudo-centroid"
+  FROM coverages
+ WHERE context_id = :context-id
+   AND lid = :lid;

@@ -107,8 +107,11 @@
     Query indicates the data requested:
     - :avg-max-distance
         computes the max distance between point of the geometry of all
-        registered coverages and returns an average"))
+        registered coverages and returns an average")
 
+  (compute-coverage-centroid [this context-id id extent]
+    "Clips the given coverage by the extent and returns a centroid guaranteed to
+    be inside the coverage, or nil if not possible"))
 
 ;; Auxiliary functions =======================================================
 ;;

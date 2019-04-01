@@ -381,6 +381,16 @@
       (let [result (db-coverages-avg-max-distance (:spec db) {:context-id (:id context)})]
         (:avg-max-distance result)))))
 
+(defn- compute-coverage-centroid
+  [{:keys [db] :as service} context-id id extent]
+  (let [context (ensure-context service context-id)
+        params  {:context-id (:id context)
+                 :lid        (build-sql-id id)
+                 :extent     extent}
+        result  (:pseudo-centroid (db-compute-coverage-centroid (:spec db) params))]
+    (when (and result (geo/is-point? result))
+      (geo/pg->coords result))))
+
 
 ;; Service definition ========================================================
 ;;
@@ -420,7 +430,9 @@
   (query-coverages [this context-id query ids]
     (query-coverages this context-id query ids))
   (query-all [this context-id query]
-    (query-all this context-id query)))
+    (query-all this context-id query))
+  (compute-coverage-centroid [this context-id id extent]
+    (compute-coverage-centroid this context-id id extent)))
 
 
 ;; REPL testing ==============================================================
