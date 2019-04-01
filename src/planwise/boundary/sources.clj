@@ -19,4 +19,7 @@
     "Returns a list of sources in a source set that are inside the given region")
 
   (enum-sources-under-coverage [this source-set-id coverage-geom]
-    "Returns the ids of the sources from the source set contained in the given geometry"))
+    "Returns the ids of the sources from the source set contained in the given geometry")
+
+  (get-sources-extent [this ids]
+    "Returns the extent of all ids"))

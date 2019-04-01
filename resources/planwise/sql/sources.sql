@@ -69,3 +69,9 @@ SELECT
   WHERE
     set_id = :source-set-id
     AND ST_Contains(:coverage-geom, the_geom);
+
+-- :name db-get-sources-extent :? :1
+SELECT
+  ST_SetSRID(ST_Extent(the_geom), 4326) AS extent
+  FROM sources
+ WHERE id IN (:v*:source-ids);

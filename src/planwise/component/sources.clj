@@ -93,6 +93,11 @@
                                        {:source-set-id source-set-id
                                         :coverage-geom coverage-geom})))
 
+(defn- get-sources-extent
+  [store source-ids]
+  (when (seq source-ids)
+    (:extent (db-get-sources-extent (get-db store) {:source-ids source-ids}))))
+
 ;; ----------------------------------------------------------------------
 ;; Store
 
@@ -109,7 +114,9 @@
   (get-sources-from-set-in-region [this source-set-id region-id]
     (get-sources-from-set-in-region this source-set-id region-id))
   (enum-sources-under-coverage [this source-set-id coverage-geom]
-    (enum-sources-under-coverage this source-set-id coverage-geom)))
+    (enum-sources-under-coverage this source-set-id coverage-geom))
+  (get-sources-extent [this ids]
+    (get-sources-extent this ids)))
 
 ;; ----------------------------------------------------------------------
 ;;
