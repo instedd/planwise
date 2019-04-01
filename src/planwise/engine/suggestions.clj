@@ -49,6 +49,59 @@
 ;;    have been found (the factor 2 is a guess here; the idea is to keep on
 ;;    searching to find better solutions down the line)
 
+;; Algorithm iteration core
+;; This functions implement the outer loop of the algorithm and are used for
+;; both raster and points scenarios
+(defn- insert-keep-order
+  "Inserts a new location suggestion into the collection, preserving order of
+  coverage provided"
+  [locations new-location]
+  (sort-by :coverage > (conj locations new-location)))
+
+(defn- insert-location-if-better
+  "If the location is an improvement over what is already known, insert in order
+  and keep collection limited to limit items. Otherwise, append at the end and
+  allow the collection to grow."
+  [locations new-location limit]
+  (let [top-locations    (take limit locations)
+        is-top-location? (some (fn [known] (> (:coverage new-location)
+                                              (:coverage known)))
+                               top-locations)]
+    (if is-top-location?
+     (take limit (insert-keep-order locations new-location))
+     (conj (vec locations) new-location))))
+
+(defn- compute-suggestions
+  "Compute up-to limit suggestions for locations and return them in a vector
+  ordered by coverage provided"
+  [engine find-location-fn run-data limit]
+  (let [limit-grow     (* 3 limit)
+        max-iterations (* 10 limit)]
+    (loop [suggestions []
+           run-data    run-data
+           iteration   1]
+      (let [{new-location :location new-run-data :run-data}
+            (find-location-fn engine (assoc run-data :iteration iteration))]
+        (if new-location
+          (let [suggestions' (insert-location-if-better suggestions new-location limit)]
+            ;; if list of locations has grown above limit-grow, it means the
+            ;; last few tries have not improved the top suggestions, and we
+            ;; don't expect to find improvements down the line; otherwise keep
+            ;; exploring until no more locations can be found or the number of
+            ;; iterations is exhausted
+            (if (and (< (count suggestions') limit-grow)
+                     (< iteration max-iterations))
+              (recur suggestions' new-run-data (inc iteration))
+              (do
+                (info (str "Cutting search short; iterated " iteration " times"))
+                {:suggestions suggestions'
+                 :run-data    new-run-data})))
+          ;; no more locations can be found
+          (do
+            (info (str "No more locations found; iterated " iteration " times"))
+            {:suggestions suggestions
+             :run-data    new-run-data}))))))
+
 (defn- setup-context-for-suggestions!
   "Setups the coverage context for the search algorithm"
   ([engine project scenario]
@@ -65,6 +118,8 @@
      #_(coverage/destroy-context (:coverage engine) context-id)
      (coverage/setup-context (:coverage engine) context-id options)
      context-id)))
+
+;; Raster specialty functions
 
 ;; FIXME: move this to the file-store component
 (defn- scenario-raster-work-path
@@ -106,57 +161,25 @@
 (defn- raster-find-optimal-location
   [engine {:keys [raster context-id iteration] :as run-data}]
   (let [p-max (demand/find-max-demand raster)]
-    (when (and p-max (pos? (:value p-max)))
-      (let [iter-id [:iteration iteration]
-            p           p-max
-            location    (assoc p :id iter-id)
-            result      (coverage/resolve-single (:coverage engine) context-id location :raster)]
+    (if (and p-max (pos? (:value p-max)))
+      (let [iter-id  [:iteration iteration]
+            p        p-max
+            location (assoc p :id iter-id)
+            result   (coverage/resolve-single (:coverage engine) context-id location :raster)]
         (if (:resolved result)
           (let [p-coverage     (raster/read-raster (:raster-path result))
                 demand-covered (demand/count-population-under-coverage raster p-coverage)]
             (demand/multiply-population-under-coverage! raster p-coverage 0.0)
             (remove-demand-point! raster p)
-            {:location (select-keys p [:lat :lon])
-             :coverage demand-covered})
+            {:location {:location (select-keys p [:lat :lon])
+                        :coverage demand-covered}
+             :run-data run-data})
           (do
             ;; coverage for point cannot be resolved; remove it from the set and continue
             (remove-demand-point! raster p-max)
-            (recur engine run-data)))))))
-
-(defn- insert-keep-order
-  "Inserts a new location suggestion into the collection, preserving order of coverage provided"
-  [locations new-location]
-  (sort-by :coverage > (conj locations new-location)))
-
-(defn- insert-location-if-better
-  "If the location is an improvement over what is already known, insert in order
-  and keep collection limited to limit items. Otherwise, append at the end and
-  allow the collection to grow."
-  [locations new-location limit]
-  (if (some (fn [known] (> (:coverage new-location) (:coverage known))) (take limit locations))
-    (take limit (insert-keep-order locations new-location))
-    (conj (vec locations) new-location)))
-
-(defn- raster-compute-suggestions
-  "Compute up-to limit suggestions for locations and return them in a vector ordered by coverage provided"
-  [engine run-data limit]
-  (loop [suggestions []
-         iteration   1]
-    (let [new-location (raster-find-optimal-location engine (assoc run-data :iteration iteration))]
-      (if new-location
-        (let [suggestions' (insert-location-if-better suggestions new-location limit)]
-          ;; if list of locations has grown beyond twice the limit, we don't
-          ;; expect to find improvements down the line; otherwise keep exploring
-          (if (and (< (count suggestions') (* 3 limit))
-                   (< iteration (* 10 limit)))
-            (recur suggestions' (inc iteration))
-            (do
-              (info (str "Cutting search short; iterated " iteration " times"))
-              suggestions')))
-        ;; no more locations can be found
-        (do
-          (info (str "No more locations found; iterated " iteration "times"))
-          suggestions)))))
+            (recur engine run-data))))
+      {:location nil
+       :run-data run-data})))
 
 (defmethod search-optimal-locations "raster"
   [engine project scenario]
@@ -164,10 +187,11 @@
         context-id       (:context-id run-data)
         resize-factor    (:resize-factor run-data)
         project-capacity (get-in project [:config :providers :capacity])]
-    (let [limit       5
-          suggestions (->> (raster-compute-suggestions engine run-data limit)
-                           (filter #(pos? (:coverage %)))
-                           (take limit))]
+    (let [limit                 5
+          {:keys [suggestions]} (compute-suggestions engine raster-find-optimal-location run-data limit)
+          suggestions           (->> suggestions
+                                     (filter #(pos? (:coverage %)))
+                                     (take limit))]
       (info (str "Found " (count suggestions) " locations"))
       #_(coverage/destroy-context (:coverage engine) context-id)
       (map (fn [sugg]
@@ -178,6 +202,8 @@
                       :action-capacity required-capacity)))
            suggestions))))
 
+;; Points specialty functions
+;;
 
 (defn- prep-points-for-search
   [engine project scenario]
@@ -228,38 +254,13 @@
       {:location nil
        :run-data run-data})))
 
-(defn- points-compute-suggestions
-  "Compute up-to limit suggestions for locations and return them in a vector ordered by coverage provided"
-  [engine run-data limit]
-  (info (str "Searching for optimal locations to cover " (count (:sources run-data)) " sources"))
-  (loop [suggestions []
-         run-data    run-data
-         iteration   1]
-    (let [{new-location :location new-run-data :run-data} (points-find-optimal-location engine (assoc run-data :iteration iteration))]
-      (if new-location
-        (let [suggestions' (insert-location-if-better suggestions new-location limit)]
-          ;; if list of locations has grown beyond twice the limit, we don't
-          ;; expect to find improvements down the line; otherwise keep exploring
-          (if (and (< (count suggestions') (* 3 limit))
-                   (< iteration (* 10 limit)))
-            (recur suggestions' new-run-data (inc iteration))
-            (do
-              (info (str "Cutting search short; iterated " iteration " times"))
-              {:suggestions suggestions'
-               :run-data    new-run-data})))
-        ;; no more locations can be found
-        (do
-          (info (str "No more locations found; iterated " iteration " times"))
-          {:suggestions suggestions
-           :run-data    new-run-data})))))
-
 (defmethod search-optimal-locations "points"
   [engine project scenario]
   (let [run-data         (prep-points-for-search engine project scenario)
         context-id       (:context-id run-data)
         project-capacity (get-in project [:config :providers :capacity])]
     (let [limit                 5
-          {:keys [suggestions]} (points-compute-suggestions engine run-data limit)
+          {:keys [suggestions]} (compute-suggestions engine points-find-optimal-location run-data limit)
           suggestions           (->> suggestions
                                      (filter #(pos? (:coverage %)))
                                      (take limit))]
