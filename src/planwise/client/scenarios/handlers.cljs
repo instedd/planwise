@@ -311,12 +311,12 @@
  :scenarios/no-suggested-locations
  in-scenarios
  (fn [db [_ {:keys [response]}]]
-   (let [state (get-in db [:scenarios :current-scenario :computing-best-locations :state])]
+   (let [state (get-in db [:current-scenario :computing-best-locations :state])]
      (if (some? state)
        (do
          (js/alert (or (:error response) "Could not compute suggestions"))
          (-> db
-             (assoc-in [:view-state] :new-provider)
+             (assoc-in [:view-state] :current-scenario)
              (assoc-in [:current-scenario :computing-best-locations :state] nil)))
        db))))
 
@@ -396,7 +396,7 @@
  :scenarios/no-suggested-interventions
  in-scenarios
  (fn [db [_ {:keys [response]}]]
-   (let [state (get-in db [:scenarios :current-scenario :computing-best-improvements :state])]
+   (let [state (get-in db [:current-scenario :computing-best-improvements :state])]
      (if (some? state)
        (do
          (js/alert (or (:error response) "Could not compute suggestions"))
