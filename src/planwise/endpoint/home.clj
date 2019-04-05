@@ -91,7 +91,7 @@
       [:ul
        [:li
         [:a.btn
-         {:href   "http://instedd.org/technologies/"
+         {:href   "https://instedd.org/technologies/"
           :target "_blank"}
          "About Instedd Platform"]]
        [:li
@@ -100,7 +100,7 @@
          "Sign in"]]
        [:li
         [:a.btn-outline
-         {:href   "https://docs.google.com/forms/d/e/1FAIpQLSc8ldIy9lF8jw12kIZky94MIAEq1o1jCkCiL4TqmLAx3jlZng/viewform?usp=sf_link"
+         {:href   "https://instedd.org/work-with-us/"
           :target "_blank"}
          "Work with Us"]]]]]
     [:main
