@@ -107,7 +107,7 @@
      [:div.section.headline
       [:div.grid.x2
        [:div.cell
-        [:h1.strong "Placing help? where's needed"]
+        [:h1.strong "Placing Help Where It Is Needed"]
         [:h3 "A data-driven tool that helps health planners to make better decisions"]
         [:p.text-gray
          [:b "What is Planwise?"]
