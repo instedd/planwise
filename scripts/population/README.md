@@ -1,41 +1,47 @@
 # Importing country population data
-## _(example country Uruguay)_
 
-## Download files
+We use Uruguay as an example in the following sections.
 
-### Regions file
+## Import the region
 
-See script at `/scripts/geojson` to download KMZ files from [GADM](https://gadm.org/) and convert them to geojson.
+The scripts at `scripts/geojson` (refer to `scripts/geojson/README.md`) will
+leave the usable files under `data/geojson`. You need to import these into the
+database by running `scripts/population/load-regions`. Eg.:
 
-### Population file
-* Download file `URY_ppp_v2b_2015.tif` from [worldpop.org.ok - Uruguay 100m Population](http://www.worldpop.org.uk/data/summary/?id=29) (click in "Browse Individual Files" and then "Switch to file view")
-* Move file to folder: `./data`
-
-## Run Script
-
-Instead of using the country name as 3rd parameter. Now we use the country code: [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3) 
- 
-```diff
+```sh
 $ docker-compose run --rm app bash
-/app$ lein import-population "ury_2015" "URY_ppp_v2b_2015.tif" "URY"
+/app$ scripts/population/load-regions URY Uruguay
 ```
 
-### Verbose option
+## Clip friction layer for new regions
+
+The friction raster is clipped to the country-level regions for quicker access
+(to avoid loading the full planet raster). Simply run:
+
 ```sh
-/app$ lein import-population "ury_2015" "URY_ppp_v2b_2015.tif" "URY" --verbose
+$ docker-compose run --rm app bash
+/app$ scripts/friction/load-friction-raster /data/friction/friction_surface_2015_v1.0.tif
 ```
 
-### Building C++ applications option
-If you need to build the applications in the /cpp folder then add the following option:
-```sh
-/app$ lein import-population "ury_2015" "URY_ppp_v2b_2015.tif" "URY" --build-cpp
+NB. the actual full raster file may change. In any case, after running the
+script, you will find the clipped friction raster files in
+`data/friction/regions`
+
+## Create a source record for the downloaded raster demand
+
+* Download file `URY_ppp_v2b_2015.tif` from [worldpop.org.ok - Uruguay 100m
+  Population](http://www.worldpop.org.uk/data/summary/?id=29) (click in "Browse
+  Individual Files" and then "Switch to file view")
+* Move file to any folder below `./data`
+
+Then we need to create a record in the `source_set` table to point to the
+downloaded raster file. Get access to the database and run the following SQL
+snippet:
+
+```sql
+INSERT INTO source_set (name, type, unit, raster_file) VALUES ('Uruguay PPP v2b 2015', 'raster', 'people', 'URY_ppp_v2b_2015.tif');
 ```
 
-## _(example country Kenya)_
+The important bit of information is the last field. That should be a relative
+path from the `DATA_PATH` directory to the downloaded raster file.
 
-* Download file `KEN_popmap15_v2b.tif` from [worldpop.org.ok - Kenya 100m Population](http://www.worldpop.org.uk/data/summary/?id=29) in `./data`
-* Run geojson script
-* and then run:
-```sh
-$ lein import-population "ken_2015" "KEN_popmap15_v2b.tif" "KEN"
-```
