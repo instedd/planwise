@@ -37,6 +37,7 @@
         (let [section      (:section @page-params)]
           (case section
             :index [listings/project-section-index]
+            :new [listings/project-section-new]
             :show [project-section-show :scenarios]
             :project-scenarios [project-section-show :scenarios]
             :project-settings [project-section-show :settings]

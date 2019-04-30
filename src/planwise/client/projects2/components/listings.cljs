@@ -44,6 +44,24 @@
                :on-click   (utils/prevent-default #(dispatch [:projects2/new-project]))}
      "Create one"]]])
 
+(defn project-section-new
+  []
+  [ui/fixed-width (common2/nav-params)
+    [:div.template-container
+      [:h2.row "Start from a template"]
+      [:div.row
+        [:a.action {:onClick #(dispatch [:projects2/new-project "plan"])}
+          [m/Icon {} "directions_walk"]
+          [:div "Plan facilities based on ground access"]]
+        [:a.action {:onClick #(dispatch [:projects2/new-project "diagnosis"])}
+          [m/Icon {} "call_split"]
+          [:div "Plan diagonostic devices & sample referrals"]]]
+      [:h2.row "Start from scratch"]
+      [:div.row
+        [:a.action {}
+          [m/Icon {} "folder_open"]
+          [:div "Follow a wizard through all available settings"]]]]])
+
 (defn- listing-component []
   (let [projects (subscribe [:projects2/list])]
     (if (empty? @projects)
@@ -51,6 +69,6 @@
       [projects-list @projects])))
 
 (defn project-section-index []
-  (let [create-project-button (ui/main-action {:icon "add" :on-click #(dispatch [:projects2/new-project])})]
+  (let [create-project-button (ui/main-action {:icon "add" :on-click #(dispatch [:projects2/template-project])})]
     [ui/fixed-width (merge {:action create-project-button} (common2/nav-params))
      [listing-component]]))

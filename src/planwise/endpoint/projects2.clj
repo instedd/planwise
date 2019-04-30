@@ -26,9 +26,9 @@
   [{service :projects2 service-scenarios :scenarios}]
   (routes
 
-   (POST "/" request
+   (POST "/" [name project :as request]
      (let [user-id    (util/request-user-id request)
-           project-id (:id (projects2/create-project service user-id))
+           project-id (:id (projects2/create-project service (merge project {:owner-id user-id})))
            project    (projects2/get-project service project-id)]
        (response project)))
 

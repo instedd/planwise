@@ -15,9 +15,17 @@
 (rf/reg-event-fx
  :projects2/new-project
  in-projects2
- (fn [_ [_]]
-   {:api (assoc (api/create-project!)
+ (fn [_ [_ template-identifier]]
+   {:api (assoc (api/create-project! template-identifier)
                 :on-success [:projects2/project-created])}))
+
+(rf/reg-event-fx
+:projects2/template-project
+  in-projects2
+  (fn [_ [_]]
+    {:navigate (routes/projects2-new {})}))
+    ; {:api (assoc (api/create-project!)
+    ;              :on-success [:projects2/project-created])}))
 
 (rf/reg-event-fx
  :projects2/project-created

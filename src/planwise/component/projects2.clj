@@ -28,10 +28,9 @@
 ;; Service definition
 
 (defn create-project
-  [store owner-id]
-  (db-create-project! (get-db store) {:owner-id owner-id
-                                      :name ""
-                                      :state "draft"}))
+  [store params]
+  (db-create-project! (get-db store) (merge params {
+                                      :state "draft"})))
 
 (defn update-project
   [store {:keys [config provider-set-id] :as project}]
