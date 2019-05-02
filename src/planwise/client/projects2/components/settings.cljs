@@ -165,6 +165,38 @@
     [:label "Tags: " [tag-set tags read-only]]
     [count-providers tags current-project]])
 
+(defn- current-project-step-coverage
+  [read-only current-project]
+
+  [:section {:class-name "project-settings-section"}
+    [section-header 4 "Coverage"]
+    [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm current-project)
+                                        :value              (get-in current-project [:config :coverage :filter-options])
+                                        :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
+                                        :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
+                                        :disabled?          read-only}]])
+
+(defn- current-project-step-actions
+  [read-only current-project build-actions upgrade-actions]
+
+  [:section {:class-name "project-settings-section"}
+   [:div [:p [m/Icon "account_balance"] "Available budget"]]
+   [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
+   [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
+
+   [:div [:p [m/Icon "domain"] "Building a new provider..."]]
+   [listing-actions {:read-only?  read-only
+                     :action-name :build
+                     :list        build-actions}]
+
+   [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
+   [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
+
+   [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
+   [listing-actions {:read-only?   read-only
+                     :action-name :upgrade
+                     :list        upgrade-actions}]])
+
 
 (defn current-project-settings-view
   [{:keys [read-only step]}]
@@ -181,50 +213,17 @@
             [:div step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"])]
        [m/GridCell {:span 6}
         [:form.vertical
-          (:div :step step); TODO: Remove this
           (case step
             "goal" [current-project-step-goal read-only @current-project]
             "consumers" [current-project-step-consumers read-only @current-project]
             "providers" [current-project-step-providers read-only @current-project @tags]
-            "coverage" [:div "es coverage"]
-            "actions" [:div "es actions"]
+            "coverage" [current-project-step-coverage read-only @current-project]
+            "actions" [current-project-step-actions read-only @current-project @build-actions @upgrade-actions]
             "review" [:div "es review"]
             [])]]])))
-         ;
-
-         ;
-
-
-         ;
-         ; [:section {:class-name "project-settings-section"}
-         ;  [section-header 4 "Coverage"]
-         ;  [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
-         ;                                      :value              (get-in @current-project [:config :coverage :filter-options])
-         ;                                      :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-         ;                                      :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
-         ;                                      :disabled?          read-only}]]
-         ;
-         ; [:section {:class-name "project-settings-section"}
-         ;  [:div [:p [m/Icon "account_balance"] "Available budget"]]
-         ;  [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
-         ;  [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
-         ;
-         ;  [:div [:p [m/Icon "domain"] "Building a new provider..."]]
-         ;  [listing-actions {:read-only?  read-only
-         ;                    :action-name :build
-         ;                    :list        @build-actions}]
-         ;
-         ;  [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
-         ;  [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
-         ;
-         ;  [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
-         ;  [listing-actions {:read-only?   read-only
-         ;                    :action-name :upgrade
-         ;                    :list        @upgrade-actions}]]]]])))
-
 
 (defn edit-current-project
-  [test]
+  []
   (let [page-params       (subscribe [:page-params])
         current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
