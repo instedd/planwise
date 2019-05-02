@@ -125,88 +125,114 @@
 
 ;-------------------------------------------------------------------------------------------
 
+(defn- current-project-step-goal
+  [read-only current-project]
+  (let [current-project (subscribe [:projects2/current-project])])
+  [:section {:class-name "project-settings-section"}
+    [section-header 1 "Goal"]
+    [current-project-input "Goal" [:name] "text"]
+    [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
+
+    [regions-dropdown-component {:label     "Region"
+                               :on-change #(dispatch [:projects2/save-key :region-id %])
+                               :model     (:region-id current-project)
+                               :disabled? read-only}]])
+(defn- current-project-step-consumers
+  [read-only current-project]
+  [:section {:class-name "project-settings-section"}
+   [section-header 2 "Demand"]
+   [sources-dropdown-component {:label     "Sources"
+                                :value     (:source-set-id current-project)
+                                :on-change #(dispatch [:projects2/save-key :source-set-id %])
+                                :disabled?  read-only}]
+   [current-project-input "Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
+   [current-project-input "Target" [:config :demographics :target] "number" {:disabled read-only :sub-type :percentage}]
+   [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in current-project [:config :demographics :unit-name]))]])
+
+ (defn- current-project-step-providers
+   [read-only current-project tags]
+   [:section {:class-name "project-settings-section"}
+    [section-header 3 "Providers"]
+    [providers-set-dropdown-component {:label     "Provider Set"
+                                       :value     (:provider-set-id current-project)
+                                       :on-change #(dispatch [:projects2/save-key :provider-set-id %])
+                                       :disabled? read-only}]
+
+    [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
+    [m/TextFieldHelperText {:persistent true} (str "How many " (get-in current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
+
+    (when-not read-only [tag-input])
+    [:label "Tags: " [tag-set tags read-only]]
+    [count-providers tags current-project]])
+
+
 (defn current-project-settings-view
-  [{:keys [read-only]}]
+  [{:keys [read-only step]}]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
         tags            (subscribe [:projects2/tags])]
-    (fn [{:keys [read-only]}]
-      [m/Grid {}
+    (fn [{:keys [read-only step]}]
+      [m/Grid {:class-name "wizard"}
+       [m/GridCell {:span 12 :class-name "steps"}
+        (map-indexed (fn [i step]
+          [:a {:key i :href (routes/projects2-show {:id (:id @current-project) :step step})}
+            [:i (inc i)]
+            [:div step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"])]
        [m/GridCell {:span 6}
         [:form.vertical
-         [:section {:class-name "project-settings-section"}
-          [section-header 1 "Goal"]
-          [current-project-input "Goal" [:name] "text"]
-          [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
+          (:div :step step); TODO: Remove this
+          (case step
+            "goal" [current-project-step-goal read-only @current-project]
+            "consumers" [current-project-step-consumers read-only @current-project]
+            "providers" [current-project-step-providers read-only @current-project @tags]
+            "coverage" [:div "es coverage"]
+            "actions" [:div "es actions"]
+            "review" [:div "es review"]
+            [])]]])))
+         ;
 
-          [regions-dropdown-component {:label     "Region"
-                                       :on-change #(dispatch [:projects2/save-key :region-id %])
-                                       :model     (:region-id @current-project)
-                                       :disabled? read-only}]]
+         ;
 
-         [:section {:class-name "project-settings-section"}
-          [section-header 2 "Demand"]
-          [sources-dropdown-component {:label     "Sources"
-                                       :value     (:source-set-id @current-project)
-                                       :on-change #(dispatch [:projects2/save-key :source-set-id %])
-                                       :disabled?  read-only}]
 
-          [current-project-input "Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
-          [current-project-input "Target" [:config :demographics :target] "number" {:disabled read-only :sub-type :percentage}]
-          [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]
-
-         [:section {:class-name "project-settings-section"}
-          [section-header 3 "Providers"]
-          [providers-set-dropdown-component {:label     "Provider Set"
-                                             :value     (:provider-set-id @current-project)
-                                             :on-change #(dispatch [:projects2/save-key :provider-set-id %])
-                                             :disabled? read-only}]
-
-          [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-          [m/TextFieldHelperText {:persistent true} (str "How many " (get-in @current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
-
-          (when-not read-only [tag-input])
-          [:label "Tags: " [tag-set @tags read-only]]
-          [count-providers @tags @current-project]]
-
-         [:section {:class-name "project-settings-section"}
-          [section-header 4 "Coverage"]
-          [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
-                                              :value              (get-in @current-project [:config :coverage :filter-options])
-                                              :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-                                              :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
-                                              :disabled?          read-only}]]
-
-         [:section {:class-name "project-settings-section"}
-          [:div [:p [m/Icon "account_balance"] "Available budget"]]
-          [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
-          [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
-
-          [:div [:p [m/Icon "domain"] "Building a new provider..."]]
-          [listing-actions {:read-only?  read-only
-                            :action-name :build
-                            :list        @build-actions}]
-
-          [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
-          [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
-
-          [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
-          [listing-actions {:read-only?   read-only
-                            :action-name :upgrade
-                            :list        @upgrade-actions}]]]]])))
+         ;
+         ; [:section {:class-name "project-settings-section"}
+         ;  [section-header 4 "Coverage"]
+         ;  [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
+         ;                                      :value              (get-in @current-project [:config :coverage :filter-options])
+         ;                                      :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
+         ;                                      :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
+         ;                                      :disabled?          read-only}]]
+         ;
+         ; [:section {:class-name "project-settings-section"}
+         ;  [:div [:p [m/Icon "account_balance"] "Available budget"]]
+         ;  [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
+         ;  [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
+         ;
+         ;  [:div [:p [m/Icon "domain"] "Building a new provider..."]]
+         ;  [listing-actions {:read-only?  read-only
+         ;                    :action-name :build
+         ;                    :list        @build-actions}]
+         ;
+         ;  [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
+         ;  [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
+         ;
+         ;  [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
+         ;  [listing-actions {:read-only?   read-only
+         ;                    :action-name :upgrade
+         ;                    :list        @upgrade-actions}]]]]])))
 
 
 (defn edit-current-project
-  []
-  (let [current-project (subscribe [:projects2/current-project])
+  [test]
+  (let [page-params       (subscribe [:page-params])
+        current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
         hide-dialog     (fn [] (reset! delete? false))]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
-
-        [current-project-settings-view {:read-only false}]
+        [current-project-settings-view{:read-only false :step (:step @page-params)}]
 
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]

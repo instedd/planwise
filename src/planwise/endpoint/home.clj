@@ -222,6 +222,7 @@
      (GET "/sources" [] loading-page2)
      (context "/projects2" []
        (GET "/" [] loading-page2)
+       (GET "/:id/steps/:step" [] loading-page2)
        (GET "/:id" [] loading-page2)
        (GET "/:id/scenarios" [] loading-page2)
        (GET "/:id/settings" [] loading-page2)
