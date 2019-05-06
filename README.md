@@ -311,7 +311,7 @@ running `(load-sql)`.
 Running the tests require a separate scratch database.
 
 ```bash
-$ docker-compose exec db createdb planwise-test
+$ docker-compose exec db createdb planwise-test -U planwise
 ```
 
 The connection configuration is located in the environment variable
