@@ -778,8 +778,8 @@ form.vertical, .fields-vertical {
     border-bottom: 1px solid rgba(0,0,0,0.1);
     margin-left: -25px;
     margin-right: -25px;
-    padding: 0 25px;
-    height: 76px;
+    padding: 5px 20px 0;
+    height: 56px;
 
     > a {
       text-decoration: none;
@@ -799,9 +799,9 @@ form.vertical, .fields-vertical {
           content: "";
           position: absolute;
           height: 12px;
-          width: 5%;
+          min-width: 85px;
           margin-left: 10px;
-          border-bottom: 1px solid #999999;
+          border-bottom: 1px solid rgba(0,0,0,0.1);
         }
       }
       &:last-child div:after {
