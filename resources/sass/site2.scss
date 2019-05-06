@@ -822,6 +822,10 @@ form.vertical, .fields-vertical {
       font-weight: 500;
     }
   }
+  .map {
+    min-height: 500px;
+    height: 100%;
+  }
 }
 
 @keyframes spin {

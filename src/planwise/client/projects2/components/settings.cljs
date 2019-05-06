@@ -220,7 +220,9 @@
            "coverage" [current-project-step-coverage read-only @current-project]
            "actions" [current-project-step-actions read-only @current-project @build-actions @upgrade-actions]
            "review" [:div "es review"]
-           [])]]])))
+           [])]]
+       [m/GridCell {:span 6}
+        [:div.map]]])))
 
 (defn edit-current-project
   []
