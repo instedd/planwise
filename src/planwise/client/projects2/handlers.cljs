@@ -31,6 +31,14 @@
                      (assoc :list new-list))
       :navigate  (routes/projects2-show {:id project-id})})))
 
+(rf/reg-event-fx
+ :projects2/next-step-project
+ in-projects2
+ (fn [{:keys [db]} [_ project-id step]]
+   (let [steps ["goal", "consumers", "providers", "coverage", "actions", "review"]]
+   {:navigate (routes/projects2-show {:id project-id :step (steps (inc (.indexOf steps step)))})})))
+
+
 ;;------------------------------------------------------------------------------
 ;; Updating db
 

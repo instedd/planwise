@@ -55,6 +55,16 @@
              :on-click   (utils/prevent-default #(dispatch [:projects2/start-project (:id project)]))}
    (if (= (keyword (:state project)) :started) "Started ..." "Start")])
 
+
+(defn- project-next-step-button
+ [project step]
+ [m/Button {:id         "start-project"
+            :type       "button"
+            :unelevated "unelevated"
+            ; :disabled   (not (s/valid? :planwise.model.project/starting project))
+            :on-click   (utils/prevent-default #(dispatch [:projects2/next-step-project (:id project) step]))}
+            "Continue"])
+
 (defn- project-delete-button
   [state]
   [m/Button {:type     "button"
@@ -140,8 +150,8 @@
 (defn- current-project-step-consumers
   [read-only current-project]
   [:section {:class-name "project-settings-section"}
-   [section-header 2 "Demand"]
-   [sources-dropdown-component {:label     "Sources"
+   [section-header 2 "Consumers"]
+   [sources-dropdown-component {:label     "Consumer Dataset"
                                 :value     (:source-set-id current-project)
                                 :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                 :disabled?  read-only}]
@@ -219,7 +229,7 @@
             "providers" [current-project-step-providers read-only @current-project @tags]
             "coverage" [current-project-step-coverage read-only @current-project]
             "actions" [current-project-step-actions read-only @current-project @build-actions @upgrade-actions]
-            "review" [:div "es review"]
+            "review" [:div "review"]
             [])]]])))
 
 (defn edit-current-project
@@ -234,8 +244,9 @@
         [current-project-settings-view{:read-only false :step (:step @page-params)}]
 
         [:div {:class-name "project-settings-actions"}
-         [project-delete-button delete?]
-         [project-start-button {} @current-project]]]
+         ; [project-delete-button delete?]
+         [project-next-step-button @current-project (:step @page-params)]]]
+         ; [project-start-button {} @current-project]]]
        [delete-project-dialog {:open? @delete?
                                :cancel-fn hide-dialog
                                :delete-fn #(dispatch [:projects2/delete-project (:id @current-project)])}]])))
