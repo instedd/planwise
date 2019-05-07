@@ -778,8 +778,53 @@ form.vertical, .fields-vertical {
     border-bottom: 1px solid rgba(0,0,0,0.1);
     margin-left: -25px;
     margin-right: -25px;
-    padding: 0 25px;
-    height: 76px;
+    padding: 5px 20px 0;
+    height: 56px;
+
+    > a {
+      text-decoration: none;
+      text-transform: capitalize;
+      i {
+        background-color: #999999;        
+        color: #ffffff;
+        font-style: normal;
+        padding: 5px 11px;
+        margin-right: 10px;
+        border-radius: 50%;
+      }
+      div {
+        color: #999999;
+        display: inline-block;
+        &:after {
+          content: "";
+          position: absolute;
+          height: 12px;
+          min-width: 85px;
+          margin-left: 10px;
+          border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+      }
+      &:last-child div:after {
+        border: none;
+      }
+    }
+    
+    .complete {
+      i {
+        background-color: $mdc-theme-primary;
+      }
+      div {
+        color: #000000;
+      }
+    }
+    .active {
+      @extend .complete;
+      font-weight: 500;
+    }
+  }
+  .map {
+    min-height: 500px;
+    height: 100%;
   }
 }
 
