@@ -57,13 +57,13 @@
 
 
 (defn- project-next-step-button
- [project step]
- [m/Button {:id         "start-project"
-            :type       "button"
-            :unelevated "unelevated"
+  [project step]
+  [m/Button {:id         "start-project"
+             :type       "button"
+             :unelevated "unelevated"
             ; :disabled   (not (s/valid? :planwise.model.project/starting project))
-            :on-click   (utils/prevent-default #(dispatch [:projects2/next-step-project (:id project) step]))}
-            "Continue"])
+             :on-click   (utils/prevent-default #(dispatch [:projects2/next-step-project (:id project) step]))}
+   "Continue"])
 
 (defn- project-delete-button
   [state]
@@ -217,10 +217,12 @@
     (fn [{:keys [read-only step]}]
       [m/Grid {:class-name "wizard"}
        [m/GridCell {:span 12 :class-name "steps"}
-        (map-indexed (fn [i step]
-                       [:a {:key i :href (routes/projects2-show {:id (:id @current-project) :step step})}
+        (map-indexed (fn [i iteration-step]
+                       [:a {:key i
+                            :class-name (if (= iteration-step step) "active")
+                            :href (routes/projects2-show {:id (:id @current-project) :step iteration-step})}
                         [:i (inc i)]
-                        [:div step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"])]
+                        [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"])]
        [m/GridCell {:span 6}
         [:form.vertical
          (case step
