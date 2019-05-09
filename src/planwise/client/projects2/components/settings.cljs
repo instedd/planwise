@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
-            [clojure.string :refer [blank?]]
+            [clojure.string :refer [blank? join]]
             [planwise.client.asdf :as asdf]
             [planwise.client.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
@@ -207,12 +207,6 @@
                      :action-name :upgrade
                      :list        upgrade-actions}]])
 
-(defn- validate-step
-  [current-project step]
-  (let [validations {"goal" {:goal [:presence] :region [:presence]}}]
-    (println (get-in {"goal" "test"} "goal"))))
-
-
 (defn current-project-settings-view
   [{:keys [read-only step]}]
   (let [current-project (subscribe [:projects2/current-project])
@@ -223,11 +217,10 @@
       [m/Grid {:class-name "wizard"}
        [m/GridCell {:span 12 :class-name "steps"}
         (map-indexed (fn [i iteration-step]
-                       (validate-step @current-project step)
                        [:a {:key i
                             :class-name (if (= iteration-step step) "active")
                             :href (routes/projects2-show {:id (:id @current-project) :step iteration-step})}
-                        [:i (inc i)]
+                        (if (s/valid? (keyword "planwise.model.project" (str iteration-step "-step")) @current-project) [m/Icon "done"] [:i (inc i)])
                         [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"])]
        [m/GridCell {:span 6}
         [:form.vertical

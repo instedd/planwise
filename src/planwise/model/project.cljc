@@ -45,3 +45,11 @@
 
 ;; Project Starting
 (s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))
+
+;; TODO: Use real validations
+(s/def ::goal-step (s/keys :req-un [::name ::region-id]))
+(s/def ::consumers-step (s/keys :req-un [::source-set-id]))
+(s/def ::providers-step (s/keys :req-un [::id ::owner-id ::provider-set-id]))
+(s/def ::coverage-step (s/keys :req-un [::id ::owner-id ::name]))
+(s/def ::actions-step (s/keys :req-un [::id ::owner-id ::actions]))
+(s/def ::review-step (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))
