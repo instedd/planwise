@@ -61,8 +61,8 @@
   [m/Button {:id         "start-project"
              :type       "button"
              :unelevated "unelevated"
-            ; :disabled   (not (s/valid? :planwise.model.project/starting project))
-             :on-click   (utils/prevent-default #(dispatch [:projects2/next-step-project (:id project) step]))}
+             :disabled   (if (= step "review") (not (s/valid? :planwise.model.project/starting project)) false)
+             :on-click   (utils/prevent-default #(if (= step "review") (utils/prevent-default (dispatch [:projects2/start-project (:id project)])) (dispatch [:projects2/next-step-project (:id project) step])))}
    "Continue"])
 
 (defn- project-delete-button
@@ -207,6 +207,11 @@
                      :action-name :upgrade
                      :list        upgrade-actions}]])
 
+(defn- validate-step
+  [current-project step]
+  (let [validations {"goal" {:goal [:presence] :region [:presence]}}]
+    (println (get-in {"goal" "test"} "goal"))))
+
 
 (defn current-project-settings-view
   [{:keys [read-only step]}]
@@ -218,6 +223,7 @@
       [m/Grid {:class-name "wizard"}
        [m/GridCell {:span 12 :class-name "steps"}
         (map-indexed (fn [i iteration-step]
+                       (validate-step @current-project step)
                        [:a {:key i
                             :class-name (if (= iteration-step step) "active")
                             :href (routes/projects2-show {:id (:id @current-project) :step iteration-step})}
