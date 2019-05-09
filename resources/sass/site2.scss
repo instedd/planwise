@@ -526,6 +526,14 @@ form.vertical, .fields-vertical {
     color: rgba(0, 0, 0, 0.6);
     margin: 25px 0 0;
   }
+
+  div > p, button {
+    display: inline-flex;
+    align-items: center;
+    .material-icons {
+      margin-right: 10px;
+    }
+  }
 }
 
 .project-settings-actions {
