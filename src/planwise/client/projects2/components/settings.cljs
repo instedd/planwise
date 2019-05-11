@@ -155,7 +155,8 @@
                                 :value     (:source-set-id current-project)
                                 :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                 :disabled?  read-only}]
-   [current-project-input "Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
+   [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
+   [m/TextFieldHelperText {:persistent true} (str "How do you refer to the filtered population? (Eg: women)")]
    [current-project-input "Target" [:config :demographics :target] "number" {:disabled read-only :sub-type :percentage}]
    [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in current-project [:config :demographics :unit-name]))]])
 
@@ -163,14 +164,13 @@
   [read-only current-project tags]
   [:section {:class-name "project-settings-section"}
    [section-header 3 "Providers"]
-   [providers-set-dropdown-component {:label     "Provider Set"
+   [providers-set-dropdown-component {:label     "Provider Dataset"
                                       :value     (:provider-set-id current-project)
                                       :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                       :disabled? read-only}]
 
-   [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-   [m/TextFieldHelperText {:persistent true} (str "How many " (get-in current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
-
+   [current-project-input "Capacity Workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
+   [m/TextFieldHelperText {:persistent true} (str "How many " (or (not-empty (get-in current-project [:config :demographics :unit-name])) "consumers") " can each provider handle?")]
    (when-not read-only [tag-input])
    [:label "Tags: " [tag-set tags read-only]]
    [count-providers tags current-project]])
