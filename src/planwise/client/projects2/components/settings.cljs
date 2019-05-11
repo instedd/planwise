@@ -208,6 +208,17 @@
                      :action-name :upgrade
                      :list        upgrade-actions}]])
 
+(defn- current-project-step-review
+  [read-only current-project]
+  [:section {:class "project-settings-section"}
+   [section-header 6 "Review"]
+   [:div {:class "step-info"} "After this step the system will search for different improvements scenarios based on the given parameters. Once started, the process will continue even if you leave the site. From the dashboard you will be able to see the scenarios found so far, pause the search and review the performed work."]
+   [:div [:p [m/Icon "location_on"] "Kenya health facilities - ResMap 8902"]]
+   [:div [:p [m/Icon "account_balance"] "K 25,000,000"]]
+   [:div [:p [m/Icon "people"] "Kenya census 2005"]]
+   [:div [:p [m/Icon "directions"] "120 min walking distance, 40 min driving"]]
+   [:div [:p [m/Icon "info"] "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]])
+
 (defn current-project-settings-view
   [{:keys [read-only step]}]
   (let [current-project (subscribe [:projects2/current-project])
@@ -231,7 +242,7 @@
            "providers" [current-project-step-providers read-only @current-project @tags]
            "coverage" [current-project-step-coverage read-only @current-project]
            "actions" [current-project-step-actions read-only @current-project @build-actions @upgrade-actions]
-           "review" [:div "es review"]
+           "review" [current-project-step-review read-only @current-project]
            [])]]
        [m/GridCell {:span 6}
         [:div.map]]])))
