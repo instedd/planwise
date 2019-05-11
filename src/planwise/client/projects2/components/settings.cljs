@@ -190,6 +190,7 @@
   [read-only current-project build-actions upgrade-actions]
 
   [:section {:class-name "project-settings-section"}
+   [section-header 5 "Actions"]
    [:div [:p [m/Icon "account_balance"] "Available budget"]]
    [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
    [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
