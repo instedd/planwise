@@ -783,6 +783,7 @@ form.vertical, .fields-vertical {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    align-items: flex-start;
     border-bottom: 1px solid rgba(0,0,0,0.1);
     margin-left: -25px;
     margin-right: -25px;
@@ -792,6 +793,8 @@ form.vertical, .fields-vertical {
     > a {
       text-decoration: none;
       text-transform: capitalize;
+      display: flex;
+      align-items: center;
       i {
         background-color: #999999;        
         color: #ffffff;
@@ -828,6 +831,11 @@ form.vertical, .fields-vertical {
     .active {
       @extend .complete;
       font-weight: 500;
+    }
+    .material-icons {
+      font-size: 19px;
+      display: inline;
+      padding: 6px;
     }
   }
   .map {
