@@ -16,7 +16,13 @@
             [planwise.client.ui.filter-select :as filter-select]
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
-            [clojure.spec.alpha :as s]))
+            [clojure.spec.alpha :as s]
+            [planwise.model.project-consumers]
+            [planwise.model.project-actions]
+            [planwise.model.project-coverage]
+            [planwise.model.project-providers]
+            [planwise.model.project-review]
+            [planwise.model.project-goal]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
@@ -220,7 +226,7 @@
                        [:a {:key i
                             :class-name (if (= iteration-step step) "active")
                             :href (routes/projects2-show {:id (:id @current-project) :step iteration-step})}
-                        (if (s/valid? (keyword "planwise.model.project" (str iteration-step "-step")) @current-project) [m/Icon "done"] [:i (inc i)])
+                        (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) [m/Icon "done"] [:i (inc i)])
                         [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"])]
        [m/GridCell {:span 6}
         [:form.vertical
