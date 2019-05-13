@@ -7,7 +7,7 @@
 
 ;; Goal
 (s/def ::id number?)
-(s/def ::name string?)
+(s/def ::name (s/and string? (comp not blank?)))
 (s/def ::region-id number?)
 
 ;; Demographics

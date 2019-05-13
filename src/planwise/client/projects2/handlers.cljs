@@ -29,7 +29,7 @@
      {:db        (-> db
                      (assoc :current-project nil)
                      (assoc :list new-list))
-      :navigate  (routes/projects2-show {:id project-id})})))
+      :navigate  (routes/projects2-show {:id project-id :step "goal"})})))
 
 (rf/reg-event-fx
  :projects2/next-step-project
