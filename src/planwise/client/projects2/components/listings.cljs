@@ -22,7 +22,7 @@
                           (static-image @region-geo map-preview-size)
                           (static-image fullmap-region-geo map-preview-size))]
     (when region-id (dispatch [:regions/load-regions-with-preview [region-id]]))
-    [ui/card {:href (routes/projects2-show {:id id :step "goal"})
+    [ui/card {:href (routes/projects2-show {:id id})
               :primary [:img {:style map-preview-size :src preview-map-url}]
               :title (utils/or-blank (:name project) [:i "Untitled"])
               :status (utils/or-blank (:state project) [:i "status: unknown"])}]))

@@ -225,7 +225,7 @@
         (map-indexed (fn [i iteration-step]
                        [:a {:key i
                             :class-name (if (= iteration-step step) "active")
-                            :href (routes/projects2-show {:id (:id @current-project) :step iteration-step})}
+                            :href (routes/projects2-show-with-step {:id (:id @current-project) :step iteration-step})}
                         (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) [m/Icon "done"] [:i (inc i)])
                         [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"])]
        [m/GridCell {:span 6}
@@ -237,7 +237,7 @@
            "coverage" [current-project-step-coverage read-only @current-project]
            "actions" [current-project-step-actions read-only @current-project @build-actions @upgrade-actions]
            "review" [:div "es review"]
-           [])]]
+           (dispatch [:projects2/infer-step @current-project]))]]
        [m/GridCell {:span 6}
         [:div.map]]])))
 
