@@ -44,7 +44,8 @@
  in-projects2
  (fn [{:keys [db]} [_ project]]
    (let [steps ["goal", "consumers", "providers", "coverage", "actions", "review"]
-         selected-step (first (filter #(not (s/valid? (keyword (str "planwise.model.project-" %) "validation") project)) steps))]
+         first-invalid-step (first (filter #(not (s/valid? (keyword (str "planwise.model.project-" %) "validation") project)) steps))
+         selected-step (if (not-empty first-invalid-step) first-invalid-step "review")]
      {:navigate (routes/projects2-show-with-step {:id (:id project) :step selected-step})})))
 
 (rf/reg-event-fx
