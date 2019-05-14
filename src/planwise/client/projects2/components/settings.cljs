@@ -239,12 +239,12 @@
       [m/Grid {:class-name "wizard"}
        [m/GridCell {:span 12 :class-name "steps"}
         (doall
-          (map-indexed (fn [i iteration-step]
-                         [:a {:key i
-                              :class-name (join " " [(if (= iteration-step step) "active") (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) "complete")])
-                              :href (routes/projects2-show-with-step {:id (:id @current-project) :step iteration-step})}
-                          (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) [m/Icon "done"] [:i (inc i)])
-                          [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"]))]
+         (map-indexed (fn [i iteration-step]
+                        [:a {:key i
+                             :class-name (join " " [(if (= iteration-step step) "active") (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) "complete")])
+                             :href (routes/projects2-show-with-step {:id (:id @current-project) :step iteration-step})}
+                         (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) [m/Icon "done"] [:i (inc i)])
+                         [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"]))]
        [m/GridCell {:span 6}
         [:form.vertical
          (case step
