@@ -1,11 +1,8 @@
-(ns planwise.model.project
+(ns planwise.model.project-review
   (:require [clojure.spec.alpha :as s]
             [clojure.string :refer [blank?]]))
 
-;; ----------------------------------------------------------------------
-;; Project starting validation
 
-;; Goal
 (s/def ::id number?)
 (s/def ::name (s/and string? (comp not blank?)))
 (s/def ::region-id number?)
@@ -16,7 +13,6 @@
 (s/def ::unit-name string?)
 (s/def ::demographics (s/keys :req-un [::unit-name ::target]))
 
-;; Providers
 (s/def ::provider-set-id number?)
 (s/def ::capacity number?)
 (s/def ::providers (s/keys :req-un [::capacity]))
@@ -29,8 +25,8 @@
 (s/def ::driving-options (s/keys :req-un [::driving-time]))
 (s/def ::walking-options (s/keys :req-un [::walking-time]))
 (s/def ::distance-options (s/keys :req-un [::distance]))
-;; example:
-;; (s/def ::public-transport-options (s/keys :req-un [::walking-time ::transport-type ::total-time]))
+
+
 (s/def ::filter-options (s/or :driving-options ::driving-options
                               :walking-options ::walking-options
                               :distance-options ::distance-options))
@@ -43,12 +39,4 @@
 ;; Config
 (s/def ::config (s/keys :req-un [::demographics ::actions ::coverage ::providers]))
 
-;; Project Starting
-(s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))
-
-;; TODO: Use real validations
-(s/def ::consumers-step (s/keys :req-un [::source-set-id ::consumer-config]))
-(s/def ::providers-step (s/keys :req-un [::id ::owner-id ::provider-set-id]))
-(s/def ::coverage-step (s/keys :req-un [::id ::owner-id ::name]))
-(s/def ::actions-step (s/keys :req-un [::id ::owner-id ::actions]))
-(s/def ::review-step (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))
+(s/def ::validation (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))

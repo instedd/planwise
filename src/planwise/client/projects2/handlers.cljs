@@ -5,7 +5,15 @@
             [planwise.client.routes :as routes]
             [planwise.client.effects :as effects]
             [planwise.client.projects2.db :as db]
-            [planwise.client.utils :as utils]))
+            [planwise.client.utils :as utils]
+            [clojure.spec.alpha :as s]
+            [planwise.model.project-consumers]
+            [planwise.model.project-actions]
+            [planwise.model.project-coverage]
+            [planwise.model.project-providers]
+            [planwise.model.project-review]
+            [planwise.model.project-goal]))
+
 
 (def in-projects2 (rf/path [:projects2]))
 
@@ -32,11 +40,20 @@
       :navigate  (routes/projects2-show {:id project-id})})))
 
 (rf/reg-event-fx
+ :projects2/infer-step
+ in-projects2
+ (fn [{:keys [db]} [_ project]]
+   (let [steps ["goal", "consumers", "providers", "coverage", "actions", "review"]
+         first-invalid-step (first (filter #(not (s/valid? (keyword (str "planwise.model.project-" %) "validation") project)) steps))
+         selected-step (if (not-empty first-invalid-step) first-invalid-step "review")]
+     {:navigate (routes/projects2-show-with-step {:id (:id project) :step selected-step})})))
+
+(rf/reg-event-fx
  :projects2/next-step-project
  in-projects2
  (fn [{:keys [db]} [_ project-id step]]
    (let [steps ["goal", "consumers", "providers", "coverage", "actions", "review"]]
-     {:navigate (routes/projects2-show {:id project-id :step (steps (inc (.indexOf steps step)))})})))
+     {:navigate (routes/projects2-show-with-step {:id project-id :step (steps (inc (.indexOf steps step)))})})))
 
 
 ;;------------------------------------------------------------------------------

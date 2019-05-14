@@ -63,6 +63,7 @@
     (fn [props]
       (let [component-props (assoc (select-keys props extra-keys)
                                    :id id
+                                   :type "test"
                                    :focus focus)
             props           (apply dissoc props extra-keys)]
         [mdc-input-field props component-props]))))
@@ -88,6 +89,7 @@
                              (select-keys props extra-keys)
                              {:id    (str (random-uuid))
                               :focus focus
+                              :type "number"
                               :focus-extra-class (when wrong-input " invalid-input")})
             on-change-fn    (:on-change props)
             global-value    (str (:value props))
