@@ -161,7 +161,8 @@
                                 :value     (:source-set-id current-project)
                                 :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                 :disabled?  read-only}]
-   [current-project-input "Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
+   [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
+   [m/TextFieldHelperText {:persistent true} (str "How do you refer to the filtered population? (Eg: women)")]
    [current-project-input "Target" [:config :demographics :target] "number" {:disabled read-only :sub-type :percentage}]
    [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in current-project [:config :demographics :unit-name]))]])
 
@@ -169,14 +170,13 @@
   [read-only current-project tags]
   [:section {:class-name "project-settings-section"}
    [section-header 3 "Providers"]
-   [providers-set-dropdown-component {:label     "Provider Set"
+   [providers-set-dropdown-component {:label     "Provider Dataset"
                                       :value     (:provider-set-id current-project)
                                       :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                       :disabled? read-only}]
 
-   [current-project-input "Capacity workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-   [m/TextFieldHelperText {:persistent true} (str "How many " (get-in current-project [:config :demographics :unit-name]) " can be handled per provider capacity")]
-
+   [current-project-input "Capacity Workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
+   [m/TextFieldHelperText {:persistent true} (str "How many " (or (not-empty (get-in current-project [:config :demographics :unit-name])) "consumers") " can each provider handle?")]
    (when-not read-only [tag-input])
    [:label "Tags: " [tag-set tags read-only]]
    [count-providers tags current-project]])
@@ -196,6 +196,7 @@
   [read-only current-project build-actions upgrade-actions]
 
   [:section {:class-name "project-settings-section"}
+   [section-header 5 "Actions"]
    [:div [:p [m/Icon "account_balance"] "Available budget"]]
    [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
    [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
@@ -212,6 +213,17 @@
    [listing-actions {:read-only?   read-only
                      :action-name :upgrade
                      :list        upgrade-actions}]])
+
+(defn- current-project-step-review
+  [read-only current-project]
+  [:section {:class "project-settings-section"}
+   [section-header 6 "Review"]
+   [:div {:class "step-info"} "After this step the system will search for different improvements scenarios based on the given parameters. Once started, the process will continue even if you leave the site. From the dashboard you will be able to see the scenarios found so far, pause the search and review the performed work."]
+   [:div [:p [m/Icon "location_on"] "Kenya health facilities - ResMap 8902"]]
+   [:div [:p [m/Icon "account_balance"] "K 25,000,000"]]
+   [:div [:p [m/Icon "people"] "Kenya census 2005"]]
+   [:div [:p [m/Icon "directions"] "120 min walking distance, 40 min driving"]]
+   [:div [:p [m/Icon "info"] "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]])
 
 (defn current-project-settings-view
   [{:keys [read-only step]}]
@@ -236,7 +248,8 @@
            "providers" [current-project-step-providers read-only @current-project @tags]
            "coverage" [current-project-step-coverage read-only @current-project]
            "actions" [current-project-step-actions read-only @current-project @build-actions @upgrade-actions]
-           "review" [:div "es review"]
+
+           "review" [current-project-step-review read-only @current-project]
            (dispatch [:projects2/infer-step @current-project]))]]
        [m/GridCell {:span 6}
         [:div.map]]])))
