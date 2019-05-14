@@ -589,12 +589,37 @@ form.vertical, .fields-vertical {
   margin-right: 15px;
 }
 
-.project-setting{
-  width: 554px;
+.project-setting {
+  max-width: 554px;
 }
 
-.action-input{
-  width: 110px;
+.action-input {
+  max-width: 100px;
+}
+
+.prefix {
+  color: #999999;
+  font-style: normal;
+  position: absolute;
+  padding-bottom: 8px;
+
+  + input {
+    padding-left: 15px;
+  }
+  + .suffix {
+    + input {
+      padding-left: 1rem;
+    }
+  }
+}
+.suffix {
+  @extend .prefix;
+  left: auto;
+  right: 0;
+  + input {
+    padding-right: 1rem;
+    padding-left: 0;
+  }
 }
 
 //empty projects

@@ -33,13 +33,17 @@
 
 (defn- current-project-input
   ([label path type]
-   (current-project-input label path type {:disabled false}))
+   (current-project-input label path type "" "" {:disabled false}))
   ([label path type other-props]
+   (current-project-input label path type "" "" {:disabled false}))
+  ([label path type prefix suffix other-props]
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
          change-fn       #(rf/dispatch-sync [:projects2/save-key path %])
          props (merge (select-keys other-props [:class :disabled :sub-type])
-                      {:label     label
+                      {:prefix    prefix
+                       :suffix    suffix
+                       :label     label
                        :on-change (comp change-fn (fn [e] (-> e .-target .-value)))
                        :value     value})]
      (case type
