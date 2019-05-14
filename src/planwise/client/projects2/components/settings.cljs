@@ -123,9 +123,9 @@
               props)
     [m/Icon "clear"]]
    (when (= action-name :build) "with a capacity of ")
-   [current-project-input "" [:config :actions action-name idx :capacity] "number" (merge {:class "action-input"} props)]
-   "would cost"
-   [current-project-input "" [:config :actions action-name idx :investment] "number" (merge {:class "action-input"} props)]])
+   [current-project-input "" [:config :actions action-name idx :capacity] "number" "" "" (merge {:class "action-input"} props)]
+   " would cost "
+   [current-project-input "" [:config :actions action-name idx :investment] "number" "$" "" (merge {:class "action-input"} props)]])
 
 (defn- listing-actions
   [{:keys [read-only? action-name list]}]
@@ -161,7 +161,7 @@
                                 :disabled?  read-only}]
    [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
    [m/TextFieldHelperText {:persistent true} (str "How do you refer to the filtered population? (Eg: women)")]
-   [current-project-input "Target" [:config :demographics :target] "number" {:disabled read-only :sub-type :percentage}]
+   [current-project-input "Target" [:config :demographics :target] "number" "" "%"  {:disabled read-only :sub-type :percentage}]
    [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in current-project [:config :demographics :unit-name]))]])
 
 (defn- current-project-step-providers
@@ -196,7 +196,7 @@
   [:section {:class-name "project-settings-section"}
    [section-header 5 "Actions"]
    [:div [:p [m/Icon "account_balance"] "Available budget"]]
-   [current-project-input "" [:config :actions :budget] "number" {:disabled read-only :class "project-setting"}]
+   [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
    [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
    [:div [:p [m/Icon "domain"] "Building a new provider..."]]
@@ -205,7 +205,7 @@
                      :list        build-actions}]
 
    [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
-   [current-project-input "" [:config :actions :upgrade-budget] "number" {:disabled read-only :class "project-setting"}]
+   [current-project-input "" [:config :actions :upgrade-budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
 
    [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
    [listing-actions {:read-only?   read-only
