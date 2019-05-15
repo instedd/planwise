@@ -81,6 +81,13 @@
              :theme    ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
+(defn- project-back-button
+  []
+  ; TODO - add on-click function and don't show it in first step
+  [m/Button {:type     "button"
+             :theme    ["text-secondary-on-secondary-light"]}
+   "Back"])
+
 (defn- tag-chip
   [props index input read-only]
   [m/Chip props [m/ChipText input]
@@ -271,6 +278,7 @@
         [current-project-settings-view {:read-only false :step (:step @page-params)}]
 
         [:div {:class-name "project-settings-actions"}
+         [project-back-button]
          [project-delete-button delete?]
          [project-next-step-button @current-project (:step @page-params)]]]
        [delete-project-dialog {:open? @delete?

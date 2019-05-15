@@ -548,6 +548,10 @@ form.vertical, .fields-vertical {
 
   button {
     margin-left: 25px;
+    &:first-child {
+      float: left;
+      margin: 0;
+    }
   }
 }
 
