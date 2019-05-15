@@ -271,9 +271,8 @@
         [current-project-settings-view {:read-only false :step (:step @page-params)}]
 
         [:div {:class-name "project-settings-actions"}
-         ; [project-delete-button delete?]
+         [project-delete-button delete?]
          [project-next-step-button @current-project (:step @page-params)]]]
-         ; [project-start-button {} @current-project]]]
        [delete-project-dialog {:open? @delete?
                                :cancel-fn hide-dialog
                                :delete-fn #(dispatch [:projects2/delete-project (:id @current-project)])}]])))
