@@ -46,7 +46,6 @@
 ;; Project Starting
 (s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))
 
-;; TODO: Use real validations
 (s/def ::consumers-step (s/keys :req-un [::source-set-id ::consumer-config]))
 (s/def ::providers-step (s/keys :req-un [::id ::owner-id ::provider-set-id]))
 (s/def ::coverage-step (s/keys :req-un [::id ::owner-id ::name]))
