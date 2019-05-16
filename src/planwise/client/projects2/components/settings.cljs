@@ -67,14 +67,14 @@
 
 
 (defn- project-next-step-button
-  [project step]
+  [project next-step]
   [m/Button {:id         "start-project"
              :type       "button"
              :unelevated "unelevated"
-             :disabled   (if (= step "review") (not (s/valid? :planwise.model.project/starting project)) false)
-             :on-click   (utils/prevent-default #(if (= step "review")
+             :disabled   (if (nil? next-step) (not (s/valid? :planwise.model.project/starting project)) false)
+             :on-click   (utils/prevent-default #(if (nil? next-step)
                                                    (dispatch [:projects2/start-project (:id project)])
-                                                   (dispatch [:projects2/next-step-project (:id project) step])))}
+                                                   (dispatch [:projects2/navigate-to-step-project (:id project) next-step])))}
    "Continue"])
 
 (defn- project-delete-button
@@ -254,7 +254,6 @@
            "providers" [current-project-step-providers read-only @current-project @tags]
            "coverage" [current-project-step-coverage read-only @current-project]
            "actions" [current-project-step-actions read-only @current-project @build-actions @upgrade-actions]
-
            "review" [current-project-step-review read-only @current-project]
            (dispatch [:projects2/infer-step @current-project]))]]
        [m/GridCell {:span 6}
@@ -266,12 +265,12 @@
         current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
         hide-dialog     (fn [] (reset! delete? false))
-        sections        [{:step "goal" :title "Goal" :spec :planwise.model.project-goal/validation}
-                         {:step "consumers" :title "Consumers" :spec :planwise.model.project-consumers/validation}
-                         {:step "providers" :title "Providers" :spec :planwise.model.project-providers/validation}
-                         {:step "coverage" :title "Coverage" :spec :planwise.model.project-coverage/validation}
-                         {:step "actions" :title "Actions" :spec :planwise.model.project-actions/validation}
-                         {:step "review" :title "Review" :spec :planwise.model.project-review/validation}]]
+        sections        [{:step "goal" :title "Goal" :spec :planwise.model.project/goal-step :next-step "consumers"}
+                         {:step "consumers" :title "Consumers" :spec :planwise.model.project/consumers-step :next-step "providers"}
+                         {:step "providers" :title "Providers" :spec :planwise.model.project/providers-step :next-step "coverage"}
+                         {:step "coverage" :title "Coverage" :spec :planwise.model.project/coverage-step :next-step "actions"}
+                         {:step "actions" :title "Actions" :spec :planwise.model.project/actions-step :next-step "review"}
+                         {:step "review" :title "Review" :spec :planwise.model.project/review-step :next-step nil}]]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
@@ -279,7 +278,7 @@
 
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]
-         [project-next-step-button @current-project (:step @page-params)]]]
+         [project-next-step-button @current-project (:next-step (first (filter #(= (:step %) (:step @page-params)) sections)))]]]
        [delete-project-dialog {:open? @delete?
                                :cancel-fn hide-dialog
                                :delete-fn #(dispatch [:projects2/delete-project (:id @current-project)])}]])))
