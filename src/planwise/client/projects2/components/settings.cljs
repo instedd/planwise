@@ -174,8 +174,9 @@
                                 :disabled?  read-only}]
    [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
    [m/TextFieldHelperText {:persistent true} (str "How do you refer to the filtered population? (Eg: women)")]
-   [current-project-input "Target" [:config :demographics :target] "number" "" "%"  {:disabled read-only :sub-type :percentage}]
-   [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in current-project [:config :demographics :unit-name]))]])
+   [:div.percentage-input
+    [current-project-input "Target" [:config :demographics :target] "number" "" "%"  {:disabled read-only :sub-type :percentage}]
+    [:p (str "of " (or (not-empty (get-in current-project [:config :demographics :unit-name])) "population") " should be considered")]]])
 
 (defn- current-project-step-providers
   [read-only current-project tags]

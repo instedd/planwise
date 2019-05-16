@@ -600,6 +600,14 @@ form.vertical, .fields-vertical {
 .action-input {
   max-width: 100px;
 }
+.percentage-input {
+  div {
+    margin-right: 0.8rem;
+    > input {
+      max-width: 50px;
+    }
+  }
+}
 
 .prefix {
   color: #999999;
