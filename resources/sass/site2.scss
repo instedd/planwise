@@ -531,7 +531,7 @@ form.vertical, .fields-vertical {
     margin: 25px 0 0;
   }
 
-  div > p, button {
+  button {
     display: inline-flex;
     align-items: center;
     .material-icons {
@@ -595,6 +595,15 @@ form.vertical, .fields-vertical {
 
 .project-setting {
   max-width: 554px;
+}
+.project-setting-title {
+  p {
+    display: inline-flex;
+    align-items: flex-start;
+    .material-icons {
+      margin-right: 10px;
+    }
+  }
 }
 
 .action-input {
