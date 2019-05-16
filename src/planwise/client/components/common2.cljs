@@ -41,12 +41,12 @@
     [:div.mdc-text-field.mdc-text-field--upgraded {:class (cond
                                                             (:read-only props) focus-extra-class
                                                             @focus (str "mdc-text-field--focused" focus-extra-class))}
-     (if (not-empty prefix) [:i.prefix prefix])
-     (if (not-empty suffix) [:i.suffix suffix])
+     (when-not (empty? prefix) [:i.prefix prefix])
+     (when-not (not-empty suffix) [:i.suffix suffix])
      [:input.mdc-text-field__input (apply dissoc (merge props {:id id
                                                                :on-focus #(reset! focus true)
-                                                               :on-blur  #(reset! focus false)
-                                                               :placeholder (if @focus nil)}) [:prefix :suffix])]
+                                                               :on-blur  #(reset! focus false)})
+                                          [:prefix :suffix])]
      [:label.mdc-floating-label {:for id
                                  :class (when (or (not (blank? (str (:value props))))
                                                   @focus) "mdc-floating-label--float-above")}
@@ -63,7 +63,7 @@
     (fn [props]
       (let [component-props (assoc (select-keys props extra-keys)
                                    :id id
-                                   :type "test"
+                                   :type "text"
                                    :focus focus)
             props           (apply dissoc props extra-keys)]
         [mdc-input-field props component-props]))))

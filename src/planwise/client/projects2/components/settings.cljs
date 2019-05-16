@@ -72,7 +72,9 @@
              :type       "button"
              :unelevated "unelevated"
              :disabled   (if (= step "review") (not (s/valid? :planwise.model.project/starting project)) false)
-             :on-click   (utils/prevent-default #(if (= step "review") (utils/prevent-default (dispatch [:projects2/start-project (:id project)])) (dispatch [:projects2/next-step-project (:id project) step])))}
+             :on-click   (utils/prevent-default #(if (= step "review")
+                                                   (dispatch [:projects2/start-project (:id project)])
+                                                   (dispatch [:projects2/next-step-project (:id project) step])))}
    "Continue"])
 
 (defn- project-delete-button
@@ -154,8 +156,7 @@
 
 (defn- current-project-step-goal
   [read-only current-project]
-  (let [current-project (subscribe [:projects2/current-project])])
-  [:section {:class-name "project-settings-section"}
+  [:section.project-settings-section
    [section-header 1 "Goal"]
    [current-project-input "Goal" [:name] "text"]
    [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
@@ -238,7 +239,7 @@
    [:div [:p [m/Icon "info"] "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]])
 
 (defn current-project-settings-view
-  [{:keys [read-only step]}]
+  [{:keys [read-only step sections]}]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
@@ -246,13 +247,13 @@
     (fn [{:keys [read-only step]}]
       [m/Grid {:class-name "wizard"}
        [m/GridCell {:span 12 :class-name "steps"}
-        (doall
-         (map-indexed (fn [i iteration-step]
-                        [:a {:key i
-                             :class-name (join " " [(if (= iteration-step step) "active") (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) "complete")])
-                             :href (routes/projects2-show-with-step {:id (:id @current-project) :step iteration-step})}
-                         (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) [m/Icon "done"] [:i (inc i)])
-                         [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"]))]
+        (let [project @current-project]
+          (map-indexed (fn [i iteration-step]
+                         [:a {:key i
+                              :class-name (join " " [(if (= (:step iteration-step) step) "active") (if (s/valid? (keyword (str "planwise.model.project-" (:step iteration-step)) "validation") project) "complete")])
+                              :href (routes/projects2-show-with-step {:id (:id project) :step (:step iteration-step)})}
+                          (if (s/valid? (:spec iteration-step) project) [m/Icon "done"] [:i (inc i)])
+                          [:div (:title iteration-step)]]) sections))]
        [m/GridCell {:span 6}
         [:form.vertical
          (case step
@@ -272,11 +273,17 @@
   (let [page-params       (subscribe [:page-params])
         current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
-        hide-dialog     (fn [] (reset! delete? false))]
+        hide-dialog     (fn [] (reset! delete? false))
+        sections        [{:step "goal" :title "Goal" :spec :planwise.model.project-goal/validation}
+                         {:step "consumers" :title "Consumers" :spec :planwise.model.project-consumers/validation}
+                         {:step "providers" :title "Providers" :spec :planwise.model.project-providers/validation}
+                         {:step "coverage" :title "Coverage" :spec :planwise.model.project-coverage/validation}
+                         {:step "actions" :title "Actions" :spec :planwise.model.project-actions/validation}
+                         {:step "review" :title "Review" :spec :planwise.model.project-review/validation}]]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
-        [current-project-settings-view {:read-only false :step (:step @page-params)}]
+        [current-project-settings-view {:read-only false :step (:step @page-params) :sections sections}]
 
         [:div {:class-name "project-settings-actions"}
          [project-back-button]
