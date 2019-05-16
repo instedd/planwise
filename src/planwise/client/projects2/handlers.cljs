@@ -49,11 +49,10 @@
      {:navigate (routes/projects2-show-with-step {:id (:id project) :step selected-step})})))
 
 (rf/reg-event-fx
- :projects2/next-step-project
+ :projects2/navigate-to-step-project
  in-projects2
  (fn [{:keys [db]} [_ project-id step]]
-   (let [steps ["goal", "consumers", "providers", "coverage", "actions", "review"]]
-     {:navigate (routes/projects2-show-with-step {:id project-id :step (steps (inc (.indexOf steps step)))})})))
+   {:navigate (routes/projects2-show-with-step {:id project-id :step step})}))
 
 
 ;;------------------------------------------------------------------------------
