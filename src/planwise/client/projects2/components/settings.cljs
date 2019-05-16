@@ -202,6 +202,7 @@
 
   [:section {:class-name "project-settings-section"}
    [section-header 4 "Coverage"]
+   [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."]
    [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm current-project)
                                        :value              (get-in current-project [:config :coverage :filter-options])
                                        :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
@@ -213,6 +214,7 @@
 
   [:section {:class-name "project-settings-section"}
    [section-header 5 "Actions"]
+   [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
    [project-setting-title "account_balance" "Available budget"]
    [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
    [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
