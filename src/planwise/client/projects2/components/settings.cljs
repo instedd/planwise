@@ -72,7 +72,9 @@
              :type       "button"
              :unelevated "unelevated"
              :disabled   (if (= step "review") (not (s/valid? :planwise.model.project/starting project)) false)
-             :on-click   (utils/prevent-default #(if (= step "review") (utils/prevent-default (dispatch [:projects2/start-project (:id project)])) (dispatch [:projects2/next-step-project (:id project) step])))}
+             :on-click   (utils/prevent-default #(if (= step "review")
+                                                   (dispatch [:projects2/start-project (:id project)])
+                                                   (dispatch [:projects2/next-step-project (:id project) step])))}
    "Continue"])
 
 (defn- project-delete-button
@@ -147,8 +149,7 @@
 
 (defn- current-project-step-goal
   [read-only current-project]
-  (let [current-project (subscribe [:projects2/current-project])])
-  [:section {:class-name "project-settings-section"}
+  [:section.project-settings-section
    [section-header 1 "Goal"]
    [current-project-input "Goal" [:name] "text"]
    [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
@@ -238,13 +239,13 @@
     (fn [{:keys [read-only step]}]
       [m/Grid {:class-name "wizard"}
        [m/GridCell {:span 12 :class-name "steps"}
-        (doall
-         (map-indexed (fn [i iteration-step]
-                        [:a {:key i
-                             :class-name (join " " [(if (= iteration-step step) "active") (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) "complete")])
-                             :href (routes/projects2-show-with-step {:id (:id @current-project) :step iteration-step})}
-                         (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") @current-project) [m/Icon "done"] [:i (inc i)])
-                         [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"]))]
+        (let [project @current-project]
+          (map-indexed (fn [i iteration-step]
+                         [:a {:key i
+                              :class-name (join " " [(if (= iteration-step step) "active") (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") project) "complete")])
+                              :href (routes/projects2-show-with-step {:id (:id project) :step iteration-step})}
+                          (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") project) [m/Icon "done"] [:i (inc i)])
+                          [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"]))]
        [m/GridCell {:span 6}
         [:form.vertical
          (case step

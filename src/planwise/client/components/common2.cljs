@@ -45,8 +45,7 @@
      (when-not (not-empty suffix) [:i.suffix suffix])
      [:input.mdc-text-field__input (apply dissoc (merge props {:id id
                                                                :on-focus #(reset! focus true)
-                                                               :on-blur  #(reset! focus false)
-                                                               :placeholder @focus})
+                                                               :on-blur  #(reset! focus false)})
                                           [:prefix :suffix])]
      [:label.mdc-floating-label {:for id
                                  :class (when (or (not (blank? (str (:value props))))
