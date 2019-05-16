@@ -231,7 +231,7 @@
    [:div [:p [m/Icon "info"] "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]])
 
 (defn current-project-settings-view
-  [{:keys [read-only step]}]
+  [{:keys [read-only step sections]}]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
@@ -242,10 +242,10 @@
         (let [project @current-project]
           (map-indexed (fn [i iteration-step]
                          [:a {:key i
-                              :class-name (join " " [(if (= iteration-step step) "active") (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") project) "complete")])
-                              :href (routes/projects2-show-with-step {:id (:id project) :step iteration-step})}
-                          (if (s/valid? (keyword (str "planwise.model.project-" iteration-step) "validation") project) [m/Icon "done"] [:i (inc i)])
-                          [:div iteration-step]]) ["goal", "consumers", "providers", "coverage", "actions", "review"]))]
+                              :class-name (join " " [(if (= (:step iteration-step) step) "active") (if (s/valid? (keyword (str "planwise.model.project-" (:step iteration-step)) "validation") project) "complete")])
+                              :href (routes/projects2-show-with-step {:id (:id project) :step (:step iteration-step)})}
+                          (if (s/valid? (:spec iteration-step) project) [m/Icon "done"] [:i (inc i)])
+                          [:div (:title iteration-step)]]) sections))]
        [m/GridCell {:span 6}
         [:form.vertical
          (case step
@@ -265,11 +265,17 @@
   (let [page-params       (subscribe [:page-params])
         current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
-        hide-dialog     (fn [] (reset! delete? false))]
+        hide-dialog     (fn [] (reset! delete? false))
+        sections        [{:step "goal" :title "Goal" :spec :planwise.model.project-goal/validation}
+                         {:step "consumers" :title "Consumers" :spec :planwise.model.project-consumers/validation}
+                         {:step "providers" :title "Providers" :spec :planwise.model.project-providers/validation}
+                         {:step "coverage" :title "Coverage" :spec :planwise.model.project-coverage/validation}
+                         {:step "actions" :title "Actions" :spec :planwise.model.project-actions/validation}
+                         {:step "review" :title "Review" :spec :planwise.model.project-review/validation}]]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
-        [current-project-settings-view {:read-only false :step (:step @page-params)}]
+        [current-project-settings-view {:read-only false :step (:step @page-params) :sections sections}]
 
         [:div {:class-name "project-settings-actions"}
          [project-delete-button delete?]
