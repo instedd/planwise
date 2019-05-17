@@ -610,6 +610,8 @@ form.vertical, .fields-vertical {
   max-width: 100px;
 }
 .percentage-input {
+  display: inline-flex;
+  align-items: end;
   div {
     margin-right: 0.8rem;
     > input {
