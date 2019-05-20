@@ -113,6 +113,9 @@ header {
     position: absolute;
     right: $margin-page;
     bottom: -27px;
+    > i {
+      align-self: center;
+    }
   }
 }
 
