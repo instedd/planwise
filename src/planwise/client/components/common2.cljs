@@ -35,15 +35,18 @@
 
 (defn mdc-input-field
   [props component-props]
-  (let [{:keys [id focus focus-extra-class label]} component-props]
+
+  (let [{:keys [id focus focus-extra-class label]} component-props
+        {:keys [prefix suffix]} props]
     [:div.mdc-text-field.mdc-text-field--upgraded {:class (cond
                                                             (:read-only props) focus-extra-class
                                                             @focus (str "mdc-text-field--focused" focus-extra-class))}
-     [:input.mdc-text-field__input (merge props {:id id
-                                                 :on-focus #(reset! focus true)
-                                                 :on-blur  #(reset! focus false)}
-                                          (when @focus
-                                            {:placeholder nil}))]
+     (when-not (empty? prefix) [:i.prefix prefix])
+     (when-not (empty? suffix) [:i.suffix suffix])
+     [:input.mdc-text-field__input (apply dissoc (merge props {:id id
+                                                               :on-focus #(reset! focus true)
+                                                               :on-blur  #(reset! focus false)})
+                                          [:prefix :suffix])]
      [:label.mdc-floating-label {:for id
                                  :class (when (or (not (blank? (str (:value props))))
                                                   @focus) "mdc-floating-label--float-above")}
@@ -60,6 +63,7 @@
     (fn [props]
       (let [component-props (assoc (select-keys props extra-keys)
                                    :id id
+                                   :type "text"
                                    :focus focus)
             props           (apply dissoc props extra-keys)]
         [mdc-input-field props component-props]))))
@@ -85,6 +89,7 @@
                              (select-keys props extra-keys)
                              {:id    (str (random-uuid))
                               :focus focus
+                              :type "number"
                               :focus-extra-class (when wrong-input " invalid-input")})
             on-change-fn    (:on-change props)
             global-value    (str (:value props))
