@@ -85,11 +85,12 @@
              :on-click #(reset! state true)} "Delete"])
 
 (defn- project-back-button
-  []
-  ; TODO - add on-click function and don't show it in first step
-  [m/Button {:type     "button"
-             :theme    ["text-secondary-on-secondary-light"]}
-   "Back"])
+  [project step]
+  (when step
+    [m/Button {:type     "button"
+               :theme    ["text-secondary-on-secondary-light"]
+               :on-click (utils/prevent-default #(dispatch [:projects2/navigate-to-step-project (:id project) step]))}
+     "Back"]))
 
 (defn- tag-chip
   [props index input read-only]
@@ -296,8 +297,10 @@
         [current-project-settings-view {:read-only false :step (:step @page-params) :sections sections}]
 
         [:div {:class-name "project-settings-actions"}
-         [project-back-button]
-         [project-delete-button delete?]
+         (let [previous-step (:step (first (filter #(= (:next-step %) (:step @page-params)) sections)))]
+           (if (nil? previous-step)
+             [project-delete-button delete?]
+             [project-back-button @current-project previous-step]))
          [project-next-step-button @current-project (:next-step (first (filter #(= (:step %) (:step @page-params)) sections)))]]]
        [delete-project-dialog {:open? @delete?
                                :cancel-fn hide-dialog
