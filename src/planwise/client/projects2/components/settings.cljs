@@ -37,6 +37,7 @@
                      attrs)]
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
+;; TODO: Refactor this fn to require flat map instead of this large amount of params
 (defn- current-project-input
   ([label path type]
    (current-project-input label path type "" "" {:disabled false}))
