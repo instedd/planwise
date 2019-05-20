@@ -42,7 +42,7 @@
                                                             (:read-only props) focus-extra-class
                                                             @focus (str "mdc-text-field--focused" focus-extra-class))}
      (when-not (empty? prefix) [:i.prefix prefix])
-     (when-not (not-empty suffix) [:i.suffix suffix])
+     (when-not (empty? suffix) [:i.suffix suffix])
      [:input.mdc-text-field__input (apply dissoc (merge props {:id id
                                                                :on-focus #(reset! focus true)
                                                                :on-blur  #(reset! focus false)})

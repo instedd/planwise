@@ -84,6 +84,13 @@
              :theme    ["text-secondary-on-secondary-light"]
              :on-click #(reset! state true)} "Delete"])
 
+(defn- project-back-button
+  []
+  ; TODO - add on-click function and don't show it in first step
+  [m/Button {:type     "button"
+             :theme    ["text-secondary-on-secondary-light"]}
+   "Back"])
+
 (defn- tag-chip
   [props index input read-only]
   [m/Chip props [m/ChipText input]
@@ -119,6 +126,9 @@
   [:div {:class-name "step-header"}
    [:h2 [:span title]]])
 
+(defn- project-setting-title
+  [icon title]
+  [:div.project-setting-title [:p [m/Icon icon] title]])
 
 ;-------------------------------------------------------------------------------------------
 ; Actions
@@ -171,8 +181,9 @@
                                   :disabled?  read-only}]
      [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the filtered population? (Eg: women)")]
-     [current-project-input "Target" [:config :demographics :target] "number" "" "%"  {:disabled read-only :sub-type :percentage}]
-     [m/TextFieldHelperText {:persistent true} (str "Percentage of population that should be considered " (get-in @current-project [:config :demographics :unit-name]))]]))
+     [:div.percentage-input
+      [current-project-input "Target" [:config :demographics :target] "number" "" "%"  {:disabled read-only :sub-type :percentage}]
+      [:p (str "of " (or (not-empty (get-in @current-project [:config :demographics :unit-name])) "population") " should be considered")]]]))
 
 (defn- current-project-step-providers
   [read-only]
@@ -196,6 +207,7 @@
   (let [current-project (subscribe [:projects2/current-project])]
     [:section {:class-name "project-settings-section"}
      [section-header 4 "Coverage"]
+     [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."]
      [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
                                          :value              (get-in @current-project [:config :coverage :filter-options])
                                          :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
@@ -209,19 +221,20 @@
         upgrade-actions (subscribe [:projects2/upgrade-actions])]
     [:section {:class-name "project-settings-section"}
      [section-header 5 "Actions"]
-     [:div [:p [m/Icon "account_balance"] "Available budget"]]
+     [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
+     [project-setting-title "account_balance" "Available budget"]
      [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
      [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
-     [:div [:p [m/Icon "domain"] "Building a new provider..."]]
+     [project-setting-title "domain" "Building a new provider..."]
      [listing-actions {:read-only?  read-only
                        :action-name :build
                        :list        @build-actions}]
 
-     [:div [:p [m/Icon "arrow_upward"] "Upgrading a provider so that it can satisfy demand would cost..."]]
+     [project-setting-title "arrow_upward" "Upgrading a provider so that it can satisfy demand would cost..."]
      [current-project-input "" [:config :actions :upgrade-budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
 
-     [:div [:p [m/Icon "add"] "Increase the capactiy of a provider by..."]]
+     [project-setting-title "add" "Increase the capactiy of a provider by..."]
      [listing-actions {:read-only?   read-only
                        :action-name :upgrade
                        :list        @upgrade-actions}]]))
@@ -232,11 +245,11 @@
     [:section {:class "project-settings-section"}
      [section-header 6 "Review"]
      [:div {:class "step-info"} "After this step the system will search for different improvements scenarios based on the given parameters. Once started, the process will continue even if you leave the site. From the dashboard you will be able to see the scenarios found so far, pause the search and review the performed work."]
-     [:div [:p [m/Icon "location_on"] "Kenya health facilities - ResMap 8902"]]
-     [:div [:p [m/Icon "account_balance"] "K 25,000,000"]]
-     [:div [:p [m/Icon "people"] "Kenya census 2005"]]
-     [:div [:p [m/Icon "directions"] "120 min walking distance, 40 min driving"]]
-     [:div [:p [m/Icon "info"] "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]]))
+     [project-setting-title "location_on" "Kenya health facilities - ResMap 8902"]
+     [project-setting-title "account_balance" "K 25,000,000"]
+     [project-setting-title "people" "Kenya census 2005"]
+     [project-setting-title "directions" "120 min walking distance, 40 min driving"]
+     [project-setting-title "info" "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]))
 
 (defn current-project-settings-view
   [{:keys [read-only step sections]}]
@@ -283,6 +296,7 @@
         [current-project-settings-view {:read-only false :step (:step @page-params) :sections sections}]
 
         [:div {:class-name "project-settings-actions"}
+         [project-back-button]
          [project-delete-button delete?]
          [project-next-step-button @current-project (:next-step (first (filter #(= (:step %) (:step @page-params)) sections)))]]]
        [delete-project-dialog {:open? @delete?
