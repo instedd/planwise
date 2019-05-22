@@ -848,7 +848,7 @@ form.vertical, .fields-vertical {
       display: flex;
       align-items: center;
       i {
-        background-color: #999999;        
+        background-color: #999999;
         color: #ffffff;
         font-style: normal;
         padding: 5px 11px;
@@ -871,7 +871,7 @@ form.vertical, .fields-vertical {
         border: none;
       }
     }
-    
+
     .complete {
       i {
         background-color: $mdc-theme-primary;
@@ -893,6 +893,12 @@ form.vertical, .fields-vertical {
   .map {
     min-height: 500px;
     height: 100%;
+    width: 500px;
+
+    > div {
+      width: 100%;
+      height: 300px;
+    }
   }
 }
 

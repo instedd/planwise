@@ -17,6 +17,8 @@
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
             [clojure.spec.alpha :as s]
+            [leaflet.core :as l]
+            [planwise.client.mapping :as mapping]
             [planwise.model.project-consumers]
             [planwise.model.project-actions]
             [planwise.model.project-coverage]
@@ -251,18 +253,27 @@
      [project-setting-title "directions" "120 min walking distance, 40 min driving"]
      [project-setting-title "info" "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]))
 
+(def map-preview-size {:width 373 :height 278})
+
 (defn current-project-settings-view
   [{:keys [read-only step sections]}]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
-        tags            (subscribe [:projects2/tags])]
-
+        tags            (subscribe [:projects2/tags])
+        regions         (subscribe [:regions/list])]
+        ; preview-map-url (if region-id
+        ;                   (static-image @region-geo map-preview-size)
+        ;                   (static-image fullmap-region-geo map-preview-size))]
     (fn [{:keys [read-only step]}]
       (let [project @current-project
-            step-data       (first (filter #(= (:step %) step) sections))]
-
+            step-data       (first (filter #(= (:step %) step) sections))
+            bbox            (:bbox (first (filter #(= (:id %) (:region-id @current-project)) @regions)))
+            region-geo      (subscribe [:regions/preview-geojson (:region-id @current-project)])
+            preview-map-url (if (:region-id @current-project) (static-image @region-geo map-preview-size))]
+        (dispatch [:regions/load-regions-with-preview [(:region-id @current-project)]])
         [m/Grid {:class-name "wizard"}
+
          [m/GridCell {:span 12 :class-name "steps"}
           (map-indexed (fn [i iteration-step]
                          [:a {:key i
@@ -276,7 +287,20 @@
              (dispatch [:projects2/infer-step @current-project])
              ((:component step-data) read-only))]]
          [m/GridCell {:span 6}
-          [:div.map]]]))))
+          [:div.map
+           (println @region-geo)
+           (if (some? bbox)
+             [l/map-widget {:position (mapping/bbox-center bbox)
+                            :controls []
+                            :initial-bbox bbox}
+              mapping/default-base-tile-layer
+              [:geojson-layer {:data  @region-geo}
+               :group {:pane "tilePane"}
+               :lat-fn (fn [polygon-point] (:lat polygon-point))
+               :lon-fn (fn [polygon-point] (:lon polygon-point))
+               :color :orange
+               :stroke true]])]]]))))
+
 
 (defn edit-current-project
   []
