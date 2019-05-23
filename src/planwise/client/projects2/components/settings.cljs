@@ -245,26 +245,46 @@
   [read-only]
   (let [current-project (subscribe [:projects2/current-project])
         algorithms      (rf/subscribe [:coverage/supported-algorithms])
-        provider        (:provider-set-id @current-project)
+        providers       (subscribe [:providers-set/dropdown-options])
+        provider-set-id        (:provider-set-id @current-project)
+        provider        (first (filter #(= provider-set-id (:value %)) @providers))
         algorithm       (get-in @algorithms [(keyword (:coverage-algorithm @current-project))])
         criteria        (first (vals (:criteria algorithm)))
         coverage-amount (first (vals (get-in @current-project [:config :coverage :filter-options])))
         sources         (subscribe [:sources/list])
-        source          (first (filter #(= (:source-set-id @current-project) (:id %)) @sources))]
+        source          (first (filter #(= (:source-set-id @current-project) (:id %)) @sources))
+        budget          (get-in @current-project [:config :actions :budget])
+        workload        (get-in @current-project [:config :providers :capacity])
+        consumers-unit        (get-in @current-project [:config :demographics :unit-name])
+        capacities       (get-in @current-project [:config :actions :build])]
     (dispatch [:sources/load])
+    (dispatch [:providers-set/load-providers-set])
     [:section {:class "project-settings-section"}
      [section-header 6 "Review"]
      [:div {:class "step-info"} "After this step the system will search for different improvements scenarios based on the given parameters. Once started, the process will continue even if you leave the site. From the dashboard you will be able to see the scenarios found so far, pause the search and review the performed work."]
-     [project-setting-title "location_on" "Kenya health facilities - ResMap 8902"]
-     [project-setting-title "account_balance" "K 25,000,000"]
-     (if (and (some? source))
-         [project-setting-title "people" (:name source)])
-     (if (and (some? coverage-amount) (some? provider))
-         [project-setting-title "directions" (str
-                                               (:label (first (filter #(= coverage-amount (:value %)) (:options criteria))))
-                                               " of "
-                                               (:label (first (vals (:criteria algorithm)))))])
-     [project-setting-title "info" "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]))
+     (if (some? provider)
+       [project-setting-title "location_on" (:label provider)]
+       [project-setting-title "warning" "The provider dataset field in the \"providers\" tab is needed"])
+     (if (some? budget)
+       [project-setting-title "account_balance" (str "K " budget)]
+       [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"])
+     (if (some? source)
+       [project-setting-title "people" (:name source)]
+       [project-setting-title "warning" "The \"consumers\" tab information is needed"])
+     (if (and (some? coverage-amount) (some? provider-set-id))
+       [project-setting-title "directions" (str
+                                            (:label (first (filter #(= coverage-amount (:value %)) (:options criteria))))
+                                            " of "
+                                            (:label (first (vals (:criteria algorithm)))))]
+       [project-setting-title "warning" "The \"providers\" and \"coverage\" tabs information is needed"])
+     (map (fn [action]
+            [project-setting-title "info" (join " " ["A facility with a capacity of"
+                                                     (:capacity action)
+                                                     "will provide service for"
+                                                     (* (:capacity action) workload)
+                                                     (or (not-empty consumers-unit) "consumers units")
+                                                     " per year"])]) capacities)]))
+
 
 (def map-preview-size {:width 373 :height 278})
 
@@ -275,9 +295,6 @@
         upgrade-actions (subscribe [:projects2/upgrade-actions])
         tags            (subscribe [:projects2/tags])
         regions         (subscribe [:regions/list])]
-        ; preview-map-url (if region-id
-        ;                   (static-image @region-geo map-preview-size)
-        ;                   (static-image fullmap-region-geo map-preview-size))]
     (fn [{:keys [read-only step]}]
       (let [project @current-project
             step-data       (first (filter #(= (:step %) step) sections))
