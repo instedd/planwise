@@ -243,14 +243,27 @@
 
 (defn- current-project-step-review
   [read-only]
-  (let [current-project (subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])
+        algorithms      (rf/subscribe [:coverage/supported-algorithms])
+        provider        (:provider-set-id @current-project)
+        algorithm       (get-in @algorithms [(keyword (:coverage-algorithm @current-project))])
+        criteria        (first (vals (:criteria algorithm)))
+        coverage-amount (first (vals (get-in @current-project [:config :coverage :filter-options])))
+        sources         (subscribe [:sources/list])
+        source          (first (filter #(= (:source-set-id @current-project) (:id %)) @sources))]
+    (dispatch [:sources/load])
     [:section {:class "project-settings-section"}
      [section-header 6 "Review"]
      [:div {:class "step-info"} "After this step the system will search for different improvements scenarios based on the given parameters. Once started, the process will continue even if you leave the site. From the dashboard you will be able to see the scenarios found so far, pause the search and review the performed work."]
      [project-setting-title "location_on" "Kenya health facilities - ResMap 8902"]
      [project-setting-title "account_balance" "K 25,000,000"]
-     [project-setting-title "people" "Kenya census 2005"]
-     [project-setting-title "directions" "120 min walking distance, 40 min driving"]
+     (if (and (some? source))
+         [project-setting-title "people" (:name source)])
+     (if (and (some? coverage-amount) (some? provider))
+         [project-setting-title "directions" (str
+                                               (:label (first (filter #(= coverage-amount (:value %)) (:options criteria))))
+                                               " of "
+                                               (:label (first (vals (:criteria algorithm)))))])
      [project-setting-title "info" "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]))
 
 (def map-preview-size {:width 373 :height 278})
@@ -288,7 +301,6 @@
              ((:component step-data) read-only))]]
          [m/GridCell {:span 6}
           [:div.map
-           (println @region-geo)
            (if (some? bbox)
              [l/map-widget {:position (mapping/bbox-center bbox)
                             :controls []
