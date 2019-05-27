@@ -65,7 +65,7 @@
                 :max      (:value (last sorted-options))
                 :discrete true
                 :step     step}]
-    [:p value-label]]))
+     [:p value-label]]))
 
 (defn- criteria-option
   [{:keys [config value on-change disabled?]}]
