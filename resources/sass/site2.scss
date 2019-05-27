@@ -609,6 +609,23 @@ form.vertical, .fields-vertical {
   }
 }
 
+.coverage-setting {
+  p, label {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+  }
+  .mdc-slider .mdc-slider__pin {
+    background-color: transparent;
+    color: $mdc-theme-primary;
+    top: 24px;
+    transform: rotate(-45deg);
+    > .mdc-slider__pin-value-marker::selection {
+      // remove selection color in firefox
+      background-color: transparent;
+    }
+  }
+}
+
 .action-input {
   max-width: 100px;
 }

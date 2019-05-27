@@ -54,14 +54,18 @@
 (defn- criteria-option-select-component
   [{:keys [label value options on-change]}]
   (let [sorted-options  (sort-by :value options)
-        step            (- (:value (second sorted-options)) (:value (first sorted-options)))]
-    [m/Slider {:value    value
-               :onInput  #(on-change (-> % .-detail .-value))
-               :onChange #(on-change (-> % .-detail .-value))
-               :min      (:value (first sorted-options))
-               :max      (:value (last sorted-options))
-               :discrete true
-               :step     step}]))
+        step            (- (:value (second sorted-options)) (:value (first sorted-options)))
+        value-label     (:label (first (filter #(= value (:value %)) options)))]
+    [:div.coverage-setting
+     [:label label]
+     [m/Slider {:value    value
+                :onInput  #(on-change (-> % .-detail .-value))
+                :onChange #(on-change (-> % .-detail .-value))
+                :min      (:value (first sorted-options))
+                :max      (:value (last sorted-options))
+                :discrete true
+                :step     step}]
+    [:p value-label]]))
 
 (defn- criteria-option
   [{:keys [config value on-change disabled?]}]
