@@ -631,7 +631,7 @@ form.vertical, .fields-vertical {
 }
 .percentage-input {
   display: inline-flex;
-  align-items: end;
+  align-items: baseline;
   div {
     margin-right: 0.8rem;
     > input {
