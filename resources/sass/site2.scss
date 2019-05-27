@@ -851,6 +851,7 @@ form.vertical, .fields-vertical {
 }
 
 .wizard {
+  padding-bottom: 0;
   .steps {
     display: flex;
     flex-direction: row;
@@ -911,14 +912,16 @@ form.vertical, .fields-vertical {
     }
   }
   .map {
+    display: flex;
+    align-items: stretch;
     min-height: 500px;
-    height: 100%;
+    height: calc(100% + 24px);
     min-width: 500px;
-    margin: -24px -24px -24px 0;
+    margin: -24px -24px 0 0;
 
     > div {
       width: 100%;
-      height: 500px;
+      height: 100%;
     }
   }
 }
