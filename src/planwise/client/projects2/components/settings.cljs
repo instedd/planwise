@@ -18,13 +18,7 @@
             [planwise.client.utils :as utils]
             [clojure.spec.alpha :as s]
             [leaflet.core :as l]
-            [planwise.client.mapping :as mapping]
-            [planwise.model.project-consumers]
-            [planwise.model.project-actions]
-            [planwise.model.project-coverage]
-            [planwise.model.project-providers]
-            [planwise.model.project-review]
-            [planwise.model.project-goal]))
+            [planwise.client.mapping :as mapping]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
@@ -308,7 +302,7 @@
          [m/GridCell {:span 12 :class-name "steps"}
           (map-indexed (fn [i iteration-step]
                          [:a {:key i
-                              :class-name (join " " [(if (= (:step iteration-step) step) "active") (if (s/valid? (keyword (str "planwise.model.project-" (:step iteration-step)) "validation") project) "complete")])
+                              :class-name (join " " [(if (= (:step iteration-step) step) "active") (if (s/valid? (:spec iteration-step) project) "complete")])
                               :href (routes/projects2-show-with-step {:id (:id project) :step (:step iteration-step)})}
                           (if (s/valid? (:spec iteration-step) project) [m/Icon "done"] [:i (inc i)])
                           [:div (:title iteration-step)]]) sections)]

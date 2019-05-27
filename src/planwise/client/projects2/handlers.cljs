@@ -6,13 +6,7 @@
             [planwise.client.effects :as effects]
             [planwise.client.projects2.db :as db]
             [planwise.client.utils :as utils]
-            [clojure.spec.alpha :as s]
-            [planwise.model.project-consumers]
-            [planwise.model.project-actions]
-            [planwise.model.project-coverage]
-            [planwise.model.project-providers]
-            [planwise.model.project-review]
-            [planwise.model.project-goal]))
+            [clojure.spec.alpha :as s]))
 
 
 (def in-projects2 (rf/path [:projects2]))
@@ -44,7 +38,7 @@
  in-projects2
  (fn [{:keys [db]} [_ project]]
    (let [steps ["goal", "consumers", "providers", "coverage", "actions", "review"]
-         first-invalid-step (first (filter #(not (s/valid? (keyword (str "planwise.model.project-" %) "validation") project)) steps))
+         first-invalid-step (first (filter #(not (s/valid? (keyword "planwise.model.project" (str % "-step")) project)) steps))
          selected-step (if (not-empty first-invalid-step) first-invalid-step "review")]
      {:navigate (routes/projects2-show-with-step {:id (:id project) :step selected-step})})))
 
