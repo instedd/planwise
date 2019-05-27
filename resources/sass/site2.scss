@@ -913,11 +913,12 @@ form.vertical, .fields-vertical {
   .map {
     min-height: 500px;
     height: 100%;
-    width: 500px;
+    min-width: 500px;
+    margin: -24px -24px -24px 0;
 
     > div {
       width: 100%;
-      height: 300px;
+      height: 500px;
     }
   }
 }
