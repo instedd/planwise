@@ -12,7 +12,7 @@
  :providers-set/dropdown-options
  (fn [db _]
    (let [list (get-in db [:providers-set :list :value])]
-     (mapv (fn [provider-set] (let [{:keys [id name]} provider-set] {:value (str id) :label name})) list))))
+     (mapv (fn [provider-set] (let [{:keys [id name]} provider-set] {:value id :label name})) list))))
 
 (rf/reg-sub
  :providers-set/view-state

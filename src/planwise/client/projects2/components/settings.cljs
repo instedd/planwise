@@ -17,12 +17,8 @@
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
             [clojure.spec.alpha :as s]
-            [planwise.model.project-consumers]
-            [planwise.model.project-actions]
-            [planwise.model.project-coverage]
-            [planwise.model.project-providers]
-            [planwise.model.project-review]
-            [planwise.model.project-goal]))
+            [leaflet.core :as l]
+            [planwise.client.mapping :as mapping]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
@@ -85,11 +81,12 @@
              :on-click #(reset! state true)} "Delete"])
 
 (defn- project-back-button
-  []
-  ; TODO - add on-click function and don't show it in first step
-  [m/Button {:type     "button"
-             :theme    ["text-secondary-on-secondary-light"]}
-   "Back"])
+  [project step]
+  (when step
+    [m/Button {:type     "button"
+               :theme    ["text-secondary-on-secondary-light"]
+               :on-click (utils/prevent-default #(dispatch [:projects2/navigate-to-step-project (:id project) step]))}
+     "Back"]))
 
 (defn- tag-chip
   [props index input read-only]
@@ -241,32 +238,71 @@
 
 (defn- current-project-step-review
   [read-only]
-  (let [current-project (subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])
+        algorithms      (rf/subscribe [:coverage/supported-algorithms])
+        providers       (subscribe [:providers-set/dropdown-options])
+        provider-set-id        (:provider-set-id @current-project)
+        provider        (first (filter #(= provider-set-id (:value %)) @providers))
+        algorithm       (get-in @algorithms [(keyword (:coverage-algorithm @current-project))])
+        criteria        (first (vals (:criteria algorithm)))
+        coverage-amount (first (vals (get-in @current-project [:config :coverage :filter-options])))
+        sources         (subscribe [:sources/list])
+        source          (first (filter #(= (:source-set-id @current-project) (:id %)) @sources))
+        budget          (get-in @current-project [:config :actions :budget])
+        workload        (get-in @current-project [:config :providers :capacity])
+        consumers-unit        (get-in @current-project [:config :demographics :unit-name])
+        capacities       (get-in @current-project [:config :actions :build])]
+    (dispatch [:sources/load])
+    (dispatch [:providers-set/load-providers-set])
     [:section {:class "project-settings-section"}
      [section-header 6 "Review"]
      [:div {:class "step-info"} "After this step the system will search for different improvements scenarios based on the given parameters. Once started, the process will continue even if you leave the site. From the dashboard you will be able to see the scenarios found so far, pause the search and review the performed work."]
-     [project-setting-title "location_on" "Kenya health facilities - ResMap 8902"]
-     [project-setting-title "account_balance" "K 25,000,000"]
-     [project-setting-title "people" "Kenya census 2005"]
-     [project-setting-title "directions" "120 min walking distance, 40 min driving"]
-     [project-setting-title "info" "A hospital with a capacity of 100 beds will provide service for 1000 pregnancies per year"]]))
+     (if (some? provider)
+       [project-setting-title "location_on" (:label provider)]
+       [project-setting-title "warning" "The provider dataset field in the \"providers\" tab is needed"])
+     (if (some? budget)
+       [project-setting-title "account_balance" (str "K " budget)]
+       [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"])
+     (if (some? source)
+       [project-setting-title "people" (:name source)]
+       [project-setting-title "warning" "The \"consumers\" tab information is needed"])
+     (if (and (some? coverage-amount) (some? provider-set-id))
+       [project-setting-title "directions" (str
+                                            (:label (first (filter #(= coverage-amount (:value %)) (:options criteria))))
+                                            " of "
+                                            (:label (first (vals (:criteria algorithm)))))]
+       [project-setting-title "warning" "The \"providers\" and \"coverage\" tabs information is needed"])
+     (map (fn [action]
+            [project-setting-title "info" (join " " ["A facility with a capacity of"
+                                                     (:capacity action)
+                                                     "will provide service for"
+                                                     (* (:capacity action) workload)
+                                                     (or (not-empty consumers-unit) "consumers units")
+                                                     " per year"])]) capacities)]))
+
+
+(def map-preview-size {:width 373 :height 278})
 
 (defn current-project-settings-view
   [{:keys [read-only step sections]}]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
-        tags            (subscribe [:projects2/tags])]
-
+        tags            (subscribe [:projects2/tags])
+        regions         (subscribe [:regions/list])]
     (fn [{:keys [read-only step]}]
       (let [project @current-project
-            step-data       (first (filter #(= (:step %) step) sections))]
-
+            step-data       (first (filter #(= (:step %) step) sections))
+            bbox            (:bbox (first (filter #(= (:id %) (:region-id @current-project)) @regions)))
+            region-geo      (subscribe [:regions/preview-geojson (:region-id @current-project)])
+            preview-map-url (if (:region-id @current-project) (static-image @region-geo map-preview-size))]
+        (dispatch [:regions/load-regions-with-preview [(:region-id @current-project)]])
         [m/Grid {:class-name "wizard"}
+
          [m/GridCell {:span 12 :class-name "steps"}
           (map-indexed (fn [i iteration-step]
                          [:a {:key i
-                              :class-name (join " " [(if (= (:step iteration-step) step) "active") (if (s/valid? (keyword (str "planwise.model.project-" (:step iteration-step)) "validation") project) "complete")])
+                              :class-name (join " " [(if (= (:step iteration-step) step) "active") (if (s/valid? (:spec iteration-step) project) "complete")])
                               :href (routes/projects2-show-with-step {:id (:id project) :step (:step iteration-step)})}
                           (if (s/valid? (:spec iteration-step) project) [m/Icon "done"] [:i (inc i)])
                           [:div (:title iteration-step)]]) sections)]
@@ -276,7 +312,19 @@
              (dispatch [:projects2/infer-step @current-project])
              ((:component step-data) read-only))]]
          [m/GridCell {:span 6}
-          [:div.map]]]))))
+          [:div.map
+           (if (some? bbox)
+             [l/map-widget {:position (mapping/bbox-center bbox)
+                            :controls []
+                            :initial-bbox bbox}
+              mapping/default-base-tile-layer
+              [:geojson-layer {:data  @region-geo}
+               :group {:pane "tilePane"}
+               :lat-fn (fn [polygon-point] (:lat polygon-point))
+               :lon-fn (fn [polygon-point] (:lon polygon-point))
+               :color :orange
+               :stroke true]])]]]))))
+
 
 (defn edit-current-project
   []
@@ -296,8 +344,10 @@
         [current-project-settings-view {:read-only false :step (:step @page-params) :sections sections}]
 
         [:div {:class-name "project-settings-actions"}
-         [project-back-button]
-         [project-delete-button delete?]
+         (let [previous-step (:step (first (filter #(= (:next-step %) (:step @page-params)) sections)))]
+           (if (nil? previous-step)
+             [project-delete-button delete?]
+             [project-back-button @current-project previous-step]))
          [project-next-step-button @current-project (:next-step (first (filter #(= (:step %) (:step @page-params)) sections)))]]]
        [delete-project-dialog {:open? @delete?
                                :cancel-fn hide-dialog
