@@ -845,9 +845,13 @@ form.vertical, .fields-vertical {
   background-color: #FFFFFF;
   box-shadow: 0 1px 2px 0 rgba(0,0,0,0.2), 0 1px 3px 0 rgba(0,0,0,0.1);
   flex-direction: column;
+  padding: 60px;
 
   h2 {
+    color: #999999;
+    font-size: 1rem;
     text-transform: uppercase;
+    margin-bottom: 45px;
   }
 
   i {
@@ -864,12 +868,26 @@ form.vertical, .fields-vertical {
   .action {
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
+    width: 20%;
+    cursor: pointer;
+    
+    div {
+      text-align: center;
+      margin: 1rem 0; 
+    }
   }
 
   .row {
     display: flex;
+    justify-content: space-around;
+    width: 100%;
+  }
+
+  hr {
+    border: 1px solid rgba(0,0,0,0.1);
+    width: calc(100% + 118px);
+    margin: 60px 0;
   }
 }
 
