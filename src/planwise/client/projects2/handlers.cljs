@@ -22,10 +22,10 @@
                 :on-success [:projects2/project-created])}))
 
 (rf/reg-event-fx
-:projects2/template-project
-  in-projects2
-  (fn [_ [_]]
-    {:navigate (routes/projects2-new {})}))
+ :projects2/template-project
+ in-projects2
+ (fn [_ [_]]
+   {:navigate (routes/projects2-new {})}))
     ; {:api (assoc (api/create-project!)
     ;              :on-success [:projects2/project-created])}))
 

@@ -29,8 +29,7 @@
 
 (defn create-project
   [store params]
-  (db-create-project! (get-db store) (merge params {
-                                      :state "draft"})))
+  (db-create-project! (get-db store) (merge params {:state "draft"})))
 
 (defn update-project
   [store {:keys [config provider-set-id] :as project}]
