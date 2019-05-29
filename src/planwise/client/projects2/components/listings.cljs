@@ -47,21 +47,21 @@
 (defn project-section-new
   []
   [ui/fixed-width (common2/nav-params)
-    [:div.template-container
-      [:h2 "Start from a template"]
-      [:div.row
-        [:a.action {:onClick #(dispatch [:projects2/new-project "plan"])}
-          [m/Icon {} "directions_walk"]
-          [:div "Plan facilities based on ground access"]]
-        [:a.action {:onClick #(dispatch [:projects2/new-project "diagnosis"])}
-          [m/Icon {} "call_split"]
-          [:div "Plan diagonostic devices & sample referrals"]]]
-      [:hr]
-      [:h2 "Start from scratch"]
-      [:div.row
-        [:a.action {}
-          [m/Icon {} "folder_open"]
-          [:div "Follow a wizard through all available settings"]]]]])
+   [:div.template-container
+    [:h2 "Start from a template"]
+    [:div.row
+     [:a.action {:onClick #(dispatch [:projects2/new-project "plan"])}
+      [m/Icon {} "directions_walk"]
+      [:div "Plan facilities based on ground access"]]
+     [:a.action {:onClick #(dispatch [:projects2/new-project "diagnosis"])}
+      [m/Icon {} "call_split"]
+      [:div "Plan diagonostic devices & sample referrals"]]]
+    [:hr]
+    [:h2 "Start from scratch"]
+    [:div.row
+     [:a.action {}
+      [m/Icon {} "folder_open"]
+      [:div "Follow a wizard through all available settings"]]]]])
 
 (defn- listing-component []
   (let [projects (subscribe [:projects2/list])]
