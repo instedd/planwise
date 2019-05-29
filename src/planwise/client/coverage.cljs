@@ -53,15 +53,23 @@
 
 (defn- criteria-option-select-component
   [{:keys [label value options on-change]}]
-  [m/Select {:label label
-             :disabled (empty? options)
-             :value (str value)
-             :options options
-             :onChange #(on-change (js/parseInt (-> % .-target .-value)))}])
+  (let [sorted-options  (sort-by :value options)
+        step            (- (:value (second sorted-options)) (:value (first sorted-options)))
+        value-label     (:label (first (filter #(= value (:value %)) options)))]
+    [:div.coverage-setting
+     [:label label]
+     [m/Slider {:value    value
+                :onInput  #(on-change (-> % .-detail .-value))
+                :onChange #(on-change (-> % .-detail .-value))
+                :min      (:value (first sorted-options))
+                :max      (:value (last sorted-options))
+                :discrete true
+                :step     step}]
+     [:p value-label]]))
 
 (defn- criteria-option
   [{:keys [config value on-change disabled?]}]
-  (let [options   (map #(update % :value str) (:options config))
+  (let [options   (:options config)
         label     (:label config)
         component (if disabled?
                     disabled-input-component

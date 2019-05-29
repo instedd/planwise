@@ -20,7 +20,7 @@
           (not= (:id @current-project) id) (do
                                              (dispatch [:projects2/get-project id])
                                              [common2/loading-placeholder])
-          (= "draft" (:state @current-project)) [settings/edit-current-project]
+          (= "draft" (:state @current-project)) [settings/edit-current-project @page-params]
           :else [dashboard/view-current-project section])))))
 
 ;;------------------------------------------------------------------------

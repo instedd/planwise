@@ -7,13 +7,13 @@
 
 ;; Goal
 (s/def ::id number?)
-(s/def ::name string?)
+(s/def ::name (s/and string? (comp not blank?)))
 (s/def ::region-id number?)
 
 ;; Demographics
 (s/def ::source-set-id number?)
 (s/def ::target number?)
-(s/def ::unit-name (comp not blank?))
+(s/def ::unit-name string?)
 (s/def ::demographics (s/keys :req-un [::unit-name ::target]))
 
 ;; Providers
@@ -42,6 +42,17 @@
 
 ;; Config
 (s/def ::config (s/keys :req-un [::demographics ::actions ::coverage ::providers]))
+(s/def :planwise.model.project-consumers/config (s/keys :req-un [:planwise.model.project/demographics]))
+(s/def :planwise.model.project-providers/config (s/keys :req-un [:planwise.model.project/providers]))
+(s/def :planwise.model.project-coverage/config (s/keys :req-un [:planwise.model.project/coverage]))
+(s/def :planwise.model.project-actions/config (s/keys :req-un [:planwise.model.project/actions]))
 
 ;; Project Starting
 (s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))
+
+(s/def ::goal-step (s/keys :req-un [:planwise.model.project/name :planwise.model.project/region-id]))
+(s/def ::consumers-step (s/keys :req-un [:planwise.model.project/source-set-id :planwise.model.project-consumers/config]))
+(s/def ::providers-step (s/keys :req-un [::provider-set-id :planwise.model.project-providers/config]))
+(s/def ::coverage-step (s/keys :req-un [:planwise.model.project-coverage/config]))
+(s/def ::actions-step (s/keys :req-un [:planwise.model.project-actions/config]))
+(s/def ::review-step (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))

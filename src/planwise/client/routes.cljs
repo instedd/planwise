@@ -18,6 +18,8 @@
   (dispatch [:navigate {:page :projects2, :section :new}]))
 (defroute projects2-show "/projects2/:id" [id]
   (dispatch [:navigate {:page :projects2, :id (js/parseInt id), :section :show}]))
+(defroute projects2-show-with-step "/projects2/:id/steps/:step" [id step]
+  (dispatch [:navigate {:page :projects2, :id (js/parseInt id), :step step, :section :show}]))
 (defroute design "/_design" []
   (dispatch [:navigate {:page :design}]))
 (defroute design-section "/_design/:section" [section query-params]

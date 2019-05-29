@@ -113,6 +113,9 @@ header {
     position: absolute;
     right: $margin-page;
     bottom: -27px;
+    > i {
+      align-self: center;
+    }
   }
 }
 
@@ -516,6 +519,10 @@ form.vertical, .fields-vertical {
       margin-bottom: 0;
     }
   }
+  .step-info {
+    line-height: 1.9rem;
+    margin: 1.2rem 0 3rem;
+  }
 
   .mdc-select {
     margin-top: 16px;
@@ -525,6 +532,14 @@ form.vertical, .fields-vertical {
   .no-provider-set-selected {
     color: rgba(0, 0, 0, 0.6);
     margin: 25px 0 0;
+  }
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    .material-icons {
+      margin-right: 10px;
+    }
   }
 }
 
@@ -536,6 +551,10 @@ form.vertical, .fields-vertical {
 
   button {
     margin-left: 25px;
+    &:first-child {
+      float: left;
+      margin: 0;
+    }
   }
 }
 
@@ -577,12 +596,73 @@ form.vertical, .fields-vertical {
   margin-right: 15px;
 }
 
-.project-setting{
-  width: 554px;
+.project-setting {
+  max-width: 554px;
+}
+.project-setting-title {
+  p {
+    display: inline-flex;
+    align-items: flex-start;
+    .material-icons {
+      margin-right: 10px;
+    }
+  }
 }
 
-.action-input{
-  width: 110px;
+.coverage-setting {
+  p, label {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+  }
+  .mdc-slider .mdc-slider__pin {
+    background-color: transparent;
+    color: $mdc-theme-primary;
+    top: 24px;
+    transform: rotate(-45deg);
+    > .mdc-slider__pin-value-marker::selection {
+      // remove selection color in firefox
+      background-color: transparent;
+    }
+  }
+}
+
+.action-input {
+  max-width: 100px;
+}
+.percentage-input {
+  display: inline-flex;
+  align-items: baseline;
+  div {
+    margin-right: 0.8rem;
+    > input {
+      max-width: 50px;
+    }
+  }
+}
+
+.prefix {
+  color: #999999;
+  font-style: normal;
+  position: absolute;
+  padding-bottom: 8px;
+
+  + input {
+    padding-left: 15px;
+  }
+  + .suffix {
+    + input {
+      padding-left: 1rem;
+    }
+  }
+}
+.suffix {
+  @extend .prefix;
+  left: auto;
+  right: 0;
+  + input {
+    padding-right: 1rem;
+    padding-left: 0;
+  }
 }
 
 //empty projects
@@ -805,6 +885,85 @@ form.vertical, .fields-vertical {
   height: 42px;
   -webkit-animation: spin 2s linear infinite;
   animation: spin 2s linear infinite;
+}
+
+.wizard {
+  padding-bottom: 0;
+  .steps {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    margin-left: -25px;
+    margin-right: -25px;
+    padding: 5px 20px 0;
+    height: 56px;
+
+    > a {
+      text-decoration: none;
+      text-transform: capitalize;
+      display: flex;
+      align-items: center;
+      i {
+        background-color: #999999;
+        color: #ffffff;
+        font-style: normal;
+        padding: 5px 11px;
+        margin-right: 10px;
+        border-radius: 50%;
+      }
+      div {
+        color: #999999;
+        display: inline-block;
+        &:after {
+          content: "";
+          position: absolute;
+          height: 12px;
+          min-width: 85px;
+          margin-left: 10px;
+          border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+      }
+      &:last-child div:after {
+        border: none;
+      }
+    }
+
+    .complete {
+      i {
+        background-color: $mdc-theme-primary;
+      }
+      div {
+        color: #000000;
+      }
+    }
+    .active {
+      @extend .complete;
+      font-weight: 500;
+    }
+    .material-icons {
+      font-size: 19px;
+      display: inline;
+      padding: 6px;
+    }
+  }
+  .map {
+    display: flex;
+    align-items: stretch;
+    min-height: 500px;
+    height: calc(100% + 24px);
+    min-width: 500px;
+    margin: -24px -24px 0 0;
+    * {
+      z-index: 0;
+    }
+
+    > div {
+      width: 100%;
+      // height: 100%;
+    }
+  }
 }
 
 @keyframes spin {

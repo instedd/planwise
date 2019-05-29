@@ -68,8 +68,14 @@
       (include-css "/css/MarkerCluster.Custom.css")
       [:script "planwise.client.core.main();"]])))
 
+(defn- intercom-snippet
+  "Intercom snippet to insert in landing page only. For the app itself, the component is inserted through react-intercom."
+  [{:keys [intercom-app-id]}]
+  (when (seq intercom-app-id)
+    (str "var APP_ID = '" intercom-app-id "'; window.intercomSettings = {app_id: APP_ID}; (function(){var w=window;var ic=w.Intercom;if(typeof ic==='function'){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/' + APP_ID;var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();")))
+
 (defn landing-page
-  []
+  [endpoint]
   (html5
    [:head
     [:meta {:charset "utf-8"}]
@@ -188,22 +194,21 @@
          :target "_blank"}
         "Work with Us"]]]]
 
-    [:script "
+    [:script (str "
        function openNav() {
-           document.getElementById(\"Sidenav\").style.transform = \"translateX(0)\";
-           document.getElementById(\"Overlay\").style.visibility = \"visible\";
+           document.getElementById('Sidenav').style.transform = 'translateX(0)';
+           document.getElementById('Overlay').style.visibility = 'visible';
        }
 
        function closeNav() {
-           document.getElementById(\"Sidenav\").style.transform = \"translateX(-100%)\";
-           document.getElementById(\"Overlay\").style.visibility = \"hidden\";
-       }
-     "]]))
+           document.getElementById('Sidenav').style.transform = 'translateX(-100%)';
+           document.getElementById('Overlay').style.visibility = 'hidden';
+       } " (intercom-snippet endpoint))]]))
 
 (defn home-page
   [endpoint request]
   (if-not (authenticated? request)
-    (landing-page)
+    (landing-page endpoint)
     (loading-page2 endpoint request)))
 
 (defn home-endpoint [endpoint]
@@ -217,6 +222,7 @@
      (GET "/sources" [] loading-page2)
      (context "/projects2" []
        (GET "/" [] loading-page2)
+       (GET "/:id/steps/:step" [] loading-page2)
        (GET "/:id" [] loading-page2)
        (GET "/:id/scenarios" [] loading-page2)
        (GET "/:id/settings" [] loading-page2)
