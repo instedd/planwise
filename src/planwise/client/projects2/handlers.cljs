@@ -17,8 +17,8 @@
 (rf/reg-event-fx
  :projects2/new-project
  in-projects2
- (fn [_ [_ template-identifier]]
-   {:api (assoc (api/create-project! template-identifier)
+ (fn [_ [_ defaults]]
+   {:api (assoc (api/create-project! defaults)
                 :on-success [:projects2/project-created])}))
 
 (rf/reg-event-fx
