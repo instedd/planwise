@@ -16,6 +16,12 @@
    :section   :index
    :uri       (str "/api/projects2")})
 
+(defn- list-templates
+  []
+  {:method    :get
+   :section   :index
+   :uri       (str "/api/projects2/templates")})
+
 (defn- update-project
   [project-id project]
   {:method    :put

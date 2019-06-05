@@ -1,7 +1,7 @@
 -- :name db-create-project! :<! :1
 INSERT INTO projects2
-  ("owner-id", name, config, "provider-set-id", state)
-  VALUES (:owner-id, :name, NULL, NULL, :state)
+  ("owner-id", name, config, "region-id", "provider-set-id", "source-set-id", state)
+  VALUES (:owner-id, :name, :config, :region-id, :provider-set-id, :source-set-id, :state)
   RETURNING id;
 
 -- :name db-update-project :!

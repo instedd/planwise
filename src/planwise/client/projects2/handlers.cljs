@@ -26,8 +26,20 @@
  in-projects2
  (fn [_ [_]]
    {:navigate (routes/projects2-new {})}))
+
+(rf/reg-event-fx
+ :projects2/get-templates-list
+ in-projects2
+ (fn [_ [_]]
+   {:api (assoc (api/list-templates) :on-success [:projects2/templates-fetched])}))
     ; {:api (assoc (api/create-project!)
     ;              :on-success [:projects2/project-created])}))
+(rf/reg-event-fx
+ :projects2/templates-fetched
+ in-projects2
+ (fn [{:keys [db]} [_ templates]]
+   {:db     (-> db
+                (assoc :templates templates))}))
 
 (rf/reg-event-fx
  :projects2/project-created
