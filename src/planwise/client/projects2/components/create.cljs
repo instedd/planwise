@@ -23,21 +23,23 @@
 (defn project-section-template-selector
   []
   [ui/fixed-width (common2/nav-params)
-   (let [templates (subscribe [:projects2/templates])]
+   (let [templates (subscribe [:projects2/templates])
+         scratch-template (first (filter #(not (contains? % :description)) @templates))
+         sample-templates (filter #(contains? % :description) @templates)]
      (dispatch [:projects2/get-templates-list])
      [:div.template-container
-      (if (some? @templates)
+      (if (some? sample-templates)
         [:h2 "Start from a template"])
-      (if (some? @templates)
+      (if (some? sample-templates)
         [:div.row
          (map (fn [template]
                 [:a.action {:key (:key template) :onClick #(dispatch [:projects2/new-project (:defaults template)])}
                  [m/Icon {} (:icon template)]
                  [:div (:description template)]])
-              @templates)])
+              sample-templates)])
       [:hr]
       [:h2 "Start from scratch"]
       [:div.row
-       [:a.action {}
+       [:a.action {:onClick #(dispatch [:projects2/new-project (:defaults scratch-template)])}
         [m/Icon {} "folder_open"]
         [:div "Follow a wizard through all available settings"]]]])])

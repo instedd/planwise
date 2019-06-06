@@ -26,8 +26,23 @@
                :source-set-id 2
                :region-id 1
                :provider-set-id 1}}
-
    {:description "Plan diagonostic devices & sample referrals"
     :icon "call_split"
     :key "diagnosis"
-    :defaults {:name "sample"}}])
+    :defaults {:name "sample"
+               :config {:coverage {}
+                        :demographics {}
+                        :actions {}}
+
+               :source-set-id nil
+               :region-id nil
+               :provider-set-id nil}}
+   {:key "empty"
+    :defaults {:name ""
+               :config {:coverage {}
+                        :demographics {}
+                        :actions {}}
+
+               :source-set-id nil
+               :region-id nil
+               :provider-set-id nil}}])
