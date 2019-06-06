@@ -36,7 +36,7 @@
      (.Intercom js/window "shutdown"))))
 
 (def default-xhrio-options
-  {:timeout         10000
+  {:timeout         30000
    :format          (ajax/json-request-format)
    :response-format (ajax/json-response-format {:keywords? true})})
 
