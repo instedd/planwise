@@ -25,7 +25,7 @@
 
                :source-set-id 2
                :region-id 1
-               :provider-set-id 1}}
+               :provider-set-id nil}}
    {:description "Plan diagonostic devices & sample referrals"
     :icon "call_split"
     :key "diagnosis"
