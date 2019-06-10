@@ -24,7 +24,7 @@
                                              :investment 444}]}}
 
                :source-set-id 2
-               :region-id 1
+               :region-id nil
                :provider-set-id nil}}
    {:description "Plan diagonostic devices & sample referrals"
     :icon "call_split"
