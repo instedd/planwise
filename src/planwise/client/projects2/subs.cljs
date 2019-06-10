@@ -10,6 +10,11 @@
    (get-in db [:projects2 :current-project])))
 
 (rf/reg-sub
+ :projects2/templates
+ (fn [db _]
+   (get-in db [:projects2 :templates])))
+
+(rf/reg-sub
  :projects2/list
  (fn [db _]
    (some->> (get-in db [:projects2 :list])
@@ -29,4 +34,3 @@
  :projects2/upgrade-actions :<- [:projects2/current-project]
  (fn [current-project [_]]
    (get-in current-project [:config :actions :upgrade])))
-

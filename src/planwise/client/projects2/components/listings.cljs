@@ -51,6 +51,6 @@
       [projects-list @projects])))
 
 (defn project-section-index []
-  (let [create-project-button (ui/main-action {:icon "add" :on-click #(dispatch [:projects2/new-project])})]
+  (let [create-project-button (ui/main-action {:icon "add" :on-click #(dispatch [:projects2/template-project])})]
     [ui/fixed-width (merge {:action create-project-button} (common2/nav-params))
      [listing-component]]))

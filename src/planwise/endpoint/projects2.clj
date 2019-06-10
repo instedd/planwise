@@ -10,6 +10,7 @@
             [planwise.model.projects2 :as model]
             [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.projects2 :as projects2]
+            [planwise.configuration.templates :as templates-config]
             [planwise.boundary.scenarios :as scenarios]))
 
 (timbre/refer-timbre)
@@ -26,11 +27,11 @@
   [{service :projects2 service-scenarios :scenarios}]
   (routes
 
-   (POST "/" request
+   (POST "/" [name project :as request]
      (let [user-id    (util/request-user-id request)
-           project-id (:id (projects2/create-project service user-id))
-           project    (projects2/get-project service project-id)]
-       (response project)))
+           project-id (:id (projects2/create-project service (merge project {:owner-id user-id})))
+           project-db    (projects2/get-project service project-id)]
+       (response project-db)))
 
    (PUT "/:id" [id project :as request]
      (let [user-id  (util/request-user-id request)
@@ -43,6 +44,9 @@
            (assert (s/valid? ::model/project project) "Invalid project")
            (projects2/update-project service project)
            (response (api-project (projects2/get-project service id)))))))
+
+   (GET "/templates" []
+     (response (templates-config/templates-list)))
 
    (GET "/:id" [id :as request]
      (let [user-id (util/request-user-id request)

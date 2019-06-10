@@ -4,9 +4,10 @@
 ;; API methods
 
 (defn- create-project!
-  []
+  [defaults]
   {:method    :post
    :section   :index
+   :params    {:project defaults}
    :uri       "/api/projects2"})
 
 (defn- list-projects
@@ -14,6 +15,12 @@
   {:method    :get
    :section   :index
    :uri       (str "/api/projects2")})
+
+(defn- list-templates
+  []
+  {:method    :get
+   :section   :index
+   :uri       (str "/api/projects2/templates")})
 
 (defn- update-project
   [project-id project]

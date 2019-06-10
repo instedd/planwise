@@ -7,6 +7,7 @@
             [planwise.client.projects2.components.dashboard :as dashboard]
             [planwise.client.projects2.components.listings :as listings]
             [planwise.client.projects2.components.settings :as settings]
+            [planwise.client.projects2.components.create :as create]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]))
 
@@ -37,6 +38,7 @@
         (let [section      (:section @page-params)]
           (case section
             :index [listings/project-section-index]
+            :new [create/project-section-template-selector]
             :show [project-section-show :scenarios]
             :project-scenarios [project-section-show :scenarios]
             :project-settings [project-section-show :settings]
