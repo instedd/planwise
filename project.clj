@@ -137,7 +137,7 @@
    :test          [:project/test :profiles/test]
    :repl          {:prep-tasks   ^:replace ["javac" "compile"]
                    :repl-options {:init-ns user
-                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]
+                                  :nrepl-middleware [cider.piggieback/wrap-cljs-repl]
                                   :host "0.0.0.0"
                                   :port 47480}}
    :uberjar       {:aot :all}
@@ -150,7 +150,8 @@
                                   ; REPL tools
                                   [org.clojure/tools.namespace "0.3.0-alpha4"]
                                   [integrant/repl "0.2.0"]
-                                  [virgil "0.1.8"]
+                                  [virgil "0.1.9"]
+                                  [cider/piggieback "0.4.1"]
 
                                   ; Testing libraries
                                   [eftest "0.4.3"
