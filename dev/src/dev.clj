@@ -6,7 +6,6 @@
             [clojure.java.io :as io]
             [duct.core :as duct]
             [duct.core.repl :as duct-repl]
-            [duct.repl.figwheel :refer [cljs-repl]]
             [eftest.runner :as eftest]
             [clojure.spec.alpha :as s]
             [integrant.core :as ig]

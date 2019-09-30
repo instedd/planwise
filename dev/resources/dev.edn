@@ -1,31 +1,6 @@
 {:duct.core/environment :development
  :duct.core/include ["planwise/config"]
 
- :duct.module/cljs {:main cljs.user}
-
- :duct.server/figwheel
- {:reload-clj-files false
-  :css-dirs ["target/resources/planwise/public/css"]
-  :builds [{:id "dev"
-            :source-paths  ["dev/src" "src"]
-            :build-options {:main cljs.user
-                            :parallel-build true
-                            :language-in :es-2016
-                            :npm-deps true
-                            :output-to "target/resources/planwise/public/js/main.js"
-                            :output-dir "target/resources/planwise/public/js"
-                            :asset-path "/js"
-                            :closure-defines {goog.DEBUG true
-                                              "re_frame.trace.trace_enabled_QMARK_" true}
-                            :verbose false
-                            :preloads [devtools.preload]
-                            :optimizations :none}}]
-  :build-order #ig/ref :planwise/sass}
-
- :planwise/sass
- {:output-style :nested
-  :source-map?  true}
-
  :duct.module/sql
  {:database-url #duct/env ["DATABASE_URL" Str :or "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"]}
 

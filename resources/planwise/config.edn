@@ -4,13 +4,6 @@
  :duct.module/logging {}
  :duct.module/web     {}
  :duct.module/sql     {}
- :duct.module/cljs    {:main planwise.client.core}
-
- :planwise/sass
- {:logger        #ig/ref :duct/logger
-  :source-paths  ["resources/sass"]
-  :include-paths ["node_modules"]
-  :output-path   "target/resources/planwise/public/css"}
 
  ;; Database
 

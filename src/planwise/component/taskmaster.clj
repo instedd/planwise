@@ -1,6 +1,5 @@
 (ns planwise.component.taskmaster
-  (:require [com.stuartsierra.component :as component]
-            [taoensso.timbre :as timbre]
+  (:require [taoensso.timbre :as timbre]
             [schema.core :as s]
             [clojure.core.async :refer [chan close! put! <! >! go
                                         alt!! alts! alts!! timeout]]))

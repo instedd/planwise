@@ -3,8 +3,6 @@
   (:require [integrant.core :as ig]
             [integrant.repl :as igr]
             [integrant.repl.state :refer [config system]]
-            [duct.server.figwheel :as figwheel]
-            [figwheel-sidecar.utils :as fig-utils]
             [eftest.runner :as eftest]
             [planwise.database :as database]
             [planwise.tasks.build-icons :as build-icons]
@@ -12,7 +10,6 @@
             [ragtime.jdbc :as rag-jdbc]
             [duct.migrator.ragtime :as dmr]
             [buddy.core.nonce :as nonce]
-            [clojure.java.shell :as shell]
             [planwise.virgil])
   (:import org.apache.commons.codec.binary.Hex))
 
@@ -20,19 +17,6 @@
   []
   (let [[_ database] (ig/find-derived-1 system :duct.database/sql)]
     database))
-
-(defn rebuild-cljs
-  []
-  (let [figwheel (:duct.server/figwheel system)]
-    (figwheel/rebuild-cljs figwheel)))
-
-(defn clean-cljs
-  []
-  (let [builds (get-in config [:duct.server/figwheel :builds])]
-    (dorun (for [{:keys [build-options]} builds]
-             (do
-               (println "Cleaning CLJS in" (:output-dir build-options))
-               (fig-utils/clean-cljs-build* build-options))))))
 
 (defn run-tests
   [tests]
@@ -72,18 +56,8 @@
       Hex/encodeHex
       String.))
 
-(defn npm-install
-  []
-  (println "Running npm install...")
-  (let [{:keys [exit out err]} (shell/sh "npm" "install")]
-    (cond (zero? exit) (println out)
-          :else (do
-                  (println "Error running npm install - exit code" exit)
-                  (print err)))))
-
 (defn go
   []
-  (npm-install)
   (igr/prep)
   (igr/init))
 

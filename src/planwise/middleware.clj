@@ -106,7 +106,7 @@
                                           :static  {:resources "planwise/public"}})]
     (let [middleware [#(wrap-not-found % (html-response error-404))
                       wrap-webjars
-                      #(wrap-resource % "public/assets")
+                      #(wrap-resource % "public/assets")  ; for webjars
                       #(wrap-authorization % authz-backend)
                       wrap-check-guisso-cookie
                       #(wrap-authentication-helper % authn-backends)
