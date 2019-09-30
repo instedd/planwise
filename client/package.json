@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "build-sass": "shadow-cljs clj-run build/sass",
+    "watch": "shadow-cljs clj-run build/watch"
+  },
   "dependencies": {
     "@cljs-oss/module-deps": "^1.1.1",
     "create-react-class": "^15.6.3",

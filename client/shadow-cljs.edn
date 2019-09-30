@@ -29,5 +29,7 @@
         :asset-path "/js"
         :modules    {:main {:entries [planwise.client.core]}}
         :dev        {:closure-defines {"re_frame.trace.trace_enabled_QMARK_" true}}
-        :devtools   {:preloads [dev.user
-                                day8.re-frame-10x.preload]}}}}
+        :devtools   {:watch-dir  "target/planwise/public/css"
+                     :watch-path "/css"
+                     :preloads   [dev.user
+                                  day8.re-frame-10x.preload]}}}}
