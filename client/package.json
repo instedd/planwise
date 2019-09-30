@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build-sass": "shadow-cljs clj-run build/sass",
+    "build": "shadow-cljs clj-run build/build",
     "watch": "shadow-cljs clj-run build/watch"
   },
   "dependencies": {

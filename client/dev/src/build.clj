@@ -25,3 +25,8 @@
   (sass)
   (watch-sass)
   (shadow/watch :app))
+
+(defn build
+  []
+  (sass)
+  (shadow/compile :app))
