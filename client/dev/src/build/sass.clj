@@ -1,11 +1,8 @@
-(ns planwise.sass
+(ns build.sass
   (:import [io.bit3.jsass Options OutputStyle]
            [io.bit3.jsass.context FileContext])
   (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [duct.logger :as log]
-            [integrant.core :as ig]
-            [medley.core :as m]))
+            [clojure.string :as str]))
 
 (def ^:private compiler (io.bit3.jsass.Compiler.))
 
@@ -68,7 +65,7 @@
       true)))
 
 (defn- compile-sass [in out {:keys [logger] :as opts}]
-  (log/log logger :info ::compiling {:in (str in) :out (str out)})
+  (println (str "Compiling SASS " (str in) " -> " (str out)))
   (let [context (FileContext. (.toURI in) (.toURI out) (make-options in out opts))
         result  (.compile compiler context)]
     (.mkdirs (.getParentFile out))
@@ -79,10 +76,9 @@
         (when-let [source-map (.getSourceMap result)]
           (spit (source-map-uri out) source-map))))))
 
-(defmethod ig/init-key :planwise/sass [_ opts]
+(defn build-all
+  [opts]
   (let [in->out (file-mapping opts)]
     (doseq [[in out] in->out]
       (compile-sass in out opts))
     (mapv (comp str val) in->out)))
-
-(derive :planwise/sass :duct/compiler)
