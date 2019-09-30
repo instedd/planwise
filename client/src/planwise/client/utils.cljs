@@ -1,12 +1,10 @@
 (ns planwise.client.utils
-  (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :as async :refer [chan >! <! put!]]
-            [goog.i18n.NumberFormat]
-            [re-frame.core :refer [subscribe dispatch]]
-            [goog.string :as gstring]
-            [clojure.string :as cstring]
+  (:require [re-frame.core :refer [subscribe dispatch]]
             [re-frame.utils :as c]
-            [goog.string.format]))
+            [clojure.string :as cstring]
+            [goog.string :as gstring]
+            [goog.string.format]
+            [goog.i18n.NumberFormat]))
 
 ;; Debounce functions
 

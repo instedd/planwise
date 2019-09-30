@@ -1,4 +1,4 @@
-(ns cljs.user
+(ns user
   (:require [figwheel.client :as figwheel]
             [devtools.core :as devtools]
             [day8.re-frame-10x.preload]

@@ -13,8 +13,8 @@
 
 (rf/reg-fx
  :delayed-dispatch
- (fn [{:keys [ms dispatch key] :or {:ms 0}}]
-   (let [timeout (js/setTimeout #(rf/dispatch dispatch) ms)]
+ (fn [{:keys [ms dispatch key]}]
+   (let [timeout (js/setTimeout #(rf/dispatch dispatch) (or ms 0))]
      (swap! rf-db/app-db update-in key (fn [prev-timeout]
                                          (js/clearTimeout prev-timeout)
                                          timeout)))))
