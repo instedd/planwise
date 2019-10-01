@@ -15,6 +15,7 @@
     "react": "=15.5.4",
     "react-dom": "=15.5.4",
     "react-flip-move": "^3.0.3",
+    "react-highlight.js": "^1.0.7",
     "react-intercom": "^1.0.15",
     "rmwc": "^1.4.1"
   },
