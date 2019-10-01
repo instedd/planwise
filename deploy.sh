@@ -8,11 +8,6 @@ if [ $# -lt 1 ]; then
 	exit 1
 fi
 
-git describe --always > resources/planwise/version
-docker-compose run --rm app npm install
-docker-compose run --rm app lein uberjar
-docker-compose run --rm app scripts/build-binaries --release
-
 TAG=${1/\//_}
 
 docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${DOCKER_REGISTRY}
