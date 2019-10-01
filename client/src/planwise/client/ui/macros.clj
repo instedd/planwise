@@ -48,8 +48,6 @@
     Tab
     TabBar
     TabIcon
-    TabIconText
-    TabBarScroller
     TextField
     TextFieldHelperText
     TextFieldIcon

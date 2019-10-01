@@ -6,10 +6,11 @@
   "test"]
 
  :dependencies
- [[reagent "0.7.0"]
-  [reagent-forms "0.5.36"]
-  [reagent-utils "0.3.0"]
-  [re-frame "0.10.5"]
+ [[reagent "0.8.1"
+   :exclusions [cljsjs/react cljsjs/react-dom]]
+  [reagent-forms "0.5.43"]
+  [reagent-utils "0.3.3"]
+  [re-frame "0.10.9"]
   [re-com "2.1.0"]
   [day8.re-frame/http-fx "0.1.5"]
   [crate "0.2.4"]
@@ -17,7 +18,8 @@
   [clj-commons/secretary "1.2.4"]
   [venantius/accountant "0.2.4"]
   [prismatic/schema "1.1.7"]
-  [day8.re-frame/re-frame-10x "0.3.7"]
+  [day8.re-frame/re-frame-10x "0.4.1"
+   :exclusions [cljsjs/react cljsjs/react-dom]]
   [binaryage/devtools "0.9.10"]
 
   [io.bit3/jsass "5.5.6"]

@@ -7,17 +7,14 @@
     "test": "shadow-cljs compile test && node target/test/node-tests.js"
   },
   "dependencies": {
-    "@cljs-oss/module-deps": "^1.1.1",
-    "create-react-class": "^15.6.3",
-    "lodash": ">=4.17.13",
-    "material-components-web": "^0.32.0",
-    "prop-types": "=15.5.8",
-    "react": "=15.5.4",
-    "react-dom": "=15.5.4",
+    "create-react-class": "15.6.3",
+    "highlight.js": "9.15.8",
+    "react": "16.8.6",
+    "react-dom": "16.8.6",
     "react-flip-move": "^3.0.3",
     "react-highlight.js": "^1.0.7",
     "react-intercom": "^1.0.15",
-    "rmwc": "^1.4.1"
+    "rmwc": "=1.4.1"
   },
   "devDependencies": {
     "shadow-cljs": "^2.8.58"
