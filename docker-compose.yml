@@ -7,7 +7,6 @@ services:
       context: .
     volumes:
       - ".:/app"
-      # - "~/.m2:/root/.m2"
       - m2:/root/.m2
       - "~/.lein:/root/.lein"
     links:
@@ -20,12 +19,22 @@ services:
       POSTGRES_USER: planwise
       POSTGRES_PASSWORD: planwise
       POSTGRES_DB: planwise
-      RASTER_ISOCHRONES: 'yes'
     command: "lein repl :headless"
     ports:
       - "47480:47480"
       - "3000:3000"
-      - "3449:3449"
+
+  client:
+    build:
+      dockerfile: Dockerfile-dev
+      context: .
+    volumes:
+      - ".:/app"
+      - m2:/root/.m2
+    working_dir: "/app/client"
+    command: "sh -c 'npm install && npm run watch'"
+    ports:
+      - "9630:9630"
 
   db:
     image: starefossen/pgrouting:10.1-2.4-2.5
