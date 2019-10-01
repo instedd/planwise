@@ -1,9 +1,9 @@
-(defproject planwise "0.11.0"
+(defproject planwise "0.13.0-SNAPSHOT"
   :description "Facility Planner"
   :url "http://github.com/instedd/planwise"
   :min-lein-version "2.0.0"
   :dependencies [; Base infrastructure
-                 [org.clojure/clojure "1.9.0"]
+                 [org.clojure/clojure "1.10.1"]
                  [org.clojure/core.async "0.4.474"]
                  [prismatic/schema "1.1.7"]
 

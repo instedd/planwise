@@ -4,7 +4,7 @@
             [clojure.core.memoize :as memoize]
             [planwise.component.coverage :as coverage]
             [taoensso.timbre :as timbre])
-  (:import [java.lang.Math]
+  (:import [java.lang Math]
            [planwise.engine Algorithm]
            [org.gdal.gdalconst gdalconst]))
 
