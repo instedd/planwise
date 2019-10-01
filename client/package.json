@@ -3,7 +3,8 @@
     "build-sass": "shadow-cljs clj-run build/sass",
     "build": "shadow-cljs clj-run build/build",
     "watch": "shadow-cljs clj-run build/watch",
-    "release": "shadow-cljs clj-run build/release"
+    "release": "shadow-cljs clj-run build/release",
+    "test": "shadow-cljs compile test && node target/test/node-tests.js"
   },
   "dependencies": {
     "@cljs-oss/module-deps": "^1.1.1",

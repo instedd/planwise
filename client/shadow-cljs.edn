@@ -36,4 +36,7 @@
         :devtools         {:watch-dir  "target/planwise/public/css"
                            :watch-path "/css"
                            :preloads   [dev.user
-                                        day8.re-frame-10x.preload]}}}}
+                                        day8.re-frame-10x.preload]}}
+
+  :test {:target :node-test
+         :output-to "target/test/node-tests.js"}}}
