@@ -2,12 +2,14 @@
   "scripts": {
     "build-sass": "shadow-cljs clj-run build/sass",
     "build": "shadow-cljs clj-run build/build",
-    "watch": "shadow-cljs clj-run build/watch"
+    "watch": "shadow-cljs clj-run build/watch",
+    "release": "shadow-cljs clj-run build/release"
   },
   "dependencies": {
     "@cljs-oss/module-deps": "^1.1.1",
     "create-react-class": "^15.6.3",
     "material-components-web": "^0.32.0",
+    "prop-types": "=15.5.8",
     "react": "=15.5.4",
     "react-dom": "=15.5.4",
     "react-flip-move": "^3.0.3",

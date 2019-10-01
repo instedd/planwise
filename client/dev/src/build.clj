@@ -3,14 +3,22 @@
             [shadow.cljs.devtools.api :as shadow]
             [build.sass :as sass]))
 
+(def sass-options
+  {:source-paths  ["resources/sass"]
+   :output-path   "target/planwise/public/css"
+   :include-paths ["node_modules"]
+   :output-style  :nested
+   :source-map?   true})
+
 (defn sass
   []
   (sass/build-all
-   {:source-paths  ["resources/sass"]
-    :output-path   "target/planwise/public/css"
-    :include-paths ["node_modules"]
-    :output-style  :nested
-    :source-map?   true}))
+   (merge sass-options {:output-style :nested})))
+
+(defn sass-release
+  []
+  (sass/build-all
+   (merge sass-options {:output-style :compressed})))
 
 (defn watch-sass
   {:shadow/requires-server true}
@@ -30,3 +38,8 @@
   []
   (sass)
   (shadow/compile :app))
+
+(defn release
+  []
+  (sass-release)
+  (shadow/release :app))

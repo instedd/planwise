@@ -27,12 +27,13 @@
  {:port 9630}
 
  :builds
- {:app {:target     :browser
-        :output-dir "target/planwise/public/js"
-        :asset-path "/js"
-        :modules    {:main {:entries [planwise.client.core]}}
-        :dev        {:closure-defines {"re_frame.trace.trace_enabled_QMARK_" true}}
-        :devtools   {:watch-dir  "target/planwise/public/css"
-                     :watch-path "/css"
-                     :preloads   [dev.user
-                                  day8.re-frame-10x.preload]}}}}
+ {:app {:target           :browser
+        :output-dir       "target/planwise/public/js"
+        :asset-path       "/js"
+        :modules          {:main {:entries [planwise.client.core]}}
+        :compiler-options {:externs ["resources/js/externs.js"]}
+        :dev              {:closure-defines {"re_frame.trace.trace_enabled_QMARK_" true}}
+        :devtools         {:watch-dir  "target/planwise/public/css"
+                           :watch-path "/css"
+                           :preloads   [dev.user
+                                        day8.re-frame-10x.preload]}}}}
