@@ -87,7 +87,7 @@
    [:div.card-primary primary]
    [:div.card-secondary
     [:h1 {} title]
-    (map (fn [a] [:h2 {} a]) subtitles)
+    (into [:<>] (map (fn [a] [:h2 {} a]) subtitles))
     [:div.status {} status]
     (when action-button
       [:div.actions action-button])]])

@@ -8,11 +8,11 @@
   },
   "dependencies": {
     "create-react-class": "15.6.3",
-    "highlight.js": "9.15.8",
+    "highlight.js": "9.15.10",
     "react": "16.8.6",
     "react-dom": "16.8.6",
     "react-flip-move": "^3.0.3",
-    "react-highlight.js": "^1.0.7",
+    "react-highlight.js": "1.0.7",
     "react-intercom": "^1.0.15",
     "rmwc": "=1.4.1"
   },
