@@ -398,4 +398,3 @@
                    (apply concat (map make-h-then-choices group-names group-opt-lists))))
                :else
                [:li.mdc-list-item {:role "option" :aria-disabled true :tab-index -1} (str "No results match \"" @filter-text "\"")])]]]))})))
-

@@ -50,7 +50,7 @@
 
 (defn main-action
   [{:keys [icon on-click]}]
-  [m/Fab {:id "main-action" :on-click on-click} icon])
+  [m/Fab {:id "main-action" :on-click on-click :icon icon} icon])
 
 (defn secondary-action
   [{:keys [on-click]} content]

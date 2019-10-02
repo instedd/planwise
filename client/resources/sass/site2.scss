@@ -252,6 +252,10 @@ form.vertical, .fields-vertical {
   margin-top: 44px;
 }
 
+.mdc-select__native-control {
+  -webkit-appearance: none;
+}
+
 //
 
 .file-input-wrapper {

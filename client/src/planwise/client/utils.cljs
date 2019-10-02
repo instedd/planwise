@@ -42,7 +42,7 @@
 
 ;; String functions
 
-(defn- or-blank
+(defn or-blank
   [value fallback]
   (cond
     (or (nil? value) (= value "")) fallback

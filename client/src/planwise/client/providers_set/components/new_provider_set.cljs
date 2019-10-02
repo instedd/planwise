@@ -53,10 +53,10 @@
         [:a {:href (routes/download-providers-sample)
              :data-trigger "false"} "Download a sample providers list"]
         [m/Select {:label "Coverage algorithm"
-                   :value @coverage
-                   :options @algorithms
+                   :value (or @coverage "")
+                   :options (into [{:key "" :value ""}] @algorithms)
                    :on-change #(rf/dispatch [:providers-set/new-provider-set-update
-                                             :coverage (-> % .-target .-value)])}]
+                                             :coverage (utils/or-blank (.. % -target -value) nil)])}]
 
         (when-let [last-error @(rf/subscribe [:providers-set/last-error])]
           [:div.error-message
