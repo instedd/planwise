@@ -90,6 +90,8 @@
 
   :aliases {"migrate"               ["with-profile" "+repl" "run" ":duct/migrator"]
             "build-icons"           ["with-profile" "+repl" "run" "-m" "planwise.tasks.build-icons"]
+            "check-format"          ["with-profile" "cljfmt" "cljfmt" "check"]
+            "fix-format"            ["with-profile" "cljfmt" "cljfmt" "fix"]
             "import-population"     ["with-profile" "+repl" "run" "-m" "planwise.tasks.import-population"]}
 
   :profiles

@@ -38,6 +38,7 @@ jobs:
       - run: |
           cd client
           npm run test
+      - run: lein check-format
       - save_cache:
           key: v2-planwise-m2-{{ checksum "project.clj" }}-{{ checksum "client/shadow-cljs.edn" }}
           paths:
