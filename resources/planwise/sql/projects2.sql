@@ -42,7 +42,8 @@ UPDATE "projects2" AS p2
 
 -- :name db-reset-project! :!
 UPDATE "projects2" AS p2
-  SET "state" = 'draft'
+  SET "state" = 'draft',
+      "engine-config" = NULL
   WHERE "id" = :id;
 
 -- :name db-delete-project! :!

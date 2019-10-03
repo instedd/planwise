@@ -123,7 +123,8 @@
     (-> scenario
         (assoc :sources-data updated-sources
                :providers providers
-               :disabled-providers disabled-providers)
+               :disabled-providers disabled-providers
+               :source-demand (get-in project [:engine-config :source-demand]))
         (dissoc :updated-at :new-providers-geom))))
 
 (defn get-provider-geom

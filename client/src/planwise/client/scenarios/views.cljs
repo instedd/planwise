@@ -210,26 +210,29 @@
   (utils/format-percentage (/ num denom) 2))
 
 (defn initial-scenario-panel
-  [{:keys [name demand-coverage state]} unit-name source-demand]
-  [:div
-   [:div {:class-name "section"}
-    [:h1 {:class-name "title-icon"} name]]
-   [:hr]
-   [:div {:class-name "section"}
-    [:h1 {:class-name "large"}
-     [:small (str "Initial " unit-name " coverage")]
-     (cond
-       (= "pending" state) "loading..."
-       :else (str (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]
-    [:p {:class-name "grey-text"}
-     (str "of a total of " (utils/format-number source-demand))]]])
+  [_ _]
+  (let [source-demand (subscribe [:scenarios.current/source-demand])]
+    (fn [{:keys [name demand-coverage state]} unit-name]
+      [:div
+       [:div {:class-name "section"}
+        [:h1 {:class-name "title-icon"} name]]
+       [:hr]
+       [:div {:class-name "section"}
+        [:h1 {:class-name "large"}
+         [:small (str "Initial " unit-name " coverage")]
+         (cond
+           (= "pending" state) "loading..."
+           :else (str (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]
+        [:p {:class-name "grey-text"}
+         (str "of a total of " (utils/format-number @source-demand))]]])))
 
 (defn side-panel-view
-  [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
+  [_ _]
   (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
         computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
-        view-state                   (subscribe [:scenarios/view-state])]
-    (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name source-demand]
+        view-state                   (subscribe [:scenarios/view-state])
+        source-demand                (subscribe [:scenarios.current/source-demand])]
+    (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name]
       [:div
        [:div {:class-name "section"}
         [:h1 {:class-name "title-icon"} name]]
@@ -240,11 +243,11 @@
          [:small (str "Increase in " unit-name " coverage")]
          (cond
            (= "pending" state) "loading..."
-           :else (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
+           :else               (str increase-coverage " (" (format-percentage increase-coverage @source-demand) ")"))]
         [:p {:class-name "grey-text"}
          (cond
            (= "pending" state) "to a total of"
-           :else (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
+           :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]]
        [:div {:class-name "section"}
         [:h1 {:class-name "large"}
          [:small "Investment required"]
@@ -263,7 +266,6 @@
         state      (subscribe [:scenarios/view-state])
         error      (subscribe [:scenarios/error])
         providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
-        source-demand (get-in current-project [:engine-config :source-demand])
         unit-name  (get-in current-project [:config :demographics :unit-name])
         export-providers-button [:a {:class "mdc-fab disable-a"
                                      :id "main-action"
@@ -279,8 +281,8 @@
                                       [:li (:name current-scenario)]]
                               :action export-providers-button})
        (if @read-only?
-         [initial-scenario-panel current-scenario unit-name source-demand]
-         [side-panel-view current-scenario unit-name source-demand])
+         [initial-scenario-panel current-scenario unit-name]
+         [side-panel-view current-scenario unit-name])
        [:div (when-not @error {:class-name "fade"})]
        (if @error
          [raise-alert current-project current-scenario @error]
