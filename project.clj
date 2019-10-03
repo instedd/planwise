@@ -71,7 +71,7 @@
                  [net.mintern/primitive "1.3"]]
 
   :plugins [[duct/lein-duct "0.10.6"]
-            [lein-cljfmt "0.5.7"]]
+            [lein-cljfmt "0.6.4"]]
 
   :cljfmt {:remove-consecutive-blank-lines? false}
 
@@ -122,4 +122,7 @@
                    :source-paths   ["dev/src"]
                    :resource-paths ["dev/resources" "test/resources"]}
    :project/test  {:prep-tasks     ^:replace ["javac" "compile"]
-                   :resource-paths ["test/resources"]}})
+                   :resource-paths ["test/resources"]}
+   ;; this profile adds client source paths for running cljfmt
+   ;; run with: lein with-profile cljfmt cljfmt check
+   :cljfmt        {:source-paths   ["client/src" "client/test"]}})
