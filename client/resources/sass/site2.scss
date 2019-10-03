@@ -303,6 +303,12 @@ form.vertical, .fields-vertical {
 }
 
 
+.option-row {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+}
+
 .option-context {
   color: #ddd;
   float: right;

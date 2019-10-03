@@ -27,7 +27,7 @@
   [attrs]
   (let [props (merge {:choices   @(rf/subscribe [:regions/list])
                       :label-fn  :name
-                      :render-fn (fn [region] [:div
+                      :render-fn (fn [region] [:div.option-row
                                                [:span (:name region)]
                                                [:span.option-context (:country-name region)]])}
                      attrs)]
