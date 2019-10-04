@@ -114,12 +114,13 @@
   [{:keys [id change matches-filters required-capacity satisfied-demand] :as provider} selected-provider]
   {:className
    (str
+    "leaflet-circle-icon "
     (cond
-      (= id  (:id selected-provider)) "leaflet-circle-icon-orange"
+      (= id  (:id selected-provider)) "orange"
       (and (not change)
-           (not matches-filters)) "leaflet-circle-icon-gray"
-      (zero? required-capacity) "leaflet-circle-icon-blue"
-      :else "leaflet-circle-icon-red")
+           (not matches-filters)) "gray"
+      (zero? required-capacity) "blue"
+      :else "red")
     " "
     (when (provider-has-change? provider)
       "leaflet-circle-for-change"))})

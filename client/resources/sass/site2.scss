@@ -801,24 +801,22 @@ form.vertical, .fields-vertical {
   background: red ;
 }
 
-.leaflet-circle-icon-gray {
-  background-color: gray;
+.leaflet-circle-icon{
   border-radius: 50%;
-}
-.leaflet-circle-icon-orange {
-  background-color: orange;
-  border-radius: 50%;;
-}
 
-.leaflet-circle-icon-red{
-  background-color: red;
-  border-radius: 50%;;
+  &.blue {
+    background-color: blue;
   }
-
-.leaflet-circle-icon-blue{
-  background-color: blue;
-  border-radius: 50%;;
+  &.gray {
+    background-color: gray;
   }
+  &.orange {
+    background-color: orange;
+  }
+  &.red {
+    background-color: red;
+  }
+}
 
 .leaflet-circle-for-change{
   border: 3px solid rgba(255, 255, 255, 0.756) !important;
@@ -881,10 +879,10 @@ form.vertical, .fields-vertical {
     align-items: center;
     width: 20%;
     cursor: pointer;
-    
+
     div {
       text-align: center;
-      margin: 1rem 0; 
+      margin: 1rem 0;
     }
   }
 
