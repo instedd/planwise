@@ -110,6 +110,20 @@
   [coll]
   (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
 
+(defn- icon-function
+  [{:keys [id change matches-filters required-capacity satisfied-demand] :as provider} selected-provider]
+  {:className
+   (str
+    (cond
+      (= id  (:id selected-provider)) "leaflet-circle-icon-orange"
+      (and (not change)
+           (not matches-filters)) "leaflet-circle-icon-gray"
+      (zero? required-capacity) "leaflet-circle-icon-blue"
+      :else "leaflet-circle-icon-red")
+    " "
+    (when (provider-has-change? provider)
+      "leaflet-circle-for-change"))})
+
 (defn simple-map
   [{:keys [bbox]} scenario state error read-only?]
   (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
@@ -159,18 +173,7 @@
             providers-layer [providers-layer-type {:points @all-providers
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
-                                                   :icon-fn (fn [provider]
-                                                              (let [{:keys [id change matches-filters required-capacity satisfied-demand]} provider]
-                                                                {:className
-                                                                 (str
-                                                                  (cond
-                                                                    (= id  (:id @selected-provider)) "leaflet-circle-icon-orange"
-                                                                    (and (not change)
-                                                                         (not matches-filters)) "leaflet-circle-icon-gray"
-                                                                    (zero? required-capacity) "leaflet-circle-icon-blue"
-                                                                    :else "leaflet-circle-icon-red")
-                                                                  (when (provider-has-change? provider)
-                                                                    " leaflet-circle-for-change"))}))
+                                                   :icon-fn #(icon-function % @selected-provider)
                                                    :popup-fn     #(show-provider read-only? %)
                                                    :mouseover-fn (fn [provider]
                                                                    (dispatch [:scenarios.map/select-provider provider]))
