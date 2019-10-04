@@ -31,6 +31,7 @@ services:
     volumes:
       - ".:/app"
       - m2:/root/.m2
+      - node_modules:/app/client/node_modules
     working_dir: "/app/client"
     command: "sh -c 'npm install && npm run watch'"
     ports:
@@ -67,3 +68,4 @@ services:
 volumes:
   db:
   m2:
+  node_modules:
