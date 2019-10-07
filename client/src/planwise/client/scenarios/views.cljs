@@ -112,7 +112,7 @@
 
 (defn- get-percentage
   [total relative]
-  (*(/ relative total) 100))
+  (* (/ relative total) 100))
 
 (defn- get-circle-colour
   [satisfied-demand unsatisfied-demand capacity free-capacity]
