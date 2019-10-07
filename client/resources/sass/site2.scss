@@ -804,17 +804,26 @@ form.vertical, .fields-vertical {
 .leaflet-circle-icon{
   border-radius: 50%;
 
-  &.blue {
+  &.idle-capacity {
     background-color: blue;
   }
-  &.gray {
+  &.at-capacity {
+    background-color: green;
+  }
+  &.small-unsatisfied {
+    background-color: yellow;
+  }
+  &.not-matching {
     background-color: gray;
   }
-  &.orange {
+  &.mid-unsatisfied {
     background-color: orange;
   }
-  &.red {
+  &.unsatisfied {
     background-color: red;
+  }
+  &.selected {
+    background-color: fuchsia;
   }
 }
 

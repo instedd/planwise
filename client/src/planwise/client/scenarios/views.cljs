@@ -110,17 +110,30 @@
   [coll]
   (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
 
+(defn- get-percentage
+  [total relative]
+  (*(/ relative total) 100))
+
+(defn- get-circle-colour
+  [satisfied-demand unsatisfied-demand capacity free-capacity]
+  (cond
+    (> (get-percentage capacity free-capacity) 10)              "idle-capacity"
+    (and (>= free-capacity 0) (zero? unsatisfied-demand))       "at-capacity"
+    (< (get-percentage satisfied-demand unsatisfied-demand) 10) "small-unsatisfied"
+    (< (get-percentage satisfied-demand unsatisfied-demand) 30) "mid-unsatisfied"
+    (> unsatisfied-demand 0)                                    "unsatisfied"
+    :else                                                       "unsatisfied"))
+
 (defn- icon-function
-  [{:keys [id change matches-filters required-capacity satisfied-demand] :as provider} selected-provider]
+  [{:keys [id change matches-filters required-capacity satisfied-demand unsatisfied-demand capacity free-capacity] :as provider} selected-provider]
   {:className
    (str
     "leaflet-circle-icon "
     (cond
-      (= id  (:id selected-provider)) "orange"
+      (= id  (:id selected-provider)) "selected"
       (and (not change)
-           (not matches-filters)) "gray"
-      (zero? required-capacity) "blue"
-      :else "red")
+           (not matches-filters)) "not-matching"
+      :else (get-circle-colour satisfied-demand unsatisfied-demand capacity free-capacity))
     " "
     (when (provider-has-change? provider)
       "leaflet-circle-for-change"))})
