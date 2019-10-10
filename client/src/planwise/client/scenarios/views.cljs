@@ -199,7 +199,7 @@
                         :on-position-changed #(reset! position %)
                         :on-zoom-changed #(reset! zoom %)
                         :on-click (cond (= state :new-provider) add-point)
-                        :controls []
+                        :controls [:legend]
                         :initial-bbox bbox
                         :pointer-class (cond (= state :new-provider) "crosshair-pointer")}
           mapping/default-base-tile-layer

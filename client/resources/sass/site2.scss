@@ -827,6 +827,21 @@ form.vertical, .fields-vertical {
   }
 }
 
+.leaflet-legend-icon {
+  float: left;
+  width: 12px;
+  height: 12px;
+}
+
+.leaflet-legend-label {
+  margin-left: 15%;
+  margin-top: 5px;
+}
+
+.leaflet-legend-container {
+  margin-top: 40px !important;
+}
+
 .leaflet-circle-for-change{
   border: 3px solid rgba(255, 255, 255, 0.756) !important;
 }
