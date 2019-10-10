@@ -60,6 +60,42 @@
                                                dst-left dst-top dst-right dst-bottom
                                                src-left src-top)))
 
+(defn mark-pixels-under-coverage!
+  [raster mask mark-value]
+  (let [{src-bounds :src dst-bounds :dst}       (raster/clipped-coordinates raster mask)
+        {src-buffer :data src-nodata :nodata}   mask
+        {dst-buffer :data dst-nodata :nodata}   raster
+        [dst-left dst-top dst-right dst-bottom] dst-bounds
+        [src-left src-top _ _]                  src-bounds
+        dst-stride                              (:xsize raster)
+        src-stride                              (:xsize mask)]
+    (Algorithm/markPixelsUnderCoverage dst-buffer dst-stride dst-nodata
+                                       src-buffer src-stride src-nodata
+                                       mark-value
+                                       dst-left dst-top dst-right dst-bottom
+                                       src-left src-top)))
+
+(defn build-mask!
+  [raster mask mask-value]
+  (let [{src-buffer :data src-nodata :nodata} mask
+        {dst-buffer :data}                    raster
+        [left top right bottom]               [0 0 (dec (:xsize raster)) (dec (:ysize raster))]
+        stride                                (:xsize raster)]
+    (Algorithm/buildMask dst-buffer src-buffer src-nodata mask-value stride left top right bottom)))
+
+(defn compute-geo-coverage
+  [{:keys [xsize ysize ^byte nodata ^bytes data]}]
+  (loop [not-covered 0
+         covered     0
+         ^long index (dec (* xsize ysize))]
+    (if (>= index 0)
+      (let [value (aget data index)]
+        (cond
+          (= nodata value) (recur not-covered covered (dec index))
+          (zero? value)    (recur (inc not-covered) covered (dec index))
+          :else            (recur not-covered (inc covered) (dec index))))
+      (float (/ covered (+ covered not-covered))))))
+
 (defn compute-population-quartiles
   [population]
   (vec (Algorithm/computeExactQuartiles (:data population) (:nodata population))))

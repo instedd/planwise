@@ -21,6 +21,7 @@
             [taoensso.timbre :as timbre]
             [clojure.set :as set]
             [clojure.string :as str])
+  (:import [org.gdal.gdalconst gdalconst])
   (:import [clojure.lang ExceptionInfo]))
 
 (timbre/refer-timbre)
@@ -48,6 +49,11 @@
   "Full path to the renderable raster for a computed scenario."
   [project-id scenario-filename]
   (str "data/scenarios/" project-id "/" scenario-filename ".map.tif"))
+
+(defn scenario-raster-coverage-path
+  "Full path to the renderable raster for a computed scenario."
+  [project-id scenario-filename]
+  (str "data/scenarios/" project-id "/" scenario-filename ".coverage.tif"))
 
 (defn scenario-raster-path
   "For persisting in the scenarios table"
@@ -298,6 +304,12 @@
      :used-capacity    used-capacity
      :free-capacity    (- capacity used-capacity)}))
 
+(defn raster-add-coverage!
+  "Mark each pixel in the coverage raster which is served by the provider"
+  [geo-coverage-raster provider]
+  (let [provider-coverage-raster (raster/read-raster (:coverage-raster-path provider))]
+    (demand/mark-pixels-under-coverage! geo-coverage-raster provider-coverage-raster 1)))
+
 (defn raster-do-providers!
   "Process each provider in the collection *in order* by the function f
   (presumably with side effects) and return a vector with the results; intended
@@ -354,6 +366,7 @@
          :source-demand     base-demand
          :pending-demand    unsatisfied-demand
          :covered-demand    (- base-demand unsatisfied-demand)
+         :geo-coverage      0.42
          :demand-quartiles  quartiles
          :providers-data    (merge-providers applied-providers providers-unsatisfied-demand)}))))
 
@@ -371,6 +384,10 @@
           quartiles              (get-in project [:engine-config :demand-quartiles])
           demand-raster-name     (:raster initial-scenario)
           demand-raster          (raster/read-raster (common/scenario-raster-full-path demand-raster-name))
+          geo-coverage-raster    (raster/create-raster-from demand-raster {:data-type gdalconst/GDT_Byte
+                                                                           :nodata    -1
+                                                                           :data-fill -1})
+          _                      (demand/build-mask! geo-coverage-raster demand-raster 0)
           initial-providers-data (:providers-data initial-scenario)
           scenario-filename      (str (format "%03d-" scenario-id) (java.util.UUID/randomUUID))]
 
@@ -379,14 +396,18 @@
 
       (let [applied-changes              (raster-do-providers! changed-providers
                                                                (partial raster-apply-provider! demand-raster capacity-multiplier))
+            _                            (raster-do-providers! changed-providers
+                                                               (partial raster-add-coverage! geo-coverage-raster))
             unsatisfied-demand           (demand/count-population demand-raster)
             providers-unsatisfied-demand (raster-do-providers! (merge-providers initial-providers changed-providers)
                                                                (partial raster-measure-provider demand-raster capacity-multiplier))
             raster-data-path             (scenario-raster-data-path project-id scenario-filename)
-            raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
+            raster-map-path              (scenario-raster-map-path project-id scenario-filename)
+            raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)]
         (io/make-parents raster-data-path)
         (raster/write-raster demand-raster raster-data-path)
         (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
+        (raster/write-raster geo-coverage-raster raster-coverage-path)
 
         (debug "Wrote" raster-data-path)
         (debug "Scenario unsatisfied demand:" unsatisfied-demand)
@@ -394,6 +415,7 @@
         {:raster-path    (scenario-raster-path project-id scenario-filename)
          :pending-demand unsatisfied-demand
          :covered-demand (- base-demand unsatisfied-demand)
+         :geo-coverage   (demand/compute-geo-coverage geo-coverage-raster)
          :providers-data (merge-providers initial-providers-data applied-changes providers-unsatisfied-demand)}))))
 
 ;; POINT SCENARIOS

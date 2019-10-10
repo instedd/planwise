@@ -132,6 +132,62 @@ public class Algorithm {
         }
     }
 
+    public static void markPixelsUnderCoverage(byte[] dstData,
+                                               int dstStride,
+                                               float dstNodata,
+                                               byte[] srcData,
+                                               int srcStride,
+                                               byte srcNodata,
+                                               byte markValue,
+                                               int dstLeft,
+                                               int dstTop,
+                                               int dstRight,
+                                               int dstBottom,
+                                               int srcLeft,
+                                               int srcTop) {
+        int width = dstRight - dstLeft + 1;
+        int dstSkip = dstStride - width;
+        int srcSkip = srcStride - width;
+        int dstIdx = dstTop * dstStride + dstLeft;
+        int srcIdx = srcTop * srcStride + srcLeft;
+
+        for (int y = dstTop; y <= dstBottom; y++) {
+            for (int x = dstLeft; x <= dstRight; x++) {
+                if (dstData[dstIdx] != dstNodata && srcData[srcIdx] != srcNodata) {
+                    dstData[dstIdx] = markValue;
+                }
+                dstIdx++;
+                srcIdx++;
+            }
+            dstIdx += dstSkip;
+            srcIdx += srcSkip;
+        }
+    }
+
+    public static void buildMask(byte[] dstData,
+                                 float[] srcData,
+                                 float srcNodata,
+                                 byte maskValue,
+                                 int stride,
+                                 int left,
+                                 int top,
+                                 int right,
+                                 int bottom) {
+        int width = right - left + 1;
+        int skip = stride - width;
+        int index = top * stride + left;
+
+        for (int y = top; y <= bottom; y++) {
+            for (int x = left; x <= right; x++) {
+                if (srcData[index] != srcNodata) {
+                    dstData[index] = maskValue;
+                }
+                index++;
+            }
+            index += skip;
+        }
+    }
+
     public static float[] computeExactQuartiles(float[] data, float nodata) {
         float copy[] = new float[data.length];
         int j = 0;

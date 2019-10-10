@@ -176,6 +176,7 @@
                     result (engine/compute-initial-scenario engine project)]
                 (info (str "Initial scenario " scenario-id " computed")
                       (select-keys result [:raster-path :covered-demand :providers-data :sources-data]))
+                (info (str "Computed geographic coverage " (* 100 (:geo-coverage result 0))))
                 ;; TODO check if scenario didn't change from result
                 (db-update-scenario-state! (get-db store)
                                            {:id                 scenario-id
@@ -256,6 +257,7 @@
                     result           (engine/compute-scenario engine project initial-scenario scenario)]
                 (info (str "Scenario " scenario-id " computed")
                       (select-keys result [:raster-path :covered-demand :providers-data :sources-data]))
+                (info (str "Computed geographic coverage " (* 100 (:geo-coverage result 0))))
                 ;; TODO check if scenario didn't change from result. If did, discard result.
                 (db-update-scenario-state! (get-db store)
                                            {:id                 scenario-id

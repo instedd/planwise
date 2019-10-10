@@ -25,15 +25,18 @@
                     {:data-type data-type}))))
 
 (defn- alloc-array
-  [data-type length]
-  (condp = data-type
-    gdalconst/GDT_Byte    (byte-array length)
-    gdalconst/GDT_Int16   (short-array length)
-    gdalconst/GDT_Int32   (int-array length)
-    gdalconst/GDT_Float32 (float-array length)
-    gdalconst/GDT_Float64 (double-array length)
-    (throw (ex-info "Unsupported data type"
-                    {:data-type data-type}))))
+  ([data-type length]
+   (alloc-array data-type length 0))
+  ([data-type length val]
+   (let [initial-value (cast-value data-type val)]
+     (condp = data-type
+       gdalconst/GDT_Byte    (byte-array length initial-value)
+       gdalconst/GDT_Int16   (short-array length initial-value)
+       gdalconst/GDT_Int32   (int-array length initial-value)
+       gdalconst/GDT_Float32 (float-array length initial-value)
+       gdalconst/GDT_Float64 (double-array length initial-value)
+       (throw (ex-info "Unsupported data type"
+                       {:data-type data-type}))))))
 
 (defn read-nodata-value
   "Reads the NODATA value from a raster band and returns it casted to the
@@ -82,9 +85,13 @@
         data      (read-band-data band 0 0 xsize ysize)]
     (->Raster projection geotransform xsize ysize data-type nodata data)))
 
-(defn create-raster-from-existing
-  [{:keys [geotransform projection xsize ysize data-type nodata]} new-data]
-  (->Raster projection geotransform xsize ysize data-type nodata new-data))
+(defn create-raster-from
+  [source-raster {:keys [data-type nodata data-fill]}]
+  (let [{:keys [projection geotransform xsize ysize]} source-raster
+        data-type                                     (or data-type (:data-type source-raster))
+        nodata                                        (or nodata (:nodata source-raster))
+        data                                          (alloc-array data-type (* xsize ysize) data-fill)]
+    (->Raster projection geotransform xsize ysize data-type nodata data)))
 
 (defn read-raster
   "Reads a raster file and returns a Raster record with the data from the
