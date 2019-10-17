@@ -114,8 +114,8 @@
   [total relative]
   (* (/ relative total) 100))
 
-(defn- get-circle-colour
-  [satisfied-demand unsatisfied-demand capacity free-capacity]
+(defn- get-marker-class-for-provider
+  [{:keys [satisfied-demand unsatisfied-demand capacity free-capacity]}]
   (cond
     (> (get-percentage capacity free-capacity) 10)              "idle-capacity"
     (and (>= free-capacity 0) (zero? unsatisfied-demand))       "at-capacity"
@@ -133,7 +133,7 @@
       (= id  (:id selected-provider)) "selected"
       (and (not change)
            (not matches-filters)) "not-matching"
-      :else (get-circle-colour satisfied-demand unsatisfied-demand capacity free-capacity))
+      :else (get-marker-class-for-provider provider))
     " "
     (when (provider-has-change? provider)
       "leaflet-circle-for-change"))})
