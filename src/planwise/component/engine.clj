@@ -333,7 +333,11 @@
         raster-resolution   (raster/raster-resolution demand-raster)
         base-demand         (demand/count-population demand-raster)
         capacity-multiplier (get-in (:config project) [:providers :capacity])
-        scenario-filename   (str "initial-" (java.util.UUID/randomUUID))]
+        scenario-filename   (str "initial-" (java.util.UUID/randomUUID))
+        geo-coverage-raster (raster/create-raster-from demand-raster {:data-type gdalconst/GDT_Byte
+                                                                      :nodata    -1
+                                                                      :data-fill -1})
+        _                   (demand/build-mask! geo-coverage-raster demand-raster 0)]
 
     (debug (str "Base scenario demand: " base-demand))
 
@@ -348,12 +352,16 @@
                                                                (partial raster-apply-provider! demand-raster capacity-multiplier))
             unsatisfied-demand           (demand/count-population demand-raster)
             quartiles                    (demand/compute-population-quartiles demand-raster)
+            _                            (raster-do-providers! providers
+                                                               (partial raster-add-coverage! geo-coverage-raster))
             providers-unsatisfied-demand (raster-do-providers! providers
                                                                (partial raster-measure-provider demand-raster capacity-multiplier))
             raster-data-path             (scenario-raster-data-path project-id scenario-filename)
-            raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
+            raster-map-path              (scenario-raster-map-path project-id scenario-filename)
+            raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)]
         (io/make-parents raster-data-path)
         (raster/write-raster demand-raster raster-data-path)
+        (raster/write-raster geo-coverage-raster raster-coverage-path)
         (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
 
         (debug (str "Wrote " raster-data-path))
@@ -366,7 +374,7 @@
          :source-demand     base-demand
          :pending-demand    unsatisfied-demand
          :covered-demand    (- base-demand unsatisfied-demand)
-         :geo-coverage      0.42
+         :geo-coverage      (demand/compute-geo-coverage geo-coverage-raster)
          :demand-quartiles  quartiles
          :providers-data    (merge-providers applied-providers providers-unsatisfied-demand)}))))
 
@@ -384,10 +392,7 @@
           quartiles              (get-in project [:engine-config :demand-quartiles])
           demand-raster-name     (:raster initial-scenario)
           demand-raster          (raster/read-raster (common/scenario-raster-full-path demand-raster-name))
-          geo-coverage-raster    (raster/create-raster-from demand-raster {:data-type gdalconst/GDT_Byte
-                                                                           :nodata    -1
-                                                                           :data-fill -1})
-          _                      (demand/build-mask! geo-coverage-raster demand-raster 0)
+          geo-coverage-raster    (raster/read-raster (common/scenario-raster-full-path (str demand-raster-name ".coverage")))
           initial-providers-data (:providers-data initial-scenario)
           scenario-filename      (str (format "%03d-" scenario-id) (java.util.UUID/randomUUID))]
 
