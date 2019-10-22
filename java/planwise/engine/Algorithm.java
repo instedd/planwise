@@ -168,6 +168,7 @@ public class Algorithm {
                                  float[] srcData,
                                  float srcNodata,
                                  byte maskValue,
+                                 float effectiveThreshold,
                                  int stride,
                                  int left,
                                  int top,
@@ -179,7 +180,7 @@ public class Algorithm {
 
         for (int y = top; y <= bottom; y++) {
             for (int x = left; x <= right; x++) {
-                if (srcData[index] != srcNodata) {
+                if (srcData[index] != srcNodata && srcData[index] > effectiveThreshold) {
                     dstData[index] = maskValue;
                 }
                 index++;

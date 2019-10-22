@@ -74,14 +74,70 @@
                                        mark-value
                                        dst-left dst-top dst-right dst-bottom
                                        src-left src-top)))
+(defn get-coordinates
+  [geotransform, x, y]
+  (let [lon   (+ (get geotransform 0) (* (get geotransform 1) x) (* (get geotransform 2) y))
+        lat   (+ (get geotransform 3) (* (get geotransform 4) x) (* (get geotransform 5) y))]
+
+    {:lon lon :lat lat}))
+
+(def earth-radius "In Km" 6371)
+
+(defn- sin-2
+  "Sin squared"
+  [radians]
+  (* (Math/sin radians) (Math/sin radians)))
+
+(defn- trig
+  [lat1 lat2 d-lat d-long]
+  (+ (sin-2 (/ d-lat 2))
+     (* (sin-2 (/ d-long 2)) (Math/cos lat1) (Math/cos lat2))))
+
+(defn distance
+  "Returns the distance in km between two points using haversine"
+  [{lat1 :lat long1 :lon}
+   {lat2 :lat long2 :lon}]
+  (let [d-lat       (Math/toRadians (- lat2 lat1))
+        d-long      (Math/toRadians (- long2 long1))
+        lon1        (Math/toRadians long1)
+        lon2        (Math/toRadians long2)
+        lat1        (Math/toRadians lat1)
+        lat2        (Math/toRadians lat2)]
+
+    (* earth-radius 2
+       (Math/asin (Math/sqrt (trig lat1 lat2 d-lat d-long))))))
+
+
+(defn get-pixel-size-in-km2
+  ; "return the average area a pixel covers, in squared meters"
+  "Return the average number of pixels needed to cover a squared km"
+  [raster]
+  (let [[x1 _ _ y1]       (:geotransform raster)
+        geotransform      (:geotransform raster)
+        xsize             (:xsize raster)
+        ysize             (:ysize raster)
+        upper-left        (get-coordinates geotransform 0.0 0.0)
+        upper-right       (get-coordinates geotransform xsize 0.0)
+        lower-left        (get-coordinates geotransform 0.0 ysize)
+        total-width-kms   (distance upper-left upper-right)
+        pixel-width-kms   (/ total-width-kms xsize)
+        total-height-kms  (distance upper-left lower-left)
+        pixel-height-kms  (/ total-height-kms ysize)]
+
+    (* pixel-height-kms pixel-width-kms)))
 
 (defn build-mask!
-  [raster mask mask-value]
+  ; Threshold is to ignore areas with population per km2 smaller than the received value
+  [raster mask mask-value threshold]
   (let [{src-buffer :data src-nodata :nodata} mask
         {dst-buffer :data}                    raster
         [left top right bottom]               [0 0 (dec (:xsize raster)) (dec (:ysize raster))]
-        stride                                (:xsize raster)]
-    (Algorithm/buildMask dst-buffer src-buffer src-nodata mask-value stride left top right bottom)))
+        stride                                (:xsize raster)
+        pixel-size                            (get-pixel-size-in-km2 raster)
+        threshold-per-pixel                   (* threshold pixel-size)] ; Calculate the number each pixel needs to have to be bigger than the threshold
+
+    (Algorithm/buildMask dst-buffer src-buffer src-nodata mask-value threshold-per-pixel stride left top right bottom)))
+
 
 (defn compute-geo-coverage
   [{:keys [xsize ysize ^byte nodata ^bytes data]}]

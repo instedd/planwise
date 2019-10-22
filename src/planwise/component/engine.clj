@@ -337,7 +337,7 @@
         geo-coverage-raster (raster/create-raster-from demand-raster {:data-type gdalconst/GDT_Byte
                                                                       :nodata    -1
                                                                       :data-fill -1})
-        _                   (demand/build-mask! geo-coverage-raster demand-raster 0)]
+        _                   (demand/build-mask! geo-coverage-raster demand-raster 0 1)]
 
     (debug (str "Base scenario demand: " base-demand))
 
@@ -358,6 +358,7 @@
                                                                (partial raster-measure-provider demand-raster capacity-multiplier))
             raster-data-path             (scenario-raster-data-path project-id scenario-filename)
             raster-map-path              (scenario-raster-map-path project-id scenario-filename)
+            geo-demand                   (:geotransform demand-raster)
             raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)]
         (io/make-parents raster-data-path)
         (raster/write-raster demand-raster raster-data-path)
@@ -394,6 +395,7 @@
           demand-raster          (raster/read-raster (common/scenario-raster-full-path demand-raster-name))
           geo-coverage-raster    (raster/read-raster (common/scenario-raster-full-path (str demand-raster-name ".coverage")))
           initial-providers-data (:providers-data initial-scenario)
+          geo-demand             (:geotransform demand-raster)
           scenario-filename      (str (format "%03d-" scenario-id) (java.util.UUID/randomUUID))]
 
       (debug "Base scenario demand:" base-demand)
