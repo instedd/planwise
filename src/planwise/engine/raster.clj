@@ -1,5 +1,6 @@
 (ns planwise.engine.raster
   (:require [clojure.spec.alpha :as s]
+            [planwise.util.geo :as geo]
             [planwise.util.numbers :refer [float= abs]])
   (:import [org.gdal.gdal gdal]
            [org.gdal.gdalconst gdalconst]
@@ -266,6 +267,29 @@
   [{:keys [geotransform]}]
   (let [[_ xres _ _ _ yres] geotransform]
     {:xres xres :yres yres}))
+
+(defn pixel-coords->lat-lon
+  [{:keys [geotransform]}, x, y]
+  (let [lon   (+ (get geotransform 0) (* (get geotransform 1) x) (* (get geotransform 2) y))
+        lat   (+ (get geotransform 3) (* (get geotransform 4) x) (* (get geotransform 5) y))]
+
+    {:lat lat :lon lon}))
+
+(defn get-pixel-size-in-km2
+  ; "return the average area a pixel covers, in squared meters"
+  "Return the average number of pixels needed to cover a squared km"
+  [raster]
+  (let [xsize             (:xsize raster)
+        ysize             (:ysize raster)
+        upper-left        (pixel-coords->lat-lon raster 0.0 0.0)
+        upper-right       (pixel-coords->lat-lon raster xsize 0.0)
+        lower-left        (pixel-coords->lat-lon raster 0.0 ysize)
+        total-width-kms   (geo/haversine-distance upper-left upper-right)
+        pixel-width-kms   (/ total-width-kms xsize)
+        total-height-kms  (geo/haversine-distance upper-left lower-left)
+        pixel-height-kms  (/ total-height-kms ysize)]
+
+    (* pixel-height-kms pixel-width-kms)))
 
 (defprotocol RasterOps
   (compatible? [r1 r2]

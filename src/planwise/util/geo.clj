@@ -91,3 +91,29 @@
      :max-lon (max lon1 lon2)
      :min-lat (min lat1 lat2)
      :max-lat (max lat1 lat2)}))
+
+(def earth-radius "In Km" 6371)
+
+(defn- sin-2
+  "Sin squared"
+  [radians]
+  (* (Math/sin radians) (Math/sin radians)))
+
+(defn- trig
+  [lat1 lat2 d-lat d-long]
+  (+ (sin-2 (/ d-lat 2))
+     (* (sin-2 (/ d-long 2)) (Math/cos lat1) (Math/cos lat2))))
+
+(defn haversine-distance
+  "Returns the distance in km between two points using haversine"
+  [{lat1 :lat long1 :lon}
+   {lat2 :lat long2 :lon}]
+  (let [d-lat       (Math/toRadians (- lat2 lat1))
+        d-long      (Math/toRadians (- long2 long1))
+        lon1        (Math/toRadians long1)
+        lon2        (Math/toRadians long2)
+        lat1        (Math/toRadians lat1)
+        lat2        (Math/toRadians lat2)]
+
+    (* earth-radius 2
+       (Math/asin (Math/sqrt (trig lat1 lat2 d-lat d-long))))))
