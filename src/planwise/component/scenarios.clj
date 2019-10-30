@@ -69,7 +69,7 @@
   [scenario]
   (reduce (fn [map key] (update map key edn/read-string))
           scenario
-          [:changeset :sources-data :providers-data :new-providers-geom :geo-coverage]))
+          [:changeset :sources-data :providers-data :new-providers-geom]))
 
 (defn get-scenario
   [store scenario-id]
