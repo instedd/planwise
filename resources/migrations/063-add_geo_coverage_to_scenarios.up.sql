@@ -1,0 +1,1 @@
+ALTER TABLE scenarios ADD COLUMN "geo-coverage" FLOAT DEFAULT NULL;

@@ -1,5 +1,5 @@
 -- :name db-list-scenarios :?
-SELECT id, name, investment, "demand-coverage", changeset, label, state
+SELECT id, name, investment, "demand-coverage", "geo-coverage", changeset, label, state
 FROM scenarios
 WHERE "project-id" = :project-id
 ORDER BY
@@ -65,6 +65,7 @@ UPDATE "scenarios"
       "providers-data" = :providers-data,
       "sources-data" = :sources-data,
       "new-providers-geom" = :new-providers-geom,
+      "geo-coverage" = :geo-coverage,
       "error-message" = NULL
   WHERE "id" = :id;
 
