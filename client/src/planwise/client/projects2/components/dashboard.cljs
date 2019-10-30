@@ -47,7 +47,7 @@
      [:td.col3 (utils/format-number investment)]
      [:td.col4 changeset-summary]]
     [:tr {:key (str "tr-" index)}
-     (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 5))]))
+     (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 6))]))
 
 (defn- generate-title
   [num]
