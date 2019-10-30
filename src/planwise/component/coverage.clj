@@ -19,6 +19,11 @@
 
 (hugsql/def-db-fns "planwise/sql/coverage/coverage.sql")
 
+(def distance-values
+  (for [x (range 301) :when (= (mod x 5) 0)] x))
+
+(def distance-options
+  (for [x (vec distance-values)] {:value x :label (str x " km")}))
 
 ;; Specs =====================================================================
 ;;
@@ -26,7 +31,7 @@
 (s/def ::driving-time #{30 60 90 120})
 (s/def ::driving-friction-criteria (s/keys :req-un [::driving-time]))
 
-(s/def ::distance #{5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100})
+(s/def ::distance (set distance-values))
 (s/def ::simple-buffer-criteria (s/keys :req-un [::distance]))
 
 (s/def ::walking-time #{60 120 180})
@@ -68,26 +73,7 @@
     :description "Simple buffer around origin for testing purposes only"
     :criteria    {:distance {:label   "Distance"
                              :type    :enum
-                             :options [{:value 5   :label "5 km"}
-                                       {:value 10  :label "10 km"}
-                                       {:value 15  :label "15 km"}
-                                       {:value 20  :label "20 km"}
-                                       {:value 25  :label "25 km"}
-                                       {:value 30  :label "30 km"}
-                                       {:value 35  :label "35 km"}
-                                       {:value 40  :label "40 km"}
-                                       {:value 45  :label "45 km"}
-                                       {:value 50  :label "50 km"}
-                                       {:value 55  :label "55 km"}
-                                       {:value 60  :label "60 km"}
-                                       {:value 65  :label "65 km"}
-                                       {:value 70  :label "70 km"}
-                                       {:value 75  :label "75 km"}
-                                       {:value 80  :label "80 km"}
-                                       {:value 85  :label "85 km"}
-                                       {:value 90  :label "90 km"}
-                                       {:value 95  :label "95 km"}
-                                       {:value 100 :label "100 km"}]}}}})
+                             :options distance-options}}}})
 
 
 ;; Coverage algorithms =======================================================
