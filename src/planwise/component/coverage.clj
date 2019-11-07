@@ -20,10 +20,10 @@
 (hugsql/def-db-fns "planwise/sql/coverage/coverage.sql")
 
 (def distance-values
-  (for [x (range 301) :when (= (mod x 5) 0)] x))
+  (range 0 301 5))
 
 (def distance-options
-  (for [x (vec distance-values)] {:value x :label (str x " km")}))
+  (map (fn [x] {:value x :label (str x " km")}) distance-values))
 
 ;; Specs =====================================================================
 ;;
