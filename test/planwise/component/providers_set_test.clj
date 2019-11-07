@@ -119,7 +119,7 @@
 (deftest create-provider-set
   (test-system/with-system (test-config)
     (let [store (:planwise.component/providers-set system)
-          provider-set-id (:id (providers-set/create-provider-set store "Initial" owner-id :none))
+          provider-set-id (:id (providers-set/create-provider-set store "Initial" owner-id))
           providers-set (providers-set/list-providers-set store owner-id)
           version (:last-version (providers-set/get-provider-set store provider-set-id))]
       (is (= (count providers-set) 1))
@@ -131,8 +131,8 @@
 (deftest csv-to-correct-provider-set
   (test-system/with-system (test-config)
     (let [store                         (:planwise.component/providers-set system)
-          provider-set1-id              (:id (providers-set/create-provider-set store "Initial" owner-id :none))
-          provider-set2-id              (:id (providers-set/create-provider-set store "Other" owner-id :none))
+          provider-set1-id              (:id (providers-set/create-provider-set store "Initial" owner-id))
+          provider-set2-id              (:id (providers-set/create-provider-set store "Other" owner-id))
           facilities-provider-set1      (providers-set/csv-to-providers store provider-set1-id (io/resource "sites.csv"))
           version-provider-set1         (:last-version (providers-set/get-provider-set store provider-set1-id))
           version-provider-set2         (:last-version (providers-set/get-provider-set store provider-set2-id))
@@ -146,7 +146,7 @@
 (deftest several-csv-to-provider-set
   (test-system/with-system (test-config)
     (let [store                        (:planwise.component/providers-set system)
-          provider-set-id              (pd (:id (providers-set/create-provider-set store "Initial" owner-id :none)))
+          provider-set-id              (pd (:id (providers-set/create-provider-set store "Initial" owner-id)))
           providers                    (providers-set/csv-to-providers store provider-set-id (io/resource "sites.csv"))
           other-providers              (providers-set/csv-to-providers store provider-set-id (io/resource "other-sites.csv"))
           last-version-provider-set    (:last-version (providers-set/get-provider-set store provider-set-id))
