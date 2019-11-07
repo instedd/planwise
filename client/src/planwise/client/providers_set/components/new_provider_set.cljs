@@ -12,20 +12,16 @@
 
 (defn new-provider-set-dialog
   []
-  (let [algorithms (rf/subscribe [:coverage/algorithms-list])
-        view-state (rf/subscribe [:providers-set/view-state])
+  (let [view-state (rf/subscribe [:providers-set/view-state])
         open?      (db/show-dialog? @view-state)
         name       (rf/subscribe [:providers-set/new-provider-set-name])
         js-file    (rf/subscribe [:providers-set/new-provider-set-js-file])
-        coverage   (rf/subscribe [:providers-set/new-provider-set-coverage])
         disabled?  (or (= @view-state :creating)
                        (str/blank? @name)
-                       (nil? @js-file)
-                       (nil? @coverage))
+                       (nil? @js-file))
         accept-fn  #(rf/dispatch [:providers-set/create-load-provider-set
                                   {:name @name
-                                   :csv-file @js-file
-                                   :coverage-algorithm @coverage}])
+                                   :csv-file @js-file}])
         cancel-fn  #(rf/dispatch [:providers-set/cancel-new-provider-set])
         key-handler-fn #(case (.-which %) 27 (cancel-fn) nil)]
     [m/Dialog {:open open?
@@ -52,11 +48,6 @@
            [:span (.-name @js-file)])]
         [:a {:href (routes/download-providers-sample)
              :data-trigger "false"} "Download a sample providers list"]
-        [m/Select {:label "Coverage algorithm"
-                   :value (or @coverage "")
-                   :options (into [{:key "" :value ""}] @algorithms)
-                   :on-change #(rf/dispatch [:providers-set/new-provider-set-update
-                                             :coverage (utils/or-blank (.. % -target -value) nil)])}]
 
         (when-let [last-error @(rf/subscribe [:providers-set/last-error])]
           [:div.error-message

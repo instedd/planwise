@@ -1,5 +1,6 @@
 (ns dev.user
   (:require [schema.core :as s]
+            [re-frame.core :as rf]
             [planwise.client.core :as client]))
 
 ;; Enable Schema validations client-side
@@ -11,4 +12,5 @@
 
 (defn ^:dev/after-load remount
   []
+  (rf/clear-subscription-cache!)
   (client/mount-root))

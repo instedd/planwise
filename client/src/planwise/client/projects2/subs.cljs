@@ -34,3 +34,8 @@
  :projects2/upgrade-actions :<- [:projects2/current-project]
  (fn [current-project [_]]
    (get-in current-project [:config :actions :upgrade])))
+
+(rf/reg-sub
+ :projects2/new-project-coverage :<- [:projects2/current-project]
+ (fn [current-project [_]]
+   (get-in current-project [:coverage-algorithm])))

@@ -11,8 +11,13 @@
 (rf/reg-sub
  :providers-set/dropdown-options
  (fn [db _]
-   (let [list (get-in db [:providers-set :list :value])]
-     (mapv (fn [provider-set] (let [{:keys [id name]} provider-set] {:value id :label name})) list))))
+   (let [providers (get-in db [:providers-set :list :value])]
+     (->> providers
+          (map (fn [provider-set]
+                 (let [{:keys [id name]} provider-set]
+                   {:value id :label name})))
+          (sort-by :label)
+          (into [{:value nil :label "None"}])))))
 
 (rf/reg-sub
  :providers-set/view-state
@@ -39,10 +44,6 @@
  (fn [db _]
    (get-in db [:providers-set :new-provider-set :js-file])))
 
-(rf/reg-sub
- :providers-set/new-provider-set-coverage
- (fn [db _]
-   (get-in db [:providers-set :new-provider-set :coverage])))
 
 (rf/reg-sub
  :providers-set/delete-selected-provider-set

@@ -21,7 +21,7 @@
   [m/Select {:label (if (empty? options) empty-label label)
              :disabled (empty? options)
              :value (str value)
-             :options (sort-by :label options)
+             :options options
              :on-change #(on-change (js/parseInt (-> % .-target .-value)))}])
 
 (defn providers-set-dropdown-component

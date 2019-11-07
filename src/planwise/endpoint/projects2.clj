@@ -8,7 +8,6 @@
             [buddy.auth :refer [authenticated?]]
             [buddy.auth.accessrules :refer [restrict]]
             [planwise.model.projects2 :as model]
-            [planwise.boundary.providers-set :as providers-set]
             [planwise.boundary.projects2 :as projects2]
             [planwise.configuration.templates :as templates-config]
             [planwise.boundary.scenarios :as scenarios]))
@@ -75,8 +74,7 @@
                  (projects2/start-project service id)
                  (response (api-project (projects2/get-project service id)))
                  (catch Exception e
-                   (when (:invalid-starting-project (ex-data e))
-                     invalid-starting-project))))))
+                   invalid-starting-project)))))
 
    (POST "/:id/reset" [id :as request]
      (let [user-id       (util/request-user-id request)

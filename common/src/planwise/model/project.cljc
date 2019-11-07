@@ -17,7 +17,7 @@
 (s/def ::demographics (s/keys :req-un [::unit-name ::target]))
 
 ;; Providers
-(s/def ::provider-set-id number?)
+(s/def ::provider-set-id (s/nilable number?))
 (s/def ::capacity number?)
 (s/def ::providers (s/keys :req-un [::capacity]))
 
@@ -25,6 +25,7 @@
 (s/def ::driving-time number?)
 (s/def ::walking-time number?)
 (s/def ::distance number?)
+(s/def ::coverage-algorithm string?)
 
 (s/def ::driving-options (s/keys :req-un [::driving-time]))
 (s/def ::walking-options (s/keys :req-un [::walking-time]))
@@ -48,7 +49,7 @@
 (s/def :planwise.model.project-actions/config (s/keys :req-un [:planwise.model.project/actions]))
 
 ;; Project Starting
-(s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))
+(s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::coverage-algorithm ::source-set-id ::region-id]))
 
 (s/def ::goal-step (s/keys :req-un [:planwise.model.project/name :planwise.model.project/region-id]))
 (s/def ::consumers-step (s/keys :req-un [:planwise.model.project/source-set-id :planwise.model.project-consumers/config]))

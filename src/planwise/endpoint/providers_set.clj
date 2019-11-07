@@ -19,12 +19,11 @@
            sets    (providers-set/list-providers-set service user-id)]
        (response sets)))
 
-   (POST "/" [name coverage-algorithm :as request]
+   (POST "/" [name :as request]
      (let [user-id  (util/request-user-id request)
            csv-file (:tempfile (get (:multipart-params request) "file"))]
        (let [options    {:name               name
-                         :owner-id           user-id
-                         :coverage-algorithm coverage-algorithm}
+                         :owner-id           user-id}
              result     (providers-set/create-and-import-providers service options csv-file)
              provider-set-id (:id result)]
          (response result))))

@@ -55,10 +55,9 @@
 (rf/reg-event-fx
  :providers-set/create-load-provider-set
  in-providers-set
- (fn [{:keys [db]} [_ {:keys [name csv-file coverage-algorithm]}]]
+ (fn [{:keys [db]} [_ {:keys [name csv-file]}]]
    {:api (assoc (api/create-provider-set-with-csv {:name name
-                                                   :csv-file csv-file
-                                                   :coverage-algorithm coverage-algorithm})
+                                                   :csv-file csv-file})
                 :on-success [:providers-set/provider-set-created]
                 :on-failure [:providers-set/provider-set-not-created])
     :db  (assoc db

@@ -201,14 +201,22 @@
 
 (defn- current-project-step-coverage
   [read-only]
-  (let [current-project (subscribe [:projects2/current-project])]
+  (let [algorithms (rf/subscribe [:coverage/algorithms-list])
+        coverage   (rf/subscribe [:projects2/new-project-coverage])
+        current-project (subscribe [:projects2/current-project])]
     [:section {:class-name "project-settings-section"}
      [section-header 4 "Coverage"]
      [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."]
+     [m/Select {:label "Coverage algorithm"
+                :value (or @coverage "")
+                :options (into [{:key "" :value ""}] @algorithms)
+                :on-change #(rf/dispatch [:projects2/save-key
+                                          [:coverage-algorithm] (utils/or-blank (.. % -target -value) nil)])}]
      [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
                                          :value              (get-in @current-project [:config :coverage :filter-options])
-                                         :on-change          #(dispatch [:projects2/save-key [:config :coverage :filter-options] %])
-                                         :empty              [:div {:class-name " no-provider-set-selected"} "First choose provider-set."]
+                                         :on-change          (fn [options]
+                                                               (dispatch [:projects2/save-key [:config :coverage :filter-options] options]))
+                                         :empty              [:div {:class-name " no-provider-set-selected"} "First choose coverage algorithm."]
                                          :disabled?          read-only}]]))
 
 (defn- current-project-step-actions
@@ -266,7 +274,7 @@
      (if (some? source)
        [project-setting-title "people" (:name source)]
        [project-setting-title "warning" "The \"consumers\" tab information is needed"])
-     (if (and (some? coverage-amount) (some? provider-set-id))
+     (if (and (some? coverage-amount))
        [project-setting-title "directions" (str
                                             (:label (first (filter #(= coverage-amount (:value %)) (:options criteria))))
                                             " of "

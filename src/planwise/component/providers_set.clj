@@ -66,10 +66,9 @@
 ;; Service definition
 
 (defn create-provider-set
-  [store name owner-id coverage-algorithm]
+  [store name owner-id]
   (db-create-provider-set! (get-db store) {:name name
-                                           :owner-id owner-id
-                                           :coverage-algorithm (some-> coverage-algorithm clojure.core/name)}))
+                                           :owner-id owner-id}))
 
 (defn list-providers-set
   [store owner-id]
@@ -84,10 +83,10 @@
   (db-find-provider (get-db store) {:id provider-id}))
 
 (defn create-and-import-providers
-  [store {:keys [name owner-id coverage-algorithm]} csv-file]
+  [store {:keys [name owner-id]} csv-file]
   (jdbc/with-db-transaction [tx (get-db store)]
     (let [tx-store (assoc-in store [:db :spec] tx)
-          create-result (create-provider-set tx-store name owner-id coverage-algorithm)
+          create-result (create-provider-set tx-store name owner-id)
           provider-set-id (:id create-result)]
       (csv-to-providers tx-store provider-set-id csv-file)
       (get-provider-set tx-store provider-set-id))))

@@ -9,13 +9,13 @@ UPDATE projects2
   SET name = :name, config = :config,
       "provider-set-id" = :provider-set-id,
       "region-id" = :region-id,
+      "coverage-algorithm" = :coverage-algorithm,
       "source-set-id" = :source-set-id
   WHERE id = :id;
 
 -- :name db-get-project :? :1
 SELECT
   projects2.*,
-  providers_set."coverage-algorithm",
   ST_AsGeoJSON(ST_Envelope(regions.the_geom)) AS bbox,
   source_set.type AS "source-type"
   FROM projects2

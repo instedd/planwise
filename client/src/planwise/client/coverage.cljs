@@ -32,7 +32,7 @@
  (fn [db _]
    (let [algorithms (get-in db [:coverage :algorithms])]
      (mapv (fn [[key algo-blurb]]
-             {:value key
+             {:value (name key)
               :label (:label algo-blurb)})
            algorithms))))
 
@@ -90,6 +90,6 @@
                     [criteria-option {:key key
                                       :config config
                                       :value (get value key)
-                                      :on-change #(on-change (assoc value key %))
+                                      :on-change #(on-change {key %})
                                       :disabled? disabled?}])
                   criteria)])))

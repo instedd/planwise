@@ -1,7 +1,7 @@
 -- :name db-create-provider-set! :<! :1
 INSERT INTO providers_set
-    (name, "last-version", "owner-id", "coverage-algorithm")
-    VALUES (:name, 0, :owner-id, :coverage-algorithm)
+    (name, "last-version", "owner-id")
+    VALUES (:name, 0, :owner-id)
     RETURNING id;
 
 -- :name db-create-provider-set-version! :<! :1

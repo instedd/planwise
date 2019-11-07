@@ -34,13 +34,10 @@
                                          (assoc :providers (pr-str (:providers params))))))
 
 (defn update-project
-  [store {:keys [config provider-set-id] :as project}]
-  (let [algorithm (-> (providers-set/get-provider-set (:providers-set store) provider-set-id)
-                      :coverage-algorithm
-                      keyword)
-        valid-criteria? (s/valid? ::coverage/coverage-criteria
+  [store {:keys [config provider-set-id coverage-algorithm] :as project}]
+  (let [valid-criteria? (s/valid? ::coverage/coverage-criteria
                                   (assoc (get-in project [:config :coverage :filter-options])
-                                         :algorithm algorithm))
+                                         :algorithm (keyword coverage-algorithm)))
         updated-config   (if valid-criteria? config (assoc-in config [:coverage :filter-options] {}))]
     (db-update-project (get-db store) (-> project
                                           (assoc :config (pr-str updated-config))
@@ -65,16 +62,14 @@
 (defn start-project
   [store project-id]
   (db-start-project! (get-db store) {:id project-id})
-  (let [{:keys [provider-set-id] :as project} (get-project store project-id)
-        algorithm (-> (providers-set/get-provider-set (:providers-set store) provider-set-id)
-                      :coverage-algorithm
-                      keyword)
-        valid-criteria? (s/valid? ::coverage/coverage-criteria
-                                  (assoc (get-in project [:config :coverage :filter-options])
-                                         :algorithm algorithm))]
+  (let [{:keys [provider-set-id coverage-algorithm] :as project} (get-project store project-id)
+        coverage-criteria (assoc (get-in project [:config :coverage :filter-options])
+                                 :algorithm (keyword coverage-algorithm))
+        valid-criteria? (s/valid? ::coverage/coverage-criteria coverage-criteria)]
+
     (if valid-criteria?
       (scenarios/create-initial-scenario (:scenarios store) project)
-      (throw (ex-info "Invalid starting project" {:invalid-starting-project true})))))
+      (throw (ex-info "Invalid starting project" {:validation-message (s/explain-data ::coverage/coverage-criteria coverage-criteria)})))))
 
 (defn reset-project
   [store project-id]
