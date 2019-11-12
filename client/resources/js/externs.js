@@ -833,7 +833,8 @@ var L = {
     "addPointerListenerStart": function () {},
     "addPointerListenerMove": function () {},
     "addPointerListenerEnd": function () {},
-    "removePointerListener": function () {}
+    "removePointerListener": function () {},
+    "latlng": {},
   },
   "Draggable": function () {},
   "Handler": function () {},
