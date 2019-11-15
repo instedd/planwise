@@ -328,6 +328,16 @@
    []
    providers))
 
+(defn build-and-write-geo-coverage-raster
+  [raster providers raster-coverage-path]
+  (let [geo-coverage-raster (raster/create-raster-from raster {:data-type gdalconst/GDT_Byte
+                                                               :nodata    -1
+                                                               :data-fill -1})]
+    (demand/build-mask! geo-coverage-raster raster 0 min-demand-per-km2)
+    (raster-do-providers! providers (partial raster-add-coverage! geo-coverage-raster))
+    (raster/write-raster geo-coverage-raster raster-coverage-path)
+    geo-coverage-raster))
+
 (defn compute-initial-scenario-by-raster
   [engine project]
   (let [project-id          (:id project)
@@ -335,11 +345,7 @@
         raster-resolution   (raster/raster-resolution demand-raster)
         base-demand         (demand/count-population demand-raster)
         capacity-multiplier (get-in (:config project) [:providers :capacity])
-        scenario-filename   (str "initial-" (java.util.UUID/randomUUID))
-        geo-coverage-raster (raster/create-raster-from demand-raster {:data-type gdalconst/GDT_Byte
-                                                                      :nodata    -1
-                                                                      :data-fill -1})
-        _                   (demand/build-mask! geo-coverage-raster demand-raster 0 min-demand-per-km2)]
+        scenario-filename   (str "initial-" (java.util.UUID/randomUUID))]
 
     (debug (str "Base scenario demand: " base-demand))
 
@@ -350,20 +356,19 @@
           applicable-providers (filter :applicable? providers)]
       (debug (str "Applying " (count applicable-providers) " providers"))
 
-      (let [applied-providers            (raster-do-providers! applicable-providers
+      (let [raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)
+            geo-coverage-raster          (build-and-write-geo-coverage-raster demand-raster providers raster-coverage-path)
+            applied-providers            (raster-do-providers! applicable-providers
                                                                (partial raster-apply-provider! demand-raster capacity-multiplier))
             unsatisfied-demand           (demand/count-population demand-raster)
             quartiles                    (demand/compute-population-quartiles demand-raster)
-            _                            (raster-do-providers! providers
-                                                               (partial raster-add-coverage! geo-coverage-raster))
             providers-unsatisfied-demand (raster-do-providers! providers
                                                                (partial raster-measure-provider demand-raster capacity-multiplier))
             raster-data-path             (scenario-raster-data-path project-id scenario-filename)
-            raster-map-path              (scenario-raster-map-path project-id scenario-filename)
-            raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)]
+            raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
+
         (io/make-parents raster-data-path)
         (raster/write-raster demand-raster raster-data-path)
-        (raster/write-raster geo-coverage-raster raster-coverage-path)
         (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
 
         (debug (str "Wrote " raster-data-path))
