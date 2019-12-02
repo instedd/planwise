@@ -11,7 +11,6 @@
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [planwise.model.providers :refer [merge-providers]]
-            [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
             [clojure.java.io :as io]

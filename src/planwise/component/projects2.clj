@@ -7,7 +7,6 @@
             [clojure.spec.alpha :as s]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
-            [clojure.java.jdbc :as jdbc]
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
             [clojure.string :refer [join]]
