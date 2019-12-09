@@ -15,27 +15,27 @@
 
 
 (defn recompute-scenario
-  [project store {:keys [id]}]
-  (scenarios/compute-scenario id {:store store :project project}))
+  [project scenarios-component {:keys [id]}]
+  (scenarios/compute-scenario id {:store scenarios-component :project project}))
 
 (defn recompute-scenarios
-  [projects2 store [project-id scenarios]]
+  [projects2 scenarios-component [project-id scenarios]]
   (let [project    (p2/get-project projects2 project-id)]
-    (dorun (pmap (partial recompute-scenario project store) scenarios))))
+    (dorun (pmap (partial recompute-scenario project scenarios-component) scenarios))))
 
 (defn recompute-scenario-groups
-  [groups store projects2]
-  (dorun (pmap (partial recompute-scenarios projects2 store) groups)))
+  [groups scenarios-component projects2]
+  (dorun (pmap (partial recompute-scenarios projects2 scenarios-component) groups)))
 
 (defn recompute-initial-scenario
-  [projects2 store {:keys [id project-id] :as scenario}]
+  [projects2 scenarios-component {:keys [id project-id] :as scenario}]
   (let [project    (p2/get-project projects2 project-id)]
-    (scenarios/compute-initial-scenario id {:store store :project project})))
+    (scenarios/compute-initial-scenario id {:store scenarios-component :project project})))
 
 
 (defn recompute-initial-scenarios
-  [initial-scenarios store projects2]
-  (dorun (map (partial recompute-initial-scenario projects2 store) initial-scenarios)))
+  [initial-scenarios scenarios-component projects2]
+  (dorun (map (partial recompute-initial-scenario projects2 scenarios-component) initial-scenarios)))
 
 
 (defn -main [& args]
@@ -52,15 +52,14 @@
 
     (try
       (let [projects2               (:planwise.component/projects2 system)
-            store                   (:planwise.component/scenarios system)
+            scenarios-component     (:planwise.component/scenarios system)
             database                (:spec (second (ig/find-derived-1 system :duct.database/sql)))
-            project                 (p2/get-project projects2 11)
             initial-scenarios       (jdbc/query database ["SELECT id, label, \"project-id\" FROM scenarios WHERE label = 'initial'"])
             scenarios               (jdbc/query database ["SELECT id, label, \"project-id\" FROM scenarios WHERE label <> 'initial'"])
             scenarios               (group-by :project-id scenarios)]
 
-        (recompute-initial-scenarios initial-scenarios store projects2)
-        (recompute-scenario-groups scenarios store projects2))
+        (recompute-initial-scenarios initial-scenarios scenarios-component projects2)
+        (recompute-scenario-groups scenarios scenarios-component projects2))
 
       (finally
         (println "Shutting down system")
