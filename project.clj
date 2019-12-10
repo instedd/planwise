@@ -12,6 +12,7 @@
                  [duct/module.web "0.6.4"
                   :exclusions [org.slf4j/slf4j-nop]]
                  [duct/module.sql "0.4.2"]
+                 [integrant "0.6.3"]
 
                  ; Web server and routing
                  [compojure "1.6.0"]
