@@ -1,0 +1,5 @@
+{:duct.core/include ["planwise/config"]
+
+ :duct.logger/timbre
+ {:level        :info
+  :ns-blacklist ["duct.database.sql.hikaricp"]}}

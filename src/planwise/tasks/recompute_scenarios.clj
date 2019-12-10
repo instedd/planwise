@@ -59,7 +59,7 @@
   [env]
   (let [config-file (case env
                       :dev  "dev.edn"
-                      :prod "planwise/prod.edn")
+                      :prod "planwise/cli.edn")
         config      (-> (io/resource config-file)
                         duct/read-config
                         duct/prep)
@@ -72,7 +72,6 @@
         (ig/halt! system task-components)))))
 
 (defn -main [& args]
-  ;; Logging configuration for production
   (timbre/merge-config! {:level        :info
                          :ns-blacklist ["com.zaxxer.hikari.*"
                                         "org.apache.http.*"
