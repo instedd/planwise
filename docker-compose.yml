@@ -19,6 +19,7 @@ services:
       POSTGRES_USER: planwise
       POSTGRES_PASSWORD: planwise
       POSTGRES_DB: planwise
+      BIN_PATH: cpp/
     command: "lein repl :headless"
     ports:
       - "47480:47480"
