@@ -21,11 +21,11 @@
 (defn recompute-scenarios
   [projects2 scenarios-component [project-id scenarios]]
   (let [project    (p2/get-project projects2 project-id)]
-    (dorun (pmap (partial recompute-scenario project scenarios-component) scenarios))))
+    (dorun (map (partial recompute-scenario project scenarios-component) scenarios))))
 
 (defn recompute-scenario-groups
   [groups scenarios-component projects2]
-  (dorun (pmap (partial recompute-scenarios projects2 scenarios-component) groups)))
+  (dorun (map (partial recompute-scenarios projects2 scenarios-component) groups)))
 
 (defn recompute-initial-scenario
   [projects2 scenarios-component {:keys [id project-id] :as scenario}]
