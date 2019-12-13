@@ -144,7 +144,8 @@ public class Algorithm {
                                                int dstRight,
                                                int dstBottom,
                                                int srcLeft,
-                                               int srcTop) {
+                                               int srcTop,
+                                               boolean checkValidMask) {
         int width = dstRight - dstLeft + 1;
         int dstSkip = dstStride - width;
         int srcSkip = srcStride - width;
@@ -153,7 +154,7 @@ public class Algorithm {
 
         for (int y = dstTop; y <= dstBottom; y++) {
             for (int x = dstLeft; x <= dstRight; x++) {
-                if (dstData[dstIdx] != dstNodata && srcData[srcIdx] != srcNodata) {
+                if ((!checkValidMask || dstData[dstIdx] != dstNodata) && srcData[srcIdx] != srcNodata) {
                     dstData[dstIdx] = markValue;
                 }
                 dstIdx++;
