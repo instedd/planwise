@@ -52,9 +52,9 @@
 (defn remove-unused-scenario-files
   [{:keys [id raster] :as scenario} scenario-result-after-computation]
   (when (some? raster)
-    (io/delete-file (io/file (str "data/" raster ".tif")))
-    (io/delete-file (io/file (str "data/" raster ".map.tif")))
-    (io/delete-file (io/file (str "data/" raster ".coverage.tif")))
+    (io/delete-file (io/file (str "data/" raster ".tif")) :silent)
+    (io/delete-file (io/file (str "data/" raster ".map.tif")) :silent)
+    (io/delete-file (io/file (str "data/" raster ".coverage.tif")) :silent)
     (let [old-provider-ids (set (keys (:new-providers-geom scenario)))
           new-provider-ids (set (keys (:new-providers-geom scenario-result-after-computation)))
           removed-ids  (set/difference old-provider-ids new-provider-ids)]
