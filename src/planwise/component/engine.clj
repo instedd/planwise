@@ -42,44 +42,45 @@
   [{:keys [raster-file]}]
   (str "data/" raster-file))
 
+(defn project-path
+  "Full path to the project data directory"
+  [project-id]
+  (str "data/scenarios/" project-id))
+
+(defn project-raster-path
+  "Prefixes a raster-name with its extension and the full path to the project data directory"
+  [project-id raster-name]
+  (str (project-path project-id) "/" raster-name ".tif"))
+
 (defn scenario-raster-data-path
   "Full path to the data raster for a computed scenario."
   [project-id scenario-filename]
-  (str "data/scenarios/" project-id "/" scenario-filename ".tif"))
+  (project-raster-path project-id scenario-filename))
 
 (defn scenario-raster-map-path
   "Full path to the renderable raster for a computed scenario."
   [project-id scenario-filename]
-  (str "data/scenarios/" project-id "/" scenario-filename ".map.tif"))
+  (project-raster-path project-id (str scenario-filename ".map")))
 
 (defn scenario-raster-coverage-path
   "Full path to the coverage raster for a computed scenario."
   [project-id scenario-filename]
-  (str "data/scenarios/" project-id "/" scenario-filename ".coverage.tif"))
+  (project-raster-path project-id (str scenario-filename ".coverage")))
 
 (defn scenario-raster-full-coverage-path
   "Full path to the coverage raster for a computed scenario."
   [project-id scenario-filename]
-  (str "data/scenarios/" project-id "/" scenario-filename ".full-coverage.tif"))
+  (project-raster-path project-id (str scenario-filename ".full-coverage")))
 
 (defn scenario-raster-base-demand-path
   "Full path to the original base demand raster for a computed scenario."
   [project-id scenario-filename]
-  (str "data/scenarios/" project-id "/" scenario-filename ".base-demand.tif"))
+  (project-raster-path project-id (str scenario-filename ".base-demand")))
 
 (defn scenario-raster-path
   "For persisting in the scenarios table"
   [project-id scenario-filename]
   (str "scenarios/" project-id "/" scenario-filename))
-
-(defn project-file-path
-  "Prefixes a filename with the full path to the project data directory"
-  [project-id file-path]
-  (str "data/scenarios/" project-id "/" file-path))
-
-(defn project-directory
-  [project-id]
-  (project-file-path project-id ""))
 
 ;; Computing a scenario:
 ;; - compute the initial scenario or retrieve a cached version
@@ -235,7 +236,6 @@
   May output temporary files in the project scenarios data directory."
   [engine project]
   (let [project-id      (:id project)
-        project-path    (project-directory project-id)
         source-set      (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))
         source-raster   (read-raster-from-source-set source-set)
         regions-service (:regions engine)
@@ -263,14 +263,14 @@
       (debug (str "Down scale factor to apply: " scale-factor))
 
       ;; Scale down the source raster if necessary
-      (let [resized-raster-path  (str project-path "/source-scaled.tif")
+      (let [resized-raster-path  (project-raster-path project-id "/source-scaled")
             resized-raster       (common/resize-raster (:runner engine) source-raster resized-raster-path scale-factor)
             resize-demand-factor (compute-resize-factor engine source-raster resized-raster)]
         (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
         (debug (str "Need to apply a resize factor of " resize-demand-factor))
 
         ;; Cut the source raster using the region outline
-        (let [cropped-raster (common/crop-raster-by-cutline (:runner engine) resized-raster (:geojson region) project-path)]
+        (let [cropped-raster (common/crop-raster-by-cutline (:runner engine) resized-raster (:geojson region) (project-path project-id))]
           (debug "Cropped source raster to working region:" (:file-path cropped-raster))
           (debug (str "Project raster is " (:xsize cropped-raster) "x" (:ysize cropped-raster)))
 
