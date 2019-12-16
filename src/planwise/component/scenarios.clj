@@ -54,8 +54,8 @@
   (when (some? raster)
     (io/delete-file (io/file (str "data/" raster ".tif")))
     (io/delete-file (io/file (str "data/" raster ".map.tif")))
-    (io/delete-file (io/file (str "data/" raster ".coverage.tif")) true)
-    (io/delete-file (io/file (str "data/" raster ".base-demand.tif")) true)
+    (io/delete-file (io/file (str "data/" raster ".coverage.tif")))
+    (io/delete-file (io/file (str "data/" raster ".base-demand.tif")))
 
     (let [old-provider-ids (set (keys (:new-providers-geom scenario)))
           new-provider-ids (set (keys (:new-providers-geom scenario-result-after-computation)))
