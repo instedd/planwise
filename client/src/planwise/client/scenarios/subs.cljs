@@ -107,7 +107,7 @@
   (merge provider
          (select-keys
           (utils/find-by-id providers-data (:id provider))
-          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])
+          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity :reachable-demand])
          {:initial-capacity capacity}))
 
 (defn apply-change

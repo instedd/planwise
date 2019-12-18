@@ -48,7 +48,7 @@
     button))
 
 (defn- show-provider
-  [read-only? {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand] :as provider}]
+  [read-only? unit-name {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand reachable-demand] :as provider}]
   (let [format-number   (fnil utils/format-number 0)
         change* (if (some? change)
                   change
@@ -63,6 +63,7 @@
         [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))])
       (when (or matches-filters change)
         [:p (str "Free capacity: " (utils/format-number (Math/floor free-capacity)))])
+      [:p (str unit-name " under geographic coverage: " (utils/format-number (Math/ceil reachable-demand)))]
       (when-not read-only?
         (popup-connected-button
          (cond
@@ -139,7 +140,7 @@
       "leaflet-circle-for-change"))})
 
 (defn simple-map
-  [{:keys [bbox]} scenario state error read-only?]
+  [{:keys [bbox]} scenario state error read-only? unit-name]
   (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
         all-providers       (subscribe [:scenarios/all-providers])
@@ -188,7 +189,7 @@
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
                                                    :icon-fn #(icon-function % @selected-provider)
-                                                   :popup-fn     #(show-provider read-only? %)
+                                                   :popup-fn     #(show-provider read-only? unit-name %)
                                                    :mouseover-fn (fn [provider]
                                                                    (dispatch [:scenarios.map/select-provider provider]))
                                                    :mouseout-fn  (fn [provider]
@@ -291,7 +292,7 @@
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)
                              {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario @state @error @read-only?]
+                              :main [simple-map current-project current-scenario @state @error @read-only? unit-name]
                               :title [:ul {:class-name "breadcrumb-menu"}
                                       [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
