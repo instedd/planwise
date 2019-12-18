@@ -401,6 +401,7 @@
          :pending-demand    unsatisfied-demand
          :covered-demand    (- base-demand unsatisfied-demand)
          :geo-coverage      (demand/compute-geo-coverage geo-coverage-raster)
+         :population-under-coverage population-under-coverage
          :demand-quartiles  quartiles
          :providers-data    (merge-providers applied-providers providers-unsatisfied-demand)}))))
 
@@ -452,6 +453,7 @@
          :pending-demand unsatisfied-demand
          :covered-demand (- base-demand unsatisfied-demand)
          :geo-coverage   (demand/compute-geo-coverage geo-coverage-raster)
+         :population-under-coverage population-under-coverage
          :providers-data (merge-providers initial-providers-data applied-changes providers-unsatisfied-demand)}))))
 
 ;; POINT SCENARIOS
