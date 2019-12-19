@@ -144,3 +144,8 @@
  :scenarios.current/source-demand
  (fn [db]
    (get-in db [:scenarios :current-scenario :source-demand] 0)))
+
+(rf/reg-sub
+ :scenarios.current/population-under-coverage
+ (fn [db]
+   (get-in db [:scenarios :current-scenario :population-under-coverage] 0)))

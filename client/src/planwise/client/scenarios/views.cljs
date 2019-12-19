@@ -249,7 +249,8 @@
   (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
         computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
         view-state                   (subscribe [:scenarios/view-state])
-        source-demand                (subscribe [:scenarios.current/source-demand])]
+        source-demand                (subscribe [:scenarios.current/source-demand])
+        population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name]
       [:div
        [:div {:class-name "section"}
@@ -266,6 +267,12 @@
          (cond
            (= "pending" state) "to a total of"
            :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]]
+       [:div {:class-name "section"}
+        [:h1 {:class-name "large"}
+         [:small (str "Total " unit-name " under geographic coverage")]
+         (cond
+           (= "pending" state) "loading..."
+           :else  @population-under-coverage)]]
        [:div {:class-name "section"}
         [:h1 {:class-name "large"}
          [:small "Investment required"]
