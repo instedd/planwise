@@ -1,7 +1,5 @@
-{:duct.core/environment :production
+{:duct.core/include ["planwise/config"]
 
- :duct.module/logging {}
- :duct.module/sql
- {:database-url #duct/env ["DATABASE_URL" Str :or "jdbc:postgresql://localhost:5433/planwise?user=planwise&password=planwise"]}
-
- :duct.core/include ["planwise/core"]}
+ :duct.logger/timbre
+ {:level        :info
+  :ns-blacklist ["duct.database.sql.hikaricp"]}}
