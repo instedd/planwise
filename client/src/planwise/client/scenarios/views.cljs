@@ -150,7 +150,7 @@
    (if (= suggestion selected-suggestion) "leaflet-suggestion-icon selected" "leaflet-suggestion-icon")})
 
 (defn simple-map
-  [{:keys [bbox]} scenario state error read-only? unit-name]
+  [{:keys [bbox] :as project} scenario state error read-only?]
   (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
         selected-suggestion (subscribe [:scenarios.map/selected-suggestion])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
@@ -159,7 +159,8 @@
         zoom                (r/atom 3)
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
-        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)]
+        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
+        unit-name           (get-in project [:config :demographics :unit-name])]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
       (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
@@ -319,7 +320,7 @@
     (fn [current-project current-scenario]
       [ui/full-screen (merge (common2/nav-params)
                              {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario @state @error @read-only? unit-name]
+                              :main [simple-map current-project current-scenario @state @error @read-only?]
                               :title [:ul {:class-name "breadcrumb-menu"}
                                       [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
