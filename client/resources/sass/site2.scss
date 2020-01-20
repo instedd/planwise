@@ -808,7 +808,16 @@ form.vertical, .fields-vertical {
 
 .leaflet-square-icon-red{
   border: 1px solid lightcoral !important;
-  background: red ;
+  background: red;
+}
+
+.leaflet-suggestion-icon{
+  border: 3px solid orange !important;
+  background: cyan;
+
+  &.selected {
+    background-color: fuchsia;
+  }
 }
 
 .leaflet-circle-icon{
