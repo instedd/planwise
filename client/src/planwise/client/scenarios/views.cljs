@@ -139,9 +139,15 @@
     (when (provider-has-change? provider)
       "leaflet-circle-for-change"))})
 
+(defn- suggestion-icon-fn
+  [suggestion selected-suggestion]
+  {:className
+   (if (= suggestion selected-suggestion) "leaflet-suggestion-icon selected" "leaflet-suggestion-icon")})
+
 (defn simple-map
   [{:keys [bbox] :as project} scenario state error read-only?]
   (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
+        selected-suggestion (subscribe [:scenarios.map/selected-suggestion])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
@@ -154,6 +160,8 @@
       (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
             pending-demand-raster   raster
+            suggested-locations     @suggested-locations
+            selected-suggestion     @selected-suggestion
             sources-layer           [:marker-layer {:points indexed-sources
                                                     :shape :square
                                                     :lat-fn #(get-in % [:elem :lat])
@@ -176,16 +184,15 @@
                                                      :lon-fn (fn [polygon-point] (:lon polygon-point))
                                                      :color :orange
                                                      :stroke true}]
-            suggestions-layer       [:marker-layer {:points (map-indexed (fn [ix suggestion]
-                                                                           (assoc suggestion :ranked (inc ix)))
-                                                                         @suggested-locations)
+            suggestions-layer       [:marker-layer {:points suggested-locations
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
                                                     :popup-fn   #(show-suggested-provider % state)
+                                                    :icon-fn #(suggestion-icon-fn % selected-suggestion)
                                                     :mouseover-fn (fn [suggestion]
-                                                                    (dispatch [:scenarios.map/select-provider suggestion]))
+                                                                    (dispatch [:scenarios.map/select-suggestion suggestion]))
                                                     :mouseout-fn  (fn [suggestion]
-                                                                    (dispatch [:scenarios.map/unselect-provider suggestion]))}]
+                                                                    (dispatch [:scenarios.map/unselect-suggestion suggestion]))}]
             providers-layer [providers-layer-type {:points @all-providers
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
@@ -216,7 +223,7 @@
           sources-layer
           providers-layer
           (when @selected-provider selected-provider-layer)
-          (when @suggested-locations suggestions-layer)]]))))
+          (when suggested-locations suggestions-layer)]]))))
 
 (defn- create-new-scenario
   [current-scenario]
@@ -249,36 +256,44 @@
   [_ _]
   (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
         computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
+        suggested-locations          (subscribe [:scenarios.new-provider/suggested-locations])
         view-state                   (subscribe [:scenarios/view-state])
         source-demand                (subscribe [:scenarios.current/source-demand])
         population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name]
       [:div
-       [:div {:class-name "section"}
-        [:h1 {:class-name "title-icon"} name]]
-       [edit/scenario-settings @view-state]
-       [:hr]
-       [:div {:class-name "section"}
-        [:h1 {:class-name "large"}
-         [:small (str "Increase in " unit-name " coverage")]
-         (cond
-           (= "pending" state) "loading..."
-           :else               (str increase-coverage " (" (format-percentage increase-coverage @source-demand) ")"))]
-        [:p {:class-name "grey-text"}
-         (cond
-           (= "pending" state) "to a total of"
-           :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]]
-       [:div {:class-name "section"}
-        [:h1 {:class-name "large"}
-         [:small (str "Total " unit-name " under geographic coverage")]
-         (cond
-           (= "pending" state) "loading..."
-           :else  @population-under-coverage)]]
-       [:div {:class-name "section"}
-        [:h1 {:class-name "large"}
-         [:small "Investment required"]
-         "K " (utils/format-number investment)]]
-       [:hr]
+       (cond (not @suggested-locations)
+             [:div
+              [:div {:class-name "section"}
+               [:h1 {:class-name "title-icon"} name]]
+              [edit/scenario-settings @view-state]
+              [:hr]
+              [:div {:class-name "section"}
+               [:h1 {:class-name "large"}
+                [:small (str "Increase in " unit-name " coverage")]
+                (cond
+                  (= "pending" state) "loading..."
+                  :else               (str increase-coverage " (" (format-percentage increase-coverage @source-demand) ")"))]
+               [:p {:class-name "grey-text"}
+                (cond
+                  (= "pending" state) "to a total of"
+                  :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]]
+              [:div {:class-name "section"}
+               [:h1 {:class-name "large"}
+                [:small (str "Total " unit-name " under geographic coverage")]
+                (cond
+                  (= "pending" state) "loading..."
+                  :else  @population-under-coverage)]]
+              [:div {:class-name "section"}
+               [:h1 {:class-name "large"}
+                [:small "Investment required"]
+                "K " (utils/format-number investment)]]
+              [:hr]]
+             :else
+             [:div
+              [:div {:class-name "section"}
+               [:h1 {:class-name "title-icon"} "Suggestion list"]
+               [changeset/suggestion-listing-component @suggested-locations state show-suggested-provider]]])
        [edit/create-new-action-component @view-state (or @computing-best-locations? @computing-best-improvements?)]
        (if (or @computing-best-locations? @computing-best-improvements?)
          [:div {:class-name "info-computing-best-location"}

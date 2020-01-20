@@ -242,15 +242,12 @@
 (rf/reg-event-fx
  :scenarios.map/select-provider
  in-scenarios
- (fn [{:keys [db dispatch]} [_ provider]]
+ (fn [{:keys [db]} [_ provider]]
    (let [suggestion? (:coverage provider)
          id (get-in db [:current-scenario :id])]
-     (cond
-       suggestion?
-       {:db (assoc db :selected-provider provider)}
-
-       (not= (:id provider)
-             (get-in db [:selected-provider :id]))
+     (when
+      (not= (:id provider)
+            (get-in db [:selected-provider :id]))
        {:db (assoc db :selected-provider provider)
         :api (assoc (api/get-provider-geom id (:id provider))
                     :on-success [:scenarios/update-geometry])}))))
@@ -266,6 +263,18 @@
  in-scenarios
  (fn [db [_ provider]]
    (assoc db :selected-provider nil)))
+
+(rf/reg-event-fx
+ :scenarios.map/select-suggestion
+ in-scenarios
+ (fn [{:keys [db]} [_ suggestion]]
+   {:db (assoc db :selected-suggestion suggestion)}))
+
+(rf/reg-event-db
+ :scenarios.map/unselect-suggestion
+ in-scenarios
+ (fn [db [_ suggestion]]
+   (assoc db :selected-suggestion nil)))
 
 ;;Creating new-providers
 
@@ -308,11 +317,15 @@
 (rf/reg-event-db
  :scenarios/suggested-locations
  (fn [db [_ suggestions]]
-   (let [state (get-in db [:scenarios :current-scenario :computing-best-locations :state])]
+   (let [state (get-in db [:scenarios :current-scenario :computing-best-locations :state])
+         suggestions' (map-indexed (fn [index suggestion]
+                                     (assoc suggestion :ranked (inc index)))
+                                   suggestions)]
      (if (some? state)
        (-> db
            (assoc-in [:scenarios :view-state] :new-provider)
-           (assoc-in [:scenarios :current-scenario :suggested-locations] suggestions)
+           (assoc-in [:scenarios :current-scenario :suggested-locations] suggestions')
+
            (assoc-in [:scenarios :current-scenario :computing-best-locations :state] nil))
        db))))
 

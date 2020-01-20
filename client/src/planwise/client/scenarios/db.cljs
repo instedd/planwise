@@ -6,6 +6,8 @@
    :rename-dialog            nil
    :current-scenario         nil
    :changeset-dialog         nil
+   :selected-provider        nil
+   :selected-suggestion      nil
    :list-scope               nil
    :list                     (asdf/new nil)})
 
