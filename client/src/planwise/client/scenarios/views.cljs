@@ -42,9 +42,9 @@
   (some? (:change provider)))
 
 (defn- popup-connected-button
-  [label dispatch-vector]
+  [label callback]
   (let [button (crate/html [:button label])]
-    (.addEventListener button "click" #(dispatch dispatch-vector))
+    (.addEventListener button "click" callback)
     button))
 
 (defn- show-provider
@@ -70,25 +70,30 @@
            (some? change)        "Edit provider"
            (not matches-filters) "Upgrade provider"
            :else                "Increase provider")
-         [:scenarios/edit-change (assoc provider :change change*)]))])))
+         #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
 
-(defn- button-for-suggestion
-  [provider action]
-  (case action
-    :create (popup-connected-button "Create new provider"
-                                    [:scenarios/create-provider (:location provider)])
-    :upgrade (popup-connected-button "Upgrade provider"
-                                     [:scenarios/edit-change provider])
-    :increase (popup-connected-button "Increase provider"
-                                      [:scenarios/edit-change provider])))
-
-(defn- show-suggested-provider
+(defn action-for-suggestion
   [suggestion state]
   (let [new-provider? (= state :new-provider)
         action        (cond
                         new-provider?                 :create
                         (:matches-filters suggestion) :increase
                         :else                         :upgrade)]
+    (case action
+      :create   {:label    "Create new provider"
+                 :callback #(dispatch [:scenarios/create-provider (:location suggestion)])}
+      :upgrade  {:label    "Upgrade provider"
+                 :callback #(dispatch [:scenarios/edit-change suggestion])}
+      :increase {:label    "Increase provider"
+                 :callback #(dispatch [:scenarios/edit-change suggestion])})))
+
+(defn- button-for-suggestion
+  [action]
+  (popup-connected-button (:label action) (:callback action)))
+
+(defn- show-suggested-provider
+  [suggestion state]
+  (let [new-provider? (= state :new-provider)]
     (crate/html
      [:div
       [:p (str "Suggestion:" (:ranked suggestion))]
@@ -99,7 +104,7 @@
         (let [action-cost (:action-cost suggestion)]
           (when action-cost
             [:p (str "Investment according to project configuration : " (utils/format-number action-cost))])))
-      (button-for-suggestion suggestion action)])))
+      (button-for-suggestion (action-for-suggestion suggestion state))])))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
