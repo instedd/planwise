@@ -20,19 +20,11 @@
                  [:coverage/load-algorithms]]
     :db db/initial-db}))
 
-(defmulti on-navigate (fn [page params] page))
-
-(defmethod on-navigate :default [_ _]
-  nil)
-
 (rf/reg-event-fx
  :navigate
  (fn [{:keys [db]} [_ {page :page, :as params}]]
-   (let [new-db (assoc db
-                       :current-page page
-                       :page-params params)]
-     (merge {:db new-db}
-            (on-navigate page params)))))
+   {:db           (assoc db :current-page page :page-params params)
+    :route-change params}))
 
 (rf/reg-event-fx
  :signout

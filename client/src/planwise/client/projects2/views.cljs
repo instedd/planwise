@@ -1,7 +1,7 @@
 (ns planwise.client.projects2.views
   (:require [reagent.core :as r]
             [re-com.core :as rc]
-            [re-frame.core :refer [subscribe dispatch] :as rf]
+            [re-frame.core :refer [subscribe] :as rf]
             [planwise.client.asdf :as asdf]
             [planwise.client.components.common2 :as common2]
             [planwise.client.projects2.components.dashboard :as dashboard]
@@ -18,9 +18,7 @@
     (fn [section]
       (let [id (:id @page-params)]
         (cond
-          (not= (:id @current-project) id) (do
-                                             (dispatch [:projects2/get-project id])
-                                             [common2/loading-placeholder])
+          (not= (:id @current-project) id) [common2/loading-placeholder]
           (= "draft" (:state @current-project)) [settings/edit-current-project @page-params]
           :else [dashboard/view-current-project section])))))
 
@@ -29,17 +27,14 @@
 
 
 (defn project2-view []
-  (let [page-params  (subscribe [:page-params])
+  (let [page-params   (subscribe [:page-params])
         projects-list (subscribe [:projects2/list])]
     (fn []
-      (do
-        (when (nil? @projects-list)
-          (dispatch [:projects2/projects-list]))
-        (let [section      (:section @page-params)]
-          (case section
-            :index [listings/project-section-index]
-            :new [create/project-section-template-selector]
-            :show [project-section-show :scenarios]
-            :project-scenarios [project-section-show :scenarios]
-            :project-settings [project-section-show :settings]
-            [common2/loading-placeholder]))))))
+      (let [section (:section @page-params)]
+        (case section
+          :index             [listings/project-section-index]
+          :new               [create/project-section-template-selector]
+          :show              [project-section-show :scenarios]
+          :project-scenarios [project-section-show :scenarios]
+          :project-settings  [project-section-show :settings]
+          [common2/loading-placeholder])))))
