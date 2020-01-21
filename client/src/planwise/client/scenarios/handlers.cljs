@@ -9,6 +9,15 @@
 
 (def in-scenarios (rf/path [:scenarios]))
 
+;; Controller
+
+(routes/reg-controller
+ {:id            :scenario
+  :params->state (fn [{:keys [page id]}]
+                   (when (= :scenarios page) id))
+  :start         [:scenarios/get-scenario]
+  :stop          [:scenarios/clear-current-scenario]})
+
 ;; Db events
 
 (rf/reg-event-db

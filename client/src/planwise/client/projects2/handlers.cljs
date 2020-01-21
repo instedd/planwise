@@ -11,6 +11,26 @@
 
 (def in-projects2 (rf/path [:projects2]))
 
+;; Controllers
+
+(routes/reg-controller
+ {:id            :projects
+  :params->state (fn [{:keys [page]}]
+                   (when (= :projects2 page)
+                     true))
+  :start         [:projects2/projects-list]
+  :stop          nil})
+
+(routes/reg-controller
+ {:id            :project
+  :params->state (fn [{:keys [page project-id id section]}]
+                   (cond
+                     (and (#{:show :project-scenarios :project-settings} section)
+                          (= :projects2 page)) id
+                     (= :scenarios page)       project-id))
+  :start         [:projects2/get-project]
+  :stop          nil})
+
 ;;------------------------------------------------------------------------------
 ;; Creating New Project
 
