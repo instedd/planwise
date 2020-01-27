@@ -42,34 +42,45 @@
   [{:keys [raster-file]}]
   (str "data/" raster-file))
 
+(defn project-path
+  "Full path to the project data directory"
+  [project-id]
+  (str "data/scenarios/" project-id))
+
+(defn project-raster-path
+  "Prefixes a raster-name with its extension and the full path to the project data directory"
+  [project-id raster-name]
+  (str (project-path project-id) "/" raster-name ".tif"))
+
 (defn scenario-raster-data-path
   "Full path to the data raster for a computed scenario."
   [project-id scenario-filename]
-  (str "data/scenarios/" project-id "/" scenario-filename ".tif"))
+  (project-raster-path project-id scenario-filename))
 
 (defn scenario-raster-map-path
   "Full path to the renderable raster for a computed scenario."
   [project-id scenario-filename]
-  (str "data/scenarios/" project-id "/" scenario-filename ".map.tif"))
+  (project-raster-path project-id (str scenario-filename ".map")))
 
 (defn scenario-raster-coverage-path
-  "Full path to the renderable raster for a computed scenario."
+  "Full path to the coverage raster for a computed scenario."
   [project-id scenario-filename]
-  (str "data/scenarios/" project-id "/" scenario-filename ".coverage.tif"))
+  (project-raster-path project-id (str scenario-filename ".coverage")))
+
+(defn scenario-raster-full-coverage-path
+  "Full path to the coverage raster for a computed scenario."
+  [project-id scenario-filename]
+  (project-raster-path project-id (str scenario-filename ".full-coverage")))
+
+(defn scenario-raster-base-demand-path
+  "Full path to the original base demand raster for a computed scenario."
+  [project-id scenario-filename]
+  (project-raster-path project-id (str scenario-filename ".base-demand")))
 
 (defn scenario-raster-path
   "For persisting in the scenarios table"
   [project-id scenario-filename]
   (str "scenarios/" project-id "/" scenario-filename))
-
-(defn project-file-path
-  "Prefixes a filename with the full path to the project data directory"
-  [project-id file-path]
-  (str "data/scenarios/" project-id "/" file-path))
-
-(defn project-directory
-  [project-id]
-  (project-file-path project-id ""))
 
 ;; Computing a scenario:
 ;; - compute the initial scenario or retrieve a cached version
@@ -225,7 +236,6 @@
   May output temporary files in the project scenarios data directory."
   [engine project]
   (let [project-id      (:id project)
-        project-path    (project-directory project-id)
         source-set      (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))
         source-raster   (read-raster-from-source-set source-set)
         regions-service (:regions engine)
@@ -253,14 +263,14 @@
       (debug (str "Down scale factor to apply: " scale-factor))
 
       ;; Scale down the source raster if necessary
-      (let [resized-raster-path  (str project-path "/source-scaled.tif")
+      (let [resized-raster-path  (project-raster-path project-id "/source-scaled")
             resized-raster       (common/resize-raster (:runner engine) source-raster resized-raster-path scale-factor)
             resize-demand-factor (compute-resize-factor engine source-raster resized-raster)]
         (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
         (debug (str "Need to apply a resize factor of " resize-demand-factor))
 
         ;; Cut the source raster using the region outline
-        (let [cropped-raster (common/crop-raster-by-cutline (:runner engine) resized-raster (:geojson region) project-path)]
+        (let [cropped-raster (common/crop-raster-by-cutline (:runner engine) resized-raster (:geojson region) (project-path project-id))]
           (debug "Cropped source raster to working region:" (:file-path cropped-raster))
           (debug (str "Project raster is " (:xsize cropped-raster) "x" (:ysize cropped-raster)))
 
@@ -288,11 +298,12 @@
   "Mutates demand-raster by subtracting the capacity of the provider distributed
   uniformily across the coverage, and returns the satisfied demand for this
   provider as well as the used and remaining capacity."
-  [demand-raster capacity-multiplier provider]
+  [demand-raster capacity-multiplier base-demand-raster provider]
   (let [coverage-raster  (raster/read-raster (:coverage-raster-path provider))
         capacity         (:capacity provider)
         scaled-capacity  (* capacity capacity-multiplier)
         reachable-demand (demand/count-population-under-coverage demand-raster coverage-raster)
+        new-reachable    (demand/count-population-under-coverage base-demand-raster coverage-raster)
         satisfied-demand (min scaled-capacity reachable-demand)
         used-capacity    (float (/ satisfied-demand capacity-multiplier))]
     (debug "Applying provider" (:id provider) "with capacity" capacity
@@ -304,13 +315,14 @@
      :satisfied-demand satisfied-demand
      :capacity         capacity
      :used-capacity    used-capacity
+     :reachable-demand new-reachable
      :free-capacity    (- capacity used-capacity)}))
 
 (defn raster-add-coverage!
   "Mark each pixel in the coverage raster which is served by the provider"
-  [geo-coverage-raster provider]
+  [geo-coverage-raster check-valid-mask provider]
   (let [provider-coverage-raster (raster/read-raster (:coverage-raster-path provider))]
-    (demand/mark-pixels-under-coverage! geo-coverage-raster provider-coverage-raster 1)))
+    (demand/mark-pixels-under-coverage! geo-coverage-raster provider-coverage-raster 1 check-valid-mask)))
 
 (defn raster-do-providers!
   "Process each provider in the collection *in order* by the function f
@@ -328,24 +340,23 @@
    []
    providers))
 
-(defn build-and-write-geo-coverage-raster
-  [raster providers raster-coverage-path]
-  (let [geo-coverage-raster (raster/create-raster-from raster {:data-type gdalconst/GDT_Byte
-                                                               :nodata    -1
-                                                               :data-fill -1})]
-    (demand/build-mask! geo-coverage-raster raster 0 min-demand-per-km2)
-    (raster-do-providers! providers (partial raster-add-coverage! geo-coverage-raster))
-    (raster/write-raster geo-coverage-raster raster-coverage-path)
-    geo-coverage-raster))
-
 (defn compute-initial-scenario-by-raster
   [engine project]
-  (let [project-id          (:id project)
-        demand-raster       (process-base-demand-raster engine project)
-        raster-resolution   (raster/raster-resolution demand-raster)
-        base-demand         (demand/count-population demand-raster)
-        capacity-multiplier (get-in (:config project) [:providers :capacity])
-        scenario-filename   (str "initial-" (java.util.UUID/randomUUID))]
+  (let [project-id           (:id project)
+        scenario-filename    (str "initial-" (java.util.UUID/randomUUID))
+        demand-raster        (process-base-demand-raster engine project)
+        raster-base-path     (scenario-raster-base-demand-path project-id scenario-filename)
+        _                    (raster/write-raster demand-raster raster-base-path)
+        raster-resolution    (raster/raster-resolution demand-raster)
+        base-demand          (demand/count-population demand-raster)
+        capacity-multiplier  (get-in (:config project) [:providers :capacity])
+        geo-coverage-raster  (raster/create-raster-from demand-raster {:data-type gdalconst/GDT_Byte
+                                                                       :nodata    -1
+                                                                       :data-fill -1})
+        full-coverage-raster (raster/create-raster-from demand-raster {:data-type gdalconst/GDT_Byte
+                                                                       :nodata    -1
+                                                                       :data-fill -1})
+        _                    (demand/build-mask! geo-coverage-raster demand-raster 0 min-demand-per-km2)]
 
     (debug (str "Base scenario demand: " base-demand))
 
@@ -356,20 +367,28 @@
           applicable-providers (filter :applicable? providers)]
       (debug (str "Applying " (count applicable-providers) " providers"))
 
-      (let [raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)
-            geo-coverage-raster          (build-and-write-geo-coverage-raster demand-raster providers raster-coverage-path)
+      (let [base-demand-raster           (raster/read-raster (scenario-raster-base-demand-path project-id scenario-filename))
             applied-providers            (raster-do-providers! applicable-providers
-                                                               (partial raster-apply-provider! demand-raster capacity-multiplier))
+                                                               (partial raster-apply-provider! demand-raster capacity-multiplier base-demand-raster))
             unsatisfied-demand           (demand/count-population demand-raster)
             quartiles                    (demand/compute-population-quartiles demand-raster)
+            _                            (raster-do-providers! providers
+                                                               (partial raster-add-coverage! geo-coverage-raster :check-valid-mask))
+            _                            (raster-do-providers! providers
+                                                               (partial raster-add-coverage! full-coverage-raster false))
             providers-unsatisfied-demand (raster-do-providers! providers
                                                                (partial raster-measure-provider demand-raster capacity-multiplier))
             raster-data-path             (scenario-raster-data-path project-id scenario-filename)
-            raster-map-path              (scenario-raster-map-path project-id scenario-filename)]
-
+            raster-map-path              (scenario-raster-map-path project-id scenario-filename)
+            raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)
+            raster-full-coverage-path    (scenario-raster-full-coverage-path project-id scenario-filename)
+            population-under-coverage    (demand/count-population-under-coverage base-demand-raster full-coverage-raster)]
         (io/make-parents raster-data-path)
         (raster/write-raster demand-raster raster-data-path)
+        (raster/write-raster geo-coverage-raster raster-coverage-path)
         (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
+
+        (raster/write-raster full-coverage-raster raster-full-coverage-path)
 
         (debug (str "Wrote " raster-data-path))
         (debug (str "Unsatisfied demand: " unsatisfied-demand))
@@ -382,6 +401,7 @@
          :pending-demand    unsatisfied-demand
          :covered-demand    (- base-demand unsatisfied-demand)
          :geo-coverage      (demand/compute-geo-coverage geo-coverage-raster)
+         :population-under-coverage population-under-coverage
          :demand-quartiles  quartiles
          :providers-data    (merge-providers applied-providers providers-unsatisfied-demand)}))))
 
@@ -392,30 +412,35 @@
         changeset   (:changeset scenario)]
     ;; Run coverage algorithm for providers in changeset
     (resolve-new-providers! engine project changeset)
-    (let [initial-providers      (providers-in-project-with-coverage engine project)
-          changed-providers      (changes-with-coverage engine project changeset)
-          capacity-multiplier    (get-in (:config project) [:providers :capacity])
-          base-demand            (get-in project [:engine-config :source-demand])
-          quartiles              (get-in project [:engine-config :demand-quartiles])
-          demand-raster-name     (:raster initial-scenario)
-          demand-raster          (raster/read-raster (common/scenario-raster-full-path demand-raster-name))
-          geo-coverage-raster    (raster/read-raster (common/scenario-raster-full-path (str demand-raster-name ".coverage")))
-          initial-providers-data (:providers-data initial-scenario)
-          scenario-filename      (str (format "%03d-" scenario-id) (java.util.UUID/randomUUID))]
+    (let [initial-providers         (providers-in-project-with-coverage engine project)
+          changed-providers         (changes-with-coverage engine project changeset)
+          capacity-multiplier       (get-in (:config project) [:providers :capacity])
+          base-demand               (get-in project [:engine-config :source-demand])
+          quartiles                 (get-in project [:engine-config :demand-quartiles])
+          demand-raster-name        (:raster initial-scenario)
+          demand-raster             (raster/read-raster (common/scenario-raster-full-path demand-raster-name))
+          geo-coverage-raster       (raster/read-raster (common/scenario-raster-full-path (str demand-raster-name ".coverage")))
+          geo-full-coverage-raster  (raster/read-raster (common/scenario-raster-full-path (str demand-raster-name ".full-coverage")))
+          initial-providers-data    (:providers-data initial-scenario)
+          scenario-filename         (str (format "%03d-" scenario-id) (java.util.UUID/randomUUID))]
 
       (debug "Base scenario demand:" base-demand)
       (debug "Applying" (count changed-providers) "changes")
 
-      (let [applied-changes              (raster-do-providers! changed-providers
-                                                               (partial raster-apply-provider! demand-raster capacity-multiplier))
+      (let [base-demand-raster           (raster/read-raster (common/scenario-raster-full-path (str demand-raster-name ".base-demand")))
+            applied-changes              (raster-do-providers! changed-providers
+                                                               (partial raster-apply-provider! demand-raster capacity-multiplier base-demand-raster))
             _                            (raster-do-providers! changed-providers
-                                                               (partial raster-add-coverage! geo-coverage-raster))
+                                                               (partial raster-add-coverage! geo-coverage-raster :check-valid-mask))
+            _                            (raster-do-providers! changed-providers
+                                                               (partial raster-add-coverage! geo-full-coverage-raster false))
             unsatisfied-demand           (demand/count-population demand-raster)
             providers-unsatisfied-demand (raster-do-providers! (merge-providers initial-providers changed-providers)
                                                                (partial raster-measure-provider demand-raster capacity-multiplier))
             raster-data-path             (scenario-raster-data-path project-id scenario-filename)
             raster-map-path              (scenario-raster-map-path project-id scenario-filename)
-            raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)]
+            raster-coverage-path         (scenario-raster-coverage-path project-id scenario-filename)
+            population-under-coverage    (demand/count-population-under-coverage base-demand-raster geo-full-coverage-raster)]
         (io/make-parents raster-data-path)
         (raster/write-raster demand-raster raster-data-path)
         (raster/write-raster (demand/build-renderable-population demand-raster quartiles) raster-map-path)
@@ -428,6 +453,7 @@
          :pending-demand unsatisfied-demand
          :covered-demand (- base-demand unsatisfied-demand)
          :geo-coverage   (demand/compute-geo-coverage geo-coverage-raster)
+         :population-under-coverage population-under-coverage
          :providers-data (merge-providers initial-providers-data applied-changes providers-unsatisfied-demand)}))))
 
 ;; POINT SCENARIOS

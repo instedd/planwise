@@ -61,7 +61,7 @@
                                                src-left src-top)))
 
 (defn mark-pixels-under-coverage!
-  [raster mask mark-value]
+  [raster mask mark-value with-ckecks]
   (let [{src-bounds :src dst-bounds :dst}       (raster/clipped-coordinates raster mask)
         {src-buffer :data src-nodata :nodata}   mask
         {dst-buffer :data dst-nodata :nodata}   raster
@@ -73,7 +73,7 @@
                                        src-buffer src-stride src-nodata
                                        mark-value
                                        dst-left dst-top dst-right dst-bottom
-                                       src-left src-top)))
+                                       src-left src-top (boolean with-ckecks))))
 
 
 

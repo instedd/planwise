@@ -33,7 +33,7 @@
   (when (not (blank? input)) [m/ChipSet [m/Chip [m/ChipText input]]]))
 
 (defn- scenarios-list-item
-  [project-id {:keys [id name label state demand-coverage investment changeset-summary geo-coverage] :as scenario} index]
+  [project-id {:keys [id name label state demand-coverage investment changeset-summary geo-coverage population-under-coverage] :as scenario} index]
   (if id
     [:tr {:key id :on-click (fn [evt]
                               (if (or (.-shiftKey evt) (.-metaKey evt))
@@ -44,10 +44,11 @@
      [:td.col1 name]
      [:td.col2 (utils/format-number demand-coverage)]
      [:td.col5 (str (utils/format-number (* geo-coverage 100)) "%")]
+     [:td.col6 population-under-coverage]
      [:td.col3 (utils/format-number investment)]
      [:td.col4 changeset-summary]]
     [:tr {:key (str "tr-" index)}
-     (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 6))]))
+     (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 7))]))
 
 (defn- generate-title
   [num]
@@ -65,6 +66,7 @@
         [:th.col1 "Name"]
         [:th.col2 (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage")]
         [:th.col5 "Geographic Coverage"]
+        [:th.col6 "Population Under Coverage"]
         [:th.col3 "Investment"]
         [:th.col4 "Actions"]]]
       [:tbody

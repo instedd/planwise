@@ -54,7 +54,8 @@
   (when (some? raster)
     (io/delete-file (io/file (str "data/" raster ".tif")) :silent)
     (io/delete-file (io/file (str "data/" raster ".map.tif")) :silent)
-    (io/delete-file (io/file (str "data/" raster ".coverage.tif")) :silent)))
+    (io/delete-file (io/file (str "data/" raster ".coverage.tif")) :silent)
+    (io/delete-file (io/file (str "data/" raster ".base-demand.tif")) :silent)))
 
 ;; ----------------------------------------------------------------------
 ;; Service definition
@@ -169,18 +170,20 @@
           scenario  (get-scenario store scenario-id)
           result    (engine/compute-initial-scenario engine project)]
       (info (str "Initial scenario " scenario-id " computed")
-            (select-keys result [:raster-path :geo-coverage :covered-demand :providers-data :sources-data]))
+
+            (select-keys result [:raster-path :geo-coverage :population-under-coverage :covered-demand :providers-data :sources-data]))
       (info (str "Computed geographic coverage " (* 100 (:geo-coverage result 0))))
       ;; TODO check if scenario didn't change from result
       (db-update-scenario-state! (get-db store)
-                                 {:id                 scenario-id
-                                  :raster             (:raster-path result)
-                                  :demand-coverage    (:covered-demand result)
-                                  :providers-data     (pr-str (:providers-data result))
-                                  :sources-data       (pr-str (:sources-data result))
-                                  :new-providers-geom (pr-str {})
-                                  :geo-coverage       (:geo-coverage result)
-                                  :state              "done"})
+                                 {:id                         scenario-id
+                                  :raster                     (:raster-path result)
+                                  :demand-coverage            (:covered-demand result)
+                                  :providers-data             (pr-str (:providers-data result))
+                                  :sources-data               (pr-str (:sources-data result))
+                                  :new-providers-geom         (pr-str {})
+                                  :geo-coverage               (:geo-coverage result)
+                                  :population-under-coverage  (:population-under-coverage result)
+                                  :state                      "done"})
       (remove-unused-scenario-files scenario result)
       (db-update-project-engine-config! (get-db store)
                                         {:project-id    (:id project)
@@ -258,18 +261,19 @@
           initial-scenario (get-initial-scenario store (:id project))
           result           (engine/compute-scenario engine project initial-scenario scenario)]
       (info (str "Scenario " scenario-id " computed")
-            (select-keys result [:raster-path :geo-coverage :covered-demand :providers-data :sources-data]))
+            (select-keys result [:raster-path :geo-coverage :population-under-coverage :covered-demand :providers-data :sources-data]))
       (info (str "Computed geographic coverage " (* 100 (:geo-coverage result 0))))
       ;; TODO check if scenario didn't change from result. If did, discard result.
       (db-update-scenario-state! (get-db store)
-                                 {:id                 scenario-id
-                                  :raster             (:raster-path result)
-                                  :demand-coverage    (:covered-demand result)
-                                  :providers-data     (pr-str (:providers-data result))
-                                  :sources-data       (pr-str (:sources-data result))
-                                  :new-providers-geom (pr-str (:new-providers-geom result))
-                                  :geo-coverage       (:geo-coverage result)
-                                  :state              "done"})
+                                 {:id                         scenario-id
+                                  :raster                     (:raster-path result)
+                                  :demand-coverage            (:covered-demand result)
+                                  :providers-data             (pr-str (:providers-data result))
+                                  :sources-data               (pr-str (:sources-data result))
+                                  :new-providers-geom         (pr-str (:new-providers-geom result))
+                                  :geo-coverage               (:geo-coverage result)
+                                  :population-under-coverage  (:population-under-coverage result)
+                                  :state                      "done"})
       (remove-unused-scenario-files scenario result)
       (db-update-scenarios-label! (get-db store) {:project-id (:id project)}))
     (catch Exception e

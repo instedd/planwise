@@ -9,7 +9,8 @@
       (assoc :capacity (sum-by :capacity providers)
              :satisfied-demand (sum-by :satisfied-demand providers)
              :used-capacity (sum-by :used-capacity providers)
-             :free-capacity (sum-by :free-capacity providers))))
+             :free-capacity (sum-by :free-capacity providers)
+             :reachable-demand (sum-by :reachable-demand providers))))
 
 (defn merge-providers
   "Merge providers by id, but perform addition for the fields :capacity,

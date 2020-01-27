@@ -107,7 +107,7 @@
   (merge provider
          (select-keys
           (utils/find-by-id providers-data (:id provider))
-          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity])
+          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity :reachable-demand])
          {:initial-capacity capacity}))
 
 (defn apply-change
@@ -144,3 +144,8 @@
  :scenarios.current/source-demand
  (fn [db]
    (get-in db [:scenarios :current-scenario :source-demand] 0)))
+
+(rf/reg-sub
+ :scenarios.current/population-under-coverage
+ (fn [db]
+   (get-in db [:scenarios :current-scenario :population-under-coverage] 0)))

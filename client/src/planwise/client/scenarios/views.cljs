@@ -48,7 +48,7 @@
     button))
 
 (defn- show-provider
-  [read-only? {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand] :as provider}]
+  [read-only? unit-name {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand reachable-demand] :as provider}]
   (let [format-number   (fnil utils/format-number 0)
         change* (if (some? change)
                   change
@@ -63,6 +63,7 @@
         [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))])
       (when (or matches-filters change)
         [:p (str "Free capacity: " (utils/format-number (Math/floor free-capacity)))])
+      [:p (str unit-name " under geographic coverage: " (utils/format-number (Math/ceil reachable-demand)))]
       (when-not read-only?
         (popup-connected-button
          (cond
@@ -139,7 +140,7 @@
       "leaflet-circle-for-change"))})
 
 (defn simple-map
-  [{:keys [bbox]} scenario state error read-only?]
+  [{:keys [bbox] :as project} scenario state error read-only?]
   (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
         all-providers       (subscribe [:scenarios/all-providers])
@@ -147,7 +148,8 @@
         zoom                (r/atom 3)
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
-        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)]
+        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
+        unit-name           (get-in project [:config :demographics :unit-name])]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
       (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
@@ -188,7 +190,7 @@
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
                                                    :icon-fn #(icon-function % @selected-provider)
-                                                   :popup-fn     #(show-provider read-only? %)
+                                                   :popup-fn     #(show-provider read-only? unit-name %)
                                                    :mouseover-fn (fn [provider]
                                                                    (dispatch [:scenarios.map/select-provider provider]))
                                                    :mouseout-fn  (fn [provider]
@@ -248,7 +250,8 @@
   (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
         computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
         view-state                   (subscribe [:scenarios/view-state])
-        source-demand                (subscribe [:scenarios.current/source-demand])]
+        source-demand                (subscribe [:scenarios.current/source-demand])
+        population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])]
     (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name]
       [:div
        [:div {:class-name "section"}
@@ -265,6 +268,12 @@
          (cond
            (= "pending" state) "to a total of"
            :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]]
+       [:div {:class-name "section"}
+        [:h1 {:class-name "large"}
+         [:small (str "Total " unit-name " under geographic coverage")]
+         (cond
+           (= "pending" state) "loading..."
+           :else  @population-under-coverage)]]
        [:div {:class-name "section"}
         [:h1 {:class-name "large"}
          [:small "Investment required"]
