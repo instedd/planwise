@@ -372,6 +372,10 @@ form.vertical, .fields-vertical {
   }
   */
 
+  .suggestion-list {
+    max-height: 490px !important;
+  }
+
   .scroll-list {
     max-height: 280px;
     width: 100%;
@@ -703,6 +707,12 @@ form.vertical, .fields-vertical {
   padding: 7px 10px;
   color: #FFF;
   font-weight: 500;
+}
+
+.suggestion-list {
+  .border-btn-floating {
+      margin-top: -1.8rem !important;
+  }
 }
 
 .border-btn-floating {

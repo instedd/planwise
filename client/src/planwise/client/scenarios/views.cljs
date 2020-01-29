@@ -21,7 +21,7 @@
 
 
 (defn raise-alert
-  [project {:keys [changeset]} {:keys [causes id]}]
+  [{:keys [changeset]} {:keys [causes id]}]
   (let [message ""]
     [:div.raise-alert
      [:div.card-message
@@ -257,61 +257,88 @@
         [:p {:class-name "grey-text"}
          (str "of a total of " (utils/format-number @source-demand))]]])))
 
-(defn side-panel-view
-  [_ _]
+(defn scenario-info
+  [view-state current-scenario unit-name]
+  (let [{:keys [name label investment demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario]
+    [:div
+     [:div {:class-name "section"}
+      [:h1 {:class-name "title-icon"} name]]
+     [edit/scenario-settings view-state]
+     [:hr]
+     [:div {:class-name "section"}
+      [:h1 {:class-name "large"}
+       [:small (str "Increase in " unit-name " coverage")]
+       (cond
+         (= "pending" state) "loading..."
+         :else               (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
+      [:p {:class-name "grey-text"}
+       (cond
+         (= "pending" state) "to a total of"
+         :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
+     [:div {:class-name "section"}
+      [:h1 {:class-name "large"}
+       [:small (str "Total " unit-name " under geographic coverage")]
+       (cond
+         (= "pending" state) "loading..."
+         :else  population-under-coverage)]]
+     [:div {:class-name "section"}
+      [:h1 {:class-name "large"}
+       [:small "Investment required"]
+       "K " (utils/format-number investment)]]
+     [:hr]]))
+
+(defn suggested-locations-list
+  [suggested-locations state]
+  [:div
+   [:div {:class-name "section"}
+    [:h1 {:class-name "title-icon"} "Suggestion list"]
+    [:div {:class-name "fade"}]
+    [changeset/suggestion-listing-component suggested-locations state]
+    [:div {:class-name "fade inverted"}]]])
+
+(defn side-panel-view-2
+  [_ _ _]
   (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
         computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
         suggested-locations          (subscribe [:scenarios.new-provider/suggested-locations])
         view-state                   (subscribe [:scenarios/view-state])
         source-demand                (subscribe [:scenarios.current/source-demand])
-        population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])]
-    (fn [{:keys [name label investment demand-coverage increase-coverage state]} unit-name]
-      [:div
-       (cond (not @suggested-locations)
-             [:div
-              [:div {:class-name "section"}
-               [:h1 {:class-name "title-icon"} name]]
-              [edit/scenario-settings @view-state]
-              [:hr]
-              [:div {:class-name "section"}
-               [:h1 {:class-name "large"}
-                [:small (str "Increase in " unit-name " coverage")]
-                (cond
-                  (= "pending" state) "loading..."
-                  :else               (str increase-coverage " (" (format-percentage increase-coverage @source-demand) ")"))]
-               [:p {:class-name "grey-text"}
-                (cond
-                  (= "pending" state) "to a total of"
-                  :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]]
-              [:div {:class-name "section"}
-               [:h1 {:class-name "large"}
-                [:small (str "Total " unit-name " under geographic coverage")]
-                (cond
-                  (= "pending" state) "loading..."
-                  :else  @population-under-coverage)]]
-              [:div {:class-name "section"}
-               [:h1 {:class-name "large"}
-                [:small "Investment required"]
-                "K " (utils/format-number investment)]]
-              [:hr]]
-             :else
-             [:div
-              [:div {:class-name "section"}
-               [:h1 {:class-name "title-icon"} "Suggestion list"]
-               [changeset/suggestion-listing-component @suggested-locations state show-suggested-provider]]])
-       [edit/create-new-action-component @view-state (or @computing-best-locations? @computing-best-improvements?)]
-       (if (or @computing-best-locations? @computing-best-improvements?)
-         [:div {:class-name "info-computing-best-location"}
-          [:small (if @computing-best-locations?
-                    "Computing best locations ..."
-                    "Computing best improvements...")]])])))
+        population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])
+        providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])]
+    (fn [{:keys [state] :as current-scenario} unit-name error]
+      (if @suggested-locations
+        [:<>
+         [:div {:class-name "suggestion-list"}
+          [edit/create-new-action-component @view-state (or @computing-best-locations? @computing-best-improvements?)]]
+         [suggested-locations-list @suggested-locations state]]
+        [:<>
+         [:div
+          [scenario-info @view-state current-scenario unit-name]
+          [edit/create-new-action-component @view-state (or @computing-best-locations? @computing-best-improvements?)]
+          (if (or @computing-best-locations? @computing-best-improvements?)
+            [:div {:class-name "info-computing-best-location"}
+             [:small (if @computing-best-locations?
+                       "Computing best locations ..."
+                       "Computing best improvements...")]])]
+         [:div (when-not error {:class-name "fade"})]
+         (if error
+           [raise-alert current-scenario error]
+           [changeset/listing-component @providers-from-changeset])
+         [:div (when-not error {:class-name "fade inverted"})]]))))
+
+(defn side-panel-view
+  [current-scenario unit-name error read-only?]
+  [:<>
+   (if read-only?
+     [initial-scenario-panel current-scenario unit-name]
+     [side-panel-view-2 current-scenario unit-name error])
+   [create-new-scenario current-scenario]])
 
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
         error      (subscribe [:scenarios/error])
-        providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
         unit-name  (get-in current-project [:config :demographics :unit-name])
         export-providers-button [:a {:class "mdc-fab disable-a"
                                      :id "main-action"
@@ -326,15 +353,7 @@
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
                                       [:li (:name current-scenario)]]
                               :action export-providers-button})
-       (if @read-only?
-         [initial-scenario-panel current-scenario unit-name]
-         [side-panel-view current-scenario unit-name])
-       [:div (when-not @error {:class-name "fade"})]
-       (if @error
-         [raise-alert current-project current-scenario @error]
-         [changeset/listing-component @providers-from-changeset])
-       [:div (when-not @error {:class-name "fade inverted"})]
-       [create-new-scenario current-scenario]
+       [side-panel-view current-scenario unit-name @error @read-only?]
        [edit/rename-scenario-dialog]
        [edit/changeset-dialog current-project current-scenario]
        [edit/delete-scenario-dialog @state current-scenario]])))
