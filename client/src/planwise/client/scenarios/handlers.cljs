@@ -292,6 +292,7 @@
                       :show-scenario-settings :show-options-to-create-provider
                       :show-options-to-create-provider  :current-scenario
                       :new-provider                     :current-scenario
+                      :new-intervention                 :current-scenario
                       :get-suggestions-for-new-provider :current-scenario
                       :get-suggestions-for-improvements :current-scenario
                       actual-state)]

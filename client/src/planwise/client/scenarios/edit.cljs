@@ -144,7 +144,7 @@
    [m/Fab {:class-name "btn-floating"
            :on-click #(dispatch [:scenarios.new-action/toggle-options])}
     (cond computing? "stop"
-          (= state :new-provider) "cancel"
+          (or (= state :new-provider) (= state :new-intervention)) "cancel"
           :default "domain")]])
 
 (defn create-new-action-component
@@ -159,10 +159,10 @@
          "Create one"]
         [m/MenuItem
          {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
-         "Get suggestions for new provider"]
+         "Get suggestions for a new provider"]
         [m/MenuItem
          {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
-         "Get suggestions for improve existing provider"]]])))
+         "Get suggestions to improve an existing provider"]]])))
 
 (defn scenario-settings
   [state]

@@ -50,5 +50,5 @@
 (defn- suggestion-listing-component
   [suggestions state]
   [:div {:class-name "scroll-list suggestion-list"}
-   (map (fn [suggestion] [suggestion-row {:key (str "suggestion-action" (:ranked suggestion))} suggestion state])
+   (map (fn [suggestion] [suggestion-row {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))} suggestion state])
         suggestions)])
