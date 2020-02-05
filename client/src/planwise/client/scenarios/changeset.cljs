@@ -35,7 +35,7 @@
         providers)])
 
 (defn- suggestion-row
-  [props {:keys [coverage action-capacity ranked name] :as suggestion} state]
+  [props {:keys [coverage action-capacity ranked name] :as suggestion}]
   [:div
    [:div {:class-name "section changeset-row"
           :on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
@@ -48,7 +48,7 @@
    [:hr]])
 
 (defn- suggestion-listing-component
-  [suggestions state]
+  [suggestions]
   [:div {:class-name "scroll-list suggestion-list"}
-   (map (fn [suggestion] [suggestion-row {:key (str "suggestion-action" (:ranked suggestion))} suggestion state])
+   (map (fn [suggestion] [suggestion-row {:key (str "suggestion-action" (:ranked suggestion))} suggestion])
         suggestions)])
