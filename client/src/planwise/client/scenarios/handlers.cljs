@@ -243,8 +243,7 @@
  :scenarios.map/select-provider
  in-scenarios
  (fn [{:keys [db]} [_ provider]]
-   (let [suggestion? (:coverage provider)
-         id (get-in db [:current-scenario :id])]
+   (let [id (get-in db [:current-scenario :id])]
      (when
       (not= (:id provider)
             (get-in db [:selected-provider :id]))
@@ -273,7 +272,7 @@
 (rf/reg-event-db
  :scenarios.map/unselect-suggestion
  in-scenarios
- (fn [db [_ suggestion]]
+ (fn [db [_ _]]
    (assoc db :selected-suggestion nil)))
 
 ;;Creating new-providers

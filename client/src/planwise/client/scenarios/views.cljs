@@ -88,8 +88,8 @@
                  :callback #(dispatch [:scenarios/edit-change suggestion])})))
 
 (defn- button-for-suggestion
-  [action]
-  (popup-connected-button (:label action) (:callback action)))
+  [{:keys [label callback]}]
+  (popup-connected-button label callback))
 
 (defn- show-suggested-provider
   [suggestion state]
@@ -293,7 +293,7 @@
    [:div {:class-name "section"}
     [:h1 {:class-name "title-icon"} "Suggestion list"]
     [:div {:class-name "fade"}]
-    [changeset/suggestion-listing-component suggested-locations state]
+    [changeset/suggestion-listing-component suggested-locations]
     [:div {:class-name "fade inverted"}]]])
 
 (defn side-panel-view-2
@@ -306,25 +306,28 @@
         population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])
         providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])]
     (fn [{:keys [state] :as current-scenario} unit-name error]
-      (if @suggested-locations
-        [:<>
-         [:div {:class-name "suggestion-list"}
-          [edit/create-new-action-component @view-state (or @computing-best-locations? @computing-best-improvements?)]]
-         [suggested-locations-list @suggested-locations state]]
-        [:<>
-         [:div
-          [scenario-info @view-state current-scenario unit-name]
-          [edit/create-new-action-component @view-state (or @computing-best-locations? @computing-best-improvements?)]
-          (if (or @computing-best-locations? @computing-best-improvements?)
-            [:div {:class-name "info-computing-best-location"}
-             [:small (if @computing-best-locations?
-                       "Computing best locations ..."
-                       "Computing best improvements...")]])]
-         [:div (when-not error {:class-name "fade"})]
-         (if error
-           [raise-alert current-scenario error]
-           [changeset/listing-component @providers-from-changeset])
-         [:div (when-not error {:class-name "fade inverted"})]]))))
+      (let [computing-suggestions?   (or @computing-best-locations? @computing-best-improvements?)
+            edit-button              [edit/create-new-action-component @view-state computing-suggestions?]]
+        (if @suggested-locations
+          [:<>
+           [:div {:class-name "suggestion-list"}
+            [edit/create-new-action-component @view-state computing-suggestions?]]
+           [suggested-locations-list @suggested-locations state]]
+          [:<>
+           [:div
+            [scenario-info @view-state current-scenario unit-name]
+            [edit/create-new-action-component @view-state computing-suggestions?]
+            (if computing-suggestions?
+              [:div {:class-name "info-computing-best-location"}
+               [:small (if @computing-best-locations?
+                         "Computing best locations ..."
+                         "Computing best improvements...")]])]
+           (if error
+             [raise-alert current-scenario error]
+             [:<>
+              [:div {:class-name "fade"}]
+              [changeset/listing-component @providers-from-changeset]
+              [:div {:class-name "fade inverted"}]])])))))
 
 (defn side-panel-view
   [current-scenario unit-name error read-only?]
