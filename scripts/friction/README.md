@@ -1,10 +1,10 @@
 # Importing friction data
 
 Download the global friction raster from The Malaria Atlas Project: 
-https://map.ox.ac.uk/research-project/accessibility_to_cities/
+https://malariaatlas.org/research-project/accessibility_to_cities/
 
 Direct download link:
-https://map.ox.ac.uk/wp-content/uploads/accessibility/friction_surface_2015_v1.0.zip
+https://malariaatlas.org/geoserver/ows?service=CSW&version=2.0.1&request=DirectDownload&ResourceId=Explorer:2015_friction_surface_v1_Decompressed
 
 The zip file contains a .tif file with the friction layer for most of the
 planet. Unit is minutes/meter. Unzip it and execute the following script to clip
