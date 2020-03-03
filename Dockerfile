@@ -1,4 +1,4 @@
-FROM openjdk:8-jre
+FROM openjdk:8u242-jre-stretch
 
 # Install package dependencies and add precompiled binary
 RUN for i in {1..5}; do \
