@@ -43,7 +43,7 @@
   [:planwise.component/projects2
    :planwise.component/scenarios])
 
-(defn- recompute-all-scenarios!
+(defn recompute-all-scenarios!
   [system]
   (let [projects2               (:planwise.component/projects2 system)
         scenarios-component     (:planwise.component/scenarios system)
