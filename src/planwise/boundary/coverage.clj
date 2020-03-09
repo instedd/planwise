@@ -1,16 +1,11 @@
 (ns planwise.boundary.coverage
-  (:require [planwise.util.geo :as geo]
+  (:require [planwise.model.coverage :as model]
+            [planwise.util.geo :as geo]
             [clojure.spec.alpha :as s]
             [clojure.math.combinatorics :as combo]))
 
 ;; Specs =====================================================================
 ;;
-
-(s/def ::algorithm keyword?)
-(s/def ::base-criteria (s/keys :req-un [::algorithm]))
-
-(defmulti criteria-algo :algorithm)
-(s/def ::coverage-criteria (s/multi-spec criteria-algo :algorithm))
 
 (s/def ::pixel-resolution float?)
 (s/def ::xres ::pixel-resolution)
@@ -18,7 +13,7 @@
 (s/def ::raster-resolution (s/keys :req-un [::xres ::yres]))
 
 (s/def ::region-id nat-int?)
-(s/def ::context-options (s/keys :req-un [::region-id ::coverage-criteria]
+(s/def ::context-options (s/keys :req-un [::region-id ::model/coverage-criteria]
                                  :opt-un [::raster-resolution]))
 
 (s/def ::id some?)

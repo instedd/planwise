@@ -11,7 +11,8 @@
             [clojure.edn :as edn]
             [clojure.string :refer [join]]
             [clojure.java.io :as io]
-            [planwise.model.projects2 :as model]
+            [planwise.model.project :as model]
+            [planwise.model.projects2 :as model2]
             [planwise.util.hash :refer [update*]]))
 
 ;; ----------------------------------------------------------------------
@@ -33,13 +34,10 @@
                                          (assoc :providers (pr-str (:providers params))))))
 
 (defn update-project
-  [store {:keys [config provider-set-id coverage-algorithm] :as project}]
-  (let [valid-criteria? (s/valid? ::coverage/coverage-criteria
-                                  (assoc (get-in project [:config :coverage :filter-options])
-                                         :algorithm (keyword coverage-algorithm)))
-        updated-config   (if valid-criteria? config (assoc-in config [:coverage :filter-options] {}))]
+  [store {:keys [config] :as project}]
+  (let [project (model/ensure-valid-coverage project)]
     (db-update-project (get-db store) (-> project
-                                          (assoc :config (pr-str updated-config))
+                                          (update :config pr-str)
                                           (dissoc :state)))))
 
 (defn get-project
@@ -51,7 +49,7 @@
      (-> project
          (update* :engine-config edn/read-string)
          (update* :config edn/read-string)
-         (update* :config model/apply-default)
+         (update* :config model2/apply-default)
          (assoc   :providers number-of-providers)))))
 
 (defn list-projects
@@ -61,14 +59,10 @@
 (defn start-project
   [store project-id]
   (db-start-project! (get-db store) {:id project-id})
-  (let [{:keys [provider-set-id coverage-algorithm] :as project} (get-project store project-id)
-        coverage-criteria (assoc (get-in project [:config :coverage :filter-options])
-                                 :algorithm (keyword coverage-algorithm))
-        valid-criteria? (s/valid? ::coverage/coverage-criteria coverage-criteria)]
-
-    (if valid-criteria?
+  (let [project (get-project store project-id)]
+    (if (model/valid-starting-project? project)
       (scenarios/create-initial-scenario (:scenarios store) project)
-      (throw (ex-info "Invalid starting project" {:validation-message (s/explain-data ::coverage/coverage-criteria coverage-criteria)})))))
+      (throw (ex-info "Invalid starting project" {})))))
 
 (defn reset-project
   [store project-id]

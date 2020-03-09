@@ -1,5 +1,6 @@
 (ns planwise.model.project
-  (:require [clojure.spec.alpha :as s]
+  (:require [planwise.model.coverage :as coverage]
+            [clojure.spec.alpha :as s]
             [clojure.string :refer [blank?]]))
 
 ;; ----------------------------------------------------------------------
@@ -48,12 +49,34 @@
 (s/def :planwise.model.project-coverage/config (s/keys :req-un [:planwise.model.project/coverage]))
 (s/def :planwise.model.project-actions/config (s/keys :req-un [:planwise.model.project/actions]))
 
-;; Project Starting
+(defn valid-project-coverage?
+  [{:keys [coverage-algorithm config]}]
+  (let [filter-options (get-in config [:coverage :filter-options])]
+    (coverage/valid-coverage-criteria? coverage-algorithm filter-options)))
+
+(defn ensure-valid-coverage
+  [{:keys [config] :as project}]
+  (let [updated-config (if (valid-project-coverage? project)
+                         config
+                         (assoc-in config [:coverage :filter-options] {}))]
+    (assoc project :config updated-config)))
+
+
 (s/def ::starting (s/keys :req-un [::id ::owner-id ::name ::config ::coverage-algorithm ::source-set-id ::region-id]))
+
+(defn valid-starting-project?
+  [project]
+  (and (valid-project-coverage? project)
+       (s/valid? ::starting project)))
+
+
+;; Project Starting
 
 (s/def ::goal-step (s/keys :req-un [:planwise.model.project/name :planwise.model.project/region-id]))
 (s/def ::consumers-step (s/keys :req-un [:planwise.model.project/source-set-id :planwise.model.project-consumers/config]))
 (s/def ::providers-step (s/keys :req-un [::provider-set-id :planwise.model.project-providers/config]))
-(s/def ::coverage-step (s/keys :req-un [:planwise.model.project-coverage/config]))
+(s/def ::coverage-step (s/and
+                        #(valid-project-coverage? %)
+                        (s/keys :req-un [::coverage-algorithm :planwise.model.project-coverage/config])))
 (s/def ::actions-step (s/keys :req-un [:planwise.model.project-actions/config]))
-(s/def ::review-step (s/keys :req-un [::id ::owner-id ::name ::config ::provider-set-id ::source-set-id ::region-id]))
+(s/def ::review-step #(valid-starting-project? %))

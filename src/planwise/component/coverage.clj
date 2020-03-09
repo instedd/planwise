@@ -1,5 +1,6 @@
 (ns planwise.component.coverage
-  (:require [planwise.boundary.coverage :as boundary]
+  (:require [planwise.model.coverage :as model]
+            [planwise.boundary.coverage :as boundary]
             [planwise.boundary.file-store :as file-store]
             [planwise.component.coverage.simple :as simple]
             [planwise.component.coverage.rasterize :as rasterize]
@@ -19,30 +20,8 @@
 
 (hugsql/def-db-fns "planwise/sql/coverage/coverage.sql")
 
-(def distance-values
-  (range 0 301 5))
-
-(def distance-options
-  (map (fn [x] {:value x :label (str x " km")}) distance-values))
-
-;; Specs =====================================================================
-;;
-
-(s/def ::driving-time #{30 60 90 120})
-(s/def ::driving-friction-criteria (s/keys :req-un [::driving-time]))
-
-(s/def ::distance (set distance-values))
-(s/def ::simple-buffer-criteria (s/keys :req-un [::distance]))
-
-(s/def ::walking-time #{60 120 180})
-(s/def ::walking-friction-criteria (s/keys :req-un [::walking-time]))
-
-(defmethod boundary/criteria-algo :simple-buffer [_]
-  (s/merge ::boundary/base-criteria ::simple-buffer-criteria))
-(defmethod boundary/criteria-algo :walking-friction [_]
-  (s/merge ::boundary/base-criteria ::walking-friction-criteria))
-(defmethod boundary/criteria-algo :driving-friction [_]
-  (s/merge ::boundary/base-criteria ::driving-friction-criteria))
+(def buffer-distance-options
+  (map (fn [x] {:value x :label (str x " km")}) model/buffer-distance-values))
 
 
 ;; Supported algorithm description ===========================================
@@ -73,7 +52,7 @@
     :description "Simple buffer around origin for testing purposes only"
     :criteria    {:distance {:label   "Distance"
                              :type    :enum
-                             :options distance-options}}}})
+                             :options buffer-distance-options}}}})
 
 
 ;; Coverage algorithms =======================================================
