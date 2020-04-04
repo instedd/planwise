@@ -13,7 +13,7 @@
     "adm-zip": "^0.4.13",
     "commander": "^2.15.1",
     "countryinfo": "^1.0.2",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.3",
     "mkdirp": "^0.5.1",
     "request": "^2.88.0",
     "togeojson": "^0.16.0"
