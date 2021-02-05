@@ -54,6 +54,25 @@
        "number" [common2/numeric-field (assoc props :on-change change-fn)]
        [common2/text-field props]))))
 
+(defn analysis-type-deserialize
+  [value]
+  (not= value "action"))
+
+(defn analysis-type-serialize
+  [value]
+  (if value "budget" "action"))
+
+(defn- current-project-checkbox
+  [label path other-props]
+  (let [current-project (rf/subscribe [:projects2/current-project])
+        checked         (analysis-type-deserialize (get-in @current-project path))
+        change-fn       #(rf/dispatch-sync [:projects2/save-key path (analysis-type-serialize %)])
+        props (merge (select-keys other-props [:class :disabled :sub-type])
+                     {:label     label
+                      :on-change (comp change-fn (fn [e] (-> e .-target .-checked)))
+                      :checked   checked})]
+       [m/Checkbox props]))
+
 (defn- project-start-button
   [_ project]
   [m/Button {:id         "start-project"
@@ -228,6 +247,10 @@
     [:section {:class-name "project-settings-section"}
      [section-header 5 "Actions"]
      [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
+
+     [project-setting-title "info" "Budget"]
+     [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] {:disabled read-only :class "project-setting"}]
+
      [project-setting-title "account_balance" "Available budget"]
      [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
      [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
