@@ -243,7 +243,8 @@
   [read-only build-actions upgrade-actions]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
-        upgrade-actions (subscribe [:projects2/upgrade-actions])]
+        upgrade-actions (subscribe [:projects2/upgrade-actions])
+        analysis-type   (get-in @current-project [:config :analysis-type])]
     [:section {:class-name "project-settings-section"}
      [section-header 5 "Actions"]
      [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
@@ -251,22 +252,24 @@
      [project-setting-title "info" "Budget"]
      [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] {:disabled read-only :class "project-setting"}]
 
-     [project-setting-title "account_balance" "Available budget"]
-     [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
-     [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
+     (when (= analysis-type "budget")
+       [:div.budget-section
+        [project-setting-title "account_balance" "Available budget"]
+        [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
+        [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
-     [project-setting-title "domain" "Building a new provider..."]
-     [listing-actions {:read-only?  read-only
-                       :action-name :build
-                       :list        @build-actions}]
+        [project-setting-title "domain" "Building a new provider..."]
+        [listing-actions {:read-only?  read-only
+                          :action-name :build
+                          :list        @build-actions}]
 
-     [project-setting-title "arrow_upward" "Upgrading a provider so that it can satisfy demand would cost..."]
-     [current-project-input "" [:config :actions :upgrade-budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
+        [project-setting-title "arrow_upward" "Upgrading a provider so that it can satisfy demand would cost..."]
+        [current-project-input "" [:config :actions :upgrade-budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
 
-     [project-setting-title "add" "Increase the capactiy of a provider by..."]
-     [listing-actions {:read-only?   read-only
-                       :action-name :upgrade
-                       :list        @upgrade-actions}]]))
+        [project-setting-title "add" "Increase the capactiy of a provider by..."]
+        [listing-actions {:read-only?   read-only
+                          :action-name :upgrade
+                          :list        @upgrade-actions}]])]))
 
 (defn- current-project-step-review
   [read-only]
