@@ -71,7 +71,7 @@
                      {:label     label
                       :on-change (comp change-fn (fn [e] (-> e .-target .-checked)))
                       :checked   checked})]
-       [m/Checkbox props]))
+    [m/Checkbox props]))
 
 (defn- project-start-button
   [_ project]
