@@ -54,19 +54,11 @@
        "number" [common2/numeric-field (assoc props :on-change change-fn)]
        [common2/text-field props]))))
 
-(defn analysis-type-deserialize
-  [value]
-  (not= value "action"))
-
-(defn analysis-type-serialize
-  [value]
-  (if value "budget" "action"))
-
 (defn- current-project-checkbox
-  [label path other-props]
+  [label path checked-value unchecked-value other-props]
   (let [current-project (rf/subscribe [:projects2/current-project])
-        checked         (analysis-type-deserialize (get-in @current-project path))
-        change-fn       #(rf/dispatch-sync [:projects2/save-key path (analysis-type-serialize %)])
+        checked         (not= (get-in @current-project path) unchecked-value)
+        change-fn       #(rf/dispatch-sync [:projects2/save-key path (if % checked-value unchecked-value)])
         props (merge (select-keys other-props [:class :disabled :sub-type])
                      {:label     label
                       :on-change (comp change-fn (fn [e] (-> e .-target .-checked)))
@@ -250,9 +242,9 @@
      [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
 
      [project-setting-title "info" "Budget"]
-     [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] {:disabled read-only :class "project-setting"}]
+     [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] "budget" "action" {:disabled read-only :class "project-setting"}]
 
-     (when (= analysis-type "budget")
+     (when (not= analysis-type "action")
        [:div.budget-section
         [project-setting-title "account_balance" "Available budget"]
         [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
