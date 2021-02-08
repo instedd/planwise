@@ -275,6 +275,7 @@
         coverage-amount (first (vals (get-in @current-project [:config :coverage :filter-options])))
         sources         (subscribe [:sources/list])
         source          (first (filter #(= (:source-set-id @current-project) (:id %)) @sources))
+        analysis-type   (get-in @current-project [:config :analysis-type])
         budget          (get-in @current-project [:config :actions :budget])
         workload        (get-in @current-project [:config :providers :capacity])
         consumers-unit        (get-in @current-project [:config :demographics :unit-name])
@@ -287,9 +288,10 @@
      (if (some? provider)
        [project-setting-title "location_on" (:label provider)]
        [project-setting-title "warning" "The provider dataset field in the \"providers\" tab is needed"])
-     (if (some? budget)
-       [project-setting-title "account_balance" (str "K " budget)]
-       [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"])
+     (when (= analysis-type "budget")
+       (if (some? budget)
+         [project-setting-title "account_balance" (str "K " budget)]
+         [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"]))
      (if (some? source)
        [project-setting-title "people" (:name source)]
        [project-setting-title "warning" "The \"consumers\" tab information is needed"])
