@@ -32,7 +32,14 @@
 (s/def ::capacity number?)
 (s/def ::providers (s/keys :req-un [::capacity]))
 
-(s/def ::config (s/nilable (s/keys :req-un [::demographics ::analysis-type ::actions ::coverage ::providers])))
+(defmulti attr-actions :analysis-type)
+(defmethod attr-actions "budget" [_]
+  (s/keys :req-un [::analysis-type ::actions]))
+(defmethod attr-actions "action" [_]
+  (s/keys :req-un [::analysis-type]))
+
+(s/def ::config-base (s/keys :req-un [::demographics ::coverage ::providers]))
+(s/def ::config (s/nilable (s/merge ::config-base (s/multi-spec attr-actions :analysis-type))))
 (s/def ::id number?)
 (s/def ::name string?)
 (s/def ::provider-set-id (s/nilable number?))

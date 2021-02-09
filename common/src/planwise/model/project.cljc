@@ -51,11 +51,11 @@
 
 ;; Config
 (s/def ::config-base (s/keys :req-un [::demographics ::coverage ::providers]))
-(s/def ::config (s/merge ::config-base (s/multi-spec attr-actions ::analysis-type)))
+(s/def ::config (s/merge ::config-base (s/multi-spec attr-actions :analysis-type)))
 (s/def :planwise.model.project-consumers/config (s/keys :req-un [:planwise.model.project/demographics]))
 (s/def :planwise.model.project-providers/config (s/keys :req-un [:planwise.model.project/providers]))
 (s/def :planwise.model.project-coverage/config (s/keys :req-un [:planwise.model.project/coverage]))
-(s/def :planwise.model.project-actions/config (s/multi-spec attr-actions ::analysis-type))
+(s/def :planwise.model.project-actions/config (s/multi-spec attr-actions :analysis-type))
 
 (defn valid-project-coverage?
   [{:keys [coverage-algorithm config]}]
