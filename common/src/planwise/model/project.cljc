@@ -43,19 +43,19 @@
 (s/def ::actions (s/keys :req-un [::budget]))
 (s/def ::analysis-type string?)
 
-(defmulti attr-actions :analysis-type)
-(defmethod attr-actions "budget" [_]
+(defmulti attribute-analysis-type-actions :analysis-type)
+(defmethod attribute-analysis-type-actions "budget" [_]
   (s/keys :req-un [::analysis-type ::actions]))
-(defmethod attr-actions "action" [_]
+(defmethod attribute-analysis-type-actions "action" [_]
   (s/keys :req-un [::analysis-type]))
 
 ;; Config
 (s/def ::config-base (s/keys :req-un [::demographics ::coverage ::providers]))
-(s/def ::config (s/merge ::config-base (s/multi-spec attr-actions :analysis-type)))
+(s/def ::config (s/merge ::config-base (s/multi-spec attribute-analysis-type-actions :analysis-type)))
 (s/def :planwise.model.project-consumers/config (s/keys :req-un [:planwise.model.project/demographics]))
 (s/def :planwise.model.project-providers/config (s/keys :req-un [:planwise.model.project/providers]))
 (s/def :planwise.model.project-coverage/config (s/keys :req-un [:planwise.model.project/coverage]))
-(s/def :planwise.model.project-actions/config (s/multi-spec attr-actions :analysis-type))
+(s/def :planwise.model.project-actions/config (s/multi-spec attribute-analysis-type-actions :analysis-type))
 
 (defn valid-project-coverage?
   [{:keys [coverage-algorithm config]}]
