@@ -37,6 +37,7 @@ Client side:
   top of [reagent](https://github.com/reagent-project/reagent)
   and [React](https://facebook.github.io/react/).
 * [Leaflet](http://leafletjs.com/) for displaying interactive maps.
+* [shadow-cljs](http://shadow-cljs.org/) for compilation.
 
 Deployment:
 
@@ -108,6 +109,25 @@ Run inside the `app` container:
 $ docker-compose run app bash
 app$ scripts/bootstrap-dev.sh
 ```
+
+### Seed the database and data directory
+
+There is a bit of geographical data needed to have a functional environment.
+
+First, the global friction layer needs to be download as described
+[here](./scripts/friction/README.md). This is used to compute walking
+and car travel time.
+
+Second, the administrative hierarchy of selected countries needs to be
+downloaded. Follow [this procedure](./scripts/geojson/README.md) to populate
+the `data/geojson` directory.
+
+Third, download and register country population datasets to use as demand
+raster source. While doing this last step the administrative hierarchies
+will be registered and friction layer will be sliced per country. If you
+don't need demand raster sources you will still need to register the
+administrative hierarchies and slice the friction layer. Check
+[this procedure](./scripts/population/README.md) to see how these steps are done.
 
 ### Configure Guisso credentials
 
@@ -256,17 +276,14 @@ dev=> (reset)
 :resumed
 ```
 
-If you want to access a ClojureScript REPL, make sure that the site is loaded
-in a browser and run:
+If you want to access a ClojureScript REPL, make sure that the server is running.
 
-```clojure
-dev=> (cljs-repl)
-Waiting for browser connection... Connected.
-To quit, type: :cljs/quit
-nil
-cljs.user=>
+```
+$ shadow-cljs cljs-repl :app
 ```
 
+The `shadow-cljs` is installed by `./client/package.json` in
+`./client/node_modules/.bin/shadow-cljs`.
 
 ## Further configuration information
 
