@@ -136,9 +136,12 @@
   ;; TODO compute % coverage from initial scenario/project
   (let [list (db-list-scenarios (get-db store) {:project-id project-id})]
     (map (fn [{:keys [changeset] :as scenario}]
-           (-> scenario
-               (assoc  :changeset-summary (build-changeset-summary (edn/read-string changeset)))
-               (dissoc :changeset)))
+           (let
+            [changeset-parsed (edn/read-string changeset)]
+             (-> scenario
+                 (assoc  :changeset-summary (build-changeset-summary changeset-parsed))
+                 (assoc  :changeset-count (count changeset-parsed))
+                 (dissoc :changeset))))
          list)))
 
 (defn create-initial-scenario
