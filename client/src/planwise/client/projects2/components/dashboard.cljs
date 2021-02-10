@@ -56,7 +56,8 @@
 
 (defn- scenarios-list
   [scenarios current-project]
-  (let [num (count scenarios)]
+  (let [num (count scenarios)
+        analysis-type (get-in current-project [:config :analysis-type])]
     [:div.scenarios-content
      [:table
       [:caption (generate-title num)]
@@ -67,7 +68,7 @@
         [:th.col2 (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage")]
         [:th.col5 "Geographic Coverage"]
         [:th.col6 "Population Under Coverage"]
-        [:th.col3 "Investment"]
+        [:th.col3 (if (= analysis-type "budget") "Investment" "Effort")]
         [:th.col4 "Actions"]]]
       [:tbody
        (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index)) (into scenarios (repeat (- 5 num) nil)))]]]))
