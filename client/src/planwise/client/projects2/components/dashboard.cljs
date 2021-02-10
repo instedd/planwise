@@ -33,7 +33,7 @@
   (when (not (blank? input)) [m/ChipSet [m/Chip [m/ChipText input]]]))
 
 (defn- scenarios-list-item
-  [project-id {:keys [id name label state demand-coverage investment changeset-summary geo-coverage population-under-coverage] :as scenario} index]
+  [project-id {:keys [id name label state demand-coverage investment changeset-count changeset-summary geo-coverage population-under-coverage] :as scenario} index analysis-type]
   (if id
     [:tr {:key id :on-click (fn [evt]
                               (if (or (.-shiftKey evt) (.-metaKey evt))
@@ -45,7 +45,7 @@
      [:td.col2 (utils/format-number demand-coverage)]
      [:td.col5 (str (utils/format-number (* geo-coverage 100)) "%")]
      [:td.col6 population-under-coverage]
-     [:td.col3 (utils/format-number investment)]
+     [:td.col3 (if (= analysis-type "budget") (utils/format-number investment) changeset-count)]
      [:td.col4 changeset-summary]]
     [:tr {:key (str "tr-" index)}
      (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 7))]))
@@ -71,7 +71,7 @@
         [:th.col3 (if (= analysis-type "budget") "Investment" "Effort")]
         [:th.col4 "Actions"]]]
       [:tbody
-       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index)) (into scenarios (repeat (- 5 num) nil)))]]]))
+       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (into scenarios (repeat (- 5 num) nil)))]]]))
 
 (defn- project-settings
   []
