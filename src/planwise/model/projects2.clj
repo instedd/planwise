@@ -18,7 +18,7 @@
       (default [:providers :capacity] 1)))
 
 (s/def ::target (s/nilable number?))
-(s/def ::analysis-type (s/nilable string?))
+(s/def ::analysis-type string?)
 (s/def ::budget (s/nilable number?))
 (s/def ::upgrade-budget (s/nilable number?))
 (s/def ::build (s/nilable (s/coll-of map? :kind vector? :distinct true)))
@@ -32,14 +32,14 @@
 (s/def ::capacity number?)
 (s/def ::providers (s/keys :req-un [::capacity]))
 
-(defmulti attr-actions :analysis-type)
-(defmethod attr-actions "budget" [_]
+(defmulti attribute-analysis-type-actions :analysis-type)
+(defmethod attribute-analysis-type-actions "budget" [_]
   (s/keys :req-un [::analysis-type ::actions]))
-(defmethod attr-actions "action" [_]
+(defmethod attribute-analysis-type-actions "action" [_]
   (s/keys :req-un [::analysis-type]))
 
-(s/def ::config-base (s/keys :req-un [::demographics ::coverage ::providers]))
-(s/def ::config (s/nilable (s/merge ::config-base (s/multi-spec attr-actions :analysis-type))))
+(s/def ::config-base (s/keys :req-un [::demographics ::coverage ::providers ::analysis-type]))
+(s/def ::config (s/nilable (s/merge ::config-base (s/multi-spec attribute-analysis-type-actions :analysis-type))))
 (s/def ::id number?)
 (s/def ::name string?)
 (s/def ::provider-set-id (s/nilable number?))

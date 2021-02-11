@@ -57,7 +57,7 @@
 (defn- current-project-checkbox
   [label path checked-value unchecked-value other-props]
   (let [current-project (rf/subscribe [:projects2/current-project])
-        checked         (not= (get-in @current-project path) unchecked-value)
+        checked         (= (get-in @current-project path) checked-value)
         change-fn       #(rf/dispatch-sync [:projects2/save-key path (if % checked-value unchecked-value)])
         props (merge (select-keys other-props [:class :disabled :sub-type])
                      {:label     label
@@ -244,7 +244,7 @@
      [project-setting-title "info" "Budget"]
      [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] "budget" "action" {:disabled read-only :class "project-setting"}]
 
-     (when (not= analysis-type "action")
+     (when (= analysis-type "budget")
        [:div.budget-section
         [project-setting-title "account_balance" "Available budget"]
         [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
