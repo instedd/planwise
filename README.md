@@ -276,14 +276,20 @@ dev=> (reset)
 :resumed
 ```
 
-If you want to access a ClojureScript REPL, make sure that the server is running.
+If you want to access a ClojureScript REPL, make sure that the server is
+running and there is a browser with the application loaded.
 
 ```
 $ shadow-cljs cljs-repl :app
+shadow-cljs - config: /app/client/shadow-cljs.edn  cli version: 2.8.59  node: v9.11.2
+shadow-cljs - connected to server
+cljs.user=> (js/alert "hi")
+nil
 ```
 
 The `shadow-cljs` is installed by `./client/package.json` in
-`./client/node_modules/.bin/shadow-cljs`.
+`./client/node_modules/.bin/shadow-cljs`. In a docker development environment
+you can execute shadow-cljs from the client service container.
 
 ## Further configuration information
 
