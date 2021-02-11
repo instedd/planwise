@@ -34,9 +34,9 @@
 
 (defmulti attribute-analysis-type-actions :analysis-type)
 (defmethod attribute-analysis-type-actions "budget" [_]
-  (s/keys :req-un [::analysis-type ::actions]))
+  (s/keys :req-un [::actions]))
 (defmethod attribute-analysis-type-actions "action" [_]
-  (s/keys :req-un [::analysis-type]))
+  (s/keys))
 
 (s/def ::config-base (s/keys :req-un [::demographics ::coverage ::providers ::analysis-type]))
 (s/def ::config (s/nilable (s/merge ::config-base (s/multi-spec attribute-analysis-type-actions :analysis-type))))
