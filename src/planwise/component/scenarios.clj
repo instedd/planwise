@@ -220,10 +220,12 @@
   [store project {:keys [name changeset]}]
   (assert (s/valid? ::model/change-set changeset))
   (let [changeset (map create-provider-new-id-when-necessary changeset)
+        analysis-type (get-in project [:config :analysis-type])
+        effort (if (= analysis-type "budget") (sum-investments changeset) (count changeset))
         result (db-create-scenario! (get-db store)
                                     {:name name
                                      :project-id (:id project)
-                                     :effort (sum-investments changeset)
+                                     :effort effort
                                      :demand-coverage nil
                                      :changeset (pr-str changeset)
                                      :label nil})]
@@ -238,13 +240,15 @@
   ;; TODO assert scenario belongs to project
   (let [db (get-db store)
         project-id (:id project)
+        analysis-type (get-in project [:config :analysis-type])
+        effort (if (= analysis-type "budget") (sum-investments changeset) (count changeset))
         label (:label (get-scenario store id))]
     (assert (s/valid? ::model/change-set changeset))
     (assert (not= label "initial"))
     (db-update-scenario! db
                          {:name name
                           :id id
-                          :effort (sum-investments changeset)
+                          :effort effort
                           :demand-coverage nil
                           :changeset (pr-str changeset)
                           :label nil})
