@@ -12,11 +12,13 @@
   [config]
   (-> config
       (default [:demographics :target] nil)
+      (default [:analysis-type] "budget")
       (default [:actions :budget] nil)
       (default [:coverage :filter-options] {})
       (default [:providers :capacity] 1)))
 
 (s/def ::target (s/nilable number?))
+(s/def ::analysis-type string?)
 (s/def ::budget (s/nilable number?))
 (s/def ::upgrade-budget (s/nilable number?))
 (s/def ::build (s/nilable (s/coll-of map? :kind vector? :distinct true)))
@@ -30,7 +32,14 @@
 (s/def ::capacity number?)
 (s/def ::providers (s/keys :req-un [::capacity]))
 
-(s/def ::config (s/nilable (s/keys :req-un [::demographics ::actions ::coverage ::providers])))
+(defmulti attribute-analysis-type-actions :analysis-type)
+(defmethod attribute-analysis-type-actions "budget" [_]
+  (s/keys :req-un [::actions]))
+(defmethod attribute-analysis-type-actions "action" [_]
+  (s/keys))
+
+(s/def ::config-base (s/keys :req-un [::demographics ::coverage ::providers ::analysis-type]))
+(s/def ::config (s/nilable (s/merge ::config-base (s/multi-spec attribute-analysis-type-actions :analysis-type))))
 (s/def ::id number?)
 (s/def ::name string?)
 (s/def ::provider-set-id (s/nilable number?))

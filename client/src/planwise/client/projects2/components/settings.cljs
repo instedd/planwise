@@ -54,6 +54,17 @@
        "number" [common2/numeric-field (assoc props :on-change change-fn)]
        [common2/text-field props]))))
 
+(defn- current-project-checkbox
+  [label path checked-value unchecked-value other-props]
+  (let [current-project (rf/subscribe [:projects2/current-project])
+        checked         (= (get-in @current-project path) checked-value)
+        change-fn       #(rf/dispatch-sync [:projects2/save-key path (if % checked-value unchecked-value)])
+        props (merge (select-keys other-props [:class :disabled :sub-type])
+                     {:label     label
+                      :on-change (comp change-fn (fn [e] (-> e .-target .-checked)))
+                      :checked   checked})]
+    [m/Checkbox props]))
+
 (defn- project-start-button
   [_ project]
   [m/Button {:id         "start-project"
@@ -224,26 +235,33 @@
   [read-only build-actions upgrade-actions]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
-        upgrade-actions (subscribe [:projects2/upgrade-actions])]
+        upgrade-actions (subscribe [:projects2/upgrade-actions])
+        analysis-type   (get-in @current-project [:config :analysis-type])]
     [:section {:class-name "project-settings-section"}
      [section-header 5 "Actions"]
      [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
-     [project-setting-title "account_balance" "Available budget"]
-     [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
-     [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
-     [project-setting-title "domain" "Building a new provider..."]
-     [listing-actions {:read-only?  read-only
-                       :action-name :build
-                       :list        @build-actions}]
+     [project-setting-title "info" "Budget"]
+     [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] "budget" "action" {:disabled read-only :class "project-setting"}]
 
-     [project-setting-title "arrow_upward" "Upgrading a provider so that it can satisfy demand would cost..."]
-     [current-project-input "" [:config :actions :upgrade-budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
+     (when (= analysis-type "budget")
+       [:div.budget-section
+        [project-setting-title "account_balance" "Available budget"]
+        [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
+        [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
-     [project-setting-title "add" "Increase the capactiy of a provider by..."]
-     [listing-actions {:read-only?   read-only
-                       :action-name :upgrade
-                       :list        @upgrade-actions}]]))
+        [project-setting-title "domain" "Building a new provider..."]
+        [listing-actions {:read-only?  read-only
+                          :action-name :build
+                          :list        @build-actions}]
+
+        [project-setting-title "arrow_upward" "Upgrading a provider so that it can satisfy demand would cost..."]
+        [current-project-input "" [:config :actions :upgrade-budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
+
+        [project-setting-title "add" "Increase the capactiy of a provider by..."]
+        [listing-actions {:read-only?   read-only
+                          :action-name :upgrade
+                          :list        @upgrade-actions}]])]))
 
 (defn- current-project-step-review
   [read-only]
@@ -257,6 +275,7 @@
         coverage-amount (first (vals (get-in @current-project [:config :coverage :filter-options])))
         sources         (subscribe [:sources/list])
         source          (first (filter #(= (:source-set-id @current-project) (:id %)) @sources))
+        analysis-type   (get-in @current-project [:config :analysis-type])
         budget          (get-in @current-project [:config :actions :budget])
         workload        (get-in @current-project [:config :providers :capacity])
         consumers-unit        (get-in @current-project [:config :demographics :unit-name])
@@ -269,9 +288,10 @@
      (if (some? provider)
        [project-setting-title "location_on" (:label provider)]
        [project-setting-title "warning" "The provider dataset field in the \"providers\" tab is needed"])
-     (if (some? budget)
-       [project-setting-title "account_balance" (str "K " budget)]
-       [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"])
+     (when (= analysis-type "budget")
+       (if (some? budget)
+         [project-setting-title "account_balance" (str "K " budget)]
+         [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"]))
      (if (some? source)
        [project-setting-title "people" (:name source)]
        [project-setting-title "warning" "The \"consumers\" tab information is needed"])
