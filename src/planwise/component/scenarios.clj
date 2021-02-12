@@ -150,7 +150,7 @@
         scenario-id (:id (db-create-scenario! (get-db store)
                                               {:name            "Initial"
                                                :project-id      project-id
-                                               :investment      0
+                                               :effort          0
                                                :demand-coverage nil
                                                :changeset       "[]"
                                                :label           "initial"}))]
@@ -223,7 +223,7 @@
         result (db-create-scenario! (get-db store)
                                     {:name name
                                      :project-id (:id project)
-                                     :investment (sum-investments changeset)
+                                     :effort (sum-investments changeset)
                                      :demand-coverage nil
                                      :changeset (pr-str changeset)
                                      :label nil})]
@@ -244,7 +244,7 @@
     (db-update-scenario! db
                          {:name name
                           :id id
-                          :investment (sum-investments changeset)
+                          :effort (sum-investments changeset)
                           :demand-coverage nil
                           :changeset (pr-str changeset)
                           :label nil})

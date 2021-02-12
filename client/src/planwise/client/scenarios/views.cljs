@@ -259,7 +259,7 @@
 
 (defn scenario-info
   [view-state current-scenario unit-name]
-  (let [{:keys [name label investment demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario]
+  (let [{:keys [name label effort demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario]
     [:div
      [:div {:class-name "section"}
       [:h1 {:class-name "title-icon"} name]]
@@ -284,7 +284,7 @@
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
        [:small "Investment required"]
-       "K " (utils/format-number investment)]]
+       "K " (utils/format-number effort)]]
      [:hr]]))
 
 (defn suggested-locations-list

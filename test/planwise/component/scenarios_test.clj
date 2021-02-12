@@ -36,11 +36,11 @@
    [:projects2
     [{:id project-id :owner-id owner-id :name "" :config nil :provider-set-id nil}]]
    [:scenarios
-    [{:investment 0    :demand-coverage 100 :id initial-scenario-id     :label "initial" :name "Initial" :project-id project-id :changeset "[]"}
-     {:investment 500  :demand-coverage 120 :id sub-optimal-scenario-id :label nil       :name "S1"      :project-id project-id :changeset "[]"}
-     {:investment 500  :demand-coverage 150 :id best-scenario-id        :label nil       :name "S2"      :project-id project-id :changeset "[]"}
-     {:investment 1000 :demand-coverage 150 :id optimal-scenario-id     :label nil       :name "S3"      :project-id project-id :changeset "[]"}
-     {:investment 1000 :demand-coverage 120 :id other-scenario-id       :label nil       :name "S4"      :project-id project-id :changeset "[]"}]]])
+    [{:effort 0    :demand-coverage 100 :id initial-scenario-id     :label "initial" :name "Initial" :project-id project-id :changeset "[]"}
+     {:effort 500  :demand-coverage 120 :id sub-optimal-scenario-id :label nil       :name "S1"      :project-id project-id :changeset "[]"}
+     {:effort 500  :demand-coverage 150 :id best-scenario-id        :label nil       :name "S2"      :project-id project-id :changeset "[]"}
+     {:effort 1000 :demand-coverage 150 :id optimal-scenario-id     :label nil       :name "S3"      :project-id project-id :changeset "[]"}
+     {:effort 1000 :demand-coverage 120 :id other-scenario-id       :label nil       :name "S4"      :project-id project-id :changeset "[]"}]]])
 
 (defn test-config
   ([]
@@ -92,7 +92,7 @@
       (is (= (map #(dissoc % :id) (:changeset scenario)) (map #(dissoc % :id) (:changeset props))))
 
       ;; computes sum of investments of actions
-      (is (= (:investment scenario) 15000M)))))
+      (is (= (:effort scenario) 15000M)))))
 
 (deftest list-scenarios-order
   (test-system/with-system (test-config fixture-with-scenarios)
@@ -132,12 +132,12 @@
           new-scenario (assoc scenario
                               :changeset [{:action "create-provider" :id "new.1" :investment 10000 :capacity 50 :location {:lat 0 :lon 0}}]
                               :label "sub-optimal"
-                              :investment 10000)]
+                              :effort 10000)]
       (do
         (is (thrown? java.lang.AssertionError (scenarios/update-scenario store project new-scenario)))
         (let [updated-scenario (scenarios/get-scenario store scenario-id)
               check-key (fn [key] (= (-> updated-scenario key) (-> scenario key)))]
-          (is (map check-key [:id :changeset :investment :state])))))))
+          (is (map check-key [:id :changeset :effort :state])))))))
 
 
 (deftest delete-current-scenario

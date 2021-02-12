@@ -127,7 +127,7 @@
                  :content     (when open?
                                 (changeset-dialog-content
                                  (assoc @provider
-                                        :available-budget (- budget (:investment scenario)))
+                                        :available-budget (- budget (:effort scenario)))
                                  {:project-capacity (get-in config [:providers :capacity])
                                   :upgrade-budget   (get-in config [:actions :upgrade-budget])
                                   :building-costs   (sort-by :capacity (get-in config [:actions :build]))
