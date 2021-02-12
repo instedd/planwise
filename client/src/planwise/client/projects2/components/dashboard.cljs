@@ -32,6 +32,10 @@
   [input]
   (when (not (blank? input)) [m/ChipSet [m/Chip [m/ChipText input]]]))
 
+(defn- format-effort
+  [effort analysis-type]
+  (str (if (= analysis-type "budget") "$ ") (utils/format-number effort)))
+
 (defn- scenarios-list-item
   [project-id {:keys [id name label state demand-coverage effort changeset-summary geo-coverage population-under-coverage] :as scenario} index analysis-type]
   (if id
@@ -45,7 +49,7 @@
      [:td.col2 (utils/format-number demand-coverage)]
      [:td.col5 (str (utils/format-number (* geo-coverage 100)) "%")]
      [:td.col6 population-under-coverage]
-     [:td.col3 (if (= analysis-type "budget") (utils/format-number effort) effort)]
+     [:td.col3 (format-effort effort analysis-type)]
      [:td.col4 changeset-summary]]
     [:tr {:key (str "tr-" index)}
      (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 7))]))
