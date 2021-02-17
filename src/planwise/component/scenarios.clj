@@ -136,12 +136,9 @@
   ;; TODO compute % coverage from initial scenario/project
   (let [list (db-list-scenarios (get-db store) {:project-id project-id})]
     (map (fn [{:keys [changeset] :as scenario}]
-           (let
-            [changeset-parsed (edn/read-string changeset)]
-             (-> scenario
-                 (assoc  :changeset-summary (build-changeset-summary changeset-parsed))
-                 (assoc  :changeset-count (count changeset-parsed))
-                 (dissoc :changeset))))
+           (-> scenario
+               (assoc  :changeset-summary (build-changeset-summary (edn/read-string changeset)))
+               (dissoc :changeset)))
          list)))
 
 (defn create-initial-scenario
@@ -216,12 +213,16 @@
     (assoc provider :id (str (java.util.UUID/randomUUID)))
     provider))
 
+(defn- calc-effort
+  [analysis-type changeset]
+  (if (= analysis-type "budget") (sum-investments changeset) (count changeset)))
+
 (defn create-scenario
   [store project {:keys [name changeset]}]
   (assert (s/valid? ::model/change-set changeset))
   (let [changeset (map create-provider-new-id-when-necessary changeset)
         analysis-type (get-in project [:config :analysis-type])
-        effort (if (= analysis-type "budget") (sum-investments changeset) (count changeset))
+        effort (calc-effort analysis-type changeset)
         result (db-create-scenario! (get-db store)
                                     {:name name
                                      :project-id (:id project)
@@ -241,7 +242,7 @@
   (let [db (get-db store)
         project-id (:id project)
         analysis-type (get-in project [:config :analysis-type])
-        effort (if (= analysis-type "budget") (sum-investments changeset) (count changeset))
+        effort (calc-effort analysis-type changeset)
         label (:label (get-scenario store id))]
     (assert (s/valid? ::model/change-set changeset))
     (assert (not= label "initial"))
