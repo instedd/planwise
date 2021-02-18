@@ -270,7 +270,7 @@
        [:small (str "Increase in " unit-name " coverage")]
        (cond
          (= "pending" state) "loading..."
-         :else               (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
+         :else               (str (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")"))]
       [:p {:class-name "grey-text"}
        (cond
          (= "pending" state) "to a total of"
@@ -280,7 +280,7 @@
        [:small (str "Total " unit-name " under geographic coverage")]
        (cond
          (= "pending" state) "loading..."
-         :else  population-under-coverage)]]
+         :else  (utils/format-number population-under-coverage))]]
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
        [:small "Effort required"]
