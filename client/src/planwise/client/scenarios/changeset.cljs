@@ -17,7 +17,7 @@
    "increase-provider" "add"})
 
 (defn- changeset-row
-  [props {:keys [name change] :as provider}]
+  [props {:keys [name change] :as provider} analysis-type]
   [:div
    [:div {:class-name "section changeset-row"
           :on-click #(dispatch [:scenarios/open-changeset-dialog provider])}
@@ -25,13 +25,14 @@
      [m/Icon {} (get action-icons (:action change))]
      [:div {:class-name "icon-list-text"}
       [:p {:class-name "strong"} name]
-      [:p {:class-name "grey-text"}  (str "K " (utils/format-number (:investment change)))]]]]
+      (when (= analysis-type "budget")
+        [:p {:class-name "grey-text"}  (str "$ " (utils/format-number (:investment change)))])]]]
    [:hr]])
 
 (defn- listing-component
-  [providers]
+  [providers analysis-type]
   [:div {:class-name "scroll-list"}
-   (map (fn [provider] [changeset-row {:key (str "provider-action" (:id provider))} provider])
+   (map (fn [provider] [changeset-row {:key (str "provider-action" (:id provider))} provider analysis-type])
         providers)])
 
 (defn- suggestion-row

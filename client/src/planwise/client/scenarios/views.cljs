@@ -328,7 +328,7 @@
              [raise-alert current-scenario error]
              [:<>
               [:div {:class-name "fade"}]
-              [changeset/listing-component @providers-from-changeset]
+              [changeset/listing-component @providers-from-changeset analysis-type]
               [:div {:class-name "fade inverted"}]])])))))
 
 (defn side-panel-view
