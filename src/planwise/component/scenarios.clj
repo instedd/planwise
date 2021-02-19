@@ -367,10 +367,14 @@
   [store {:keys [sources-set-id config] :as project} {:keys [raster sources-data] :as scenario}]
   (let [increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))
         upgrade-budget   (get-in config [:actions :upgrade-budget])
+        analysis-type    (get-in config [:analysis-type])
         costs-config?    (and (not (empty? increasing-costs)) (some? upgrade-budget))
         settings         (merge
-                          {:available-budget (- (get-in config [:actions :budget])
-                                                (get-current-investment (:changeset scenario)))}
+                          {:analysis-type analysis-type
+                           :available-budget (if (= analysis-type "budget")
+                                               (- (get-in config [:actions :budget])
+                                                  (get-current-investment (:changeset scenario)))
+                                               0)}
                           (if costs-config?
                             {:max-capacity     (:capacity (last increasing-costs))
                              :increasing-costs increasing-costs
