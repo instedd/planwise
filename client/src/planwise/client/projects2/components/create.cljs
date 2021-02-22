@@ -15,7 +15,7 @@
     :icon "directions_walk"
     :key "plan"
     :defaults {:name "ground"}}
-   {:description "Plan diagonostic devices & sample referrals"
+   {:description "Plan diagnostic services & sample referrals"
     :icon "call_split"
     :key "diagnosis"
     :defaults {:name "sample"}}])
