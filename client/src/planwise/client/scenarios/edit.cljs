@@ -10,7 +10,8 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.routes :as routes]
             [clojure.string :as str]
-            [planwise.client.ui.rmwc :as m]))
+            [planwise.client.ui.rmwc :as m]
+            [planwise.common :as common]))
 
 (defn rename-scenario-dialog
   []
@@ -88,7 +89,7 @@
                 (neg? required)       [common2/text-field {:label "Free capacity"
                                                            :read-only true
                                                            :value (utils/format-number (Math/abs required))}])))]
-     (if (= analysis-type "budget")
+     (if (common/is-budget analysis-type)
        (let [remaining-budget           (- available-budget (:investment change))
              suggested-cost             (suggest-investment change props)
              show-suggested-cost        (or (configured-costs? props)

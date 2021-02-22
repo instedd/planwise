@@ -10,7 +10,8 @@
             [planwise.util.files :as files]
             [planwise.util.geo :as geo]
             [clojure.set :refer [rename-keys]]
-            [taoensso.timbre :as timbre])
+            [taoensso.timbre :as timbre]
+            [planwise.common :as c])
   (:import [planwise.engine Algorithm]))
 
 (timbre/refer-timbre)
@@ -411,7 +412,7 @@
 
 (defn- provider-with-data
   [provider providers-data {:keys [analysis-type] :as settings}]
-  (let [budget? (= analysis-type "budget")]
+  (let [budget? (c/is-budget analysis-type)]
     (when-let [intervention ((if budget? get-provider-capacity-and-cost get-provider-capacity-and-unsatisfied-demand)
                              (merge
                               provider
@@ -433,7 +434,7 @@
   [engine project {:keys [providers-data changeset] :as scenario} {:keys [analysis-type] :as settings}]
   (let [{:keys [engine-config config provider-set-id region-id coverage-algorithm]} project
         providers-collection (common/providers-in-project (:providers-set engine) project)
-        sort-key (if (= analysis-type "budget") :ratio :unsatisfied-demand)]
+        sort-key (if (c/is-budget analysis-type) :ratio :unsatisfied-demand)]
     (reduce
      (fn [suggestions provider]
        (insert-in-sorted-coll

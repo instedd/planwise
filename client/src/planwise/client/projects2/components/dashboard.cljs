@@ -10,7 +10,8 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
-            [planwise.client.projects2.components.settings :as settings]))
+            [planwise.client.projects2.components.settings :as settings]
+            [planwise.common :as common]))
 
 (defn- project-tabs
   [{:keys [active] :or {active :scenarios}}]
@@ -68,7 +69,7 @@
         [:th.col2 (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage")]
         [:th.col5 "Geographic Coverage"]
         [:th.col6 "Population Under Coverage"]
-        [:th.col3 (if (= analysis-type "budget") "Investment" "Effort")]
+        [:th.col3 (if (common/is-budget analysis-type) "Investment" "Effort")]
         [:th.col4 "Actions"]]]
       [:tbody
        (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (into scenarios (repeat (- 5 num) nil)))]]]))

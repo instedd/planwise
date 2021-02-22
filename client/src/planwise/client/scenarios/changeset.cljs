@@ -9,7 +9,8 @@
             [planwise.client.utils :as utils]
             [planwise.client.routes :as routes]
             [clojure.string :as str]
-            [planwise.client.ui.rmwc :as m]))
+            [planwise.client.ui.rmwc :as m]
+            [planwise.common :as common]))
 
 (def action-icons
   {"create-provider" "domain"
@@ -25,7 +26,7 @@
      [m/Icon {} (get action-icons (:action change))]
      [:div {:class-name "icon-list-text"}
       [:p {:class-name "strong"} name]
-      (when (= analysis-type "budget")
+      (when (common/is-budget analysis-type)
         [:p {:class-name "grey-text"}  (str "$ " (utils/format-number (:investment change)))])]]]
    [:hr]])
 

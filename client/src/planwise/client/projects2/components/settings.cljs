@@ -19,7 +19,8 @@
             [planwise.model.project :as model]
             [clojure.spec.alpha :as s]
             [leaflet.core :as l]
-            [planwise.client.mapping :as mapping]))
+            [planwise.client.mapping :as mapping]
+            [planwise.common :as common]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
@@ -244,7 +245,7 @@
      [project-setting-title "info" "Budget"]
      [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] "budget" "action" {:disabled read-only :class "project-setting"}]
 
-     (when (= analysis-type "budget")
+     (when (common/is-budget analysis-type)
        [:div.budget-section
         [project-setting-title "account_balance" "Available budget"]
         [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
@@ -288,7 +289,7 @@
      (if (some? provider)
        [project-setting-title "location_on" (:label provider)]
        [project-setting-title "warning" "The provider dataset field in the \"providers\" tab is needed"])
-     (when (= analysis-type "budget")
+     (when (common/is-budget analysis-type)
        (if (some? budget)
          [project-setting-title "account_balance" (str "K " budget)]
          [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"]))

@@ -17,7 +17,8 @@
             [clojure.string :as str]
             [clojure.data.csv :as csv]
             [clojure.spec.alpha :as s]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [planwise.common :as common]))
 
 (timbre/refer-timbre)
 
@@ -215,7 +216,7 @@
 
 (defn- calc-effort
   [analysis-type changeset]
-  (if (= analysis-type "budget") (sum-investments changeset) (count changeset)))
+  (if (common/is-budget analysis-type) (sum-investments changeset) (count changeset)))
 
 (defn create-scenario
   [store project {:keys [name changeset]}]
@@ -371,7 +372,7 @@
         costs-config?    (and (not (empty? increasing-costs)) (some? upgrade-budget))
         settings         (merge
                           {:analysis-type analysis-type
-                           :available-budget (if (= analysis-type "budget")
+                           :available-budget (if (common/is-budget analysis-type)
                                                (- (get-in config [:actions :budget])
                                                   (get-current-investment (:changeset scenario)))
                                                0)}
