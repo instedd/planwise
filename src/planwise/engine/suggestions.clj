@@ -394,7 +394,7 @@
    (first (filter #(= id (:id %)) all-providers))
    keys))
 
-(defn get-provider-unsatisfied-demand
+(defn get-provider-capacity-and-unsatisfied-demand
   [{:keys [unsatisfied-demand required-capacity] :as provider} {:keys [max-capacity] :as settings}]
   (let [action-capacity (if max-capacity
                           (min required-capacity max-capacity)
@@ -412,7 +412,7 @@
 (defn- provider-with-data
   [provider providers-data {:keys [analysis-type] :as settings}]
   (let [budget? (= analysis-type "budget")]
-    (when-let [intervention ((if budget? get-provider-capacity-and-cost get-provider-unsatisfied-demand)
+    (when-let [intervention ((if budget? get-provider-capacity-and-cost get-provider-capacity-and-unsatisfied-demand)
                              (merge
                               provider
                               (get-information-from-demand
