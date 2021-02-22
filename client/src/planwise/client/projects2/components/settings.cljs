@@ -154,7 +154,7 @@
    (when (= action-name :build) "with a capacity of ")
    [current-project-input "" [:config :actions action-name idx :capacity] "number" "" "" (merge {:class "action-input"} props)]
    " would cost "
-   [current-project-input "" [:config :actions action-name idx :investment] "number" "$" "" (merge {:class "action-input"} props)]])
+   [current-project-input "" [:config :actions action-name idx :investment] "number" common/currency-symbol "" (merge {:class "action-input"} props)]])
 
 (defn- listing-actions
   [{:keys [read-only? action-name list]}]
@@ -248,7 +248,7 @@
      (when (common/is-budget analysis-type)
        [:div.budget-section
         [project-setting-title "account_balance" "Available budget"]
-        [current-project-input "" [:config :actions :budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
+        [current-project-input "" [:config :actions :budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
         [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
         [project-setting-title "domain" "Building a new provider..."]
@@ -257,7 +257,7 @@
                           :list        @build-actions}]
 
         [project-setting-title "arrow_upward" "Upgrading a provider so that it can satisfy demand would cost..."]
-        [current-project-input "" [:config :actions :upgrade-budget] "number" "$" "" {:disabled read-only :class "project-setting"}]
+        [current-project-input "" [:config :actions :upgrade-budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
 
         [project-setting-title "add" "Increase the capactiy of a provider by..."]
         [listing-actions {:read-only?   read-only
@@ -291,7 +291,7 @@
        [project-setting-title "warning" "The provider dataset field in the \"providers\" tab is needed"])
      (when (common/is-budget analysis-type)
        (if (some? budget)
-         [project-setting-title "account_balance" (str "K " budget)]
+         [project-setting-title "account_balance" (str common/currency-symbol " " budget)]
          [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"]))
      (if (some? source)
        [project-setting-title "people" (:name source)]

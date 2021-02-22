@@ -27,7 +27,7 @@
      [:div {:class-name "icon-list-text"}
       [:p {:class-name "strong"} name]
       (when (common/is-budget analysis-type)
-        [:p {:class-name "grey-text"}  (str "$ " (utils/format-number (:investment change)))])]]]
+        [:p {:class-name "grey-text"}  (str common/currency-symbol " " (utils/format-number (:investment change)))])]]]
    [:hr]])
 
 (defn- listing-component

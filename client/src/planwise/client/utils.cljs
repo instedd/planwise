@@ -74,7 +74,7 @@
 
 (defn format-effort
   [effort analysis-type]
-  (str (if (common/is-budget analysis-type) "$ ") (format-number effort)))
+  (str (if (common/is-budget analysis-type) (str common/currency-symbol " ")) (format-number effort)))
 
 ; Copied from https://github.com/teropa/hiccups/blob/master/src/cljs/hiccups/runtime.cljs#L30-L34
 (defn escape-html
