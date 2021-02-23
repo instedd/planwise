@@ -4,4 +4,6 @@
   [analysis-type]
   (= analysis-type "budget"))
 
+(def is-action (complement is-budget))
+
 (def currency-symbol "$")

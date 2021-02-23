@@ -124,7 +124,7 @@
             budget        (get-in config [:actions :budget])
             analysis-type (get-in config [:analysis-type])]
         (dialog {:open?       open?
-                 :acceptable? (and (or (= analysis-type "action")
+                 :acceptable? (and (or (common/is-action analysis-type)
                                        ((fnil pos? 0) (get-in @provider [:change :investment])))
                                    ((fnil pos? 0) (get-in @provider [:change :capacity])))
                  :title       (action->title action)
