@@ -236,6 +236,21 @@
  (fn [db [_]]
    (update db :list asdf/invalidate!)))
 
+(rf/reg-event-db
+ :scenarios/change-sort-column
+ in-scenarios
+ (fn [db [_ column]]
+   (assoc db
+          :sort-column column
+          :sort-order true)))
+
+(rf/reg-event-db
+ :scenarios/change-sort-order
+ in-scenarios
+ (fn [db [_ order]]
+   (assoc db
+          :sort-order order)))
+
 ;; ----------------------------------------------------------------------------
 ;; Providers in map
 

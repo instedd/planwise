@@ -55,24 +55,41 @@
   [num]
   (str (utils/pluralize num "scenario")))
 
+(defn- sort-scenarios
+  [scenarios key asc]
+  (cond
+    (nil? key) scenarios
+    :else (sort-by key (if asc #(< %1 %2) #(> %1 %2)) scenarios)))
+
+(defn- column-header-handler
+  [new-column old-column order]
+  (fn []
+    (if (or (nil? new-column)
+            (not (= new-column old-column)))
+      (rf/dispatch [:scenarios/change-sort-column new-column])
+      (rf/dispatch [:scenarios/change-sort-order (not order)]))))
+
 (defn- scenarios-list
   [scenarios current-project]
   (let [num (count scenarios)
-        analysis-type (get-in current-project [:config :analysis-type])]
+        analysis-type (get-in current-project [:config :analysis-type])
+        sort-column (rf/subscribe [:scenarios/sort-column])
+        sort-order (rf/subscribe [:scenarios/sort-order])
+        sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)]
     [:div.scenarios-content
      [:table
       [:caption (generate-title num)]
       [:thead
        [:tr
-        [:th]
-        [:th.col1 "Name"]
-        [:th.col2 (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage")]
-        [:th.col5 "Geographic Coverage"]
-        [:th.col6 "Population Under Coverage"]
-        [:th.col3 (if (common/is-budget analysis-type) "Investment" "Effort")]
+        [:th {:on-click (column-header-handler nil @sort-column @sort-order)}]
+        [:th.col1 {:on-click (column-header-handler :name @sort-column @sort-order)} "Name"]
+        [:th.col2 {:on-click (column-header-handler :demand-coverage @sort-column @sort-order)} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage")]
+        [:th.col5 {:on-click (column-header-handler :geo-coverage @sort-column @sort-order)} "Geographic Coverage"]
+        [:th.col6 {:on-click (column-header-handler :population-under-coverage @sort-column @sort-order)} "Population Under Coverage"]
+        [:th.col3 {:on-click (column-header-handler :effort @sort-column @sort-order)} (if (common/is-budget analysis-type) "Investment" "Effort")]
         [:th.col4 "Actions"]]]
       [:tbody
-       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (into scenarios (repeat (- 5 num) nil)))]]]))
+       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
 
 (defn- project-settings
   []

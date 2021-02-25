@@ -154,3 +154,13 @@
  :scenarios.current/population-under-coverage
  (fn [db]
    (get-in db [:scenarios :current-scenario :population-under-coverage] 0)))
+
+(rf/reg-sub
+ :scenarios/sort-column
+ (fn [db _]
+   (get-in db [:scenarios :sort-column])))
+
+(rf/reg-sub
+ :scenarios/sort-order
+ (fn [db _]
+   (get-in db [:scenarios :sort-order])))
