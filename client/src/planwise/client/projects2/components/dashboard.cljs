@@ -10,7 +10,8 @@
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
-            [planwise.client.projects2.components.settings :as settings]))
+            [planwise.client.projects2.components.settings :as settings]
+            [planwise.common :as common]))
 
 (defn- project-tabs
   [{:keys [active] :or {active :scenarios}}]
@@ -33,7 +34,7 @@
   (when (not (blank? input)) [m/ChipSet [m/Chip [m/ChipText input]]]))
 
 (defn- scenarios-list-item
-  [project-id {:keys [id name label state demand-coverage investment changeset-summary geo-coverage population-under-coverage] :as scenario} index]
+  [project-id {:keys [id name label state demand-coverage effort changeset-summary geo-coverage population-under-coverage] :as scenario} index analysis-type]
   (if id
     [:tr {:key id :on-click (fn [evt]
                               (if (or (.-shiftKey evt) (.-metaKey evt))
@@ -45,7 +46,7 @@
      [:td.col2 (utils/format-number demand-coverage)]
      [:td.col5 (str (utils/format-number (* geo-coverage 100)) "%")]
      [:td.col6 population-under-coverage]
-     [:td.col3 (utils/format-number investment)]
+     [:td.col3 (utils/format-effort effort analysis-type)]
      [:td.col4 changeset-summary]]
     [:tr {:key (str "tr-" index)}
      (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 7))]))
@@ -56,7 +57,8 @@
 
 (defn- scenarios-list
   [scenarios current-project]
-  (let [num (count scenarios)]
+  (let [num (count scenarios)
+        analysis-type (get-in current-project [:config :analysis-type])]
     [:div.scenarios-content
      [:table
       [:caption (generate-title num)]
@@ -67,10 +69,10 @@
         [:th.col2 (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage")]
         [:th.col5 "Geographic Coverage"]
         [:th.col6 "Population Under Coverage"]
-        [:th.col3 "Investment"]
+        [:th.col3 (if (common/is-budget analysis-type) "Investment" "Effort")]
         [:th.col4 "Actions"]]]
       [:tbody
-       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index)) (into scenarios (repeat (- 5 num) nil)))]]]))
+       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (into scenarios (repeat (- 5 num) nil)))]]]))
 
 (defn- project-settings
   []

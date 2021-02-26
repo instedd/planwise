@@ -258,8 +258,8 @@
          (str "of a total of " (utils/format-number @source-demand))]]])))
 
 (defn scenario-info
-  [view-state current-scenario unit-name]
-  (let [{:keys [name label investment demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario]
+  [view-state current-scenario unit-name analysis-type]
+  (let [{:keys [name label effort demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario]
     [:div
      [:div {:class-name "section"}
       [:h1 {:class-name "title-icon"} name]]
@@ -270,7 +270,7 @@
        [:small (str "Increase in " unit-name " coverage")]
        (cond
          (= "pending" state) "loading..."
-         :else               (str increase-coverage " (" (format-percentage increase-coverage source-demand) ")"))]
+         :else               (str (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")"))]
       [:p {:class-name "grey-text"}
        (cond
          (= "pending" state) "to a total of"
@@ -280,11 +280,11 @@
        [:small (str "Total " unit-name " under geographic coverage")]
        (cond
          (= "pending" state) "loading..."
-         :else  population-under-coverage)]]
+         :else  (utils/format-number population-under-coverage))]]
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
-       [:small "Investment required"]
-       "K " (utils/format-number investment)]]
+       [:small "Effort required"]
+       (utils/format-effort effort analysis-type)]]
      [:hr]]))
 
 (defn suggested-locations-list
@@ -304,7 +304,9 @@
         view-state                   (subscribe [:scenarios/view-state])
         source-demand                (subscribe [:scenarios.current/source-demand])
         population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])
-        providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])]
+        providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])
+        current-project              (subscribe [:projects2/current-project])
+        analysis-type                (get-in @current-project [:config :analysis-type])]
     (fn [{:keys [state] :as current-scenario} unit-name error]
       (let [computing-suggestions?   (or @computing-best-locations? @computing-best-improvements?)
             edit-button              [edit/create-new-action-component @view-state computing-suggestions?]]
@@ -315,7 +317,7 @@
            [suggested-locations-list @suggested-locations state]]
           [:<>
            [:div
-            [scenario-info @view-state current-scenario unit-name]
+            [scenario-info @view-state current-scenario unit-name analysis-type]
             [edit/create-new-action-component @view-state computing-suggestions?]
             (if computing-suggestions?
               [:div {:class-name "info-computing-best-location"}
@@ -326,7 +328,7 @@
              [raise-alert current-scenario error]
              [:<>
               [:div {:class-name "fade"}]
-              [changeset/listing-component @providers-from-changeset]
+              [changeset/listing-component @providers-from-changeset analysis-type]
               [:div {:class-name "fade inverted"}]])])))))
 
 (defn side-panel-view

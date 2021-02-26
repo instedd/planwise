@@ -1,5 +1,5 @@
 -- :name db-list-scenarios :?
-SELECT id, name, investment, "demand-coverage", "geo-coverage", "population-under-coverage", changeset, label, state
+SELECT id, name, effort, "demand-coverage", "geo-coverage", "population-under-coverage", changeset, label, state
 FROM scenarios
 WHERE "project-id" = :project-id
 ORDER BY
@@ -16,8 +16,8 @@ SET label = computed.label
 FROM (
   SELECT id,
     CASE
-    WHEN rank() OVER (ORDER BY "demand-coverage" desc, investment asc) = 1 THEN 'best'
-    WHEN rank() OVER (PARTITION BY investment ORDER BY "demand-coverage" desc) = 1 THEN 'optimal'
+    WHEN rank() OVER (ORDER BY "demand-coverage" desc, effort asc) = 1 THEN 'best'
+    WHEN rank() OVER (PARTITION BY effort ORDER BY "demand-coverage" desc) = 1 THEN 'optimal'
     ELSE NULL
     END as label
   FROM scenarios
@@ -41,15 +41,15 @@ AND scenarios."label" = 'initial';
 
 -- :name db-create-scenario! :<! :1
 INSERT INTO scenarios
-  (name, "project-id", investment, "demand-coverage", changeset, label, "state", "updated-at")
+  (name, "project-id", effort, "demand-coverage", changeset, label, "state", "updated-at")
 VALUES
-  (:name, :project-id, :investment, NULL, :changeset, :label, 'pending', NOW())
+  (:name, :project-id, :effort, NULL, :changeset, :label, 'pending', NOW())
 RETURNING id;
 
 -- :name db-update-scenario! :! :1
 UPDATE scenarios
   SET name = :name,
-      investment = :investment,
+      effort = :effort,
       "demand-coverage" = :demand-coverage,
        changeset = :changeset,
        label = :label,

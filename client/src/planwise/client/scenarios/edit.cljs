@@ -10,7 +10,8 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.routes :as routes]
             [clojure.string :as str]
-            [planwise.client.ui.rmwc :as m]))
+            [planwise.client.ui.rmwc :as m]
+            [planwise.common :as common]))
 
 (defn rename-scenario-dialog
   []
@@ -59,7 +60,7 @@
     (seq (:building-costs props))))
 
 (defn changeset-dialog-content
-  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props]
+  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props analysis-type]
   (let [new?      (and (= (:action change) "create-provider") (nil? required-capacity) (nil? free-capacity))
         increase? (=  (:action change) "increase-provider")
         idle?     (pos? free-capacity)]
@@ -88,24 +89,25 @@
                 (neg? required)       [common2/text-field {:label "Free capacity"
                                                            :read-only true
                                                            :value (utils/format-number (Math/abs required))}])))]
-     (let [remaining-budget           (- available-budget (:investment change))
-           suggested-cost             (suggest-investment change props)
-           show-suggested-cost        (or (configured-costs? props)
-                                          (:action-cost provider))]
-       [:div
-        [common2/numeric-field {:label         "Investment"
-                                :sub-type      :float
-                                :on-change     #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
-                                :invalid-input (< available-budget (:investment change))
-                                :value         (:investment change)}]
-        [common2/numeric-field {:label         "Available budget"
-                                :sub-type      :float
-                                :read-only     true
-                                :value        (if (pos? remaining-budget) remaining-budget 0)}]
-        (when show-suggested-cost
-          [:p.text-helper
-           {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] (min suggested-cost remaining-budget)])}
-           "Suggested investment according to project configuration: " (- suggested-cost (:investment change))])])]))
+     (if (common/is-budget analysis-type)
+       (let [remaining-budget           (- available-budget (:investment change))
+             suggested-cost             (suggest-investment change props)
+             show-suggested-cost        (or (configured-costs? props)
+                                            (:action-cost provider))]
+         [:div
+          [common2/numeric-field {:label         "Investment"
+                                  :sub-type      :float
+                                  :on-change     #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] %])
+                                  :invalid-input (< available-budget (:investment change))
+                                  :value         (:investment change)}]
+          [common2/numeric-field {:label         "Available budget"
+                                  :sub-type      :float
+                                  :read-only     true
+                                  :value        (if (pos? remaining-budget) remaining-budget 0)}]
+          (when show-suggested-cost
+            [:p.text-helper
+             {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] (min suggested-cost remaining-budget)])}
+             "Suggested investment according to project configuration: " (- suggested-cost (:investment change))])]))]))
 
 
 (defn- action->title
@@ -117,21 +119,24 @@
   (let [provider   (subscribe [:scenarios/changeset-dialog])
         view-state (subscribe [:scenarios/view-state])]
     (fn [{:keys [config] :as project} scenario]
-      (let [open? (= @view-state :changeset-dialog)
-            action (get-in @provider [:change :action])
-            budget (get-in config [:actions :budget])]
+      (let [open?         (= @view-state :changeset-dialog)
+            action        (get-in @provider [:change :action])
+            budget        (get-in config [:actions :budget])
+            analysis-type (get-in config [:analysis-type])]
         (dialog {:open?       open?
-                 :acceptable? (and ((fnil pos? 0) (get-in @provider [:change :investment]))
+                 :acceptable? (and (or (common/is-action analysis-type)
+                                       ((fnil pos? 0) (get-in @provider [:change :investment])))
                                    ((fnil pos? 0) (get-in @provider [:change :capacity])))
                  :title       (action->title action)
                  :content     (when open?
                                 (changeset-dialog-content
                                  (assoc @provider
-                                        :available-budget (- budget (:investment scenario)))
+                                        :available-budget (- budget (:effort scenario)))
                                  {:project-capacity (get-in config [:providers :capacity])
                                   :upgrade-budget   (get-in config [:actions :upgrade-budget])
                                   :building-costs   (sort-by :capacity (get-in config [:actions :build]))
-                                  :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))}))
+                                  :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))}
+                                 analysis-type))
                  :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])
                  :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
                  :cancel-fn   #(dispatch [:scenarios/cancel-dialog])})))))

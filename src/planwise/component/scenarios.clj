@@ -17,7 +17,8 @@
             [clojure.string :as str]
             [clojure.data.csv :as csv]
             [clojure.spec.alpha :as s]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [planwise.common :as common]))
 
 (timbre/refer-timbre)
 
@@ -147,7 +148,7 @@
         scenario-id (:id (db-create-scenario! (get-db store)
                                               {:name            "Initial"
                                                :project-id      project-id
-                                               :investment      0
+                                               :effort          0
                                                :demand-coverage nil
                                                :changeset       "[]"
                                                :label           "initial"}))]
@@ -213,14 +214,20 @@
     (assoc provider :id (str (java.util.UUID/randomUUID)))
     provider))
 
+(defn- calc-effort
+  [analysis-type changeset]
+  (if (common/is-budget analysis-type) (sum-investments changeset) (count changeset)))
+
 (defn create-scenario
   [store project {:keys [name changeset]}]
   (assert (s/valid? ::model/change-set changeset))
   (let [changeset (map create-provider-new-id-when-necessary changeset)
+        analysis-type (get-in project [:config :analysis-type])
+        effort (calc-effort analysis-type changeset)
         result (db-create-scenario! (get-db store)
                                     {:name name
                                      :project-id (:id project)
-                                     :investment (sum-investments changeset)
+                                     :effort effort
                                      :demand-coverage nil
                                      :changeset (pr-str changeset)
                                      :label nil})]
@@ -235,13 +242,15 @@
   ;; TODO assert scenario belongs to project
   (let [db (get-db store)
         project-id (:id project)
+        analysis-type (get-in project [:config :analysis-type])
+        effort (calc-effort analysis-type changeset)
         label (:label (get-scenario store id))]
     (assert (s/valid? ::model/change-set changeset))
     (assert (not= label "initial"))
     (db-update-scenario! db
                          {:name name
                           :id id
-                          :investment (sum-investments changeset)
+                          :effort effort
                           :demand-coverage nil
                           :changeset (pr-str changeset)
                           :label nil})
@@ -359,10 +368,14 @@
   [store {:keys [sources-set-id config] :as project} {:keys [raster sources-data] :as scenario}]
   (let [increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))
         upgrade-budget   (get-in config [:actions :upgrade-budget])
+        analysis-type    (get-in config [:analysis-type])
         costs-config?    (and (not (empty? increasing-costs)) (some? upgrade-budget))
         settings         (merge
-                          {:available-budget (- (get-in config [:actions :budget])
-                                                (get-current-investment (:changeset scenario)))}
+                          {:analysis-type analysis-type
+                           :available-budget (if (common/is-budget analysis-type)
+                                               (- (get-in config [:actions :budget])
+                                                  (get-current-investment (:changeset scenario)))
+                                               0)}
                           (if costs-config?
                             {:max-capacity     (:capacity (last increasing-costs))
                              :increasing-costs increasing-costs

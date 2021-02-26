@@ -10,7 +10,8 @@
             [planwise.util.files :as files]
             [planwise.util.geo :as geo]
             [clojure.set :refer [rename-keys]]
-            [taoensso.timbre :as timbre])
+            [taoensso.timbre :as timbre]
+            [planwise.common :as c])
   (:import [planwise.engine Algorithm]))
 
 (timbre/refer-timbre)
@@ -389,31 +390,57 @@
   (sort-by criteria > (conj coll value)))
 
 (defn get-information-from-demand
-  [all-providers id]
+  [all-providers id keys]
   (select-keys
    (first (filter #(= id (:id %)) all-providers))
-   [:required-capacity]))
+   keys))
+
+(defn get-provider-capacity-and-unsatisfied-demand
+  [{:keys [unsatisfied-demand required-capacity] :as provider} {:keys [max-capacity] :as settings}]
+  (let [action-capacity (if max-capacity
+                          (min required-capacity max-capacity)
+                          required-capacity)
+        action-cost     (get-increasing-cost
+                         {:action (if (:applicable? provider)
+                                    "increase-provider"
+                                    "upgrade-provider")
+                          :capacity action-capacity}
+                         settings)]
+    {:unsatisfied-demand unsatisfied-demand
+     :action-capacity    action-capacity
+     :action-cost        action-cost}))
+
+(defn- provider-with-data
+  [provider providers-data {:keys [analysis-type] :as settings}]
+  (let [budget? (c/is-budget analysis-type)]
+    (when-let [intervention ((if budget? get-provider-capacity-and-cost get-provider-capacity-and-unsatisfied-demand)
+                             (merge
+                              provider
+                              (get-information-from-demand
+                               providers-data
+                               (:id provider)
+                               (if budget? [:required-capacity] [:required-capacity :unsatisfied-demand])))
+                             settings)]
+      (merge
+       provider
+       intervention
+       (if budget?
+         (let [{:keys [action-capacity action-cost]} intervention]
+           {:ratio (if (not (zero? action-cost))
+                     (/ action-capacity action-cost)
+                     0)}))))))
 
 (defn get-sorted-providers-interventions
-  [engine project {:keys [providers-data changeset] :as scenario} settings]
+  [engine project {:keys [providers-data changeset] :as scenario} {:keys [analysis-type] :as settings}]
   (let [{:keys [engine-config config provider-set-id region-id coverage-algorithm]} project
-        providers-collection (common/providers-in-project (:providers-set engine) project)]
+        providers-collection (common/providers-in-project (:providers-set engine) project)
+        sort-key (if (c/is-budget analysis-type) :ratio :unsatisfied-demand)]
     (reduce
      (fn [suggestions provider]
        (insert-in-sorted-coll
         suggestions
-        (when-let [intervention (get-provider-capacity-and-cost
-                                 (merge provider
-                                        (get-information-from-demand providers-data (:id provider)))
-                                 settings)]
-          (merge
-           provider
-           intervention
-           (let [{:keys [action-capacity action-cost]} intervention]
-             {:ratio (if (not (zero? action-cost))
-                       (/ action-capacity action-cost)
-                       0)})))
-        :ratio))
+        (provider-with-data provider providers-data settings)
+        sort-key))
      []
      providers-collection)))
 
