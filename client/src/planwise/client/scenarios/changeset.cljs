@@ -46,6 +46,8 @@
      [m/Icon {} (get action-icons "create-provider")]
      [:div {:class-name "icon-list-text"}
       [:p {:class-name "strong"} (if name name (str "Suggestion " ranked))]
+      ; coverage is nil when requesting suggestions to improve existing provider
+      ; and it is not nil when requesting suggestions for new providers
       [:p {:class-name "grey-text"} (str "Required Capacity: " action-capacity
                                          (if (not (nil? coverage)) (str " Coverage: " coverage)))]]]]
    [:hr]])
