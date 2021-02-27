@@ -66,10 +66,10 @@
   (let [old-column (rf/subscribe [:scenarios/sort-column])
         old-order (rf/subscribe [:scenarios/sort-order])
         new-props (assoc props :on-click (fn [_]
-                                          (if (or (nil? field)
-                                                  (not (= field @old-column)))
-                                            (rf/dispatch [:scenarios/change-sort-column field])
-                                            (rf/dispatch [:scenarios/change-sort-order (not @old-order)]))))]
+                                           (if (or (nil? field)
+                                                   (not (= field @old-column)))
+                                             (rf/dispatch [:scenarios/change-sort-column field])
+                                             (rf/dispatch [:scenarios/change-sort-order (not @old-order)]))))]
     [:th new-props title]))
 
 (defn- scenarios-list
