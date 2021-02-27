@@ -61,13 +61,16 @@
     (nil? key) scenarios
     :else (sort-by key (if asc #(< %1 %2) #(> %1 %2)) scenarios)))
 
-(defn- column-header-handler
-  [new-column old-column order]
-  (fn []
-    (if (or (nil? new-column)
-            (not (= new-column old-column)))
-      (rf/dispatch [:scenarios/change-sort-column new-column])
-      (rf/dispatch [:scenarios/change-sort-order (not order)]))))
+(defn- scenarios-sortable-header
+  [props title field]
+  (let [old-column (rf/subscribe [:scenarios/sort-column])
+        old-order (rf/subscribe [:scenarios/sort-order])
+        new-props (assoc props :on-click (fn [_]
+                                          (if (or (nil? field)
+                                                  (not (= field @old-column)))
+                                            (rf/dispatch [:scenarios/change-sort-column field])
+                                            (rf/dispatch [:scenarios/change-sort-order (not @old-order)]))))]
+    [:th new-props title]))
 
 (defn- scenarios-list
   [scenarios current-project]
@@ -81,12 +84,12 @@
       [:caption (generate-title num)]
       [:thead
        [:tr
-        [:th {:on-click (column-header-handler nil @sort-column @sort-order)}]
-        [:th.col1 {:on-click (column-header-handler :name @sort-column @sort-order)} "Name"]
-        [:th.col2 {:on-click (column-header-handler :demand-coverage @sort-column @sort-order)} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage")]
-        [:th.col5 {:on-click (column-header-handler :geo-coverage @sort-column @sort-order)} "Geographic Coverage"]
-        [:th.col6 {:on-click (column-header-handler :population-under-coverage @sort-column @sort-order)} "Population Under Coverage"]
-        [:th.col3 {:on-click (column-header-handler :effort @sort-column @sort-order)} (if (common/is-budget analysis-type) "Investment" "Effort")]
+        [scenarios-sortable-header {} "" nil]
+        [scenarios-sortable-header {:class-name "col1"} "Name" :name]
+        [scenarios-sortable-header {:class-name "col2"} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage") :demand-coverage]
+        [scenarios-sortable-header {:class-name "col5"} "Geographic Coverage" :geo-coverage]
+        [scenarios-sortable-header {:class-name "col6"} "Population Under Coverage" :population-under-coverage]
+        [scenarios-sortable-header {:class-name "col3"} (if (common/is-budget analysis-type) "Investment" "Effort") :effort]
         [:th.col4 "Actions"]]]
       [:tbody
        (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
