@@ -11,7 +11,7 @@
    :list-scope               nil
    :list                     (asdf/new nil)
    :sort-column              nil
-   :sort-order               true})
+   :sort-order               nil})
 
 
 (defmulti new-action :action-name)

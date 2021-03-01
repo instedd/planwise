@@ -239,10 +239,10 @@
 (rf/reg-event-db
  :scenarios/change-sort-column
  in-scenarios
- (fn [db [_ column]]
+ (fn [db [_ column order]]
    (assoc db
           :sort-column column
-          :sort-order true)))
+          :sort-order order)))
 
 (rf/reg-event-db
  :scenarios/change-sort-order

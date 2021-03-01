@@ -36,41 +36,54 @@
 (defn- scenarios-list-item
   [project-id {:keys [id name label state demand-coverage effort changeset-summary geo-coverage population-under-coverage] :as scenario} index analysis-type]
   (if id
-    [:tr {:key id :on-click (fn [evt]
-                              (if (or (.-shiftKey evt) (.-metaKey evt))
-                                (.open js/window (routes/scenarios {:project-id project-id :id id}))
-                                (dispatch [:scenarios/load-scenario {:id id}])))}
-     [:td (cond (= state "pending") [create-chip state]
-                (not= label "initial") [create-chip label])]
-     [:td.col1 name]
-     [:td.col2 (utils/format-number demand-coverage)]
-     [:td.col5 (str (utils/format-number (* geo-coverage 100)) "%")]
-     [:td.col6 population-under-coverage]
-     [:td.col3 (utils/format-effort effort analysis-type)]
-     [:td.col4 changeset-summary]]
-    [:tr {:key (str "tr-" index)}
-     (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 7))]))
+    [:tr.rmwc-data-table__row {:key id :on-click (fn [evt]
+                                                   (if (or (.-shiftKey evt) (.-metaKey evt))
+                                                     (.open js/window (routes/scenarios {:project-id project-id :id id}))
+                                                     (dispatch [:scenarios/load-scenario {:id id}])))}
+     [:td.rmwc-data-table__cell (cond (= state "pending") [create-chip state]
+                                      (not= label "initial") [create-chip label])]
+     [:td.col1.rmwc-data-table__cell name]
+     [:td.col2.rmwc-data-table__cell (utils/format-number demand-coverage)]
+     [:td.col5.rmwc-data-table__cell (str (utils/format-number (* geo-coverage 100)) "%")]
+     [:td.col6.rmwc-data-table__cell population-under-coverage]
+     [:td.col3.rmwc-data-table__cell (utils/format-effort effort analysis-type)]
+     [:td.col4.rmwc-data-table__cell changeset-summary]]
+    [:tr.rmwc-data-table__row {:key (str "tr-" index)}
+     (map (fn [n] [:td.rmwc-data-table__cell {:key (str "td-" index "-" n)}]) (range 7))]))
 
 (defn- generate-title
   [num]
   (str (utils/pluralize num "scenario")))
 
 (defn- sort-scenarios
-  [scenarios key asc]
+  [scenarios key order]
   (cond
-    (nil? key) scenarios
-    :else (sort-by key (if asc #(< %1 %2) #(> %1 %2)) scenarios)))
+    (or (nil? key) (nil? order)) scenarios
+    :else (sort-by key (if (= order 1) #(< %1 %2) #(> %1 %2)) scenarios)))
+
+(defn- next-order
+  [order]
+  (cond
+    (nil? order) 1
+    (= order 1) -1
+    :else nil))
 
 (defn- scenarios-sortable-header
   [props title field]
-  (let [old-column (rf/subscribe [:scenarios/sort-column])
-        old-order (rf/subscribe [:scenarios/sort-order])
+  (let [column (rf/subscribe [:scenarios/sort-column])
+        order (rf/subscribe [:scenarios/sort-order])
         new-props (assoc props :on-click (fn [_]
-                                           (if (or (nil? field)
-                                                   (not (= field @old-column)))
-                                             (rf/dispatch [:scenarios/change-sort-column field])
-                                             (rf/dispatch [:scenarios/change-sort-order (not @old-order)]))))]
-    [:th new-props title]))
+                                           (if (= field @column)
+                                             (rf/dispatch [:scenarios/change-sort-order (next-order @order)])
+                                             (rf/dispatch [:scenarios/change-sort-column field 1])))
+                         :class-name (str "rmwc-data-table__cell rmwc-data-table__head-cell rmwc-data-table__head-cell--sortable rmwc-data-table__head-cell--sorted rmwc-data-table__head-cell--sorted-ascending " (:class-name props)))]
+    [:th new-props title
+     [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon
+      (cond
+        (or (nil? @order)
+            (not (= field @column))) "blank"
+        (= @order 1) "arrow_upward"
+        :else "arrow_downward")]]))
 
 (defn- scenarios-list
   [scenarios current-project]
@@ -79,19 +92,19 @@
         sort-column (rf/subscribe [:scenarios/sort-column])
         sort-order (rf/subscribe [:scenarios/sort-order])
         sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)]
-    [:div.scenarios-content
-     [:table
+    [:div.scenarios-content.rmwc-data-table
+     [:table.rmwc-data-table__content
       [:caption (generate-title num)]
-      [:thead
-       [:tr
-        [scenarios-sortable-header {} "" nil]
+      [:thead.rmwc-data-table__head
+       [:tr.rmwc-data-table__row
+        [:th.rmwc-data-table__cell.rmwc-data-table__head-cell ""]
         [scenarios-sortable-header {:class-name "col1"} "Name" :name]
         [scenarios-sortable-header {:class-name "col2"} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage") :demand-coverage]
         [scenarios-sortable-header {:class-name "col5"} "Geographic Coverage" :geo-coverage]
         [scenarios-sortable-header {:class-name "col6"} "Population Under Coverage" :population-under-coverage]
         [scenarios-sortable-header {:class-name "col3"} (if (common/is-budget analysis-type) "Investment" "Effort") :effort]
-        [:th.col4 "Actions"]]]
-      [:tbody
+        [:th.col4.rmwc-data-table__cell.rmwc-data-table__head-cell "Actions"]]]
+      [:tbody.rmwc-data-table__body
        (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
 
 (defn- project-settings
