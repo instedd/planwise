@@ -59,30 +59,30 @@
   [scenarios key order]
   (cond
     (or (nil? key) (nil? order)) scenarios
-    :else (sort-by key (if (= order 1) #(< %1 %2) #(> %1 %2)) scenarios)))
+    :else (sort-by key (if (= order :asc) #(< %1 %2) #(> %1 %2)) scenarios)))
 
 (defn- next-order
   [order]
   (cond
-    (nil? order) 1
-    (= order 1) -1
+    (nil? order) :asc
+    (= order :asc) :desc
     :else nil))
 
 (defn- scenarios-sortable-header
-  [props title field]
+  [{:keys [class-name align] :as props} title field]
   (let [column (rf/subscribe [:scenarios/sort-column])
         order (rf/subscribe [:scenarios/sort-order])
         new-props (assoc props :on-click (fn [_]
                                            (if (= field @column)
                                              (rf/dispatch [:scenarios/change-sort-order (next-order @order)])
-                                             (rf/dispatch [:scenarios/change-sort-column field 1])))
+                                             (rf/dispatch [:scenarios/change-sort-column field :asc])))
                          :class-name (str "rmwc-data-table__cell rmwc-data-table__head-cell rmwc-data-table__head-cell--sortable rmwc-data-table__head-cell--sorted rmwc-data-table__head-cell--sorted-ascending " (:class-name props)))]
     [:th new-props title
      [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon
       (cond
         (or (nil? @order)
             (not (= field @column))) "blank"
-        (= @order 1) "arrow_upward"
+        (= @order :asc) "arrow_upward"
         :else "arrow_downward")]]))
 
 (defn- scenarios-list
