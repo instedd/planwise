@@ -69,26 +69,25 @@
     :else nil))
 
 (defn- scenarios-sortable-header
-  [{:keys [class-name align sortable] :as props} title field]
+  [{:keys [align] :as props} title field]
   (let [column (rf/subscribe [:scenarios/sort-column])
         order (rf/subscribe [:scenarios/sort-order])
-        new-props (assoc (dissoc props :align :sortable)
-                         :on-click (fn [_]
-                                     (if (= field @column)
-                                       (rf/dispatch [:scenarios/change-sort-order (next-order @order)])
-                                       (rf/dispatch [:scenarios/change-sort-column field :asc])))
-                         :class [:rmwc-data-table__head-cell--sortable
-                                 :rmwc-data-table__cell
-                                 :rmwc-data-table__head-cell
-                                 (if (and (= field @column) (not (nil? @order))) :rmwc-data-table__head-cell--sorted)
-                                 (if (= @order :asc) :rmwc-data-table__head-cell--sorted-ascending)
-                                 (if (= @order :desc) :rmwc-data-table__head-cell--sorted-descending)
-                                 (if (= align :left) :rmwc-data-table__cell--align-start)
-                                 (if (= align :right) :rmwc-data-table__cell--align-end)
-                                 (:class-name props)])]
-    [:th new-props
-     [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
-     title]))
+        new-props (-> props
+                      (dissoc :class-name)
+                      (assoc :on-click (fn [_]
+                                         (if (= field @column)
+                                           (rf/dispatch [:scenarios/change-sort-order (next-order @order)])
+                                           (rf/dispatch [:scenarios/change-sort-column field :asc])))
+                             :class [:rmwc-data-table__head-cell--sortable
+                                     :rmwc-data-table__cell
+                                     :rmwc-data-table__head-cell
+                                     (if (and (= field @column) (not (nil? @order))) :rmwc-data-table__head-cell--sorted)
+                                     (if (= @order :asc) :rmwc-data-table__head-cell--sorted-ascending)
+                                     (if (= @order :desc) :rmwc-data-table__head-cell--sorted-descending)
+                                     (if (= align :left) :rmwc-data-table__cell--align-start)
+                                     (if (= align :right) :rmwc-data-table__cell--align-end)
+                                     (:class-name props)]))]
+    [ui/sortable-table-header new-props title]))
 
 (defn- scenarios-list
   [scenarios current-project]
