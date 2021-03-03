@@ -21,7 +21,8 @@
   {:sections [[ui/section {:href "/_design" :className "active"} "Design"]
               [ui/section {:href "/_design/map"} "Map"]
               [ui/section {:href "/_design/project"} "Project"]
-              [ui/section {:href "/_design/scenario"} "Scenario"]]
+              [ui/section {:href "/_design/scenario"} "Scenario"]
+              [ui/section {:href "/_design/list-scenarios"} "List scenarios"]]
    :account [ui/account {:name "John Doe" :on-signout #(println "Sign out")}]
    :title "Planwise"
    :action (ui/main-action {:icon "add" :on-click #(reset! dialog-open true)})
@@ -63,6 +64,61 @@
      [m/GridCell {:span 12}
       [:div.form-actions
        [m/Button {} "Continue"]]]]]])
+
+(defn scenarios-list-header
+ []
+ [:thead.rmwc-data-table__head
+  [:tr.rmwc-data-table__row.mdc-data-table__header-row
+   [:th]
+   [:th {:class [:col1
+                 :rmwc-data-table__head-cell--sortable
+                 :rmwc-data-table__cell
+                 :rmwc-data-table__head-cell
+                 :rmwc-data-table__head-cell--sorted
+                 :rmwc-data-table__head-cell--sorted-ascending
+                 :rmwc-data-table__cell--align-start]}
+    [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
+    "Name"]
+   [:th {:class [:col2
+                 :rmwc-data-table__head-cell--sortable
+                 :rmwc-data-table__cell
+                 :rmwc-data-table__head-cell
+                 :rmwc-data-table__head-cell--sorted
+                 :rmwc-data-table__head-cell--sorted-descending
+                 :rmwc-data-table__cell--align-end]}
+    [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
+    "Coverage"]
+   [:th {:class [:col5]} "Geographic Coverage"]
+   [:th {:class [:col6]} "Population Under Coverage"]
+   [:th {:class [:col3]} "Effort"]
+   [:th {:class [:col4]} "Actions"]]])
+
+
+(defn demo-list-scenarios
+  []
+  [ui/fixed-width (merge {:tabs [project-tabs {:active 1}]} nav-params)
+   [ui/panel {}
+    [:div.scenarios-content
+     [:table.mdc-data-table__table
+      [:caption "N Scenarios"]
+      [scenarios-list-header]
+      [:tbody
+       [:tr {:key 1}
+        [:td "initial"]
+        [:td.col1 "Name"]
+        [:td.col2 "200,000"]
+        [:td.col5 "10.10%"]
+        [:td.col6 "1,000,000"]
+        [:td.col3 "$ 100.000"]
+        [:td.col4 ""]]
+       [:tr {:key 2}
+        [:td "best"]
+        [:td.col1 "Name"]
+        [:td.col2 "300,000"]
+        [:td.col5 "15.10%"]
+        [:td.col6 "1,500,000"]
+        [:td.col3 "$ 200.000"]
+        [:td.col4 ""]]]]]]])
 
 (defn simple-map
   [opts]
@@ -180,4 +236,5 @@
           (= section :project) [demo-project]
           (= section :map) [demo-map]
           (= section :scenario) [demo-scenario]
+          (= section :list-scenarios) [demo-list-scenarios]
           :else [demo-list])))))
