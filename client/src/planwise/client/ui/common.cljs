@@ -91,3 +91,10 @@
     [:div.status {} status]
     (when action-button
       [:div.actions action-button])]])
+
+(defn sortable-table-header
+  [{:keys [align] :as props} title]
+  [:th (dissoc props :align)
+   (if (= align :left) title)
+   [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
+   (if (not= align :left) title)])
