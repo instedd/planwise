@@ -66,32 +66,32 @@
        [m/Button {} "Continue"]]]]]])
 
 (defn scenarios-list-header
- []
- [:thead.rmwc-data-table__head
-  [:tr.rmwc-data-table__row.mdc-data-table__header-row
-   [:th]
-   [:th {:class [:col1
-                 :rmwc-data-table__head-cell--sortable
-                 :rmwc-data-table__cell
-                 :rmwc-data-table__head-cell
-                 :rmwc-data-table__head-cell--sorted
-                 :rmwc-data-table__head-cell--sorted-ascending
-                 :rmwc-data-table__cell--align-start]}
-    [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
-    "Name"]
-   [:th {:class [:col2
-                 :rmwc-data-table__head-cell--sortable
-                 :rmwc-data-table__cell
-                 :rmwc-data-table__head-cell
-                 :rmwc-data-table__head-cell--sorted
-                 :rmwc-data-table__head-cell--sorted-descending
-                 :rmwc-data-table__cell--align-end]}
-    [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
-    "Coverage"]
-   [:th {:class [:col5]} "Geographic Coverage"]
-   [:th {:class [:col6]} "Population Under Coverage"]
-   [:th {:class [:col3]} "Effort"]
-   [:th {:class [:col4]} "Actions"]]])
+  []
+  [:thead.rmwc-data-table__head
+   [:tr.rmwc-data-table__row.mdc-data-table__header-row
+    [:th]
+    [:th {:class [:col1
+                  :rmwc-data-table__head-cell--sortable
+                  :rmwc-data-table__cell
+                  :rmwc-data-table__head-cell
+                  :rmwc-data-table__head-cell--sorted
+                  :rmwc-data-table__head-cell--sorted-ascending
+                  :rmwc-data-table__cell--align-start]}
+     [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
+     "Name"]
+    [:th {:class [:col2
+                  :rmwc-data-table__head-cell--sortable
+                  :rmwc-data-table__cell
+                  :rmwc-data-table__head-cell
+                  :rmwc-data-table__head-cell--sorted
+                  :rmwc-data-table__head-cell--sorted-descending
+                  :rmwc-data-table__cell--align-end]}
+     [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
+     "Coverage"]
+    [:th {:class [:col5]} "Geographic Coverage"]
+    [:th {:class [:col6]} "Population Under Coverage"]
+    [:th {:class [:col3]} "Effort"]
+    [:th {:class [:col4]} "Actions"]]])
 
 
 (defn demo-list-scenarios
