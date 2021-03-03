@@ -69,22 +69,26 @@
     :else nil))
 
 (defn- scenarios-sortable-header
-  [{:keys [class-name align] :as props} title field]
+  [{:keys [class-name align sortable] :as props} title field]
   (let [column (rf/subscribe [:scenarios/sort-column])
         order (rf/subscribe [:scenarios/sort-order])
-        new-props (assoc props
+        new-props (assoc (dissoc props :align :sortable)
                          :on-click (fn [_]
                                      (if (= field @column)
                                        (rf/dispatch [:scenarios/change-sort-order (next-order @order)])
                                        (rf/dispatch [:scenarios/change-sort-column field :asc])))
-                         :class-name (str (:class-name props)))]
-    [:th new-props title
-     [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon
-      (cond
-        (or (nil? @order)
-            (not (= field @column))) "blank"
-        (= @order :asc) "arrow_upward"
-        :else "arrow_downward")]]))
+                         :class [:rmwc-data-table__head-cell--sortable
+                                 :rmwc-data-table__cell
+                                 :rmwc-data-table__head-cell
+                                 (if (and (= field @column) (not (nil? @order))) :rmwc-data-table__head-cell--sorted)
+                                 (if (= @order :asc) :rmwc-data-table__head-cell--sorted-ascending)
+                                 (if (= @order :desc) :rmwc-data-table__head-cell--sorted-descending)
+                                 (if (= align :left) :rmwc-data-table__cell--align-start)
+                                 (if (= align :right) :rmwc-data-table__cell--align-end)
+                                 (:class-name props)])]
+    [:th new-props
+     [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]
+     title]))
 
 (defn- scenarios-list
   [scenarios current-project]
@@ -94,16 +98,16 @@
         sort-order (rf/subscribe [:scenarios/sort-order])
         sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)]
     [:div.scenarios-content
-     [:table
+     [:table.mdc-data-table__table
       [:caption (generate-title num)]
-      [:thead
-       [:tr
+      [:thead.rmwc-data-table__head
+       [:tr.rmwc-data-table__row.mdc-data-table__header-row
         [:th ""]
-        [scenarios-sortable-header {:class-name "col1"} "Name" :name]
-        [scenarios-sortable-header {:class-name "col2"} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage") :demand-coverage]
-        [scenarios-sortable-header {:class-name "col5"} "Geographic Coverage" :geo-coverage]
-        [scenarios-sortable-header {:class-name "col6"} "Population Under Coverage" :population-under-coverage]
-        [scenarios-sortable-header {:class-name "col3"} (if (common/is-budget analysis-type) "Investment" "Effort") :effort]
+        [scenarios-sortable-header {:class-name "col1" :align :left} "Name" :name]
+        [scenarios-sortable-header {:class-name "col2" :align :right} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage") :demand-coverage]
+        [scenarios-sortable-header {:class-name "col5" :align :right} "Geographic Coverage" :geo-coverage]
+        [scenarios-sortable-header {:class-name "col6" :align :right} "Population Under Coverage" :population-under-coverage]
+        [scenarios-sortable-header {:class-name "col3" :align :right} (if (common/is-budget analysis-type) "Investment" "Effort") :effort]
         [:th.col4 "Actions"]]]
       [:tbody
        (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
