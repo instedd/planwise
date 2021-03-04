@@ -614,6 +614,10 @@
   (let [scenarios-path (str "data/scenarios/" project-id)]
     (files/delete-files-recursively scenarios-path true)))
 
+(defn compute-scenario-statistics
+  [engine project scenario statistics]
+  (debug "Computing scenario" (:id scenario) "for project" (:id project)))
+
 (defrecord Engine [providers-set sources-set coverage regions runner file-store]
   boundary/Engine
   (compute-initial-scenario [engine project]
@@ -625,7 +629,9 @@
   (search-optimal-locations [engine project scenario]
     (suggestions/search-optimal-locations engine project scenario))
   (search-optimal-interventions [engine project scenario settings]
-    (suggestions/get-sorted-providers-interventions engine project scenario settings)))
+    (suggestions/get-sorted-providers-interventions engine project scenario settings))
+  (compute-scenario-statistics [engine project scenario statistics]
+    (compute-scenario-statistics engine project scenario statistics)))
 
 (defmethod ig/init-key :planwise.component/engine
   [_ config]

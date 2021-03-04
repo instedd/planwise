@@ -17,5 +17,8 @@
 
   (search-optimal-interventions
     [engine project scenario settings]
-    "Returns suggestions for either upgrading or increasing existing providers in project"))
+    "Returns suggestions for either upgrading or increasing existing providers in project")
 
+  (compute-scenario-statistics
+    [engine project scenario statistics]
+    "Computes statistics for a scenario"))
