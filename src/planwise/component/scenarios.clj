@@ -257,7 +257,7 @@
                   {:store store
                    :project project})
     (jr/queue-job (:jobrunner store)
-                  [::boundary/compute-scenario-statistics (:id result)]
+                  [::boundary/compute-scenario-stats (:id result)]
                   {:store store
                    :project project})
     result))
@@ -286,7 +286,7 @@
                   {:store store
                    :project project})
     (jr/queue-job (:jobrunner store)
-                  [::boundary/compute-scenario-statistics id]
+                  [::boundary/compute-scenario-stats id]
                   {:store store
                    :project project})))
 
@@ -416,23 +416,23 @@
            #(select-keys % show-keys)
            (engine/search-optimal-interventions (:engine store) project scenario settings)))))
 
-(defn compute-scenario-statistics
+(defn compute-scenario-stats
   [scenario-id {:keys [store project]}]
   (info "Computing scenario statistics" scenario-id)
   (try
     (let [engine           (:engine store)
           scenario         (get-scenario store scenario-id)
-          statistics       [:some :statistics]
-          result           (engine/compute-scenario-statistics engine project scenario statistics)]
+          params           [:some :params]
+          result           (engine/compute-scenario-stats engine project scenario params)]
       (info (str "Scenario " scenario-id " statistics computed")))
     (catch Exception e
       (error e "Scenario statistics computation failed"))))
 
-(defmethod jr/job-next-task ::boundary/compute-scenario-statistics
+(defmethod jr/job-next-task ::boundary/compute-scenario-stats
   [[_ scenario-id] state]
   (info "Job next task - Computing scenario statistics" scenario-id)
   (letfn [(task-fn []
-            (compute-scenario-statistics scenario-id state))]
+            (compute-scenario-stats scenario-id state))]
     {:task-id scenario-id
      :task-fn task-fn
      :state   nil}))

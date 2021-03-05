@@ -456,6 +456,10 @@
          :population-under-coverage population-under-coverage
          :providers-data (merge-providers initial-providers-data applied-changes providers-unsatisfied-demand)}))))
 
+(defn compute-scenario-stats-by-raster
+  [engine project scenario stats]
+  (debug "Computing scenario by raster" (:id scenario) "stats."))
+
 ;; POINT SCENARIOS
 ;; -------------------------------------------------------------------------------------------------
 
@@ -583,6 +587,9 @@
          :covered-demand     (- base-demand unsatisfied-demand)
          :providers-data     (merge-providers initial-providers-data applied-changes providers-unsatisfied-demand)}))))
 
+(defn compute-scenario-stats-by-point
+  [engine project scenario stats]
+  (debug "Computing scenario by point" (:id scenario) "stats."))
 
 ;; COMPONENT ENTRY POINTS
 ;; -------------------------------------------------------------------------------------------------
@@ -614,9 +621,16 @@
   (let [scenarios-path (str "data/scenarios/" project-id)]
     (files/delete-files-recursively scenarios-path true)))
 
-(defn compute-scenario-statistics
-  [engine project scenario statistics]
-  (debug "Computing scenario" (:id scenario) "for project" (:id project)))
+(defn compute-scenario-stats
+  [engine project scenario stats]
+  (debug "Computing scenario" (:id scenario) "for project" (:id project))
+  (case (:source-type project)
+    "points" (compute-scenario-stats-by-point engine project scenario stats)
+    "raster" (compute-scenario-stats-by-raster engine project scenario stats)
+    (throw (ex-info "Invalid source set type for scenario computation" {:project-id      (:id project)
+                                                                        :scenario-id     (:id scenario)
+                                                                        :source-set-id   (:source-set-id project)
+                                                                        :source-set-type (:source-type project)}))))
 
 (defrecord Engine [providers-set sources-set coverage regions runner file-store]
   boundary/Engine
@@ -630,8 +644,8 @@
     (suggestions/search-optimal-locations engine project scenario))
   (search-optimal-interventions [engine project scenario settings]
     (suggestions/get-sorted-providers-interventions engine project scenario settings))
-  (compute-scenario-statistics [engine project scenario statistics]
-    (compute-scenario-statistics engine project scenario statistics)))
+  (compute-scenario-stats [engine project scenario params]
+    (compute-scenario-stats engine project scenario params)))
 
 (defmethod ig/init-key :planwise.component/engine
   [_ config]
@@ -646,7 +660,7 @@
   (def coverage (:planwise.component/coverage integrant.repl.state/system))
 
   (defn new-engine []
-    (map->Engine {:providers-set providers-set :coverage coverage}))
+    (planwise.component.engine/map->Engine {:providers-set providers-set :coverage coverage}))
 
   (projects2/get-project projects2 5)
 
@@ -658,5 +672,11 @@
   (compute-scenario (new-engine) (projects2/get-project projects2 23) (planwise.boundary.scenarios/get-scenario scenarios 30))
 
   (compute-initial-scenario (dev/engine) (projects2/get-project (dev/projects2) 2))
+
+  (planwise.boundary.engine/compute-scenario-stats
+   (new-engine)
+   (planwise.boundary.projects2/get-project projects2 41)
+   (planwise.boundary.scenarios/get-scenario scenarios 83)
+   [:some :params])
 
   nil)
