@@ -77,6 +77,7 @@
                                                    (if (= field @column)
                                                      (rf/dispatch [:scenarios/change-sort-order (next-order @order)])
                                                      (rf/dispatch [:scenarios/change-sort-column field :asc])))
+                                       :sortable true
                                        :order @order
                                        :sorted (and (= field @column) (not (nil? @order)))}))]
     [ui/sortable-table-header new-props title]))
@@ -94,11 +95,11 @@
       [:thead.rmwc-data-table__head
        [:tr.rmwc-data-table__row.mdc-data-table__header-row
         [:th ""]
-        [scenarios-sortable-header {:class [:col1] :sortable true :align :left} "Name" :name]
-        [scenarios-sortable-header {:class [:col2] :sortable true :align :right} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage") :demand-coverage]
-        [scenarios-sortable-header {:class [:col5] :sortable true :align :right} "Geographic Coverage" :geo-coverage]
-        [scenarios-sortable-header {:class [:col6] :sortable true :align :right} "Population Under Coverage" :population-under-coverage]
-        [scenarios-sortable-header {:class [:col3] :sortable true :align :right} (if (common/is-budget analysis-type) "Investment" "Effort") :effort]
+        [scenarios-sortable-header {:class [:col1] :align :left} "Name" :name]
+        [scenarios-sortable-header {:class [:col2] :align :right} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage") :demand-coverage]
+        [scenarios-sortable-header {:class [:col5] :align :right} "Geographic Coverage" :geo-coverage]
+        [scenarios-sortable-header {:class [:col6] :align :right} "Population Under Coverage" :population-under-coverage]
+        [scenarios-sortable-header {:class [:col3] :align :right} (if (common/is-budget analysis-type) "Investment" "Effort") :effort]
         [:th.col4 "Actions"]]]
       [:tbody
        (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
