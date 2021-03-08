@@ -256,10 +256,6 @@
                   [::boundary/compute-scenario (:id result)]
                   {:store store
                    :project project})
-    (jr/queue-job (:jobrunner store)
-                  [::boundary/compute-scenario-stats (:id result)]
-                  {:store store
-                   :project project})
     result))
 
 (defn update-scenario
@@ -283,10 +279,6 @@
     (db-update-scenarios-label! db {:project-id project-id})
     (jr/queue-job (:jobrunner store)
                   [::boundary/compute-scenario id]
-                  {:store store
-                   :project project})
-    (jr/queue-job (:jobrunner store)
-                  [::boundary/compute-scenario-stats id]
                   {:store store
                    :project project})))
 
