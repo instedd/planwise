@@ -91,3 +91,21 @@
     [:div.status {} status]
     (when action-button
       [:div.actions action-button])]])
+
+(defn sortable-table-header
+  [{:keys [sorted order align class] :as props} title]
+  (let [new-props (-> props
+                      (dissoc :sorted :order :align :class)
+                      (assoc :class (concat class [:rmwc-data-table__cell
+                                                   :rmwc-data-table__head-cell
+                                                   :rmwc-data-table__head-cell--sortable
+                                                   (if sorted :rmwc-data-table__head-cell--sorted)
+                                                   (if (= order :asc) :rmwc-data-table__head-cell--sorted-ascending)
+                                                   (if (= order :desc) :rmwc-data-table__head-cell--sorted-descending)
+                                                   (if (= align :left) :rmwc-data-table__cell--align-start)
+                                                   (if (= align :right) :rmwc-data-table__cell--align-end)])))
+        icon [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]]
+    [:th new-props
+     (if (= align :right) icon)
+     title
+     (if (= align :left) icon)]))

@@ -9,7 +9,9 @@
    :selected-provider        nil
    :selected-suggestion      nil
    :list-scope               nil
-   :list                     (asdf/new nil)})
+   :list                     (asdf/new nil)
+   :sort-column              nil
+   :sort-order               nil})
 
 
 (defmulti new-action :action-name)

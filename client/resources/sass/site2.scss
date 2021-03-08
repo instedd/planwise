@@ -5,6 +5,7 @@ $small-font-size: 0.81em;
 
 @import "material-components-web/material-components-web";
 @import "@material/theme/_color-palette";
+@import "../css/data-table";
 
 @mixin link-color($color, $hover-color: darken($color, 20%), $active-color: lighten($color, 20%)) {
   text-decoration: none;
@@ -462,6 +463,7 @@ form.vertical, .fields-vertical {
         text-align: left;
         padding: 24px 20px;
         font-weight: 500;
+        font-size: 1rem;
       }
     }
 
