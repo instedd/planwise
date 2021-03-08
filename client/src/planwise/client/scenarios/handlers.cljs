@@ -237,18 +237,11 @@
    (update db :list asdf/invalidate!)))
 
 (rf/reg-event-db
- :scenarios/change-sort-column
+ :scenarios/change-sort-column-order
  in-scenarios
  (fn [db [_ column order]]
    (assoc db
           :sort-column column
-          :sort-order order)))
-
-(rf/reg-event-db
- :scenarios/change-sort-order
- in-scenarios
- (fn [db [_ order]]
-   (assoc db
           :sort-order order)))
 
 ;; ----------------------------------------------------------------------------

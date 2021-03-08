@@ -73,13 +73,10 @@
   (let [column (rf/subscribe [:scenarios/sort-column])
         order (rf/subscribe [:scenarios/sort-order])
         new-props (merge props
-                         (if sortable {:on-click (fn [_]
-                                                   (if (= field @column)
-                                                     (rf/dispatch [:scenarios/change-sort-order (next-order @order)])
-                                                     (rf/dispatch [:scenarios/change-sort-column field :asc])))
-                                       :sortable true
-                                       :order @order
-                                       :sorted (and (= field @column) (not (nil? @order)))}))]
+                         {:on-click #(rf/dispatch [:scenarios/change-sort-column-order field (if (= field @column) (next-order @order) :asc)])
+                          :sortable true
+                          :order @order
+                          :sorted (and (= field @column) (not (nil? @order)))})]
     [ui/sortable-table-header new-props title]))
 
 (defn- scenarios-list
