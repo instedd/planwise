@@ -74,7 +74,6 @@
         order (rf/subscribe [:scenarios/sort-order])
         new-props (merge props
                          {:on-click #(rf/dispatch [:scenarios/change-sort-column-order field (if (= field @column) (next-order @order) :asc)])
-                          :sortable true
                           :order @order
                           :sorted (and (= field @column) (not (nil? @order)))})]
     [ui/sortable-table-header new-props title]))

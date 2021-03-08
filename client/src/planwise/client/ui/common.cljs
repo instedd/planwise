@@ -93,19 +93,19 @@
       [:div.actions action-button])]])
 
 (defn sortable-table-header
-  [{:keys [sortable sorted order align class] :as props} title]
+  [{:keys [sorted order align class] :as props} title]
   (let [new-props (-> props
-                      (dissoc :sortable :sorted :order :align :class)
+                      (dissoc :sorted :order :align :class)
                       (assoc :class (concat class [:rmwc-data-table__cell
                                                    :rmwc-data-table__head-cell
-                                                   (if sortable :rmwc-data-table__head-cell--sortable)
+                                                   :rmwc-data-table__head-cell--sortable
                                                    (if sorted :rmwc-data-table__head-cell--sorted)
-                                                   (if (and sortable (= order :asc)) :rmwc-data-table__head-cell--sorted-ascending)
-                                                   (if (and sortable (= order :desc)) :rmwc-data-table__head-cell--sorted-descending)
+                                                   (if (= order :asc) :rmwc-data-table__head-cell--sorted-ascending)
+                                                   (if (= order :desc) :rmwc-data-table__head-cell--sorted-descending)
                                                    (if (= align :left) :rmwc-data-table__cell--align-start)
                                                    (if (= align :right) :rmwc-data-table__cell--align-end)])))
         icon [:i.rmwc-icon.material-icons.rmwc-data-table__sort-icon "arrow_upward"]]
     [:th new-props
-     (if (and sortable (= align :right)) icon)
+     (if (= align :right) icon)
      title
-     (if (and sortable (= align :left)) icon)]))
+     (if (= align :left) icon)]))

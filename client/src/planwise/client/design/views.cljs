@@ -70,19 +70,21 @@
   [:thead.rmwc-data-table__head
    [:tr.rmwc-data-table__row.mdc-data-table__header-row
     [:th]
-    [ui/sortable-table-header {:sortable true
-                               :sorted true
+    [ui/sortable-table-header {:sorted true
                                :align :left
                                :order :asc
                                :class [:col1]}
      "Name"]
-    [ui/sortable-table-header {:sortable true
-                               :sorted true
+    [ui/sortable-table-header {:sorted true
                                :align :right
                                :order :desc
                                :class [:col2]}
      "Coverage"]
-    [:th {:class [:col5]} "Geographic Coverage"]
+    [ui/sortable-table-header {:sorted false
+                               :align :right
+                               :order :asc
+                               :class [:col5]}
+     "Geographic Coverage"]
     [:th {:class [:col6]} "Population Under Coverage"]
     [:th {:class [:col3]} "Effort"]
     [:th {:class [:col4]} "Actions"]]])
