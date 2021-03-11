@@ -193,7 +193,7 @@
 (defn leaflet-update-layers [this]
   (let [state (reagent/state this)
         leaflet (:map state)
-        popupopen (:popupopen state)
+        block-layer-removal? (< (.now js/Date) (:popuptimeout state))
         new-children (reagent/children this)]
 
     ;; go through all the layers, old and new, and update the Leaflet objects
@@ -210,7 +210,7 @@
                             ;; trying to open a popup might trigger an update of the layers
                             ;; the update on some cases will cause the removal of a layer
                             ;; which will close the open popup
-                            (if (and popupopen (some? new-child) (= (first new-child) :marker-layer))
+                            (if (and block-layer-removal? (some? new-child) (= (first new-child) :marker-layer))
                               old-layer
                               (do
                                 (when old-layer (remove-layer-fn old-layer))
@@ -327,7 +327,7 @@
         initial-bbox (:initial-bbox props)]
 
     ;; keep track of popup state to prevent closing it by :component-did-update
-    (reagent/set-state this {:map leaflet :popupopen false})
+    (reagent/set-state this {:map leaflet :popuptimeout 0})
 
     (leaflet-update-controls this)
     (leaflet-update-layers this)
@@ -344,8 +344,9 @@
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))
 
-    (.on leaflet "popupopen" #(reagent/set-state this {:popupopen true}))
-    (.on leaflet "popupclose" #(reagent/set-state this {:popupopen false}))
+    ;; when the popup is open ignore changes to :marker-layer during 2 seconds
+    (.on leaflet "popupopen" #(reagent/set-state this {:popuptimeout (+ (.now js/Date) 2000)}))
+    (.on leaflet "popupclose" #(reagent/set-state this {:popuptimeout 0}))
 
     (when (some? initial-bbox)
       (let [[[s w] [n e]] initial-bbox
