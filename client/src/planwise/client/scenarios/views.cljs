@@ -96,7 +96,7 @@
   (let [new-provider? (= state :new-provider)]
     (crate/html
      [:div
-      [:p (str "Suggestion:" (:ranked suggestion))]
+      [:p (str "Suggested provider " (:ranked suggestion))]
       [:p (str "Needed capacity : " (utils/format-number (:action-capacity suggestion)))]
       (when new-provider?
         [:p (str "Expected demand to satisfy : " (utils/format-number (:coverage suggestion)))])
