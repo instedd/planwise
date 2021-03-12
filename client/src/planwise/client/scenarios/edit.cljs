@@ -65,10 +65,12 @@
         increase? (=  (:action change) "increase-provider")
         idle?     (pos? free-capacity)]
     [:div
-     [common2/text-field  {:label "Name"
-                           :read-only true
-                           :focus-extra-class "show-static-text"
-                           :value name}]
+     ;; Allow name change when creating a new provider
+     [common2/text-field (merge {:label "Name"
+                                 :value (if new? (:name change) name)}
+                                (when-not new? {:read-only true
+                                                :focus-extra-class "show-static-text"})
+                                (when new? {:on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :name] (-> % .-target .-value)])}))]
      [:div
       (when increase?
         [common2/text-field {:label "Original capacity"
