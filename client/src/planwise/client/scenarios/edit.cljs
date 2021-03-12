@@ -59,10 +59,14 @@
                              (seq (:increasing-costs props)))
     (seq (:building-costs props))))
 
+(defn new-provider?
+  [{:keys [change required-capacity free-capacity]}]
+  (and (= (:action change) "create-provider") (nil? required-capacity) (nil? free-capacity)))
+
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props analysis-type]
-  (let [new?      (and (= (:action change) "create-provider") (nil? required-capacity) (nil? free-capacity))
-        increase? (=  (:action change) "increase-provider")
+  (let [new?      (new-provider? provider)
+        increase? (= (:action change) "increase-provider")
         idle?     (pos? free-capacity)]
     [:div
      ;; Allow name change when creating a new provider
@@ -124,24 +128,26 @@
       (let [open?         (= @view-state :changeset-dialog)
             action        (get-in @provider [:change :action])
             budget        (get-in config [:actions :budget])
-            analysis-type (get-in config [:analysis-type])]
-        (dialog {:open?       open?
-                 :acceptable? (and (or (common/is-action analysis-type)
-                                       ((fnil pos? 0) (get-in @provider [:change :investment])))
-                                   ((fnil pos? 0) (get-in @provider [:change :capacity])))
-                 :title       (action->title action)
-                 :content     (when open?
-                                (changeset-dialog-content
-                                 (assoc @provider
-                                        :available-budget (- budget (:effort scenario)))
-                                 {:project-capacity (get-in config [:providers :capacity])
-                                  :upgrade-budget   (get-in config [:actions :upgrade-budget])
-                                  :building-costs   (sort-by :capacity (get-in config [:actions :build]))
-                                  :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))}
-                                 analysis-type))
-                 :delete-fn   #(dispatch [:scenarios/delete-change (:id @provider)])
-                 :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
-                 :cancel-fn   #(dispatch [:scenarios/cancel-dialog])})))))
+            analysis-type (get-in config [:analysis-type])
+            new?          (new-provider? @provider)]
+        (dialog (merge {:open?       open?
+                        :acceptable? (and (or (common/is-action analysis-type)
+                                              ((fnil pos? 0) (get-in @provider [:change :investment])))
+                                          ((fnil pos? 0) (get-in @provider [:change :capacity])))
+                        :title       (action->title action)
+                        :content     (when open?
+                                       (changeset-dialog-content
+                                        (assoc @provider
+                                               :available-budget (- budget (:effort scenario)))
+                                        {:project-capacity (get-in config [:providers :capacity])
+                                         :upgrade-budget   (get-in config [:actions :upgrade-budget])
+                                         :building-costs   (sort-by :capacity (get-in config [:actions :build]))
+                                         :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))}
+                                        analysis-type))
+                        :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
+                        :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}
+                       (when-not new?
+                         {:delete-fn #(dispatch [:scenarios/delete-change (:id @provider)])})))))))
 
 (defn new-provider-button
   [state computing?]
