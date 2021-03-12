@@ -69,7 +69,7 @@
          (cond
            (some? change)        "Edit provider"
            (not matches-filters) "Upgrade provider"
-           :else                "Increase provider")
+           :else                 "Increase provider")
          #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
 
 (defn action-for-suggestion
@@ -96,7 +96,7 @@
   (let [new-provider? (= state :new-provider)]
     (crate/html
      [:div
-      [:p (str "Suggested provider " (:ranked suggestion))]
+      [:h3 (str "Suggested provider " (:ranked suggestion))]
       [:p (str "Needed capacity : " (utils/format-number (:action-capacity suggestion)))]
       (when new-provider?
         [:p (str "Expected demand to satisfy : " (utils/format-number (:coverage suggestion)))])
