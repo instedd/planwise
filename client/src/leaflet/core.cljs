@@ -42,7 +42,7 @@
                    (conj new-objects new-object)
                    (rest new-decls))))))))
 
-(defn create-marker [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+(defn create-marker [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn open-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
   (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
         attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         icon      (if icon-fn
@@ -59,6 +59,8 @@
       (do
         (.on marker "mouseout" #(when-not (.isPopupOpen marker) (mouseout-fn point)))
         (.on marker "popupclose" #(mouseout-fn point))))
+    (if (and open-fn (open-fn point))
+      (js/setTimeout #(.openPopup marker) 100))
     marker))
 
 (defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
@@ -345,7 +347,7 @@
     (.on leaflet "click" (leaflet-click-handler this))
 
     ;; when the popup is open ignore changes to :marker-layer during 2 seconds
-    (.on leaflet "popupopen" #(reagent/set-state this {:popuptimeout (+ (.now js/Date) 2000)}))
+    (.on leaflet "popupopen" #(reagent/set-state this {:popuptimeout (+ (.now js/Date) 500)}))
     (.on leaflet "popupclose" #(reagent/set-state this {:popuptimeout 0}))
 
     (when (some? initial-bbox)

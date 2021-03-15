@@ -149,6 +149,10 @@
   {:className
    (if (= suggestion selected-suggestion) "leaflet-suggestion-icon selected" "leaflet-suggestion-icon")})
 
+(defn- suggestion-openpopup-fn
+  [suggestion selected-suggestion]
+  (= suggestion selected-suggestion))
+
 (defn simple-map
   [{:keys [bbox] :as project} scenario state error read-only?]
   (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
@@ -192,8 +196,9 @@
             suggestions-layer       [:marker-layer {:points suggested-locations
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
-                                                    :popup-fn   #(show-suggested-provider % state)
+                                                    :popup-fn #(show-suggested-provider % state)
                                                     :icon-fn #(suggestion-icon-fn % selected-suggestion)
+                                                    :open-fn #(suggestion-openpopup-fn % selected-suggestion)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
                                                     :mouseout-fn  (fn [suggestion]
