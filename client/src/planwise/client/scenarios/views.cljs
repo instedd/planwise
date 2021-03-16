@@ -70,7 +70,7 @@
            (some? change)        "Edit provider"
            (not matches-filters) "Upgrade provider"
            :else                 "Increase provider")
-         #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
+         #(dispatch [:scenarios/edit-change (assoc provider :change change*) nil])))])))
 
 (defn action-for-suggestion
   [suggestion state]
@@ -81,11 +81,11 @@
                         :else                         :upgrade)]
     (case action
       :create   {:label    "Create new provider"
-                 :callback #(dispatch [:scenarios/create-provider (:location suggestion)])}
+                 :callback #(dispatch [:scenarios/create-provider (:location suggestion) state])}
       :upgrade  {:label    "Upgrade provider"
-                 :callback #(dispatch [:scenarios/edit-change suggestion])}
+                 :callback #(dispatch [:scenarios/edit-change suggestion state])}
       :increase {:label    "Increase provider"
-                 :callback #(dispatch [:scenarios/edit-change suggestion])})))
+                 :callback #(dispatch [:scenarios/edit-change suggestion state])})))
 
 (defn- button-for-suggestion
   [{:keys [label callback]}]
@@ -161,7 +161,7 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon} nil]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
         unit-name           (get-in project [:config :demographics :unit-name])]
