@@ -13,18 +13,13 @@
   [old-objects
    old-decls
    new-decls
-   dispose-fn!
-   create-fn!]
+   update-fn!]
 
   (letfn [(replace-object [old-object old-decl new-decl]
             (if (= old-decl new-decl)
               ;; declarations are identical, nothing to replace
               old-object
-              (do
-                ;; dispose of the old object and return the new one
-                (when old-object (dispose-fn! old-object))
-                (let [new-object (when new-decl (create-fn! new-decl))]
-                  new-object))))]
+              (update-fn! old-object new-decl)))]
 
     (loop [old-objects old-objects
            old-decls old-decls
@@ -198,6 +193,7 @@
 (defn leaflet-update-layers [this]
   (let [state (reagent/state this)
         leaflet (:map state)
+        block-layer-removal? (< (.now js/Date) (:popuptimeout state))
         new-children (reagent/children this)]
 
     ;; go through all the layers, old and new, and update the Leaflet objects
@@ -210,11 +206,19 @@
                             (let [new-layer (leaflet-layer new-child)]
                               (when new-layer (.addLayer leaflet new-layer))
                               new-layer))
+          update-layer-fn (fn [old-layer new-child]
+                            ;; trying to open a popup might trigger an update of the layers
+                            ;; the update on some cases will cause the removal of a layer
+                            ;; which will close the open popup
+                            (if (and block-layer-removal? (some? new-child) (= (first new-child) :marker-layer))
+                              old-layer
+                              (do
+                                (when old-layer (remove-layer-fn old-layer))
+                                (when new-child (create-layer-fn new-child)))))
           new-layers (update-objects-from-decls old-layers
                                                 old-children
                                                 new-children
-                                                remove-layer-fn
-                                                create-layer-fn)]
+                                                update-layer-fn)]
 
       ;; check if the children marked as fit-bounds have changed
       ;; if so, update the leaflet map viewport
@@ -286,11 +290,13 @@
                               (let [new-control (leaflet-create-control new-control-def props)]
                                 (.addControl leaflet new-control)
                                 new-control))
+          update-control-fn (fn [old-control new-control-def]
+                              (when old-control (destroy-control-fn old-control))
+                              (when new-control-def (create-control-fn new-control-def)))
           new-controls (update-objects-from-decls old-controls
                                                   old-control-defs
                                                   new-control-defs
-                                                  destroy-control-fn
-                                                  create-control-fn)]
+                                                  update-control-fn)]
       (reagent/set-state this {:current-controls new-control-defs
                                :controls new-controls}))))
 
@@ -320,7 +326,8 @@
                            :minZoom (:min-zoom props)})
         initial-bbox (:initial-bbox props)]
 
-    (reagent/set-state this {:map leaflet})
+    ;; keep track of popup state to prevent closing it by :component-did-update
+    (reagent/set-state this {:map leaflet :popuptimeout 0})
 
     (leaflet-update-controls this)
     (leaflet-update-layers this)
@@ -336,6 +343,10 @@
 
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))
+
+    ;; when the popup is open ignore changes to :marker-layer during 2 seconds
+    (.on leaflet "popupopen" #(reagent/set-state this {:popuptimeout (+ (.now js/Date) 2000)}))
+    (.on leaflet "popupclose" #(reagent/set-state this {:popuptimeout 0}))
 
     (when (some? initial-bbox)
       (let [[[s w] [n e]] initial-bbox
