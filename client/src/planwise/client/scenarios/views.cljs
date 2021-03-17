@@ -293,12 +293,12 @@
      [:hr]]))
 
 (defn suggested-locations-list
-  [suggested-locations state]
+  [suggested-locations state action-fn]
   [:div
    [:div {:class-name "section"}
     [:h1 {:class-name "title-icon"} "Suggestion list"]
     [:div {:class-name "fade"}]
-    [changeset/suggestion-listing-component suggested-locations]
+    [changeset/suggestion-listing-component suggested-locations action-fn]
     [:div {:class-name "fade inverted"}]]])
 
 (defn side-panel-view-2
@@ -319,7 +319,7 @@
           [:<>
            [:div {:class-name "suggestion-list"}
             [edit/create-new-action-component @view-state computing-suggestions?]]
-           [suggested-locations-list @suggested-locations state]]
+           [suggested-locations-list @suggested-locations state #(action-for-suggestion % @view-state)]]
           [:<>
            [:div
             [scenario-info @view-state current-scenario unit-name analysis-type]
