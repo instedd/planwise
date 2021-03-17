@@ -92,18 +92,17 @@
   (popup-connected-button label callback))
 
 (defn- show-suggested-provider
-  [suggestion state]
+  [{:keys [action-capacity action-cost coverage name ranked] :as suggestion} state]
   (let [new-provider? (= state :new-provider)]
     (crate/html
      [:div
-      [:h3 (str "Suggested provider " (:ranked suggestion))]
-      [:p (str "Needed capacity : " (utils/format-number (:action-capacity suggestion)))]
+      [:h3 (if name name (str "Suggested provider " ranked))]
+      [:p (str "Needed capacity : " (utils/format-number action-capacity))]
       (when new-provider?
-        [:p (str "Expected demand to satisfy : " (utils/format-number (:coverage suggestion)))])
+        [:p (str "Expected demand to satisfy : " (utils/format-number coverage))])
       (when-not new-provider?
-        (let [action-cost (:action-cost suggestion)]
-          (when action-cost
-            [:p (str "Investment according to project configuration : " (utils/format-number action-cost))])))
+        (when action-cost
+          [:p (str "Investment according to project configuration : " (utils/format-number action-cost))]))
       (button-for-suggestion (action-for-suggestion suggestion state))])))
 
 (defn- show-source
@@ -148,10 +147,6 @@
   [suggestion selected-suggestion]
   {:className
    (if (= suggestion selected-suggestion) "leaflet-suggestion-icon selected" "leaflet-suggestion-icon")})
-
-(defn- suggestion-openpopup-fn
-  [suggestion selected-suggestion]
-  (= suggestion selected-suggestion))
 
 (defn simple-map
   [{:keys [bbox] :as project} scenario state error read-only?]
@@ -198,7 +193,7 @@
                                                     :lon-fn #(get-in % [:location :lon])
                                                     :popup-fn #(show-suggested-provider % state)
                                                     :icon-fn #(suggestion-icon-fn % selected-suggestion)
-                                                    :open-fn #(suggestion-openpopup-fn % selected-suggestion)
+                                                    :open-fn #(= % selected-suggestion)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
                                                     :mouseout-fn  (fn [suggestion]
