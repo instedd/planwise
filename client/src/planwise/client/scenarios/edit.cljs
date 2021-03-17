@@ -67,14 +67,15 @@
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props analysis-type]
   (let [new?      (new-provider? provider)
         increase? (= (:action change) "increase-provider")
+        create?   (= (:action change) "create-provider")
         idle?     (pos? free-capacity)]
     [:div
      ;; Allow name change when creating a new provider
      [common2/text-field (merge {:label "Name"
-                                 :value (if new? (:name change) name)}
-                                (when-not new? {:read-only true
-                                                :focus-extra-class "show-static-text"})
-                                (when new? {:on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :name] (-> % .-target .-value)])}))]
+                                 :value (if create? (:name change) name)}
+                                (when-not create? {:read-only true
+                                                   :focus-extra-class "show-static-text"})
+                                (when create? {:on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :name] (-> % .-target .-value)])}))]
      [:div
       (when increase?
         [common2/text-field {:label "Original capacity"
