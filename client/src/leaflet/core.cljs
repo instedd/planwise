@@ -60,7 +60,9 @@
         (.on marker "mouseout" #(when-not (.isPopupOpen marker) (mouseout-fn point)))
         (.on marker "popupclose" #(mouseout-fn point))))
     (if (and open-fn (open-fn point))
-      (js/setTimeout #(.openPopup marker) 100))
+      ;; Delay popup until the layer was created
+      (when-not (.isPopupOpen marker)
+        (js/setTimeout #(.openPopup marker) 100)))
     marker))
 
 (defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
