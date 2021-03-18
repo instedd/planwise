@@ -348,7 +348,7 @@
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))
 
-    ;; when the popup is open ignore changes to :marker-layer during 2 seconds
+    ;; when the popup is open ignore changes to :marker-layer during 0.5 seconds
     (.on leaflet "popupopen" #(reagent/set-state this {:popuptimeout (+ (.now js/Date) 500)}))
     (.on leaflet "popupclose" #(reagent/set-state this {:popuptimeout 0}))
 
