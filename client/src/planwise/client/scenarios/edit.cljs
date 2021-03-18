@@ -73,9 +73,10 @@
      ;; Allow name change when creating a new provider
      [common2/text-field (merge {:label "Name"
                                  :value (if create? (:name change) name)}
-                                (when-not create? {:read-only true
-                                                   :focus-extra-class "show-static-text"})
-                                (when create? {:on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :name] (-> % .-target .-value)])}))]
+                                (if create?
+                                  {:on-change #(dispatch [:scenarios/save-key [:changeset-dialog :change :name] (-> % .-target .-value)])}
+                                  {:read-only true
+                                   :focus-extra-class "show-static-text"}))]
      [:div
       (when increase?
         [common2/text-field {:label "Original capacity"
