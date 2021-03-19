@@ -61,7 +61,8 @@
 
 (defn new-provider?
   [{:keys [change required-capacity free-capacity]}]
-  (and (= (:action change) "create-provider") (nil? required-capacity) (nil? free-capacity)))
+  ;; TODO: Review other cases where required-capacity is nil (nil? required-capacity)
+  (and (= (:action change) "create-provider") (nil? free-capacity)))
 
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props analysis-type]
@@ -85,7 +86,8 @@
       [common2/numeric-field {:label (if increase? "Extra capacity" "Capacity")
                               :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
                               :value (:capacity change)}]
-      (when-not new?
+      ;; TODO: Review the condition to show required capacity
+      (when (or (some? capacity) (some? required-capacity))
         (let [extra-capacity          (:capacity change)
               total-required-capacity (if idle? (- capacity free-capacity) (+ capacity required-capacity))
               required                (Math/ceil (- total-required-capacity initial-capacity extra-capacity))]

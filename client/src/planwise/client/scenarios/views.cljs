@@ -81,7 +81,7 @@
                         :else                         :upgrade)]
     (case action
       :create   {:label    "Create new provider"
-                 :callback #(dispatch [:scenarios/create-provider (:location suggestion) state])}
+                 :callback #(dispatch [:scenarios/create-provider (:location suggestion) suggestion state])}
       :upgrade  {:label    "Upgrade provider"
                  :callback #(dispatch [:scenarios/edit-change suggestion state])}
       :increase {:label    "Increase provider"
@@ -156,7 +156,7 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon} nil]))
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon} nil nil]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
         unit-name           (get-in project [:config :demographics :unit-name])]

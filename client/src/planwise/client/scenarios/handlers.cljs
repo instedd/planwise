@@ -161,13 +161,20 @@
       (let [vals (mapv (fn [p] (->> (:name p) (re-find #"\d+") int)) new-providers)]
         (str "New provider " (inc (apply max vals)))))))
 
+(defn apply-suggestion
+  [provider suggestion]
+  (if (some? suggestion)
+    (assoc provider :required-capacity (:action-capacity suggestion))
+    provider))
+
 (rf/reg-event-fx
  :scenarios/create-provider
  in-scenarios
- (fn [{:keys [db]} [_ location cancel-next-state]]
+ (fn [{:keys [db]} [_ location suggestion cancel-next-state]]
    (let [{:keys [current-scenario]} db
          new-action   (db/new-action {:location location
                                       :name (new-provider-name (:changeset current-scenario))} :create)
+         new-provider (apply-suggestion (db/new-provider-from-change new-action) suggestion)
          updated-scenario (dissoc current-scenario
                                   :computing-best-locations)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
@@ -175,7 +182,7 @@
       :db   (assoc  db
                     :current-scenario  updated-scenario
                     :cancel-next-state cancel-next-state)
-      :dispatch [:scenarios/open-changeset-dialog (db/new-provider-from-change new-action)]})))
+      :dispatch [:scenarios/open-changeset-dialog new-provider]})))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
