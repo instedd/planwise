@@ -53,7 +53,7 @@
 
 (defn- generate-title
   [num]
-  (str (utils/pluralize num "scenario")))
+  (str (common/pluralize num "scenario")))
 
 (defn- sort-scenarios
   [scenarios key order]
