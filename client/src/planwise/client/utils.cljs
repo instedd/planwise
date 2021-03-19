@@ -49,13 +49,6 @@
     (or (nil? value) (= value "")) fallback
     :else value))
 
-(defn pluralize
-  ([count singular]
-   (pluralize count singular (str singular "s")))
-  ([count singular plural]
-   (let [noun (if (= 1 count) singular plural)]
-     (str count " " noun))))
-
 (defn format-number
   ([number]
    (when number

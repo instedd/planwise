@@ -9,7 +9,8 @@
             [planwise.client.ui.rmwc :as m]
             [planwise.client.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
-            [planwise.client.components.common :as common]))
+            [planwise.client.components.common :as components]
+            [planwise.common :as common]))
 
 ;; ----------------------------------------------------------------------------
 ;; providers-set list
@@ -18,7 +19,7 @@
   []
   [:div.empty-list-container
    [:div.empty-list
-    [common/icon :box]
+    [components/icon :box]
     [:p "You have no providers yet"]]])
 
 
@@ -37,10 +38,10 @@
         no-projects? (zero? depending-projects)]
     [ui/card (merge {:title name}
                     (if no-projects?
-                      {:subtitles [(utils/pluralize provider-count "provider")]
+                      {:subtitles [(common/pluralize provider-count "provider")]
                        :action-button [m/Button {:on-click #(rf/dispatch [:providers-set/confirm-delete-provider-set provider-set])} "Delete"]}
-                      {:subtitles [(utils/pluralize provider-count "provider")
-                                   (str (utils/pluralize depending-projects "project") " depends on this set")]}))]))
+                      {:subtitles [(common/pluralize provider-count "provider")
+                                   (str (common/pluralize depending-projects "project") " depends on this set")]}))]))
 
 (defn providers-set-list
   [providers-set]

@@ -3,9 +3,10 @@
             [planwise.client.utils :as utils]
             [planwise.client.ui.common :as ui]
             [planwise.client.components.common2 :as common2]
-            [planwise.client.components.common :as common]
+            [planwise.client.components.common :as components]
             [planwise.client.routes :as routes]
-            [planwise.client.modal.modal :as modal]))
+            [planwise.client.modal.modal :as modal]
+            [planwise.common :as common]))
 
 ;; ----------------------------------------------------------------------------
 ;; Sources list
@@ -14,7 +15,7 @@
   []
   [:div.empty-list-container
    [:div.empty-list
-    [common/icon :box]
+    [components/icon :box]
     [:p "You have no sources yet"]]])
 
 (defn source-card
@@ -22,7 +23,7 @@
   (let [name (:name source)
         sources-count (:sources-count source 0)]
     [ui/card {:title name
-              :subtitle (utils/pluralize sources-count "source")}]))
+              :subtitle (common/pluralize sources-count "source")}]))
 
 (defn list-view
   [sources]
