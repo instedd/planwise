@@ -61,11 +61,10 @@
 
 (defn new-provider?
   [{:keys [change required-capacity free-capacity]}]
-  ;; TODO: Review other cases where required-capacity is nil (nil? required-capacity)
   (and (= (:action change) "create-provider") (nil? free-capacity)))
 
 (defn changeset-dialog-content
-  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props analysis-type]
+  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props budget?]
   (let [new?      (new-provider? provider)
         increase? (= (:action change) "increase-provider")
         create?   (= (:action change) "create-provider")
@@ -86,7 +85,8 @@
       [common2/numeric-field {:label (if increase? "Extra capacity" "Capacity")
                               :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
                               :value (:capacity change)}]
-      ;; TODO: Review the condition to show required capacity
+      ;; Show unsatisfied demand when data is available from an existing provider or
+      ;; when creating a provider from a suggestion
       (when (or (some? capacity) (some? required-capacity))
         (let [extra-capacity          (:capacity change)
               total-required-capacity (if idle? (- capacity free-capacity) (+ capacity required-capacity))
@@ -99,7 +99,7 @@
                 (neg? required)       [common2/text-field {:label "Free capacity"
                                                            :read-only true
                                                            :value (utils/format-number (Math/abs required))}])))]
-     (if (common/is-budget analysis-type)
+     (if budget?
        (let [remaining-budget           (- available-budget (:investment change))
              suggested-cost             (suggest-investment change props)
              show-suggested-cost        (or (configured-costs? props)
@@ -132,22 +132,24 @@
       (let [open?         (= @view-state :changeset-dialog)
             action        (get-in @provider [:change :action])
             budget        (get-in config [:actions :budget])
-            analysis-type (get-in config [:analysis-type])
+            budget?       (common/is-budget (get-in config [:analysis-type]))
             new?          (new-provider? @provider)]
         (dialog (merge {:open?       open?
-                        :acceptable? (and (or (common/is-action analysis-type)
+                        :acceptable? (and (or (not budget?)
                                               ((fnil pos? 0) (get-in @provider [:change :investment])))
                                           ((fnil pos? 0) (get-in @provider [:change :capacity])))
                         :title       (action->title action)
                         :content     (when open?
                                        (changeset-dialog-content
-                                        (assoc @provider
-                                               :available-budget (- budget (:effort scenario)))
+                                        (if budget?
+                                          (assoc @provider
+                                                 :available-budget (- budget (:effort scenario)))
+                                          @provider)
                                         {:project-capacity (get-in config [:providers :capacity])
                                          :upgrade-budget   (get-in config [:actions :upgrade-budget])
                                          :building-costs   (sort-by :capacity (get-in config [:actions :build]))
                                          :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))}
-                                        analysis-type))
+                                        budget?))
                         :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
                         :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}
                        (when-not new?

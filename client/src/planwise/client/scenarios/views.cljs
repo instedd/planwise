@@ -70,7 +70,7 @@
            (some? change)        "Edit provider"
            (not matches-filters) "Upgrade provider"
            :else                 "Increase provider")
-         #(dispatch [:scenarios/edit-change (assoc provider :change change*) nil])))])))
+         #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
 
 (defn action-for-suggestion
   [suggestion state]
@@ -156,7 +156,7 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon} nil nil]))
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
         unit-name           (get-in project [:config :demographics :unit-name])]
