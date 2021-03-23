@@ -135,7 +135,7 @@
  (fn [db [_]]
    (let [cancel-next-state (get-in db [:cancel-next-state])]
      (assoc db
-            :view-state        (if (some? cancel-next-state) cancel-next-state :current-scenario)
+            :view-state        (or cancel-next-state :current-scenario)
             :cancel-next-state nil
             :changeset-dialog  nil
             :rename-dialog     nil))))
@@ -373,10 +373,10 @@
 (rf/reg-event-db
  :scenarios/edit-change
  in-scenarios
- (fn [db [_ change cancel-next-state]]
+ (fn [db [_ change]]
    (assoc db
           :view-state        :changeset-dialog
-          :cancel-next-state cancel-next-state
+          :cancel-next-state (:view-state db)
           :changeset-dialog  change)))
 
 (rf/reg-event-fx

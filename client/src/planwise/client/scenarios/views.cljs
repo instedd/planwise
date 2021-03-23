@@ -70,7 +70,7 @@
            (some? change)        "Edit provider"
            (not matches-filters) "Upgrade provider"
            :else                 "Increase provider")
-         #(dispatch [:scenarios/edit-change (assoc provider :change change*) nil])))])))
+         #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
 
 (defn action-for-suggestion
   [suggestion state]
@@ -83,9 +83,9 @@
       :create   {:label    "Create new provider"
                  :callback #(dispatch [:scenarios/create-provider (:location suggestion) state])}
       :upgrade  {:label    "Upgrade provider"
-                 :callback #(dispatch [:scenarios/edit-change suggestion state])}
+                 :callback #(dispatch [:scenarios/edit-change suggestion])}
       :increase {:label    "Increase provider"
-                 :callback #(dispatch [:scenarios/edit-change suggestion state])})))
+                 :callback #(dispatch [:scenarios/edit-change suggestion])})))
 
 (defn- button-for-suggestion
   [{:keys [label callback]}]
@@ -188,12 +188,11 @@
                                                      :lon-fn (fn [polygon-point] (:lon polygon-point))
                                                      :color :orange
                                                      :stroke true}]
-            suggestions-layer       [:marker-layer {:points suggested-locations
+            suggestions-layer       [:marker-layer {:points (map #(assoc % :open? (= % selected-suggestion)) suggested-locations)
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
                                                     :popup-fn #(show-suggested-provider % state)
                                                     :icon-fn #(suggestion-icon-fn % selected-suggestion)
-                                                    :open-fn #(= % selected-suggestion)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
                                                     :mouseout-fn  (fn [suggestion]

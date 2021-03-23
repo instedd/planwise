@@ -42,7 +42,7 @@
                    (conj new-objects new-object)
                    (rest new-decls))))))))
 
-(defn create-marker [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn open-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+(defn create-marker [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
   (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
         attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
         icon      (if icon-fn
@@ -59,7 +59,7 @@
       (do
         (.on marker "mouseout" #(when-not (.isPopupOpen marker) (mouseout-fn point)))
         (.on marker "popupclose" #(mouseout-fn point))))
-    (if (and open-fn (open-fn point))
+    (if (:open? point)
       ;; Delay popup until the layer was created
       (when-not (.isPopupOpen marker)
         (js/setTimeout #(.openPopup marker) 100)))
