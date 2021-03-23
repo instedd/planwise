@@ -3,9 +3,9 @@
             [re-frame.utils :as c]
             [planwise.client.config :as config]))
 
-(def emerald-mapbox-mapid "juanedi.177h17ed")
-(def bright-mapbox-mapid "juanedi/cis9iabkx002c31lg5awqyqa8")
-(def mapbox-access-token "pk.eyJ1IjoianVhbmVkaSIsImEiOiJFeVIxckN3In0.502Q6lu_hD-Bu3r9a0jUyw")
+(def emerald-mapbox-mapid "instedd/ckml2dykm4cl917o08mxux07b")
+(def bright-mapbox-mapid "instedd/ckml2dykm4cl917o08mxux07b")
+(def mapbox-access-token "pk.eyJ1IjoiaW5zdGVkZCIsImEiOiJja21ndHVrZ3cwMHQ5Mm9rZDgwaThkd3JoIn0.Kr3h9hO93IimCigXfYrBmw")
 
 (def map-preview-position
   [-12.211180191503985 21.4453125])
@@ -18,16 +18,20 @@
   "population")
 
 (def default-base-tile-layer
-  [:tile-layer {:url "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
+  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}?access_token={accessToken}"
                 :attribution "&copy; Mapbox"
                 :maxZoom 18
+                :zoomOffset -1
+                :tileSize 512
                 :mapid emerald-mapbox-mapid
                 :accessToken mapbox-access-token}])
 
 (def bright-base-tile-layer
-  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/256/{z}/{x}/{y}?access_token={accessToken}"
+  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}?access_token={accessToken}"
                 :attribution "&copy; Mapbox"
                 :maxZoom 18
+                :zoomOffset -1
+                :tileSize 512
                 :mapid bright-mapbox-mapid
                 :accessToken mapbox-access-token}])
 
