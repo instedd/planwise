@@ -37,12 +37,12 @@
         providers)])
 
 (defn- suggestion-row
-  [props {:keys [coverage action-capacity ranked name] :as suggestion} action-fn]
+  [props {:keys [coverage action-capacity ranked name] :as suggestion}]
   [:div
    [:div {:class-name    "section changeset-row"
           :on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
           :on-mouse-out  #(dispatch [:scenarios.map/unselect-suggestion suggestion])
-          :on-click      (:callback (action-fn suggestion))}
+          :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])}
     [:div {:class-name "icon-list"}
      [m/Icon {} (get action-icons "create-provider")]
      [:div {:class-name "icon-list-text"}
@@ -54,7 +54,7 @@
    [:hr]])
 
 (defn- suggestion-listing-component
-  [suggestions action-fn]
+  [suggestions]
   [:div {:class-name "scroll-list suggestion-list"}
-   (map (fn [suggestion] [suggestion-row {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))} suggestion action-fn])
+   (map (fn [suggestion] [suggestion-row {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))} suggestion])
         suggestions)])

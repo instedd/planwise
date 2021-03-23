@@ -72,7 +72,7 @@
            :else                 "Increase provider")
          #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
 
-(defn action-for-suggestion
+(defn label-for-suggestion
   [suggestion state]
   (let [new-provider? (= state :new-provider)
         action        (cond
@@ -80,16 +80,13 @@
                         (:matches-filters suggestion) :increase
                         :else                         :upgrade)]
     (case action
-      :create   {:label    "Create new provider"
-                 :callback #(dispatch [:scenarios/create-provider (:location suggestion) state])}
-      :upgrade  {:label    "Upgrade provider"
-                 :callback #(dispatch [:scenarios/edit-change suggestion])}
-      :increase {:label    "Increase provider"
-                 :callback #(dispatch [:scenarios/edit-change suggestion])})))
+      :create   "Create new provider"
+      :upgrade  "Upgrade provider"
+      :increase "Increase provider")))
 
 (defn- button-for-suggestion
-  [{:keys [label callback]}]
-  (popup-connected-button label callback))
+  [label suggestion]
+  (popup-connected-button label #(dispatch [:scenarios/edit-suggestion suggestion])))
 
 (defn- show-suggested-provider
   [{:keys [action-capacity action-cost coverage name ranked] :as suggestion} state]
@@ -103,7 +100,7 @@
       (when-not new-provider?
         (when action-cost
           [:p (str "Investment according to project configuration : " (utils/format-number action-cost))]))
-      (button-for-suggestion (action-for-suggestion suggestion state))])))
+      (button-for-suggestion (label-for-suggestion suggestion state) suggestion)])))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
@@ -156,7 +153,7 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon} nil]))
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
         unit-name           (get-in project [:config :demographics :unit-name])]
@@ -287,12 +284,12 @@
      [:hr]]))
 
 (defn suggested-locations-list
-  [suggested-locations state action-fn]
+  [suggested-locations state]
   [:div
    [:div {:class-name "section"}
     [:h1 {:class-name "title-icon"} "Suggestion list"]
     [:div {:class-name "fade"}]
-    [changeset/suggestion-listing-component suggested-locations action-fn]
+    [changeset/suggestion-listing-component suggested-locations]
     [:div {:class-name "fade inverted"}]]])
 
 (defn side-panel-view-2
@@ -313,7 +310,7 @@
           [:<>
            [:div {:class-name "suggestion-list"}
             [edit/create-new-action-component @view-state computing-suggestions?]]
-           [suggested-locations-list @suggested-locations state #(action-for-suggestion % @view-state)]]
+           [suggested-locations-list @suggested-locations state]]
           [:<>
            [:div
             [scenario-info @view-state current-scenario unit-name analysis-type]

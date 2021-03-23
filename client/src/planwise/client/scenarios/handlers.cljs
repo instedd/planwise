@@ -164,7 +164,7 @@
 (rf/reg-event-fx
  :scenarios/create-provider
  in-scenarios
- (fn [{:keys [db]} [_ location cancel-next-state]]
+ (fn [{:keys [db]} [_ location]]
    (let [{:keys [current-scenario]} db
          new-action   (db/new-action {:location location
                                       :name (new-provider-name (:changeset current-scenario))} :create)
@@ -174,7 +174,7 @@
                    :on-success [:scenarios/update-demand-information])
       :db   (assoc  db
                     :current-scenario  updated-scenario
-                    :cancel-next-state cancel-next-state)
+                    :cancel-next-state (:view-state db))
       :dispatch [:scenarios/open-changeset-dialog (db/new-provider-from-change new-action)]})))
 
 (rf/reg-event-db
@@ -440,3 +440,12 @@
              (assoc-in [:view-state] :current-scenario)
              (assoc-in [:current-scenario :computing-best-improvements :state] nil)))
        db))))
+
+(rf/reg-event-fx
+ :scenarios/edit-suggestion
+ in-scenarios
+ (fn [{:keys [db]} [_ suggestion]]
+   (let [{:keys [view-state]} db]
+     {:dispatch (if (= view-state :new-provider)
+                  [:scenarios/create-provider (:location suggestion)]
+                  [:scenarios/edit-change suggestion])})))
