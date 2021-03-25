@@ -36,20 +36,7 @@
   (let [changeset (filter #(-> % :initial nil?) changeset)]
     (apply +' (map :investment changeset))))
 
-(defn- count-actions
-  [changeset]
-  (reduce
-   (fn [counters change]
-     (letfn [(action-to-index [action]
-               (case action
-                 "create-provider" 0
-                 "upgrade-provider" 1
-                 "increase-provider" 2))]
-       (update-in counters [(action-to-index (:action change))] inc)))
-   [0 0 0]
-   changeset))
-
-(def action-labels ["create" "upgrade" "increase capacity for"])
+(def action-labels {"create-provider" "create" "upgrade-provider" "upgrade" "increase-provider" "increase capacity for"})
 
 (defn- build-summary
   [counters]
@@ -59,15 +46,20 @@
             ([x y] (str x " and " y))
             ([x y z] (str x ", " y " and " z)))
           (build-action
-            [count label]
-            (if (> count 0) (str label " " (common/pluralize count "provider"))))]
-    (str/capitalize (apply format-summary (filter some? (map build-action counters action-labels))))))
+            [[action label] counters]
+            (let [count (get counters action 0)]
+              (if (pos? count) (str label " " (common/pluralize count "provider")))))]
+    (->> action-labels
+         (map #(build-action % counters))
+         (filter some?)
+         (apply format-summary)
+         (str/capitalize))))
 
 (defn- build-changeset-summary
   [changeset]
   (let [changeset (filter #(-> % :initial nil?) changeset)
-        counters (count-actions changeset)
-        providers (apply + counters)
+        counters (frequencies (map :action changeset))
+        providers (count changeset)
         capacity (apply +' (mapv :capacity changeset))
         summary (build-summary counters)]
     (if (zero? providers) ""
