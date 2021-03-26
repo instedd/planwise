@@ -18,7 +18,7 @@
   "population")
 
 (def default-base-tile-layer
-  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}?access_token={accessToken}"
+  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}"
                 :attribution "&copy; Mapbox"
                 :maxZoom 18
                 :zoomOffset -1
@@ -27,7 +27,7 @@
                 :accessToken mapbox-access-token}])
 
 (def bright-base-tile-layer
-  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}?access_token={accessToken}"
+  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}"
                 :attribution "&copy; Mapbox"
                 :maxZoom 18
                 :zoomOffset -1
@@ -69,7 +69,6 @@
 
 (defn bbox-center [[[s w] [n e]]]
   [(/ (+ s n) 2.0) (/ (+ e w) 2.0)])
-
 
 (def fullmap-region-geo
   "{
