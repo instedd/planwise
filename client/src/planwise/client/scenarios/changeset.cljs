@@ -39,13 +39,14 @@
 (defn- suggestion-row
   [props {:keys [coverage action-capacity ranked name] :as suggestion}]
   [:div
-   [:div {:class-name "section changeset-row"
+   [:div {:class-name    "section changeset-row"
           :on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
-          :on-mouse-out  #(dispatch [:scenarios.map/unselect-suggestion suggestion])}
+          :on-mouse-out  #(dispatch [:scenarios.map/unselect-suggestion suggestion])
+          :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])}
     [:div {:class-name "icon-list"}
      [m/Icon {} (get action-icons "create-provider")]
      [:div {:class-name "icon-list-text"}
-      [:p {:class-name "strong"} (if name name (str "Suggestion " ranked))]
+      [:p {:class-name "strong"} (if name name (str "Suggested provider " ranked))]
       ; coverage is nil when requesting suggestions to improve existing provider
       ; and it is not nil when requesting suggestions for new providers
       [:p {:class-name "grey-text"} (str "Required Capacity: " action-capacity

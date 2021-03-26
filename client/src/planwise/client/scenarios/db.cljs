@@ -3,6 +3,7 @@
 
 (def initial-db
   {:view-state :current-scenario
+   :cancel-next-state        nil
    :rename-dialog            nil
    :current-scenario         nil
    :changeset-dialog         nil

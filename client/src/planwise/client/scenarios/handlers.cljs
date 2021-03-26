@@ -133,10 +133,12 @@
  :scenarios/cancel-dialog
  in-scenarios
  (fn [db [_]]
-   (assoc db
-          :view-state :current-scenario
-          :changeset-dialog nil
-          :rename-dialog nil)))
+   (let [cancel-next-state (get-in db [:cancel-next-state])]
+     (assoc db
+            :view-state        (or cancel-next-state :current-scenario)
+            :cancel-next-state nil
+            :changeset-dialog  nil
+            :rename-dialog     nil))))
 
 (rf/reg-event-fx
  :scenarios/accept-rename-dialog
@@ -162,16 +164,19 @@
 (rf/reg-event-fx
  :scenarios/create-provider
  in-scenarios
- (fn [{:keys [db]} [_ location]]
+ (fn [{:keys [db]} [_ location suggestion]]
    (let [{:keys [current-scenario]} db
          new-action   (db/new-action {:location location
                                       :name (new-provider-name (:changeset current-scenario))} :create)
+         new-provider (merge (db/new-provider-from-change new-action) suggestion)
          updated-scenario (dissoc current-scenario
-                                  :suggested-locations :computing-best-locations)]
+                                  :computing-best-locations)]
      {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                    :on-success [:scenarios/update-demand-information])
-      :db   (assoc  db :current-scenario updated-scenario)
-      :dispatch [:scenarios/open-changeset-dialog (db/new-provider-from-change new-action)]})))
+      :db   (assoc  db
+                    :current-scenario  updated-scenario
+                    :cancel-next-state (:view-state db))
+      :dispatch [:scenarios/open-changeset-dialog new-provider]})))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
@@ -198,6 +203,7 @@
                    :on-success [:scenarios/update-demand-information])
       :db   (-> db
                 (assoc-in [:current-scenario] updated-scenario)
+                (assoc-in [:cancel-next-state] nil)
                 (assoc-in [:view-state] :current-scenario))})))
 
 (rf/reg-event-fx
@@ -370,8 +376,9 @@
  in-scenarios
  (fn [db [_ change]]
    (assoc db
-          :view-state       :changeset-dialog
-          :changeset-dialog change)))
+          :view-state        :changeset-dialog
+          :cancel-next-state (:view-state db)
+          :changeset-dialog  change)))
 
 (rf/reg-event-fx
  :scenarios/delete-current-scenario
@@ -434,3 +441,12 @@
              (assoc-in [:view-state] :current-scenario)
              (assoc-in [:current-scenario :computing-best-improvements :state] nil)))
        db))))
+
+(rf/reg-event-fx
+ :scenarios/edit-suggestion
+ in-scenarios
+ (fn [{:keys [db]} [_ suggestion]]
+   (let [{:keys [view-state]} db]
+     {:dispatch (if (= view-state :new-provider)
+                  [:scenarios/create-provider (:location suggestion) {:required-capacity (:action-capacity suggestion)}]
+                  [:scenarios/edit-change suggestion])})))

@@ -69,10 +69,10 @@
          (cond
            (some? change)        "Edit provider"
            (not matches-filters) "Upgrade provider"
-           :else                "Increase provider")
+           :else                 "Increase provider")
          #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
 
-(defn action-for-suggestion
+(defn label-for-suggestion
   [suggestion state]
   (let [new-provider? (= state :new-provider)
         action        (cond
@@ -80,31 +80,27 @@
                         (:matches-filters suggestion) :increase
                         :else                         :upgrade)]
     (case action
-      :create   {:label    "Create new provider"
-                 :callback #(dispatch [:scenarios/create-provider (:location suggestion)])}
-      :upgrade  {:label    "Upgrade provider"
-                 :callback #(dispatch [:scenarios/edit-change suggestion])}
-      :increase {:label    "Increase provider"
-                 :callback #(dispatch [:scenarios/edit-change suggestion])})))
+      :create   "Create new provider"
+      :upgrade  "Upgrade provider"
+      :increase "Increase provider")))
 
 (defn- button-for-suggestion
-  [{:keys [label callback]}]
-  (popup-connected-button label callback))
+  [label suggestion]
+  (popup-connected-button label #(dispatch [:scenarios/edit-suggestion suggestion])))
 
 (defn- show-suggested-provider
-  [suggestion state]
+  [{:keys [action-capacity action-cost coverage name ranked] :as suggestion} state]
   (let [new-provider? (= state :new-provider)]
     (crate/html
      [:div
-      [:p (str "Suggestion:" (:ranked suggestion))]
-      [:p (str "Needed capacity : " (utils/format-number (:action-capacity suggestion)))]
+      [:h3 (if name name (str "Suggested provider " ranked))]
+      [:p (str "Needed capacity : " (utils/format-number action-capacity))]
       (when new-provider?
-        [:p (str "Expected demand to satisfy : " (utils/format-number (:coverage suggestion)))])
+        [:p (str "Expected demand to satisfy : " (utils/format-number coverage))])
       (when-not new-provider?
-        (let [action-cost (:action-cost suggestion)]
-          (when action-cost
-            [:p (str "Investment according to project configuration : " (utils/format-number action-cost))])))
-      (button-for-suggestion (action-for-suggestion suggestion state))])))
+        (when action-cost
+          [:p (str "Investment according to project configuration : " (utils/format-number action-cost))]))
+      (button-for-suggestion (label-for-suggestion suggestion state) suggestion)])))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
@@ -189,10 +185,10 @@
                                                      :lon-fn (fn [polygon-point] (:lon polygon-point))
                                                      :color :orange
                                                      :stroke true}]
-            suggestions-layer       [:marker-layer {:points suggested-locations
+            suggestions-layer       [:marker-layer {:points (map #(assoc % :open? (= % selected-suggestion)) suggested-locations)
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
-                                                    :popup-fn   #(show-suggested-provider % state)
+                                                    :popup-fn #(show-suggested-provider % state)
                                                     :icon-fn #(suggestion-icon-fn % selected-suggestion)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
