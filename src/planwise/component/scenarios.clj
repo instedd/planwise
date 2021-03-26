@@ -36,13 +36,34 @@
   (let [changeset (filter #(-> % :initial nil?) changeset)]
     (apply +' (map :investment changeset))))
 
+(def action-labels {"create-provider" "create" "upgrade-provider" "upgrade" "increase-provider" "increase capacity for"})
+
+(defn- build-summary
+  [counters]
+  (letfn [(format-summary
+            ([] "")
+            ([x] x)
+            ([x y] (str x " and " y))
+            ([x y z] (str x ", " y " and " z)))
+          (build-action
+            [[action label] counters]
+            (let [count (get counters action 0)]
+              (if (pos? count) (str label " " (common/pluralize count "provider")))))]
+    (->> action-labels
+         (map #(build-action % counters))
+         (filter some?)
+         (apply format-summary)
+         (str/capitalize))))
+
 (defn- build-changeset-summary
   [changeset]
-  (let [providers (count (filter #(-> % :initial nil?) changeset))
+  (let [changeset (filter #(-> % :initial nil?) changeset)
+        counters (frequencies (map :action changeset))
+        providers (count changeset)
         capacity (apply +' (mapv :capacity changeset))
-        u (if (= providers 1) "provider" "providers")]
+        summary (build-summary counters)]
     (if (zero? providers) ""
-        (format "Create %d %s. Increase overall capacity in %d." providers u capacity))))
+        (format "%s. Increase overall capacity in %d." summary capacity))))
 
 (defn- map->csv
   [coll fields]
