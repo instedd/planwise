@@ -60,7 +60,7 @@
   ([geojson]
    (static-image geojson map-preview-size))
   ([geojson options]
-   (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/%dx%d.png?access_token=%s"
+   (fmt/format "https://api.mapbox.com/styles/v1/%s/static/geojson(%s)/auto/%dx%d@2x?access_token=%s"
                emerald-mapbox-mapid
                (js/encodeURIComponent geojson)
                (:width options)
