@@ -3,8 +3,7 @@
             [re-frame.utils :as c]
             [planwise.client.config :as config]))
 
-(def emerald-mapbox-mapid "instedd/ckml2dykm4cl917o08mxux07b")
-(def bright-mapbox-mapid "instedd/ckml2dykm4cl917o08mxux07b")
+(def mapbox-mapid "instedd/ckml2dykm4cl917o08mxux07b")
 (def mapbox-access-token "pk.eyJ1IjoiaW5zdGVkZCIsImEiOiJja21ndHVrZ3cwMHQ5Mm9rZDgwaThkd3JoIn0.Kr3h9hO93IimCigXfYrBmw")
 
 (def map-preview-position
@@ -23,16 +22,7 @@
                 :maxZoom 18
                 :zoomOffset -1
                 :tileSize 512
-                :mapid emerald-mapbox-mapid
-                :accessToken mapbox-access-token}])
-
-(def bright-base-tile-layer
-  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}"
-                :attribution "&copy; Mapbox"
-                :maxZoom 18
-                :zoomOffset -1
-                :tileSize 512
-                :mapid bright-mapbox-mapid
+                :mapid mapbox-mapid
                 :accessToken mapbox-access-token}])
 
 (def geojson-levels
@@ -61,7 +51,7 @@
    (static-image geojson map-preview-size))
   ([geojson options]
    (fmt/format "https://api.mapbox.com/styles/v1/%s/static/geojson(%s)/auto/%dx%d@2x?access_token=%s"
-               emerald-mapbox-mapid
+               mapbox-mapid
                (js/encodeURIComponent geojson)
                (:width options)
                (:height options)
