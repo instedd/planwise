@@ -3,9 +3,8 @@
             [re-frame.utils :as c]
             [planwise.client.config :as config]))
 
-(def emerald-mapbox-mapid "juanedi.177h17ed")
-(def bright-mapbox-mapid "juanedi/cis9iabkx002c31lg5awqyqa8")
-(def mapbox-access-token "pk.eyJ1IjoianVhbmVkaSIsImEiOiJFeVIxckN3In0.502Q6lu_hD-Bu3r9a0jUyw")
+(def mapbox-mapid "instedd/ckml2dykm4cl917o08mxux07b")
+(def mapbox-access-token "pk.eyJ1IjoiaW5zdGVkZCIsImEiOiJja21ndHVrZ3cwMHQ5Mm9rZDgwaThkd3JoIn0.Kr3h9hO93IimCigXfYrBmw")
 
 (def map-preview-position
   [-12.211180191503985 21.4453125])
@@ -18,17 +17,12 @@
   "population")
 
 (def default-base-tile-layer
-  [:tile-layer {:url "http://api.tiles.mapbox.com/v4/{mapid}/{z}/{x}/{y}.png?access_token={accessToken}"
+  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}"
                 :attribution "&copy; Mapbox"
                 :maxZoom 18
-                :mapid emerald-mapbox-mapid
-                :accessToken mapbox-access-token}])
-
-(def bright-base-tile-layer
-  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/256/{z}/{x}/{y}?access_token={accessToken}"
-                :attribution "&copy; Mapbox"
-                :maxZoom 18
-                :mapid bright-mapbox-mapid
+                :zoomOffset -1
+                :tileSize 512
+                :mapid mapbox-mapid
                 :accessToken mapbox-access-token}])
 
 (def geojson-levels
@@ -56,8 +50,8 @@
   ([geojson]
    (static-image geojson map-preview-size))
   ([geojson options]
-   (fmt/format "https://api.mapbox.com/v4/%s/geojson(%s)/auto/%dx%d.png?access_token=%s"
-               emerald-mapbox-mapid
+   (fmt/format "https://api.mapbox.com/styles/v1/%s/static/geojson(%s)/auto/%dx%d@2x?access_token=%s&logo=false"
+               mapbox-mapid
                (js/encodeURIComponent geojson)
                (:width options)
                (:height options)
@@ -65,7 +59,6 @@
 
 (defn bbox-center [[[s w] [n e]]]
   [(/ (+ s n) 2.0) (/ (+ e w) 2.0)])
-
 
 (def fullmap-region-geo
   "{
