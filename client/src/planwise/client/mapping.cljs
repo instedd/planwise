@@ -50,7 +50,7 @@
   ([geojson]
    (static-image geojson map-preview-size))
   ([geojson options]
-   (fmt/format "https://api.mapbox.com/styles/v1/%s/static/geojson(%s)/auto/%dx%d@2x?access_token=%s"
+   (fmt/format "https://api.mapbox.com/styles/v1/%s/static/geojson(%s)/auto/%dx%d@2x?access_token=%s&logo=false"
                mapbox-mapid
                (js/encodeURIComponent geojson)
                (:width options)
