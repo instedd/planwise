@@ -12,7 +12,11 @@
 (rf/reg-sub
  :scenarios/view-state
  (fn [db _]
-   (get-in db [:scenarios :view-state])))
+   (let [views (get-in db [:scenarios :views-stack])]
+     (println ["........" views])
+     (if (empty? views)
+       :current-scenario
+       (peek views)))))
 
 (rf/reg-sub
  :scenarios/error
@@ -85,6 +89,7 @@
  (fn [[view-state suggested-locations suggested-providers all-providers providers-from-changeset] _]
    (case view-state
      :new-provider     suggested-locations
+     :new-suggestion   suggested-locations
      :new-intervention (map
                         #(apply-suggestion-to-provider % all-providers providers-from-changeset)
                         suggested-providers)

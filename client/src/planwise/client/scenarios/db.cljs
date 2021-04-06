@@ -2,8 +2,7 @@
   (:require [planwise.client.asdf :as asdf]))
 
 (def initial-db
-  {:view-state :current-scenario
-   :cancel-next-state        nil
+  {:views-stack              []
    :rename-dialog            nil
    :current-scenario         nil
    :changeset-dialog         nil

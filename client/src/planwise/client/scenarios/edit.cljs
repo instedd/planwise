@@ -129,7 +129,7 @@
   (let [provider   (subscribe [:scenarios/changeset-dialog])
         view-state (subscribe [:scenarios/view-state])]
     (fn [{:keys [config] :as project} scenario]
-      (let [open?         (= @view-state :changeset-dialog)
+      (let [open?         (and (= @view-state :changeset-dialog) (some? @provider))
             action        (get-in @provider [:change :action])
             budget        (get-in config [:actions :budget])
             budget?       (common/is-budget (get-in config [:analysis-type]))
@@ -163,7 +163,7 @@
    [m/Fab {:class-name "btn-floating"
            :on-click #(dispatch [:scenarios.new-action/toggle-options])}
     (cond computing? "stop"
-          (or (= state :new-provider) (= state :new-intervention)) "cancel"
+          (or (= state :new-provider) (= state :new-intervention) (= state :new-suggestion)) "cancel"
           :default "domain")]])
 
 (defn create-new-action-component
