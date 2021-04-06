@@ -15,7 +15,8 @@
 (s/def ::source-set-id number?)
 (s/def ::target number?)
 (s/def ::unit-name string?)
-(s/def ::demographics (s/keys :req-un [::unit-name ::target]))
+(s/def ::demand-unit string?)
+(s/def ::demographics (s/keys :req-un [::unit-name ::target ::demand-unit]))
 
 ;; Providers
 (s/def ::provider-set-id (s/nilable number?))
