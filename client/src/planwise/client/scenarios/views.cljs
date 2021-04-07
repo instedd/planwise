@@ -74,7 +74,7 @@
 
 (defn label-for-suggestion
   [suggestion state]
-  (let [new-provider? (= state :new-provider)
+  (let [new-provider? (or (= state :new-provider) (= state :new-suggestion))
         action        (cond
                         new-provider?                 :create
                         (:matches-filters suggestion) :increase
@@ -90,7 +90,7 @@
 
 (defn- show-suggested-provider
   [{:keys [action-capacity action-cost coverage name ranked] :as suggestion} state]
-  (let [new-provider? (= state :new-provider)]
+  (let [new-provider? (or (= state :new-provider) (= state :new-suggestion))]
     (crate/html
      [:div
       [:h3 (if name name (str "Suggested provider " ranked))]
@@ -208,10 +208,10 @@
                         :position @position
                         :on-position-changed #(reset! position %)
                         :on-zoom-changed #(reset! zoom %)
-                        :on-click (cond (= state :new-provider) add-point)
+                        :on-click (cond (or (= state :new-provider) (= state :new-suggestion)) add-point)
                         :controls [:legend]
                         :initial-bbox bbox
-                        :pointer-class (cond (= state :new-provider) "crosshair-pointer")}
+                        :pointer-class (cond (or (= state :new-provider) (= state :new-suggestion)) "crosshair-pointer")}
           mapping/default-base-tile-layer
           (when pending-demand-raster
             [:wms-tile-layer
