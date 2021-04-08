@@ -52,8 +52,8 @@
      (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 7))]))
 
 (defn- generate-title
-  [num]
-  (str (common/pluralize num "scenario")))
+  [num source-demand]
+  (str (common/pluralize num "scenario") " (Target population: " (utils/format-number source-demand) ")"))
 
 (defn- sort-scenarios
   [scenarios key order]
@@ -93,7 +93,7 @@
         sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)]
     [:div.scenarios-content
      [:table.mdc-data-table__table
-      [:caption (generate-title num)]
+      [:caption (generate-title num source-demand)]
       [:thead.rmwc-data-table__head
        [:tr.rmwc-data-table__row.mdc-data-table__header-row
         [:th.col0 ""]
