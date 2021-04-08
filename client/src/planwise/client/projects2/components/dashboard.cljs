@@ -34,7 +34,7 @@
   (when (not (blank? input)) [m/ChipSet [m/Chip [m/ChipText input]]]))
 
 (defn- scenarios-list-item
-  [project-id {:keys [id name label state demand-coverage effort changeset-summary geo-coverage population-under-coverage] :as scenario} index analysis-type]
+  [project-id {:keys [id name label state demand-coverage effort changeset-summary geo-coverage population-under-coverage] :as scenario} index source-demand analysis-type]
   (if id
     [:tr {:key id :on-click (fn [evt]
                               (if (or (.-shiftKey evt) (.-metaKey evt))
@@ -44,8 +44,8 @@
                 (not= label "initial") [create-chip label])]
      [:td.col1 name]
      [:td.col2 (utils/format-number demand-coverage)]
-     [:td.col5 (str (utils/format-number (* geo-coverage 100)) "%")]
-     [:td.col6 population-under-coverage]
+     [:td.col5 (utils/format-number (- population-under-coverage demand-coverage))]
+     [:td.col6 (utils/format-number (- source-demand population-under-coverage))]
      [:td.col3 (utils/format-effort effort analysis-type)]
      [:td.col4 changeset-summary]]
     [:tr {:key (str "tr-" index)}
@@ -57,9 +57,14 @@
 
 (defn- sort-scenarios
   [scenarios key order]
-  (cond
-    (or (nil? key) (nil? order)) scenarios
-    :else (sort-by key (if (= order :asc) #(< %1 %2) #(> %1 %2)) scenarios)))
+  (letfn [(keyfn [scenario]
+            (case key
+              :without-service (- (:population-under-coverage scenario) (:demand-coverage scenario))
+              :without-coverage (- (:population-under-coverage scenario))
+              (get scenario key)))]
+    (cond
+      (or (nil? key) (nil? order)) scenarios
+      :else (sort-by keyfn (if (= order :asc) #(< %1 %2) #(> %1 %2)) scenarios))))
 
 (defn- next-order
   [order]
@@ -81,6 +86,7 @@
 (defn- scenarios-list
   [scenarios current-project]
   (let [num (count scenarios)
+        source-demand (get-in current-project [:engine-config :source-demand])
         analysis-type (get-in current-project [:config :analysis-type])
         sort-column (rf/subscribe [:scenarios/sort-column])
         sort-order (rf/subscribe [:scenarios/sort-order])
@@ -92,13 +98,13 @@
        [:tr.rmwc-data-table__row.mdc-data-table__header-row
         [:th ""]
         [scenarios-sortable-header {:class [:col1] :align :left} "Name" :name]
-        [scenarios-sortable-header {:class [:col2] :align :right} (str (some-> (get-in current-project [:config :demographics :unit-name]) capitalize) " coverage") :demand-coverage]
-        [scenarios-sortable-header {:class [:col5] :align :right} "Geographic Coverage" :geo-coverage]
-        [scenarios-sortable-header {:class [:col6] :align :right} "Population Under Coverage" :population-under-coverage]
+        [scenarios-sortable-header {:class [:col2] :align :right} "Population with service" :demand-coverage]
+        [scenarios-sortable-header {:class [:col5] :align :right} "Without service" :without-service]
+        [scenarios-sortable-header {:class [:col6] :align :right} "Without coverage" :without-coverage]
         [scenarios-sortable-header {:class [:col3] :align :right} (if (common/is-budget analysis-type) "Investment" "Effort") :effort]
         [:th.col4 "Actions"]]]
       [:tbody
-       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
+       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index source-demand analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
 
 (defn- project-settings
   []
