@@ -40,8 +40,8 @@
                               (if (or (.-shiftKey evt) (.-metaKey evt))
                                 (.open js/window (routes/scenarios {:project-id project-id :id id}))
                                 (dispatch [:scenarios/load-scenario {:id id}])))}
-     [:td (cond (= state "pending") [create-chip state]
-                (not= label "initial") [create-chip label])]
+     [:td.col0 (cond (= state "pending") [create-chip state]
+                     (not= label "initial") [create-chip label])]
      [:td.col1 name]
      [:td.col2 (utils/format-number demand-coverage)]
      [:td.col5 (utils/format-number (- population-under-coverage demand-coverage))]
@@ -96,7 +96,7 @@
       [:caption (generate-title num)]
       [:thead.rmwc-data-table__head
        [:tr.rmwc-data-table__row.mdc-data-table__header-row
-        [:th ""]
+        [:th.col0 ""]
         [scenarios-sortable-header {:class [:col1] :align :left} "Name" :name]
         [scenarios-sortable-header {:class [:col2] :align :right} "Population with service" :demand-coverage]
         [scenarios-sortable-header {:class [:col5] :align :right} "Without service" :without-service]

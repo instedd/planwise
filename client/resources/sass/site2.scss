@@ -36,8 +36,8 @@ body {
   height: 100vh;
   font-size: 1rem;
   display: grid;
-  grid-template-columns: 1fr 1180px 1fr;
-  grid-template-rows: min-content 40px auto 20px 40px;
+  grid-template-columns: 40px auto 40px;
+  grid-template-rows: min-content 40px auto 40px 40px;
   grid-template-areas:
     "header header header"
     ".      .      .     "
@@ -71,7 +71,7 @@ header {
     padding-right: $margin-page;
   }
 
-  .mdc-toolbar__title,  {
+  .mdc-toolbar__title  {
     margin: 0px;
   }
 
@@ -442,6 +442,7 @@ form.vertical, .fields-vertical {
     margin: 0;
     padding: 0;
     width: 100%;
+    table-layout: fixed;
 
     caption{
       padding: 32px 72px;
@@ -456,6 +457,9 @@ form.vertical, .fields-vertical {
       tr > th {
         border-bottom: 1px solid #ccc;
         white-space: nowrap;
+        table-layout: fixed;
+        text-overflow: ellipsis;
+        overflow: hidden;
       }
 
       th {
@@ -479,37 +483,46 @@ form.vertical, .fields-vertical {
       border-bottom: 1px solid #eee;
       padding: 20px;
       height: 50px;
+      table-layout: fixed;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
 
-    .col1{
+    .col0{
       width: 15%;
       text-align: left;
     }
 
-    .col2{
+    .col1{
       width: 10%;
+      text-align: left;
+    }
+
+    .col2{
+      width: 15%;
       text-align: right;
     }
 
     .col3{
-      width: 15%;
+      width: 10%;
       text-align: right;
     }
 
     .col4{
       text-align: left;
-      width: 40%;
+      width: 20%;
     }
 
     .col5{
       text-align: right;
-      width: 10%;
+      width: 15%;
     }
 
     .col6{
       text-align: right;
-      width: 10%;
+      width: 15%;
     }
   }
 }
