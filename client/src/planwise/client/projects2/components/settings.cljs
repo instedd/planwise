@@ -210,7 +210,7 @@
                                         :disabled? read-only}]
 
      [current-project-input "Capacity Workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-     [m/TextFieldHelperText {:persistent true} (str "How many " (or (not-empty (get-in @current-project [:config :demographics :unit-name])) "consumers") " can each provider handle?")]
+     [m/TextFieldHelperText {:persistent true} (str "How many " (or (not-empty (get-in @current-project [:config :demographics :demand-unit])) "targets") " can each provider handle?")]
      (when-not read-only [tag-input])
      [:label "Tags: " [tag-set @tags read-only]]
      [count-providers @tags @current-project]]))
@@ -282,8 +282,8 @@
         analysis-type   (get-in @current-project [:config :analysis-type])
         budget          (get-in @current-project [:config :actions :budget])
         workload        (get-in @current-project [:config :providers :capacity])
-        consumers-unit        (get-in @current-project [:config :demographics :unit-name])
-        capacities       (get-in @current-project [:config :actions :build])]
+        demand-unit     (get-in @current-project [:config :demographics :demand-unit])
+        capacities      (get-in @current-project [:config :actions :build])]
     (dispatch [:sources/load])
     (dispatch [:providers-set/load-providers-set])
     [:section {:class "project-settings-section"}
@@ -310,8 +310,7 @@
                                                      (:capacity action)
                                                      "will provide service for"
                                                      (* (:capacity action) workload)
-                                                     (or (not-empty consumers-unit) "consumers units")
-                                                     " per year"])]) capacities)]))
+                                                     (or (not-empty demand-unit) "targets")])]) capacities)]))
 
 
 (def map-preview-size {:width 373 :height 278})
