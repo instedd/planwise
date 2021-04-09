@@ -8,7 +8,8 @@
     :defaults {:name "Improve the coverage of meningitis rapid test"
                :config {:coverage {:filter-options {:driving-time 90}} ;How to define Region?
                         :demographics {:target 12
-                                       :unit-name "suspected cases of meningitis"}
+                                       :unit-name "children under 15 years old"
+                                       :demand-unit "suspected cases of meningitis"}
                         :actions {:budget 500000
                                   :build [{:id "build-0"
                                            :capacity 100

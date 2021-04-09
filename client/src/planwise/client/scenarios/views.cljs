@@ -48,7 +48,7 @@
     button))
 
 (defn- show-provider
-  [read-only? unit-name {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand reachable-demand] :as provider}]
+  [read-only? demand-unit {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand reachable-demand] :as provider}]
   (let [format-number   (fnil utils/format-number 0)
         change* (if (some? change)
                   change
@@ -63,7 +63,7 @@
         [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))])
       (when (or matches-filters change)
         [:p (str "Free capacity: " (utils/format-number (Math/floor free-capacity)))])
-      [:p (str unit-name " under geographic coverage: " (utils/format-number (Math/ceil reachable-demand)))]
+      [:p (str demand-unit " under geographic coverage: " (utils/format-number (Math/ceil reachable-demand)))]
       (when-not read-only?
         (popup-connected-button
          (cond
@@ -156,7 +156,7 @@
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
-        unit-name           (get-in project [:config :demographics :unit-name])]
+        demand-unit              (get-in project [:config :demographics :demand-unit])]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
       (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
@@ -198,7 +198,7 @@
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
                                                    :icon-fn #(icon-function % @selected-provider)
-                                                   :popup-fn     #(show-provider read-only? unit-name %)
+                                                   :popup-fn     #(show-provider read-only? demand-unit %)
                                                    :mouseover-fn (fn [provider]
                                                                    (dispatch [:scenarios.map/select-provider provider]))
                                                    :mouseout-fn  (fn [provider]
@@ -239,14 +239,14 @@
 (defn initial-scenario-panel
   [_ _]
   (let [source-demand (subscribe [:scenarios.current/source-demand])]
-    (fn [{:keys [name demand-coverage state]} unit-name]
+    (fn [{:keys [name demand-coverage state]} demand-unit]
       [:div
        [:div {:class-name "section"}
         [:h1 {:class-name "title-icon"} name]]
        [:hr]
        [:div {:class-name "section"}
         [:h1 {:class-name "large"}
-         [:small (str "Initial " unit-name " coverage")]
+         [:small (str "Initial " demand-unit " coverage")]
          (cond
            (= "pending" state) "loading..."
            :else (str (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]
@@ -254,7 +254,7 @@
          (str "of a total of " (utils/format-number @source-demand))]]])))
 
 (defn scenario-info
-  [view-state current-scenario unit-name analysis-type]
+  [view-state current-scenario demand-unit analysis-type]
   (let [{:keys [name label effort demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario]
     [:div
      [:div {:class-name "section"}
@@ -263,7 +263,7 @@
      [:hr]
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
-       [:small (str "Increase in " unit-name " coverage")]
+       [:small (str "Increase in " demand-unit " coverage")]
        (cond
          (= "pending" state) "loading..."
          :else               (str (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")"))]
@@ -273,7 +273,7 @@
          :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
      [:div {:class-name "section"}
       [:h1 {:class-name "large"}
-       [:small (str "Total " unit-name " under geographic coverage")]
+       [:small (str "Total " demand-unit " under geographic coverage")]
        (cond
          (= "pending" state) "loading..."
          :else  (utils/format-number population-under-coverage))]]
@@ -303,7 +303,7 @@
         providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])
         current-project              (subscribe [:projects2/current-project])
         analysis-type                (get-in @current-project [:config :analysis-type])]
-    (fn [{:keys [state] :as current-scenario} unit-name error]
+    (fn [{:keys [state] :as current-scenario} demand-unit error]
       (let [computing-suggestions?   (or @computing-best-locations? @computing-best-improvements?)
             edit-button              [edit/create-new-action-component @view-state computing-suggestions?]]
         (if @suggested-locations
@@ -313,7 +313,7 @@
            [suggested-locations-list @suggested-locations state]]
           [:<>
            [:div
-            [scenario-info @view-state current-scenario unit-name analysis-type]
+            [scenario-info @view-state current-scenario demand-unit analysis-type]
             [edit/create-new-action-component @view-state computing-suggestions?]
             (if computing-suggestions?
               [:div {:class-name "info-computing-best-location"}
@@ -328,11 +328,11 @@
               [:div {:class-name "fade inverted"}]])])))))
 
 (defn side-panel-view
-  [current-scenario unit-name error read-only?]
+  [current-scenario demand-unit error read-only?]
   [:<>
    (if read-only?
-     [initial-scenario-panel current-scenario unit-name]
-     [side-panel-view-2 current-scenario unit-name error])
+     [initial-scenario-panel current-scenario demand-unit]
+     [side-panel-view-2 current-scenario demand-unit error])
    [create-new-scenario current-scenario]])
 
 (defn display-current-scenario
@@ -340,7 +340,7 @@
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
         error      (subscribe [:scenarios/error])
-        unit-name  (get-in current-project [:config :demographics :unit-name])
+        demand-unit (get-in current-project [:config :demographics :demand-unit])
         export-providers-button [:a {:class "mdc-fab disable-a"
                                      :id "main-action"
                                      :href (str "/api/scenarios/" id "/csv")}
@@ -354,7 +354,7 @@
                                       [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
                                       [:li (:name current-scenario)]]
                               :action export-providers-button})
-       [side-panel-view current-scenario unit-name @error @read-only?]
+       [side-panel-view current-scenario demand-unit @error @read-only?]
        [edit/rename-scenario-dialog]
        [edit/changeset-dialog current-project current-scenario]
        [edit/delete-scenario-dialog @state current-scenario]])))
