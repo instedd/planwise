@@ -457,7 +457,6 @@ form.vertical, .fields-vertical {
       tr > th {
         border-bottom: 1px solid #ccc;
         white-space: nowrap;
-        table-layout: fixed;
         text-overflow: ellipsis;
         overflow: hidden;
       }
@@ -483,12 +482,14 @@ form.vertical, .fields-vertical {
       border-bottom: 1px solid #eee;
       padding: 20px;
       height: 50px;
-      table-layout: fixed;
+    }
+
+    td > p {
+      border-bottom: 2px dotted #000;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
-
 
     .col0{
       width: 15%;
@@ -523,6 +524,30 @@ form.vertical, .fields-vertical {
     .col6{
       text-align: right;
       width: 15%;
+    }
+
+    .has-tooltip {
+      position: relative;
+    }
+
+    .has-tooltip .tooltip {
+      z-index: 1;
+      display: none;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .has-tooltip:hover .tooltip {
+      display: block;
+      position: absolute;
+      width: 160px;
+      padding: 8px;
+      background-color: #000;
+      color: #ccc;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      overflow: hidden;
+      white-space: initial;
     }
   }
 }

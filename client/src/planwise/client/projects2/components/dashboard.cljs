@@ -47,7 +47,11 @@
      [:td.col5 (utils/format-number (- population-under-coverage demand-coverage))]
      [:td.col6 (utils/format-number (- source-demand population-under-coverage))]
      [:td.col3 (utils/format-effort effort analysis-type)]
-     [:td.col4 changeset-summary]]
+     (if (empty? changeset-summary)
+       [:td.col4]
+       [:td.col4.has-tooltip
+         [:p changeset-summary]
+         [:div.tooltip changeset-summary]])]
     [:tr {:key (str "tr-" index)}
      (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 7))]))
 
