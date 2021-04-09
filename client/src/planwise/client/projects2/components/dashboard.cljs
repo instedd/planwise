@@ -50,8 +50,8 @@
      (if (empty? changeset-summary)
        [:td.col4]
        [:td.col4.has-tooltip
-         [:p changeset-summary]
-         [:div.tooltip changeset-summary]])]
+        [:p changeset-summary]
+        [:div.tooltip changeset-summary]])]
     [:tr {:key (str "tr-" index)}
      (map (fn [n] [:td {:key (str "td-" index "-" n)}]) (range 7))]))
 
@@ -78,13 +78,14 @@
     :else nil))
 
 (defn- scenarios-sortable-header
-  [{:keys [sortable] :as props} title field]
+  [{:keys [sortable] :as props} field title tooltip]
   (let [column (rf/subscribe [:scenarios/sort-column])
         order (rf/subscribe [:scenarios/sort-order])
         new-props (merge props
                          {:on-click #(rf/dispatch [:scenarios/change-sort-column-order field (if (= field @column) (next-order @order) :asc)])
                           :order @order
-                          :sorted (and (= field @column) (not (nil? @order)))})]
+                          :sorted (and (= field @column) (not (nil? @order)))}
+                         (if (some? tooltip) {:tooltip tooltip}))]
     [ui/sortable-table-header new-props title]))
 
 (defn- scenarios-list
@@ -101,12 +102,12 @@
       [:thead.rmwc-data-table__head
        [:tr.rmwc-data-table__row.mdc-data-table__header-row
         [:th.col0 ""]
-        [scenarios-sortable-header {:class [:col1] :align :left} "Name" :name]
-        [scenarios-sortable-header {:class [:col2] :align :right} "Population with service" :demand-coverage]
-        [scenarios-sortable-header {:class [:col5] :align :right} "Without service" :without-service]
-        [scenarios-sortable-header {:class [:col6] :align :right} "Without coverage" :without-coverage]
-        [scenarios-sortable-header {:class [:col3] :align :right} (if (common/is-budget analysis-type) "Investment" "Effort") :effort]
-        [:th.col4 "Actions"]]]
+        [scenarios-sortable-header {:class [:col1] :align :left} :name "Name"]
+        [scenarios-sortable-header {:class [:col2] :align :right} :demand-coverage "Population with service" "Population within provider’s catchment area, with access to service provided within capacity."]
+        [scenarios-sortable-header {:class [:col5] :align :right} :without-service "Without service" "Population within provider’s catchment area but without enough capacity to provide service"]
+        [scenarios-sortable-header {:class [:col6] :align :right} :without-coverage "Without coverage" "Population outside catchment area of service providers"]
+        [scenarios-sortable-header {:class [:col3] :align :right} :effort (if (common/is-budget analysis-type) "Investment" "Effort")]
+        [:th.col4 [:p "Actions"]]]]
       [:tbody
        (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index source-demand analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
 

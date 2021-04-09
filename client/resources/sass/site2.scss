@@ -456,15 +456,34 @@ form.vertical, .fields-vertical {
 
       tr > th {
         border-bottom: 1px solid #ccc;
+      }
+
+      th > p {
         white-space: nowrap;
         text-overflow: ellipsis;
         overflow: hidden;
+        padding-bottom: 13px;
+      }
+
+      th.col2 > p {
+        border-bottom: 3px solid green;
+        padding-bottom: 10px;
+      }
+
+      th.col5 > p {
+        border-bottom: 3px solid orange;
+        padding-bottom: 10px;
+      }
+
+      th.col6 > p {
+        border-bottom: 3px solid red;
+        padding-bottom: 10px;
       }
 
       th {
         color: #999999;
         text-align: left;
-        padding: 24px 20px;
+        padding: 24px 20px 11px 20px;
         font-weight: 500;
         font-size: 1rem;
       }
@@ -484,7 +503,7 @@ form.vertical, .fields-vertical {
       height: 50px;
     }
 
-    td > p {
+    td.has-tooltip > p {
       border-bottom: 2px dotted #000;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -528,6 +547,11 @@ form.vertical, .fields-vertical {
 
     .has-tooltip {
       position: relative;
+    }
+
+    th.has-tooltip .tooltip {
+      bottom: 70%;
+      text-align: left;
     }
 
     .has-tooltip .tooltip {
