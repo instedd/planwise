@@ -351,7 +351,7 @@
   [{:keys [id action capacity location]}]
   {:id id
    :type action
-   :name "New Provider"
+   :name (or (:name change) "New Provider")
    :lat (:lat location)
    :lon (:lon location)
    :capacity capacity
