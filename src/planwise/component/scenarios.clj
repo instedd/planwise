@@ -348,10 +348,10 @@
            (util-str/next-name))))
 
 (defn- created-provider-to-export
-  [{:keys [id action capacity location]}]
+  [{:keys [id action capacity location name]}]
   {:id id
    :type action
-   :name (or (:name change) "New Provider")
+   :name (or name "New Provider")
    :lat (:lat location)
    :lon (:lon location)
    :capacity capacity
