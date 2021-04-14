@@ -11,7 +11,7 @@
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
             [planwise.client.projects2.components.settings :as settings]
-            [planwise.common :as common]))
+            [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit] :as common]))
 
 (defn- project-tabs
   [{:keys [active] :or {active :scenarios}}]
@@ -97,7 +97,9 @@
         analysis-type (get-in current-project [:config :analysis-type])
         sort-column (rf/subscribe [:scenarios/sort-column])
         sort-order (rf/subscribe [:scenarios/sort-order])
-        sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)]
+        sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)
+        demand-unit (get-demand-unit current-project)
+        provider-unit (get-provider-unit current-project)]
     [:div.scenarios-content
      [:table.mdc-data-table__table
       [:caption (generate-title num source-demand)]
@@ -111,17 +113,17 @@
         [scenarios-sortable-header {:class [:col-demand-coverage]
                                     :align :right
                                     :sorting-key :demand-coverage
-                                    :tooltip "Population within provider’s catchment area, with access to service provided within capacity."}
+                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area, with access to service provided within capacity.")}
          "Population with service"]
         [scenarios-sortable-header {:class [:col-pop-without-service]
                                     :align :right
                                     :sorting-key :without-service
-                                    :tooltip "Population within provider’s catchment area but without enough capacity to provide service"}
+                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area but without enough capacity to provide service.")}
          "Without service"]
         [scenarios-sortable-header {:class [:col-pop-without-coverage]
                                     :align :right
                                     :sorting-key :without-coverage
-                                    :tooltip "Population outside catchment area of service providers"}
+                                    :tooltip (str (capitalize demand-unit) " outside catchment area of " provider-unit ".")}
          "Without coverage"]
         [scenarios-sortable-header {:class [:col-effort]
                                     :align :right
