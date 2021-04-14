@@ -408,6 +408,27 @@
            #(select-keys % show-keys)
            (engine/search-optimal-interventions (:engine store) project scenario settings)))))
 
+(defn compute-scenario-stats
+  [scenario-id {:keys [store project]}]
+  (info "Computing scenario statistics" scenario-id)
+  (try
+    (let [engine           (:engine store)
+          scenario         (get-scenario store scenario-id)
+          params           [:some :params]
+          result           (engine/compute-scenario-stats engine project scenario params)]
+      (info (str "Scenario " scenario-id " statistics computed")))
+    (catch Exception e
+      (error e "Scenario statistics computation failed"))))
+
+(defmethod jr/job-next-task ::boundary/compute-scenario-stats
+  [[_ scenario-id] state]
+  (info "Job next task - Computing scenario statistics" scenario-id)
+  (letfn [(task-fn []
+            (compute-scenario-stats scenario-id state))]
+    {:task-id scenario-id
+     :task-fn task-fn
+     :state   nil}))
+
 
 (defrecord ScenariosStore [db engine jobrunner providers-set sources-set coverage]
   boundary/Scenarios
