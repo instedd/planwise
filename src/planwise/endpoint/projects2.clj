@@ -100,7 +100,7 @@
      (let [user-id       (util/request-user-id request)
            id            (Integer. id)
            project       (filter-owned-by (projects2/get-project service id) user-id)
-           scenarios     (scenarios/list-scenarios service-scenarios id)]
+           scenarios     (scenarios/list-scenarios service-scenarios project)]
        (if (nil? project)
          (not-found {:error "Project not found"})
          (response scenarios))))))
