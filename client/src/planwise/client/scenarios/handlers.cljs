@@ -157,9 +157,9 @@
   [changeset]
   (let [new-providers (filter #(= (:action %) "create-provider") changeset)]
     (if (empty? new-providers)
-      "New provider 0"
+      "New 0"
       (let [vals (mapv (fn [p] (->> (:name p) (re-find #"\d+") int)) new-providers)]
-        (str "New provider " (inc (apply max vals)))))))
+        (str "New " (inc (apply max vals)))))))
 
 (rf/reg-event-fx
  :scenarios/create-provider
