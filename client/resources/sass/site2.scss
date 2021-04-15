@@ -36,8 +36,8 @@ body {
   height: 100vh;
   font-size: 1rem;
   display: grid;
-  grid-template-columns: 1fr 1180px 1fr;
-  grid-template-rows: min-content 40px auto 20px 40px;
+  grid-template-columns: 40px auto 40px;
+  grid-template-rows: min-content 40px auto 40px 40px;
   grid-template-areas:
     "header header header"
     ".      .      .     "
@@ -71,7 +71,7 @@ header {
     padding-right: $margin-page;
   }
 
-  .mdc-toolbar__title,  {
+  .mdc-toolbar__title  {
     margin: 0px;
   }
 
@@ -442,6 +442,7 @@ form.vertical, .fields-vertical {
     margin: 0;
     padding: 0;
     width: 100%;
+    table-layout: fixed;
 
     caption{
       padding: 32px 72px;
@@ -455,13 +456,34 @@ form.vertical, .fields-vertical {
 
       tr > th {
         border-bottom: 1px solid #ccc;
+      }
+
+      th > p {
         white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        padding-bottom: 13px;
+      }
+
+      th.col-demand-coverage > p {
+        border-bottom: 3px solid green;
+        padding-bottom: 10px;
+      }
+
+      th.col-pop-without-service > p {
+        border-bottom: 3px solid orange;
+        padding-bottom: 10px;
+      }
+
+      th.col-pop-without-coverage > p {
+        border-bottom: 3px solid red;
+        padding-bottom: 10px;
       }
 
       th {
         color: #999999;
         text-align: left;
-        padding: 24px 20px;
+        padding: 24px 20px 11px 20px;
         font-weight: 500;
         font-size: 1rem;
       }
@@ -481,35 +503,75 @@ form.vertical, .fields-vertical {
       height: 50px;
     }
 
+    td.has-tooltip > p {
+      border-bottom: 2px dotted #000;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-    .col1{
+    .col-state {
       width: 15%;
       text-align: left;
     }
 
-    .col2{
+    .col-name {
       width: 10%;
-      text-align: right;
+      text-align: left;
     }
 
-    .col3{
+    .col-demand-coverage {
       width: 15%;
       text-align: right;
     }
 
-    .col4{
+    .col-effort {
+      width: 10%;
+      text-align: right;
+    }
+
+    .col-actions {
       text-align: left;
-      width: 40%;
+      width: 20%;
     }
 
-    .col5{
+    .col-pop-without-service {
       text-align: right;
-      width: 10%;
+      width: 15%;
     }
 
-    .col6{
+    .col-pop-without-coverage {
       text-align: right;
-      width: 10%;
+      width: 15%;
+    }
+
+    .has-tooltip {
+      position: relative;
+    }
+
+    th.has-tooltip .tooltip {
+      bottom: 70%;
+      text-align: left;
+    }
+
+    .has-tooltip .tooltip {
+      z-index: 1;
+      display: none;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .has-tooltip:hover .tooltip {
+      display: block;
+      position: absolute;
+      width: 160px;
+      padding: 8px;
+      background-color: #000;
+      color: #ccc;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      overflow: hidden;
+      white-space: initial;
     }
   }
 }

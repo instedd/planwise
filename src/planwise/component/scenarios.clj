@@ -40,15 +40,20 @@
 
 (defn- build-summary
   [counters]
-  (letfn [(format-summary
+  (letfn [(format-action
+            ([action]
+             (format-action action false))
+            ([[label count] final]
+             (str label " " (if final (common/pluralize count "provider") count))))
+          (format-summary
             ([] "")
-            ([x] x)
-            ([x y] (str x " and " y))
-            ([x y z] (str x ", " y " and " z)))
+            ([x] (format-action x true))
+            ([x y] (str (format-action x) " and " (format-action y true)))
+            ([x y z] (str (format-action x) ", " (format-action y) " and " (format-action z true))))
           (build-action
             [[action label] counters]
             (let [count (get counters action 0)]
-              (if (pos? count) (str label " " (common/pluralize count "provider")))))]
+              (if (pos? count) [label count])))]
     (->> action-labels
          (map #(build-action % counters))
          (filter some?)
