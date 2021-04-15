@@ -31,7 +31,7 @@
     onAdd: function() {
       var container = L.DomUtil.create('div', 'legend leaflet-legend-container');
 
-      L.DomUtil.create("div", "title", container).innerHTML = "Satisfied Demand by provider";
+      L.DomUtil.create("div", "title", container).innerHTML = "Satisfied demand by " + this.options.providerUnit;
 
       createExpandedScale(buckets, this.options.pixelArea, container);
 

@@ -18,7 +18,7 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]
-            [planwise.common :refer [get-demand-unit]]))
+            [planwise.common :refer [get-demand-unit get-provider-unit]]))
 
 
 (defn raise-alert
@@ -157,7 +157,8 @@
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
-        demand-unit              (get-demand-unit project)]
+        demand-unit              (get-demand-unit project)
+        provider-unit            (get-provider-unit project)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
       (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
@@ -212,7 +213,8 @@
                         :on-click (cond (= state :new-provider) add-point)
                         :controls [:legend]
                         :initial-bbox bbox
-                        :pointer-class (cond (= state :new-provider) "crosshair-pointer")}
+                        :pointer-class (cond (= state :new-provider) "crosshair-pointer")
+                        :provider-unit provider-unit}
           mapping/default-base-tile-layer
           (when pending-demand-raster
             [:wms-tile-layer
