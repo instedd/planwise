@@ -9,7 +9,7 @@ import net.mintern.primitive.comparators.IntComparator;
 public class Algorithm {
     public static long countPopulation(float[] popData,
                                        float popNodata) {
-        float sum = 0.0f;
+        double sum = 0.0d;
         for (int i = 0; i < popData.length; i++) {
             if (popData[i] != popNodata)
                 sum += popData[i];
@@ -38,7 +38,7 @@ public class Algorithm {
                                                     int popBottom,
                                                     int covLeft,
                                                     int covTop) {
-        float sum = 0.0f;
+        double sum = 0.0d;
         int width = popRight - popLeft + 1;
         int popSkip = popStride - width;
         int covSkip = covStride - width;
