@@ -34,22 +34,22 @@
   (when (not (blank? input)) [m/ChipSet [m/Chip [m/ChipText input]]]))
 
 (defn- scenarios-list-item
-  [project-id {:keys [id name label state demand-coverage effort changeset-summary geo-coverage population-under-coverage] :as scenario} index source-demand analysis-type]
+  [{:keys [project-id id name label state demand-coverage effort changeset-summary geo-coverage population-under-coverage index source-demand analysis-type]}]
   (if id
     [:tr {:key id :on-click (fn [evt]
                               (if (or (.-shiftKey evt) (.-metaKey evt))
                                 (.open js/window (routes/scenarios {:project-id project-id :id id}))
                                 (dispatch [:scenarios/load-scenario {:id id}])))}
-     [:td.col0 (cond (= state "pending") [create-chip state]
-                     (not= label "initial") [create-chip label])]
-     [:td.col1 name]
-     [:td.col2 (utils/format-number demand-coverage)]
-     [:td.col5 (utils/format-number (- population-under-coverage demand-coverage))]
-     [:td.col6 (utils/format-number (- source-demand population-under-coverage))]
-     [:td.col3 (utils/format-effort effort analysis-type)]
+     [:td.col-state (cond (= state "pending") [create-chip state]
+                          (not= label "initial") [create-chip label])]
+     [:td.col-name name]
+     [:td.col-demand-coverage (utils/format-number demand-coverage)]
+     [:td.col-pop-without-service (utils/format-number (- population-under-coverage demand-coverage))]
+     [:td.col-pop-without-coverage (utils/format-number (- source-demand population-under-coverage))]
+     [:td.col-effort (utils/format-effort effort analysis-type)]
      (if (empty? changeset-summary)
-       [:td.col4]
-       [:td.col4.has-tooltip
+       [:td.col-actions]
+       [:td.col-actions.has-tooltip
         [:p changeset-summary]
         [:div.tooltip changeset-summary]])]
     [:tr {:key (str "tr-" index)}
@@ -64,6 +64,7 @@
   (letfn [(keyfn [scenario]
             (case key
               :without-service (- (:population-under-coverage scenario) (:demand-coverage scenario))
+              ; Column 'Without coverage' displays `demand-source - population-under-coverage`
               :without-coverage (- (:population-under-coverage scenario))
               (get scenario key)))]
     (cond
@@ -78,14 +79,15 @@
     :else nil))
 
 (defn- scenarios-sortable-header
-  [{:keys [sortable] :as props} field title tooltip]
+  [{:keys [sorting-key] :as props} title]
   (let [column (rf/subscribe [:scenarios/sort-column])
         order (rf/subscribe [:scenarios/sort-order])
-        new-props (merge props
-                         {:on-click #(rf/dispatch [:scenarios/change-sort-column-order field (if (= field @column) (next-order @order) :asc)])
-                          :order @order
-                          :sorted (and (= field @column) (not (nil? @order)))}
-                         (if (some? tooltip) {:tooltip tooltip}))]
+        new-props (-> props
+                      (dissoc :sorting-key)
+                      (assoc
+                       :on-click #(rf/dispatch [:scenarios/change-sort-column-order sorting-key (if (= sorting-key @column) (next-order @order) :asc)])
+                       :order @order
+                       :sorted (and (= sorting-key @column) (not (nil? @order)))))]
     [ui/sortable-table-header new-props title]))
 
 (defn- scenarios-list
@@ -101,15 +103,39 @@
       [:caption (generate-title num source-demand)]
       [:thead.rmwc-data-table__head
        [:tr.rmwc-data-table__row.mdc-data-table__header-row
-        [:th.col0 ""]
-        [scenarios-sortable-header {:class [:col1] :align :left} :name "Name"]
-        [scenarios-sortable-header {:class [:col2] :align :right} :demand-coverage "Population with service" "Population within provider’s catchment area, with access to service provided within capacity."]
-        [scenarios-sortable-header {:class [:col5] :align :right} :without-service "Without service" "Population within provider’s catchment area but without enough capacity to provide service"]
-        [scenarios-sortable-header {:class [:col6] :align :right} :without-coverage "Without coverage" "Population outside catchment area of service providers"]
-        [scenarios-sortable-header {:class [:col3] :align :right} :effort (if (common/is-budget analysis-type) "Investment" "Effort")]
-        [:th.col4 [:p "Actions"]]]]
+        [:th.col-state ""]
+        [scenarios-sortable-header {:class [:col-name]
+                                    :align :left
+                                    :sorting-key :name}
+         "Name"]
+        [scenarios-sortable-header {:class [:col-demand-coverage]
+                                    :align :right
+                                    :sorting-key :demand-coverage
+                                    :tooltip "Population within provider’s catchment area, with access to service provided within capacity."}
+         "Population with service"]
+        [scenarios-sortable-header {:class [:col-pop-without-service]
+                                    :align :right
+                                    :sorting-key :without-service
+                                    :tooltip "Population within provider’s catchment area but without enough capacity to provide service"}
+         "Without service"]
+        [scenarios-sortable-header {:class [:col-pop-without-coverage]
+                                    :align :right
+                                    :sorting-key :without-coverage
+                                    :tooltip "Population outside catchment area of service providers"}
+         "Without coverage"]
+        [scenarios-sortable-header {:class [:col-effort]
+                                    :align :right
+                                    :sorting-key :effort}
+         (if (common/is-budget analysis-type) "Investment" "Effort")]
+        [:th.col-actions [:p "Actions"]]]]
       [:tbody
-       (map-indexed (fn [index scenario] (scenarios-list-item (:id current-project) scenario index source-demand analysis-type)) (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
+       (map-indexed (fn [index scenario]
+                      (scenarios-list-item (assoc scenario
+                                                  :project-id (:id current-project)
+                                                  :index index
+                                                  :source-demand source-demand
+                                                  :analysis-type analysis-type)))
+                    (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
 
 (defn- project-settings
   []

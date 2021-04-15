@@ -465,17 +465,17 @@ form.vertical, .fields-vertical {
         padding-bottom: 13px;
       }
 
-      th.col2 > p {
+      th.col-demand-coverage > p {
         border-bottom: 3px solid green;
         padding-bottom: 10px;
       }
 
-      th.col5 > p {
+      th.col-pop-without-service > p {
         border-bottom: 3px solid orange;
         padding-bottom: 10px;
       }
 
-      th.col6 > p {
+      th.col-pop-without-coverage > p {
         border-bottom: 3px solid red;
         padding-bottom: 10px;
       }
@@ -510,37 +510,37 @@ form.vertical, .fields-vertical {
       white-space: nowrap;
     }
 
-    .col0{
+    .col-state {
       width: 15%;
       text-align: left;
     }
 
-    .col1{
+    .col-name {
       width: 10%;
       text-align: left;
     }
 
-    .col2{
+    .col-demand-coverage {
       width: 15%;
       text-align: right;
     }
 
-    .col3{
+    .col-effort {
       width: 10%;
       text-align: right;
     }
 
-    .col4{
+    .col-actions {
       text-align: left;
       width: 20%;
     }
 
-    .col5{
+    .col-pop-without-service {
       text-align: right;
       width: 15%;
     }
 
-    .col6{
+    .col-pop-without-coverage {
       text-align: right;
       width: 15%;
     }

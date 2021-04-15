@@ -69,25 +69,25 @@
   []
   [:thead.rmwc-data-table__head
    [:tr.rmwc-data-table__row.mdc-data-table__header-row
-    [:th]
+    [:th {:class [:col-state]}]
     [ui/sortable-table-header {:sorted true
                                :align :left
                                :order :asc
-                               :class [:col1]}
+                               :class [:col-name]}
      "Name"]
     [ui/sortable-table-header {:sorted true
                                :align :right
                                :order :desc
-                               :class [:col2]}
-     "Coverage"]
+                               :class [:col-demand-coverage]}
+     "Population with service"]
     [ui/sortable-table-header {:sorted false
                                :align :right
                                :order :asc
-                               :class [:col5]}
-     "Geographic Coverage"]
-    [:th {:class [:col6]} "Population Under Coverage"]
-    [:th {:class [:col3]} "Effort"]
-    [:th {:class [:col4]} "Actions"]]])
+                               :class [:col-pop-without-service]}
+     "Without service"]
+    [:th {:class [:col-pop-without-coverage]} "Without coverage"]
+    [:th {:class [:col-effort]} "Effort"]
+    [:th {:class [:col-actions]} "Actions"]]])
 
 
 (defn demo-list-scenarios
@@ -100,21 +100,21 @@
       [scenarios-list-header]
       [:tbody
        [:tr {:key 1}
-        [:td "initial"]
-        [:td.col1 "Name"]
-        [:td.col2 "200,000"]
-        [:td.col5 "10.10%"]
-        [:td.col6 "1,000,000"]
-        [:td.col3 "$ 100.000"]
-        [:td.col4 ""]]
+        [:td.col-state "initial"]
+        [:td.col-name "Name"]
+        [:td.col-demand-coverage "200,000"]
+        [:td.col-pop-without-service "100,000%"]
+        [:td.col-pop-without-coverage "1,000,000"]
+        [:td.col-effort "$ 100.000"]
+        [:td.col-actions ""]]
        [:tr {:key 2}
-        [:td "best"]
-        [:td.col1 "Name"]
-        [:td.col2 "300,000"]
-        [:td.col5 "15.10%"]
-        [:td.col6 "1,500,000"]
-        [:td.col3 "$ 200.000"]
-        [:td.col4 ""]]]]]]])
+        [:td.col-state "best"]
+        [:td.col-name "Name"]
+        [:td.col-demand-coverage "300,000"]
+        [:td.col-pop-without-service "100,000"]
+        [:td.col-pop-without-coverage "1,500,000"]
+        [:td.col-effort "$ 200.000"]
+        [:td.col-actions ""]]]]]]])
 
 (defn simple-map
   [opts]
