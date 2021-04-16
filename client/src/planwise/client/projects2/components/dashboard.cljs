@@ -11,7 +11,7 @@
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
             [planwise.client.projects2.components.settings :as settings]
-            [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit] :as common]))
+            [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit get-capacity-unit] :as common]))
 
 (defn- project-tabs
   [{:keys [active] :or {active :scenarios}}]
@@ -45,7 +45,9 @@
      [:td.col-name name]
      [:td.col-demand-coverage (utils/format-number demand-coverage)]
      [:td.col-pop-without-service (utils/format-number (- population-under-coverage demand-coverage))]
-     [:td.col-pop-without-coverage (utils/format-number (- source-demand population-under-coverage))]
+     [:td.col-pop-without-coverage
+      (if (some? source-demand)
+        (utils/format-number (- source-demand population-under-coverage)))]
      [:td.col-effort (utils/format-effort effort analysis-type)]
      (if (empty? changeset-summary)
        [:td.col-actions]
@@ -57,7 +59,9 @@
 
 (defn- generate-title
   [num source-demand]
-  (str (common/pluralize num "scenario") " (Target population: " (utils/format-number source-demand) ")"))
+  (str (common/pluralize num "scenario")
+       (if (some? source-demand)
+         (str " (Target population: " (utils/format-number source-demand) ")"))))
 
 (defn- sort-scenarios
   [scenarios key order]
@@ -99,7 +103,8 @@
         sort-order (rf/subscribe [:scenarios/sort-order])
         sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)
         demand-unit (get-demand-unit current-project)
-        provider-unit (get-provider-unit current-project)]
+        provider-unit (get-provider-unit current-project)
+        capacity-unit (get-capacity-unit current-project)]
     [:div.scenarios-content
      [:table.mdc-data-table__table
       [:caption (generate-title num source-demand)]
@@ -113,12 +118,12 @@
         [scenarios-sortable-header {:class [:col-demand-coverage]
                                     :align :right
                                     :sorting-key :demand-coverage
-                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area, with access to service provided within capacity.")}
+                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area, with access to " capacity-unit " within capacity.")}
          "Population with service"]
         [scenarios-sortable-header {:class [:col-pop-without-service]
                                     :align :right
                                     :sorting-key :without-service
-                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area but without enough capacity to provide service.")}
+                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area but without enough " capacity-unit " to provide service.")}
          "Without service"]
         [scenarios-sortable-header {:class [:col-pop-without-coverage]
                                     :align :right

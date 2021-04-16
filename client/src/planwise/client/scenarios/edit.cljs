@@ -64,7 +64,7 @@
   (and (= (:action change) "create-provider") (nil? free-capacity)))
 
 (defn changeset-dialog-content
-  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} props budget?]
+  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change] :as provider} {:keys [budget? demand-unit capacity-unit] :as props}]
   (let [new?      (new-provider? provider)
         increase? (= (:action change) "increase-provider")
         create?   (= (:action change) "create-provider")
@@ -82,7 +82,7 @@
         [common2/text-field {:label "Original capacity"
                              :read-only true
                              :value initial-capacity}])
-      [common2/numeric-field {:label (if increase? "Extra capacity" "Capacity")
+      [common2/numeric-field {:label (if increase? "Extra capacity" (str "Capacity " capacity-unit))
                               :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
                               :value (:capacity change)}]
       ;; Show unsatisfied demand when data is available from an existing provider or
@@ -133,7 +133,9 @@
             action        (get-in @provider [:change :action])
             budget        (get-in config [:actions :budget])
             budget?       (common/is-budget (get-in config [:analysis-type]))
-            new?          (new-provider? @provider)]
+            new?          (new-provider? @provider)
+            demand-unit   (common/get-demand-unit project)
+            capacity-unit (common/get-capacity-unit project)]
         (dialog (merge {:open?       open?
                         :acceptable? (and (or (not budget?)
                                               ((fnil pos? 0) (get-in @provider [:change :investment])))
@@ -141,15 +143,16 @@
                         :title       (action->title action)
                         :content     (when open?
                                        (changeset-dialog-content
-                                        (if budget?
-                                          (assoc @provider
-                                                 :available-budget (- budget (:effort scenario)))
-                                          @provider)
+                                        (merge @provider
+                                               (if budget?
+                                                 {:available-budget (- budget (:effort scenario))}))
                                         {:project-capacity (get-in config [:providers :capacity])
                                          :upgrade-budget   (get-in config [:actions :upgrade-budget])
                                          :building-costs   (sort-by :capacity (get-in config [:actions :build]))
-                                         :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))}
-                                        budget?))
+                                         :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))
+                                         :budget?          budget?
+                                         :demand-unit      demand-unit
+                                         :capacity-unit    capacity-unit}))
                         :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
                         :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}
                        (when-not new?

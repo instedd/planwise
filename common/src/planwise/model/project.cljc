@@ -22,7 +22,8 @@
 (s/def ::provider-set-id (s/nilable number?))
 (s/def ::capacity number?)
 (s/def ::provider-unit string?)
-(s/def ::providers (s/keys :req-un [::capacity ::provider-unit]))
+(s/def ::capacity-unit string?)
+(s/def ::providers (s/keys :req-un [::capacity ::provider-unit ::capacity-unit]))
 
 ;; Coverage
 (s/def ::driving-time number?)
