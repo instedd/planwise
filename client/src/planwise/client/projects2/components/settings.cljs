@@ -195,7 +195,7 @@
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                   :disabled?  read-only}]
      [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
-     [m/TextFieldHelperText {:persistent true} (str "How do you refer to the filtered consumers source?")]
+     [m/TextFieldHelperText {:persistent true} (str "How do you refer to the units in the dataset? (e.g. population)")]
      [current-project-input "Demand Unit" [:config :demographics :demand-unit] "text" {:disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the unit of your demand?")]
      [:div.percentage-input
