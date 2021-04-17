@@ -43,12 +43,18 @@
      [:td.col-state (cond (= state "pending") [create-chip state]
                           (not= label "initial") [create-chip label])]
      [:td.col-name name]
-     [:td.col-demand-coverage (utils/format-number demand-coverage)]
-     [:td.col-pop-without-service (utils/format-number (- population-under-coverage demand-coverage))]
+     [:td.col-demand-coverage
+      (when (some? demand-coverage)
+        (utils/format-number demand-coverage))]
+     [:td.col-pop-without-service
+      (when (and (some? demand-coverage) (some? population-under-coverage))
+        (utils/format-number (- population-under-coverage demand-coverage)))]
      [:td.col-pop-without-coverage
-      (if (some? source-demand)
+      (when (some? source-demand)
         (utils/format-number (- source-demand population-under-coverage)))]
-     [:td.col-effort (utils/format-effort effort analysis-type)]
+     [:td.col-effort
+      (when (some? effort)
+        (utils/format-effort effort analysis-type))]
      (if (empty? changeset-summary)
        [:td.col-actions]
        [:td.col-actions.has-tooltip
@@ -104,7 +110,8 @@
         sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)
         demand-unit (get-demand-unit current-project)
         provider-unit (get-provider-unit current-project)
-        capacity-unit (get-capacity-unit current-project)]
+        capacity-unit (get-capacity-unit current-project)
+        effort-label (if (common/is-budget analysis-type) "Investment" "Effort")]
     [:div.scenarios-content
      [:table.mdc-data-table__table
       [:caption (generate-title num source-demand)]
@@ -132,8 +139,9 @@
          "Without coverage"]
         [scenarios-sortable-header {:class [:col-effort]
                                     :align :right
-                                    :sorting-key :effort}
-         (if (common/is-budget analysis-type) "Investment" "Effort")]
+                                    :sorting-key :effort
+                                    :tooltip effort-label}
+         effort-label]
         [:th.col-actions [:p "Actions"]]]]
       [:tbody
        (map-indexed (fn [index scenario]
