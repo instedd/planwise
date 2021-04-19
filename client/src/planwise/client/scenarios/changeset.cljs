@@ -37,7 +37,7 @@
         providers)])
 
 (defn- suggestion-row
-  [props {:keys [coverage action-capacity ranked name] :as suggestion}]
+  [{:keys [demand-unit capacity-unit] :as props} {:keys [coverage action-capacity ranked name] :as suggestion}]
   [:div
    [:div {:class-name    "section changeset-row"
           :on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
@@ -49,12 +49,12 @@
       [:p {:class-name "strong"} (if name name (str "Suggestion " ranked))]
       ; coverage is nil when requesting suggestions to improve existing provider
       ; and it is not nil when requesting suggestions for new providers
-      [:p {:class-name "grey-text"} (str "Required Capacity: " action-capacity
-                                         (if (not (nil? coverage)) (str " Coverage: " coverage)))]]]]
+      [:p {:class-name "grey-text"} (str "Required Capacity: " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit
+                                         (if (some? coverage) (str " Coverage: " (utils/format-number coverage))))]]]]
    [:hr]])
 
 (defn- suggestion-listing-component
-  [suggestions]
+  [props suggestions]
   [:div {:class-name "scroll-list suggestion-list"}
-   (map (fn [suggestion] [suggestion-row {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))} suggestion])
+   (map (fn [suggestion] [suggestion-row (merge props {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))}) suggestion])
         suggestions)])
