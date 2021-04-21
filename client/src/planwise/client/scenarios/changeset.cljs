@@ -49,8 +49,9 @@
       [:p {:class-name "strong"} (if name name (str "Suggestion " ranked))]
       ; coverage is nil when requesting suggestions to improve existing provider
       ; and it is not nil when requesting suggestions for new providers
-      [:p {:class-name "grey-text"} (str "Required Capacity: " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit
-                                         (if (some? coverage) (str " Coverage: " (utils/format-number coverage))))]]]]
+      [:p {:class-name "grey-text"} (str "Required Capacity: " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]
+      (when (some? coverage)
+        [:p {:class-name "grey-text"} (str " Coverage: " (utils/format-number coverage) " " demand-unit)])]]]
    [:hr]])
 
 (defn- suggestion-listing-component

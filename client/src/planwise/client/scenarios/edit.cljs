@@ -79,7 +79,7 @@
                                    :focus-extra-class "show-static-text"}))]
      [:div
       (when increase?
-        [common2/text-field {:label (str "Original capacity")
+        [common2/text-field {:label (str "Original capacity " capacity-unit)
                              :read-only true
                              :value initial-capacity}])
       [common2/numeric-field {:label (if increase? "Extra capacity" (str "Capacity " capacity-unit))
