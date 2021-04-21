@@ -61,14 +61,14 @@
          (str/capitalize))))
 
 (defn- build-changeset-summary
-  [changeset provider-unit]
+  [changeset {:keys [provider-unit capacity-unit]}]
   (let [changeset (filter #(-> % :initial nil?) changeset)
         counters (frequencies (map :action changeset))
         providers (count changeset)
         capacity (apply +' (mapv :capacity changeset))
         summary (build-summary counters provider-unit)]
     (if (zero? providers) ""
-        (format "%s. Increase overall capacity in %d." summary capacity))))
+        (format "%s. Increase overall capacity in %d %s." summary capacity capacity-unit))))
 
 (defn- map->csv
   [coll fields]
@@ -163,10 +163,11 @@
   ;; TODO compute % coverage from initial scenario/project
   (let [project-id    (:id project)
         provider-unit (common/get-provider-unit project)
+        capacity-unit (common/get-capacity-unit project)
         list          (db-list-scenarios (get-db store) {:project-id project-id})]
     (map (fn [{:keys [changeset] :as scenario}]
            (-> scenario
-               (assoc  :changeset-summary (build-changeset-summary (edn/read-string changeset) provider-unit))
+               (assoc  :changeset-summary (build-changeset-summary (edn/read-string changeset) {:provider-unit provider-unit :capacity-unit capacity-unit}))
                (dissoc :changeset)))
          list)))
 

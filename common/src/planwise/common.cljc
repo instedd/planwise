@@ -37,3 +37,9 @@
    (get-provider-unit project true))
   ([project lowercase?]
    (get-project-unit project [:config :providers :provider-unit] "providers" lowercase?)))
+
+(defn get-capacity-unit
+  ([project]
+   (get-capacity-unit project true))
+  ([project lowercase?]
+   (get-project-unit project [:config :providers :capacity-unit] "units" lowercase?)))

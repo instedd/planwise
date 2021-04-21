@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
-            [clojure.string :refer [blank? join lower-case]]
+            [clojure.string :refer [blank? join lower-case capitalize]]
             [planwise.client.asdf :as asdf]
             [planwise.client.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
@@ -20,7 +20,7 @@
             [clojure.spec.alpha :as s]
             [leaflet.core :as l]
             [planwise.client.mapping :as mapping]
-            [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit] :as common]))
+            [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit get-capacity-unit] :as common]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
@@ -40,7 +40,7 @@
   ([label path type]
    (current-project-input label path type "" "" {:disabled false}))
   ([label path type other-props]
-   (current-project-input label path type "" "" {:disabled false}))
+   (current-project-input label path type "" "" other-props))
   ([label path type prefix suffix other-props]
    (let [current-project (rf/subscribe [:projects2/current-project])
          value           (or (get-in @current-project path) "")
@@ -143,7 +143,7 @@
 ;-------------------------------------------------------------------------------------------
 ; Actions
 (defn- show-action
-  [_ {:keys [idx action-name capacity investment] :as action} props]
+  [{:keys [idx action-name capacity investment capacity-unit] :as action} props]
   [:div {:class "project-setting"}
    [m/Button (merge
               {:type "button"
@@ -151,17 +151,19 @@
                :on-click #(dispatch [:projects2/delete-action action-name idx])}
               props)
     [m/Icon "clear"]]
-   (when (= action-name :build) "with a capacity of ")
+   ;; (when (= action-name :build) "with a capacity of ")
    [current-project-input "" [:config :actions action-name idx :capacity] "number" "" "" (merge {:class "action-input"} props)]
+   " "
+   capacity-unit
    " would cost "
    [current-project-input "" [:config :actions action-name idx :investment] "number" common/currency-symbol "" (merge {:class "action-input"} props)]
    " each"])
 
 (defn- listing-actions
-  [{:keys [read-only? action-name list]}]
+  [{:keys [read-only? action-name list capacity-unit]}]
   [:div
    (for [[index action] (map-indexed vector list)]
-     [show-action {:key (str action-name "-" index)} (assoc action :action-name action-name :idx index) {:disabled read-only?}])
+     ^{:key (str action-name "-" index)} [show-action (assoc action :action-name action-name :idx index :capacity-unit capacity-unit) {:disabled read-only?}])
    [m/Button  {:type "button"
                :disabled read-only?
                :theme    ["text-secondary-on-secondary-light"]
@@ -193,7 +195,7 @@
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                   :disabled?  read-only}]
      [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
-     [m/TextFieldHelperText {:persistent true} (str "How do you refer to the filtered consumers source?")]
+     [m/TextFieldHelperText {:persistent true} (str "How do you refer to the units in the dataset? (e.g. population)")]
      [current-project-input "Demand Unit" [:config :demographics :demand-unit] "text" {:disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the unit of your demand?")]
      [:div.percentage-input
@@ -205,10 +207,11 @@
   (let [current-project (subscribe [:projects2/current-project])
         tags            (subscribe [:projects2/tags])
         provider-unit   (get-provider-unit @current-project)
-        demand-unit     (get-demand-unit @current-project)]
+        demand-unit     (get-demand-unit @current-project)
+        capacity-unit   (get-capacity-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 3 "Providers"]
-     [providers-set-dropdown-component {:label     "Dataset"
+     [providers-set-dropdown-component {:label     "Provider Dataset"
                                         :value     (:provider-set-id @current-project)
                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                         :disabled? read-only}]
@@ -216,8 +219,15 @@
      [current-project-input "Provider Unit" [:config :providers :provider-unit] "text" {:disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to your providers? (eg: \"sites\")")]
 
-     [current-project-input "Capacity Workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-     [m/TextFieldHelperText {:persistent true} (str "How many " demand-unit " can one of the " provider-unit " handle?")]
+     [current-project-input "Capacity Unit" [:config :providers :capacity-unit] "text" {:disabled read-only}]
+     [m/TextFieldHelperText {:persistent true} (str "What's the " provider-unit " unit of capacity? (eg: \"test devices\")")]
+
+     [:div
+      (str (capitalize capacity-unit) " will provide service for ")
+      [current-project-input "" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float :class "capacity-input"}]
+      (str demand-unit)
+      " each"]
+
      (when-not read-only [tag-input provider-unit])
      [:label "Tags: " [tag-set @tags read-only]]
      [count-providers @tags @current-project provider-unit]]))
@@ -248,7 +258,8 @@
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
         analysis-type   (get-in @current-project [:config :analysis-type])
-        provider-unit   (get-provider-unit @current-project)]
+        provider-unit   (get-provider-unit @current-project)
+        capacity-unit   (get-capacity-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 5 "Actions"]
      [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
@@ -262,10 +273,11 @@
         [current-project-input "" [:config :actions :budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
         [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
-        [project-setting-title "domain" (str "Building new " provider-unit)]
-        [listing-actions {:read-only?  read-only
-                          :action-name :build
-                          :list        @build-actions}]
+        [project-setting-title "domain" (str "Building new " provider-unit " with a capacity of ")]
+        [listing-actions {:read-only?    read-only
+                          :action-name   :build
+                          :list          @build-actions
+                          :capacity-unit capacity-unit}]
 
         [project-setting-title "arrow_upward" (str "Upgrading " provider-unit " to satisfy demand would cost")]
         [:div.project-settings
@@ -273,9 +285,10 @@
          "each"]
 
         [project-setting-title "add" (str "Increase the capactiy of " provider-unit " by")]
-        [listing-actions {:read-only?   read-only
-                          :action-name :upgrade
-                          :list        @upgrade-actions}]])]))
+        [listing-actions {:read-only?    read-only
+                          :action-name   :upgrade
+                          :list          @upgrade-actions
+                          :capacity-unit capacity-unit}]])]))
 
 (defn- current-project-step-review
   [read-only]
@@ -293,6 +306,7 @@
         budget          (get-in @current-project [:config :actions :budget])
         workload        (get-in @current-project [:config :providers :capacity])
         demand-unit     (get-demand-unit @current-project)
+        capacity-unit   (get-capacity-unit @current-project)
         capacities      (get-in @current-project [:config :actions :build])]
     (dispatch [:sources/load])
     (dispatch [:providers-set/load-providers-set])
@@ -304,7 +318,7 @@
        [project-setting-title "warning" "The provider dataset field in the \"providers\" tab is needed"])
      (when (common/is-budget analysis-type)
        (if (some? budget)
-         [project-setting-title "account_balance" (str common/currency-symbol " " budget)]
+         [project-setting-title "account_balance" (str common/currency-symbol " " (utils/format-number budget))]
          [project-setting-title "warning" "The budget field in the \"actions\" tab is needed"]))
      (if (some? source)
        [project-setting-title "people" (:name source)]
@@ -320,9 +334,11 @@
                       ^{:key (str "action-" idx)} [project-setting-title
                                                    "info"
                                                    (join " " ["A facility with a capacity of"
-                                                              (:capacity action)
-                                                              "will provide service for"
-                                                              (* (:capacity action) workload)
+                                                              (utils/format-number (:capacity action))
+                                                              " "
+                                                              capacity-unit
+                                                              " will provide service for"
+                                                              (utils/format-number (* (:capacity action) workload))
                                                               " "
                                                               demand-unit])]) capacities))]))
 

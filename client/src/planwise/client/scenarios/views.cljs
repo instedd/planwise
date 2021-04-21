@@ -18,7 +18,7 @@
             [planwise.client.components.common2 :as common2]
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]
-            [planwise.common :refer [get-demand-unit get-provider-unit]]))
+            [planwise.common :refer [get-demand-unit get-provider-unit get-capacity-unit]]))
 
 
 (defn raise-alert
@@ -49,7 +49,7 @@
     button))
 
 (defn- show-provider
-  [read-only? demand-unit {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand reachable-demand] :as provider}]
+  [{:keys [read-only? demand-unit capacity-unit]} {:keys [change matches-filters name capacity free-capacity required-capacity satisfied-demand unsatisfied-demand reachable-demand] :as provider}]
   (let [format-number   (fnil utils/format-number 0)
         change* (if (some? change)
                   change
@@ -57,7 +57,7 @@
     (crate/html
      [:div
       [:h3 name]
-      [:p (str "Capacity: " (utils/format-number capacity))]
+      [:p (str "Capacity: " (utils/format-number capacity) " " capacity-unit)]
       [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
       [:p (str "Required capacity: " (utils/format-number (Math/ceil required-capacity)))]
       (when (or matches-filters change)
@@ -90,14 +90,14 @@
   (popup-connected-button label #(dispatch [:scenarios/edit-suggestion suggestion])))
 
 (defn- show-suggested-provider
-  [{:keys [action-capacity action-cost coverage name ranked] :as suggestion} state]
+  [{:keys [demand-unit capacity-unit]} {:keys [action-capacity action-cost coverage name ranked] :as suggestion} state]
   (let [new-provider? (= state :new-provider)]
     (crate/html
      [:div
       [:h3 (if name name (str "Suggestion " ranked))]
-      [:p (str "Needed capacity : " (utils/format-number action-capacity))]
+      [:p (str "Needed capacity : " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]
       (when new-provider?
-        [:p (str "Expected demand to satisfy : " (utils/format-number coverage))])
+        [:p (str "Expected demand to satisfy : " (utils/format-number coverage) " " demand-unit)])
       (when-not new-provider?
         (when action-cost
           [:p (str "Investment according to project configuration : " (utils/format-number action-cost))]))
@@ -158,7 +158,8 @@
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
         demand-unit              (get-demand-unit project)
-        provider-unit            (get-provider-unit project)]
+        provider-unit            (get-provider-unit project)
+        capacity-unit            (get-capacity-unit project)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
       (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
@@ -190,7 +191,7 @@
             suggestions-layer       [:marker-layer {:points (map #(assoc % :open? (= % selected-suggestion)) suggested-locations)
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
-                                                    :popup-fn #(show-suggested-provider % state)
+                                                    :popup-fn #(show-suggested-provider {:demand-unit demand-unit :capacity-unit capacity-unit} % state)
                                                     :icon-fn #(suggestion-icon-fn % selected-suggestion)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
@@ -200,7 +201,9 @@
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
                                                    :icon-fn #(icon-function % @selected-provider)
-                                                   :popup-fn     #(show-provider read-only? demand-unit %)
+                                                   :popup-fn     #(show-provider {:read-only read-only?
+                                                                                  :demand-unit demand-unit
+                                                                                  :capacity-unit capacity-unit} %)
                                                    :mouseover-fn (fn [provider]
                                                                    (dispatch [:scenarios.map/select-provider provider]))
                                                    :mouseout-fn  (fn [provider]
@@ -287,12 +290,12 @@
      [:hr]]))
 
 (defn suggested-locations-list
-  [suggested-locations state]
+  [props suggested-locations]
   [:div
    [:div {:class-name "section"}
     [:h1 {:class-name "title-icon"} "Suggestion list"]
     [:div {:class-name "fade"}]
-    [changeset/suggestion-listing-component suggested-locations]
+    [changeset/suggestion-listing-component props suggested-locations]
     [:div {:class-name "fade inverted"}]]])
 
 (defn side-panel-view-2
@@ -305,7 +308,9 @@
         population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])
         providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])
         current-project              (subscribe [:projects2/current-project])
-        analysis-type                (get-in @current-project [:config :analysis-type])]
+        analysis-type                (get-in @current-project [:config :analysis-type])
+        demand-unit                  (get-demand-unit @current-project)
+        capacity-unit                (get-capacity-unit @current-project)]
     (fn [{:keys [state] :as current-scenario} demand-unit error]
       (let [computing-suggestions?   (or @computing-best-locations? @computing-best-improvements?)
             edit-button              [edit/create-new-action-component @view-state computing-suggestions? @current-project]]
@@ -313,7 +318,7 @@
           [:<>
            [:div {:class-name "suggestion-list"}
             [edit/create-new-action-component @view-state computing-suggestions? @current-project]]
-           [suggested-locations-list @suggested-locations state]]
+           [suggested-locations-list {:state state :demand-unit demand-unit :capacity-unit capacity-unit} @suggested-locations]]
           [:<>
            [:div
             [scenario-info @view-state current-scenario demand-unit analysis-type]

@@ -11,7 +11,7 @@
             [planwise.client.ui.rmwc :as m]
             [planwise.client.utils :as utils]
             [planwise.client.projects2.components.settings :as settings]
-            [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit] :as common]))
+            [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit get-capacity-unit] :as common]))
 
 (defn- project-tabs
   [{:keys [active] :or {active :scenarios}}]
@@ -43,10 +43,18 @@
      [:td.col-state (cond (= state "pending") [create-chip state]
                           (not= label "initial") [create-chip label])]
      [:td.col-name name]
-     [:td.col-demand-coverage (utils/format-number demand-coverage)]
-     [:td.col-pop-without-service (utils/format-number (- population-under-coverage demand-coverage))]
-     [:td.col-pop-without-coverage (utils/format-number (- source-demand population-under-coverage))]
-     [:td.col-effort (utils/format-effort effort analysis-type)]
+     [:td.col-demand-coverage
+      (some-> demand-coverage utils/format-number)]
+     [:td.col-pop-without-service
+      (when (and (some? demand-coverage) (some? population-under-coverage))
+        (utils/format-number (- population-under-coverage demand-coverage)))]
+     [:td.col-pop-without-coverage
+      (some-> source-demand
+              (- population-under-coverage)
+              utils/format-number)]
+     [:td.col-effort
+      (some-> effort
+              (utils/format-effort analysis-type))]
      (if (empty? changeset-summary)
        [:td.col-actions]
        [:td.col-actions.has-tooltip
@@ -57,7 +65,9 @@
 
 (defn- generate-title
   [num source-demand]
-  (str (common/pluralize num "scenario") " (Target population: " (utils/format-number source-demand) ")"))
+  (str (common/pluralize num "scenario")
+       (if (some? source-demand)
+         (str " (Target population: " (utils/format-number source-demand) ")"))))
 
 (defn- sort-scenarios
   [scenarios key order]
@@ -99,7 +109,9 @@
         sort-order (rf/subscribe [:scenarios/sort-order])
         sorted-scenarios (sort-scenarios scenarios @sort-column @sort-order)
         demand-unit (get-demand-unit current-project)
-        provider-unit (get-provider-unit current-project)]
+        provider-unit (get-provider-unit current-project)
+        capacity-unit (get-capacity-unit current-project)
+        effort-label (if (common/is-budget analysis-type) "Investment" "Effort")]
     [:div.scenarios-content
      [:table.mdc-data-table__table
       [:caption (generate-title num source-demand)]
@@ -113,12 +125,12 @@
         [scenarios-sortable-header {:class [:col-demand-coverage]
                                     :align :right
                                     :sorting-key :demand-coverage
-                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area, with access to service provided within capacity.")}
+                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area, with access to " capacity-unit " within capacity.")}
          "Population with service"]
         [scenarios-sortable-header {:class [:col-pop-without-service]
                                     :align :right
                                     :sorting-key :without-service
-                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area but without enough capacity to provide service.")}
+                                    :tooltip (str (capitalize demand-unit) " within " provider-unit " catchment area but without enough " capacity-unit " to provide service.")}
          "Without service"]
         [scenarios-sortable-header {:class [:col-pop-without-coverage]
                                     :align :right
@@ -127,8 +139,9 @@
          "Without coverage"]
         [scenarios-sortable-header {:class [:col-effort]
                                     :align :right
-                                    :sorting-key :effort}
-         (if (common/is-budget analysis-type) "Investment" "Effort")]
+                                    :sorting-key :effort
+                                    :tooltip effort-label}
+         effort-label]
         [:th.col-actions [:p "Actions"]]]]
       [:tbody
        (map-indexed (fn [index scenario]
