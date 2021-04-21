@@ -44,17 +44,17 @@
                           (not= label "initial") [create-chip label])]
      [:td.col-name name]
      [:td.col-demand-coverage
-      (when (some? demand-coverage)
-        (utils/format-number demand-coverage))]
+      (some-> demand-coverage utils/format-number)]
      [:td.col-pop-without-service
       (when (and (some? demand-coverage) (some? population-under-coverage))
         (utils/format-number (- population-under-coverage demand-coverage)))]
      [:td.col-pop-without-coverage
-      (when (some? source-demand)
-        (utils/format-number (- source-demand population-under-coverage)))]
+      (some-> source-demand
+              (- population-under-coverage)
+              utils/format-number)]
      [:td.col-effort
-      (when (some? effort)
-        (utils/format-effort effort analysis-type))]
+      (some-> effort
+              (utils/format-effort analysis-type))]
      (if (empty? changeset-summary)
        [:td.col-actions]
        [:td.col-actions.has-tooltip

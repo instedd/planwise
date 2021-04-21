@@ -119,10 +119,14 @@
              {:on-click #(dispatch [:scenarios/save-key [:changeset-dialog :change :investment] (min suggested-cost remaining-budget)])}
              "Suggested investment according to project configuration: " (- suggested-cost (:investment change))])]))]))
 
+(def action-labels
+  {"create-provider" "Create"
+   "upgrade-provider" "Upgrade"
+   "increase-provider" "Increase"})
 
 (defn- action->title
-  [name]
-  (str/capitalize (first (str/split name #"-"))))
+  [action]
+  (get action-labels action))
 
 (defn changeset-dialog
   [project scenario]
