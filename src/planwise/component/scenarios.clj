@@ -39,12 +39,12 @@
 (def action-labels {"create-provider" "create" "upgrade-provider" "upgrade" "increase-provider" "increase capacity for"})
 
 (defn- build-summary
-  [counters]
+  [counters provider-unit]
   (letfn [(format-action
             ([action]
              (format-action action false))
             ([[label count] final]
-             (str label " " (if final (common/pluralize count "provider") count))))
+             (str label " " (if final (str count " " provider-unit) count))))
           (format-summary
             ([] "")
             ([x] (format-action x true))
@@ -61,12 +61,12 @@
          (str/capitalize))))
 
 (defn- build-changeset-summary
-  [changeset]
+  [changeset provider-unit]
   (let [changeset (filter #(-> % :initial nil?) changeset)
         counters (frequencies (map :action changeset))
         providers (count changeset)
         capacity (apply +' (mapv :capacity changeset))
-        summary (build-summary counters)]
+        summary (build-summary counters provider-unit)]
     (if (zero? providers) ""
         (format "%s. Increase overall capacity in %d." summary capacity))))
 
@@ -159,12 +159,14 @@
       {:coverage-geom (:geojson query-result)})))
 
 (defn list-scenarios
-  [store project-id]
+  [store project]
   ;; TODO compute % coverage from initial scenario/project
-  (let [list (db-list-scenarios (get-db store) {:project-id project-id})]
+  (let [project-id    (:id project)
+        provider-unit (common/get-provider-unit project)
+        list          (db-list-scenarios (get-db store) {:project-id project-id})]
     (map (fn [{:keys [changeset] :as scenario}]
            (-> scenario
-               (assoc  :changeset-summary (build-changeset-summary (edn/read-string changeset)))
+               (assoc  :changeset-summary (build-changeset-summary (edn/read-string changeset) provider-unit))
                (dissoc :changeset)))
          list)))
 
@@ -351,7 +353,7 @@
   [{:keys [id action capacity location name]}]
   {:id id
    :type action
-   :name (or name "New Provider")
+   :name (or name "New")
    :lat (:lat location)
    :lon (:lon location)
    :capacity capacity
@@ -437,8 +439,8 @@
 
 (defrecord ScenariosStore [db engine jobrunner providers-set sources-set coverage]
   boundary/Scenarios
-  (list-scenarios [store project-id]
-    (list-scenarios store project-id))
+  (list-scenarios [store project]
+    (list-scenarios store project))
   (get-scenario [store scenario-id]
     (get-scenario store scenario-id))
   (create-initial-scenario [store project]

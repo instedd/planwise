@@ -122,7 +122,7 @@
 
 (defn- action->title
   [name]
-  (str/join " " (map str/capitalize (str/split name #"-"))))
+  (str/capitalize (first (str/split name #"-"))))
 
 (defn changeset-dialog
   [project scenario]
@@ -167,8 +167,9 @@
           :default "domain")]])
 
 (defn create-new-action-component
-  [state computing?]
-  (let [open (subscribe [:scenarios.new-action/options])]
+  [state computing? project]
+  (let [open          (subscribe [:scenarios.new-action/options])
+        provider-unit (common/get-provider-unit project)]
     (fn [state computing?]
       [:div.scenario-settings
        [new-provider-button state computing?]
@@ -178,10 +179,10 @@
          "Create one"]
         [m/MenuItem
          {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
-         "Get suggestions for a new provider"]
+         (str "Get suggestions for new " provider-unit)]
         [m/MenuItem
          {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
-         "Get suggestions to improve an existing provider"]]])))
+         (str "Get suggestions to improve existing " provider-unit)]]])))
 
 (defn scenario-settings
   [state]

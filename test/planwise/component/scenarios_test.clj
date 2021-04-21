@@ -68,8 +68,10 @@
 
 (deftest empty-list-of-scenarios
   (test-system/with-system (test-config)
-    (let [store (:planwise.component/scenarios system)
-          scenarios (scenarios/list-scenarios store project-id)]
+    (let [store     (:planwise.component/scenarios system)
+          projects2 (:planwise.component/projects2 system)
+          project   (projects2/get-project projects2 project-id)
+          scenarios (scenarios/list-scenarios store project)]
       (is (= (count scenarios) 0)))))
 
 (deftest initial-scenario-has-empty-changeset
@@ -127,7 +129,9 @@
   (test-system/with-system (test-config fixture-with-scenarios)
     (let [store        (:planwise.component/scenarios system)
           _            (scenarios/db-update-scenarios-label! (scenarios/get-db store) {:project-id project-id})
-          scenarios    (scenarios/list-scenarios store project-id)
+          projects2    (:planwise.component/projects2 system)
+          project      (projects2/get-project projects2 project-id)
+          scenarios    (scenarios/list-scenarios store project)
           scenario-ids (map :id scenarios)]
       (is (= (take 3 scenario-ids) [initial-scenario-id best-scenario-id optimal-scenario-id]))
       (is (= (:label (find-by scenarios :id initial-scenario-id)) "initial"))

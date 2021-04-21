@@ -4,7 +4,7 @@
             [crate.core :as crate]
             [re-com.core :as rc]
             [leaflet.core :as l]
-            [clojure.string :refer [join split]]
+            [clojure.string :refer [join split capitalize]]
             [planwise.client.config :as config]
             [planwise.client.scenarios.db :as db]
             [planwise.client.dialog :refer [dialog]]
@@ -17,7 +17,8 @@
             [planwise.client.components.common :as common]
             [planwise.client.components.common2 :as common2]
             [planwise.client.utils :as utils]
-            [planwise.client.ui.rmwc :as m]))
+            [planwise.client.ui.rmwc :as m]
+            [planwise.common :refer [get-demand-unit get-provider-unit]]))
 
 
 (defn raise-alert
@@ -63,13 +64,13 @@
         [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))])
       (when (or matches-filters change)
         [:p (str "Free capacity: " (utils/format-number (Math/floor free-capacity)))])
-      [:p (str demand-unit " under geographic coverage: " (utils/format-number (Math/ceil reachable-demand)))]
+      [:p (str (capitalize demand-unit) " under geographic coverage: " (utils/format-number (Math/ceil reachable-demand)))]
       (when-not read-only?
         (popup-connected-button
          (cond
-           (some? change)        "Edit provider"
-           (not matches-filters) "Upgrade provider"
-           :else                 "Increase provider")
+           (some? change)        "Edit"
+           (not matches-filters) "Upgrade"
+           :else                 "Increase")
          #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
 
 (defn label-for-suggestion
@@ -80,9 +81,9 @@
                         (:matches-filters suggestion) :increase
                         :else                         :upgrade)]
     (case action
-      :create   "Create new provider"
-      :upgrade  "Upgrade provider"
-      :increase "Increase provider")))
+      :create   "Create"
+      :upgrade  "Upgrade"
+      :increase "Increase")))
 
 (defn- button-for-suggestion
   [label suggestion]
@@ -93,7 +94,7 @@
   (let [new-provider? (= state :new-provider)]
     (crate/html
      [:div
-      [:h3 (if name name (str "Suggested provider " ranked))]
+      [:h3 (if name name (str "Suggestion " ranked))]
       [:p (str "Needed capacity : " (utils/format-number action-capacity))]
       (when new-provider?
         [:p (str "Expected demand to satisfy : " (utils/format-number coverage))])
@@ -156,7 +157,8 @@
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
         providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
-        demand-unit              (get-in project [:config :demographics :demand-unit])]
+        demand-unit              (get-demand-unit project)
+        provider-unit            (get-provider-unit project)]
     (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
       (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
@@ -211,7 +213,8 @@
                         :on-click (cond (= state :new-provider) add-point)
                         :controls [:legend]
                         :initial-bbox bbox
-                        :pointer-class (cond (= state :new-provider) "crosshair-pointer")}
+                        :pointer-class (cond (= state :new-provider) "crosshair-pointer")
+                        :provider-unit provider-unit}
           mapping/default-base-tile-layer
           (when pending-demand-raster
             [:wms-tile-layer
@@ -305,16 +308,16 @@
         analysis-type                (get-in @current-project [:config :analysis-type])]
     (fn [{:keys [state] :as current-scenario} demand-unit error]
       (let [computing-suggestions?   (or @computing-best-locations? @computing-best-improvements?)
-            edit-button              [edit/create-new-action-component @view-state computing-suggestions?]]
+            edit-button              [edit/create-new-action-component @view-state computing-suggestions? @current-project]]
         (if @suggested-locations
           [:<>
            [:div {:class-name "suggestion-list"}
-            [edit/create-new-action-component @view-state computing-suggestions?]]
+            [edit/create-new-action-component @view-state computing-suggestions? @current-project]]
            [suggested-locations-list @suggested-locations state]]
           [:<>
            [:div
             [scenario-info @view-state current-scenario demand-unit analysis-type]
-            [edit/create-new-action-component @view-state computing-suggestions?]
+            [edit/create-new-action-component @view-state computing-suggestions? @current-project]
             (if computing-suggestions?
               [:div {:class-name "info-computing-best-location"}
                [:small (if @computing-best-locations?
@@ -337,27 +340,27 @@
 
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]
-  (let [read-only? (subscribe [:scenarios/read-only?])
-        state      (subscribe [:scenarios/view-state])
-        error      (subscribe [:scenarios/error])
-        demand-unit (get-in current-project [:config :demographics :demand-unit])
+  (let [read-only?  (subscribe [:scenarios/read-only?])
+        state       (subscribe [:scenarios/view-state])
+        error       (subscribe [:scenarios/error])
         export-providers-button [:a {:class "mdc-fab disable-a"
                                      :id "main-action"
                                      :href (str "/api/scenarios/" id "/csv")}
                                  [m/Icon {:class "material-icons  center-download-icon"} "get_app"]]]
     (fn [current-project current-scenario]
-      [ui/full-screen (merge (common2/nav-params)
-                             {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario @state @error @read-only?]
-                              :title [:ul {:class-name "breadcrumb-menu"}
-                                      [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
-                                      [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
-                                      [:li (:name current-scenario)]]
-                              :action export-providers-button})
-       [side-panel-view current-scenario demand-unit @error @read-only?]
-       [edit/rename-scenario-dialog]
-       [edit/changeset-dialog current-project current-scenario]
-       [edit/delete-scenario-dialog @state current-scenario]])))
+      (let [demand-unit (get-demand-unit current-project)]
+        [ui/full-screen (merge (common2/nav-params)
+                               {:main-prop {:style {:position :relative}}
+                                :main [simple-map current-project current-scenario @state @error @read-only?]
+                                :title [:ul {:class-name "breadcrumb-menu"}
+                                        [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
+                                        [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
+                                        [:li (:name current-scenario)]]
+                                :action export-providers-button})
+         [side-panel-view current-scenario demand-unit @error @read-only?]
+         [edit/rename-scenario-dialog]
+         [edit/changeset-dialog current-project current-scenario]
+         [edit/delete-scenario-dialog @state current-scenario]]))))
 
 (defn scenarios-page
   []

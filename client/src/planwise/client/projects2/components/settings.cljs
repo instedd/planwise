@@ -2,7 +2,7 @@
   (:require [reagent.core :as r]
             [re-frame.core :refer [subscribe dispatch] :as rf]
             [re-com.core :as rc]
-            [clojure.string :refer [blank? join]]
+            [clojure.string :refer [blank? join lower-case]]
             [planwise.client.asdf :as asdf]
             [planwise.client.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
@@ -20,7 +20,7 @@
             [clojure.spec.alpha :as s]
             [leaflet.core :as l]
             [planwise.client.mapping :as mapping]
-            [planwise.common :as common]))
+            [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit] :as common]))
 
 ;;------------------------------------------------------------------------
 ;;Current Project updating
@@ -115,9 +115,9 @@
 
 (defn tag-input []
   (let [value (r/atom "")]
-    (fn []
+    (fn [provider-unit]
       [common2/text-field {:type "text"
-                           :placeholder "Type tag for filtering providers"
+                           :placeholder (str "Type tag for filtering " provider-unit)
                            :on-key-press (fn [e] (when (and (= (.-charCode e) 13) (not (blank? @value)))
                                                    (dispatch [:projects2/save-tag @value])
                                                    (reset! value "")))
@@ -125,11 +125,11 @@
                            :value @value}])))
 
 (defn- count-providers
-  [tags {:keys [provider-set-id providers region-id]}]
+  [tags {:keys [provider-set-id providers region-id]} provider-unit]
   (let [{:keys [total filtered]} providers]
     (cond (nil? region-id) [:p "Select region first."]
-          (nil? provider-set-id) [:p "Select provider set first."]
-          :else [:p "Selected providers: " filtered " / " total])))
+          (nil? provider-set-id) [:p (str "Select " provider-unit " set first.")]
+          :else [:p (str "Selected " provider-unit ": " filtered " / " total)])))
 
 (defn- section-header
   [number title]
@@ -154,7 +154,8 @@
    (when (= action-name :build) "with a capacity of ")
    [current-project-input "" [:config :actions action-name idx :capacity] "number" "" "" (merge {:class "action-input"} props)]
    " would cost "
-   [current-project-input "" [:config :actions action-name idx :investment] "number" common/currency-symbol "" (merge {:class "action-input"} props)]])
+   [current-project-input "" [:config :actions action-name idx :investment] "number" common/currency-symbol "" (merge {:class "action-input"} props)]
+   " each"])
 
 (defn- listing-actions
   [{:keys [read-only? action-name list]}]
@@ -182,7 +183,9 @@
                                   :disabled? read-only}]]))
 (defn- current-project-step-consumers
   [read-only]
-  (let [current-project (subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])
+        consumer-unit   (get-consumer-unit @current-project)
+        demand-unit     (get-demand-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 2 "Consumers"]
      [sources-dropdown-component {:label     "Consumer Dataset"
@@ -195,25 +198,29 @@
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the unit of your demand?")]
      [:div.percentage-input
       [current-project-input "Target" [:config :demographics :target] "number" "" "%"  {:disabled read-only :sub-type :percentage}]
-      [:p (str "of " (or (not-empty (get-in @current-project [:config :demographics :unit-name])) "total population") " should be counted as "
-               (or (not-empty (get-in @current-project [:config :demographics :demand-unit])) "target"))]]]))
+      [:p (str "of " consumer-unit " should be counted as " demand-unit)]]]))
 
 (defn- current-project-step-providers
   [read-only]
   (let [current-project (subscribe [:projects2/current-project])
-        tags            (subscribe [:projects2/tags])]
+        tags            (subscribe [:projects2/tags])
+        provider-unit   (get-provider-unit @current-project)
+        demand-unit     (get-demand-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 3 "Providers"]
-     [providers-set-dropdown-component {:label     "Provider Dataset"
+     [providers-set-dropdown-component {:label     "Dataset"
                                         :value     (:provider-set-id @current-project)
                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                         :disabled? read-only}]
 
+     [current-project-input "Provider Unit" [:config :providers :provider-unit] "text" {:disabled read-only}]
+     [m/TextFieldHelperText {:persistent true} (str "How do you refer to your providers? (eg: \"sites\")")]
+
      [current-project-input "Capacity Workload" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float}]
-     [m/TextFieldHelperText {:persistent true} (str "How many " (or (not-empty (get-in @current-project [:config :demographics :demand-unit])) "targets") " can each provider handle?")]
-     (when-not read-only [tag-input])
+     [m/TextFieldHelperText {:persistent true} (str "How many " demand-unit " can one of the " provider-unit " handle?")]
+     (when-not read-only [tag-input provider-unit])
      [:label "Tags: " [tag-set @tags read-only]]
-     [count-providers @tags @current-project]]))
+     [count-providers @tags @current-project provider-unit]]))
 
 (defn- current-project-step-coverage
   [read-only]
@@ -240,7 +247,8 @@
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
-        analysis-type   (get-in @current-project [:config :analysis-type])]
+        analysis-type   (get-in @current-project [:config :analysis-type])
+        provider-unit   (get-provider-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 5 "Actions"]
      [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
@@ -254,15 +262,17 @@
         [current-project-input "" [:config :actions :budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
         [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
-        [project-setting-title "domain" "Building a new provider..."]
+        [project-setting-title "domain" (str "Building new " provider-unit)]
         [listing-actions {:read-only?  read-only
                           :action-name :build
                           :list        @build-actions}]
 
-        [project-setting-title "arrow_upward" "Upgrading a provider so that it can satisfy demand would cost..."]
-        [current-project-input "" [:config :actions :upgrade-budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
+        [project-setting-title "arrow_upward" (str "Upgrading " provider-unit " to satisfy demand would cost")]
+        [:div.project-settings
+         [current-project-input "" [:config :actions :upgrade-budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
+         "each"]
 
-        [project-setting-title "add" "Increase the capactiy of a provider by..."]
+        [project-setting-title "add" (str "Increase the capactiy of " provider-unit " by")]
         [listing-actions {:read-only?   read-only
                           :action-name :upgrade
                           :list        @upgrade-actions}]])]))
@@ -282,7 +292,7 @@
         analysis-type   (get-in @current-project [:config :analysis-type])
         budget          (get-in @current-project [:config :actions :budget])
         workload        (get-in @current-project [:config :providers :capacity])
-        demand-unit     (get-in @current-project [:config :demographics :demand-unit])
+        demand-unit     (get-demand-unit @current-project)
         capacities      (get-in @current-project [:config :actions :build])]
     (dispatch [:sources/load])
     (dispatch [:providers-set/load-providers-set])
@@ -305,12 +315,16 @@
                                             " of "
                                             (:label (first (vals (:criteria algorithm)))))]
        [project-setting-title "warning" "The \"providers\" and \"coverage\" tabs information is needed"])
-     (map (fn [action]
-            [project-setting-title "info" (join " " ["A facility with a capacity of"
-                                                     (:capacity action)
-                                                     "will provide service for"
-                                                     (* (:capacity action) workload)
-                                                     (or (not-empty demand-unit) "targets")])]) capacities)]))
+     (when (common/is-budget analysis-type)
+       (map-indexed (fn [idx action]
+                      ^{:key (str "action-" idx)} [project-setting-title
+                                                   "info"
+                                                   (join " " ["A facility with a capacity of"
+                                                              (:capacity action)
+                                                              "will provide service for"
+                                                              (* (:capacity action) workload)
+                                                              " "
+                                                              demand-unit])]) capacities))]))
 
 
 (def map-preview-size {:width 373 :height 278})

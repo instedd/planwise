@@ -3,7 +3,7 @@
 (defprotocol Scenarios
   "API for manipulating scenarios"
 
-  (list-scenarios [this project-id]
+  (list-scenarios [this project]
     "Returns the list of the scenarios owned by the project")
 
   (get-scenario [this scenario-id]
