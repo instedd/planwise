@@ -85,9 +85,9 @@
         criteria     (get-in @list [(keyword coverage-algorithm) :criteria])
         valid-keys   (keys criteria)
         update-value (fn [key change]
-                      (if (= coverage-algorithm "drive-walk-friction")
-                        (merge value {key change})
-                        {key change}))]
+                       (if (= coverage-algorithm "drive-walk-friction")
+                         (merge value {key change})
+                         {key change}))]
     (cond
       (nil? criteria) empty
       :else [:div {:class-name "fields-vertical"}
