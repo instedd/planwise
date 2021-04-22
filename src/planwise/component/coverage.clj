@@ -52,7 +52,22 @@
     :description "Simple buffer around origin for testing purposes only"
     :criteria    {:distance {:label   "Distance"
                              :type    :enum
-                             :options buffer-distance-options}}}})
+                             :options buffer-distance-options}}}
+
+   :drive-walk-friction
+   {:label       "Walk or Travel by car"
+    :description "Computes reachable isochrone using a friction raster layer"
+    :criteria    {:driving-time {:label   "Driving time"
+                                 :type    :enum
+                                 :options [{:value 30  :label "30 minutes"}
+                                           {:value 60  :label "1 hour"}
+                                           {:value 90  :label "1:30 hours"}
+                                           {:value 120 :label "2 hours"}]}
+                  :walking-time {:label   "Walking time"
+                                 :type    :enum
+                                 :options [{:value 60  :label "1 hour"}
+                                           {:value 120 :label "2 hours"}
+                                           {:value 180 :label "3 hours"}]}}}})
 
 
 ;; Coverage algorithms =======================================================
