@@ -19,8 +19,10 @@
       (str "data/friction/regions/" region-id ".tif"))))
 
 (defn compute-polygon
-  [runner friction-raster coords max-time min-friction]
-  (let [coords      (->> coords ((juxt :lon :lat)) (str/join ","))
-        args        (map str ["-i" friction-raster "-m" max-time "-g" coords "-f" min-friction])
-        polygon-wkt (runner/run-external runner :bin 2000 "walking-coverage" args)]
+  [{:keys [runner friction-raster coords time friction]}]
+  (let [coords        (->> coords ((juxt :lon :lat)) (str/join ","))
+        time-args     (mapcat #(list "-m" %) time)
+        friction-args (mapcat #(list "-f" %) friction)
+        args          (map str (concat ["-i" friction-raster "-g" coords] time-args friction-args))
+        polygon-wkt   (runner/run-external runner :bin 2000 "walking-coverage" args)]
     (PGgeometry. (str "SRID=4326;" polygon-wkt))))

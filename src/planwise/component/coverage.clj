@@ -52,6 +52,9 @@
                              :type    :enum
                              :options buffer-distance-options}}}})
 
+(def frictions
+  {:walking-time (float (/ 1 100))
+   :driving-time (float (/ 1 2000))})
 
 ;; Coverage algorithms =======================================================
 ;;
@@ -77,9 +80,13 @@
   (let [db-spec         (:spec db)
         friction-raster (friction/find-friction-raster db-spec coords)
         max-time        (:walking-time criteria)
-        min-friction    (float (/ 1 100))]
+        min-friction    (:walking-friction frictions)]
     (if friction-raster
-      (friction/compute-polygon runner friction-raster coords max-time min-friction)
+      (friction/compute-polygon {:runner runner
+                                 :friction-raster friction-raster
+                                 :coords coords
+                                 :time [max-time]
+                                 :friction [min-friction]})
       (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
 
 (defmethod compute-coverage-polygon :driving-friction
@@ -87,23 +94,33 @@
   (let [db-spec         (:spec db)
         friction-raster (friction/find-friction-raster db-spec coords)
         max-time        (:driving-time criteria)
-        min-friction    (float (/ 1 2000))]
+        min-friction    (:driving-friction frictions)]
     (if friction-raster
-      (friction/compute-polygon runner friction-raster coords max-time min-friction)
+      (friction/compute-polygon {:runner runner
+                                 :friction-raster friction-raster
+                                 :coords coords
+                                 :time [max-time]
+                                 :friction [min-friction]})
       (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
 
 (defmethod compute-coverage-polygon :drive-walk-friction
   [{:keys [db runner]} coords criteria]
   (let [db-spec         (:spec db)
         friction-raster (friction/find-friction-raster db-spec coords)
-        drive-time      (:driving-time criteria)
-        walk-time       (:walking-time criteria)
-        walk-friction   (float (/ 1 100))
-        drive-friction  (float (/ 1 2000))]
+        valid-keys      (keys (get-in supported-algorithms [:drive-walk-friction :criteria]))
+        [time friction] (->> valid-keys
+                             (map (fn [key]
+                                    (let [value (get criteria key)]
+                                      (when (pos? value)
+                                        [value (get frictions key)]))))
+                             (filter some?)
+                             (apply mapv vector))]
     (if friction-raster
-      (cond
-        (zero? walk-time) (friction/compute-polygon runner friction-raster coords drive-time drive-friction)
-        :else (friction/compute-polygon runner friction-raster coords walk-time walk-friction))
+      (friction/compute-polygon {:runner runner
+                                 :friction-raster friction-raster
+                                 :coords coords
+                                 :time time
+                                 :friction friction})
       (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
 
 ;; Other utility functions ===================================================

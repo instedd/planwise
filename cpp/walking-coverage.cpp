@@ -188,8 +188,8 @@ struct run_options_t {
   string   _outputCostPath;
   coords_t _origin;
   bool     _verbose;
-  int      _maxTimeCost;    // defaults to 180 minutes = 3 hours
-  float    _minFriction;    // defaults to 0.01 min/m = 6 km/h (ie. walking speed)
+  vector<int> _maxTimeCost;    // defaults to 180 minutes = 3 hours
+  vector<float> _minFriction;    // defaults to 0.01 min/m = 6 km/h (ie. walking speed)
 };
 
 static bool
@@ -206,8 +206,8 @@ parse_command_line(int argc, char *argv[], run_options_t& options)
     ("input-friction-raster,i", po::value<string>(), "input friction raster file")
     ("output-cost-raster,o", po::value<string>(), "output cost raster file")
     ("origin,g", po::value<string>(), "coordinates of origin given in lng,lat format")
-    ("max-time,m", po::value<int>()->default_value(180), "maximum time given in minutes")
-    ("min-friction,f", po::value<float>()->default_value(0.01), "minimum friction to consider in min/m");
+    ("max-time,m", po::value<vector<int>>(), "maximum time given in minutes")
+    ("min-friction,f", po::value<vector<float>>(), "minimum friction to consider in min/m");
 
   po::variables_map vm;
 
@@ -240,8 +240,8 @@ parse_command_line(int argc, char *argv[], run_options_t& options)
 
     options._rasterPath = vm["input-friction-raster"].as<string>();
     options._origin = parse_coordinates(vm["origin"].as<string>());
-    options._maxTimeCost = vm["max-time"].as<int>();
-    options._minFriction = vm["min-friction"].as<float>();
+    options._maxTimeCost = vm["max-time"].as<vector<int>>();
+    options._minFriction = vm["min-friction"].as<vector<float>>();
     if (vm.count("verbose")) {
       options._verbose = true;
     }
@@ -964,7 +964,7 @@ int main(int argc, char *argv[])
   float nodata;
   unique_ptr<float[]> friction = load_friction_data(frictionRaster.dataset(), 1, &width, &height, &nodata);
 
-  const int maxTimeCost = options._maxTimeCost; // minutes
+  const int maxTimeCost = options._maxTimeCost[0]; // minutes
   unique_ptr<float[]> cost =
     run_dijkstra_on_friction_layer(friction.get(),
                                    width, height, nodata,
@@ -972,7 +972,7 @@ int main(int argc, char *argv[])
                                    frictionRaster.pixel_height_meters(),
                                    pixelOrigin.first, pixelOrigin.second,
                                    maxTimeCost,
-                                   options._minFriction);
+                                   options._minFriction[0]);
 
   if (!options._outputCostPath.empty()) {
     write_cost_layer(options._outputCostPath, frictionRaster.dataset(), cost.get(), width, height);
