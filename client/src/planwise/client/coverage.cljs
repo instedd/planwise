@@ -86,7 +86,7 @@
         valid-keys   (keys criteria)
         update-value (fn [key change]
                        (if (= coverage-algorithm "drive-walk-friction")
-                         (merge value {key change})
+                         (select-keys (merge value {key change}) valid-keys)
                          {key change}))]
     (cond
       (nil? criteria) empty
@@ -95,6 +95,6 @@
                     [criteria-option {:key key
                                       :config config
                                       :value (get value key)
-                                      :on-change #(on-change (select-keys (update-value key %) valid-keys))
+                                      :on-change #(on-change (update-value key %))
                                       :disabled? disabled?}])
                   criteria)])))

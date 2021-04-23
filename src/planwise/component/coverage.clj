@@ -28,46 +28,29 @@
 ;;
 
 (def supported-algorithms
-  {:driving-friction
-   {:label       "Travel by car"
-    :description "Computes reachable isochrone using a friction raster layer"
-    :criteria    {:driving-time {:label   "Driving time"
-                                 :type    :enum
-                                 :options [{:value 30  :label "30 minutes"}
-                                           {:value 60  :label "1 hour"}
-                                           {:value 90  :label "1:30 hours"}
-                                           {:value 120 :label "2 hours"}]}}}
-
-   :walking-friction
-   {:label       "Walking distance"
+  {:drive-walk-friction
+   {:label       "Walk distance or Travel by car"
     :description "Computes reachable isochrone using a friction raster layer"
     :criteria    {:walking-time {:label   "Walking time"
                                  :type    :enum
-                                 :options [{:value 60  :label "1 hour"}
+                                 :options [{:value 0   :label "Disabled"}
+                                           {:value 60  :label "1 hour"}
                                            {:value 120 :label "2 hours"}
-                                           {:value 180 :label "3 hours"}]}}}
+                                           {:value 180 :label "3 hours"}]}
+                  :driving-time {:label   "Driving time"
+                                 :type    :enum
+                                 :options [{:value 0   :label "Disabled"}
+                                           {:value 30  :label "30 minutes"}
+                                           {:value 60  :label "1 hour"}
+                                           {:value 90  :label "1:30 hours"}
+                                           {:value 120 :label "2 hours"}]}}}
 
    :simple-buffer
    {:label       "Distance buffer"
     :description "Simple buffer around origin for testing purposes only"
     :criteria    {:distance {:label   "Distance"
                              :type    :enum
-                             :options buffer-distance-options}}}
-
-   :drive-walk-friction
-   {:label       "Walk or Travel by car"
-    :description "Computes reachable isochrone using a friction raster layer"
-    :criteria    {:driving-time {:label   "Driving time"
-                                 :type    :enum
-                                 :options [{:value 30  :label "30 minutes"}
-                                           {:value 60  :label "1 hour"}
-                                           {:value 90  :label "1:30 hours"}
-                                           {:value 120 :label "2 hours"}]}
-                  :walking-time {:label   "Walking time"
-                                 :type    :enum
-                                 :options [{:value 60  :label "1 hour"}
-                                           {:value 120 :label "2 hours"}
-                                           {:value 180 :label "3 hours"}]}}}})
+                             :options buffer-distance-options}}}})
 
 
 ;; Coverage algorithms =======================================================
@@ -109,6 +92,19 @@
       (friction/compute-polygon runner friction-raster coords max-time min-friction)
       (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
 
+(defmethod compute-coverage-polygon :drive-walk-friction
+  [{:keys [db runner]} coords criteria]
+  (let [db-spec         (:spec db)
+        friction-raster (friction/find-friction-raster db-spec coords)
+        drive-time      (:driving-time criteria)
+        walk-time       (:walking-time criteria)
+        walk-friction   (float (/ 1 100))
+        drive-friction  (float (/ 1 2000))]
+    (if friction-raster
+      (cond
+        (zero? walk-time) (friction/compute-polygon runner friction-raster coords drive-time drive-friction)
+        :else (friction/compute-polygon runner friction-raster coords walk-time walk-friction))
+      (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
 
 ;; Other utility functions ===================================================
 ;;

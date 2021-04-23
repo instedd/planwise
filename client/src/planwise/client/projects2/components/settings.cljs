@@ -239,7 +239,9 @@
         current-project (subscribe [:projects2/current-project])]
     [:section {:class-name "project-settings-section"}
      [section-header 4 "Coverage"]
-     [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."]
+     [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."
+      [:p "If there is more than one method enabled the resulting area will be the union of all."]]
+
      [m/Select {:label "Coverage algorithm"
                 :value (or @coverage "")
                 :options (into [{:key "" :value ""}] @algorithms)
