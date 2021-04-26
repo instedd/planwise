@@ -12,7 +12,7 @@
  :sources/dropdown-options
  (fn [db _]
    (let [list (asdf/value (get-in db [:sources :list]))]
-     (mapv (fn [source] (let [{:keys [id name]} source] {:value id :label name})) list))))
+     (mapv (fn [{:keys [id name type]}] {:value id :label name :type type}) list))))
 
 ;; ----------------------------------------------------------------------------
 ;; Views
@@ -36,6 +36,7 @@
   [{:keys [label value on-change disabled?]}]
   (let [list      (subscribe [:sources/list])
         options   (subscribe [:sources/dropdown-options])
+        types     (subscribe [:projects2/source-types])
         component (if (or disabled? (empty? @options))
                     disabled-input-component
                     sources-select-component)]
@@ -43,6 +44,6 @@
       (dispatch [:sources/load]))
     [component {:label        label
                 :value        value
-                :options      @options
+                :options      (filter (fn [option] (@types (:type option))) @options)
                 :empty-label  "No sources layer available."
                 :on-change    on-change}]))

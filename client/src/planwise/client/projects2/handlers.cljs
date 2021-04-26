@@ -157,6 +157,13 @@
               (assoc :current-project nil)
               (update :list #(seq (utils/remove-by-id % id))))}))
 
+(rf/reg-event-db
+ :projects2/set-source-types
+ in-projects2
+ (fn [db [_ source-types]]
+   (-> db
+       (assoc :source-types source-types))))
+
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
 

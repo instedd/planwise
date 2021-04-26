@@ -4,4 +4,5 @@
 
 (def initial-db
   {:current-project         nil
-   :list                    nil})
+   :list                    nil
+   :source-types            #{"raster" "points"}})
