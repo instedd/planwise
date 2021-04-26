@@ -927,11 +927,11 @@ extract_isochrone(const float *data, int width, int height, const coords_t& topL
 
 
 static void
-merge_cost_layer(float base[], const float layer[], int width, int height, float scale)
+merge_cost_layer(float base[], const float layer[], int width, int height, float baseCost, float layerCost)
 {
   const int size = width * height;
   for (int i=0; i<size; ++i) {
-    base[i] = min(base[i], scale * layer[i]);
+    base[i] = min(base[i], baseCost * layer[i] / layerCost);
   }
 }
 
@@ -1016,7 +1016,7 @@ int main(int argc, char *argv[])
                                      options._minFriction[i]);
 
     // Merging layers scale costs to make it is easier to calculate the isochrone
-    merge_cost_layer(cost.get(), new_cost.get(), width, height, maxTimeCost / options._maxTimeCost[i]);
+    merge_cost_layer(cost.get(), new_cost.get(), width, height, maxTimeCost, options._maxTimeCost[i]);
   }
 
   if (!options._outputCostPath.empty()) {
