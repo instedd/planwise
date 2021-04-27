@@ -201,8 +201,8 @@
         demand-unit     (get-demand-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 2 "Consumers"]
-     [:div
-      [m/TextFieldHelperText {:persistent true} "Data type"]
+     [:div.source-type-settings
+      [:p "Data type"]
       [:div
        [m/Checkbox {:label "Raster (population)"
                     :checked (some? (@source-types "raster"))
