@@ -232,22 +232,31 @@
      [:label "Tags: " [tag-set @tags read-only]]
      [count-providers @tags @current-project provider-unit]]))
 
+; Accept previous coverage algorithms as the new one combining both
+(defn- get-coverage-algorithm
+  [coverage]
+  (case coverage
+    "driving-friction" "drive-walk-friction"
+    "walking-friction" "drive-walk-friction"
+    coverage))
+
 (defn- current-project-step-coverage
   [read-only]
-  (let [algorithms (rf/subscribe [:coverage/algorithms-list])
-        coverage   (rf/subscribe [:projects2/new-project-coverage])
-        current-project (subscribe [:projects2/current-project])]
+  (let [algorithms       (rf/subscribe [:coverage/algorithms-list])
+        project-coverage (rf/subscribe [:projects2/new-project-coverage])
+        current-project  (rf/subscribe [:projects2/current-project])
+        coverage         (get-coverage-algorithm @project-coverage)]
     [:section {:class-name "project-settings-section"}
      [section-header 4 "Coverage"]
      [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."
       [:p "If there is more than one method enabled the resulting area will be the union of all."]]
 
      [m/Select {:label "Coverage algorithm"
-                :value (or @coverage "")
+                :value (or coverage "")
                 :options (into [{:key "" :value ""}] @algorithms)
                 :on-change #(rf/dispatch [:projects2/save-key
                                           [:coverage-algorithm] (utils/or-blank (.. % -target -value) nil)])}]
-     [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
+     [coverage-algorithm-filter-options {:coverage-algorithm coverage
                                          :value              (get-in @current-project [:config :coverage :filter-options])
                                          :on-change          (fn [options]
                                                                (dispatch [:projects2/save-key [:config :coverage :filter-options] options]))
