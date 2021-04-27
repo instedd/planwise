@@ -16,14 +16,14 @@
 (s/def ::target number?)
 (s/def ::unit-name string?)
 (s/def ::demand-unit string?)
-(s/def ::demographics (s/keys :req-un [::unit-name ::target ::demand-unit]))
+(s/def ::demographics (s/keys :req-un [::target]))
 
 ;; Providers
 (s/def ::provider-set-id (s/nilable number?))
 (s/def ::capacity number?)
 (s/def ::provider-unit string?)
 (s/def ::capacity-unit string?)
-(s/def ::providers (s/keys :req-un [::capacity ::provider-unit ::capacity-unit]))
+(s/def ::providers (s/keys :req-un [::capacity]))
 
 ;; Coverage
 (s/def ::driving-time number?)
