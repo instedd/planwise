@@ -9,13 +9,6 @@
             [planwise.client.ui.rmwc :as m]
             [re-frame.utils :as c]))
 
-(defn- disabled-input-component
-  [{:keys [label value options empty-label]}]
-  [common2/text-field {:type     "text"
-                       :label    label
-                       :value    (utils/label-from-options options (str value) empty-label)
-                       :disabled true}])
-
 (defn- providers-set-select-component
   [{:keys [label value options empty-label on-change]}]
   [m/Select {:label (if (empty? options) empty-label label)
@@ -29,7 +22,7 @@
   (let [list      (subscribe [:providers-set/list])
         options   (subscribe [:providers-set/dropdown-options])
         component (if (or disabled? (empty? @options))
-                    disabled-input-component
+                    common2/disabled-input-component
                     providers-set-select-component)]
     (when (asdf/should-reload? @list)
       (dispatch [:providers-set/load-providers-set]))

@@ -104,3 +104,10 @@
           (when changed-global-value?
             (reset! local-value (str global-value))))
         [mdc-input-field props component-props]))))
+
+(defn disabled-input-component
+  [{:keys [label value options empty-label]}]
+  [text-field {:type     "text"
+               :label    label
+               :value    (utils/label-from-options options value (or empty-label ""))
+               :disabled true}])

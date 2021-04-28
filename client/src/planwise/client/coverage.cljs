@@ -44,13 +44,6 @@
 ;; ----------------------------------------------------------------------------
 ;; Views
 
-(defn- disabled-input-component
-  [{:keys [label value options]}]
-  [common2/text-field {:type     "text"
-                       :label    label
-                       :value    (utils/label-from-options options (str value) "")
-                       :disabled true}])
-
 (defn- criteria-option-select-component
   [{:keys [label value options on-change]}]
   (let [sorted-options  (sort-by :value options)
@@ -72,7 +65,7 @@
   (let [options   (:options config)
         label     (:label config)
         component (if disabled?
-                    disabled-input-component
+                    common2/disabled-input-component
                     criteria-option-select-component)]
     [component {:label     label
                 :value     value

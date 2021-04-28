@@ -125,9 +125,10 @@
                            :value @value}])))
 
 (defn- count-providers
-  [tags {:keys [provider-set-id providers region-id]} provider-unit]
+  [{:keys [tags provider-unit read-only]} {:keys [provider-set-id providers region-id]} provider-unit]
   (let [{:keys [total filtered]} providers]
-    (cond (nil? region-id) [:p "Select region first."]
+    (cond (and read-only (some nil? [region-id provider-set-id])) [:p "No " provider-unit " set defined."]
+          (nil? region-id) [:p "Select region first."]
           (nil? provider-set-id) [:p (str "Select " provider-unit " set first.")]
           :else [:p (str "Selected " provider-unit ": " filtered " / " total)])))
 
@@ -176,7 +177,7 @@
   (let [current-project (subscribe [:projects2/current-project])]
     [:section.project-settings-section
      [section-header 1 "Goal"]
-     [current-project-input "Goal" [:name] "text"]
+     [current-project-input "Goal" [:name] "text" {:disabled read-only}]
      [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
 
      [regions-dropdown-component {:label     "Region"
@@ -221,6 +222,7 @@
   [read-only]
   (let [current-project (subscribe [:projects2/current-project])
         tags            (subscribe [:projects2/tags])
+        provider-set-id (:provider-set-id @current-project)
         provider-unit   (get-provider-unit @current-project)
         demand-unit     (get-demand-unit @current-project)
         capacity-unit   (get-capacity-unit @current-project)]
@@ -244,25 +246,37 @@
       " each"]
 
      (when-not read-only [tag-input provider-unit])
-     [:label "Tags: " [tag-set @tags read-only]]
-     [count-providers @tags @current-project provider-unit]]))
+     (when (or (not read-only) (some? provider-set-id))
+       [:label "Tags: "
+        (if (empty? @tags)
+          (str "No tags defined.")
+          [tag-set @tags read-only])])
+     [count-providers {:tags @tags :provider-unit provider-unit :read-only read-only} @current-project]]))
+
+(defn- coverage-algorithm-select
+  [{:keys [label on-change read-only]}]
+  (let [algorithms (rf/subscribe [:coverage/algorithms-list])
+        coverage   (rf/subscribe [:projects2/new-project-coverage])
+        component  (if read-only
+                     common2/disabled-input-component
+                     m/Select)]
+    [component {:label label
+                :value (or @coverage "")
+                :options (into [{:key "" :value ""}] @algorithms)
+                :disabled read-only
+                :on-change on-change}]))
 
 (defn- current-project-step-coverage
   [read-only]
-  (let [algorithms      (rf/subscribe [:coverage/algorithms-list])
-        coverage        (rf/subscribe [:projects2/new-project-coverage])
-        current-project (rf/subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])]
     [:section {:class-name "project-settings-section"}
      [section-header 4 "Coverage"]
-     [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."
-      [:p "If there is more than one method enabled the resulting area will be the union of all."]]
-
-     [m/Select {:label "Coverage algorithm"
-                :value (or @coverage "")
-                :options (into [{:key "" :value ""}] @algorithms)
-                :on-change #(rf/dispatch [:projects2/save-key
-                                          [:coverage-algorithm] (utils/or-blank (.. % -target -value) nil)])}]
-     [coverage-algorithm-filter-options {:coverage-algorithm @coverage
+     [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."]
+     [coverage-algorithm-select {:label "Coverage algorithm"
+                                 :on-change #(rf/dispatch [:projects2/save-key
+                                                           [:coverage-algorithm] (utils/or-blank (.. % -target -value) nil)])
+                                 :read-only read-only}]
+     [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
                                          :value              (get-in @current-project [:config :coverage :filter-options])
                                          :on-change          (fn [options]
                                                                (dispatch [:projects2/save-key [:config :coverage :filter-options] options]))
