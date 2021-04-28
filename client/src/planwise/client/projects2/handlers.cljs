@@ -11,6 +11,12 @@
 
 (def in-projects2 (rf/path [:projects2]))
 
+(defn- reset-state
+  [db]
+  (assoc db
+         :current-project nil
+         :source-types    #{"raster" "points"}))
+
 ;; Controllers
 
 (routes/reg-controller
@@ -69,7 +75,7 @@
          project-item (select-keys project [:id :name :state])
          new-list     (cons project-item (:list db))]
      {:db        (-> db
-                     (assoc :current-project nil)
+                     (reset-state)
                      (assoc :list new-list))
       :navigate  (routes/projects2-show {:id project-id})})))
 
@@ -97,6 +103,7 @@
  in-projects2
  (fn [db [_ current-project]]
    (-> db
+       (reset-state)
        (assoc :current-project current-project)
     ;; Keep list in sync with current project
        (update :list
