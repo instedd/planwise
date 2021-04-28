@@ -153,16 +153,17 @@
                     (concat sorted-scenarios (repeat (- 5 num) nil)))]]]))
 
 (defn- project-settings
-  []
-  [settings/current-project-settings-view {:read-only true}])
+  [step]
+  [settings/current-project-settings-view {:read-only true :step (or step "review")}])
 
 (defn view-current-project
   [active-tab]
   (let [current-project (rf/subscribe [:projects2/current-project])
-        delete?  (r/atom false)
-        hide-dialog (fn [] (reset! delete? false))
-        id (:id @current-project)
-        scenarios-sub (rf/subscribe [:scenarios/list])]
+        delete?         (r/atom false)
+        hide-dialog     (fn [] (reset! delete? false))
+        id              (:id @current-project)
+        scenarios-sub   (rf/subscribe [:scenarios/list])
+        page-params     (rf/subscribe [:page-params])]
     (fn [active-tab]
       (let [scenarios (asdf/value @scenarios-sub)]
         (when (asdf/should-reload? @scenarios-sub)
@@ -180,4 +181,4 @@
            [ui/panel {}
             (case active-tab
               :scenarios [scenarios-list scenarios @current-project]
-              :settings  [project-settings])]])))))
+              :settings  [project-settings (:step @page-params)])]])))))

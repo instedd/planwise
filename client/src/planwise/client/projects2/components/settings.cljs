@@ -359,11 +359,18 @@
                                                               " "
                                                               demand-unit])]) capacities))]))
 
+(def sections
+  [{:step "goal" :title "Goal" :component current-project-step-goal :spec :planwise.model.project/goal-step :next-step "consumers"}
+   {:step "consumers" :title "Consumers" :component current-project-step-consumers :spec :planwise.model.project/consumers-step :next-step "providers"}
+   {:step "providers" :title "Providers" :component current-project-step-providers :spec :planwise.model.project/providers-step :next-step "coverage"}
+   {:step "coverage" :title "Coverage" :component current-project-step-coverage :spec :planwise.model.project/coverage-step :next-step "actions"}
+   {:step "actions" :title "Actions" :component current-project-step-actions :spec :planwise.model.project/actions-step :next-step "review"}
+   {:step "review" :title "Review" :component current-project-step-review :spec :planwise.model.project/review-step :next-step nil}])
 
 (def map-preview-size {:width 373 :height 278})
 
 (defn current-project-settings-view
-  [{:keys [read-only step sections]}]
+  [{:keys [read-only step]}]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
@@ -382,7 +389,8 @@
           (map-indexed (fn [i iteration-step]
                          [:a {:key i
                               :class-name (join " " [(if (= (:step iteration-step) step) "active") (if (s/valid? (:spec iteration-step) project) "complete")])
-                              :href (routes/projects2-show-with-step {:id (:id project) :step (:step iteration-step)})}
+                              :href ((if read-only routes/projects2-settings-with-step routes/projects2-show-with-step)
+                                     {:id (:id project) :step (:step iteration-step)})}
                           (if (s/valid? (:spec iteration-step) project) [m/Icon "done"] [:i (inc i)])
                           [:div (:title iteration-step)]]) sections)]
          [m/GridCell {:span 6}
@@ -407,20 +415,14 @@
 
 (defn edit-current-project
   []
-  (let [page-params       (subscribe [:page-params])
+  (let [page-params     (subscribe [:page-params])
         current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
-        hide-dialog     (fn [] (reset! delete? false))
-        sections        [{:step "goal" :title "Goal" :component current-project-step-goal :spec :planwise.model.project/goal-step :next-step "consumers"}
-                         {:step "consumers" :title "Consumers" :component current-project-step-consumers :spec :planwise.model.project/consumers-step :next-step "providers"}
-                         {:step "providers" :title "Providers" :component current-project-step-providers :spec :planwise.model.project/providers-step :next-step "coverage"}
-                         {:step "coverage" :title "Coverage" :component current-project-step-coverage :spec :planwise.model.project/coverage-step :next-step "actions"}
-                         {:step "actions" :title "Actions" :component current-project-step-actions :spec :planwise.model.project/actions-step :next-step "review"}
-                         {:step "review" :title "Review" :component current-project-step-review :spec :planwise.model.project/review-step :next-step nil}]]
+        hide-dialog     (fn [] (reset! delete? false))]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
-        [current-project-settings-view {:read-only false :step (:step @page-params) :sections sections}]
+        [current-project-settings-view {:read-only false :step (:step @page-params)}]
 
         [:div {:class-name "project-settings-actions"}
          (let [previous-step (:step (first (filter #(= (:next-step %) (:step @page-params)) sections)))]
