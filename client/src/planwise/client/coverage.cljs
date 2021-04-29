@@ -81,8 +81,11 @@
 
 (defn coverage-algorithm-filter-options
   [{:keys [coverage-algorithm value on-change empty disabled?]}]
-  (let [list      (rf/subscribe [:coverage/supported-algorithms])
-        criteria  (get-in @list [(keyword coverage-algorithm) :criteria])]
+  (let [list         (rf/subscribe [:coverage/supported-algorithms])
+        criteria     (get-in @list [(keyword coverage-algorithm) :criteria])
+        valid-keys   (keys criteria)
+        update-value (fn [key change]
+                       (select-keys (merge value {key change}) valid-keys))]
     (cond
       (nil? criteria) empty
       :else [:div {:class-name "fields-vertical"}
@@ -90,6 +93,6 @@
                     [criteria-option {:key key
                                       :config config
                                       :value (get value key)
-                                      :on-change #(on-change {key %})
+                                      :on-change #(on-change (update-value key %))
                                       :disabled? disabled?}])
                   criteria)])))

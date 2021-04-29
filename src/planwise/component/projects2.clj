@@ -40,6 +40,14 @@
                                           (update :config pr-str)
                                           (dissoc :state)))))
 
+; Accept previous coverage algorithms as the new one combining both
+(defn- fix-coverage-algorithm
+  [coverage]
+  (case coverage
+    "driving-friction" "drive-walk-friction"
+    "walking-friction" "drive-walk-friction"
+    coverage))
+
 (defn get-project
   [store project-id]
   (let [{:keys [config provider-set-id region-id] :as project} (db-get-project (get-db store) {:id project-id})
@@ -50,6 +58,7 @@
          (update* :engine-config edn/read-string)
          (update* :config edn/read-string)
          (update* :config model2/apply-default)
+         (update* :coverage-algorithm fix-coverage-algorithm)
          (assoc   :providers number-of-providers)))))
 
 (defn list-projects

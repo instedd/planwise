@@ -179,7 +179,12 @@ parse_coordinates(const string& s)
   return make_coords(parse_double(numbers[0]), parse_double(numbers[1]));
 }
 
+// ===== Default parameters
 
+namespace {
+  const int DEFAULT_TIME_COST = 180;       // 180 minutes = 3 hours
+  const float DEFAULT_FRICTION = 0.01;     // 0.01 min/m = 6 km/h (ie. walking speed)
+}
 
 // ===== Command line parsing
 
@@ -188,8 +193,8 @@ struct run_options_t {
   string   _outputCostPath;
   coords_t _origin;
   bool     _verbose;
-  int      _maxTimeCost;    // defaults to 180 minutes = 3 hours
-  float    _minFriction;    // defaults to 0.01 min/m = 6 km/h (ie. walking speed)
+  vector<int> _maxTimeCost;
+  vector<float> _minFriction;
 };
 
 static bool
@@ -206,8 +211,8 @@ parse_command_line(int argc, char *argv[], run_options_t& options)
     ("input-friction-raster,i", po::value<string>(), "input friction raster file")
     ("output-cost-raster,o", po::value<string>(), "output cost raster file")
     ("origin,g", po::value<string>(), "coordinates of origin given in lng,lat format")
-    ("max-time,m", po::value<int>()->default_value(180), "maximum time given in minutes")
-    ("min-friction,f", po::value<float>()->default_value(0.01), "minimum friction to consider in min/m");
+    ("max-time,m", po::value<vector<int>>(), "maximum time given in minutes")
+    ("min-friction,f", po::value<vector<float>>(), "minimum friction to consider in min/m");
 
   po::variables_map vm;
 
@@ -222,7 +227,9 @@ parse_command_line(int argc, char *argv[], run_options_t& options)
            << "  " << appName << " [options]" << endl << endl
            << "Outputs the WKT of the coverage polygon from the given origin, "
            << "computed using the friction raster, with maximum travel time using a "
-           << "minimum value of friction" << endl << desc << endl;
+           << "minimum value of friction" << endl << desc << endl
+           << "Note: Multiple transport layers are supported by specifying a pair "
+           << "max-time and min-friction for every layer." << endl;
       return true;
     }
 
@@ -240,8 +247,22 @@ parse_command_line(int argc, char *argv[], run_options_t& options)
 
     options._rasterPath = vm["input-friction-raster"].as<string>();
     options._origin = parse_coordinates(vm["origin"].as<string>());
-    options._maxTimeCost = vm["max-time"].as<int>();
-    options._minFriction = vm["min-friction"].as<float>();
+    options._maxTimeCost = vm["max-time"].as<vector<int>>();
+    options._minFriction = vm["min-friction"].as<vector<float>>();
+
+    if (!options._maxTimeCost.size()) {
+      options._maxTimeCost.push_back(DEFAULT_TIME_COST);
+    }
+    if (!options._minFriction.size()) {
+      options._minFriction.push_back(DEFAULT_FRICTION);
+    }
+
+    if (options._maxTimeCost.size() != options._minFriction.size()) {
+      cerr << "ERROR: min-friction and max-time should appear the same number of times" << endl;
+      cerr << "Run with --help for available options" << endl;
+      return false;
+    }
+
     if (vm.count("verbose")) {
       options._verbose = true;
     }
@@ -905,6 +926,15 @@ extract_isochrone(const float *data, int width, int height, const coords_t& topL
 }
 
 
+static void
+merge_cost_layer(float base[], const float layer[], int width, int height, float baseCost, float layerCost)
+{
+  const int size = width * height;
+  for (int i=0; i<size; ++i) {
+    base[i] = min(base[i], baseCost * layer[i] / layerCost);
+  }
+}
+
 // ======== Main entry point
 
 // program exit codes
@@ -964,7 +994,8 @@ int main(int argc, char *argv[])
   float nodata;
   unique_ptr<float[]> friction = load_friction_data(frictionRaster.dataset(), 1, &width, &height, &nodata);
 
-  const int maxTimeCost = options._maxTimeCost; // minutes
+  const int maxTimeCost = options._maxTimeCost[0]; // minutes
+
   unique_ptr<float[]> cost =
     run_dijkstra_on_friction_layer(friction.get(),
                                    width, height, nodata,
@@ -972,7 +1003,23 @@ int main(int argc, char *argv[])
                                    frictionRaster.pixel_height_meters(),
                                    pixelOrigin.first, pixelOrigin.second,
                                    maxTimeCost,
-                                   options._minFriction);
+                                   options._minFriction[0]);
+
+  for (size_t i = 1; i < options._maxTimeCost.size(); ++i) {
+    unique_ptr<float[]> new_cost =
+      run_dijkstra_on_friction_layer(friction.get(),
+                                     width, height, nodata,
+                                     frictionRaster.pixel_width_meters(),
+                                     frictionRaster.pixel_height_meters(),
+                                     pixelOrigin.first, pixelOrigin.second,
+                                     options._maxTimeCost[i],
+                                     options._minFriction[i]);
+
+    // To calculate the isochrone at `maxTimeCost` level
+    // the layer `new_cost` has to be scaled before merging
+    // with the previously calculated layer `cost`
+    merge_cost_layer(cost.get(), new_cost.get(), width, height, maxTimeCost, options._maxTimeCost[i]);
+  }
 
   if (!options._outputCostPath.empty()) {
     write_cost_layer(options._outputCostPath, frictionRaster.dataset(), cost.get(), width, height);

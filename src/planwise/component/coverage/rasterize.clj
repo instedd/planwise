@@ -124,7 +124,7 @@
   (require '[planwise.boundary.coverage :as coverage])
   (def pg (coverage/compute-coverage (:planwise.component/coverage integrant.repl.state/system)
                                      {:lat -3.0361 :lon 40.1333}
-                                     {:algorithm :driving-friction
+                                     {:algorithm :drive-walk-friction
                                       :driving-time 60}))
 
   ;; (def ref-coords {:lat 5.470694601152364 :lon 33.912608425216725})

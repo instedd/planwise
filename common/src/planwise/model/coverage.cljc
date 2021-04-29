@@ -23,12 +23,17 @@
 (s/def ::walking-time #{60 120 180})
 (s/def ::walking-friction-criteria (s/keys :req-un [::walking-time]))
 
+(s/def ::drive-walk-friction-criteria (s/or :walking-friction-criteria ::walking-friction-criteria
+                                            :driving-friction-criteria ::driving-friction-criteria))
+
 (defmethod criteria-algo :simple-buffer [_]
   (s/merge ::base-criteria ::simple-buffer-criteria))
 (defmethod criteria-algo :walking-friction [_]
   (s/merge ::base-criteria ::walking-friction-criteria))
 (defmethod criteria-algo :driving-friction [_]
   (s/merge ::base-criteria ::driving-friction-criteria))
+(defmethod criteria-algo :drive-walk-friction [_]
+  (s/merge ::base-criteria ::drive-walk-friction-criteria))
 
 
 (defn valid-coverage-criteria?
