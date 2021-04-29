@@ -35,7 +35,7 @@
 (s/def ::walking-options (s/keys :req-un [::walking-time]))
 (s/def ::distance-options (s/keys :req-un [::distance]))
 (s/def ::walk-drive-options (s/or :driving-options ::driving-options
-                                  :walking-options ::walking-options]))
+                                  :walking-options ::walking-options))
 ;; example:
 ;; (s/def ::public-transport-options (s/keys :req-un [::walking-time ::transport-type ::total-time]))
 (s/def ::filter-options (s/or :driving-options ::driving-options
