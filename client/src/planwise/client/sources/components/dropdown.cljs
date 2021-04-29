@@ -10,9 +10,13 @@
 
 (rf/reg-sub
  :sources/dropdown-options
- (fn [db _]
-   (let [list (asdf/value (get-in db [:sources :list]))]
-     (mapv (fn [{:keys [id name type]}] {:value id :label name :type type}) list))))
+ (fn [_]
+   [(subscribe [:sources/list])
+    (subscribe [:projects2/source-types])])
+ (fn [[list types] _]
+   (->> list
+        (filter (fn [{:keys [type]}] (types type)))
+        (mapv (fn [{:keys [id name type]}] {:value id :label name :type type})))))
 
 ;; ----------------------------------------------------------------------------
 ;; Views
@@ -34,16 +38,12 @@
 
 (defn sources-dropdown-component
   [{:keys [label value on-change disabled?]}]
-  (let [list      (subscribe [:sources/list])
-        options   (subscribe [:sources/dropdown-options])
-        types     (subscribe [:projects2/source-types])
+  (let [options   (subscribe [:sources/dropdown-options])
         component (if (or disabled? (empty? @options))
                     disabled-input-component
                     sources-select-component)]
-    (when (asdf/should-reload? @list)
-      (dispatch [:sources/load]))
     [component {:label        label
                 :value        value
-                :options      (filter (fn [option] (@types (:type option))) @options)
+                :options      @options
                 :empty-label  "No sources layer available."
                 :on-change    on-change}]))

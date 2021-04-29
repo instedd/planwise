@@ -11,7 +11,7 @@
 
 (def in-projects2 (rf/path [:projects2]))
 
-(defn- reset-state
+(defn- clear-current-project
   [db]
   (assoc db
          :current-project nil
@@ -75,7 +75,7 @@
          project-item (select-keys project [:id :name :state])
          new-list     (cons project-item (:list db))]
      {:db        (-> db
-                     (reset-state)
+                     (clear-current-project)
                      (assoc :list new-list))
       :navigate  (routes/projects2-show {:id project-id})})))
 
@@ -103,9 +103,9 @@
  in-projects2
  (fn [db [_ current-project]]
    (-> db
-       (reset-state)
+       (clear-current-project)
        (assoc :current-project current-project)
-    ;; Keep list in sync with current project
+       ;; Keep list in sync with current project
        (update :list
                (fn [list]
                  (some-> list
@@ -165,11 +165,11 @@
               (update :list #(seq (utils/remove-by-id % id))))}))
 
 (rf/reg-event-db
- :projects2/set-source-types
+ :projects2/toggle-source-type
  in-projects2
- (fn [db [_ source-types]]
+ (fn [db [_ type]]
    (-> db
-       (assoc :source-types source-types))))
+       (update :source-types (fn [types] ((if (types type) disj conj) types type))))))
 
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project
