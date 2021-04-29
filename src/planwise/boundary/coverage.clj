@@ -138,4 +138,4 @@
 (comment
   (def service (:planwise.component/coverage integrant.repl.state/system))
 
-  (enumerate-algorithm-options service :walking-friction))
+  (enumerate-algorithm-options service :drive-walk-friction))

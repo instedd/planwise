@@ -75,34 +75,6 @@
       "ok" (:polygon result)
       (throw (ex-info "Simple buffer coverage computation failed" {:causes (:result result) :coords coords})))))
 
-(defmethod compute-coverage-polygon :walking-friction
-  [{:keys [db runner]} coords criteria]
-  (let [db-spec         (:spec db)
-        friction-raster (friction/find-friction-raster db-spec coords)
-        max-time        (:walking-time criteria)
-        min-friction    (:walking-friction frictions)]
-    (if friction-raster
-      (friction/compute-polygon {:runner runner
-                                 :friction-raster friction-raster
-                                 :coords coords
-                                 :time [max-time]
-                                 :friction [min-friction]})
-      (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
-
-(defmethod compute-coverage-polygon :driving-friction
-  [{:keys [db runner]} coords criteria]
-  (let [db-spec         (:spec db)
-        friction-raster (friction/find-friction-raster db-spec coords)
-        max-time        (:driving-time criteria)
-        min-friction    (:driving-friction frictions)]
-    (if friction-raster
-      (friction/compute-polygon {:runner runner
-                                 :friction-raster friction-raster
-                                 :coords coords
-                                 :time [max-time]
-                                 :friction [min-friction]})
-      (throw (ex-info "Cannot find a friction raster for the given coordinates" {:coords coords})))))
-
 (defmethod compute-coverage-polygon :drive-walk-friction
   [{:keys [db runner]} coords criteria]
   (let [db-spec         (:spec db)
@@ -111,7 +83,7 @@
         [time friction] (->> valid-keys
                              (map (fn [key]
                                     (let [value (get criteria key)]
-                                      (when (pos? value)
+                                      (when (and (some? value) (pos? value))
                                         [value (get frictions key)]))))
                              (filter some?)
                              (apply mapv vector))]
@@ -464,13 +436,13 @@
   (time
    (boundary/compute-coverage-polygon service
                                       {:lat -1.2741 :lon 36.7931}
-                                      {:algorithm    :driving-friction
+                                      {:algorithm    :drive-walk-friction
                                        :driving-time 60}))
 
   (setup-context (dev/coverage) [:project 1]
                  {:region-id         1
                   :raster-resolution {:xres (double 1/400) :yres (double -1/400)}
-                  :coverage-criteria {:algorithm :driving-friction :driving-time 120}})
+                  :coverage-criteria {:algorithm :drive-walk-friction :driving-time 120}})
 
   (destroy-context (dev/coverage) [:project 1])
 

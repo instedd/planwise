@@ -1015,7 +1015,9 @@ int main(int argc, char *argv[])
                                      options._maxTimeCost[i],
                                      options._minFriction[i]);
 
-    // Merging layers scale costs to make it is easier to calculate the isochrone
+    // To calculate the isochrone at `maxTimeCost` level
+    // the layer `new_cost` has to be scaled before merging
+    // with the previously calculated layer `cost`
     merge_cost_layer(cost.get(), new_cost.get(), width, height, maxTimeCost, options._maxTimeCost[i]);
   }
 
