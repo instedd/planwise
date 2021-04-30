@@ -103,7 +103,8 @@
  in-projects2
  (fn [db [_ current-project]]
    (-> db
-       (clear-current-project)
+       (clear-current-project) ;; Just to clear source type selection
+
        (assoc :current-project current-project)
        ;; Keep list in sync with current project
        (update :list
@@ -126,7 +127,8 @@
  :projects2/get-project
  in-projects2
  (fn [{:keys [db]} [_ id]]
-   {:dispatch [:scenarios/invalidate-scenarios]
+   {:dispatch-n [[:sources/load]
+                 [:scenarios/invalidate-scenarios]]
     :api (assoc (api/get-project id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
