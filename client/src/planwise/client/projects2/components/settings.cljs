@@ -183,6 +183,16 @@
                                   :on-change #(dispatch [:projects2/save-key :region-id %])
                                   :model     (:region-id @current-project)
                                   :disabled? read-only}]]))
+
+(defn- consumer-source-type-checkbox
+  [label type]
+  (let [source-types (subscribe [:projects2/source-types])]
+    [m/Checkbox {:label label
+                 :checked (some? (@source-types type))
+                 :value type
+                 :on-change #(rf/dispatch-sync
+                              [:projects2/toggle-source-type type])}]))
+
 (defn- current-project-step-consumers
   [read-only]
   (let [current-project (subscribe [:projects2/current-project])
@@ -190,10 +200,15 @@
         demand-unit     (get-demand-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 2 "Consumers"]
+     [:div.source-type-settings
+      [:p "Data type"]
+      [:div
+       [consumer-source-type-checkbox "Raster (population)" "raster"]
+       [consumer-source-type-checkbox "Points" "points"]]]
      [sources-dropdown-component {:label     "Consumer Dataset"
                                   :value     (:source-set-id @current-project)
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])
-                                  :disabled?  read-only}]
+                                  :disabled? read-only}]
      [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the units in the dataset? (e.g. population)")]
      [current-project-input "Demand Unit" [:config :demographics :demand-unit] "text" {:disabled read-only}]

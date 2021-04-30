@@ -21,6 +21,11 @@
             (sort-by (comp string/lower-case :name)))))
 
 (rf/reg-sub
+ :projects2/source-types
+ (fn [db _]
+   (get-in db [:projects2 :source-types])))
+
+(rf/reg-sub
  :projects2/tags :<- [:projects2/current-project]
  (fn [current-project [_]]
    (get-in current-project [:config :providers :tags])))

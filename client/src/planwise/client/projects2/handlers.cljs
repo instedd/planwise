@@ -11,6 +11,12 @@
 
 (def in-projects2 (rf/path [:projects2]))
 
+(defn- clear-current-project
+  [db]
+  (assoc db
+         :current-project nil
+         :source-types    #{"raster" "points"}))
+
 ;; Controllers
 
 (routes/reg-controller
@@ -69,7 +75,7 @@
          project-item (select-keys project [:id :name :state])
          new-list     (cons project-item (:list db))]
      {:db        (-> db
-                     (assoc :current-project nil)
+                     (clear-current-project)
                      (assoc :list new-list))
       :navigate  (routes/projects2-show {:id project-id})})))
 
@@ -97,8 +103,10 @@
  in-projects2
  (fn [db [_ current-project]]
    (-> db
+       (clear-current-project) ;; Just to clear source type selection
+
        (assoc :current-project current-project)
-    ;; Keep list in sync with current project
+       ;; Keep list in sync with current project
        (update :list
                (fn [list]
                  (some-> list
@@ -119,7 +127,8 @@
  :projects2/get-project
  in-projects2
  (fn [{:keys [db]} [_ id]]
-   {:dispatch [:scenarios/invalidate-scenarios]
+   {:dispatch-n [[:sources/load]
+                 [:scenarios/invalidate-scenarios]]
     :api (assoc (api/get-project id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
@@ -156,6 +165,13 @@
     :db   (-> db
               (assoc :current-project nil)
               (update :list #(seq (utils/remove-by-id % id))))}))
+
+(rf/reg-event-db
+ :projects2/toggle-source-type
+ in-projects2
+ (fn [db [_ type]]
+   (-> db
+       (update :source-types (fn [types] ((if (types type) disj conj) types type))))))
 
 ;;------------------------------------------------------------------------------
 ;; Debounce-updating project

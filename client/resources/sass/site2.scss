@@ -697,6 +697,14 @@ form.vertical, .fields-vertical {
   }
 }
 
+.source-type-settings {
+  > p {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.8rem;
+    margin-bottom: 0%;
+  }
+}
+
 .coverage-setting {
   p, label {
     color: rgba(0, 0, 0, 0.6);
