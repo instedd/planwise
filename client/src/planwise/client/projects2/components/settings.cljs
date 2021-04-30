@@ -291,17 +291,21 @@
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
-        analysis-type   (get-in @current-project [:config :analysis-type])
+        budget?         (common/is-budget (get-in @current-project [:config :analysis-type]))
         provider-unit   (get-provider-unit @current-project)
         capacity-unit   (get-capacity-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 5 "Actions"]
      [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
 
-     [project-setting-title "info" "Budget"]
-     [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] "budget" "action" {:disabled read-only :class "project-setting"}]
+     (when-not read-only
+       [project-setting-title "info" "Budget"]
+       [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] "budget" "action" {:disabled read-only :class "project-setting"}])
 
-     (when (common/is-budget analysis-type)
+     (when read-only
+       [project-setting-title "info" (if budget? "Using budget for analysis" "Not using budget for analysis.")])
+
+     (when budget?
        [:div.budget-section
         [project-setting-title "account_balance" "Available budget"]
         [current-project-input {:path [:config :actions :budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
