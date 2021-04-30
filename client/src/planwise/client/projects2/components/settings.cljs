@@ -203,11 +203,12 @@
         demand-unit     (get-demand-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 2 "Consumers"]
-     [:div.source-type-settings
-      [:p "Data type"]
-      [:div
-       [consumer-source-type-checkbox "Raster (population)" "raster"]
-       [consumer-source-type-checkbox "Points" "points"]]]
+     (when-not read-only
+       [:div.source-type-settings
+        [:p "Data type"]
+        [:div
+         [consumer-source-type-checkbox "Raster (population)" "raster"]
+         [consumer-source-type-checkbox "Points" "points"]]])
      [sources-dropdown-component {:label     "Consumer Dataset"
                                   :value     (:source-set-id @current-project)
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])
