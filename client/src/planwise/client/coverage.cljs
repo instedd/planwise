@@ -88,4 +88,6 @@
                                       :value (get value key)
                                       :on-change #(on-change (update-value key %))
                                       :disabled? disabled?}])
-                  criteria)])))
+                  (if disabled?
+                    (filter (fn [[key _]] ((fnil pos? 0) (get value key))) criteria)
+                    criteria))])))

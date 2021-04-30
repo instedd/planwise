@@ -324,16 +324,31 @@
                           :list          @upgrade-actions
                           :capacity-unit capacity-unit}]])]))
 
+(defn- coverage-overview
+  []
+  (let [current-project (subscribe [:projects2/current-project])
+        algorithms      (subscribe [:coverage/supported-algorithms])
+        options         (get-in @current-project [:config :coverage :filter-options])
+        algorithm       (keyword (:coverage-algorithm @current-project))
+        criteria        (get-in @algorithms [algorithm :criteria])
+        valid-keys      (set (keys criteria))
+        options         (select-keys options (for [[key value] options :when (and (pos? value) (valid-keys key))] key))]
+    (if (and (some? algorithm) (seq options))
+      [project-setting-title "directions"
+       (join ", "
+             (map (fn [[key value]]
+                    (str (:label (first (filter #(= value (:value %)) (get-in criteria [key :options]))))
+                         " of "
+                         (get-in criteria [key :label])))
+                  options))]
+      [project-setting-title "warning" "No valid coverage configured"])))
+
 (defn- current-project-step-review
   [read-only]
   (let [current-project (subscribe [:projects2/current-project])
-        algorithms      (rf/subscribe [:coverage/supported-algorithms])
         providers       (subscribe [:providers-set/dropdown-options])
-        provider-set-id        (:provider-set-id @current-project)
+        provider-set-id (:provider-set-id @current-project)
         provider        (first (filter #(= provider-set-id (:value %)) @providers))
-        algorithm       (get-in @algorithms [(keyword (:coverage-algorithm @current-project))])
-        criteria        (first (vals (:criteria algorithm)))
-        coverage-amount (first (vals (get-in @current-project [:config :coverage :filter-options])))
         sources         (subscribe [:sources/list])
         source          (first (filter #(= (:source-set-id @current-project) (:id %)) @sources))
         analysis-type   (get-in @current-project [:config :analysis-type])
@@ -357,12 +372,7 @@
      (if (some? source)
        [project-setting-title "people" (:name source)]
        [project-setting-title "warning" "The \"consumers\" tab information is needed"])
-     (if (and (some? coverage-amount))
-       [project-setting-title "directions" (str
-                                            (:label (first (filter #(= coverage-amount (:value %)) (:options criteria))))
-                                            " of "
-                                            (:label (first (vals (:criteria algorithm)))))]
-       [project-setting-title "warning" "The \"providers\" and \"coverage\" tabs information is needed"])
+     [coverage-overview]
      (when (common/is-budget analysis-type)
        (map-indexed (fn [idx action]
                       ^{:key (str "action-" idx)} [project-setting-title
