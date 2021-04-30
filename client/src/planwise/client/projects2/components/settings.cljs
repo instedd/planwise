@@ -35,25 +35,20 @@
                      attrs)]
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
-;; TODO: Refactor this fn to require flat map instead of this large amount of params
 (defn- current-project-input
-  ([label path type]
-   (current-project-input label path type "" "" {:disabled false}))
-  ([label path type other-props]
-   (current-project-input label path type "" "" other-props))
-  ([label path type prefix suffix other-props]
-   (let [current-project (rf/subscribe [:projects2/current-project])
-         value           (or (get-in @current-project path) "")
-         change-fn       #(rf/dispatch-sync [:projects2/save-key path %])
-         props (merge (select-keys other-props [:class :disabled :sub-type])
-                      {:prefix    prefix
-                       :suffix    suffix
-                       :label     label
-                       :on-change (comp change-fn (fn [e] (-> e .-target .-value)))
-                       :value     value})]
-     (case type
-       "number" [common2/numeric-field (assoc props :on-change change-fn)]
-       [common2/text-field props]))))
+  [{:keys [label path type prefix suffix] :as props}]
+  (let [current-project (rf/subscribe [:projects2/current-project])
+        value           (or (get-in @current-project path) "")
+        change-fn       #(rf/dispatch-sync [:projects2/save-key path %])
+        props           (merge (select-keys props [:class :disabled :sub-type])
+                               {:prefix    (or prefix "")
+                                :suffix    (or suffix "")
+                                :label     (or label "")
+                                :on-change (comp change-fn (fn [e] (-> e .-target .-value)))
+                                :value     value})]
+    (case type
+      "number" [common2/numeric-field (assoc props :on-change change-fn)]
+      [common2/text-field props])))
 
 (defn- current-project-checkbox
   [label path checked-value unchecked-value other-props]
@@ -153,11 +148,18 @@
               props)
     [m/Icon "clear"]]
    ;; (when (= action-name :build) "with a capacity of ")
-   [current-project-input "" [:config :actions action-name idx :capacity] "number" "" "" (merge {:class "action-input"} props)]
+   [current-project-input (merge {:path [:config :actions action-name idx :capacity]
+                                  :type "number"
+                                  :class "action-input"}
+                                 props)]
    " "
    capacity-unit
    " would cost "
-   [current-project-input "" [:config :actions action-name idx :investment] "number" common/currency-symbol "" (merge {:class "action-input"} props)]
+   [current-project-input (merge {:path [:config :actions action-name idx :investment]
+                                  :type "number"
+                                  :prefix common/currency-symbol
+                                  :class "action-input"}
+                                 props)]
    " each"])
 
 (defn- listing-actions
@@ -177,7 +179,7 @@
   (let [current-project (subscribe [:projects2/current-project])]
     [:section.project-settings-section
      [section-header 1 "Goal"]
-     [current-project-input "Goal" [:name] "text" {:disabled read-only}]
+     [current-project-input {:label "Goal" :path [:name] :type "text" :disabled read-only}]
      [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
 
      [regions-dropdown-component {:label     "Region"
@@ -210,12 +212,12 @@
                                   :value     (:source-set-id @current-project)
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                   :disabled? read-only}]
-     [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
+     [current-project-input {:label "Consumers Unit" :path [:config :demographics :unit-name] :type "text" :disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the units in the dataset? (e.g. population)")]
-     [current-project-input "Demand Unit" [:config :demographics :demand-unit] "text" {:disabled read-only}]
+     [current-project-input {:label "Demand Unit" :path [:config :demographics :demand-unit] :type "text" :disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the unit of your demand?")]
      [:div.percentage-input
-      [current-project-input "Target" [:config :demographics :target] "number" "" "%"  {:disabled read-only :sub-type :percentage}]
+      [current-project-input {:label "Target" :path [:config :demographics :target] :type "number" :suffix "%"  :disabled read-only :sub-type :percentage}]
       [:p (str "of " consumer-unit " should be counted as " demand-unit)]]]))
 
 (defn- current-project-step-providers
@@ -233,15 +235,15 @@
                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                         :disabled? read-only}]
 
-     [current-project-input "Provider Unit" [:config :providers :provider-unit] "text" {:disabled read-only}]
+     [current-project-input {:label "Provider Unit" :path [:config :providers :provider-unit] :type "text" :disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to your providers? (eg: \"sites\")")]
 
-     [current-project-input "Capacity Unit" [:config :providers :capacity-unit] "text" {:disabled read-only}]
+     [current-project-input {:label "Capacity Unit" :path [:config :providers :capacity-unit] :type "text" :disabled read-only}]
      [m/TextFieldHelperText {:persistent true} (str "What's the " provider-unit " unit of capacity? (eg: \"test devices\")")]
 
      [:div
       (str (capitalize capacity-unit) " will provide service for ")
-      [current-project-input "" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float :class "capacity-input"}]
+      [current-project-input {:path [:config :providers :capacity] :type "number" :disabled read-only :sub-type :float :class "capacity-input"}]
       (str demand-unit)
       " each"]
 
@@ -301,7 +303,7 @@
      (when (common/is-budget analysis-type)
        [:div.budget-section
         [project-setting-title "account_balance" "Available budget"]
-        [current-project-input "" [:config :actions :budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
+        [current-project-input {:path [:config :actions :budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
         [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
         [project-setting-title "domain" (str "Building new " provider-unit " with a capacity of ")]
@@ -312,7 +314,7 @@
 
         [project-setting-title "arrow_upward" (str "Upgrading " provider-unit " to satisfy demand would cost")]
         [:div.project-settings
-         [current-project-input "" [:config :actions :upgrade-budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
+         [current-project-input {:path [:config :actions :upgrade-budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
          "each"]
 
         [project-setting-title "add" (str "Increase the capactiy of " provider-unit " by")]
