@@ -36,16 +36,17 @@
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
 (defn- current-project-input
-  [{:keys [label path type prefix suffix] :as props}]
+  [{:keys [label path type prefix suffix empty-label disabled] :as props}]
   (let [current-project (rf/subscribe [:projects2/current-project])
-        value           (or (get-in @current-project path) "")
+        value           (or (get-in @current-project path) (when disabled empty-label) "")
         change-fn       #(rf/dispatch-sync [:projects2/save-key path %])
         props           (merge (select-keys props [:class :disabled :sub-type])
-                               {:prefix    (or prefix "")
-                                :suffix    (or suffix "")
-                                :label     (or label "")
-                                :on-change (comp change-fn (fn [e] (-> e .-target .-value)))
-                                :value     value})]
+                               {:prefix      (or prefix "")
+                                :suffix      (or suffix "")
+                                :label       (or label "")
+                                :on-change   (comp change-fn (fn [e] (-> e .-target .-value)))
+                                :value       value})]
+    (println ["xxx" label empty-label value disabled])
     (case type
       "number" [common2/numeric-field (assoc props :on-change change-fn)]
       [common2/text-field props])))
@@ -213,9 +214,9 @@
                                   :value     (:source-set-id @current-project)
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                   :disabled? read-only}]
-     [current-project-input {:label "Consumers Unit" :path [:config :demographics :unit-name] :type "text" :disabled read-only}]
+     [current-project-input {:label "Consumers Unit" :path [:config :demographics :unit-name] :type "text" :disabled read-only :empty-label (capitalize consumer-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the units in the dataset? (e.g. population)")]
-     [current-project-input {:label "Demand Unit" :path [:config :demographics :demand-unit] :type "text" :disabled read-only}]
+     [current-project-input {:label "Demand Unit" :path [:config :demographics :demand-unit] :type "text" :disabled read-only :empty-label (capitalize demand-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the unit of your demand?")]
      [:div.percentage-input
       [current-project-input {:label "Target" :path [:config :demographics :target] :type "number" :suffix "%"  :disabled read-only :sub-type :percentage}]
@@ -236,10 +237,10 @@
                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                         :disabled? read-only}]
 
-     [current-project-input {:label "Provider Unit" :path [:config :providers :provider-unit] :type "text" :disabled read-only}]
+     [current-project-input {:label "Provider Unit" :path [:config :providers :provider-unit] :type "text" :disabled read-only :empty-label (capitalize provider-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to your providers? (eg: \"sites\")")]
 
-     [current-project-input {:label "Capacity Unit" :path [:config :providers :capacity-unit] :type "text" :disabled read-only}]
+     [current-project-input {:label "Capacity Unit" :path [:config :providers :capacity-unit] :type "text" :disabled read-only :empty-label (capitalize capacity-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "What's the " provider-unit " unit of capacity? (eg: \"test devices\")")]
 
      [:div
