@@ -120,7 +120,7 @@
                            :value @value}])))
 
 (defn- count-providers
-  [{:keys [tags provider-unit read-only]} {:keys [provider-set-id providers region-id]} provider-unit]
+  [{:keys [tags provider-unit read-only]} {:keys [provider-set-id providers region-id]}]
   (let [{:keys [total filtered]} providers]
     (cond (and read-only (some nil? [region-id provider-set-id])) [:p "No " provider-unit " set defined."]
           (nil? region-id) [:p "Select region first."]
