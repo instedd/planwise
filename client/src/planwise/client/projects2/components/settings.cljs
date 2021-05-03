@@ -46,7 +46,6 @@
                                 :label       (or label "")
                                 :on-change   (comp change-fn (fn [e] (-> e .-target .-value)))
                                 :value       value})]
-    (println ["xxx" label empty-label value disabled])
     (case type
       "number" [common2/numeric-field (assoc props :on-change change-fn)]
       [common2/text-field props])))
@@ -337,15 +336,15 @@
         algorithm       (keyword (:coverage-algorithm @current-project))
         criteria        (get-in @algorithms [algorithm :criteria])
         valid-keys      (set (keys criteria))
-        options         (select-keys options (for [[key value] options :when (and (pos? value) (valid-keys key))] key))]
-    (if (and (some? algorithm) (seq options))
+        valid-options   (select-keys options (for [[key value] options :when (and (pos? value) (valid-keys key))] key))]
+    (if (and (some? algorithm) (seq valid-options))
       [project-setting-title "directions"
        (join ", "
              (map (fn [[key value]]
                     (str (:label (first (filter #(= value (:value %)) (get-in criteria [key :options]))))
                          " of "
                          (get-in criteria [key :label])))
-                  options))]
+                  valid-options))]
       [project-setting-title "warning" "No valid coverage configured"])))
 
 (defn- current-project-step-review

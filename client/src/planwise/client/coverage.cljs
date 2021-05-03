@@ -68,7 +68,7 @@
                     common2/disabled-input-component
                     criteria-option-select-component)]
     [component {:label     label
-                :value     value
+                :value     (or value 0)
                 :options   options
                 :on-change on-change}]))
 
@@ -88,6 +88,4 @@
                                       :value (get value key)
                                       :on-change #(on-change (update-value key %))
                                       :disabled? disabled?}])
-                  (if disabled?
-                    (filter (fn [[key _]] ((fnil pos? 0) (get value key))) criteria)
-                    criteria))])))
+                  criteria)])))
