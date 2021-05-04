@@ -208,7 +208,7 @@
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
                                                    :icon-fn #(icon-function % @selected-provider)
-                                                   :popup-fn     #(show-provider {:read-only read-only?
+                                                   :popup-fn     #(show-provider {:read-only? read-only?
                                                                                   :demand-unit demand-unit
                                                                                   :capacity-unit capacity-unit} %)
                                                    :mouseover-fn (fn [provider]
