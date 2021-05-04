@@ -167,10 +167,12 @@
   [:div
    (for [[index action] (map-indexed vector list)]
      ^{:key (str action-name "-" index)} [show-action (assoc action :action-name action-name :idx index :capacity-unit capacity-unit) {:disabled read-only?}])
-   [m/Button  {:type "button"
-               :disabled read-only?
-               :theme    ["text-secondary-on-secondary-light"]
-               :on-click #(dispatch [:projects2/create-action action-name])} [m/Icon "add"] "Add Option"]])
+   (when-not read-only?
+     [m/Button  {:type "button"
+                 :disabled read-only?
+                 :theme    ["text-secondary-on-secondary-light"]
+                 :on-click #(dispatch [:projects2/create-action action-name])}
+      [m/Icon "add"] "Add Option"])])
 
 ;-------------------------------------------------------------------------------------------
 
