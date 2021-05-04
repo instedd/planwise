@@ -187,14 +187,20 @@
                                   :model     (:region-id @current-project)
                                   :disabled? read-only}]]))
 
-(defn- consumer-source-type-checkbox
-  [label type]
-  (let [source-types (subscribe [:projects2/source-types])]
-    [m/Checkbox {:label label
-                 :checked (some? (@source-types type))
-                 :value type
-                 :on-change #(rf/dispatch-sync
-                              [:projects2/toggle-source-type type])}]))
+(defn- sources-type-component
+  [{:keys [label]}]
+  (let [source-types (subscribe [:projects2/source-types])
+        options      [{:label "Raster (population)" :type "raster"}
+                      {:label "Points" :type "points"}]]
+    [:div.source-type-settings
+     [:p label]
+     [:div
+      (doall (for [{:keys [label type]} options]
+               [m/Checkbox {:key (str "consumer-source-" type)
+                            :label label
+                            :checked (some? (@source-types type))
+                            :value type
+                            :on-change #(rf/dispatch-sync [:projects2/toggle-source-type type])}]))]]))
 
 (defn- current-project-step-consumers
   [read-only]
@@ -204,11 +210,7 @@
     [:section {:class-name "project-settings-section"}
      [section-header 2 "Consumers"]
      (when-not read-only
-       [:div.source-type-settings
-        [:p "Data type"]
-        [:div
-         [consumer-source-type-checkbox "Raster (population)" "raster"]
-         [consumer-source-type-checkbox "Points" "points"]]])
+       [sources-type-component {:label "Data type"}])
      [sources-dropdown-component {:label     "Consumer Dataset"
                                   :value     (:source-set-id @current-project)
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])

@@ -22,7 +22,8 @@
                                              :investment 10000}
                                             {:id "upgrade-1"
                                              :capacity 300
-                                             :investment 40000}]}}
+                                             :investment 40000}]}
+                        :source-type "raster"}
 
                :source-set-id nil
                :region-id nil
@@ -33,7 +34,8 @@
     :defaults {:name "sample"
                :config {:coverage {}
                         :demographics {}
-                        :actions {}}
+                        :actions {}
+                        :source-type "points"}
 
                :source-set-id nil
                :region-id nil

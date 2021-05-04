@@ -102,19 +102,21 @@
  :projects2/save-project-data
  in-projects2
  (fn [db [_ current-project]]
-   (-> db
-       (clear-current-project) ;; Just to clear source type selection
-
-       (assoc :current-project current-project)
-       ;; Keep list in sync with current project
-       (update :list
-               (fn [list]
-                 (some-> list
-                         (utils/update-by-id (:id current-project)
-                                             #(-> %
-                                                  (assoc :state (:state current-project))
-                                                  (assoc :name (:name current-project))
-                                                  (assoc :region-id (:region-id current-project))))))))))
+   (let [source-type (get-in current-project [:config :source-type])]
+     (-> db
+         (assoc :source-types (if (some? source-type)
+                                #{source-type}
+                                #{"raster" "points"}))
+         (assoc :current-project current-project)
+         ;; Keep list in sync with current project
+         (update :list
+                 (fn [list]
+                   (some-> list
+                           (utils/update-by-id (:id current-project)
+                                               #(-> %
+                                                    (assoc :state (:state current-project))
+                                                    (assoc :name (:name current-project))
+                                                    (assoc :region-id (:region-id current-project)))))))))))
 
 
 (rf/reg-event-fx
