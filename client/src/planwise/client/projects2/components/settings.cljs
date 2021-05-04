@@ -160,7 +160,7 @@
                                   :prefix common/currency-symbol
                                   :class "action-input"}
                                  props)]
-   " each"])
+   (when (= action-name :build) " each")])
 
 (defn- listing-actions
   [{:keys [read-only? action-name list capacity-unit]}]
