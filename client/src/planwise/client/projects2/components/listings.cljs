@@ -41,7 +41,7 @@
     [:p.message-margin "You have no projects yet"]
     [m/Button {:type       "button"
                :unelevated "unelevated"
-               :on-click   (utils/prevent-default #(dispatch [:projects2/new-project]))}
+               :on-click   (utils/prevent-default #(dispatch [:projects2/template-project]))}
      "Create one"]]])
 
 (defn- listing-component []
