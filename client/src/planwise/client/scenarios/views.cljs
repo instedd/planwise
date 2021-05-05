@@ -268,9 +268,10 @@
        (str "of a total of " (utils/format-number @source-demand))]]]))
 
 (defn scenario-info
-  [view-state current-scenario analysis-type]
+  [view-state current-scenario]
   (let [{:keys [name label effort demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario
         current-project (subscribe [:projects2/current-project])
+        analysis-type   (get-in @current-project [:config :analysis-type])
         demand-unit     (get-demand-unit @current-project)]
     [:div
      [:div {:class-name "section"}
@@ -325,7 +326,8 @@
 (defn scenario-view
   [{:keys [view-state scenario computing? computing-best-locations? providers project error]}]
   (let [provider-unit (get-provider-unit project)
-        analysis-type (get-in project [:config :analysis-type])
+        demand-unit   (get-demand-unit project)
+        capacity-unit (get-capacity-unit project)
         target        (if computing-best-locations? :computing-best-locations :computing-best-improvements)
         action-type   (cond computing? :computing
                             (= view-state :new-provider) :suggestion
@@ -335,7 +337,7 @@
                             :else [:scenarios/close-suggestions])]
     [:<>
      [:div
-      [scenario-info view-state scenario analysis-type]
+      [scenario-info view-state scenario]
       [edit/create-new-action-component {:type action-type
                                          :provider-unit provider-unit
                                          :on-click #(dispatch action-event)}]
@@ -348,7 +350,9 @@
        [raise-alert scenario error]
        [:<>
         [:div {:class-name "fade"}]
-        [changeset/listing-component providers analysis-type]
+        [changeset/listing-component {:demand-unit demand-unit
+                                      :capacity-unit capacity-unit}
+         providers]
         [:div {:class-name "fade inverted"}]])]))
 
 (defn side-panel-view-2
