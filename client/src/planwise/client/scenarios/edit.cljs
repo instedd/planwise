@@ -163,33 +163,32 @@
                          {:delete-fn #(dispatch [:scenarios/delete-change (:id @provider)])})))))))
 
 (defn new-provider-button
-  [state computing?]
-  [:div (if computing?
+  [{:keys [type on-click]}]
+  [:div (if (= type :computing)
           {:class-name "border-btn-floating border-btn-floating-animated"}
           {:class-name "border-btn-floating"})
-   [m/Fab {:class-name "btn-floating"
-           :on-click #(dispatch [:scenarios.new-action/toggle-options])}
-    (cond computing? "stop"
-          (or (= state :new-provider) (= state :new-intervention)) "cancel"
-          :default "domain")]])
+   [m/Fab (merge {:class-name "btn-floating"}
+                 (when (some? on-click) {:on-click on-click}))
+    (case type
+      :computing "stop"
+      :suggestion "cancel"
+      :scenario "domain")]])
 
 (defn create-new-action-component
-  [state computing? project]
-  (let [open          (subscribe [:scenarios.new-action/options])
-        provider-unit (common/get-provider-unit project)]
-    (fn [state computing?]
-      [:div.scenario-settings
-       [new-provider-button state computing?]
-       [m/Menu (when @open {:class "options-menu mdc-menu--open"})
-        [m/MenuItem
-         {:on-click #(dispatch [:scenarios.new-action/simple-create-provider])}
-         "Create one"]
-        [m/MenuItem
-         {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
-         (str "Get suggestions for new " provider-unit)]
-        [m/MenuItem
-         {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
-         (str "Get suggestions to improve existing " provider-unit)]]])))
+  [{:keys [type provider-unit on-click]}]
+  (let [open (subscribe [:scenarios.new-action/options])]
+    [:div.scenario-settings
+     [new-provider-button {:type type :on-click on-click}]
+     [m/Menu (when @open {:class "options-menu mdc-menu--open"})
+      [m/MenuItem
+       {:on-click #(dispatch [:scenarios.new-action/simple-create-provider])}
+       "Create one"]
+      [m/MenuItem
+       {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
+       (str "Get suggestions for new " provider-unit)]
+      [m/MenuItem
+       {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
+       (str "Get suggestions to improve existing " provider-unit)]]]))
 
 (defn scenario-settings
   [state]

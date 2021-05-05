@@ -250,25 +250,28 @@
   (utils/format-percentage (/ num denom) 2))
 
 (defn initial-scenario-panel
-  [_ _]
-  (let [source-demand (subscribe [:scenarios.current/source-demand])]
-    (fn [{:keys [name demand-coverage state]} demand-unit]
-      [:div
-       [:div {:class-name "section"}
-        [:h1 {:class-name "title-icon"} name]]
-       [:hr]
-       [:div {:class-name "section"}
-        [:h1 {:class-name "large"}
-         [:small (str "Initial " demand-unit " coverage")]
-         (cond
-           (= "pending" state) "loading..."
-           :else (str (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]
-        [:p {:class-name "grey-text"}
-         (str "of a total of " (utils/format-number @source-demand))]]])))
+  [{:keys [name demand-coverage state]}]
+  (let [source-demand   (subscribe [:scenarios.current/source-demand])
+        current-project (subscribe [:projects2/current-project])
+        demand-unit     (get-demand-unit @current-project)]
+    [:div
+     [:div {:class-name "section"}
+      [:h1 {:class-name "title-icon"} name]]
+     [:hr]
+     [:div {:class-name "section"}
+      [:h1 {:class-name "large"}
+       [:small (str "Initial " demand-unit " coverage")]
+       (cond
+         (= "pending" state) "loading..."
+         :else (str (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]
+      [:p {:class-name "grey-text"}
+       (str "of a total of " (utils/format-number @source-demand))]]]))
 
 (defn scenario-info
-  [view-state current-scenario demand-unit analysis-type]
-  (let [{:keys [name label effort demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario]
+  [view-state current-scenario analysis-type]
+  (let [{:keys [name label effort demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario
+        current-project (subscribe [:projects2/current-project])
+        demand-unit     (get-demand-unit @current-project)]
     [:div
      [:div {:class-name "section"}
       [:h1 {:class-name "title-icon"} name]]
@@ -305,49 +308,75 @@
     [changeset/suggestion-listing-component props suggested-locations]
     [:div {:class-name "fade inverted"}]]])
 
+(defn suggestions-view
+  [{:keys [project locations]}]
+  (let [demand-unit   (get-demand-unit project)
+        capacity-unit (get-capacity-unit project)
+        provider-unit (get-provider-unit project)]
+    [:<>
+     [:div {:class-name "suggestion-list"}
+      [edit/create-new-action-component {:type :suggestion
+                                         :provider-unit provider-unit
+                                         :on-click #(dispatch [:scenarios/close-suggestions])}]]
+     [suggested-locations-list {:demand-unit demand-unit
+                                :capacity-unit capacity-unit}
+      locations]]))
+
+(defn scenario-view
+  [{:keys [view-state scenario computing? computing-best-locations? providers project error]}]
+  (let [provider-unit (get-provider-unit project)
+        analysis-type (get-in project [:config :analysis-type])
+        target        (if computing-best-locations? :computing-best-locations :computing-best-improvements)
+        action-type   (cond computing? :computing
+                            (= view-state :new-provider) :suggestion
+                            :else :scenario)
+        action-event  (cond computing? [:scenarios.new-action/abort-fetching-suggestions target]
+                            (= view-state :current-scenario) [:scenarios/show-create-suggestions-menu]
+                            :else [:scenarios/close-suggestions])]
+    [:<>
+     [:div
+      [scenario-info view-state scenario analysis-type]
+      [edit/create-new-action-component {:type action-type
+                                         :provider-unit provider-unit
+                                         :on-click #(dispatch action-event)}]
+      (if computing?
+        [:div {:class-name "info-computing-best-location"}
+         [:small (if computing-best-locations?
+                   "Computing best locations ..."
+                   "Computing best improvements...")]])]
+     (if error
+       [raise-alert scenario error]
+       [:<>
+        [:div {:class-name "fade"}]
+        [changeset/listing-component providers analysis-type]
+        [:div {:class-name "fade inverted"}]])]))
+
 (defn side-panel-view-2
-  [_ _ _]
+  [current-scenario error]
   (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
         computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
         suggested-locations          (subscribe [:scenarios.new-provider/suggested-locations])
         view-state                   (subscribe [:scenarios/view-state])
-        source-demand                (subscribe [:scenarios.current/source-demand])
-        population-under-coverage    (subscribe [:scenarios.current/population-under-coverage])
         providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])
         current-project              (subscribe [:projects2/current-project])
-        analysis-type                (get-in @current-project [:config :analysis-type])
-        demand-unit                  (get-demand-unit @current-project)
-        capacity-unit                (get-capacity-unit @current-project)]
-    (fn [{:keys [state] :as current-scenario} demand-unit error]
-      (let [computing-suggestions?   (or @computing-best-locations? @computing-best-improvements?)
-            edit-button              [edit/create-new-action-component @view-state computing-suggestions? @current-project]]
-        (if @suggested-locations
-          [:<>
-           [:div {:class-name "suggestion-list"}
-            [edit/create-new-action-component @view-state computing-suggestions? @current-project]]
-           [suggested-locations-list {:state state :demand-unit demand-unit :capacity-unit capacity-unit} @suggested-locations]]
-          [:<>
-           [:div
-            [scenario-info @view-state current-scenario demand-unit analysis-type]
-            [edit/create-new-action-component @view-state computing-suggestions? @current-project]
-            (if computing-suggestions?
-              [:div {:class-name "info-computing-best-location"}
-               [:small (if @computing-best-locations?
-                         "Computing best locations ..."
-                         "Computing best improvements...")]])]
-           (if error
-             [raise-alert current-scenario error]
-             [:<>
-              [:div {:class-name "fade"}]
-              [changeset/listing-component @providers-from-changeset analysis-type]
-              [:div {:class-name "fade inverted"}]])])))))
+        computing-suggestions?       (or @computing-best-locations? @computing-best-improvements?)]
+    (if @suggested-locations
+      [suggestions-view {:locations @suggested-locations
+                         :project @current-project}]
+      [scenario-view {:view-state @view-state
+                      :scenario current-scenario
+                      :computing? computing-suggestions?
+                      :computing-best-locations? @computing-best-locations?
+                      :providers @providers-from-changeset
+                      :project @current-project
+                      :error error}])))
 
 (defn side-panel-view
-  [current-scenario demand-unit error read-only?]
+  [current-scenario error read-only?]
   [:<>
    (if read-only?
-     [initial-scenario-panel current-scenario demand-unit]
-     [side-panel-view-2 current-scenario demand-unit error])
+     [initial-scenario-panel current-scenario]
+     [side-panel-view-2 current-scenario error])
    [create-new-scenario current-scenario]])
 
 (defn display-current-scenario
@@ -360,19 +389,18 @@
                                      :href (str "/api/scenarios/" id "/csv")}
                                  [m/Icon {:class "material-icons  center-download-icon"} "get_app"]]]
     (fn [current-project current-scenario]
-      (let [demand-unit (get-demand-unit current-project)]
-        [ui/full-screen (merge (common2/nav-params)
-                               {:main-prop {:style {:position :relative}}
-                                :main [simple-map current-project current-scenario @state @error @read-only?]
-                                :title [:ul {:class-name "breadcrumb-menu"}
-                                        [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
-                                        [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
-                                        [:li (:name current-scenario)]]
-                                :action export-providers-button})
-         [side-panel-view current-scenario demand-unit @error @read-only?]
-         [edit/rename-scenario-dialog]
-         [edit/changeset-dialog current-project current-scenario]
-         [edit/delete-scenario-dialog @state current-scenario]]))))
+      [ui/full-screen (merge (common2/nav-params)
+                             {:main-prop {:style {:position :relative}}
+                              :main [simple-map current-project current-scenario @state @error @read-only?]
+                              :title [:ul {:class-name "breadcrumb-menu"}
+                                      [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
+                                      [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
+                                      [:li (:name current-scenario)]]
+                              :action export-providers-button})
+       [side-panel-view current-scenario @error @read-only?]
+       [edit/rename-scenario-dialog]
+       [edit/changeset-dialog current-project current-scenario]
+       [edit/delete-scenario-dialog @state current-scenario]])))
 
 (defn scenarios-page
   []
