@@ -20,6 +20,7 @@
             [clojure.spec.alpha :as s]
             [leaflet.core :as l]
             [planwise.client.mapping :as mapping]
+            [planwise.client.projects2.core :as core2]
             [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit get-capacity-unit] :as common]))
 
 ;;------------------------------------------------------------------------
@@ -392,13 +393,28 @@
                                                               " "
                                                               demand-unit])]) capacities))]))
 
+(def step->component
+  {"goal"      current-project-step-goal
+   "consumers" current-project-step-consumers
+   "providers" current-project-step-providers
+   "coverage"  current-project-step-coverage
+   "actions"   current-project-step-actions
+   "review"    current-project-step-review})
+
+(defn step->spec
+  [step]
+  (keyword "planwise.model.project" (str step "-step")))
+
 (def sections
-  [{:step "goal" :title "Goal" :component current-project-step-goal :spec :planwise.model.project/goal-step :next-step "consumers"}
-   {:step "consumers" :title "Consumers" :component current-project-step-consumers :spec :planwise.model.project/consumers-step :next-step "providers"}
-   {:step "providers" :title "Providers" :component current-project-step-providers :spec :planwise.model.project/providers-step :next-step "coverage"}
-   {:step "coverage" :title "Coverage" :component current-project-step-coverage :spec :planwise.model.project/coverage-step :next-step "actions"}
-   {:step "actions" :title "Actions" :component current-project-step-actions :spec :planwise.model.project/actions-step :next-step "review"}
-   {:step "review" :title "Review" :component current-project-step-review :spec :planwise.model.project/review-step :next-step nil}])
+  (->> core2/sections
+       (#(partition (count %) 1 (repeat nil) %))
+       (apply map (fn [x y] [x y]))
+       (map (fn [[step next]]
+              (assoc step
+                     :component (get step->component (:step step))
+                     :spec (step->spec (:step step))
+                     :next-step (:step next))))
+       (into [])))
 
 (def map-preview-size {:width 373 :height 278})
 
@@ -410,7 +426,7 @@
         tags            (subscribe [:projects2/tags])
         regions         (subscribe [:regions/list])]
     (fn [{:keys [read-only step]}]
-      (let [project @current-project
+      (let [project         @current-project
             step-data       (first (filter #(= (:step %) step) sections))
             bbox            (:bbox (first (filter #(= (:id %) (:region-id @current-project)) @regions)))
             region-geo      (subscribe [:regions/preview-geojson (:region-id @current-project)])
