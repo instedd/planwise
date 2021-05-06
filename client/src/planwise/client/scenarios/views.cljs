@@ -204,7 +204,7 @@
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
                                                     :mouseout-fn  (fn [suggestion]
                                                                     (dispatch [:scenarios.map/unselect-suggestion suggestion]))}]
-            providers-layer [providers-layer-type {:points @all-providers
+            providers-layer [providers-layer-type {:points (map #(assoc % :open? (= % @selected-provider)) @all-providers)
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
                                                    :icon-fn #(icon-function % @selected-provider)
