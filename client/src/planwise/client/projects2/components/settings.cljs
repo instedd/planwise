@@ -432,6 +432,13 @@
             region-geo      (subscribe [:regions/preview-geojson (:region-id @current-project)])
             preview-map-url (if (:region-id @current-project) (static-image @region-geo map-preview-size))]
         (dispatch [:regions/load-regions-with-preview [(:region-id @current-project)]])
+        (when (nil? step-data)
+          (dispatch
+           [(if read-only :projects2/navigate-to-settings-project :projects2/navigate-to-step-project)
+            (:id project)
+            (or (when-not read-only
+                  (:step (first (filter #(not (s/valid? (:spec %) project)) sections))))
+                (:step (last sections)))]))
         [m/Grid {:class-name "wizard"}
 
          [m/GridCell {:span 12 :class-name "steps"}
@@ -444,8 +451,7 @@
                           [:div (:title iteration-step)]]) sections)]
          [m/GridCell {:span 6}
           [:form.vertical
-           (if (nil? step-data)
-             (dispatch [:projects2/infer-step @current-project])
+           (when (some? step-data)
              ((:component step-data) read-only))]]
          [m/GridCell {:span 6}
           [:div.map

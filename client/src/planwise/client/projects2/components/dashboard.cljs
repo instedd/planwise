@@ -154,7 +154,7 @@
 
 (defn- project-settings
   [step]
-  [settings/current-project-settings-view {:read-only true :step (or step "review")}])
+  [settings/current-project-settings-view {:read-only true :step step}])
 
 (defn view-current-project
   [active-tab]
