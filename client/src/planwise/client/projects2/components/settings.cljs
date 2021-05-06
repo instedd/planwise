@@ -220,7 +220,7 @@
                                   :disabled? read-only}]
      [current-project-input {:label "Consumers Unit" :path [:config :demographics :unit-name] :type "text" :disabled read-only :empty-label (capitalize consumer-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the units in the dataset? (e.g. population)")]
-     [current-project-input {:label "Demand Unit" :path [:config :demographics :demand-unit] :type "text" :disabled read-only :empty-label (capitalize demand-unit)}]
+     [current-project-input {:label "Demand Units" :path [:config :demographics :demand-unit] :type "text" :disabled read-only :empty-label (capitalize demand-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the unit of your demand?")]
      [:div.percentage-input
       [current-project-input {:label "Target" :path [:config :demographics :target] :type "number" :suffix "%"  :disabled read-only :sub-type :percentage}]
@@ -241,10 +241,10 @@
                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                         :disabled? read-only}]
 
-     [current-project-input {:label "Provider Unit" :path [:config :providers :provider-unit] :type "text" :disabled read-only :empty-label (capitalize provider-unit)}]
+     [current-project-input {:label "Provider Units" :path [:config :providers :provider-unit] :type "text" :disabled read-only :empty-label (capitalize provider-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to your providers? (eg: \"sites\")")]
 
-     [current-project-input {:label "Capacity Unit" :path [:config :providers :capacity-unit] :type "text" :disabled read-only :empty-label (capitalize capacity-unit)}]
+     [current-project-input {:label "Capacity Units" :path [:config :providers :capacity-unit] :type "text" :disabled read-only :empty-label (capitalize capacity-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "What's the " provider-unit " unit of capacity? (eg: \"test devices\")")]
 
      [:div

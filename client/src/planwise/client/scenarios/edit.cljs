@@ -9,7 +9,7 @@
             [planwise.client.utils :as utils]
             [planwise.client.components.common2 :as common2]
             [planwise.client.routes :as routes]
-            [clojure.string :as str]
+            [clojure.string :refer [capitalize] :as str]
             [planwise.client.ui.rmwc :as m]
             [planwise.common :as common]))
 
@@ -79,10 +79,10 @@
                                    :focus-extra-class "show-static-text"}))]
      [:div
       (when increase?
-        [common2/text-field {:label (str "Original capacity " capacity-unit)
+        [common2/text-field {:label (str "Current " capacity-unit)
                              :read-only true
                              :value initial-capacity}])
-      [common2/numeric-field {:label (if increase? "Extra capacity" (str "Capacity " capacity-unit))
+      [common2/numeric-field {:label (if increase? (str (capitalize capacity-unit) " to add") (capitalize capacity-unit))
                               :on-change  #(dispatch [:scenarios/save-key  [:changeset-dialog :change :capacity] %])
                               :value (:capacity change)}]
       ;; Show unsatisfied demand when data is available from an existing provider or
@@ -92,10 +92,10 @@
               total-required-capacity (if idle? (- capacity free-capacity) (+ capacity required-capacity))
               required                (Math/ceil (- total-required-capacity initial-capacity extra-capacity))]
           (cond (not (neg? required)) [:div.inline
-                                       [common2/text-field {:label "Required capacity"
+                                       [common2/text-field {:label (str "Required " capacity-unit)
                                                             :read-only true
                                                             :value (utils/format-number (Math/abs required))}]
-                                       [:p.text-helper "Unsatisfied demand: " (utils/format-number (* (:project-capacity props) (Math/abs required)))]]
+                                       [:p.text-helper (capitalize demand-unit) " without service: " (utils/format-number (* (:project-capacity props) (Math/abs required)))]]
                 (neg? required)       [common2/text-field {:label "Free capacity"
                                                            :read-only true
                                                            :value (utils/format-number (Math/abs required))}])))]
