@@ -406,9 +406,15 @@
           (assoc step :component (get step->component (:step step))))
         core2/sections))
 
-(defn first-invalid-step
+(defn first-pending-step
   [project]
   (first (filter #(not (s/valid? (:spec %) project)) sections)))
+
+(defn infer-step
+  [project read-only]
+  (or (when-not read-only
+        (:step (first-pending-step project)))
+      (:step (last sections))))
 
 (def map-preview-size {:width 373 :height 278})
 
@@ -430,9 +436,7 @@
           (dispatch
            [(if read-only :projects2/navigate-to-settings-project :projects2/navigate-to-step-project)
             (:id project)
-            (or (when-not read-only
-                  (:step (first-invalid-step project)))
-                (:step (last sections)))]))
+            (infer-step project read-only)]))
         [m/Grid {:class-name "wizard"}
 
          [m/GridCell {:span 12 :class-name "steps"}
