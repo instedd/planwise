@@ -401,20 +401,14 @@
    "actions"   current-project-step-actions
    "review"    current-project-step-review})
 
-(defn step->spec
-  [step]
-  (keyword "planwise.model.project" (str step "-step")))
-
 (def sections
-  (->> core2/sections
-       (#(partition (count %) 1 (repeat nil) %))
-       (apply map (fn [x y] [x y]))
-       (map (fn [[step next]]
-              (assoc step
-                     :component (get step->component (:step step))
-                     :spec (step->spec (:step step))
-                     :next-step (:step next))))
-       (into [])))
+  (mapv (fn [[step next]]
+          (assoc step :component (get step->component (:step step))))
+        core2/sections))
+
+(defn first-invalid-step
+  [project]
+  (first (filter #(not (s/valid? (:spec %) project)) sections)))
 
 (def map-preview-size {:width 373 :height 278})
 
@@ -437,7 +431,7 @@
            [(if read-only :projects2/navigate-to-settings-project :projects2/navigate-to-step-project)
             (:id project)
             (or (when-not read-only
-                  (:step (first (filter #(not (s/valid? (:spec %) project)) sections))))
+                  (:step (first-invalid-step project)))
                 (:step (last sections)))]))
         [m/Grid {:class-name "wizard"}
 
