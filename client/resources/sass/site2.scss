@@ -26,6 +26,12 @@ body {
   margin: 0;
   padding: 0;
   min-width: 320px;
+
+}
+
+// Fix for jumpy text on header's toolbar when a select is closed
+body.mdc-select-scroll-lock {
+  overflow: unset;
 }
 
 .svg-hidden {
@@ -64,7 +70,6 @@ $margin-page: 90px;
 
 header {
   grid-area: header;
-  z-index: 1;
 
   .mdc-toolbar__row {
     padding-left: $margin-page;
@@ -124,7 +129,6 @@ main {
   grid-area: main;
   display: flex;
   flex: 1;
-  z-index: 0;
 }
 
 footer {
@@ -300,6 +304,10 @@ form.vertical, .fields-vertical {
     bottom: 0;
     left: 0;
     right: 0;
+  }
+  // Fix for map covering header's fab button and sidebar
+  .leaflet-pane {
+    z-index: 0;
   }
 }
 
@@ -1108,7 +1116,7 @@ form.vertical, .fields-vertical {
     align-items: stretch;
     min-height: 500px;
     height: calc(100% + 24px);
-    min-width: 500px;
+    // min-width: 500px;
     margin: -24px -24px 0 0;
     * {
       z-index: 0;
