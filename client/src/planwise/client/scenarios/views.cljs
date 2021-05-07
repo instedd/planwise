@@ -130,24 +130,28 @@
 (defn- icon-function
   [{:keys [id change matches-filters required-capacity satisfied-demand unsatisfied-demand capacity free-capacity] :as provider} selected-provider]
   {:className
-   (str
-    "leaflet-circle-icon "
-    (cond
-      (= id  (:id selected-provider)) "selected"
-      (and (not change)
-           (not matches-filters)) "not-matching"
-      :else (get-marker-class-for-provider provider))
-    " "
-    (when (provider-has-change? provider)
-      "leaflet-circle-for-change"))})
+   (join " " ["leaflet-circle-icon "
+              (cond
+                (= id (:id selected-provider)) "selected"
+                (and (not change)
+                     (not matches-filters)) "not-matching"
+                :else (get-marker-class-for-provider provider))
+              (when (provider-has-change? provider)
+                "leaflet-circle-for-change")
+              (when (some? change)
+                (str "leaflet-" (:action change)))])})
 
 (defn- suggestion-icon-fn
-  [suggestion selected-suggestion]
+  [suggestion selected-suggestion classname]
   {:className
-   (if (= suggestion selected-suggestion) "leaflet-suggestion-icon selected" "leaflet-suggestion-icon")})
+   (join " "
+         [(if (= suggestion selected-suggestion)
+            "leaflet-suggestion-icon selected"
+            "leaflet-suggestion-icon")
+          classname])})
 
 (defn simple-map
-  [{:keys [bbox] :as project} scenario state error read-only?]
+  [_ _ _ _ _]
   (let [selected-provider   (subscribe [:scenarios.map/selected-provider])
         selected-suggestion (subscribe [:scenarios.map/selected-suggestion])
         suggested-locations (subscribe [:scenarios.new-provider/suggested-locations])
@@ -156,12 +160,15 @@
         zoom                (r/atom 3)
         add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         use-providers-clustering false
-        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)
-        demand-unit              (get-demand-unit project)
-        provider-unit            (get-provider-unit project)
-        capacity-unit            (get-capacity-unit project)]
-    (fn [{:keys [bbox]} {:keys [changeset raster sources-data] :as scenario} state error]
-      (let [indexed-providers       (to-indexed-map @all-providers)
+        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)]
+    (fn [{:keys [bbox] :as project} {:keys [changeset raster sources-data] :as scenario} state error read-only?]
+      (let [demand-unit             (get-demand-unit project)
+            provider-unit           (get-provider-unit project)
+            capacity-unit           (get-capacity-unit project)
+            suggestion-classname    (if (= state :new-provider)
+                                      "leaflet-suggestion-new-provider"
+                                      "leaflet-suggestion-new-improvement")
+            indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
             pending-demand-raster   raster
             suggested-locations     @suggested-locations
@@ -192,7 +199,7 @@
                                                     :lat-fn #(get-in % [:location :lat])
                                                     :lon-fn #(get-in % [:location :lon])
                                                     :popup-fn #(show-suggested-provider {:demand-unit demand-unit :capacity-unit capacity-unit} % state)
-                                                    :icon-fn #(suggestion-icon-fn % selected-suggestion)
+                                                    :icon-fn #(suggestion-icon-fn % selected-suggestion suggestion-classname)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
                                                     :mouseout-fn  (fn [suggestion]

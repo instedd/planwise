@@ -30,17 +30,17 @@
 (defn fixed-width
   [{:keys [sections account title tabs action footer secondary-actions]} & children]
   [:div.layout.fixed-width
-   [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]
    (into [:main] children)
-   footer])
+   footer
+   [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]])
 
 (defn full-screen
   [{:keys [sections account title tabs action footer main-prop main secondary-actions]} & children]
   [:div.layout.full-screen
-   [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]
    [:main main-prop main]
    (into [:aside {:id "sidebar"}] children)
-   footer])
+   footer
+   [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]])
 
 (defn footer
   ([]
