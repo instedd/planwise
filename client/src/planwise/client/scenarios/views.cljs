@@ -130,16 +130,16 @@
 (defn- icon-function
   [{:keys [id change matches-filters required-capacity satisfied-demand unsatisfied-demand capacity free-capacity] :as provider} selected-provider]
   {:className
-   (str
-    "leaflet-circle-icon "
-    (cond
-      (= id  (:id selected-provider)) "selected"
-      (and (not change)
-           (not matches-filters)) "not-matching"
-      :else (get-marker-class-for-provider provider))
-    " "
-    (when (provider-has-change? provider)
-      "leaflet-circle-for-change"))})
+   (join " " ["leaflet-circle-icon "
+              (cond
+                (= id (:id selected-provider)) "selected"
+                (and (not change)
+                     (not matches-filters)) "not-matching"
+                :else (get-marker-class-for-provider provider))
+              (when (provider-has-change? provider)
+                "leaflet-circle-for-change")
+              (when (some? change)
+                (str "leaflet-" (:action change)))])})
 
 (defn- suggestion-icon-fn
   [suggestion selected-suggestion]
