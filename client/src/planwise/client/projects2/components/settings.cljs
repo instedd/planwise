@@ -402,7 +402,7 @@
    "review"    current-project-step-review})
 
 (def sections
-  (mapv (fn [[step next]]
+  (mapv (fn [step]
           (assoc step :component (get step->component (:step step))))
         core2/sections))
 
