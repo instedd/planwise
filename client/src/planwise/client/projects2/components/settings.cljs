@@ -20,6 +20,7 @@
             [clojure.spec.alpha :as s]
             [leaflet.core :as l]
             [planwise.client.mapping :as mapping]
+            [planwise.client.projects2.core :as core2]
             [planwise.common :refer [get-consumer-unit get-demand-unit get-provider-unit get-capacity-unit] :as common]))
 
 ;;------------------------------------------------------------------------
@@ -35,25 +36,20 @@
                      attrs)]
     (into [filter-select/single-dropdown] (mapcat identity props))))
 
-;; TODO: Refactor this fn to require flat map instead of this large amount of params
 (defn- current-project-input
-  ([label path type]
-   (current-project-input label path type "" "" {:disabled false}))
-  ([label path type other-props]
-   (current-project-input label path type "" "" other-props))
-  ([label path type prefix suffix other-props]
-   (let [current-project (rf/subscribe [:projects2/current-project])
-         value           (or (get-in @current-project path) "")
-         change-fn       #(rf/dispatch-sync [:projects2/save-key path %])
-         props (merge (select-keys other-props [:class :disabled :sub-type])
-                      {:prefix    prefix
-                       :suffix    suffix
-                       :label     label
-                       :on-change (comp change-fn (fn [e] (-> e .-target .-value)))
-                       :value     value})]
-     (case type
-       "number" [common2/numeric-field (assoc props :on-change change-fn)]
-       [common2/text-field props]))))
+  [{:keys [label path type prefix suffix empty-label disabled] :as props}]
+  (let [current-project (rf/subscribe [:projects2/current-project])
+        value           (or (get-in @current-project path) (when disabled empty-label) "")
+        change-fn       #(rf/dispatch-sync [:projects2/save-key path %])
+        props           (merge (select-keys props [:class :disabled :sub-type])
+                               {:prefix      (or prefix "")
+                                :suffix      (or suffix "")
+                                :label       (or label "")
+                                :on-change   (comp change-fn (fn [e] (-> e .-target .-value)))
+                                :value       value})]
+    (case type
+      "number" [common2/numeric-field (assoc props :on-change change-fn)]
+      [common2/text-field props])))
 
 (defn- current-project-checkbox
   [label path checked-value unchecked-value other-props]
@@ -125,9 +121,10 @@
                            :value @value}])))
 
 (defn- count-providers
-  [tags {:keys [provider-set-id providers region-id]} provider-unit]
+  [{:keys [tags provider-unit read-only]} {:keys [provider-set-id providers region-id]}]
   (let [{:keys [total filtered]} providers]
-    (cond (nil? region-id) [:p "Select region first."]
+    (cond (and read-only (some nil? [region-id provider-set-id])) [:p "No " provider-unit " set defined."]
+          (nil? region-id) [:p "Select region first."]
           (nil? provider-set-id) [:p (str "Select " provider-unit " set first.")]
           :else [:p (str "Selected " provider-unit ": " filtered " / " total)])))
 
@@ -152,22 +149,31 @@
               props)
     [m/Icon "clear"]]
    ;; (when (= action-name :build) "with a capacity of ")
-   [current-project-input "" [:config :actions action-name idx :capacity] "number" "" "" (merge {:class "action-input"} props)]
+   [current-project-input (merge {:path [:config :actions action-name idx :capacity]
+                                  :type "number"
+                                  :class "action-input"}
+                                 props)]
    " "
    capacity-unit
    " would cost "
-   [current-project-input "" [:config :actions action-name idx :investment] "number" common/currency-symbol "" (merge {:class "action-input"} props)]
-   " each"])
+   [current-project-input (merge {:path [:config :actions action-name idx :investment]
+                                  :type "number"
+                                  :prefix common/currency-symbol
+                                  :class "action-input"}
+                                 props)]
+   (when (= action-name :build) " each")])
 
 (defn- listing-actions
   [{:keys [read-only? action-name list capacity-unit]}]
   [:div
    (for [[index action] (map-indexed vector list)]
      ^{:key (str action-name "-" index)} [show-action (assoc action :action-name action-name :idx index :capacity-unit capacity-unit) {:disabled read-only?}])
-   [m/Button  {:type "button"
-               :disabled read-only?
-               :theme    ["text-secondary-on-secondary-light"]
-               :on-click #(dispatch [:projects2/create-action action-name])} [m/Icon "add"] "Add Option"]])
+   (when-not read-only?
+     [m/Button  {:type "button"
+                 :disabled read-only?
+                 :theme    ["text-secondary-on-secondary-light"]
+                 :on-click #(dispatch [:projects2/create-action action-name])}
+      [m/Icon "add"] "Add Option"])])
 
 ;-------------------------------------------------------------------------------------------
 
@@ -176,7 +182,7 @@
   (let [current-project (subscribe [:projects2/current-project])]
     [:section.project-settings-section
      [section-header 1 "Goal"]
-     [current-project-input "Goal" [:name] "text"]
+     [current-project-input {:label "Goal" :path [:name] :type "text" :disabled read-only}]
      [m/TextFieldHelperText {:persistent true} "Enter the goal for this project"]
 
      [regions-dropdown-component {:label     "Region"
@@ -200,27 +206,29 @@
         demand-unit     (get-demand-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 2 "Consumers"]
-     [:div.source-type-settings
-      [:p "Data type"]
-      [:div
-       [consumer-source-type-checkbox "Raster (population)" "raster"]
-       [consumer-source-type-checkbox "Points" "points"]]]
+     (when-not read-only
+       [:div.source-type-settings
+        [:p "Data type"]
+        [:div
+         [consumer-source-type-checkbox "Raster (population)" "raster"]
+         [consumer-source-type-checkbox "Points" "points"]]])
      [sources-dropdown-component {:label     "Consumer Dataset"
                                   :value     (:source-set-id @current-project)
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                   :disabled? read-only}]
-     [current-project-input "Consumers Unit" [:config :demographics :unit-name] "text" {:disabled read-only}]
+     [current-project-input {:label "Consumers Unit" :path [:config :demographics :unit-name] :type "text" :disabled read-only :empty-label (capitalize consumer-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the units in the dataset? (e.g. population)")]
-     [current-project-input "Demand Unit" [:config :demographics :demand-unit] "text" {:disabled read-only}]
+     [current-project-input {:label "Demand Unit" :path [:config :demographics :demand-unit] :type "text" :disabled read-only :empty-label (capitalize demand-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to the unit of your demand?")]
      [:div.percentage-input
-      [current-project-input "Target" [:config :demographics :target] "number" "" "%"  {:disabled read-only :sub-type :percentage}]
+      [current-project-input {:label "Target" :path [:config :demographics :target] :type "number" :suffix "%"  :disabled read-only :sub-type :percentage}]
       [:p (str "of " consumer-unit " should be counted as " demand-unit)]]]))
 
 (defn- current-project-step-providers
   [read-only]
   (let [current-project (subscribe [:projects2/current-project])
         tags            (subscribe [:projects2/tags])
+        provider-set-id (:provider-set-id @current-project)
         provider-unit   (get-provider-unit @current-project)
         demand-unit     (get-demand-unit @current-project)
         capacity-unit   (get-capacity-unit @current-project)]
@@ -231,38 +239,50 @@
                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                         :disabled? read-only}]
 
-     [current-project-input "Provider Unit" [:config :providers :provider-unit] "text" {:disabled read-only}]
+     [current-project-input {:label "Provider Unit" :path [:config :providers :provider-unit] :type "text" :disabled read-only :empty-label (capitalize provider-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "How do you refer to your providers? (eg: \"sites\")")]
 
-     [current-project-input "Capacity Unit" [:config :providers :capacity-unit] "text" {:disabled read-only}]
+     [current-project-input {:label "Capacity Unit" :path [:config :providers :capacity-unit] :type "text" :disabled read-only :empty-label (capitalize capacity-unit)}]
      [m/TextFieldHelperText {:persistent true} (str "What's the " provider-unit " unit of capacity? (eg: \"test devices\")")]
 
      [:div
       (str (capitalize capacity-unit) " will provide service for ")
-      [current-project-input "" [:config :providers :capacity] "number" {:disabled read-only :sub-type :float :class "capacity-input"}]
+      [current-project-input {:path [:config :providers :capacity] :type "number" :disabled read-only :sub-type :float :class "capacity-input"}]
       (str demand-unit)
       " each"]
 
      (when-not read-only [tag-input provider-unit])
-     [:label "Tags: " [tag-set @tags read-only]]
-     [count-providers @tags @current-project provider-unit]]))
+     (when (or (not read-only) (some? provider-set-id))
+       [:label "Tags: "
+        (if (empty? @tags)
+          (str "No tags defined.")
+          [tag-set @tags read-only])])
+     [count-providers {:tags @tags :provider-unit provider-unit :read-only read-only} @current-project]]))
+
+(defn- coverage-algorithm-select
+  [{:keys [label on-change read-only]}]
+  (let [algorithms (rf/subscribe [:coverage/algorithms-list])
+        coverage   (rf/subscribe [:projects2/new-project-coverage])
+        component  (if read-only
+                     common2/disabled-input-component
+                     m/Select)]
+    [component {:label label
+                :value (or @coverage "")
+                :options (into [{:key "" :value ""}] @algorithms)
+                :disabled read-only
+                :on-change on-change}]))
 
 (defn- current-project-step-coverage
   [read-only]
-  (let [algorithms      (rf/subscribe [:coverage/algorithms-list])
-        coverage        (rf/subscribe [:projects2/new-project-coverage])
-        current-project (rf/subscribe [:projects2/current-project])]
+  (let [current-project (subscribe [:projects2/current-project])]
     [:section {:class-name "project-settings-section"}
      [section-header 4 "Coverage"]
-     [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."
-      [:p "If there is more than one method enabled the resulting area will be the union of all."]]
-
-     [m/Select {:label "Coverage algorithm"
-                :value (or @coverage "")
-                :options (into [{:key "" :value ""}] @algorithms)
-                :on-change #(rf/dispatch [:projects2/save-key
-                                          [:coverage-algorithm] (utils/or-blank (.. % -target -value) nil)])}]
-     [coverage-algorithm-filter-options {:coverage-algorithm @coverage
+     [:div {:class "step-info"} "These values will be used to estimate the geographic coverage that your current sites are providing. That in turn will allow Planwise to calculate areas out of reach."]
+     [coverage-algorithm-select {:label "Coverage algorithm"
+                                 :on-change #(rf/dispatch [:projects2/save-key
+                                                           [:coverage-algorithm] (utils/or-blank (.. % -target -value) nil)])
+                                 :read-only read-only}]
+     [coverage-algorithm-filter-options {:coverage-algorithm (:coverage-algorithm @current-project)
                                          :value              (get-in @current-project [:config :coverage :filter-options])
                                          :on-change          (fn [options]
                                                                (dispatch [:projects2/save-key [:config :coverage :filter-options] options]))
@@ -274,20 +294,24 @@
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
-        analysis-type   (get-in @current-project [:config :analysis-type])
+        budget?         (common/is-budget (get-in @current-project [:config :analysis-type]))
         provider-unit   (get-provider-unit @current-project)
         capacity-unit   (get-capacity-unit @current-project)]
     [:section {:class-name "project-settings-section"}
      [section-header 5 "Actions"]
      [:div {:class "step-info"} "Potential actions to increase access to services. Planwise will use these to explore and recommend the best alternatives."]
 
-     [project-setting-title "info" "Budget"]
-     [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] "budget" "action" {:disabled read-only :class "project-setting"}]
+     (when-not read-only
+       [project-setting-title "info" "Budget"]
+       [current-project-checkbox "Do you want to analyze scenarios using a budget?" [:config :analysis-type] "budget" "action" {:disabled read-only :class "project-setting"}])
 
-     (when (common/is-budget analysis-type)
+     (when read-only
+       [project-setting-title "info" (if budget? "Using budget for analysis" "Not using budget for analysis.")])
+
+     (when budget?
        [:div.budget-section
         [project-setting-title "account_balance" "Available budget"]
-        [current-project-input "" [:config :actions :budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
+        [current-project-input {:path [:config :actions :budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
         [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
 
         [project-setting-title "domain" (str "Building new " provider-unit " with a capacity of ")]
@@ -298,7 +322,7 @@
 
         [project-setting-title "arrow_upward" (str "Upgrading " provider-unit " to satisfy demand would cost")]
         [:div.project-settings
-         [current-project-input "" [:config :actions :upgrade-budget] "number" common/currency-symbol "" {:disabled read-only :class "project-setting"}]
+         [current-project-input {:path [:config :actions :upgrade-budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
          "each"]
 
         [project-setting-title "add" (str "Increase the capactiy of " provider-unit " by")]
@@ -307,16 +331,31 @@
                           :list          @upgrade-actions
                           :capacity-unit capacity-unit}]])]))
 
+(defn- coverage-overview
+  []
+  (let [current-project (subscribe [:projects2/current-project])
+        algorithms      (subscribe [:coverage/supported-algorithms])
+        options         (get-in @current-project [:config :coverage :filter-options])
+        algorithm       (keyword (:coverage-algorithm @current-project))
+        criteria        (get-in @algorithms [algorithm :criteria])
+        valid-keys      (set (keys criteria))
+        valid-options   (select-keys options (for [[key value] options :when (and (pos? value) (valid-keys key))] key))]
+    (if (and (some? algorithm) (seq valid-options))
+      [project-setting-title "directions"
+       (join ", "
+             (map (fn [[key value]]
+                    (str (:label (first (filter #(= value (:value %)) (get-in criteria [key :options]))))
+                         " of "
+                         (get-in criteria [key :label])))
+                  valid-options))]
+      [project-setting-title "warning" "No valid coverage configured"])))
+
 (defn- current-project-step-review
   [read-only]
   (let [current-project (subscribe [:projects2/current-project])
-        algorithms      (rf/subscribe [:coverage/supported-algorithms])
         providers       (subscribe [:providers-set/dropdown-options])
-        provider-set-id        (:provider-set-id @current-project)
+        provider-set-id (:provider-set-id @current-project)
         provider        (first (filter #(= provider-set-id (:value %)) @providers))
-        algorithm       (get-in @algorithms [(keyword (:coverage-algorithm @current-project))])
-        criteria        (first (vals (:criteria algorithm)))
-        coverage-amount (first (vals (get-in @current-project [:config :coverage :filter-options])))
         sources         (subscribe [:sources/list])
         source          (first (filter #(= (:source-set-id @current-project) (:id %)) @sources))
         analysis-type   (get-in @current-project [:config :analysis-type])
@@ -340,12 +379,7 @@
      (if (some? source)
        [project-setting-title "people" (:name source)]
        [project-setting-title "warning" "The \"consumers\" tab information is needed"])
-     (if (and (some? coverage-amount))
-       [project-setting-title "directions" (str
-                                            (:label (first (filter #(= coverage-amount (:value %)) (:options criteria))))
-                                            " of "
-                                            (:label (first (vals (:criteria algorithm)))))]
-       [project-setting-title "warning" "The \"providers\" and \"coverage\" tabs information is needed"])
+     [coverage-overview]
      (when (common/is-budget analysis-type)
        (map-indexed (fn [idx action]
                       ^{:key (str "action-" idx)} [project-setting-title
@@ -359,36 +393,63 @@
                                                               " "
                                                               demand-unit])]) capacities))]))
 
+(def step->component
+  {"goal"      current-project-step-goal
+   "consumers" current-project-step-consumers
+   "providers" current-project-step-providers
+   "coverage"  current-project-step-coverage
+   "actions"   current-project-step-actions
+   "review"    current-project-step-review})
+
+(def sections
+  (mapv (fn [[step next]]
+          (assoc step :component (get step->component (:step step))))
+        core2/sections))
+
+(defn first-pending-step
+  [project]
+  (first (filter #(not (s/valid? (:spec %) project)) sections)))
+
+(defn infer-step
+  [project read-only]
+  (or (when-not read-only
+        (:step (first-pending-step project)))
+      (:step (last sections))))
 
 (def map-preview-size {:width 373 :height 278})
 
 (defn current-project-settings-view
-  [{:keys [read-only step sections]}]
+  [{:keys [read-only step]}]
   (let [current-project (subscribe [:projects2/current-project])
         build-actions   (subscribe [:projects2/build-actions])
         upgrade-actions (subscribe [:projects2/upgrade-actions])
         tags            (subscribe [:projects2/tags])
         regions         (subscribe [:regions/list])]
     (fn [{:keys [read-only step]}]
-      (let [project @current-project
+      (let [project         @current-project
             step-data       (first (filter #(= (:step %) step) sections))
             bbox            (:bbox (first (filter #(= (:id %) (:region-id @current-project)) @regions)))
             region-geo      (subscribe [:regions/preview-geojson (:region-id @current-project)])
             preview-map-url (if (:region-id @current-project) (static-image @region-geo map-preview-size))]
         (dispatch [:regions/load-regions-with-preview [(:region-id @current-project)]])
+        (when (nil? step-data)
+          (dispatch
+           [(if read-only :projects2/navigate-to-settings-project :projects2/navigate-to-step-project)
+            (:id project)
+            (infer-step project read-only)]))
         [m/Grid {:class-name "wizard"}
 
          [m/GridCell {:span 12 :class-name "steps"}
           (map-indexed (fn [i iteration-step]
                          [:a {:key i
                               :class-name (join " " [(if (= (:step iteration-step) step) "active") (if (s/valid? (:spec iteration-step) project) "complete")])
-                              :href (routes/projects2-show-with-step {:id (:id project) :step (:step iteration-step)})}
+                              :href ((if read-only routes/projects2-settings-with-step routes/projects2-show-with-step)
+                                     {:id (:id project) :step (:step iteration-step)})}
                           (if (s/valid? (:spec iteration-step) project) [m/Icon "done"] [:i (inc i)])
                           [:div (:title iteration-step)]]) sections)]
          [m/GridCell {:span 6}
           [:form.vertical
-           (if (nil? step-data)
-             (dispatch [:projects2/infer-step @current-project])
+           (when (some? step-data)
              ((:component step-data) read-only))]]
          [m/GridCell {:span 6}
           [:div.map
@@ -407,20 +468,14 @@
 
 (defn edit-current-project
   []
-  (let [page-params       (subscribe [:page-params])
+  (let [page-params     (subscribe [:page-params])
         current-project (subscribe [:projects2/current-project])
         delete?         (r/atom false)
-        hide-dialog     (fn [] (reset! delete? false))
-        sections        [{:step "goal" :title "Goal" :component current-project-step-goal :spec :planwise.model.project/goal-step :next-step "consumers"}
-                         {:step "consumers" :title "Consumers" :component current-project-step-consumers :spec :planwise.model.project/consumers-step :next-step "providers"}
-                         {:step "providers" :title "Providers" :component current-project-step-providers :spec :planwise.model.project/providers-step :next-step "coverage"}
-                         {:step "coverage" :title "Coverage" :component current-project-step-coverage :spec :planwise.model.project/coverage-step :next-step "actions"}
-                         {:step "actions" :title "Actions" :component current-project-step-actions :spec :planwise.model.project/actions-step :next-step "review"}
-                         {:step "review" :title "Review" :component current-project-step-review :spec :planwise.model.project/review-step :next-step nil}]]
+        hide-dialog     (fn [] (reset! delete? false))]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
-        [current-project-settings-view {:read-only false :step (:step @page-params) :sections sections}]
+        [current-project-settings-view {:read-only false :step (:step @page-params)}]
 
         [:div {:class-name "project-settings-actions"}
          (let [previous-step (:step (first (filter #(= (:next-step %) (:step @page-params)) sections)))]

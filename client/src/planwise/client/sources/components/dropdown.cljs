@@ -21,13 +21,6 @@
 ;; ----------------------------------------------------------------------------
 ;; Views
 
-(defn- disabled-input-component
-  [{:keys [label value options empty-label]}]
-  [common2/text-field {:type     "text"
-                       :label    label
-                       :value    (utils/label-from-options options value empty-label)
-                       :disabled true}])
-
 (defn- sources-select-component
   [{:keys [label value options empty-label on-change]}]
   [m/Select {:label (if (empty? options) empty-label label)
@@ -40,7 +33,7 @@
   [{:keys [label value on-change disabled?]}]
   (let [options   (subscribe [:sources/dropdown-options])
         component (if (or disabled? (empty? @options))
-                    disabled-input-component
+                    common2/disabled-input-component
                     sources-select-component)]
     [component {:label        label
                 :value        value
