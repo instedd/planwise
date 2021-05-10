@@ -171,8 +171,8 @@
                  (when (some? on-click) {:on-click on-click}))
     (case type
       :computing "stop"
-      :suggestion "cancel"
-      :scenario "domain")]])
+      :new-unit "cancel"
+      "domain")]])
 
 (defn create-new-action-component
   [{:keys [type provider-unit on-click]}]

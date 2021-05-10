@@ -309,6 +309,11 @@
     [changeset/suggestion-listing-component props suggested-locations]
     [:div {:class-name "fade inverted"}]]])
 
+(defn new-provider-unit?
+  [view-state]
+  (or (= view-state :new-provider)
+      (= view-state :new-intervention)))
+
 (defn suggestions-view
   [{:keys [project locations]}]
   (let [demand-unit   (get-demand-unit project)
@@ -316,7 +321,7 @@
         provider-unit (get-provider-unit project)]
     [:<>
      [:div {:class-name "suggestion-list"}
-      [edit/create-new-action-component {:type :suggestion
+      [edit/create-new-action-component {:type :new-unit
                                          :provider-unit provider-unit
                                          :on-click #(dispatch [:scenarios/close-suggestions])}]]
      [suggested-locations-list {:demand-unit demand-unit
@@ -330,11 +335,11 @@
         capacity-unit (get-capacity-unit project)
         target        (if computing-best-locations? :computing-best-locations :computing-best-improvements)
         action-type   (cond computing? :computing
-                            (= view-state :new-provider) :suggestion
-                            :else :scenario)
+                            (new-provider-unit? view-state) :new-unit
+                            :else :default)
         action-event  (cond computing? [:scenarios.new-action/abort-fetching-suggestions target]
-                            (= view-state :current-scenario) [:scenarios/show-create-suggestions-menu]
-                            :else [:scenarios/close-suggestions])]
+                            (new-provider-unit? view-state) [:scenarios/close-suggestions]
+                            :else [:scenarios/show-create-suggestions-menu])]
     [:<>
      [:div
       [scenario-info view-state scenario]
