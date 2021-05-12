@@ -17,45 +17,61 @@
    "upgrade-provider" "arrow_upward"
    "increase-provider" "add"})
 
-(defn- changeset-row
-  [props {:keys [name change] :as provider} analysis-type]
-  [:div
-   [:div {:class-name "section changeset-row"
-          :on-click #(dispatch [:scenarios/open-changeset-dialog provider])}
-    [:div {:class-name "icon-list"}
-     [m/Icon {} (get action-icons (:action change))]
-     [:div {:class-name "icon-list-text"}
-      [:p {:class-name "strong"} name]
-      (when (common/is-budget analysis-type)
-        [:p {:class-name "grey-text"}  (str common/currency-symbol " " (utils/format-number (:investment change)))])]]]
-   [:hr]])
+(defn- action-description
+  [{:keys [capacity-unit demand-unit] :as props} {:keys [change satisfied-demand] :as provider}]
+  (let [formatted-capacity (utils/format-number (:capacity change))
+        formatted-coverage (utils/format-number satisfied-demand)]
+    (case (:action change)
+      "create-provider"   (str "New build with " formatted-capacity " to serve " formatted-coverage " " demand-unit)
+      "upgrade-provider"  (str "Upgraded and increased capacity on " formatted-capacity " to serve " formatted-coverage " " demand-unit)
+      "increase-provider" (str "Increased capacity on " formatted-capacity " to serve " formatted-coverage " " demand-unit))))
 
-(defn- listing-component
-  [providers analysis-type]
-  [:div {:class-name "scroll-list"}
-   (map (fn [provider] [changeset-row {:key (str "provider-action" (:id provider))} provider analysis-type])
+(defn- action-description-with-investment
+  [props {:keys [change] :as provider}]
+  (let [investment           (:investment change)
+        formatted-investment (when (pos? investment) (str " at " (utils/format-currency investment)))]
+    (str (action-description props provider) formatted-investment)))
+
+(defn- changeset-row
+  [props {:keys [name change] :as provider}]
+  (let [action (:action change)]
+    [:div
+     [:div.section.changeset-row {:on-mouse-over #(dispatch [:scenarios.map/select-provider provider])
+                                  :on-mouse-out  #(dispatch [:scenarios.map/unselect-provider provider])
+                                  :on-click      #(dispatch [:scenarios/open-changeset-dialog provider])}
+      [:div.icon-list
+       [m/Icon {} (get action-icons action)]
+       [:div.icon-list-text
+        [:p.strong name]
+        [:p.grey-text
+         (action-description-with-investment props provider)]]]]
+     [:hr]]))
+
+(defn listing-component
+  [props providers]
+  [:div.scroll-list
+   (map (fn [provider] [changeset-row (merge props {:key (str "provider-action" (:id provider))}) provider])
         providers)])
 
 (defn- suggestion-row
   [{:keys [demand-unit capacity-unit] :as props} {:keys [coverage action-capacity ranked name] :as suggestion}]
   [:div
-   [:div {:class-name    "section changeset-row"
-          :on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
-          :on-mouse-out  #(dispatch [:scenarios.map/unselect-suggestion suggestion])
-          :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])}
-    [:div {:class-name "icon-list"}
+   [:div.section.changeset-row {:on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
+                                :on-mouse-out  #(dispatch [:scenarios.map/unselect-suggestion suggestion])
+                                :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])}
+    [:div.icon-list
      [m/Icon {} (get action-icons "create-provider")]
-     [:div {:class-name "icon-list-text"}
-      [:p {:class-name "strong"} (if name name (str "Suggestion " ranked))]
+     [:div.icon-list-text
+      [:p.strong (if name name (str "Suggestion " ranked))]
       ; coverage is nil when requesting suggestions to improve existing provider
       ; and it is not nil when requesting suggestions for new providers
-      [:p {:class-name "grey-text"} (str "Required Capacity: " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]
+      [:p.grey-text (str "Required Capacity: " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]
       (when (some? coverage)
-        [:p {:class-name "grey-text"} (str " Coverage: " (utils/format-number coverage) " " demand-unit)])]]]
+        [:p.grey-text (str " Coverage: " (utils/format-number coverage) " " demand-unit)])]]]
    [:hr]])
 
-(defn- suggestion-listing-component
+(defn suggestion-listing-component
   [props suggestions]
-  [:div {:class-name "scroll-list suggestion-list"}
+  [:div.scroll-list.suggestion-list
    (map (fn [suggestion] [suggestion-row (merge props {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))}) suggestion])
         suggestions)])

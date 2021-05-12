@@ -289,32 +289,29 @@
  (fn [db [_ _]]
    (assoc db :selected-suggestion nil)))
 
-;;Creating new-providers
-
-;TODO; check when pending state for resquested suggestions
-(rf/reg-event-fx
- :scenarios.new-action/toggle-options
+(rf/reg-event-db
+ :scenarios/close-suggestions
  in-scenarios
- (fn [{:keys [db]} [_]]
-   (let [actual-state (:view-state db)
-         getting-suggested-locations? (get-in db [:current-scenario :computing-best-locations :state])
-         getting-suggested-providers? (get-in db [:current-scenario :computing-best-improvements :state])
-         dispatch-event               (fn [e] {:dispatch [:scenarios.new-action/abort-fetching-suggestions e]})
-         next-state (case actual-state
-                      :current-scenario       :show-options-to-create-provider
-                      :show-scenario-settings :show-options-to-create-provider
-                      :show-options-to-create-provider  :current-scenario
-                      :new-provider                     :current-scenario
-                      :new-intervention                 :current-scenario
-                      :get-suggestions-for-new-provider :current-scenario
-                      :get-suggestions-for-improvements :current-scenario
-                      actual-state)]
-     (merge
-      {:db       (-> db (assoc :view-state next-state)
-                     (assoc-in [:current-scenario :suggested-locations] nil))}
-      (cond
-        getting-suggested-locations? (dispatch-event :computing-best-locations)
-        getting-suggested-providers? (dispatch-event :computing-best-improvements))))))
+ (fn [db [_ _]]
+   (-> db
+       (assoc-in [:current-scenario :suggested-locations] nil)
+       (assoc :view-state :current-scenario))))
+
+(rf/reg-event-db
+ :scenarios/show-create-suggestions-menu
+ in-scenarios
+ (fn [db [_ _]]
+   (-> db
+       (assoc :view-state :show-options-to-create-provider))))
+
+(rf/reg-event-db
+ :scenarios/close-create-suggestions-menu
+ in-scenarios
+ (fn [db [_ _]]
+   (-> db
+       (assoc :view-state :current-scenario))))
+
+;;Creating new-providers
 
 (rf/reg-event-fx
  :scenarios.new-provider/fetch-suggested-locations
