@@ -302,12 +302,12 @@
 
 (defn suggested-locations-list
   [props suggested-locations]
-  [:div
-   [:div {:class-name "section"}
-    [:h1 {:class-name "title-icon"} "Suggestion list"]
-    [:div {:class-name "fade"}]
-    [changeset/suggestion-listing-component props suggested-locations]
-    [:div {:class-name "fade inverted"}]]])
+  [:<>
+   [:div.section
+    [:h1.title-icon "Suggestion list"]]
+   [:div..fade]
+   [changeset/suggestion-listing-component props suggested-locations]
+   [:div.fade.inverted]])
 
 (defn new-provider-unit?
   [view-state]
@@ -389,6 +389,41 @@
      [side-panel-view-2 current-scenario error])
    [create-new-scenario current-scenario]])
 
+(defn scenario-line-info
+  [{:keys [name effort source-demand increase-coverage] :as current-scenario}]
+  (let [current-project (subscribe [:projects2/current-project])
+        analysis-type   (get-in @current-project [:config :analysis-type])
+        demand-unit     (get-demand-unit @current-project)]
+    [:div.section
+     [:div.scenario-line-section
+      [:div [:h3 name]]
+      [:div [:h3.grey-text (str "Increase in " demand-unit " coverage " (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")")]]
+      [:div [:h3.grey-text (str "Effort required " (utils/format-effort effort analysis-type))]]]]))
+
+(defn table-actions-view
+  [current-scenario]
+  (let [current-project          (subscribe [:projects2/current-project])
+        providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
+        demand-unit              (get-demand-unit @current-project)
+        capacity-unit            (get-capacity-unit @current-project)]
+    [:<>
+     [scenario-line-info current-scenario]
+     [changeset/table-component {:demand-unit demand-unit
+                                 :capacity-unit capacity-unit}
+      @providers-from-changeset]
+     [:div
+      [create-new-scenario current-scenario]]]))
+
+(defn sidebar-expand-button
+  [expanded-sidebar?]
+  [:div.sidebar-expand-button
+   [:div.sidebar-button {:on-click #(dispatch [(if expanded-sidebar?
+                                                 :scenarios/show-scenario
+                                                 :scenarios/show-actions-table)])}
+    [:div.sidebar-button-inner
+     [m/Icon {:strategy "ligature"
+              :use (if expanded-sidebar? "arrow_left" "arrow_right")}]]]])
+
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]
   (let [read-only?  (subscribe [:scenarios/read-only?])
@@ -399,18 +434,24 @@
                                      :href (str "/api/scenarios/" id "/csv")}
                                  [m/Icon {:class "material-icons  center-download-icon"} "get_app"]]]
     (fn [current-project current-scenario]
-      [ui/full-screen (merge (common2/nav-params)
-                             {:main-prop {:style {:position :relative}}
-                              :main [simple-map current-project current-scenario @state @error @read-only?]
-                              :title [:ul {:class-name "breadcrumb-menu"}
-                                      [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
-                                      [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
-                                      [:li (:name current-scenario)]]
-                              :action export-providers-button})
-       [side-panel-view current-scenario @error @read-only?]
-       [edit/rename-scenario-dialog]
-       [edit/changeset-dialog current-project current-scenario]
-       [edit/delete-scenario-dialog @state current-scenario]])))
+      (let [expanded-sidebar? (= @state :show-actions-table)]
+        [ui/full-screen (merge (common2/nav-params)
+                               {:main-prop {:style {:position :relative}}
+                                :main [simple-map current-project current-scenario @state @error @read-only?]
+                                :title [:ul {:class-name "breadcrumb-menu"}
+                                        [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
+                                        [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
+                                        [:li (:name current-scenario)]]
+                                :sidebar-prop {:class [(if expanded-sidebar? :expanded-sidebar :compact-sidebar)]}}
+                               (when-not expanded-sidebar?
+                                 {:action export-providers-button}))
+         (if expanded-sidebar?
+           [table-actions-view current-scenario]
+           [side-panel-view current-scenario @error @read-only?])
+         [edit/rename-scenario-dialog]
+         [edit/changeset-dialog current-project current-scenario]
+         [edit/delete-scenario-dialog @state current-scenario]
+         [sidebar-expand-button expanded-sidebar?]]))))
 
 (defn scenarios-page
   []

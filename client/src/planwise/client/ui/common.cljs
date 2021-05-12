@@ -35,10 +35,10 @@
    [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]])
 
 (defn full-screen
-  [{:keys [sections account title tabs action footer main-prop main secondary-actions]} & children]
+  [{:keys [sections account title tabs action footer main-prop main secondary-actions sidebar-prop]} & children]
   [:div.layout.full-screen
    [:main main-prop main]
-   (into [:aside {:id "sidebar"}] children)
+   (into [:aside (merge {:id "sidebar"} sidebar-prop)] children)
    footer
    [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]])
 

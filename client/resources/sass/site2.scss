@@ -56,14 +56,14 @@ body.mdc-select-scroll-lock {
   height: 100vh;
   font-size: 1rem;
   display: grid;
-  grid-template-columns: 30px 370px auto;
+  grid-template-columns: 30px 370px auto 40px;
   grid-template-rows: min-content 30px auto 20px 40px;
   grid-template-areas:
-    "header header header"
-    "main   main   main"
-    "main   main   main"
-    "main   main   main"
-    "footer footer footer";
+    "header header header header"
+    "main   main   main main"
+    "main   main   main main"
+    "main   main   main main"
+    "footer footer footer footer";
 }
 
 $margin-page: 90px;
@@ -139,12 +139,23 @@ footer {
 }
 
 .layout.full-screen aside#sidebar {
-  grid-column: 2;
-  grid-row: 3;
-  z-index: 20;
+  z-index: 9999;
   @include mdc-elevation(2);
   background: #ffffff;
+
 }
+
+.layout.full-screen aside.compact-sidebar {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.layout.full-screen aside.expanded-sidebar {
+  grid-column-start: 2;
+  grid-column-end: 4;
+  grid-row: 3;
+}
+
 //
 
 h1, h2, h3 { font-weight: 400; }
@@ -518,6 +529,8 @@ form.vertical, .fields-vertical {
       white-space: nowrap;
     }
 
+    // Scenarios table
+
     .col-state {
       width: 15%;
       text-align: left;
@@ -580,6 +593,23 @@ form.vertical, .fields-vertical {
       border-radius: 8px;
       overflow: hidden;
       white-space: initial;
+    }
+
+    // Actions table
+
+    .col-action-icon {
+      width: 24px;
+      text-align: center;
+    }
+
+    .col-action-name {
+      width: 20%;
+      text-align: left;
+    }
+
+    .col-action-description {
+      width: 80%;
+      text-align: left;
     }
   }
 }
@@ -1132,4 +1162,37 @@ form.vertical, .fields-vertical {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.scenario-line-section {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+
+  > div {
+    padding: 0 1rem 0 1rem;
+  }
+}
+
+.sidebar-expand-button {
+  position: absolute;
+  right: -24px;
+  top: 1rem;
+
+  > .sidebar-button {
+    position: relative;
+    min-width: 24px;
+    width: 24px;
+    padding: 0px;
+    height: 64px;
+    background-color: #404040;
+    color: white;
+    border-radius: 0px 4px 4px 0px;
+
+    > .sidebar-button-inner {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  }
 }

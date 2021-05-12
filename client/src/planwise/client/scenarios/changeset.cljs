@@ -32,6 +32,10 @@
         formatted-investment (when (pos? investment) (str " at " (utils/format-currency investment)))]
     (str (action-description props provider) formatted-investment)))
 
+(defn- provider-icon
+  [{:keys [change] :as provider}]
+  [m/Icon {} (get action-icons (:action change))])
+
 (defn- changeset-row
   [props {:keys [name change] :as provider}]
   (let [action (:action change)]
@@ -75,3 +79,24 @@
   [:div.scroll-list.suggestion-list
    (map (fn [suggestion] [suggestion-row (merge props {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))}) suggestion])
         suggestions)])
+
+(defn- changeset-table-row
+  [props {:keys [name change] :as provider}]
+  [:tr
+   [:td.col-action-icon [provider-icon provider]]
+   [:td.col-action-name name]
+   [:td.col-action-description (action-description-with-investment props provider)]])
+
+(defn table-component
+  [props providers]
+  [:div..scenarios-content
+   [:table
+    [:thead
+     [:tr
+      [:th.col-action-icon]
+      [:th.col-action-name "Name"]
+      [:th.col-action-description "Action"]]]
+    [:tbody
+     (map (fn [provider]
+            ^{:key (str "table-provider-action" (:id provider))} [changeset-table-row props provider])
+          providers)]]])
