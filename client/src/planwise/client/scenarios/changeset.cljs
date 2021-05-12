@@ -22,9 +22,9 @@
   (let [formatted-capacity (utils/format-number (:capacity change))
         formatted-coverage (utils/format-number satisfied-demand)]
     (case (:action change)
-      "create-provider"   (str "New build with " formatted-capacity " to serve " formatted-coverage " " demand-unit)
-      "upgrade-provider"  (str "Upgraded and increased capacity on " formatted-capacity " to serve " formatted-coverage " " demand-unit)
-      "increase-provider" (str "Increased capacity on " formatted-capacity " to serve " formatted-coverage " " demand-unit))))
+      "create-provider"   (str "New build with " formatted-capacity " " capacity-unit " to serve " formatted-coverage " " demand-unit)
+      "upgrade-provider"  (str "Upgraded and increased capacity on " formatted-capacity " " capacity-unit " to serve " formatted-coverage " " demand-unit)
+      "increase-provider" (str "Increased capacity on " formatted-capacity " " capacity-unit " to serve " formatted-coverage " " demand-unit))))
 
 (defn- action-description-with-investment
   [props {:keys [change] :as provider}]
