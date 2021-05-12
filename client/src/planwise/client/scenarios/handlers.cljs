@@ -302,8 +302,14 @@
  in-scenarios
  (fn [db [_ _]]
    (-> db
-       (assoc-in [:current-scenario :suggested-locations] nil)
        (assoc :view-state :show-options-to-create-provider))))
+
+(rf/reg-event-db
+ :scenarios/close-create-suggestions-menu
+ in-scenarios
+ (fn [db [_ _]]
+   (-> db
+       (assoc :view-state :current-scenario))))
 
 ;;Creating new-providers
 

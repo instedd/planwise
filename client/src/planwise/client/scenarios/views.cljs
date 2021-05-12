@@ -339,6 +339,7 @@
                             :else :default)
         action-event  (cond computing? [:scenarios.new-action/abort-fetching-suggestions target]
                             (new-provider-unit? view-state) [:scenarios/close-suggestions]
+                            (= view-state :show-options-to-create-provider) [:scenarios/close-create-suggestions-menu]
                             :else [:scenarios/show-create-suggestions-menu])]
     [:<>
      [:div
