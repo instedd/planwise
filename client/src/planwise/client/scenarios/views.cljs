@@ -305,7 +305,7 @@
   [:<>
    [:div.section
     [:h1.title-icon "Suggestion list"]]
-   [:div..fade]
+   [:div.fade]
    [changeset/suggestion-listing-component props suggested-locations]
    [:div.fade.inverted]])
 
@@ -320,7 +320,7 @@
         capacity-unit (get-capacity-unit project)
         provider-unit (get-provider-unit project)]
     [:<>
-     [:div {:class-name "suggestion-list"}
+     [:div.suggestion-list
       [edit/create-new-action-component {:type :new-unit
                                          :provider-unit provider-unit
                                          :on-click #(dispatch [:scenarios/close-suggestions])}]]
@@ -348,18 +348,18 @@
                                          :provider-unit provider-unit
                                          :on-click #(dispatch action-event)}]
       (if computing?
-        [:div {:class-name "info-computing-best-location"}
+        [:div.info-computing-best-location
          [:small (if computing-best-locations?
                    "Computing best locations ..."
                    "Computing best improvements...")]])]
      (if error
        [raise-alert scenario error]
        [:<>
-        [:div {:class-name "fade"}]
+        [:div.fade]
         [changeset/listing-component {:demand-unit demand-unit
                                       :capacity-unit capacity-unit}
          providers]
-        [:div {:class-name "fade inverted"}]])]))
+        [:div.fade.inverted]])]))
 
 (defn side-panel-view-2
   [current-scenario error]
@@ -400,19 +400,18 @@
       [:div [:h3.grey-text (str "Increase in " demand-unit " coverage " (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")")]]
       [:div [:h3.grey-text (str "Effort required " (utils/format-effort effort analysis-type))]]]]))
 
-(defn table-actions-view
+(defn actions-table-view
   [current-scenario]
   (let [current-project          (subscribe [:projects2/current-project])
         providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
         demand-unit              (get-demand-unit @current-project)
         capacity-unit            (get-capacity-unit @current-project)]
-    [:<>
+    [:div.actions-table-view
      [scenario-line-info current-scenario]
      [changeset/table-component {:demand-unit demand-unit
                                  :capacity-unit capacity-unit}
       @providers-from-changeset]
-     [:div
-      [create-new-scenario current-scenario]]]))
+     [create-new-scenario current-scenario]]))
 
 (defn sidebar-expand-button
   [expanded-sidebar?]
@@ -446,7 +445,7 @@
                                (when-not expanded-sidebar?
                                  {:action export-providers-button}))
          (if expanded-sidebar?
-           [table-actions-view current-scenario]
+           [actions-table-view current-scenario]
            [side-panel-view current-scenario @error @read-only?])
          [edit/rename-scenario-dialog]
          [edit/changeset-dialog current-project current-scenario]
