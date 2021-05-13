@@ -89,7 +89,7 @@
 
 (defn table-component
   [props providers]
-  [:div..scenarios-content
+  [:div.scenarios-content
    [:table
     [:thead
      [:tr

@@ -394,8 +394,8 @@
   (let [current-project (subscribe [:projects2/current-project])
         analysis-type   (get-in @current-project [:config :analysis-type])
         demand-unit     (get-demand-unit @current-project)]
-    [:div.section
-     [:div.scenario-line-section
+    [:div.section.actions-table-header
+     [:div.actions-table-scenario-info
       [:div [:h3 name]]
       [:div [:h3.grey-text (str "Increase in " demand-unit " coverage " (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")")]]
       [:div [:h3.grey-text (str "Effort required " (utils/format-effort effort analysis-type))]]]]))

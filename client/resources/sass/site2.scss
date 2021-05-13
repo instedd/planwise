@@ -1164,7 +1164,11 @@ form.vertical, .fields-vertical {
   100% { transform: rotate(360deg); }
 }
 
-.scenario-line-section {
+.actions-table-header {
+  border-bottom: 1px solid #ccc;
+}
+
+.actions-table-scenario-info {
   display: flex;
   flex-direction: row;
   align-items: baseline;
