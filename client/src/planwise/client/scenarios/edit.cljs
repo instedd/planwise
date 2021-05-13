@@ -163,23 +163,24 @@
                          {:delete-fn #(dispatch [:scenarios/delete-change (:id @provider)])})))))))
 
 (defn new-provider-button
-  [{:keys [type on-click]}]
-  [:div (if (= type :computing)
-          {:class-name "border-btn-floating border-btn-floating-animated"}
-          {:class-name "border-btn-floating"})
-   [m/Fab (merge {:class-name "btn-floating"}
-                 (when (some? on-click) {:on-click on-click}))
+  [{:keys [type on-click disabled]}]
+  [:div.border-btn-floating (when (= type :computing)
+                              {:class [:border-btn-floating-animated]})
+   [m/Fab (merge {:class [:btn-floating]
+                  :disabled disabled}
+                 (when (some? on-click)
+                   {:on-click on-click}))
     (case type
       :computing "stop"
       :new-unit "cancel"
       "domain")]])
 
 (defn create-new-action-component
-  [{:keys [type provider-unit on-click]}]
+  [{:keys [type provider-unit on-click disabled]}]
   (let [open (subscribe [:scenarios.new-action/options])]
     [:div.scenario-settings
-     [new-provider-button {:type type :on-click on-click}]
-     [m/Menu (when @open {:class "options-menu mdc-menu--open"})
+     [new-provider-button {:type type :on-click on-click :disabled disabled}]
+     [m/Menu (when @open {:class [:options-menu :mdc-menu--open]})
       [m/MenuItem
        {:on-click #(dispatch [:scenarios.new-action/simple-create-provider])}
        "Create one"]
