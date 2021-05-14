@@ -402,6 +402,20 @@
                              :show-scenario-settings :current-scenario
                              :show-scenario-settings)))))
 
+(rf/reg-event-db
+ :scenarios/show-actions-table
+ in-scenarios
+ (fn [db [_]]
+   (assoc db
+          :view-state :show-actions-table)))
+
+(rf/reg-event-db
+ :scenarios/show-scenario
+ in-scenarios
+ (fn [db [_]]
+   (assoc db
+          :view-state :current-scenario)))
+
 (rf/reg-event-fx
  :scenarios.new-action/fetch-suggested-providers-to-improve
  in-scenarios
