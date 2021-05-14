@@ -38,7 +38,7 @@
   [{:keys [sections account title tabs action footer main-prop main secondary-actions sidebar-prop]} & children]
   [:div.layout.full-screen
    [:main main-prop main]
-   (into [:aside (merge {:id "sidebar"} sidebar-prop)] children)
+   (into [:aside#sidebar sidebar-prop] children)
    footer
    [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]])
 
