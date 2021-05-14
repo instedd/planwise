@@ -239,9 +239,14 @@
           (when @selected-provider selected-provider-layer)
           (when suggested-locations suggestions-layer)]]))))
 
+(defn scenario-pending?
+  [scenario]
+  (= (:state scenario) "pending"))
+
 (defn- create-new-scenario
   [current-scenario]
   [m/Button {:class-name "btn-create"
+             :disabled (scenario-pending? current-scenario)
              :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
    "Create new scenario from here"])
 
@@ -272,30 +277,33 @@
   (let [{:keys [name label effort demand-coverage source-demand population-under-coverage increase-coverage state]} current-scenario
         current-project (subscribe [:projects2/current-project])
         analysis-type   (get-in @current-project [:config :analysis-type])
-        demand-unit     (get-demand-unit @current-project)]
+        demand-unit     (get-demand-unit @current-project)
+        pending?        (scenario-pending? current-scenario)
+        coverage-text       (if pending?
+                              "loading..."
+                              (str (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")"))
+        total-coverage-text (if pending?
+                              "to a total of"
+                              (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))
+        population-text     (if pending?
+                              "loading..."
+                              (utils/format-number population-under-coverage))]
     [:div
-     [:div {:class-name "section"}
-      [:h1 {:class-name "title-icon"} name]]
+     [:div.section
+      [:h1.title-icon name]]
      [edit/scenario-settings view-state]
      [:hr]
-     [:div {:class-name "section"}
-      [:h1 {:class-name "large"}
+     [:div.section
+      [:h1.large
        [:small (str "Increase in " demand-unit " coverage")]
-       (cond
-         (= "pending" state) "loading..."
-         :else               (str (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")"))]
-      [:p {:class-name "grey-text"}
-       (cond
-         (= "pending" state) "to a total of"
-         :else               (str "to a total of " (utils/format-number demand-coverage) " (" (format-percentage demand-coverage source-demand) ")"))]]
-     [:div {:class-name "section"}
-      [:h1 {:class-name "large"}
+       coverage-text]
+      [:p.grey-text total-coverage-text]]
+     [:div.section
+      [:h1.large
        [:small (str "Total " demand-unit " under geographic coverage")]
-       (cond
-         (= "pending" state) "loading..."
-         :else  (utils/format-number population-under-coverage))]]
-     [:div {:class-name "section"}
-      [:h1 {:class-name "large"}
+       population-text]]
+     [:div.section
+      [:h1.large
        [:small "Effort required"]
        (utils/format-effort effort analysis-type)]]
      [:hr]]))
@@ -346,6 +354,7 @@
       [scenario-info view-state scenario]
       [edit/create-new-action-component {:type action-type
                                          :provider-unit provider-unit
+                                         :disabled (scenario-pending? scenario)
                                          :on-click #(dispatch action-event)}]
       (if computing?
         [:div.info-computing-best-location

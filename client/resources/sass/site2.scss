@@ -1130,6 +1130,7 @@ form.vertical, .fields-vertical {
       }
       &:last-child div:after {
         border: none;
+        min-width: auto;
       }
     }
 
