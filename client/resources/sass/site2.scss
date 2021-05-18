@@ -854,6 +854,11 @@ form.vertical, .fields-vertical {
     }
 }
 
+.border-btn-floating button {
+  display: flex;
+  align-items: center;
+}
+
 .border-btn-floating-animated {
     background: linear-gradient(0deg, #ff7710, #FFF, #FFF);
     animation: rotate-background .5s ease 1 forwards;
