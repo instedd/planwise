@@ -11,7 +11,7 @@
             [planwise.client.mapping :refer [static-image fullmap-region-geo]]
             [planwise.client.components.common :as common]))
 
-(def map-preview-size {:width 373 :height 278})
+(def map-preview-size {:width 360 :height 270})
 
 (defn- project-card
   [props project]

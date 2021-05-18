@@ -212,6 +212,7 @@ filter: grayscale(100%);
   justify-content: flex-start;
 
   .card-item {
+    width: 360px;
     align-self: flex-start;
     margin: 10px;
 
@@ -232,6 +233,13 @@ filter: grayscale(100%);
 
     .card-secondary {
       padding: 1em;
+      h1 {
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        display: inline-block;
+        text-overflow: ellipsis;
+      }
       .actions {
         justify-content: space-between;
         display: flex;
@@ -292,7 +300,7 @@ form.vertical, .fields-vertical {
 
 .set-list {
   .card-item {
-    height: 160px;
+    height: 180px;
     width: 300px;
     margin-bottom: 20px;
 

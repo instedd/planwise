@@ -86,7 +86,7 @@
   [:a {:className "card-item" :href href}
    [:div.card-primary primary]
    [:div.card-secondary
-    [:h1 {} title]
+    [:h1 {:title title} title]
     (into [:<>] (map (fn [a] [:h2 {} a]) subtitles))
     [:div.status {} status]
     (when action-button
