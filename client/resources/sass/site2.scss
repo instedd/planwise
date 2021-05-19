@@ -1006,7 +1006,7 @@ form.vertical, .fields-vertical {
 .leaflet-square-icon-green {
   border: 1px solid rgb(192, 233, 156) !important;
   background: rgb(129, 203, 83);
-  }
+}
 
 .leaflet-square-icon-yellow {
   border: 1px solid lightgoldenrodyellow !important;
@@ -1026,55 +1026,94 @@ form.vertical, .fields-vertical {
 .leaflet-suggestion-icon{
   border: 3px solid orange !important;
   background: cyan;
+}
 
-  &.selected {
-    background-color: fuchsia;
+.leaflet-legend-container {
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 6px;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  margin: 18px !important;
+  .categories {
+    margin-top: 6px;
+    display: flex;
+    align-items: flex-end;
+    .category {
+      width: 60px;
+      .leaflet-legend-label {
+        text-transform: initial;
+        font-size: 10px;
+        color: #999;
+        line-height: 12px;
+        text-align: right;
+        padding-right: 2px;
+        padding-bottom: 6px;
+        border-right: 1px rgba(0,0,0,0.1) solid;
+      }
+      .leaflet-color {
+        height: 6px;
+        &.idle-capacity {
+          background-color: #00bcd4;
+        }
+        &.at-capacity {
+          background-color: #4caf50;
+        }
+        &.small-unsatisfied {
+          background-color: #ffeb3b;
+        }
+        &.mid-unsatisfied {
+          background-color: #ffc107;
+        }
+        &.unsatisfied {
+          background-color: #ff5722;
+        }
+      }
+    }
   }
 }
 
 .leaflet-circle-icon{
   border-radius: 50%;
+  box-sizing: border-box;
+  &[style] {
+    margin-left: -8px !important;
+    margin-top: -8px !important;
+    width: 16px !important;
+    height: 16px !important;
+  }
 
   &.idle-capacity {
-    background-color: blue;
+    background-color: #00bcd4;
   }
   &.at-capacity {
-    background-color: green;
+    background-color: #4caf50;
   }
   &.small-unsatisfied {
-    background-color: yellow;
-  }
-  &.not-matching {
-    background-color: gray;
+    background-color: #ffeb3b;
   }
   &.mid-unsatisfied {
-    background-color: orange;
+    background-color: #ffc107;
   }
   &.unsatisfied {
-    background-color: red;
+    background-color: #ff5722;
   }
-  &.selected {
-    background-color: fuchsia;
+  &.not-matching {
+    background-color: #999;
   }
-}
-
-.leaflet-legend-icon {
-  float: left;
-  width: 12px;
-  height: 12px;
-}
-
-.leaflet-legend-label {
-  margin-left: 15%;
-  margin-top: 5px;
-}
-
-.leaflet-legend-container {
-  margin-top: 40px !important;
+  &.selected[style] {
+    width: 20px !important;
+    height: 20px !important;
+    margin-left: -10px !important;
+    margin-top: -10px !important;
+    border: 4px white solid !important;
+  }
 }
 
 .leaflet-circle-for-change{
-  border: 3px solid rgba(255, 255, 255, 0.756) !important;
+  border: 2px white solid !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
 }
 .show-static-text {
   width: 50%;

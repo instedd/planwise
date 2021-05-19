@@ -134,8 +134,8 @@
               (cond
                 (= id (:id selected-provider)) "selected"
                 (and (not change)
-                     (not matches-filters)) "not-matching"
-                :else (get-marker-class-for-provider provider))
+                     (not matches-filters)) "not-matching")
+              (get-marker-class-for-provider provider)
               (when (provider-has-change? provider)
                 "leaflet-circle-for-change")
               (when (some? change)
