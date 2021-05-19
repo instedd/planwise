@@ -740,16 +740,81 @@ form.vertical, .fields-vertical {
   margin-right: 15px;
 }
 
-.project-setting {
-  max-width: 554px;
-}
-.project-setting-title {
-  p {
-    display: inline-flex;
-    align-items: flex-start;
+.project-setting-list {
+  display: grid;
+  row-gap: 18px;
+  margin-bottom: 30px;
+  .mdc-button {
+    width: fit-content;
+    height: 42px;
+    padding: 6px;
+    margin: 0;
     .material-icons {
-      margin-right: 10px;
+      margin-right: 6px;
     }
+  }
+  .project-setting {
+    display: flex;
+    align-items: baseline;
+    max-width: 554px;
+    .mdc-text-field {
+      height: 40px !important;
+    }
+    .mdc-button {
+      align-self: flex-end;
+      padding: 0;
+      width: 36px;
+      min-width: unset;
+      .material-icons {
+        margin: 0;
+        width: 36px;
+      }
+    }
+  }
+  
+  .project-setting > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    margin-right: 12px;
+  }
+  
+  .project-setting > *:last-child {
+    margin-right: 0;
+    flex-grow: 1;
+  }
+}
+
+.project-setting-title {
+  padding: 0 6px;
+  margin-top: 48px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  .material-icons {
+    margin-right: 12px;
+  }
+}
+
+.budget-section {
+  .mdc-text-field {
+    margin-top: 0 !important;
+    height: 42px !important;
+  }
+  .add-option {
+    padding-left: 0;
+    .material-icons {
+      margin-right: 12px;
+      width: 36px;
+    }
+  }
+  .indent {
+    margin-left: 42px;
+  }
+  .indent > * {
+    margin-right: 12px;
+  }
+  .indent > *:last-child {
+    margin-right: 0;
   }
 }
 
