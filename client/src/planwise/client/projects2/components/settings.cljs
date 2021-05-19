@@ -141,27 +141,27 @@
 ; Actions
 (defn- show-action
   [{:keys [idx action-name capacity investment capacity-unit] :as action} props]
-    [:div {:class "project-setting"}
-    [m/Button (merge
-                {:type "button"
-                :theme    ["text-secondary-on-secondary-light"]
-                :on-click #(dispatch [:projects2/delete-action action-name idx])}
-                props)
-      [m/Icon "clear"]]
+  [:div {:class "project-setting"}
+   [m/Button (merge
+              {:type "button"
+               :theme    ["text-secondary-on-secondary-light"]
+               :on-click #(dispatch [:projects2/delete-action action-name idx])}
+              props)
+    [m/Icon "clear"]]
     ;; (when (= action-name :build) "with a capacity of ")
-    [current-project-input (merge {:path [:config :actions action-name idx :capacity]
-                                    :type "number"
-                                    :class "action-input"}
-                                  props)]
-    [:span " "
+   [current-project-input (merge {:path [:config :actions action-name idx :capacity]
+                                  :type "number"
+                                  :class "action-input"}
+                                 props)]
+   [:span " "
     capacity-unit
     " would cost "]
-    [current-project-input (merge {:path [:config :actions action-name idx :investment]
-                                    :type "number"
-                                    :prefix common/currency-symbol
-                                    :class "action-input"}
-                                  props)]
-    (when (= action-name :build) [:span " each"])])
+   [current-project-input (merge {:path [:config :actions action-name idx :investment]
+                                  :type "number"
+                                  :prefix common/currency-symbol
+                                  :class "action-input"}
+                                 props)]
+   (when (= action-name :build) [:span " each"])])
 
 (defn- listing-actions
   [{:keys [read-only? action-name list capacity-unit]}]
@@ -315,10 +315,9 @@
        [:div.budget-section
         [project-setting-title "account_balance" "Available budget"]
         [:div {:class "indent"}
-          [current-project-input {:path [:config :actions :budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
-          [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]
-        ]
-        
+         [current-project-input {:path [:config :actions :budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
+         [m/TextFieldHelperText {:persistent true} "Planwise will keep explored scenarios below this maximum budget"]]
+
         [project-setting-title "domain" (str "Building new " provider-unit " with a capacity of ")]
         [listing-actions {:read-only?    read-only
                           :action-name   :build
@@ -327,11 +326,9 @@
 
         [project-setting-title "arrow_upward" (str "Upgrading " provider-unit " to satisfy demand would cost")]
         [:div.project-settings
-          [:div {:class "indent"}
-            [current-project-input {:path [:config :actions :upgrade-budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
-            [:span "each"]
-            ]
-          ]
+         [:div {:class "indent"}
+          [current-project-input {:path [:config :actions :upgrade-budget] :type "number" :prefix common/currency-symbol :disabled read-only :class "project-setting"}]
+          [:span "each"]]]
 
         [project-setting-title "add" (str "Increase the capactiy of " provider-unit " by")]
         [listing-actions {:read-only?    read-only
