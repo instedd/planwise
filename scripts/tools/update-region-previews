@@ -61,17 +61,20 @@
   (let [tempfile (temp-filename ".json")]
 
     (spit tempfile geojson)
-    (loop [last-size 0]
+    (loop [last-size     0
+           last-simplify 50]
       (let [file-size (.length (io/file tempfile))]
         (print file-size)
         (if (> file-size desired-size)
           (do
             (print "... ")
             (flush)
-            (let [simplify-amount    (if (= file-size last-size) 75 (simplify-amount file-size desired-size))
+            (let [simplify-amount    (if (= file-size last-size)
+                                       (* last-simplify 0.75)
+                                       (simplify-amount file-size desired-size))
                   {:keys [exit out]} (run-mapshaper-simplify tempfile simplify-amount)]
               (if (zero? exit)
-                (recur file-size)
+                (recur file-size simplify-amount)
                 (println "\nSome error occurred simplifying the GeoJSON:\n" out))))
           (println ""))))
     (slurp tempfile)))
