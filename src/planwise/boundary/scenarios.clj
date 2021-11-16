@@ -33,6 +33,9 @@
   (export-providers-data [this project scenario]
     "Create CSV file with scenario's demand information for computed and disabled providers")
 
+  (export-sources-data [this project scenario]
+    "Create CSV file with scenario's demand information for point sources. Fails if the project is of type raster.")
+
   (get-suggestions-for-new-provider-location [store project scenario]
     "Get list of locations suggested for creating new provider")
 
