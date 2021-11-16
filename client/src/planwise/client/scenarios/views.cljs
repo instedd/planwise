@@ -193,7 +193,7 @@
                                                      :group {:pane "tilePane"}
                                                      :lat-fn (fn [polygon-point] (:lat polygon-point))
                                                      :lon-fn (fn [polygon-point] (:lon polygon-point))
-                                                     :color :orange
+                                                     :color "#40404080"
                                                      :stroke true}]
             suggestions-layer       [:marker-layer {:points (map #(assoc % :open? (= % selected-suggestion)) suggested-locations)
                                                     :lat-fn #(get-in % [:location :lat])
