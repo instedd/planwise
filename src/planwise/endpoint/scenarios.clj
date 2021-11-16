@@ -43,23 +43,23 @@
            (header "Content-Disposition" (str "attachment; filename=" csv-name)))))
 
    (GET "/:id/sources" [id :as request]
-        (let [user-id  (util/request-user-id request)
-              id       (Integer. id)
-              {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
-              project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
-          (if (or (nil? project) (nil? scenario))
-            (not-found {:error "Scenario not found"})
-            (if (common/is-project-raster? project)
-              (let [tif-name (str project-id "-" id "-" (:name scenario) ".source.tif")
-                    tif-file (common/scenario-raster-full-path (:raster scenario))]
-                (-> (file-response tif-file)
-                    (content-type "image/tiff")
-                    (header "Content-Disposition" (str "attachment; filename=" tif-name))))
-              (let [csv-name (str project-id "-" id "-" (:name scenario) ".sources.csv")
-                    csv-data (scenarios/export-sources-data service project scenario)]
-                (-> (response csv-data)
-                    (content-type "text/csv")
-                    (header "Content-Disposition" (str "attachment; filename=" csv-name))))))))
+     (let [user-id  (util/request-user-id request)
+           id       (Integer. id)
+           {:keys [project-id] :as scenario} (scenarios/get-scenario service id)
+           project  (filter-owned-by (projects2/get-project projects2 project-id) user-id)]
+       (if (or (nil? project) (nil? scenario))
+         (not-found {:error "Scenario not found"})
+         (if (common/is-project-raster? project)
+           (let [tif-name (str project-id "-" id "-" (:name scenario) ".source.tif")
+                 tif-file (common/scenario-raster-full-path (:raster scenario))]
+             (-> (file-response tif-file)
+                 (content-type "image/tiff")
+                 (header "Content-Disposition" (str "attachment; filename=" tif-name))))
+           (let [csv-name (str project-id "-" id "-" (:name scenario) ".sources.csv")
+                 csv-data (scenarios/export-sources-data service project scenario)]
+             (-> (response csv-data)
+                 (content-type "text/csv")
+                 (header "Content-Disposition" (str "attachment; filename=" csv-name))))))))
 
    (GET "/:id/suggested-locations" [id :as request]
      (let [user-id  (util/request-user-id request)
