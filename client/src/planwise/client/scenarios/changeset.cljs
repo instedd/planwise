@@ -81,8 +81,7 @@
         suggestions)])
 
 (defn- changeset-table-row
-  [{:keys [source-demand] :as props}
-   {:keys [name change satisfied-demand reachable-demand] :as provider}]
+  [{:keys [source-demand] :as props} {:keys [name satisfied-demand] :as provider}]
   [:tr
    [:td.col-action-icon [provider-icon provider]]
    [:td.col-action-name name]
