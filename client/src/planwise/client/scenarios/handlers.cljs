@@ -114,10 +114,13 @@
  :scenarios/clear-current-scenario
  in-scenarios
  (fn [db [_]]
-   (assoc db
-          :current-scenario nil
-          :coverage-cache nil
-          :view-state :current-scenario)))
+   (merge db
+          {:current-scenario    nil
+           :coverage-cache      nil
+           :selected-provider   nil
+           :selected-suggestion nil
+           :providers-search    nil
+           :view-state          :current-scenario})))
 
 ;; Editing scenario
 
@@ -462,3 +465,39 @@
      {:dispatch (if (= view-state :new-provider)
                   [:scenarios/create-provider (:location suggestion) {:required-capacity (:action-capacity suggestion)}]
                   [:scenarios/edit-change suggestion])})))
+
+(defn- provider-matcher
+  [search-value]
+  (let [search-value (s/lower-case search-value)]
+    (fn [{:keys [name] :as provider}]
+      (s/includes? (s/lower-case name) search-value))))
+
+(rf/reg-event-fx
+ :scenarios/search-providers
+ in-scenarios
+ (fn [{:keys [db]} [_ search-value]]
+   (let [last-search-value  (get-in db [:providers-search :search-value])
+         last-occurrence    (get-in db [:providers-search :occurrence])
+         providers          (get-in db [:current-scenario :providers])
+         new-providers      (->> (get-in db [:current-scenario :changeset])
+                                 (filter (comp #{"create-provider"} :action)))
+         matching-providers (when-not (s/blank? search-value)
+                              (filterv (provider-matcher search-value) (concat providers new-providers)))
+         match-count        (count matching-providers)
+         occurrence         (if (and (= last-search-value search-value)
+                                     (some? last-occurrence))
+                              (mod (inc last-occurrence) match-count)
+                              0)
+         found-provider     (when (seq matching-providers) (nth matching-providers occurrence))]
+     {:db       (assoc db :providers-search {:search-value search-value
+                                             :match-count  match-count
+                                             :occurrence   occurrence})
+      :dispatch (if found-provider
+                  [:scenarios.map/select-provider found-provider]
+                  [:scenarios.map/unselect-provider])})))
+
+(rf/reg-event-fx
+ :scenarios/clear-providers-search
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   {:db (assoc db :providers-search nil)}))
