@@ -116,6 +116,7 @@
  (fn [db [_]]
    (assoc db
           :current-scenario nil
+          :coverage-cache nil
           :view-state :current-scenario)))
 
 ;; Editing scenario
@@ -256,20 +257,20 @@
 (rf/reg-event-fx
  :scenarios.map/select-provider
  in-scenarios
- (fn [{:keys [db]} [_ provider]]
-   (let [id (get-in db [:current-scenario :id])]
-     (when
-      (not= (:id provider)
-            (get-in db [:selected-provider :id]))
-       {:db (assoc db :selected-provider provider)
-        :api (assoc (api/get-provider-geom id (:id provider))
-                    :on-success [:scenarios/update-geometry])}))))
+ (fn [{:keys [db]} [_ {provider-id :id :as provider}]]
+   (when-not (= provider-id (get-in db [:selected-provider :id]))
+     (let [scenario-id           (get-in db [:current-scenario :id])
+           coverage-missing?     (nil? (get-in db [:coverage-cache provider-id]))
+           fetch-coverage-effect (assoc (api/get-provider-geom scenario-id provider-id)
+                                        :on-success [:scenarios/update-geometry provider-id])]
+       (cond-> {:db (assoc db :selected-provider provider)}
+         coverage-missing? (assoc :api fetch-coverage-effect))))))
 
 (rf/reg-event-db
  :scenarios/update-geometry
  in-scenarios
- (fn [db [_ geom]]
-   (update db :selected-provider #(merge % geom))))
+ (fn [db [_ provider-id geom]]
+   (assoc-in db [:coverage-cache provider-id] (:coverage-geom geom))))
 
 (rf/reg-event-db
  :scenarios.map/unselect-provider
