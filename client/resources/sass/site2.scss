@@ -998,6 +998,31 @@ form.vertical, .fields-vertical {
     }
 }
 
+.leaflet-popup-content {
+  > div {
+    overflow: auto;
+  }
+  p {
+    margin: 0;
+  }
+  h3 {
+    font-weight: bold;
+  }
+  .actions {
+    margin-top: 1rem;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    td {
+      white-space: nowrap;
+    }
+    tr:nth-child(odd) {
+      background-color: #f0f0f0;
+    }
+  }
+}
+
 .leaflet-square-icon-gray {
   border: 1px solid rgba(211, 211, 211, 0.53) !important;
   background: rgba(189, 187, 187, 0.447);

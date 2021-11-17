@@ -42,23 +42,36 @@
                    (conj new-objects new-object)
                    (rest new-decls))))))))
 
-(defn create-marker [point {:keys [lat-fn lon-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
-  (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
-        attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
-        icon      (if icon-fn
-                    (.divIcon js/L (clj->js (icon-fn point)))
-                    (js/L.Icon.Default.))
-        attrs    {:keyword false
-                  :icon icon}
-        marker    (.marker js/L latLng (clj->js attrs))]
+(defn create-marker [point {:keys [lat-fn lon-fn label-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
+  (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
+        attrs  (dissoc props :lat-fn :lon-fn :popup-fn)
+        icon   (if icon-fn
+                 (.divIcon js/L (clj->js (icon-fn point)))
+                 (js/L.Icon.Default.))
+        attrs  {:keyboard false
+                :icon     icon}
+        marker (.marker js/L latLng (clj->js attrs))]
+    (when label-fn
+      (.bindTooltip marker (label-fn point) (clj->js {:permanent false})))
     (if popup-fn
       (.bindPopup marker (popup-fn point)))
-    (if mouseover-fn
-      (.on marker "mouseover" #(mouseover-fn point)))
-    (if mouseout-fn
-      (do
-        (.on marker "mouseout" #(when-not (.isPopupOpen marker) (mouseout-fn point)))
-        (.on marker "popupclose" #(mouseout-fn point))))
+    (.on marker "mouseover"  (fn [_]
+                               (.openTooltip marker)
+                               (when mouseover-fn (mouseover-fn point))))
+    (.on marker "mouseout"   (fn [_]
+                               (.closeTooltip marker)
+                               (when (and mouseout-fn (not (.isPopupOpen marker)))
+                                 (mouseout-fn point))))
+    (.on marker "popupopen"  (fn [_]
+                               ;; "hide" the tooltip while the popup is open
+                               (when-let [tooltip (.getTooltip marker)]
+                                 (.setOpacity tooltip 0))
+                               (.closeTooltip marker)))
+    (.on marker "popupclose" (fn [_]
+                               ;; "restore" the tooltip while once the popup is closed
+                               (when-let [tooltip (.getTooltip marker)]
+                                 (.setOpacity tooltip 100))
+                               (when mouseout-fn (mouseout-fn point))))
     (if (:open? point)
       ;; Delay popup until the layer was created
       (when-not (.isPopupOpen marker)
