@@ -391,6 +391,7 @@ form.vertical, .fields-vertical {
   hr {
     border: none;
     border-top: 1px solid #e6e6e6;
+    margin: 0;
   }
   /*
   .btn-floating {
@@ -626,8 +627,13 @@ form.vertical, .fields-vertical {
     }
 
     .col-action-description {
-      width: 80%;
+      width: 70%;
       text-align: left;
+    }
+
+    .col-action-coverage {
+      width: 10%;
+      text-align: right;
     }
   }
 }
@@ -915,7 +921,7 @@ form.vertical, .fields-vertical {
 .border-btn-floating {
     position: absolute;
     right: 1rem;
-    margin-top: -2.5rem;
+    margin-top: -2rem;
     z-index: 2;
     border-radius: 50%;
     padding: 3px;
@@ -1128,14 +1134,19 @@ form.vertical, .fields-vertical {
 }
 
 .scenario-settings {
-  margin-left: 18rem;
   button {
     padding: 6px;
   }
 }
+.scenario-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
 .options-menu {
-   padding: 10px;
+  padding: 10px;
+  margin-left: 17rem;
 }
 
 .template-container {
@@ -1320,6 +1331,7 @@ form.vertical, .fields-vertical {
     background-color: #404040;
     color: white;
     border-radius: 0px 4px 4px 0px;
+    cursor: pointer;
 
     > .sidebar-button-inner {
       position: absolute;

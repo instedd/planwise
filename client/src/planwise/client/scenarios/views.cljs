@@ -289,9 +289,9 @@
                               "loading..."
                               (utils/format-number population-under-coverage))]
     [:div
-     [:div.section
-      [:h1.title-icon name]]
-     [edit/scenario-settings view-state]
+     [:div.section.scenario-title
+      [:h1.title-icon name]
+      [edit/scenario-settings view-state]]
      [:hr]
      [:div.section
       [:h1.large
@@ -418,7 +418,8 @@
     [:div.actions-table-view
      [scenario-line-info current-scenario]
      [changeset/table-component {:demand-unit demand-unit
-                                 :capacity-unit capacity-unit}
+                                 :capacity-unit capacity-unit
+                                 :source-demand (:source-demand current-scenario)}
       @providers-from-changeset]
      [create-new-scenario current-scenario]]))
 

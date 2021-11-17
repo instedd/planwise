@@ -81,11 +81,12 @@
         suggestions)])
 
 (defn- changeset-table-row
-  [props {:keys [name change] :as provider}]
+  [{:keys [source-demand] :as props} {:keys [name satisfied-demand] :as provider}]
   [:tr
    [:td.col-action-icon [provider-icon provider]]
    [:td.col-action-name name]
-   [:td.col-action-description (action-description-with-investment props provider)]])
+   [:td.col-action-description (action-description-with-investment props provider)]
+   [:td.col-action-coverage (utils/format-percentage (/ satisfied-demand source-demand) 2)]])
 
 (defn table-component
   [props providers]
@@ -95,7 +96,8 @@
      [:tr
       [:th.col-action-icon]
       [:th.col-action-name "Name"]
-      [:th.col-action-description "Action"]]]
+      [:th.col-action-description "Action"]
+      [:th.col-action-coverage "Coverage"]]]
     [:tbody
      (map (fn [provider]
             ^{:key (str "table-provider-action" (:id provider))} [changeset-table-row props provider])
