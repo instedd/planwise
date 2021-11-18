@@ -59,13 +59,8 @@
       (client-config (assoc endpoint :request request))
       (include-js "/assets/leaflet/leaflet.js")
       (include-js "/js/leaflet.grouprenderer.js")
-      (include-js "/js/leaflet.bboxloader.js")
       (include-js "/js/leaflet.legend.js")
       (include-js "/js/main.js")
-      (include-js "/js/leaflet.markercluster.js")
-      (include-css "/css/MarkerCluster.css")
-      (include-css "/css/MarkerCluster.Default.css")
-      (include-css "/css/MarkerCluster.Custom.css")
       [:script "planwise.client.core.main();"]])))
 
 (defn- intercom-snippet

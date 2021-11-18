@@ -188,9 +188,7 @@
         all-providers       (subscribe [:scenarios/all-providers])
         position            (r/atom mapping/map-preview-position)
         zoom                (r/atom 3)
-        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
-        use-providers-clustering false
-        providers-layer-type     (if use-providers-clustering :cluster-layer :marker-layer)]
+        add-point           (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))]
     (fn [{:keys [bbox] :as project} {:keys [changeset raster sources-data] :as scenario} state error read-only?]
       (let [demand-unit             (get-demand-unit project)
             provider-unit           (get-provider-unit project)
@@ -203,69 +201,67 @@
             pending-demand-raster   raster
             suggested-locations     @suggested-locations
             selected-suggestion     @selected-suggestion
-            sources-layer           [:marker-layer {:points indexed-sources
-                                                    :shape :square
-                                                    :lat-fn #(get-in % [:elem :lat])
-                                                    :lon-fn #(get-in % [:elem :lon])
-                                                    :label-fn (comp :name :elem)
-                                                    :icon-fn #(let [source (:elem %)
-                                                                    quantity-initial (:initial-quantity source)
-                                                                    quantity-current (:quantity source)
-                                                                    ratio (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
-                                                                    classname (cond
-                                                                                (= 0 quantity-initial) "leaflet-square-icon-gray"
-                                                                                (<= ratio 0.25) "leaflet-square-icon-green"
-                                                                                (< 0.25 ratio 0.5) "leaflet-sqaure-icon-yellow"
-                                                                                (<= 0.5 ratio 0.75) "leaflet-square-icon-orange"
-                                                                                (> ratio 0.75) "leaflet-square-icon-red")]
-                                                                {:className classname})
+            sources-layer           [:marker-layer {:points   indexed-sources
+                                                    :shape    :square
+                                                    :lat-fn   #(get-in % [:elem :lat])
+                                                    :lon-fn   #(get-in % [:elem :lon])
+                                                    :icon-fn  #(let [source           (:elem %)
+                                                                     quantity-initial (:initial-quantity source)
+                                                                     quantity-current (:quantity source)
+                                                                     ratio            (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
+                                                                     classname        (cond
+                                                                                        (= 0 quantity-initial) "leaflet-square-icon-gray"
+                                                                                        (<= ratio 0.25)        "leaflet-square-icon-green"
+                                                                                        (< 0.25 ratio 0.5)     "leaflet-sqaure-icon-yellow"
+                                                                                        (<= 0.5 ratio 0.75)    "leaflet-square-icon-orange"
+                                                                                        (> ratio 0.75)         "leaflet-square-icon-red")]
+                                                                 {:className classname})
                                                     :popup-fn #(show-source %)}]
-            selected-provider-layer [:geojson-layer {:data  (:coverage-geom @selected-provider)
-                                                     :group {:pane "tilePane"}
+            selected-provider-layer [:geojson-layer {:data   (:coverage-geom @selected-provider)
+                                                     :group  {:pane "tilePane"}
                                                      :lat-fn (fn [polygon-point] (:lat polygon-point))
                                                      :lon-fn (fn [polygon-point] (:lon polygon-point))
-                                                     :color "#40404080"
+                                                     :color  "#40404080"
                                                      :stroke true}]
-            suggestions-layer       [:marker-layer {:points (map #(assoc % :open? (= % selected-suggestion)) suggested-locations)
-                                                    :lat-fn #(get-in % [:location :lat])
-                                                    :lon-fn #(get-in % [:location :lon])
-                                                    :popup-fn #(show-suggested-provider {:demand-unit demand-unit :capacity-unit capacity-unit} % state)
-                                                    :icon-fn #(suggestion-icon-fn % selected-suggestion suggestion-classname)
+            suggestions-layer       [:marker-layer {:points       (map #(assoc % :open? (= % selected-suggestion)) suggested-locations)
+                                                    :lat-fn       #(get-in % [:location :lat])
+                                                    :lon-fn       #(get-in % [:location :lon])
+                                                    :popup-fn     #(show-suggested-provider {:demand-unit demand-unit :capacity-unit capacity-unit} % state)
+                                                    :icon-fn      #(suggestion-icon-fn % selected-suggestion suggestion-classname)
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
                                                     :mouseout-fn  (fn [suggestion]
                                                                     (dispatch [:scenarios.map/unselect-suggestion suggestion]))}]
-            providers-layer [providers-layer-type {:points (map #(assoc % :open? (= % @selected-provider)) @all-providers)
-                                                   :lat-fn #(get-in % [:location :lat])
-                                                   :lon-fn #(get-in % [:location :lon])
-                                                   :label-fn :name
-                                                   :icon-fn #(icon-function % @selected-provider)
-                                                   :popup-fn     #(show-provider {:read-only? read-only?
-                                                                                  :demand-unit demand-unit
-                                                                                  :capacity-unit capacity-unit} %)
-                                                   :mouseover-fn (fn [provider]
-                                                                   (dispatch [:scenarios.map/select-provider provider]))
-                                                   :mouseout-fn  (fn [provider]
-                                                                   (dispatch [:scenarios.map/unselect-provider provider]))}]]
+            providers-layer         [:marker-layer {:points       (map #(assoc % :open? (= % @selected-provider)) @all-providers)
+                                                    :lat-fn       #(get-in % [:location :lat])
+                                                    :lon-fn       #(get-in % [:location :lon])
+                                                    :icon-fn      #(icon-function % @selected-provider)
+                                                    :popup-fn     #(show-provider {:read-only?    read-only?
+                                                                                   :demand-unit   demand-unit
+                                                                                   :capacity-unit capacity-unit} %)
+                                                    :mouseover-fn (fn [provider]
+                                                                    (dispatch [:scenarios.map/select-provider provider]))
+                                                    :mouseout-fn  (fn [provider]
+                                                                    (dispatch [:scenarios.map/unselect-provider provider]))}]]
         [:div.map-container (when error {:class "gray-filter"})
-         [l/map-widget {:zoom @zoom
-                        :position @position
+         [l/map-widget {:zoom                @zoom
+                        :position            @position
                         :on-position-changed #(reset! position %)
-                        :on-zoom-changed #(reset! zoom %)
-                        :on-click (cond (= state :new-provider) add-point)
-                        :controls [:legend]
-                        :initial-bbox bbox
-                        :pointer-class (cond (= state :new-provider) "crosshair-pointer")
-                        :provider-unit provider-unit}
+                        :on-zoom-changed     #(reset! zoom %)
+                        :on-click            (cond (= state :new-provider) add-point)
+                        :controls            [:legend]
+                        :initial-bbox        bbox
+                        :pointer-class       (cond (= state :new-provider) "crosshair-pointer")
+                        :provider-unit       provider-unit}
           mapping/default-base-tile-layer
           (when pending-demand-raster
             [:wms-tile-layer
-             {:url config/mapserver-url
+             {:url         config/mapserver-url
               :transparent true
-              :layers "scenario"
-              :DATAFILE (str pending-demand-raster ".map")
-              :format "image/png"
-              :opacity 0.6}])
+              :layers      "scenario"
+              :DATAFILE    (str pending-demand-raster ".map")
+              :format      "image/png"
+              :opacity     0.6}])
           sources-layer
           providers-layer
           (when @selected-provider selected-provider-layer)

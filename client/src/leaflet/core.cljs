@@ -1,8 +1,6 @@
 (ns leaflet.core
   (:require [reagent.core :as reagent :refer [atom]]
-            [reagent.debug :as debug]
-            [planwise.client.utils :as utils]
-            [clojure.data :as data]))
+            [planwise.client.utils :as utils]))
 
 
 (defn update-objects-from-decls
@@ -74,8 +72,8 @@
                                (when mouseout-fn (mouseout-fn point))))
     (if (:open? point)
       ;; Delay popup until the layer was created
-      (when-not (.isPopupOpen marker)
-        (js/setTimeout #(.openPopup marker) 100)))
+      (js/setTimeout #(when-not (.isPopupOpen marker)
+                        (.openPopup marker)) 100))
     marker))
 
 (defn create-point [point {:keys [lat-fn lon-fn style-fn popup-fn mouseover-fn mouseout-fn], :or {lat-fn :lat, lon-fn :lon}, :as props}]
@@ -145,15 +143,6 @@
     (doseq [point points] (.addLayer layer (create-point point attrs)))
     layer))
 
-(defmethod leaflet-layer :cluster-layer [[_ props & children]]
-  (let [layer      (.markerClusterGroup js/L)
-        points     (:points props)
-        onclick-fn (:onclick-fn props)
-        attrs      (select-keys props [:lat-fn :lon-fn :icon-fn :popup-fn :options-fn])]
-    (doseq [point points] (.addLayer layer (create-marker point attrs)))
-    (.on layer "click" onclick-fn)
-    layer))
-
 (defmethod leaflet-layer :polygon-layer [[_ props & children]]
   (let [layer      (.layerGroup js/L)
         polygons   (:polygons props)
@@ -167,16 +156,6 @@
     (when data
       (.addData layer (js-data data)))
     layer))
-
-(defmethod leaflet-layer :geojson-bbox-layer [[_ props & children]]
-  (let [attrs (dissoc props :data :fit-bounds)
-        geojson-layer (geojson-layer attrs)
-        bbox-loader   (.bboxLoader js/L (clj->js (assoc attrs :layer geojson-layer)))]
-    (when-let [data (:data props)]
-      (doseq [{:keys [facility-id level isochrone]} data]
-        (let [layer (.asLayers geojson-layer (js/JSON.parse isochrone))]
-          (.addFeature bbox-loader level facility-id layer))))
-    bbox-loader))
 
 (defmethod leaflet-layer :tile-layer [[_ props & children]]
   (let [url   (:url props)
