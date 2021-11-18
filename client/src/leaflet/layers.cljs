@@ -40,42 +40,6 @@
                         (.openPopup marker)) 100))
     marker))
 
-(defn- create-point
-  [point {:keys [lat-fn lon-fn style-fn popup-fn mouseover-fn mouseout-fn]
-          :or   {lat-fn :lat, lon-fn :lon}
-          :as   props}]
-  (let [latLng    (.latLng js/L (lat-fn point) (lon-fn point))
-        attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
-        clickable (boolean popup-fn)
-        style     (merge
-                   {:clickable clickable :radius 5}
-                   attrs
-                   (when style-fn (style-fn point)))
-        marker    (.circleMarker js/L latLng (clj->js style))]
-    (if popup-fn
-      (.bindPopup marker (popup-fn point)))
-    (if mouseover-fn
-      (.on marker "mouseover" #(mouseover-fn point)))
-    (if mouseout-fn
-      (do
-        (.on marker "mouseout" #(when-not (.isPopupOpen marker) (mouseout-fn point)))
-        (.on marker "popupclose" #(mouseout-fn point))))
-    marker))
-
-(defn- create-polygon
-  [points {:keys [lat-fn lon-fn style-fn popup-fn]
-           :or   {lat-fn :lat lon-fn :lon}
-           :as   props}]
-  (let [attrs     (dissoc props :lat-fn :lon-fn :popup-fn)
-        clickable (boolean popup-fn)
-        style     (merge
-                   {:clickable clickable :radius 5}
-                   attrs
-                   (when style-fn (map style-fn points)))
-        latLngs   (clj->js (map #(.latLng js/L (lat-fn %) (lon-fn %)) points))
-        polygon   (.polygon js/L latLngs (clj->js style))]
-    polygon))
-
 (defn- js-data
   [data]
   (cond
@@ -105,22 +69,6 @@
         points (:points props)
         attrs  (dissoc props :points)]
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
-    layer))
-
-(defmethod leaflet-layer :point-layer
-  [[_ props & children]]
-  (let [layer  (.layerGroup js/L)
-        points (:points props)
-        attrs  (dissoc props :points)]
-    (doseq [point points] (.addLayer layer (create-point point attrs)))
-    layer))
-
-(defmethod leaflet-layer :polygon-layer
-  [[_ props & children]]
-  (let [layer    (.layerGroup js/L)
-        polygons (:polygons props)
-        attrs    (dissoc props :polygons)]
-    (doseq [points polygons] (.addLayer layer (create-polygon points attrs)))
     layer))
 
 (defmethod leaflet-layer :geojson-layer
