@@ -215,9 +215,6 @@
   (let [loading-page2 (partial loading-page2 endpoint)]
     (routes
      (GET "/" [] (partial home-page endpoint))
-     #_(GET "/_design" [] loading-page2)
-     #_(GET "/_design/:section" [] loading-page2)
-     #_(GET "/crash" [] (throw (RuntimeException. "Crash")))
      (GET "/providers" [] loading-page2)
      (GET "/sources" [] loading-page2)
      (context "/projects2" []
