@@ -8,7 +8,6 @@
             [planwise.client.providers-set.views :as providers-set]
             [planwise.client.sources.views :as sources]
             [planwise.client.scenarios.views :as scenarios]
-            [planwise.client.design.views :as design]
             [react-intercom :as react-intercom]
             [reagent.core :as reagent]))
 
@@ -39,9 +38,6 @@
 
 (defmethod content-pane :sources []
   [sources/sources-page])
-
-(defmethod content-pane :design []
-  [design/app])
 
 (defmethod content-pane :scenarios []
   [scenarios/scenarios-page])
