@@ -125,7 +125,7 @@
       [:div.actions (button-for-suggestion (label-for-suggestion suggestion state) suggestion)]])))
 
 (defn- show-source
-  [{{:keys [name initial-quantity quantity]} :elem :as source}]
+  [{:keys [name initial-quantity quantity]}]
   (let [display-initial-quantity (.toFixed (or initial-quantity 0) 2)
         display-quantity         (.toFixed (or quantity 0) 2)]
     (crate/html
@@ -138,10 +138,6 @@
        [:tr
         [:td "Current quantity:"]
         [:td display-quantity]]]])))
-
-(defn- to-indexed-map
-  [coll]
-  (map-indexed (fn [idx elem] {:elem elem :index idx}) coll))
 
 (defn- get-percentage
   [total relative]
@@ -215,10 +211,6 @@
                                                             provider))
         provider-mouseover-fn (fn [provider] (dispatch [:scenarios.map/select-provider provider]))
         provider-mouseout-fn  (fn [provider] (dispatch [:scenarios.map/unselect-provider provider]))
-        source-lat-fn         (fn [source] (get-in source [:elem :lat]))
-        source-lon-fn         (fn [source] (get-in source [:elem :lon]))
-        source-popup-fn       (fn [source] (show-source source))
-        source-icon-fn        (fn [source] (source-icon-function (:elem source)))
         suggestion-popup-fn   (fn [suggestion]
                                 (show-suggested-provider {:demand-unit   demand-unit
                                                           :capacity-unit capacity-unit}
@@ -230,17 +222,13 @@
                                                   "leaflet-suggestion-new-improvement")]
                                   (suggestion-icon-fn suggestion selected-suggestion classname)))]
     (fn [{:keys [bbox] :as project} {:keys [changeset raster sources-data] :as scenario} state error read-only?]
-      (let [indexed-providers       (to-indexed-map @all-providers)
-            indexed-sources         (to-indexed-map sources-data)
-            pending-demand-raster   raster
+      (let [pending-demand-raster   raster
             suggested-locations     @suggested-locations
             selected-suggestion     @selected-suggestion
-            sources-layer           [:marker-layer {:points   indexed-sources
+            sources-layer           [:marker-layer {:points   sources-data
                                                     :shape    :square
-                                                    :lat-fn   source-lat-fn
-                                                    :lon-fn   source-lon-fn
-                                                    :icon-fn  source-icon-fn
-                                                    :popup-fn source-popup-fn}]
+                                                    :icon-fn  source-icon-function
+                                                    :popup-fn show-source}]
             selected-provider-layer [:geojson-layer {:data   (:coverage-geom @selected-provider)
                                                      :group  {:pane "tilePane"}
                                                      :color  "#40404080"
