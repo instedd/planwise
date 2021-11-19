@@ -13,6 +13,7 @@ pom.xml.asc
 /.nrepl-port
 
 /.dir-locals.el
+/client/.dir-locals.el
 /profiles.clj
 /dev/src/local.clj
 /dev/resources/local.edn
