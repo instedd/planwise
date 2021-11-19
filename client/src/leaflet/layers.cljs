@@ -2,7 +2,7 @@
 
 
 (defn- create-marker
-  [point {:keys [lat-fn lon-fn label-fn style-fn icon-fn popup-fn mouseover-fn mouseout-fn]
+  [point {:keys [lat-fn lon-fn label-fn icon-fn popup-fn mouseover-fn mouseout-fn]
           :or   {lat-fn :lat lon-fn :lon}
           :as   props}]
   (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))

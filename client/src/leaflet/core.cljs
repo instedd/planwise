@@ -135,14 +135,15 @@
         (.setMaxBounds leaflet lat-lng-bounds)))))
 
 (defn- leaflet-create-control
-  [type props]
-  (case type
-    :zoom        (.zoom js/L.control)
-    :attribution (.attribution js/L.control #js {:prefix false})
-    :legend      (.legend js/L.control #js {:pixelMaxValue (:pixel-max-value props)
-                                            :pixelArea     (:pixel-area props)
-                                            :providerUnit  (:provider-unit props)})
-    (throw (str "Invalid control type " type))))
+  [control-def]
+  (let [[type props] (if (vector? control-def) control-def [control-def {}])]
+    (case type
+      :zoom        (.zoom js/L.control)
+      :attribution (.attribution js/L.control #js {:prefix false})
+      :legend      (.legend js/L.control #js {:pixelMaxValue (:pixel-max-value props)
+                                              :pixelArea     (:pixel-area props)
+                                              :providerUnit  (:provider-unit props)})
+      (throw (ex-info "Invalid control type" control-def)))))
 
 (def default-controls [:zoom :attribution :legend])
 
@@ -158,7 +159,7 @@
           destroy-control-fn (fn [old-control]
                                (.removeControl leaflet old-control))
           create-control-fn  (fn [new-control-def]
-                               (let [new-control (leaflet-create-control new-control-def props)]
+                               (let [new-control (leaflet-create-control new-control-def)]
                                  (.addControl leaflet new-control)
                                  new-control))
           update-control-fn  (fn [old-control new-control-def old-control-def]

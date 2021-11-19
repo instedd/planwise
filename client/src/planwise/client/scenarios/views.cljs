@@ -249,10 +249,9 @@
                         :on-position-changed #(reset! position %)
                         :on-zoom-changed     #(reset! zoom %)
                         :on-click            (cond (= state :new-provider) add-point)
-                        :controls            [:legend]
+                        :controls            [[:legend {:provider-unit provider-unit}]]
                         :initial-bbox        bbox
-                        :pointer-class       (cond (= state :new-provider) "crosshair-pointer")
-                        :provider-unit       provider-unit}
+                        :pointer-class       (cond (= state :new-provider) "crosshair-pointer")}
           mapping/default-base-tile-layer
           (when pending-demand-raster
             [:wms-tile-layer
