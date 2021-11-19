@@ -40,9 +40,10 @@
   [props {:keys [name change] :as provider}]
   (let [action (:action change)]
     [:div
-     [:div.section.changeset-row {:on-mouse-over  #(dispatch [:scenarios.map/select-provider provider])
-                                  :on-mouse-leave #(dispatch [:scenarios.map/unselect-provider provider])
-                                  :on-click       #(dispatch [:scenarios/open-changeset-dialog provider])}
+     [:div.section.changeset-row
+      {:on-mouse-over  #(dispatch [:scenarios.map/select-provider (assoc provider :open? true)])
+       :on-mouse-leave #(dispatch [:scenarios.map/unselect-provider provider])
+       :on-click       #(dispatch [:scenarios/open-changeset-dialog provider])}
       [:div.icon-list
        [m/Icon {} (get action-icons action)]
        [:div.icon-list-text
