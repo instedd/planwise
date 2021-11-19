@@ -463,10 +463,8 @@
                             :controls []
                             :initial-bbox bbox}
               mapping/default-base-tile-layer
-              [:geojson-layer {:data  @region-geo}
+              [:geojson-layer {:data @region-geo}
                :group {:pane "tilePane"}
-               :lat-fn (fn [polygon-point] (:lat polygon-point))
-               :lon-fn (fn [polygon-point] (:lon polygon-point))
                :color :orange
                :stroke true]])]]]))))
 

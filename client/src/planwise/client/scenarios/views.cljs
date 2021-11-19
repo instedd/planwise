@@ -157,7 +157,7 @@
     (> unsatisfied-demand 0)                                    "unsatisfied"
     :else                                                       "unsatisfied"))
 
-(defn- icon-function
+(defn- provider-icon-function
   [{:keys [id change matches-filters required-capacity satisfied-demand unsatisfied-demand capacity free-capacity] :as provider} selected-provider]
   {:className
    (join " " ["leaflet-circle-icon "
@@ -170,6 +170,19 @@
                 "leaflet-circle-for-change")
               (when (some? change)
                 (str "leaflet-" (:action change)))])})
+
+(defn- source-icon-function
+  [source]
+  (let [quantity-initial (:initial-quantity source)
+        quantity-current (:quantity source)
+        ratio            (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
+        classname        (cond
+                           (= 0 quantity-initial) "leaflet-square-icon-gray"
+                           (<= ratio 0.25)        "leaflet-square-icon-green"
+                           (< 0.25 ratio 0.5)     "leaflet-sqaure-icon-yellow"
+                           (<= 0.5 ratio 0.75)    "leaflet-square-icon-orange"
+                           (> ratio 0.75)         "leaflet-square-icon-red")]
+    {:className classname}))
 
 (defn- suggestion-icon-fn
   [suggestion selected-suggestion classname]
@@ -186,6 +199,7 @@
         selected-suggestion   (subscribe [:scenarios.map/selected-suggestion])
         suggested-locations   (subscribe [:scenarios.new-provider/suggested-locations])
         all-providers         (subscribe [:scenarios/all-providers])
+        view-state            (subscribe [:scenarios/view-state])
         position              (r/atom mapping/map-preview-position)
         zoom                  (r/atom 3)
         demand-unit           (get-demand-unit project)
@@ -194,47 +208,53 @@
         add-point             (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         provider-lat-fn       (fn [provider] (get-in provider [:location :lat]))
         provider-lon-fn       (fn [provider] (get-in provider [:location :lon]))
-        provider-icon-fn      (fn [provider] (icon-function provider @selected-provider))
+        provider-icon-fn      (fn [provider] (provider-icon-function provider @selected-provider))
         provider-popup-fn     (fn [provider] (show-provider {:read-only?    read-only?
                                                              :demand-unit   demand-unit
                                                              :capacity-unit capacity-unit}
                                                             provider))
         provider-mouseover-fn (fn [provider] (dispatch [:scenarios.map/select-provider provider]))
-        provider-mouseout-fn  (fn [provider] (dispatch [:scenarios.map/unselect-provider provider]))]
+        provider-mouseout-fn  (fn [provider] (dispatch [:scenarios.map/unselect-provider provider]))
+        source-lat-fn         (fn [source] (get-in source [:elem :lat]))
+        source-lon-fn         (fn [source] (get-in source [:elem :lon]))
+        source-popup-fn       (fn [source] (show-source source))
+        source-icon-fn        (fn [source] (source-icon-function (:elem source)))
+        suggestion-popup-fn   (fn [suggestion]
+                                (show-suggested-provider {:demand-unit   demand-unit
+                                                          :capacity-unit capacity-unit}
+                                                         suggestion
+                                                         @view-state))
+        suggestion-icon-fn    (fn [suggestion]
+                                (let [classname (if (= @view-state :new-provider)
+                                                  "leaflet-suggestion-new-provider"
+                                                  "leaflet-suggestion-new-improvement")]
+                                  (suggestion-icon-fn suggestion selected-suggestion classname)))]
     (fn [{:keys [bbox] :as project} {:keys [changeset raster sources-data] :as scenario} state error read-only?]
-      (let [suggestion-classname    (if (= state :new-provider)
-                                      "leaflet-suggestion-new-provider"
-                                      "leaflet-suggestion-new-improvement")
-            indexed-providers       (to-indexed-map @all-providers)
+      (let [indexed-providers       (to-indexed-map @all-providers)
             indexed-sources         (to-indexed-map sources-data)
             pending-demand-raster   raster
             suggested-locations     @suggested-locations
             selected-suggestion     @selected-suggestion
             sources-layer           [:marker-layer {:points   indexed-sources
                                                     :shape    :square
-                                                    :lat-fn   #(get-in % [:elem :lat])
-                                                    :lon-fn   #(get-in % [:elem :lon])
-                                                    :icon-fn  #(let [source           (:elem %)
-                                                                     quantity-initial (:initial-quantity source)
-                                                                     quantity-current (:quantity source)
-                                                                     ratio            (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
-                                                                     classname        (cond
-                                                                                        (= 0 quantity-initial) "leaflet-square-icon-gray"
-                                                                                        (<= ratio 0.25)        "leaflet-square-icon-green"
-                                                                                        (< 0.25 ratio 0.5)     "leaflet-sqaure-icon-yellow"
-                                                                                        (<= 0.5 ratio 0.75)    "leaflet-square-icon-orange"
-                                                                                        (> ratio 0.75)         "leaflet-square-icon-red")]
-                                                                 {:className classname})
-                                                    :popup-fn #(show-source %)}]
+                                                    :lat-fn   source-lat-fn
+                                                    :lon-fn   source-lon-fn
+                                                    :icon-fn  source-icon-fn
+                                                    :popup-fn source-popup-fn}]
             selected-provider-layer [:geojson-layer {:data   (:coverage-geom @selected-provider)
                                                      :group  {:pane "tilePane"}
                                                      :color  "#40404080"
                                                      :stroke true}]
-            suggestions-layer       [:marker-layer {:points       (map #(assoc % :open? (= % selected-suggestion)) suggested-locations)
-                                                    :lat-fn       #(get-in % [:location :lat])
-                                                    :lon-fn       #(get-in % [:location :lon])
-                                                    :popup-fn     #(show-suggested-provider {:demand-unit demand-unit :capacity-unit capacity-unit} % state)
-                                                    :icon-fn      #(suggestion-icon-fn % selected-suggestion suggestion-classname)
+            suggestion-points       (->> suggested-locations
+                                         (map (fn [{:keys [id] :as suggestion}]
+                                                (if (= id (:id selected-suggestion))
+                                                  (assoc suggestion :open? (:open? selected-suggestion))
+                                                  suggestion))))
+            suggestions-layer       [:marker-layer {:points       suggestion-points
+                                                    :lat-fn       provider-lat-fn
+                                                    :lon-fn       provider-lon-fn
+                                                    :popup-fn     suggestion-popup-fn
+                                                    :icon-fn      suggestion-icon-fn
                                                     :mouseover-fn (fn [suggestion]
                                                                     (dispatch [:scenarios.map/select-suggestion suggestion]))
                                                     :mouseout-fn  (fn [suggestion]
