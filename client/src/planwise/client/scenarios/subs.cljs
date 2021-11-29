@@ -165,3 +165,10 @@
  :scenarios/sort-order
  (fn [db _]
    (get-in db [:scenarios :sort-order])))
+
+(rf/reg-sub
+ :scenarios/search-providers-matches
+ (fn [db _]
+   (let [{:keys [occurrence match-count]} (get-in db [:scenarios :providers-search])]
+     (when (pos? match-count)
+       [(inc occurrence) match-count]))))

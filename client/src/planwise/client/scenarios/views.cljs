@@ -489,6 +489,45 @@
                    (api/download-scenario-sources scenario-id))
         (menu-item "Providers (CSV)" (api/download-scenario-providers scenario-id))]])))
 
+(defn- sidebar-search
+  []
+  (let [expanded?       (r/atom false)
+        search-value    (r/atom "")
+        close-fn        (fn []
+                          (reset! expanded? false)
+                          (reset! search-value "")
+                          (dispatch [:scenarios/clear-providers-search]))
+        toggle-fn       (fn []
+                          (if @expanded? (close-fn) (reset! expanded? true)))
+        dispatch-search (utils/debounced #(dispatch [:scenarios/search-providers %]) 500)
+        update-search   (fn [value]
+                          (reset! search-value value)
+                          (dispatch-search value))
+        search-again    (fn []
+                          (dispatch-search :immediate @search-value))
+        matches         (subscribe [:scenarios/search-providers-matches])]
+    (fn []
+      [:div.sidebar-search
+       {:class (if @expanded? "expanded")}
+       (when @expanded?
+         [:<>
+          [:input {:type        :text
+                   :auto-focus  true
+                   :on-blur     close-fn
+                   :on-key-down (fn [evt]
+                                  (case (.-which evt)
+                                    27 (close-fn)
+                                    13 (search-again)
+                                    nil))
+                   :placeholder "Search providers"
+                   :value       @search-value
+                   :on-change   #(update-search (-> % .-target .-value))}]
+          (when-let [[occurrence total] @matches]
+            [:span (str occurrence "/" total)])])
+       [:div.sidebar-button
+        {:on-click toggle-fn}
+        [m/Icon {:use "search"}]]])))
+
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]
   (let [read-only?              (subscribe [:scenarios/read-only?])
@@ -514,7 +553,9 @@
          [edit/rename-scenario-dialog]
          [edit/changeset-dialog current-project current-scenario]
          [edit/delete-scenario-dialog @state current-scenario]
-         [sidebar-expand-button expanded-sidebar?]]))))
+         [sidebar-expand-button expanded-sidebar?]
+         (when-not expanded-sidebar?
+           [sidebar-search])]))))
 
 (defn scenarios-page
   []
