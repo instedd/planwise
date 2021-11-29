@@ -58,21 +58,35 @@
     (crate/html
      [:div
       [:h3 name]
-      [:p (str "Capacity: " (utils/format-number capacity) " " capacity-unit)]
-      [:p (str "Unsatisfied demand: " (utils/format-number unsatisfied-demand))]
-      [:p (str "Required capacity: " (utils/format-number (Math/ceil required-capacity)))]
-      (when (or matches-filters change)
-        [:p (str "Satisfied demand: " (utils/format-number satisfied-demand))])
-      (when (or matches-filters change)
-        [:p (str "Free capacity: " (utils/format-number (Math/floor free-capacity)))])
-      [:p (str (capitalize demand-unit) " under geographic coverage: " (utils/format-number (Math/ceil reachable-demand)))]
+      [:table
+       [:tr
+        [:td "Capacity:"]
+        [:td (str (utils/format-number capacity) " " capacity-unit)]]
+       [:tr
+        [:td "Unsatisfied demand:"]
+        [:td (utils/format-number unsatisfied-demand)]]
+       [:tr
+        [:td "Required capacity:"]
+        [:td (utils/format-number (Math/ceil required-capacity))]]
+       (when (or matches-filters change)
+         [:tr
+          [:td "Satisfied demand:"]
+          [:td (utils/format-number satisfied-demand)]])
+       (when (or matches-filters change)
+         [:tr
+          [:td "Free capacity: "]
+          [:td (utils/format-number (Math/floor free-capacity))]])
+       [:tr
+        [:td (str (capitalize demand-unit) " under coverage:")]
+        [:td (utils/format-number (Math/ceil reachable-demand))]]]
       (when-not read-only?
-        (popup-connected-button
-         (cond
-           (some? change)        "Edit"
-           (not matches-filters) "Upgrade"
-           :else                 "Increase")
-         #(dispatch [:scenarios/edit-change (assoc provider :change change*)])))])))
+        [:div.actions
+         (popup-connected-button
+          (cond
+            (some? change)        "Edit"
+            (not matches-filters) "Upgrade"
+            :else                 "Increase")
+          #(dispatch [:scenarios/edit-change (assoc provider :change change*)]))])])))
 
 (defn label-for-suggestion
   [suggestion state]
@@ -96,19 +110,34 @@
     (crate/html
      [:div
       [:h3 (if name name (str "Suggestion " ranked))]
-      [:p (str "Needed capacity : " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]
-      (when new-provider?
-        [:p (str "Expected demand to satisfy : " (utils/format-number coverage) " " demand-unit)])
-      (when-not new-provider?
-        (when action-cost
-          [:p (str "Investment according to project configuration : " (utils/format-number action-cost))]))
-      (button-for-suggestion (label-for-suggestion suggestion state) suggestion)])))
+      [:table
+       [:tr
+        [:td "Needed capacity : "]
+        [:td (str (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]]
+       (when new-provider?
+         [:tr
+          [:td "Expected demand to satisfy:"]
+          [:td (str (utils/format-number coverage) " " demand-unit)]])
+       (when (and (not new-provider?) action-cost)
+         [:tr
+          [:td "Estimated investment:"]
+          [:td (utils/format-number action-cost)]])]
+      [:div.actions (button-for-suggestion (label-for-suggestion suggestion state) suggestion)]])))
 
 (defn- show-source
   [{{:keys [name initial-quantity quantity]} :elem :as source}]
-  (str "<b>" (utils/escape-html (str name)) "</b>"
-       "<br> Original quantity: " (.toFixed (or initial-quantity 0) 2)
-       "<br> Current quantity: " (.toFixed (or quantity 0) 2)))
+  (let [display-initial-quantity (.toFixed (or initial-quantity 0) 2)
+        display-quantity         (.toFixed (or quantity 0) 2)]
+    (crate/html
+     [:div
+      [:h3 name]
+      [:table
+       [:tr
+        [:td "Original quantity:"]
+        [:td display-initial-quantity]]
+       [:tr
+        [:td "Current quantity:"]
+        [:td display-quantity]]]])))
 
 (defn- to-indexed-map
   [coll]
@@ -178,6 +207,7 @@
                                                     :shape :square
                                                     :lat-fn #(get-in % [:elem :lat])
                                                     :lon-fn #(get-in % [:elem :lon])
+                                                    :label-fn (comp :name :elem)
                                                     :icon-fn #(let [source (:elem %)
                                                                     quantity-initial (:initial-quantity source)
                                                                     quantity-current (:quantity source)
@@ -194,7 +224,7 @@
                                                      :group {:pane "tilePane"}
                                                      :lat-fn (fn [polygon-point] (:lat polygon-point))
                                                      :lon-fn (fn [polygon-point] (:lon polygon-point))
-                                                     :color :orange
+                                                     :color "#40404080"
                                                      :stroke true}]
             suggestions-layer       [:marker-layer {:points (map #(assoc % :open? (= % selected-suggestion)) suggested-locations)
                                                     :lat-fn #(get-in % [:location :lat])
@@ -208,6 +238,7 @@
             providers-layer [providers-layer-type {:points (map #(assoc % :open? (= % @selected-provider)) @all-providers)
                                                    :lat-fn #(get-in % [:location :lat])
                                                    :lon-fn #(get-in % [:location :lon])
+                                                   :label-fn :name
                                                    :icon-fn #(icon-function % @selected-provider)
                                                    :popup-fn     #(show-provider {:read-only? read-only?
                                                                                   :demand-unit demand-unit

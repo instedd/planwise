@@ -1012,6 +1012,31 @@ form.vertical, .fields-vertical {
     }
 }
 
+.leaflet-popup-content {
+  > div {
+    overflow: auto;
+  }
+  p {
+    margin: 0;
+  }
+  h3 {
+    font-weight: bold;
+  }
+  .actions {
+    margin-top: 1rem;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    td {
+      white-space: nowrap;
+    }
+    tr:nth-child(odd) {
+      background-color: #f0f0f0;
+    }
+  }
+}
+
 .leaflet-square-icon-gray {
   border: 1px solid rgba(211, 211, 211, 0.53) !important;
   background: rgba(189, 187, 187, 0.447);
@@ -1100,27 +1125,34 @@ form.vertical, .fields-vertical {
 
   &.idle-capacity {
     background-color: #00bcd4;
+    border: 1px #00727e solid;
   }
   &.at-capacity {
     background-color: #4caf50;
+    border: 1px #327134 solid;
   }
   &.small-unsatisfied {
     background-color: #ffeb3b;
+    border: 1px #ecca00 solid;
+
   }
   &.mid-unsatisfied {
     background-color: #ffc107;
+    border: 1px #b88a00 solid;
   }
   &.unsatisfied {
     background-color: #ff5722;
+    border: 1px #8f2100 solid;
   }
   &.not-matching {
     background-color: #999;
+    border: 1px black solid;
   }
   &.selected[style] {
-    width: 20px !important;
-    height: 20px !important;
-    margin-left: -10px !important;
-    margin-top: -10px !important;
+    width: 24px !important;
+    height: 24px !important;
+    margin-left: -12px !important;
+    margin-top: -12px !important;
     border: 4px white solid !important;
   }
 }
