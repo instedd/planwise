@@ -12,5 +12,4 @@
             :matches-filter true
             :location       {:lat 0 :lon 0}
             :change         change}
-           (sut/new-provider-from-change change 1)))))
-
+           (sut/new-provider-from-change change)))))
