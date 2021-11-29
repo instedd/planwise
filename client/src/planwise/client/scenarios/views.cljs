@@ -12,6 +12,7 @@
             [planwise.client.routes :as routes]
             [planwise.client.styles :as styles]
             [planwise.client.mapping :as mapping]
+            [planwise.client.scenarios.api :as api]
             [planwise.client.scenarios.edit :as edit]
             [planwise.client.scenarios.changeset :as changeset]
             [planwise.client.components.common :as common]
@@ -433,24 +434,46 @@
      [m/Icon {:strategy "ligature"
               :use (if expanded-sidebar? "arrow_left" "arrow_right")}]]]])
 
+(defn- scenario-download-button
+  [_]
+  (let [popup-open?    (r/atom false)
+        close-popup-fn (fn [] (reset! popup-open? false))
+        menu-item      (fn [label url]
+                         [:a.mdc-list-item
+                          {:role      "menuitem"
+                           :tab-index 0
+                           :on-click  close-popup-fn
+                           :target    "_blank"
+                           :href      url}
+                          label])]
+    (fn [{:keys [scenario-id source-type]}]
+      [:div
+       [:a#main-action.mdc-fab.disable-a
+        {:on-click #(swap! popup-open? not)}
+        [m/Icon {:class "material-icons center-download-icon"} "get_app"]]
+       [m/Menu (when @popup-open? {:class [:mdc-menu--open :fab-menu]})
+        (menu-item (str "Sources " (case source-type
+                                     "raster" "(TIF)"
+                                     "(CSV)"))
+                   (api/download-scenario-sources scenario-id))
+        (menu-item "Providers (CSV)" (api/download-scenario-providers scenario-id))]])))
+
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]
-  (let [read-only?  (subscribe [:scenarios/read-only?])
-        state       (subscribe [:scenarios/view-state])
-        error       (subscribe [:scenarios/error])
-        export-providers-button [:a {:class "mdc-fab disable-a"
-                                     :id "main-action"
-                                     :href (str "/api/scenarios/" id "/csv")}
-                                 [m/Icon {:class "material-icons  center-download-icon"} "get_app"]]]
+  (let [read-only?              (subscribe [:scenarios/read-only?])
+        state                   (subscribe [:scenarios/view-state])
+        error                   (subscribe [:scenarios/error])
+        export-providers-button [scenario-download-button {:scenario-id id
+                                                           :source-type (:source-type current-project)}]]
     (fn [current-project current-scenario]
       (let [expanded-sidebar? (= @state :show-actions-table)]
         [ui/full-screen (merge (common2/nav-params)
-                               {:main-prop {:style {:position :relative}}
-                                :main [simple-map current-project current-scenario @state @error @read-only?]
-                                :title [:ul {:class-name "breadcrumb-menu"}
-                                        [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
-                                        [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
-                                        [:li (:name current-scenario)]]
+                               {:main-prop    {:style {:position :relative}}
+                                :main         [simple-map current-project current-scenario @state @error @read-only?]
+                                :title        [:ul {:class-name "breadcrumb-menu"}
+                                               [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
+                                               [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
+                                               [:li (:name current-scenario)]]
                                 :sidebar-prop {:class [(if expanded-sidebar? :expanded-sidebar :compact-sidebar)]}}
                                (when-not expanded-sidebar?
                                  {:action export-providers-button}))

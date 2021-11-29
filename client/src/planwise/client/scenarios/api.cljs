@@ -42,3 +42,11 @@
   [id]
   {:method    :delete
    :uri  (str "/api/scenarios/" id)})
+
+(defn download-scenario-sources
+  [id]
+  (str "/api/scenarios/" id "/sources"))
+
+(defn download-scenario-providers
+  [id]
+  (str "/api/scenarios/" id "/providers"))

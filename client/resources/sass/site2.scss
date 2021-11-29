@@ -122,6 +122,14 @@ header {
     > i {
       align-self: center;
     }
+    z-index: 1;
+  }
+
+  .fab-menu {
+    position: absolute;
+    right: $margin-page - 10px;
+    margin-top: 0;
+    z-index: 0;
   }
 }
 

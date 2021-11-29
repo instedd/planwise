@@ -380,6 +380,19 @@
      (merge-providers providers disabled-providers new-providers (:providers-data scenario))
      fields)))
 
+(defn export-sources-data
+  [_ {:keys [source-type] :as project} {:keys [sources-data] :as scenario}]
+  (when-not (= "points" source-type)
+    (throw (ex-info "invalid project type for exporting sources as CSV")))
+  (let [sources (->> sources-data
+                     (map (fn [{:keys [quantity initial-quantity] :as source}]
+                            (-> source
+                                (select-keys [:id :type :name :lat :lon])
+                                (assoc :satisfied-demand (- initial-quantity quantity)
+                                       :unsatisfied-demand quantity)))))
+        fields  [:id :type :name :lat :lon :satisfied-demand :unsatisfied-demand]]
+    (map->csv sources fields)))
+
 (defn reset-scenarios
   [store project-id]
   (db-delete-scenarios! (get-db store) {:project-id project-id})
@@ -458,6 +471,8 @@
     (get-scenario-for-project store scenario project))
   (export-providers-data [store project scenario]
     (export-providers-data store project scenario))
+  (export-sources-data [store project scenario]
+    (export-sources-data store project scenario))
   (get-suggestions-for-new-provider-location [store project scenario]
     (get-suggestions-for-new-provider-location store project scenario))
   (get-provider-geom [store scenario project provider-id]
