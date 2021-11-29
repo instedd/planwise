@@ -6,7 +6,7 @@
           :or   {lat-fn :lat lon-fn :lon}
           :as   props}]
   (let [latLng (.latLng js/L (lat-fn point) (lon-fn point))
-        attrs  (dissoc props :lat-fn :lon-fn :popup-fn)
+        attrs  (dissoc props :lat-fn :lon-fn :icon-fn :popup-fn)
         icon   (if icon-fn
                  (.divIcon js/L (clj->js (icon-fn point)))
                  (js/L.Icon.Default.))
@@ -35,9 +35,9 @@
                                  (.setOpacity tooltip 100))
                                (when mouseout-fn (mouseout-fn point))))
     (if (:open? point)
-      ;; Delay popup until the layer was created
-      (js/setTimeout #(when-not (.isPopupOpen marker)
-                        (.openPopup marker)) 100))
+      ;; Delay popup until the layer is added to the map
+      (do
+        (js/setTimeout #(.openPopup marker) 20)))
     marker))
 
 (defn- js-data
@@ -57,13 +57,26 @@
                             :style     (constantly (clj->js attrs))})))
 
 
-(defmulti leaflet-layer (fn [layer-def] (first layer-def)))
+(defmulti create-layer (fn [layer-def] (first layer-def)))
 
-(defmethod leaflet-layer :default
+(defmulti update-layer
+  (fn [instance layer-def old-layer-def]
+    ;; layers can only be updated if the layer type has not changed
+    (if (= (first layer-def) (first old-layer-def))
+      (first layer-def)
+      ::not-updatable))
+  :default ::not-updatable)
+
+(defmethod create-layer :default
   [layer-def]
-  (throw (str "Unknown layer type " (first layer-def))))
+  (throw (ex-info "Unknown layer type" layer-def)))
 
-(defmethod leaflet-layer :marker-layer
+(defmethod update-layer ::not-updatable
+  [instance layer-def old-layer-def]
+  ;; update is not possible by default
+  nil)
+
+(defmethod create-layer :marker-layer
   [[_ props & children]]
   (let [layer  (.featureGroup js/L)
         points (:points props)
@@ -71,7 +84,15 @@
     (doseq [point points] (.addLayer layer (create-marker point attrs)))
     layer))
 
-(defmethod leaflet-layer :geojson-layer
+(defmethod update-layer :marker-layer
+  [instance [_ props & children] _]
+  (.clearLayers instance)
+  (let [points (:points props)
+        attrs  (dissoc props :points)]
+    (doseq [point points] (.addLayer instance (create-marker point attrs)))
+    instance))
+
+(defmethod create-layer :geojson-layer
   [[_ props & children]]
   (let [data  (:data props)
         layer (geojson-layer props)]
@@ -79,16 +100,39 @@
       (.addData layer (js-data data)))
     layer))
 
-(defmethod leaflet-layer :tile-layer
+(defmethod update-layer :geojson-layer
+  [instance [_ props & children] _]
+  (.clearLayers instance)
+  (some->> (:data props)
+           js-data
+           (.addData instance))
+  instance)
+
+(defmethod create-layer :tile-layer
   [[_ props & children]]
   (let [url   (:url props)
         attrs (dissoc props :url)
         layer (.tileLayer js/L url (clj->js attrs))]
     layer))
 
-(defmethod leaflet-layer :wms-tile-layer
+(defmethod create-layer :wms-tile-layer
   [[_ props & children]]
   (let [url   (:url props)
         attrs (dissoc props :url)
         layer (when (:layers props) (js/L.tileLayer.wms url (clj->js attrs)))]
     layer))
+
+(def ^:private options-keys [:opacity])
+
+(defmethod update-layer :wms-tile-layer
+  [instance [_ props & children] [_ old-props & children]]
+  (let [options     (select-keys props options-keys)
+        old-options (select-keys old-props options-keys)]
+    (when (= options old-options)
+      (let [params     (apply dissoc props :url options-keys)
+            old-params (apply dissoc old-props :url options-keys)
+            url        (:url props)
+            old-url    (:url old-props)]
+        (when-not (= url old-url) (.setUrl instance url))
+        (when-not (= params old-params) (.setParams instance (clj->js params)))
+        instance))))

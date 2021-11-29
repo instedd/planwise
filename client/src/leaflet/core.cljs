@@ -18,7 +18,7 @@
             (if (= old-decl new-decl)
               ;; declarations are identical, nothing to replace
               old-object
-              (update-fn! old-object new-decl)))]
+              (update-fn! old-object new-decl old-decl)))]
 
     (loop [old-objects old-objects
            old-decls old-decls
@@ -61,10 +61,9 @@
 
 (defn- leaflet-update-layers
   [this]
-  (let [state                (reagent/state this)
-        leaflet              (:map state)
-        block-layer-removal? (< (.now js/Date) (:popuptimeout state))
-        new-children         (reagent/children this)]
+  (let [state        (reagent/state this)
+        leaflet      (:map state)
+        new-children (reagent/children this)]
 
     ;; go through all the layers, old and new, and update the Leaflet objects
     ;; accordingly while updating the map
@@ -73,15 +72,12 @@
           remove-layer-fn (fn [old-layer]
                             (.removeLayer leaflet old-layer))
           create-layer-fn (fn [new-child]
-                            (let [new-layer (layers/leaflet-layer new-child)]
+                            (let [new-layer (layers/create-layer new-child)]
                               (when new-layer (.addLayer leaflet new-layer))
                               new-layer))
-          update-layer-fn (fn [old-layer new-child]
-                            ;; trying to open a popup might trigger an update of the layers
-                            ;; the update on some cases will cause the removal of a layer
-                            ;; which will close the open popup
-                            (if (and block-layer-removal? (some? new-child) (= (first new-child) :marker-layer))
-                              old-layer
+          update-layer-fn (fn [old-layer new-child old-child]
+                            (if-let [new-layer (and old-layer (layers/update-layer old-layer new-child old-child))]
+                              new-layer
                               (do
                                 (when old-layer (remove-layer-fn old-layer))
                                 (when new-child (create-layer-fn new-child)))))
@@ -165,7 +161,7 @@
                                (let [new-control (leaflet-create-control new-control-def props)]
                                  (.addControl leaflet new-control)
                                  new-control))
-          update-control-fn  (fn [old-control new-control-def]
+          update-control-fn  (fn [old-control new-control-def old-control-def]
                                (when old-control (destroy-control-fn old-control))
                                (when new-control-def (create-control-fn new-control-def)))
           new-controls       (update-objects-from-decls old-controls
@@ -204,8 +200,7 @@
                                 :minZoom            (:min-zoom props)})
         initial-bbox (:initial-bbox props)]
 
-    ;; keep track of popup state to prevent closing it by :component-did-update
-    (reagent/set-state this {:map leaflet :popuptimeout 0})
+    (reagent/set-state this {:map leaflet})
 
     (leaflet-update-controls this)
     (leaflet-update-layers this)
@@ -221,10 +216,6 @@
 
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))
-
-    ;; when the popup is open ignore changes to :marker-layer during 0.5 seconds
-    (.on leaflet "popupopen" #(reagent/set-state this {:popuptimeout (+ (.now js/Date) 500)}))
-    (.on leaflet "popupclose" #(reagent/set-state this {:popuptimeout 0}))
 
     (when (some? initial-bbox)
       (let [[[s w] [n e]]  initial-bbox
