@@ -9,6 +9,7 @@
    :changeset-dialog         nil
    :selected-provider        nil
    :selected-suggestion      nil
+   :coverage-cache           nil
    :list-scope               nil
    :list                     (asdf/new nil)
    :sort-column              nil
