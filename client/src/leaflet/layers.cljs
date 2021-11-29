@@ -15,8 +15,10 @@
         marker (.marker js/L latLng (clj->js attrs))]
     (when label-fn
       (.bindTooltip marker (label-fn point) (clj->js {:permanent false})))
-    (if popup-fn
-      (.bindPopup marker (popup-fn point)))
+    (when popup-fn
+      ;; lazy-load the popup content
+      (.bindPopup marker "")
+      (.on marker "popupopen" (fn [e] (.setContent (.-popup e) (popup-fn point)))))
     (.on marker "mouseover"  (fn [_]
                                (.openTooltip marker)
                                (when mouseover-fn (mouseover-fn point))))
