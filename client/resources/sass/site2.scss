@@ -477,6 +477,9 @@ form.vertical, .fields-vertical {
 
 .changeset-row {
   cursor: pointer;
+  &:hover {
+    background-color: #f0f0f0;
+  }
 }
 
 .scenarios-content {
