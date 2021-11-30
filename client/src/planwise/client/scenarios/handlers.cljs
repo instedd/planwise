@@ -279,7 +279,9 @@
  :scenarios.map/unselect-provider
  in-scenarios
  (fn [db [_ provider]]
-   (assoc db :selected-provider nil)))
+   (if (= (:id provider) (get-in db [:selected-provider :id]))
+     (assoc db :selected-provider nil)
+     db)))
 
 (rf/reg-event-fx
  :scenarios.map/select-suggestion
@@ -290,8 +292,10 @@
 (rf/reg-event-db
  :scenarios.map/unselect-suggestion
  in-scenarios
- (fn [db [_ _]]
-   (assoc db :selected-suggestion nil)))
+ (fn [db [_ suggestion]]
+   (if (= suggestion (:selected-suggestion db))
+     (assoc db :selected-suggestion nil)
+     db)))
 
 (rf/reg-event-db
  :scenarios/close-suggestions
