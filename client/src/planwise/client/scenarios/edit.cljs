@@ -191,24 +191,6 @@
        {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
        (str "Get suggestions to improve existing " provider-unit)]]]))
 
-(defn scenario-settings
-  [state]
-  (let [open (subscribe [:scenarios/scenario-menu-settings])]
-    (fn [state]
-      [:div.scenario-settings
-       [m/Button
-        {:on-click #(dispatch [:scenarios/show-scenario-settings])}
-        [m/Icon "settings"]]
-       [m/MenuAnchor
-        [:div]
-        [m/Menu (when @open {:class "mdc-menu--open"})
-         [m/MenuItem
-          {:on-click  #(dispatch [:scenarios/open-rename-dialog])}
-          "Rename scenario"]
-         [m/MenuItem
-          {:on-click #(dispatch [:scenarios/open-delete-dialog])}
-          "Delete scenario"]]]])))
-
 (defn delete-scenario-dialog
   [state current-scenario]
   [dialog {:open? (= state :delete-scenario)

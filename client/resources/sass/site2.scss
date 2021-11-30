@@ -439,27 +439,6 @@ form.vertical, .fields-vertical {
       margin-top: -1rem;
     }
   }
-  .btn-create {
-    font-size: 1rem;
-    line-height: 0;
-    color: #FF5722;
-    text-transform: uppercase;
-    text-align: center;
-    padding: 2rem 0;
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-  }
-
-  .actions-table-view > .btn-create {
-    width: fit-content;
-    padding: 2rem;
-    right: 0rem;
-  }
-}
-
-#sidebar.expanded-sidebar {
-  padding-bottom: 4rem;
 }
 
 .icon-list {
@@ -1422,4 +1401,16 @@ form.vertical, .fields-vertical {
   span {
     margin: 0px 4px;
   }
+}
+
+.mdc-menu__items {
+  .mdc-list-item--disabled {
+    cursor: default;
+    color: #b0b0b0;
+    pointer-events: none;
+  }
+}
+
+.mdc-menu {
+  z-index: 3000;
 }
