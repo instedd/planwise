@@ -1023,7 +1023,10 @@ form.vertical, .fields-vertical {
     margin: 0;
   }
   h3 {
-    font-weight: bold;
+    font-weight: 500;
+    font-size: 120%;
+    margin-top: 0;
+    margin-bottom: 1rem;
   }
   .actions {
     margin-top: 1rem;
@@ -1033,6 +1036,10 @@ form.vertical, .fields-vertical {
     width: 100%;
     td {
       white-space: nowrap;
+      padding: 2px 6px;
+    }
+    td:nth-child(2) {
+      font-weight: bold;
     }
     tr:nth-child(odd) {
       background-color: #f0f0f0;
