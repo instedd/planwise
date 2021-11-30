@@ -55,9 +55,10 @@ body.mdc-select-scroll-lock {
 .layout.full-screen {
   height: 100vh;
   font-size: 1rem;
+  align-self: center;
   display: grid;
   grid-template-columns: 30px 370px auto 40px;
-  grid-template-rows: min-content 30px auto 20px 40px;
+  grid-template-rows: min-content 30px auto 20px 30px;
   grid-template-areas:
     "header header header header"
     "main   main   main main"
@@ -88,6 +89,7 @@ header {
   #section-row {
     display: flex;
     justify-content: flex-start;
+    align-items: center;
     * {
       margin-right: 48px;
       font-size: 16px;
@@ -141,16 +143,22 @@ main {
 
 footer {
   grid-area: footer;
-  padding: 14px 14px;
+  display: flex;
+  align-items: center;
+  padding: 0px 14px;
   border-top: 1px solid $material-color-grey-300;
   font-size: $small-font-size;
 }
 
 .layout.full-screen {
   aside#sidebar {
-    z-index: 9999;
+    z-index: 2000;
     @include mdc-elevation(2);
     background: #ffffff;
+    position: relative;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   aside#sidebar.compact-sidebar {
@@ -181,6 +189,7 @@ header.mdc-toolbar {
 #account-menu {
   @include link-color(#9a9a9a);
   display: inline-flex !important;
+  align-items: center;
   .icon-dropdown{
     margin-left: 4px;
   }
@@ -197,6 +206,7 @@ filter: grayscale(100%);
 
 #secondary-actions-handle {
   @include link-color(#9a9a9a);
+  margin-left: 10px;
 }
 
 #tabs-row {
@@ -369,7 +379,6 @@ form.vertical, .fields-vertical {
 
 #sidebar {
   position: relative;
-  padding-bottom: 3rem;
   .section {
     padding: 1rem;
   }
@@ -401,23 +410,13 @@ form.vertical, .fields-vertical {
     border-top: 1px solid #e6e6e6;
     margin: 0;
   }
-  /*
-  .btn-floating {
-    position: absolute;
-    right: 1rem;
-    margin-top: -2.4rem;
-    z-index: 2;
-  }
-  */
 
   .suggestion-list {
     max-height: 490px !important;
   }
 
   .scroll-list {
-    max-height: 280px;
     width: 100%;
-    margin-top: 2rem;
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
@@ -427,7 +426,6 @@ form.vertical, .fields-vertical {
     height: 1rem;
     width: 100%;
     position: absolute;
-    margin-top: 1.5rem;
     z-index: 1;
 
     background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 20%, rgba(255,255,255,0) 99%, rgba(255,255,255,0) 100%); /* FF3.6-15 */
@@ -463,6 +461,7 @@ form.vertical, .fields-vertical {
 
 .scenarios-content {
   padding: 0px;
+  overflow: auto;
 
   table {
     border-spacing: 0;
@@ -511,7 +510,7 @@ form.vertical, .fields-vertical {
       th {
         color: #999999;
         text-align: left;
-        padding: 24px 20px 11px 20px;
+        padding: 11px 20px 11px 20px;
         font-weight: 500;
         font-size: 1rem;
       }
@@ -904,7 +903,7 @@ form.vertical, .fields-vertical {
 
 .suggestion-list {
   .border-btn-floating {
-      margin-top: -1.8rem !important;
+    margin-top: -1.8rem !important;
   }
 }
 
@@ -915,12 +914,6 @@ form.vertical, .fields-vertical {
     z-index: 2;
     border-radius: 50%;
     padding: 3px;
-
-    .btn-floating {
-        z-index: 2;
-        border: 1px solid #FFF;
-        box-shadow: none;
-    }
 }
 
 .border-btn-floating button {
@@ -1334,22 +1327,21 @@ form.vertical, .fields-vertical {
 
 .actions-table-header {
   border-bottom: 1px solid #ccc;
-}
-
-.actions-table-scenario-info {
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-
   > div {
-    padding: 0 1rem 0 1rem;
+    height: 64px;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    > h3 {
+      margin-right: 2rem;
+    }
   }
 }
 
 .sidebar-expand-button {
   position: absolute;
   right: -24px;
-  top: 1rem;
 
   > .sidebar-button {
     position: relative;
@@ -1375,7 +1367,7 @@ form.vertical, .fields-vertical {
   background-color: #404040;
   border-radius: 0px 4px 4px 0px;
   left: 100%;
-  bottom: 1rem;
+  bottom: 0;
   display: flex;
   flex-direction: row;
   align-items: center;

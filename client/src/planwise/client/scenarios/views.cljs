@@ -397,9 +397,7 @@
   [:<>
    [:div.section
     [:h1.title-icon "Suggestion list"]]
-   [:div.fade]
-   [changeset/suggestion-listing-component props suggested-locations]
-   [:div.fade.inverted]])
+   [changeset/suggestion-listing-component props suggested-locations]])
 
 (defn new-provider-unit?
   [view-state]
@@ -448,11 +446,9 @@
      (if error
        [raise-alert scenario error]
        [:<>
-        [:div.fade]
         [changeset/listing-component {:demand-unit demand-unit
                                       :capacity-unit capacity-unit}
-         providers]
-        [:div.fade.inverted]])]))
+         providers]])]))
 
 (defn side-panel-view-2
   [current-scenario error]
@@ -482,15 +478,16 @@
      [side-panel-view-2 current-scenario error])])
 
 (defn scenario-line-info
-  [{:keys [name effort source-demand increase-coverage] :as current-scenario}]
+  [{:keys [effort source-demand increase-coverage] :as current-scenario}]
   (let [current-project (subscribe [:projects2/current-project])
         analysis-type   (get-in @current-project [:config :analysis-type])
         demand-unit     (get-demand-unit @current-project)]
-    [:div.section.actions-table-header
-     [:div.actions-table-scenario-info
-      [:div [:h3 name]]
-      [:div [:h3.grey-text (str "Increase in " demand-unit " coverage " (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")")]]
-      [:div [:h3.grey-text (str "Effort required " (utils/format-effort effort analysis-type))]]]]))
+    [:div.actions-table-header
+     [:div
+      [:h3.grey-text (str "Increase in " demand-unit " coverage "
+                          (utils/format-number increase-coverage)
+                          " (" (format-percentage increase-coverage source-demand) ")")]
+      [:h3.grey-text (str "Effort required " (utils/format-effort effort analysis-type))]]]))
 
 (defn actions-table-view
   [current-scenario]
@@ -498,7 +495,7 @@
         providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
         demand-unit              (get-demand-unit @current-project)
         capacity-unit            (get-capacity-unit @current-project)]
-    [:div.actions-table-view
+    [:<>
      [scenario-line-info current-scenario]
      [changeset/table-component {:demand-unit demand-unit
                                  :capacity-unit capacity-unit
