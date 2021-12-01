@@ -8,19 +8,26 @@
   (let [open (r/atom false)]
     (fn [_ secondary-actions]
       [m/MenuAnchor
-       (into [m/Menu {:anchorCorner "bottomStart" :open @open :onClose #(reset! open false)}]
+       (into [m/Menu
+              {:anchorCorner "bottomStart"
+               :open         @open
+               :onClose      #(reset! open false)}]
              secondary-actions)
-       [:a {:id "secondary-actions-handle" :href "#" :onClick #(reset! open true)} [m/Icon {} "more_vert"]]])))
+       [:a#secondary-actions-handle
+        {:href    "#"
+         :onClick #(swap! open not)}
+        [m/Icon {} "more_vert"]]])))
 
 (defn- header
-  [{:keys [sections account title tabs action secondary-actions]}]
+  [{:keys [sections account title title-actions tabs action secondary-actions]}]
   [m/Toolbar
    [m/ToolbarRow {:id "top-row"}
     (into [m/ToolbarSection {:id "section-row" :alignStart true}] sections)
     [m/ToolbarSection {:alignEnd true} account]]
    [m/ToolbarRow {:id "title-row"}
     [icon "logo2"]
-    [m/ToolbarTitle title]]
+    [m/ToolbarTitle title]
+    (when title-actions [secondary-actions-menu {} title-actions])]
    (if (or tabs secondary-actions)
      [m/ToolbarRow {:id "tabs-row"}
       tabs
@@ -35,12 +42,13 @@
    [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]])
 
 (defn full-screen
-  [{:keys [sections account title tabs action footer main-prop main secondary-actions sidebar-prop]} & children]
-  [:div.layout.full-screen
-   [:main main-prop main]
-   (into [:aside#sidebar sidebar-prop] children)
-   footer
-   [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]])
+  [{:keys [footer main-prop main sidebar-prop] :as props} & children]
+  (let [header-props (dissoc props :main :main-prop :sidebar-prop :footer)]
+    [:div.layout.full-screen
+     [:main main-prop main]
+     (into [:aside#sidebar sidebar-prop] children)
+     footer
+     [header header-props]]))
 
 (defn footer
   ([]
@@ -52,9 +60,22 @@
   [{:keys [icon on-click]}]
   [m/Fab {:id "main-action" :on-click on-click :icon icon} icon])
 
-(defn secondary-action
-  [{:keys [on-click]} content]
-  [m/MenuItem {:on-click on-click} content])
+(defn menu-item
+  [{:keys [on-click disabled icon]} & children]
+  (into [m/MenuItem {:className (when disabled "mdc-list-item--disabled")
+                     :on-click  #(when-not disabled (on-click))}
+         (when icon [m/ListItemGraphic icon])]
+        children))
+
+(defn link-menu-item
+  [{:keys [url icon]} & children]
+  (into [:a.mdc-list-item
+         {:role      "menuitem"
+          :tab-index 0
+          :target    "_blank"
+          :href      url}
+         (when icon [m/ListItemGraphic icon])]
+        children))
 
 (defn section
   [{:keys [active] :as props} label]

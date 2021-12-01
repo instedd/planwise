@@ -17,8 +17,9 @@
 
 (def mount-target2
   [:div#app
-   [:h3 "Loading Application"]
-   [:p "Please wait..."]])
+   [:div.loading-wrapper
+    [:h3 "Loading Application"]
+    [:p "Please wait..."]]])
 
 (defn head2 []
   [:head

@@ -51,6 +51,6 @@
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]
     (fn []
-      [:div
+      [:<>
        [content-pane @current-page]
        [intercom]])))

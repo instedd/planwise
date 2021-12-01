@@ -30,6 +30,7 @@
     GridTileTitle
     Icon
     List
+    ListDivider
     ListItem
     ListItemGraphic
     ListItemMeta

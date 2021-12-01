@@ -26,8 +26,12 @@
 
 (defn- project-secondary-actions
   [project delete?]
-  [[ui/secondary-action {:on-click #(dispatch [:projects2/reset-project (:id project)])} "Back to draft"]
-   [ui/secondary-action {:on-click #(reset! delete? true)} "Delete project"]])
+  [[ui/menu-item {:on-click #(dispatch [:projects2/reset-project (:id project)])
+                  :icon     "undo"}
+    "Back to draft"]
+   [ui/menu-item {:on-click #(reset! delete? true)
+                  :icon     "delete"}
+    "Delete project"]])
 
 (defn- create-chip
   [input]

@@ -338,13 +338,6 @@
   [scenario]
   (= (:state scenario) "pending"))
 
-(defn- create-new-scenario
-  [current-scenario]
-  [m/Button {:class-name "btn-create"
-             :disabled (scenario-pending? current-scenario)
-             :on-click #(dispatch [:scenarios/copy-scenario (:id current-scenario)])}
-   "Create new scenario from here"])
-
 (defn- format-percentage
   [num denom]
   (utils/format-percentage (/ num denom) 2))
@@ -384,10 +377,6 @@
                               "loading..."
                               (utils/format-number population-under-coverage))]
     [:div
-     [:div.section.scenario-title
-      [:h1.title-icon name]
-      [edit/scenario-settings view-state]]
-     [:hr]
      [:div.section
       [:h1.large
        [:small (str "Increase in " demand-unit " coverage")]
@@ -408,9 +397,7 @@
   [:<>
    [:div.section
     [:h1.title-icon "Suggestion list"]]
-   [:div.fade]
-   [changeset/suggestion-listing-component props suggested-locations]
-   [:div.fade.inverted]])
+   [changeset/suggestion-listing-component props suggested-locations]])
 
 (defn new-provider-unit?
   [view-state]
@@ -459,11 +446,9 @@
      (if error
        [raise-alert scenario error]
        [:<>
-        [:div.fade]
         [changeset/listing-component {:demand-unit demand-unit
                                       :capacity-unit capacity-unit}
-         providers]
-        [:div.fade.inverted]])]))
+         providers]])]))
 
 (defn side-panel-view-2
   [current-scenario error]
@@ -490,19 +475,19 @@
   [:<>
    (if read-only?
      [initial-scenario-panel current-scenario]
-     [side-panel-view-2 current-scenario error])
-   [create-new-scenario current-scenario]])
+     [side-panel-view-2 current-scenario error])])
 
 (defn scenario-line-info
-  [{:keys [name effort source-demand increase-coverage] :as current-scenario}]
+  [{:keys [effort source-demand increase-coverage] :as current-scenario}]
   (let [current-project (subscribe [:projects2/current-project])
         analysis-type   (get-in @current-project [:config :analysis-type])
         demand-unit     (get-demand-unit @current-project)]
-    [:div.section.actions-table-header
-     [:div.actions-table-scenario-info
-      [:div [:h3 name]]
-      [:div [:h3.grey-text (str "Increase in " demand-unit " coverage " (utils/format-number increase-coverage) " (" (format-percentage increase-coverage source-demand) ")")]]
-      [:div [:h3.grey-text (str "Effort required " (utils/format-effort effort analysis-type))]]]]))
+    [:div.actions-table-header
+     [:div
+      [:h3.grey-text (str "Increase in " demand-unit " coverage "
+                          (utils/format-number increase-coverage)
+                          " (" (format-percentage increase-coverage source-demand) ")")]
+      [:h3.grey-text (str "Effort required " (utils/format-effort effort analysis-type))]]]))
 
 (defn actions-table-view
   [current-scenario]
@@ -510,13 +495,12 @@
         providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
         demand-unit              (get-demand-unit @current-project)
         capacity-unit            (get-capacity-unit @current-project)]
-    [:div.actions-table-view
+    [:<>
      [scenario-line-info current-scenario]
      [changeset/table-component {:demand-unit demand-unit
                                  :capacity-unit capacity-unit
                                  :source-demand (:source-demand current-scenario)}
-      @providers-from-changeset]
-     [create-new-scenario current-scenario]]))
+      @providers-from-changeset]]))
 
 (defn sidebar-expand-button
   [expanded-sidebar?]
@@ -527,30 +511,6 @@
     [:div.sidebar-button-inner
      [m/Icon {:strategy "ligature"
               :use (if expanded-sidebar? "arrow_left" "arrow_right")}]]]])
-
-(defn- scenario-download-button
-  [_]
-  (let [popup-open?    (r/atom false)
-        close-popup-fn (fn [] (reset! popup-open? false))
-        menu-item      (fn [label url]
-                         [:a.mdc-list-item
-                          {:role      "menuitem"
-                           :tab-index 0
-                           :on-click  close-popup-fn
-                           :target    "_blank"
-                           :href      url}
-                          label])]
-    (fn [{:keys [scenario-id source-type]}]
-      [:div
-       [:a#main-action.mdc-fab.disable-a
-        {:on-click #(swap! popup-open? not)}
-        [m/Icon {:class "material-icons center-download-icon"} "get_app"]]
-       [m/Menu (when @popup-open? {:class [:mdc-menu--open :fab-menu]})
-        (menu-item (str "Sources " (case source-type
-                                     "raster" "(TIF)"
-                                     "(CSV)"))
-                   (api/download-scenario-sources scenario-id))
-        (menu-item "Providers (CSV)" (api/download-scenario-providers scenario-id))]])))
 
 (defn- sidebar-search
   []
@@ -591,25 +551,47 @@
         {:on-click toggle-fn}
         [m/Icon {:use "search"}]]])))
 
+(defn- scenario-actions
+  [{:keys [source-type]} {:keys [id] :as scenario}]
+  [[ui/menu-item {:disabled (scenario-pending? scenario)
+                  :on-click #(dispatch [:scenarios/copy-scenario (:id scenario)])
+                  :icon     "add"}
+    "Create new scenario from here"]
+   [ui/menu-item {:on-click #(dispatch [:scenarios/open-rename-dialog])
+                  :icon     "edit"}
+    "Rename scenario"]
+   [ui/menu-item {:on-click #(dispatch [:scenarios/open-delete-dialog])
+                  :icon     "delete"}
+    "Delete scenario"]
+   [m/ListDivider]
+   [ui/link-menu-item {:url  (api/download-scenario-sources id)
+                       :icon "download"}
+    "Download sources "
+    (case source-type
+      "raster" "(TIF)"
+      "(CSV)")]
+   [ui/link-menu-item {:url (api/download-scenario-providers id)
+                       :icon "download"}
+    "Download providers (CSV)"]])
+
 (defn display-current-scenario
   [current-project {:keys [id] :as current-scenario}]
-  (let [read-only?              (subscribe [:scenarios/read-only?])
-        state                   (subscribe [:scenarios/view-state])
-        error                   (subscribe [:scenarios/error])
-        export-providers-button [scenario-download-button {:scenario-id id
-                                                           :source-type (:source-type current-project)}]]
+  (let [read-only? (subscribe [:scenarios/read-only?])
+        state      (subscribe [:scenarios/view-state])
+        error      (subscribe [:scenarios/error])]
     (fn [current-project current-scenario]
       (let [expanded-sidebar? (= @state :show-actions-table)]
-        [ui/full-screen (merge (common2/nav-params)
-                               {:main-prop    {:style {:position :relative}}
-                                :main         [simple-map current-project current-scenario @state @error @read-only?]
-                                :title        [:ul {:class-name "breadcrumb-menu"}
-                                               [:li [:a {:href (routes/projects2-show {:id (:id current-project)})} (:name current-project)]]
-                                               [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
-                                               [:li (:name current-scenario)]]
-                                :sidebar-prop {:class [(if expanded-sidebar? :expanded-sidebar :compact-sidebar)]}}
-                               (when-not expanded-sidebar?
-                                 {:action export-providers-button}))
+        [ui/full-screen
+         (merge (common2/nav-params)
+                {:main-prop     {:style {:position :relative}}
+                 :main          [simple-map current-project current-scenario @state @error @read-only?]
+                 :title         [:ul {:class-name "breadcrumb-menu"}
+                                 [:li [:a {:href (routes/projects2-show {:id (:id current-project)})}
+                                       (:name current-project)]]
+                                 [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
+                                 [:li (:name current-scenario)]]
+                 :title-actions (scenario-actions current-project current-scenario)
+                 :sidebar-prop  {:class [(if expanded-sidebar? :expanded-sidebar :compact-sidebar)]}})
          (if expanded-sidebar?
            [actions-table-view current-scenario]
            [side-panel-view current-scenario @error @read-only?])
