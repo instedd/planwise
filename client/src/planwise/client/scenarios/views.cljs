@@ -568,11 +568,14 @@
 
 (defn- scenario-breadcrumb
   [current-project current-scenario]
-  [:ul {:class-name "breadcrumb-menu"}
-   [:li [:a {:href (routes/projects2-show {:id (:id current-project)})}
-         (:name current-project)]]
-   [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
-   [:li (:name current-scenario)]])
+  (when current-project
+    [:ul {:class-name "breadcrumb-menu"}
+     [:li [:a {:href (routes/projects2-show {:id (:id current-project)})}
+           (:name current-project)]]
+     [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
+     [:li (if current-scenario
+            (:name current-scenario)
+            "...")]]))
 
 (defn display-current-scenario
   [current-project current-scenario]
@@ -602,5 +605,11 @@
   (let [current-scenario (subscribe [:scenarios/current-scenario])
         current-project  (subscribe [:projects2/current-project])]
     (fn []
-      (when (and @current-scenario @current-project)
-        [display-current-scenario @current-project @current-scenario]))))
+      (if (and @current-scenario @current-project)
+        [display-current-scenario @current-project @current-scenario]
+        [ui/full-screen
+         (merge (common2/nav-params)
+                {:main         [:div.loading-wrapper
+                                [:h3 "Loading..."]]
+                 :title        [scenario-breadcrumb @current-project @current-scenario]
+                 :sidebar-prop {:class "hidden"}})]))))
