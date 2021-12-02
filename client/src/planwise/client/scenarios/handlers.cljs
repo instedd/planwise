@@ -157,6 +157,22 @@
                 (assoc-in [:current-scenario :name] name)
                 (assoc-in [:view-state] :current-scenario))})))
 
+
+;; Sidebar expansion
+
+(rf/reg-event-db
+ :scenarios/expand-sidebar
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :view-state :show-actions-table)))
+
+(rf/reg-event-db
+ :scenarios/collapse-sidebar
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :view-state :current-scenario)))
+
+
 (defn new-provider-name
   [changeset]
   (let [new-providers (filter #(= (:action %) "create-provider") changeset)]
@@ -302,24 +318,12 @@
  in-scenarios
  (fn [db [_ _]]
    (-> db
+       (assoc :selected-suggestion nil)
        (assoc-in [:current-scenario :suggested-locations] nil)
        (assoc :view-state :current-scenario))))
 
-(rf/reg-event-db
- :scenarios/show-create-suggestions-menu
- in-scenarios
- (fn [db [_ _]]
-   (-> db
-       (assoc :view-state :show-options-to-create-provider))))
 
-(rf/reg-event-db
- :scenarios/close-create-suggestions-menu
- in-scenarios
- (fn [db [_ _]]
-   (-> db
-       (assoc :view-state :current-scenario))))
-
-;;Creating new-providers
+;; Creating new-providers
 
 (rf/reg-event-fx
  :scenarios.new-provider/fetch-suggested-locations
@@ -370,11 +374,18 @@
 (rf/reg-event-fx
  :scenarios.new-action/abort-fetching-suggestions
  in-scenarios
- (fn [{:keys [db]} [_ request-action-name]]
-   (let [request-key (get-in db [:current-scenario request-action-name :state])]
-     {:db (-> db (assoc-in [:current-scenario request-action-name :state] nil)
-              (assoc :view-state :current-scenario))
-      :api-abort request-key})))
+ (fn [{:keys [db]} [_]]
+   (let [view-state          (:view-state db)
+         request-action-name (case view-state
+                               :get-suggestions-for-new-provider :computing-best-locations
+                               :get-suggestions-for-improvements :computing-best-improvements
+                               nil)
+         request-key         (get-in db [:current-scenario request-action-name :state])]
+     (when (and request-action-name request-key)
+       {:db        (-> db
+                       (assoc-in [:current-scenario request-action-name :state] nil)
+                       (assoc :view-state :current-scenario))
+        :api-abort request-key}))))
 
 (rf/reg-event-db
  :scenarios/edit-change
@@ -409,20 +420,6 @@
      (assoc db :view-state (case state
                              :show-scenario-settings :current-scenario
                              :show-scenario-settings)))))
-
-(rf/reg-event-db
- :scenarios/show-actions-table
- in-scenarios
- (fn [db [_]]
-   (assoc db
-          :view-state :show-actions-table)))
-
-(rf/reg-event-db
- :scenarios/show-scenario
- in-scenarios
- (fn [db [_]]
-   (assoc db
-          :view-state :current-scenario)))
 
 (rf/reg-event-fx
  :scenarios.new-action/fetch-suggested-providers-to-improve

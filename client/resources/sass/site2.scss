@@ -154,6 +154,7 @@ main {
   grid-area: main;
   display: flex;
   flex: 1;
+  position: relative;
 }
 
 footer {
@@ -391,11 +392,35 @@ form.vertical, .fields-vertical {
   color: #9a9a9a;
 }
 
+.icon-button {
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  width: 40px;
+  background: transparent;
+  cursor: pointer;
+  &:hover {
+    background: #e6e6e6;
+  }
+}
 
 #sidebar {
   position: relative;
   .section {
     padding: 1rem;
+  }
+  .sidebar-title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-bottom: 1px solid #e6e6e6;
+    h1 {
+      flex: 1;
+      font-size: 1.3rem;
+    }
   }
   h1 {
     margin: 0;
@@ -408,14 +433,6 @@ form.vertical, .fields-vertical {
       text-transform: uppercase;
       display: block;
     }
-    &.title-icon {
-      position: relative;
-      padding-right: 3rem;
-      a {
-        position: absolute;
-        right: .8rem;
-      }
-    }
   }
   p {
     margin: 0;
@@ -426,32 +443,18 @@ form.vertical, .fields-vertical {
     margin: 0;
   }
 
-  .suggestion-list {
-    max-height: 490px !important;
-  }
-
   .scroll-list {
     width: 100%;
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
+
+    background: linear-gradient(#ffffff 30%, rgba(255,255,255, 0)), linear-gradient(rgba(255,255,255, 0), #ffffff 70%) 0 100%, radial-gradient(farthest-side at 50% 0, rgba(0,0,0, 0.2), rgba(0,0,0,0)), radial-gradient(farthest-side at 50% 100%, rgba(0,0,0, 0.2), rgba(0,0,0,0)) 0 100%;
+    background-attachment: local, local, scroll, scroll;
+    background-repeat: no-repeat;
+    background-size: 100% 30px, 100% 30px, 100% 15px, 100% 15px;
   }
 
-  .fade {
-    height: 1rem;
-    width: 100%;
-    position: absolute;
-    z-index: 1;
-
-    background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 20%, rgba(255,255,255,0) 99%, rgba(255,255,255,0) 100%); /* FF3.6-15 */
-    background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 20%,rgba(255,255,255,0) 99%,rgba(255,255,255,0) 100%); /* Chrome10-25,Safari5.1-6 */
-    background: linear-gradient(to bottom, rgba(255,255,255,1) 0%,rgba(255,255,255,1) 20%,rgba(255,255,255,0) 99%,rgba(255,255,255,0) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#00ffffff',GradientType=0 ); /* IE6-9 */
-    &.inverted {
-      transform: rotateX(180deg);
-      margin-top: -1rem;
-    }
-  }
 }
 
 .icon-list {
@@ -472,6 +475,7 @@ form.vertical, .fields-vertical {
   &:hover {
     background-color: #f0f0f0;
   }
+  border-top: 1px solid #e6e6e6;
 }
 
 .scenarios-content {
@@ -910,23 +914,19 @@ form.vertical, .fields-vertical {
 
 .info-computing-best-location {
   background-color: #404040;
-  margin: 7px 15px;
-  padding: 7px 10px;
+  padding: 10px 10px;
   color: #FFF;
   font-weight: 500;
 }
 
-.suggestion-list {
-  .border-btn-floating {
-    margin-top: -1.8rem !important;
-  }
+#sidebar .action-button {
+  position: absolute;
+  right: 1rem;
+  z-index: 2;
 }
 
 .border-btn-floating {
-    position: absolute;
-    right: 1rem;
     margin-top: -2rem;
-    z-index: 2;
     border-radius: 50%;
     padding: 3px;
 }
@@ -1179,11 +1179,6 @@ form.vertical, .fields-vertical {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.options-menu {
-  padding: 10px;
-  margin-left: 17rem;
 }
 
 .template-container {

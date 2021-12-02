@@ -2,7 +2,7 @@
   (:require [re-frame.core :as rf]
             [planwise.client.utils :as utils]
             [planwise.client.scenarios.db :as db]
-            [cljs.reader]))
+            [cljs.reader :as edn]))
 
 (rf/reg-sub
  :scenarios/current-scenario
@@ -16,13 +16,26 @@
 
 (rf/reg-sub
  :scenarios/error
- (fn [db _]
-   (cljs.reader/read-string (get-in db [:scenarios :current-scenario :error-message]))))
+ :<- [:scenarios/current-scenario]
+ (fn [scenario]
+   (edn/read-string (:error-message scenario))))
 
 (rf/reg-sub
- :scenarios/rename-dialog
+ :scenarios/rename-dialog-data
  (fn [db _]
    (get-in db [:scenarios :rename-dialog])))
+
+(rf/reg-sub
+ :scenarios/rename-dialog-open?
+ :<- [:scenarios/view-state]
+ (fn [view-state]
+   (= :rename-dialog view-state)))
+
+(rf/reg-sub
+ :scenarios/delete-dialog-open?
+ :<- [:scenarios/view-state]
+ (fn [view-state]
+   (= :delete-scenario view-state)))
 
 (rf/reg-sub
  :scenarios/changeset-dialog
@@ -102,11 +115,6 @@
  :scenarios.new-intervention/computing-best-improvements?
  (fn [db _]
    (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
-
-(rf/reg-sub
- :scenarios.new-action/options :<- [:scenarios/view-state]
- (fn [view-state [_]]
-   (= :show-options-to-create-provider view-state)))
 
 (defn update-capacity-and-demand
   [{:keys [capacity] :as provider} providers-data]

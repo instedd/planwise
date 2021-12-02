@@ -49,8 +49,7 @@
        [:div.icon-list-text
         [:p.strong name]
         [:p.grey-text
-         (action-description-with-investment props provider)]]]]
-     [:hr]]))
+         (action-description-with-investment props provider)]]]]]))
 
 (defn listing-component
   [props providers]
@@ -72,12 +71,11 @@
       ; and it is not nil when requesting suggestions for new providers
       [:p.grey-text (str "Required Capacity: " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]
       (when (some? coverage)
-        [:p.grey-text (str " Coverage: " (utils/format-number coverage) " " demand-unit)])]]]
-   [:hr]])
+        [:p.grey-text (str " Coverage: " (utils/format-number coverage) " " demand-unit)])]]]])
 
 (defn suggestion-listing-component
   [props suggestions]
-  [:div.scroll-list.suggestion-list
+  [:div.suggestion-list
    (map (fn [suggestion] [suggestion-row (merge props {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))}) suggestion])
         suggestions)])
 

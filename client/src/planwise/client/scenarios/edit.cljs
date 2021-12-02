@@ -1,7 +1,6 @@
 (ns planwise.client.scenarios.edit
   (:require [re-frame.core :refer [dispatch subscribe]]
             [reagent.core :as r]
-            [planwise.client.asdf :as asdf]
             [planwise.client.utils :as utils]
             [planwise.client.dialog :refer [dialog]]
             [planwise.client.ui.common :as ui]
@@ -13,20 +12,42 @@
             [planwise.client.ui.rmwc :as m]
             [planwise.common :as common]))
 
+;;; Scenario dialogs
+
 (defn rename-scenario-dialog
   []
-  (let [rename-dialog (subscribe [:scenarios/rename-dialog])
-        view-state    (subscribe [:scenarios/view-state])]
+  (let [dialog-data    (subscribe [:scenarios/rename-dialog-data])
+        open?          (subscribe [:scenarios/rename-dialog-open?])
+        accept-fn      #(dispatch [:scenarios/accept-rename-dialog])
+        cancel-fn      #(dispatch [:scenarios/cancel-dialog])
+        update-name-fn (fn [event]
+                         (dispatch [:scenarios/save-key
+                                    [:rename-dialog :value]
+                                    (-> event .-target .-value)]))]
     (fn []
-      (dialog {:open?       (= @view-state :rename-dialog)
-               :title       "Rename scenario"
-               :content     [common2/text-field {:label     "Name"
-                                                 :value     (str (:value @rename-dialog))
-                                                 :on-change #(dispatch [:scenarios/save-key
-                                                                        [:rename-dialog :value] (-> % .-target .-value)])}]
-               :acceptable? (seq (:value @rename-dialog))
-               :accept-fn   #(dispatch [:scenarios/accept-rename-dialog])
-               :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}))))
+      (let [scenario-name (:value @dialog-data)
+            data-valid?   (seq scenario-name)]
+        (dialog {:open?       @open?
+                 :title       "Rename scenario"
+                 :content     [common2/text-field {:label     "Name"
+                                                   :value     (str scenario-name)
+                                                   :on-change update-name-fn}]
+                 :acceptable? data-valid?
+                 :accept-fn   accept-fn
+                 :cancel-fn   cancel-fn})))))
+
+(defn delete-scenario-dialog
+  []
+  (let [scenario  (subscribe [:scenarios/current-scenario])
+        open?     (subscribe [:scenarios/delete-dialog-open?])
+        delete-fn #(dispatch [:scenarios/delete-current-scenario])
+        cancel-fn #(dispatch [:scenarios/cancel-dialog])]
+    (fn []
+      [dialog {:open?     @open?
+               :title     (str "Delete " (:name @scenario))
+               :content   [:p "Do you want to remove current scenario from project?"]
+               :delete-fn delete-fn
+               :cancel-fn cancel-fn}])))
 
 (defn- get-investment-from-project-config
   [capacity costs]
@@ -162,39 +183,60 @@
                        (when-not new?
                          {:delete-fn #(dispatch [:scenarios/delete-change (:id @provider)])})))))))
 
-(defn new-provider-button
+
+;;; "New" actions UI
+
+(defn- new-provider-button
   [{:keys [type on-click disabled]}]
   [:div.border-btn-floating (when (= type :computing)
                               {:class [:border-btn-floating-animated]})
-   [m/Fab (merge {:class [:btn-floating]
-                  :disabled disabled}
-                 (when (some? on-click)
-                   {:on-click on-click}))
+   [m/Fab {:disabled disabled
+           :on-click on-click}
     (case type
       :computing "stop"
-      :new-unit "cancel"
-      "domain")]])
+      :new-unit  "close"
+      "add")]])
+
+(defn- is-fetching-suggestions?
+  [state]
+  (#{:get-suggestions-for-new-provider
+     :get-suggestions-for-improvements} state))
+
+(defn- is-adding-change?
+  [state]
+  (#{:new-provider :new-intervention} state))
 
 (defn create-new-action-component
-  [{:keys [type provider-unit on-click disabled]}]
-  (let [open (subscribe [:scenarios.new-action/options])]
-    [:div.scenario-settings
-     [new-provider-button {:type type :on-click on-click :disabled disabled}]
-     [m/Menu (when @open {:class [:options-menu :mdc-menu--open]})
-      [m/MenuItem
-       {:on-click #(dispatch [:scenarios.new-action/simple-create-provider])}
-       "Create one"]
-      [m/MenuItem
-       {:on-click #(dispatch [:scenarios.new-provider/fetch-suggested-locations])}
-       (str "Get suggestions for new " provider-unit)]
-      [m/MenuItem
-       {:on-click #(dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
-       (str "Get suggestions to improve existing " provider-unit)]]]))
-
-(defn delete-scenario-dialog
-  [state current-scenario]
-  [dialog {:open? (= state :delete-scenario)
-           :title (str "Delete " (:name current-scenario))
-           :cancel-fn #(dispatch [:scenarios/cancel-dialog])
-           :delete-fn #(dispatch [:scenarios/delete-current-scenario])
-           :content [:p "Do you want to remove current scenario from project?"]}])
+  [_]
+  (let [open?                (r/atom false)
+        toggle-menu-fn       #(swap! open? not)
+        close-and-dispatch   (fn [event]
+                               (fn []
+                                 (reset! open? false)
+                                 (dispatch event)))
+        view-state           (subscribe [:scenarios/view-state])
+        cancel-fetch-fn      #(dispatch [:scenarios.new-action/abort-fetching-suggestions])
+        cancel-add-change-fn #(dispatch [:scenarios/close-suggestions])]
+    (fn [{:keys [provider-unit disabled]}]
+      (let [[type on-click]
+            (cond
+              (is-fetching-suggestions? @view-state) [:computing cancel-fetch-fn]
+              (is-adding-change? @view-state)        [:new-unit cancel-add-change-fn]
+              :else                                  [:default toggle-menu-fn])]
+        [m/MenuAnchor {:className "action-button"}
+         [new-provider-button {:type     type
+                               :on-click on-click
+                               :disabled disabled}]
+         [m/Menu {:class (when @open? [:mdc-menu--open])}
+          [m/MenuItem
+           {:on-click (close-and-dispatch [:scenarios.new-action/simple-create-provider])}
+           [m/ListItemGraphic "domain"]
+           (str "Add new " provider-unit)]
+          [m/MenuItem
+           {:on-click (close-and-dispatch [:scenarios.new-provider/fetch-suggested-locations])}
+           [m/ListItemGraphic "assistant"]
+           (str "Suggest locations for new " provider-unit)]
+          [m/MenuItem
+           {:on-click (close-and-dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
+           [m/ListItemGraphic "arrow_upward"]
+           (str "Suggest " provider-unit " to increase capacity")]]]))))
