@@ -127,7 +127,7 @@
  in-projects2
  (fn [{:keys [db]} [_ id]]
    {:dispatch-n [[:sources/load]
-                 [:scenarios/invalidate-scenarios]]
+                 [:scenarios/clear-scenarios]]
     :api (assoc (api/get-project id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))

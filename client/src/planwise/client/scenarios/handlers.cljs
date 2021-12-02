@@ -287,6 +287,12 @@
    (update db :list asdf/invalidate!)))
 
 (rf/reg-event-db
+ :scenarios/clear-scenarios
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :list (asdf/new nil))))
+
+(rf/reg-event-db
  :scenarios/change-sort-column-order
  in-scenarios
  (fn [db [_ column order]]
