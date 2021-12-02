@@ -42,10 +42,10 @@
    [header {:sections sections :account account :title title :tabs tabs :action action :secondary-actions secondary-actions}]])
 
 (defn full-screen
-  [{:keys [footer main-prop main sidebar-prop] :as props} & children]
+  [{:keys [footer main sidebar-prop] :as props} & children]
   (let [header-props (dissoc props :main :main-prop :sidebar-prop :footer)]
     [:div.layout.full-screen
-     [:main main-prop main]
+     [:main main]
      (into [:aside#sidebar sidebar-prop] children)
      footer
      [header header-props]]))

@@ -97,7 +97,7 @@
             (some? change)        "Edit"
             (not matches-filters) "Upgrade"
             :else                 "Increase")
-          #(dispatch [:scenarios/edit-change (assoc provider :change change*)]))])])))
+          #(dispatch [:scenarios/open-changeset-dialog (assoc provider :change change*)]))])])))
 
 (defn- get-percentage
   [total relative]
@@ -150,10 +150,9 @@
 (defn- scenario-selected-provider-layer
   []
   (when-let [selected-provider @(subscribe [:scenarios.map/selected-provider])]
-    [:geojson-layer {:data   (:coverage-geom selected-provider)
-                     :group  {:pane "tilePane"}
-                     :color  "#40404080"
-                     :stroke true}]))
+    [:geojson-layer {:data      (:coverage-geom selected-provider)
+                     :group     {:pane "tilePane"}
+                     :className "coverage-polygon"}]))
 
 
 ;;; Suggestions
@@ -349,9 +348,6 @@
         demand-unit     (get-demand-unit @current-project)]
     [:div
      [:div {:class-name "section"}
-      [:h1 {:class-name "title-icon"} name]]
-     [:hr]
-     [:div {:class-name "section"}
       [:h1 {:class-name "large"}
        [:small (str "Initial " demand-unit " coverage")]
        (cond
@@ -389,55 +385,47 @@
      [:div.section
       [:h1.large
        [:small "Effort required"]
-       (utils/format-effort effort analysis-type)]]
-     [:hr]]))
+       (utils/format-effort effort analysis-type)]]]))
 
-(defn suggested-locations-list
-  [props suggested-locations]
-  [:<>
-   [:div.section
-    [:h1.title-icon "Suggestion list"]]
-   [changeset/suggestion-listing-component props suggested-locations]])
 
 (defn new-provider-unit?
   [view-state]
   (or (= view-state :new-provider)
       (= view-state :new-intervention)))
 
+(defn- close-button
+  [{:keys [on-click]}]
+  [:button.icon-button {:on-click on-click} [m/Icon "close"]])
+
 (defn suggestions-view
-  [{:keys [project locations]}]
+  [{:keys [project suggestions suggestion-type]}]
   (let [demand-unit   (get-demand-unit project)
         capacity-unit (get-capacity-unit project)
-        provider-unit (get-provider-unit project)]
+        provider-unit (get-provider-unit project)
+        title         (case suggestion-type
+                        :new-provider (str "Locations for new " provider-unit)
+                        :improvement  (str (capitalize provider-unit) " for capacity increase")
+                        "Suggestions")]
     [:<>
-     [:div.suggestion-list
-      [edit/create-new-action-component {:type :new-unit
-                                         :provider-unit provider-unit
-                                         :on-click #(dispatch [:scenarios/close-suggestions])}]]
-     [suggested-locations-list {:demand-unit demand-unit
-                                :capacity-unit capacity-unit}
-      locations]]))
+     [:div.section.sidebar-title
+      [:h1 title]
+      [close-button {:on-click #(dispatch [:scenarios/close-suggestions])}]]
+     [:div.scroll-list
+      [changeset/suggestion-listing-component
+       {:demand-unit   demand-unit
+        :capacity-unit capacity-unit}
+       suggestions]]]))
 
 (defn scenario-view
   [{:keys [view-state scenario computing? computing-best-locations? providers project error]}]
   (let [provider-unit (get-provider-unit project)
         demand-unit   (get-demand-unit project)
-        capacity-unit (get-capacity-unit project)
-        target        (if computing-best-locations? :computing-best-locations :computing-best-improvements)
-        action-type   (cond computing? :computing
-                            (new-provider-unit? view-state) :new-unit
-                            :else :default)
-        action-event  (cond computing? [:scenarios.new-action/abort-fetching-suggestions target]
-                            (new-provider-unit? view-state) [:scenarios/close-suggestions]
-                            (= view-state :show-options-to-create-provider) [:scenarios/close-create-suggestions-menu]
-                            :else [:scenarios/show-create-suggestions-menu])]
+        capacity-unit (get-capacity-unit project)]
     [:<>
      [:div
       [scenario-info view-state scenario]
-      [edit/create-new-action-component {:type action-type
-                                         :provider-unit provider-unit
-                                         :disabled (scenario-pending? scenario)
-                                         :on-click #(dispatch action-event)}]
+      [edit/create-new-action-component {:provider-unit provider-unit
+                                         :disabled      (scenario-pending? scenario)}]
       (if computing?
         [:div.info-computing-best-location
          [:small (if computing-best-locations?
@@ -446,7 +434,7 @@
      (if error
        [raise-alert scenario error]
        [:<>
-        [changeset/listing-component {:demand-unit demand-unit
+        [changeset/listing-component {:demand-unit   demand-unit
                                       :capacity-unit capacity-unit}
          providers]])]))
 
@@ -460,15 +448,19 @@
         current-project              (subscribe [:projects2/current-project])
         computing-suggestions?       (or @computing-best-locations? @computing-best-improvements?)]
     (if @suggested-locations
-      [suggestions-view {:locations @suggested-locations
-                         :project @current-project}]
-      [scenario-view {:view-state @view-state
-                      :scenario current-scenario
-                      :computing? computing-suggestions?
+      [suggestions-view {:suggestions     @suggested-locations
+                         :suggestion-type (case @view-state
+                                            :new-provider     :new-provider
+                                            :new-intervention :improvement
+                                            nil)
+                         :project         @current-project}]
+      [scenario-view {:view-state                @view-state
+                      :scenario                  current-scenario
+                      :computing?                computing-suggestions?
                       :computing-best-locations? @computing-best-locations?
-                      :providers @providers-from-changeset
-                      :project @current-project
-                      :error error}])))
+                      :providers                 @providers-from-changeset
+                      :project                   @current-project
+                      :error                     error}])))
 
 (defn side-panel-view
   [current-scenario error read-only?]
@@ -503,14 +495,14 @@
       @providers-from-changeset]]))
 
 (defn sidebar-expand-button
-  [expanded-sidebar?]
-  [:div.sidebar-expand-button
-   [:div.sidebar-button {:on-click #(dispatch [(if expanded-sidebar?
-                                                 :scenarios/show-scenario
-                                                 :scenarios/show-actions-table)])}
-    [:div.sidebar-button-inner
-     [m/Icon {:strategy "ligature"
-              :use (if expanded-sidebar? "arrow_left" "arrow_right")}]]]])
+  [expanded?]
+  (let [[icon event] (if expanded?
+                       ["arrow_left" :scenarios/collapse-sidebar]
+                       ["arrow_right" :scenarios/expand-sidebar])]
+    [:div.sidebar-expand-button
+     [:div.sidebar-button {:on-click #(dispatch [event])}
+      [:div.sidebar-button-inner
+       [m/Icon icon]]]]))
 
 (defn- sidebar-search
   []
@@ -574,8 +566,19 @@
                        :icon "download"}
     "Download providers (CSV)"]])
 
+(defn- scenario-breadcrumb
+  [current-project current-scenario]
+  (when current-project
+    [:ul {:class-name "breadcrumb-menu"}
+     [:li [:a {:href (routes/projects2-show {:id (:id current-project)})}
+           (:name current-project)]]
+     [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
+     [:li (if current-scenario
+            (:name current-scenario)
+            "...")]]))
+
 (defn display-current-scenario
-  [current-project {:keys [id] :as current-scenario}]
+  [current-project current-scenario]
   (let [read-only? (subscribe [:scenarios/read-only?])
         state      (subscribe [:scenarios/view-state])
         error      (subscribe [:scenarios/error])]
@@ -583,21 +586,16 @@
       (let [expanded-sidebar? (= @state :show-actions-table)]
         [ui/full-screen
          (merge (common2/nav-params)
-                {:main-prop     {:style {:position :relative}}
-                 :main          [simple-map current-project current-scenario @state @error @read-only?]
-                 :title         [:ul {:class-name "breadcrumb-menu"}
-                                 [:li [:a {:href (routes/projects2-show {:id (:id current-project)})}
-                                       (:name current-project)]]
-                                 [:li [m/Icon {:strategy "ligature" :use "keyboard_arrow_right"}]]
-                                 [:li (:name current-scenario)]]
+                {:main          [simple-map current-project current-scenario @state @error @read-only?]
+                 :title         [scenario-breadcrumb current-project current-scenario]
                  :title-actions (scenario-actions current-project current-scenario)
                  :sidebar-prop  {:class [(if expanded-sidebar? :expanded-sidebar :compact-sidebar)]}})
          (if expanded-sidebar?
            [actions-table-view current-scenario]
            [side-panel-view current-scenario @error @read-only?])
          [edit/rename-scenario-dialog]
+         [edit/delete-scenario-dialog]
          [edit/changeset-dialog current-project current-scenario]
-         [edit/delete-scenario-dialog @state current-scenario]
          [sidebar-expand-button expanded-sidebar?]
          (when-not expanded-sidebar?
            [sidebar-search])]))))
@@ -607,5 +605,11 @@
   (let [current-scenario (subscribe [:scenarios/current-scenario])
         current-project  (subscribe [:projects2/current-project])]
     (fn []
-      (when (and @current-scenario @current-project)
-        [display-current-scenario @current-project @current-scenario]))))
+      (if (and @current-scenario @current-project)
+        [display-current-scenario @current-project @current-scenario]
+        [ui/full-screen
+         (merge (common2/nav-params)
+                {:main         [:div.loading-wrapper
+                                [:h3 "Loading..."]]
+                 :title        [scenario-breadcrumb @current-project @current-scenario]
+                 :sidebar-prop {:class "hidden"}})]))))
