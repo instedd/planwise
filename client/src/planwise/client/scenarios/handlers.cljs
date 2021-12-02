@@ -120,42 +120,8 @@
            :selected-provider   nil
            :selected-suggestion nil
            :providers-search    nil
-           :view-state          :current-scenario})))
-
-;; Editing scenario
-
-(rf/reg-event-db
- :scenarios/open-rename-dialog
- in-scenarios
- (fn [db [_]]
-   (let [name (get-in db [:current-scenario :name])]
-     (assoc db
-            :view-state :rename-dialog
-            :rename-dialog {:value name}))))
-
-(rf/reg-event-db
- :scenarios/cancel-dialog
- in-scenarios
- (fn [db [_]]
-   (let [cancel-next-state (get-in db [:cancel-next-state])]
-     (assoc db
-            :view-state        (or cancel-next-state :current-scenario)
-            :cancel-next-state nil
-            :changeset-dialog  nil
-            :rename-dialog     nil))))
-
-(rf/reg-event-fx
- :scenarios/accept-rename-dialog
- in-scenarios
- (fn [{:keys [db]} [_]]
-   (let [name (get-in db [:rename-dialog :value])
-         current-scenario (assoc (:current-scenario db) :name name)]
-     {:api  (assoc (api/update-scenario (:id current-scenario) current-scenario)
-                   :on-success [:scenarios/invalidate-scenarios])
-      :db   (-> db
-                ;; do not reset rename-dialog to nil or dialog animation after <enter> will fail
-                (assoc-in [:current-scenario :name] name)
-                (assoc-in [:view-state] :current-scenario))})))
+           :view-state          :current-scenario
+           :open-dialog         nil})))
 
 
 ;; Sidebar expansion
@@ -173,6 +139,63 @@
    (assoc db :view-state :current-scenario)))
 
 
+;;; Editing scenario -- Dialogs
+
+;; Closes any dialog open
+(rf/reg-event-db
+ :scenarios/cancel-dialog
+ in-scenarios
+ (fn [db [_]]
+   (assoc db
+          :open-dialog      nil
+          :changeset-dialog nil
+          :rename-dialog    nil)))
+
+;;; Rename scenario
+
+(rf/reg-event-db
+ :scenarios/open-rename-dialog
+ in-scenarios
+ (fn [db [_]]
+   (let [name (get-in db [:current-scenario :name])]
+     (assoc db
+            :open-dialog   :rename-scenario
+            :rename-dialog {:value name}))))
+
+(rf/reg-event-fx
+ :scenarios/accept-rename-dialog
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   (let [name             (get-in db [:rename-dialog :value])
+         current-scenario (assoc (:current-scenario db) :name name)]
+     {:api (assoc (api/update-scenario (:id current-scenario) current-scenario)
+                  :on-success [:scenarios/invalidate-scenarios])
+      :db  (-> db
+               ;; do not reset rename-dialog to nil or dialog animation after <enter> will fail
+               (assoc-in [:current-scenario :name] name)
+               (assoc-in [:open-dialog] nil))})))
+
+
+;;; Delete scenario
+
+(rf/reg-event-db
+ :scenarios/open-delete-dialog
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :open-dialog :delete-scenario)))
+
+(rf/reg-event-fx
+ :scenarios/delete-current-scenario
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   (let [id (get-in db [:current-scenario :id])]
+     {:api      (assoc (api/delete-scenario id)
+                       :on-success [:projects2/project-scenarios])
+      :dispatch [:scenarios/load-scenarios]})))
+
+
+;;; Scenario action editing
+
 (defn new-provider-name
   [changeset]
   (let [new-providers (filter #(= (:action %) "create-provider") changeset)]
@@ -186,16 +209,16 @@
  in-scenarios
  (fn [{:keys [db]} [_ location suggestion]]
    (let [{:keys [current-scenario]} db
-         new-action   (db/new-action {:location location
-                                      :name (new-provider-name (:changeset current-scenario))} :create)
-         new-provider (merge (db/new-provider-from-change new-action) suggestion)
-         updated-scenario (dissoc current-scenario
-                                  :computing-best-locations)]
-     {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
-                   :on-success [:scenarios/update-demand-information])
-      :db   (assoc  db
-                    :current-scenario  updated-scenario
-                    :cancel-next-state (:view-state db))
+
+         new-name         (new-provider-name (:changeset current-scenario))
+         new-action       (db/new-action {:location location
+                                          :name     new-name}
+                                         :create)
+         new-provider     (merge (db/new-provider-from-change new-action) suggestion)
+         updated-scenario (dissoc current-scenario :computing-best-locations)]
+     {:api      (assoc (api/update-scenario (:id current-scenario) updated-scenario)
+                       :on-success [:scenarios/update-demand-information])
+      :db       (assoc  db :current-scenario updated-scenario)
       :dispatch [:scenarios/open-changeset-dialog new-provider]})))
 
 (rf/reg-event-db
@@ -203,41 +226,42 @@
  in-scenarios
  (fn [db [_ change]]
    (assoc db
-          :view-state        :changeset-dialog
-          :changeset-dialog  change)))
+          :open-dialog      :scenario-changeset
+          :changeset-dialog change)))
 
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
  in-scenarios
  (fn [{:keys [db]} [_]]
-   (let [current-scenario  (get-in db [:current-scenario])
-         updated-provider  (get-in db [:changeset-dialog])
-         new-change?       (nil? (utils/find-by-id (:changeset current-scenario) (:id updated-provider)))
-         updated-scenario  (update current-scenario
-                                   :changeset
-                                   (fn [c]
-                                     (if new-change?
-                                       (conj (vec c) (:change updated-provider))
-                                       (utils/replace-by-id c (:change updated-provider)))))]
-     {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
-                   :on-success [:scenarios/update-demand-information])
-      :db   (-> db
-                (assoc-in [:current-scenario] updated-scenario)
-                (assoc-in [:cancel-next-state] nil)
-                (assoc-in [:view-state] :current-scenario))})))
+   (let [current-scenario (get-in db [:current-scenario])
+         updated-provider (get-in db [:changeset-dialog])
+         new-change?      (nil? (utils/find-by-id (:changeset current-scenario) (:id updated-provider)))
+         updated-scenario (update current-scenario
+                                  :changeset
+                                  (fn [c]
+                                    (if new-change?
+                                      (conj (vec c) (:change updated-provider))
+                                      (utils/replace-by-id c (:change updated-provider)))))]
+     {:api (assoc (api/update-scenario (:id current-scenario) updated-scenario)
+                  :on-success [:scenarios/update-demand-information])
+      :db  (-> db
+               (assoc-in [:current-scenario] updated-scenario)
+               (assoc-in [:open-dialog] nil))})))
 
 (rf/reg-event-fx
  :scenarios/delete-change
  in-scenarios
  (fn [{:keys [db]} [_ id]]
-   (let [current-scenario (:current-scenario db)
+   (let [current-scenario   (:current-scenario db)
          modified-changeset (utils/remove-by-id (:changeset current-scenario) id)
-         updated-scenario (assoc current-scenario :changeset modified-changeset)]
-     {:api  (assoc (api/update-scenario (:id current-scenario) updated-scenario)
-                   :on-success [:scenarios/update-demand-information])
-      :db   (assoc db :current-scenario updated-scenario
-                   :changeset-dialog nil)
+         updated-scenario   (assoc current-scenario :changeset modified-changeset)]
+     {:api      (assoc (api/update-scenario (:id current-scenario) updated-scenario)
+                       :on-success [:scenarios/update-demand-information])
+      :db       (assoc db
+                       :current-scenario updated-scenario
+                       :changeset-dialog nil)
       :dispatch [:scenarios/cancel-dialog]})))
+
 
 ;; ----------------------------------------------------------------------------
 ;; Scenarios listing
@@ -388,31 +412,6 @@
         :api-abort request-key}))))
 
 (rf/reg-event-db
- :scenarios/edit-change
- in-scenarios
- (fn [db [_ change]]
-   (assoc db
-          :view-state        :changeset-dialog
-          :cancel-next-state (:view-state db)
-          :changeset-dialog  change)))
-
-(rf/reg-event-fx
- :scenarios/delete-current-scenario
- in-scenarios
- (fn [{:keys [db]} [_]]
-   (let [id (get-in db [:current-scenario :id])]
-     {:api (assoc (api/delete-scenario id)
-                  :on-success [:projects2/project-scenarios])
-      :dispatch [:scenarios/load-scenarios]})))
-
-(rf/reg-event-db
- :scenarios/open-delete-dialog
- in-scenarios
- (fn [db [_]]
-   (assoc db
-          :view-state :delete-scenario)))
-
-(rf/reg-event-db
  :scenarios/show-scenario-settings
  in-scenarios
  (fn [db [_]]
@@ -465,7 +464,7 @@
    (let [{:keys [view-state]} db]
      {:dispatch (if (= view-state :new-provider)
                   [:scenarios/create-provider (:location suggestion) {:required-capacity (:action-capacity suggestion)}]
-                  [:scenarios/edit-change suggestion])})))
+                  [:scenarios/open-changeset-dialog suggestion])})))
 
 (defn- provider-matcher
   [search-value]

@@ -97,7 +97,7 @@
             (some? change)        "Edit"
             (not matches-filters) "Upgrade"
             :else                 "Increase")
-          #(dispatch [:scenarios/edit-change (assoc provider :change change*)]))])])))
+          #(dispatch [:scenarios/open-changeset-dialog (assoc provider :change change*)]))])])))
 
 (defn- get-percentage
   [total relative]
