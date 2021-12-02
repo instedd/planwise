@@ -152,21 +152,20 @@
 (defn changeset-dialog
   [project scenario]
   (let [provider   (subscribe [:scenarios/changeset-dialog])
-        view-state (subscribe [:scenarios/view-state])]
+        open?      (subscribe [:scenarios/changeset-dialog-open?])]
     (fn [{:keys [config] :as project} scenario]
-      (let [open?         (= @view-state :changeset-dialog)
-            action        (get-in @provider [:change :action])
+      (let [action        (get-in @provider [:change :action])
             budget        (get-in config [:actions :budget])
             budget?       (common/is-budget (get-in config [:analysis-type]))
             new?          (new-provider? @provider)
             demand-unit   (common/get-demand-unit project)
             capacity-unit (common/get-capacity-unit project)]
-        (dialog (merge {:open?       open?
+        (dialog (merge {:open?       @open?
                         :acceptable? (and (or (not budget?)
                                               ((fnil pos? 0) (get-in @provider [:change :investment])))
                                           ((fnil pos? 0) (get-in @provider [:change :capacity])))
                         :title       (action->title action)
-                        :content     (when open?
+                        :content     (when @open?
                                        (changeset-dialog-content
                                         (merge @provider
                                                (if budget?

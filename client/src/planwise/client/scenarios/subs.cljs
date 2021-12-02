@@ -15,6 +15,11 @@
    (get-in db [:scenarios :view-state])))
 
 (rf/reg-sub
+ :scenarios/open-dialog
+ (fn [db _]
+   (get-in db [:scenarios :open-dialog])))
+
+(rf/reg-sub
  :scenarios/error
  :<- [:scenarios/current-scenario]
  (fn [scenario]
@@ -27,20 +32,26 @@
 
 (rf/reg-sub
  :scenarios/rename-dialog-open?
- :<- [:scenarios/view-state]
- (fn [view-state]
-   (= :rename-dialog view-state)))
+ :<- [:scenarios/open-dialog]
+ (fn [open-dialog]
+   (= :rename-scenario open-dialog)))
 
 (rf/reg-sub
  :scenarios/delete-dialog-open?
- :<- [:scenarios/view-state]
- (fn [view-state]
-   (= :delete-scenario view-state)))
+ :<- [:scenarios/open-dialog]
+ (fn [open-dialog]
+   (= :delete-scenario open-dialog)))
 
 (rf/reg-sub
  :scenarios/changeset-dialog
  (fn [db _]
    (get-in db [:scenarios :changeset-dialog])))
+
+(rf/reg-sub
+ :scenarios/changeset-dialog-open?
+ :<- [:scenarios/open-dialog]
+ (fn [open-dialog]
+   (= :scenario-changeset open-dialog)))
 
 (rf/reg-sub
  :scenarios/list

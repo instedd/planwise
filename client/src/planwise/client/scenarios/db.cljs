@@ -2,19 +2,19 @@
   (:require [planwise.client.asdf :as asdf]))
 
 (def initial-db
-  {:view-state :current-scenario
-   :cancel-next-state        nil
-   :rename-dialog            nil
-   :current-scenario         nil
-   :changeset-dialog         nil
-   :selected-provider        nil
-   :selected-suggestion      nil
-   :coverage-cache           nil
-   :list-scope               nil
-   :list                     (asdf/new nil)
-   :sort-column              nil
-   :sort-order               nil
-   :providers-search         nil})
+  {:view-state          :current-scenario
+   :open-dialog         nil
+   :rename-dialog       nil
+   :current-scenario    nil
+   :changeset-dialog    nil
+   :selected-provider   nil
+   :selected-suggestion nil
+   :coverage-cache      nil
+   :list-scope          nil
+   :list                (asdf/new nil)
+   :sort-column         nil
+   :sort-order          nil
+   :providers-search    nil})
 
 (defmulti new-action :action-name)
 
