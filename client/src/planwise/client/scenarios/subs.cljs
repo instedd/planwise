@@ -161,11 +161,6 @@
    (map #(utils/find-by-id all-providers (:id %)) changeset)))
 
 (rf/reg-sub
- :scenarios/scenario-menu-settings :<- [:scenarios/view-state]
- (fn [view-state [_]]
-   (= :show-scenario-settings view-state)))
-
-(rf/reg-sub
  :scenarios.current/source-demand
  (fn [db]
    (get-in db [:scenarios :current-scenario :source-demand] 0)))

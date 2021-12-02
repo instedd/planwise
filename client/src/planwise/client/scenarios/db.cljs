@@ -1,6 +1,25 @@
 (ns planwise.client.scenarios.db
   (:require [planwise.client.asdf :as asdf]))
 
+;; View state possible values
+;;
+;;                  :get-suggestions-for-new-provider
+;;                           ▲  │        │
+;;                           │  │        ▼
+;;                           │  │  ┌──►:new-provider
+;;          ┌─────────────┐  │  │  │     │   ┌────────────┐
+;;          │             │  │  ▼  │     ▼   │            │
+;;          ▼           ┌─┴──┴─────┴─────────┴─┐          ▼
+;; :show-actions-table  │  :current-scenario   │   :search-providers
+;;          │           └────┬─────────────────┘          │
+;;          │             ▲  │  ▲        ▲   ▲            │
+;;          └─────────────┘  │  │        │   └────────────┘
+;;                           │  │  :new-intervention
+;;                           │  │        ▲
+;;                           ▼  │        │
+;;                 :get-sugggestions-for-improvements
+
+
 (def initial-db
   {:view-state          :current-scenario
    :open-dialog         nil
