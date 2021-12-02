@@ -150,10 +150,9 @@
 (defn- scenario-selected-provider-layer
   []
   (when-let [selected-provider @(subscribe [:scenarios.map/selected-provider])]
-    [:geojson-layer {:data   (:coverage-geom selected-provider)
-                     :group  {:pane "tilePane"}
-                     :color  "#40404080"
-                     :stroke true}]))
+    [:geojson-layer {:data      (:coverage-geom selected-provider)
+                     :group     {:pane "tilePane"}
+                     :className "coverage-polygon"}]))
 
 
 ;;; Suggestions
