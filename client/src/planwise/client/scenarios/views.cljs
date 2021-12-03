@@ -436,7 +436,45 @@
        [:<>
         [changeset/listing-component {:demand-unit   demand-unit
                                       :capacity-unit capacity-unit}
-         providers]])]))
+         providers]
+        [:div.search-bottom-bar
+         {:on-click #(dispatch [:scenarios/start-searching])}
+         [m/Icon "search"]
+         [:span "Search facilities"]]])]))
+
+
+(defn- search-view
+  [project]
+  (let [search-value    (r/atom "")
+        close-fn        #(dispatch [:scenarios/cancel-search])
+        dispatch-search (utils/debounced #(dispatch [:scenarios/search-providers %]) 500)
+        update-search   (fn [value]
+                          (reset! search-value value)
+                          (dispatch-search value))
+        search-again    (fn []
+                          (dispatch-search :immediate @search-value))
+        matches         (subscribe [:scenarios/search-providers-matches])
+        demand-unit     (get-demand-unit project)
+        capacity-unit   (get-capacity-unit project)]
+    (fn [_]
+      [:<>
+       [:div.section.sidebar-title.search
+        [m/Icon "search"]
+        [:input {:type        :text
+                 :auto-focus  true
+                 :on-key-down (fn [evt]
+                                (case (.-which evt)
+                                  27 (close-fn)
+                                  13 (search-again)
+                                  nil))
+                 :placeholder "Search facilities"
+                 :value       @search-value
+                 :on-change   #(update-search (-> % .-target .-value))}]
+        [close-button {:on-click close-fn}]]
+       (when (seq @matches)
+         [changeset/listing-component {:demand-unit   demand-unit
+                                       :capacity-unit capacity-unit}
+          @matches])])))
 
 (defn side-panel-view-2
   [current-scenario error]
@@ -444,16 +482,23 @@
         computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
         suggested-locations          (subscribe [:scenarios.new-provider/suggested-locations])
         view-state                   (subscribe [:scenarios/view-state])
+        searching?                   (subscribe [:scenarios/searching-providers?])
         providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])
         current-project              (subscribe [:projects2/current-project])
         computing-suggestions?       (or @computing-best-locations? @computing-best-improvements?)]
-    (if @suggested-locations
+    (cond
+      @searching?
+      [search-view @current-project]
+
+      @suggested-locations
       [suggestions-view {:suggestions     @suggested-locations
                          :suggestion-type (case @view-state
                                             :new-provider     :new-provider
                                             :new-intervention :improvement
                                             nil)
                          :project         @current-project}]
+
+      :else
       [scenario-view {:view-state                @view-state
                       :scenario                  current-scenario
                       :computing?                computing-suggestions?
@@ -501,47 +546,9 @@
                        ["arrow_right" :scenarios/expand-sidebar])]
     [:div.sidebar-expand-button
      [:div.sidebar-button {:on-click #(dispatch [event])}
-      [:div.sidebar-button-inner
-       [m/Icon icon]]]]))
+      [m/Icon icon]]]))
 
-(defn- sidebar-search
-  []
-  (let [expanded?       (r/atom false)
-        search-value    (r/atom "")
-        close-fn        (fn []
-                          (reset! expanded? false)
-                          (reset! search-value "")
-                          (dispatch [:scenarios/clear-providers-search]))
-        toggle-fn       (fn []
-                          (if @expanded? (close-fn) (reset! expanded? true)))
-        dispatch-search (utils/debounced #(dispatch [:scenarios/search-providers %]) 500)
-        update-search   (fn [value]
-                          (reset! search-value value)
-                          (dispatch-search value))
-        search-again    (fn []
-                          (dispatch-search :immediate @search-value))
-        matches         (subscribe [:scenarios/search-providers-matches])]
-    (fn []
-      [:div.sidebar-search
-       {:class (if @expanded? "expanded")}
-       (when @expanded?
-         [:<>
-          [:input {:type        :text
-                   :auto-focus  true
-                   :on-blur     close-fn
-                   :on-key-down (fn [evt]
-                                  (case (.-which evt)
-                                    27 (close-fn)
-                                    13 (search-again)
-                                    nil))
-                   :placeholder "Search providers"
-                   :value       @search-value
-                   :on-change   #(update-search (-> % .-target .-value))}]
-          (when-let [[occurrence total] @matches]
-            [:span (str occurrence "/" total)])])
-       [:div.sidebar-button
-        {:on-click toggle-fn}
-        [m/Icon {:use "search"}]]])))
+
 
 (defn- scenario-actions
   [{:keys [source-type]} {:keys [id] :as scenario}]
@@ -579,26 +586,24 @@
 
 (defn display-current-scenario
   [current-project current-scenario]
-  (let [read-only? (subscribe [:scenarios/read-only?])
-        state      (subscribe [:scenarios/view-state])
-        error      (subscribe [:scenarios/error])]
+  (let [expanded-sidebar? (subscribe [:scenarios/sidebar-expanded?])
+        read-only?        (subscribe [:scenarios/read-only?])
+        state             (subscribe [:scenarios/view-state])
+        error             (subscribe [:scenarios/error])]
     (fn [current-project current-scenario]
-      (let [expanded-sidebar? (= @state :show-actions-table)]
-        [ui/full-screen
-         (merge (common2/nav-params)
-                {:main          [simple-map current-project current-scenario @state @error @read-only?]
-                 :title         [scenario-breadcrumb current-project current-scenario]
-                 :title-actions (scenario-actions current-project current-scenario)
-                 :sidebar-prop  {:class [(if expanded-sidebar? :expanded-sidebar :compact-sidebar)]}})
-         (if expanded-sidebar?
-           [actions-table-view current-scenario]
-           [side-panel-view current-scenario @error @read-only?])
-         [edit/rename-scenario-dialog]
-         [edit/delete-scenario-dialog]
-         [edit/changeset-dialog current-project current-scenario]
-         [sidebar-expand-button expanded-sidebar?]
-         (when-not expanded-sidebar?
-           [sidebar-search])]))))
+      [ui/full-screen
+       (merge (common2/nav-params)
+              {:main          [simple-map current-project current-scenario @state @error @read-only?]
+               :title         [scenario-breadcrumb current-project current-scenario]
+               :title-actions (scenario-actions current-project current-scenario)
+               :sidebar-prop  {:class [(if @expanded-sidebar? :expanded-sidebar :compact-sidebar)]}})
+       (if @expanded-sidebar?
+         [actions-table-view current-scenario]
+         [side-panel-view current-scenario @error @read-only?])
+       [edit/rename-scenario-dialog]
+       [edit/delete-scenario-dialog]
+       [edit/changeset-dialog current-project current-scenario]
+       [sidebar-expand-button @expanded-sidebar?]])))
 
 (defn scenarios-page
   []

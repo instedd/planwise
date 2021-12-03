@@ -487,6 +487,21 @@
 
 ;;; Providers search
 
+(rf/reg-event-fx
+ :scenarios/start-searching
+ in-scenarios
+ (fn [{:keys [db]}]
+   {:db (assoc db :view-state :search-providers)}))
+
+(rf/reg-event-fx
+ :scenarios/cancel-search
+ in-scenarios
+ (fn [{:keys [db]}]
+   (when (= :search-providers (:view-state db))
+     {:db (-> db
+              (assoc :view-state :current-scenario)
+              (assoc :providers-search nil))})))
+
 (defn- provider-matcher
   [search-value]
   (let [search-value (s/lower-case search-value)]
@@ -511,14 +526,9 @@
                               0)
          found-provider     (when (seq matching-providers) (nth matching-providers occurrence))]
      {:db       (assoc db :providers-search {:search-value search-value
-                                             :match-count  match-count
-                                             :occurrence   occurrence})
+                                             :occurrence   occurrence
+                                             :matches      matching-providers})
       :dispatch (if found-provider
                   [:scenarios.map/select-provider found-provider]
                   [:scenarios.map/unselect-provider])})))
 
-(rf/reg-event-fx
- :scenarios/clear-providers-search
- in-scenarios
- (fn [{:keys [db]} [_]]
-   {:db (assoc db :providers-search nil)}))

@@ -45,11 +45,11 @@
        :on-mouse-leave #(dispatch [:scenarios.map/unselect-provider provider])
        :on-click       #(dispatch [:scenarios/open-changeset-dialog provider])}
       [:div.icon-list
-       [m/Icon {} (get action-icons action)]
+       [m/Icon {} (get action-icons action "domain")]
        [:div.icon-list-text
         [:p.strong name]
         [:p.grey-text
-         (action-description-with-investment props provider)]]]]]))
+         (when action (action-description-with-investment props provider))]]]]]))
 
 (defn listing-component
   [props providers]

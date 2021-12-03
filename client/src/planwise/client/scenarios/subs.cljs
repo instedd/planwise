@@ -15,6 +15,12 @@
    (get-in db [:scenarios :view-state])))
 
 (rf/reg-sub
+ :scenarios/sidebar-expanded?
+ :<- [:scenarios/view-state]
+ (fn [view-state]
+   (= :show-actions-table view-state)))
+
+(rf/reg-sub
  :scenarios/open-dialog
  (fn [db _]
    (get-in db [:scenarios :open-dialog])))
@@ -127,7 +133,7 @@
  (fn [db _]
    (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
 
-(defn update-capacity-and-demand
+(defn- update-capacity-and-demand
   [{:keys [capacity] :as provider} providers-data]
   (merge provider
          (select-keys
@@ -135,14 +141,15 @@
           [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity :reachable-demand])
          {:initial-capacity capacity}))
 
-(defn apply-change
-  [providers [index change]]
+(defn- apply-change
+  [providers change]
   (if (= (:action change) "create-provider")
     (conj providers (db/new-provider-from-change change))
     (utils/update-by-id providers (:id change) assoc :change change)))
 
 (rf/reg-sub
- :scenarios/all-providers :<- [:scenarios/current-scenario]
+ :scenarios/all-providers
+ :<- [:scenarios/current-scenario]
  (fn [{:keys [providers disabled-providers changeset providers-data] :as scenario} _]
    (let [providers' (concat (map #(assoc % :matches-filters true)
                                  providers)
@@ -150,7 +157,7 @@
                                  disabled-providers))]
      (map
       #(update-capacity-and-demand % providers-data)
-      (reduce apply-change providers' (map-indexed vector changeset))))))
+      (reduce apply-change providers' changeset)))))
 
 (rf/reg-sub
  :scenarios/providers-from-changeset
@@ -181,8 +188,12 @@
    (get-in db [:scenarios :sort-order])))
 
 (rf/reg-sub
+ :scenarios/searching-providers?
+ :<- [:scenarios/view-state]
+ (fn [view-state]
+   (= :search-providers view-state)))
+
+(rf/reg-sub
  :scenarios/search-providers-matches
  (fn [db _]
-   (let [{:keys [occurrence match-count]} (get-in db [:scenarios :providers-search])]
-     (when (pos? match-count)
-       [(inc occurrence) match-count]))))
+   (get-in db [:scenarios :providers-search :matches])))
