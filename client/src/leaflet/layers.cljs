@@ -37,40 +37,53 @@
   ;; update is not possible by default
   nil)
 
+(def ^:private tooltip-offset (js/L.Point. 0 -15))
+(def ^:private tooltip-options #js {:permanent false
+                                    :direction "top"
+                                    :offset    tooltip-offset})
+
+(def ^:private popup-offset (js/L.Point. 0 -10))
+(def ^:private popup-padding-top-left (js/L.Point. 600 50))
+(def ^:private popup-padding-bottom-right (js/L.Point. 200 50))
+(def ^:private popup-options #js {:offset                    popup-offset
+                                  :autoPanPaddingTopLeft     popup-padding-top-left
+                                  :autoPanPaddingBottomRight popup-padding-bottom-right})
+
 (defmethod create-layer :marker
   [[_ {:keys [lat lon icon tooltip popup-fn mouseover-fn mouseout-fn] :as props}]]
-  (let [latLng (.latLng js/L lat lon)
-        icon   (if icon
-                 (.divIcon js/L (clj->js icon))
-                 (js/L.Icon.Default.))
-        attrs  (-> props
-                   (assoc :icon icon)
-                   (dissoc :lat :lon :tooltip :popup-fn))
-        marker (.marker js/L latLng (clj->js attrs))]
+  (let [latLng        (.latLng js/L lat lon)
+        icon          (if icon
+                        (.divIcon js/L (clj->js icon))
+                        (js/L.Icon.Default.))
+        attrs         (-> props
+                          (assoc :riseOnHover true)
+                          (assoc :icon icon)
+                          (dissoc :lat :lon :tooltip :popup-fn))
+        marker        (.marker js/L latLng (clj->js attrs))]
     (when tooltip
-      (.bindTooltip marker tooltip #js {:permanent false}))
+      (.bindTooltip marker tooltip tooltip-options))
     (when popup-fn
       ;; lazy-load the popup content
-      (.bindPopup marker "" #js {:autoPanPaddingTopLeft     (js/L.Point. 600 200)
-                                 :autoPanPaddingBottomRight (js/L.Point. 200 50)})
+      (.bindPopup marker "" popup-options)
       (.on marker "popupopen" (fn [e] (.setContent (.-popup e) (popup-fn props)))))
-    (.on marker "mouseover"  (fn [_]
-                               (.openTooltip marker)
+    (.on marker "mouseover"  (fn [e]
+                               (when-not (.isPopupOpen marker)
+                                 (.bindPopup marker (popup-fn props) popup-options))
                                (when mouseover-fn (mouseover-fn props))))
-    (.on marker "mouseout"   (fn [_]
-                               (.closeTooltip marker)
-                               (when (and mouseout-fn (not (.isPopupOpen marker)))
-                                 (mouseout-fn props))))
+    (.on marker "mouseout"   (when mouseout-fn #(when-not (.isPopupOpen marker)
+                                                  (mouseout-fn props))))
     (.on marker "popupopen"  (fn [_]
                                ;; "hide" the tooltip while the popup is open
-                               (some-> (.getTooltip marker) (.setOpacity tooltip 0))
+                               (some-> (.getTooltip marker) (.setOpacity 0))
                                (.closeTooltip marker)))
     (.on marker "popupclose" (fn [_]
                                ;; "restore" the tooltip while once the popup is closed
-                               (some-> (.getTooltip marker) (.setOpacity tooltip 100))
+                               (some-> (.getTooltip marker) (.setOpacity 100))
                                (when mouseout-fn (mouseout-fn props))))
     (when (:open? props)
       (.on marker "add" #(.openPopup marker)))
+    (when (and tooltip (:hover? props))
+      (.on marker "add" #(.openTooltip marker)))
     marker))
 
 (defmethod create-layer :feature-group

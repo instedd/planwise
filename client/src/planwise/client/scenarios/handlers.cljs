@@ -529,6 +529,6 @@
                                              :occurrence   occurrence
                                              :matches      matching-providers})
       :dispatch (if found-provider
-                  [:scenarios.map/select-provider found-provider]
+                  [:scenarios.map/select-provider (assoc found-provider :hover? true)]
                   [:scenarios.map/unselect-provider])})))
 

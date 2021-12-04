@@ -41,7 +41,7 @@
   (let [action (:action change)]
     [:div
      [:div.section.changeset-row
-      {:on-mouse-over  #(dispatch [:scenarios.map/select-provider (assoc provider :open? true)])
+      {:on-mouse-over  #(dispatch [:scenarios.map/select-provider (assoc provider :hover? true)])
        :on-mouse-leave #(dispatch [:scenarios.map/unselect-provider provider])
        :on-click       #(dispatch [:scenarios/open-changeset-dialog provider])}
       [:div.icon-list

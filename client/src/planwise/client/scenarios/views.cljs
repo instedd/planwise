@@ -135,16 +135,18 @@
         all-providers     @(subscribe [:scenarios/all-providers])]
     (into [:feature-group {}]
           (map (fn [{:keys [id location name] :as provider}]
-                 [:marker {:key          id
-                           :lat          (:lat location)
-                           :lon          (:lon location)
-                           :icon         (provider-icon-function provider selected-provider)
-                           :tooltip      name
-                           :open?        (when (= id (:id selected-provider)) (:open? selected-provider))
-                           :provider     provider
-                           :popup-fn     popup-fn
-                           :mouseover-fn mouseover-fn
-                           :mouseout-fn  mouseout-fn}])
+                 (let [selected? (= id (:id selected-provider))]
+                   [:marker {:key          id
+                             :lat          (:lat location)
+                             :lon          (:lon location)
+                             :icon         (provider-icon-function provider selected-provider)
+                             :tooltip      name
+                             :open?        (when selected? (:open? selected-provider))
+                             :hover?       (when selected? (:hover? selected-provider))
+                             :provider     provider
+                             :popup-fn     popup-fn
+                             :mouseover-fn mouseover-fn
+                             :mouseout-fn  mouseout-fn}]))
                all-providers))))
 
 (defn- scenario-selected-provider-layer
