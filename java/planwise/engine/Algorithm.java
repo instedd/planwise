@@ -213,7 +213,7 @@ public class Algorithm {
         for (int i = 0; i < popData.length; i++) {
             float value = popData[i];
             byte renderValue = 0;
-            if (value == popNodata) {
+            if (value == popNodata || value == 0 || value <= quartiles[0]) {
                 renderValue = renderNodata;
             } else {
                 while (renderValue < quartiles.length && value > quartiles[renderValue]) {
