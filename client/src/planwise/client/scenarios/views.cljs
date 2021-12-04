@@ -588,10 +588,11 @@
 
 (defn display-current-scenario
   [current-project current-scenario]
-  (let [expanded-sidebar? (subscribe [:scenarios/sidebar-expanded?])
-        read-only?        (subscribe [:scenarios/read-only?])
-        state             (subscribe [:scenarios/view-state])
-        error             (subscribe [:scenarios/error])]
+  (let [expanded-sidebar?   (subscribe [:scenarios/sidebar-expanded?])
+        can-expand-sidebar? (subscribe [:scenarios/can-expand-sidebar?])
+        read-only?          (subscribe [:scenarios/read-only?])
+        state               (subscribe [:scenarios/view-state])
+        error               (subscribe [:scenarios/error])]
     (fn [current-project current-scenario]
       [ui/full-screen
        (merge (common2/nav-params)
@@ -605,7 +606,8 @@
        [edit/rename-scenario-dialog]
        [edit/delete-scenario-dialog]
        [edit/changeset-dialog current-project current-scenario]
-       [sidebar-expand-button @expanded-sidebar?]])))
+       (when @can-expand-sidebar?
+         [sidebar-expand-button @expanded-sidebar?])])))
 
 (defn scenarios-page
   []

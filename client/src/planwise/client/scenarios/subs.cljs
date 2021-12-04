@@ -21,6 +21,12 @@
    (= :show-actions-table view-state)))
 
 (rf/reg-sub
+ :scenarios/can-expand-sidebar?
+ :<- [:scenarios/view-state]
+ (fn [view-state]
+   (#{:current-scenario :show-actions-table} view-state)))
+
+(rf/reg-sub
  :scenarios/open-dialog
  (fn [db _]
    (get-in db [:scenarios :open-dialog])))
