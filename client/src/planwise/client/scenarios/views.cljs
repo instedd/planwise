@@ -203,7 +203,8 @@
 
 (defn- suggestion-icon-function
   [suggestion selected-suggestion suggestion-type]
-  {:className
+  {:html (str "<span>" (:ranked suggestion) "</span>")
+   :className
    (->> ["leaflet-suggestion-icon"
          (when (= suggestion selected-suggestion) "selected")
          (case suggestion-type
