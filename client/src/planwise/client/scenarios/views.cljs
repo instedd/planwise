@@ -131,8 +131,7 @@
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
   (let [selected-provider @(subscribe [:scenarios.map/selected-provider])
         searching?        @(subscribe [:scenarios/searching-providers?])
-        matching-ids      (when searching?
-                            (set (map :id @(subscribe [:scenarios/search-providers-matches]))))
+        matching-ids      @(subscribe [:scenarios/search-matching-ids])
         all-providers     @(subscribe [:scenarios/all-providers])]
     (into [:feature-group {}]
           (map (fn [{:keys [id location name] :as provider}]
@@ -296,9 +295,17 @@
 
 ;;; Screen components
 
+(def ^:private fit-options #js {:maxZoom            12
+                                :paddingTopLeft     (js/L.Point. 400 50)
+                                :paddingBottomRight (js/L.Point. 50 10)})
+
 (defn simple-map
   [project _ _ _ read-only?]
-  (let [view-state              (subscribe [:scenarios/view-state])
+  (let [map-ref                 (atom nil)
+        last-bbox               (atom nil)
+        view-state              (subscribe [:scenarios/view-state])
+        searching?              (subscribe [:scenarios/searching-providers?])
+        matches-bbox            (subscribe [:scenarios.map/search-matches-bbox])
         position                (r/atom mapping/map-preview-position)
         zoom                    (r/atom 3)
         demand-unit             (get-demand-unit project)
@@ -320,9 +327,17 @@
         suggestion-mouseover-fn (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/select-suggestion suggestion]))
         suggestion-mouseout-fn  (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/unselect-suggestion suggestion]))]
     (fn [{:keys [bbox] :as project} scenario state error read-only?]
+      ;; fit-bounds to search result matches
+      (when (and @searching? @matches-bbox (not= @last-bbox @matches-bbox))
+        (reset! last-bbox @matches-bbox)
+        (let [[[s w] [n e]] @matches-bbox
+              match-bbox    (js/L.latLngBounds (js/L.latLng s w) (js/L.latLng n e))]
+          (r/after-render #(when @map-ref (.fitBounds @map-ref match-bbox fit-options)))))
+
       [:div.map-container (when error {:class "gray-filter"})
        [l/map-widget {:zoom                @zoom
                       :position            @position
+                      :ref                 #(reset! map-ref %)
                       :on-position-changed #(reset! position %)
                       :on-zoom-changed     #(reset! zoom %)
                       :on-click            (cond (= state :new-provider) add-point)

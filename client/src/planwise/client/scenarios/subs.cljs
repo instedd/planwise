@@ -183,3 +183,30 @@
  :scenarios/search-providers-matches
  (fn [db _]
    (get-in db [:scenarios :providers-search :matches])))
+
+(rf/reg-sub
+ :scenarios/search-matching-ids
+ :<- [:scenarios/search-providers-matches]
+ (fn [matches]
+   (set (map :id matches))))
+
+(defn bbox-from-location
+  [{:keys [lat lon]}]
+  [[lat lon] [lat lon]])
+
+(rf/reg-sub
+ :scenarios.map/search-matches-bbox
+ :<- [:scenarios/search-providers-matches]
+ (fn [matches]
+   (cond
+     (empty? matches)
+     nil
+
+     (= 1 (count matches))
+     (bbox-from-location (:location (first matches)))
+
+     :else
+     (reduce (fn [[[s w] [n e]] {{:keys [lat lon]} :location}]
+               [[(min s lat) (min w lon)] [(max n lat) (max e lon)]])
+             (bbox-from-location (:location (first matches)))
+             (rest matches)))))
