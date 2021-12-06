@@ -136,26 +136,22 @@
         all-providers     @(subscribe [:scenarios/all-providers])]
     (into [:feature-group {}]
           (map (fn [{:keys [id location name] :as provider}]
-                 (let [selected? (= id (:id selected-provider))
-                       matching? (or (not searching?) (contains? matching-ids id))]
+                 (let [selected?    (= id (:id selected-provider))
+                       matching?    (or (not searching?) (contains? matching-ids id))
+                       marker-props {:key      id
+                                     :lat      (:lat location)
+                                     :lon      (:lon location)
+                                     :icon     (provider-icon-function provider selected-provider)
+                                     :provider provider}]
                    (if matching?
-                     [:marker {:key          id
-                               :lat          (:lat location)
-                               :lon          (:lon location)
-                               :icon         (provider-icon-function provider selected-provider)
-                               :tooltip      name
-                               :open?        (when selected? (:open? selected-provider))
-                               :hover?       (when selected? (:hover? selected-provider))
-                               :provider     provider
-                               :popup-fn     popup-fn
-                               :mouseover-fn mouseover-fn
-                               :mouseout-fn  mouseout-fn}]
-                     [:marker {:key id
-                               :lat          (:lat location)
-                               :lon          (:lon location)
-                               :icon         (provider-icon-function provider selected-provider)
-                               :opacity      0.2
-                               :provider     provider}])))
+                     [:marker (merge marker-props
+                                     {:tooltip      name
+                                      :open?        (when selected? (:open? selected-provider))
+                                      :hover?       (when selected? (:hover? selected-provider))
+                                      :popup-fn     popup-fn
+                                      :mouseover-fn mouseover-fn
+                                      :mouseout-fn  mouseout-fn})]
+                     [:marker (assoc marker-props :opacity 0.2)])))
                all-providers))))
 
 (defn- scenario-selected-provider-layer

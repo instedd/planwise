@@ -493,7 +493,8 @@
  :scenarios/start-searching
  in-scenarios
  (fn [{:keys [db]}]
-   {:db (assoc db :view-state :search-providers)}))
+   {:db       (assoc db :view-state :search-providers)
+    :dispatch [:scenarios/search-providers "" nil]}))
 
 (rf/reg-event-fx
  :scenarios/cancel-search
@@ -516,8 +517,9 @@
         last-occurrence    (get-in db [:providers-search :occurrence])
         scenario           (:current-scenario db)
         all-providers      (sort-by :name (db/all-providers scenario))
-        matching-providers (when-not (s/blank? search-value)
-                             (filterv (provider-matcher search-value) all-providers))
+        matching-providers (if-not (s/blank? search-value)
+                             (filterv (provider-matcher search-value) all-providers)
+                             all-providers)
         match-count        (count matching-providers)
         occurrence         (if (and (= last-search-value search-value)
                                     (some? last-occurrence))
@@ -551,4 +553,4 @@
  (fn [{:keys [db]} [_]]
    (when (= :search-providers (:view-state db))
      (let [last-search-value (get-in db [:providers-search :search-value])]
-      (search-providers db last-search-value nil)))))
+       (search-providers db last-search-value nil)))))
