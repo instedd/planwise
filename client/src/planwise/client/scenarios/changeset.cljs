@@ -38,14 +38,16 @@
 
 (defn- changeset-row
   [props {:keys [name change] :as provider}]
-  (let [action (:action change)]
+  (let [action            (:action change)
+        selected-provider @(subscribe [:scenarios.map/selected-provider])]
     [:div
      [:div.section.changeset-row
       {:on-mouse-over  #(dispatch [:scenarios.map/select-provider (assoc provider :hover? true)])
        :on-mouse-leave #(dispatch [:scenarios.map/unselect-provider provider])
-       :on-click       #(dispatch [:scenarios/open-changeset-dialog provider])}
+       :on-click       #(dispatch [:scenarios/open-changeset-dialog provider])
+       :class          (when (= (:id selected-provider) (:id provider)) "selected")}
       [:div.icon-list
-       [m/Icon {} (get action-icons action "domain")]
+       [m/Icon (get action-icons action "domain")]
        [:div.icon-list-text
         [:p.strong name]
         [:p.grey-text
@@ -54,29 +56,33 @@
 (defn listing-component
   [props providers]
   [:div.scroll-list
-   (map (fn [provider] [changeset-row (merge props {:key (str "provider-action" (:id provider))}) provider])
+   (map (fn [provider] [changeset-row (merge props {:key (:id provider)}) provider])
         providers)])
 
 (defn- suggestion-row
   [{:keys [demand-unit capacity-unit] :as props} {:keys [coverage action-capacity ranked name] :as suggestion}]
-  [:div
-   [:div.section.changeset-row {:on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
-                                :on-mouse-out  #(dispatch [:scenarios.map/unselect-suggestion suggestion])
-                                :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])}
-    [:div.icon-list
-     [m/Icon {} (get action-icons "create-provider")]
-     [:div.icon-list-text
-      [:p.strong (if name name (str "Suggestion " ranked))]
-      ; coverage is nil when requesting suggestions to improve existing provider
-      ; and it is not nil when requesting suggestions for new providers
-      [:p.grey-text (str "Required Capacity: " (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]
-      (when (some? coverage)
-        [:p.grey-text (str " Coverage: " (utils/format-number coverage) " " demand-unit)])]]]])
+  (let [selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])]
+    [:div
+     [:div.section.changeset-row
+      {:on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
+       :on-mouse-out  #(dispatch [:scenarios.map/unselect-suggestion suggestion])
+       :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])
+       :class         (when (= suggestion selected-suggestion) "selected")}
+      [:div.icon-list
+       [m/Icon {} (get action-icons "create-provider")]
+       [:div.icon-list-text
+        [:p.strong (or name (str "Suggestion " ranked))]
+        [:p.grey-text (str "Required Capacity: "
+                           (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]
+        ;; coverage is nil when requesting suggestions to improve existing provider
+        ;; and it is not nil when requesting suggestions for new providers
+        (when (some? coverage)
+          [:p.grey-text (str " Coverage: " (utils/format-number coverage) " " demand-unit)])]]]]))
 
 (defn suggestion-listing-component
   [props suggestions]
   [:div.suggestion-list
-   (map (fn [suggestion] [suggestion-row (merge props {:key (str "suggestion-action" (:name suggestion) (:ranked suggestion))}) suggestion])
+   (map (fn [suggestion] [suggestion-row (merge props {:key (str (:name suggestion) (:ranked suggestion))}) suggestion])
         suggestions)])
 
 (defn- changeset-table-row

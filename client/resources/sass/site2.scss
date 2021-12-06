@@ -526,7 +526,7 @@ form.vertical, .fields-vertical {
 
 .changeset-row {
   cursor: pointer;
-  &:hover {
+  &.selected {
     background-color: #f0f0f0;
   }
   border-top: 1px solid #e6e6e6;

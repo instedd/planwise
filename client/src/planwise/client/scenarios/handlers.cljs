@@ -511,18 +511,23 @@
 (rf/reg-event-fx
  :scenarios/search-providers
  in-scenarios
- (fn [{:keys [db]} [_ search-value]]
+ (fn [{:keys [db]} [_ search-value direction]]
    (let [last-search-value  (get-in db [:providers-search :search-value])
          last-occurrence    (get-in db [:providers-search :occurrence])
          providers          (get-in db [:current-scenario :providers])
+         direction          (#{:forward :backward} direction :forward)
          new-providers      (->> (get-in db [:current-scenario :changeset])
                                  (filter (comp #{"create-provider"} :action)))
+         all-providers      (sort-by :name (concat providers new-providers))
          matching-providers (when-not (s/blank? search-value)
-                              (filterv (provider-matcher search-value) (concat providers new-providers)))
+                              (filterv (provider-matcher search-value) all-providers))
          match-count        (count matching-providers)
          occurrence         (if (and (= last-search-value search-value)
                                      (some? last-occurrence))
-                              (mod (inc last-occurrence) match-count)
+                              (mod (case direction
+                                     :forward  (inc last-occurrence)
+                                     :backward (dec last-occurrence)
+                                     last-occurrence) match-count)
                               0)
          found-provider     (when (seq matching-providers) (nth matching-providers occurrence))]
      {:db       (assoc db :providers-search {:search-value search-value

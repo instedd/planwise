@@ -449,12 +449,12 @@
   [project]
   (let [search-value    (r/atom "")
         close-fn        #(dispatch [:scenarios/cancel-search])
-        dispatch-search (utils/debounced #(dispatch [:scenarios/search-providers %]) 500)
+        dispatch-search (utils/debounced #(dispatch [:scenarios/search-providers %1 %2]) 500)
         update-search   (fn [value]
                           (reset! search-value value)
-                          (dispatch-search value))
-        search-again    (fn []
-                          (dispatch-search :immediate @search-value))
+                          (dispatch-search value :forward))
+        search-again    (fn [direction]
+                          (dispatch-search :immediate @search-value direction))
         matches         (subscribe [:scenarios/search-providers-matches])
         demand-unit     (get-demand-unit project)
         capacity-unit   (get-capacity-unit project)]
@@ -466,8 +466,9 @@
                  :auto-focus  true
                  :on-key-down (fn [evt]
                                 (case (.-which evt)
-                                  27 (close-fn)
-                                  13 (search-again)
+                                  27      (close-fn)
+                                  38      (search-again :backward)
+                                  (13 40) (search-again :forward)
                                   nil))
                  :placeholder "Search facilities"
                  :value       @search-value
