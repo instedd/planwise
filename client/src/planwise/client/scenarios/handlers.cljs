@@ -336,7 +336,7 @@
  :scenarios.map/unselect-provider
  in-scenarios
  (fn [db [_ provider]]
-   (if (= (:id provider) (get-in db [:selected-provider :id]))
+   (if (or (nil? provider) (= (:id provider) (get-in db [:selected-provider :id])))
      (assoc db :selected-provider nil)
      db)))
 
@@ -527,12 +527,16 @@
                                     last-occurrence) match-count)
                              0)
         found-provider     (when (seq matching-providers) (nth matching-providers occurrence))]
-    {:db       (assoc db :providers-search {:search-value search-value
-                                            :occurrence   occurrence
-                                            :matches      matching-providers})
-     :dispatch (if (and found-provider (some? direction))
-                 [:scenarios.map/select-provider (assoc found-provider :hover? true)]
-                 [:scenarios.map/unselect-provider])}))
+    (merge
+     {:db (assoc db :providers-search {:search-value search-value
+                                       :occurrence   occurrence
+                                       :matches      matching-providers})}
+     (cond
+       (and found-provider (some? direction))
+       {:dispatch [:scenarios.map/select-provider (assoc found-provider :hover? true)]}
+
+       (some? direction)
+       {:dispatch [:scenarios.map/unselect-provider nil]}))))
 
 (rf/reg-event-fx
  :scenarios/search-providers

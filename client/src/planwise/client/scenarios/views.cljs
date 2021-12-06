@@ -130,21 +130,32 @@
 (defn- scenario-providers-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
   (let [selected-provider @(subscribe [:scenarios.map/selected-provider])
+        searching?        @(subscribe [:scenarios/searching-providers?])
+        matching-ids      (when searching?
+                            (set (map :id @(subscribe [:scenarios/search-providers-matches]))))
         all-providers     @(subscribe [:scenarios/all-providers])]
     (into [:feature-group {}]
           (map (fn [{:keys [id location name] :as provider}]
-                 (let [selected? (= id (:id selected-provider))]
-                   [:marker {:key          id
-                             :lat          (:lat location)
-                             :lon          (:lon location)
-                             :icon         (provider-icon-function provider selected-provider)
-                             :tooltip      name
-                             :open?        (when selected? (:open? selected-provider))
-                             :hover?       (when selected? (:hover? selected-provider))
-                             :provider     provider
-                             :popup-fn     popup-fn
-                             :mouseover-fn mouseover-fn
-                             :mouseout-fn  mouseout-fn}]))
+                 (let [selected? (= id (:id selected-provider))
+                       matching? (or (not searching?) (contains? matching-ids id))]
+                   (if matching?
+                     [:marker {:key          id
+                               :lat          (:lat location)
+                               :lon          (:lon location)
+                               :icon         (provider-icon-function provider selected-provider)
+                               :tooltip      name
+                               :open?        (when selected? (:open? selected-provider))
+                               :hover?       (when selected? (:hover? selected-provider))
+                               :provider     provider
+                               :popup-fn     popup-fn
+                               :mouseover-fn mouseover-fn
+                               :mouseout-fn  mouseout-fn}]
+                     [:marker {:key id
+                               :lat          (:lat location)
+                               :lon          (:lon location)
+                               :icon         (provider-icon-function provider selected-provider)
+                               :opacity      0.2
+                               :provider     provider}])))
                all-providers))))
 
 (defn- scenario-selected-provider-layer

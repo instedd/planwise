@@ -67,11 +67,11 @@
       (.bindPopup marker "" popup-options)
       (.on marker "popupopen" (fn [e] (.setContent (.-popup e) (popup-fn props)))))
     (.on marker "mouseover"  (fn [e]
-                               (when-not (.isPopupOpen marker)
+                               (when (and popup-fn (not (.isPopupOpen marker)))
                                  (.bindPopup marker (popup-fn props) popup-options))
                                (when mouseover-fn (mouseover-fn props))))
-    (.on marker "mouseout"   (when mouseout-fn #(when-not (.isPopupOpen marker)
-                                                  (mouseout-fn props))))
+    (when mouseout-fn
+      (.on marker "mouseout"   #(when-not (.isPopupOpen marker) (mouseout-fn props))))
     (.on marker "popupopen"  (fn [_]
                                ;; "hide" the tooltip while the popup is open
                                (some-> (.getTooltip marker) (.setOpacity 0))
