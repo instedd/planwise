@@ -139,31 +139,11 @@
  (fn [db _]
    (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
 
-(defn- update-capacity-and-demand
-  [{:keys [capacity] :as provider} providers-data]
-  (merge provider
-         (select-keys
-          (utils/find-by-id providers-data (:id provider))
-          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity :reachable-demand])
-         {:initial-capacity capacity}))
-
-(defn- apply-change
-  [providers change]
-  (if (= (:action change) "create-provider")
-    (conj providers (db/new-provider-from-change change))
-    (utils/update-by-id providers (:id change) assoc :change change)))
-
 (rf/reg-sub
  :scenarios/all-providers
  :<- [:scenarios/current-scenario]
- (fn [{:keys [providers disabled-providers changeset providers-data] :as scenario} _]
-   (let [providers' (concat (map #(assoc % :matches-filters true)
-                                 providers)
-                            (map #(assoc % :matches-filters false :capacity 0)
-                                 disabled-providers))]
-     (map
-      #(update-capacity-and-demand % providers-data)
-      (reduce apply-change providers' changeset)))))
+ (fn [scenario _]
+   (db/all-providers scenario)))
 
 (rf/reg-sub
  :scenarios/providers-from-changeset

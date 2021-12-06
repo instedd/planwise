@@ -119,10 +119,8 @@
    selected-provider]
   {:className
    (join " " ["leaflet-circle-icon"
-              (cond
-                (= id (:id selected-provider)) "selected"
-                (and (not change)
-                     (not matches-filters))    "not-matching")
+              (when (= id (:id selected-provider)) "selected")
+              (when (and (not change) (not matches-filters)) "upgradeable")
               (get-marker-class-for-provider provider)
               (when (provider-has-change? provider)
                 "leaflet-circle-for-change")

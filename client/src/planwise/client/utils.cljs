@@ -108,6 +108,10 @@
   [coll field value]
   (remove #(= value (field %)) coll))
 
+(defn index-by
+  [f coll]
+  (into {} (map (juxt f identity) coll)))
+
 ;; Validation
 
 (defn is-valid-email?

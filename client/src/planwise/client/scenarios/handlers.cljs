@@ -20,11 +20,11 @@
 
 ;;; Generic data handlers
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :scenarios/save-current-scenario
  in-scenarios
- (fn [db [_ scenario]]
-   (assoc db :current-scenario scenario)))
+ (fn [{:keys [db]} [_ scenario]]
+   {:db (assoc db :current-scenario scenario)}))
 
 (rf/reg-event-db
  :scenarios/save-key
@@ -78,9 +78,10 @@
    (let [current-scenario (:current-scenario db)
          should-update    (= (:id current-scenario) (:id scenario))]
      (if should-update
-       (merge {:db (assoc db :current-scenario
-                          (merge current-scenario
-                                 (select-keys scenario demand-fields)))}
+       (merge {:db       (assoc db :current-scenario
+                                (merge current-scenario
+                                       (select-keys scenario demand-fields)))
+               :dispatch [:scenarios/refresh-search-providers]}
               (dispatch-track-demand-information-if-needed scenario))
        {}))))
 
@@ -233,10 +234,11 @@
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
  in-scenarios
- (fn [db [_ change]]
-   (assoc db
-          :open-dialog      :scenario-changeset
-          :changeset-dialog change)))
+ (fn [db [_ {:keys [change matches-filter] :as provider}]]
+   (let [change' (or change (db/new-action provider (if (not matches-filter) :upgrade :increase)))]
+     (assoc db
+            :open-dialog      :scenario-changeset
+            :changeset-dialog (assoc provider :change change')))))
 
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
@@ -269,7 +271,7 @@
       :db       (assoc db
                        :current-scenario updated-scenario
                        :changeset-dialog nil)
-      :dispatch [:scenarios/cancel-dialog]})))
+      :dispatch-n [[:scenarios/cancel-dialog]]})))
 
 
 ;; ----------------------------------------------------------------------------
@@ -508,32 +510,41 @@
     (fn [{:keys [name] :as provider}]
       (s/includes? (s/lower-case name) search-value))))
 
+(defn- search-providers
+  [db search-value direction]
+  (let [last-search-value  (get-in db [:providers-search :search-value])
+        last-occurrence    (get-in db [:providers-search :occurrence])
+        scenario           (:current-scenario db)
+        all-providers      (sort-by :name (db/all-providers scenario))
+        matching-providers (when-not (s/blank? search-value)
+                             (filterv (provider-matcher search-value) all-providers))
+        match-count        (count matching-providers)
+        occurrence         (if (and (= last-search-value search-value)
+                                    (some? last-occurrence))
+                             (mod (case direction
+                                    :forward  (inc last-occurrence)
+                                    :backward (dec last-occurrence)
+                                    last-occurrence) match-count)
+                             0)
+        found-provider     (when (seq matching-providers) (nth matching-providers occurrence))]
+    {:db       (assoc db :providers-search {:search-value search-value
+                                            :occurrence   occurrence
+                                            :matches      matching-providers})
+     :dispatch (if (and found-provider (some? direction))
+                 [:scenarios.map/select-provider (assoc found-provider :hover? true)]
+                 [:scenarios.map/unselect-provider])}))
+
 (rf/reg-event-fx
  :scenarios/search-providers
  in-scenarios
  (fn [{:keys [db]} [_ search-value direction]]
-   (let [last-search-value  (get-in db [:providers-search :search-value])
-         last-occurrence    (get-in db [:providers-search :occurrence])
-         providers          (get-in db [:current-scenario :providers])
-         direction          (#{:forward :backward} direction :forward)
-         new-providers      (->> (get-in db [:current-scenario :changeset])
-                                 (filter (comp #{"create-provider"} :action)))
-         all-providers      (sort-by :name (concat providers new-providers))
-         matching-providers (when-not (s/blank? search-value)
-                              (filterv (provider-matcher search-value) all-providers))
-         match-count        (count matching-providers)
-         occurrence         (if (and (= last-search-value search-value)
-                                     (some? last-occurrence))
-                              (mod (case direction
-                                     :forward  (inc last-occurrence)
-                                     :backward (dec last-occurrence)
-                                     last-occurrence) match-count)
-                              0)
-         found-provider     (when (seq matching-providers) (nth matching-providers occurrence))]
-     {:db       (assoc db :providers-search {:search-value search-value
-                                             :occurrence   occurrence
-                                             :matches      matching-providers})
-      :dispatch (if found-provider
-                  [:scenarios.map/select-provider (assoc found-provider :hover? true)]
-                  [:scenarios.map/unselect-provider])})))
+   (let [direction (#{:forward :backward} direction :forward)]
+     (search-providers db search-value direction))))
 
+(rf/reg-event-fx
+ :scenarios/refresh-search-providers
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   (when (= :search-providers (:view-state db))
+     (let [last-search-value (get-in db [:providers-search :search-value])]
+      (search-providers db last-search-value nil)))))
