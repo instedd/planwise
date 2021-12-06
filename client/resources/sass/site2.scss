@@ -529,6 +529,9 @@ form.vertical, .fields-vertical {
   &.selected {
     background-color: #f0f0f0;
   }
+  &.upgradeable {
+    color: #777;
+  }
   border-top: 1px solid #e6e6e6;
 }
 

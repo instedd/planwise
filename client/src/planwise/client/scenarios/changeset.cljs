@@ -37,7 +37,7 @@
   [m/Icon {} (get action-icons (:action change))])
 
 (defn- changeset-row
-  [props {:keys [name change] :as provider}]
+  [props {:keys [name change matches-filters] :as provider}]
   (let [action            (:action change)
         selected-provider @(subscribe [:scenarios.map/selected-provider])]
     [:div
@@ -45,7 +45,8 @@
       {:on-mouse-over  #(dispatch [:scenarios.map/select-provider (assoc provider :hover? true)])
        :on-mouse-leave #(dispatch [:scenarios.map/unselect-provider provider])
        :on-click       #(dispatch [:scenarios/open-changeset-dialog provider])
-       :class          (when (= (:id selected-provider) (:id provider)) "selected")}
+       :class          [(when (= (:id selected-provider) (:id provider)) "selected")
+                        (when (and (nil? action) (false? matches-filters)) "upgradeable")]}
       [:div.icon-list
        [m/Icon (get action-icons action "domain")]
        [:div.icon-list-text
