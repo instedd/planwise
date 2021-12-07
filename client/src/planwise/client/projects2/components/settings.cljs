@@ -460,7 +460,7 @@
           [:div.map
            (if (some? bbox)
              [l/map-widget {:position (mapping/bbox-center bbox)
-                            :controls []
+                            :controls [:attribution :mapbox-logo]
                             :initial-bbox bbox}
               mapping/default-base-tile-layer
               [:geojson-layer {:data @region-geo}

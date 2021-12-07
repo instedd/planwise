@@ -6,6 +6,7 @@ $small-font-size: 0.81em;
 @import "material-components-web/material-components-web";
 @import "@material/theme/_color-palette";
 @import "../css/data-table";
+@import "../css/mapbox";
 
 @mixin link-color($color, $hover-color: darken($color, 20%), $active-color: lighten($color, 20%)) {
   text-decoration: none;
@@ -450,7 +451,8 @@ form.vertical, .fields-vertical {
     margin: 0;
 
     &.large {
-      font-size: 2.5rem;
+      font-size: 2.4rem;
+      white-space: nowrap;
     }
     small {
       font-size: .7rem;
@@ -498,7 +500,7 @@ form.vertical, .fields-vertical {
   }
 
   .search-bottom-bar {
-    padding: 20px 18px;
+    padding: 16px 18px;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -1091,29 +1093,39 @@ form.vertical, .fields-vertical {
   }
 }
 
-.leaflet-square-icon-gray {
-  border: 1px solid rgba(211, 211, 211, 0.53) !important;
-  background: rgba(189, 187, 187, 0.447);
+.leaflet-source-icon {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+
+  &::before {
+    position: absolute;
+    content: " ";
+    display: block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid white;
+    background: black;
+    transform: rotate(45deg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
   }
-
-.leaflet-square-icon-green {
-  border: 1px solid rgb(192, 233, 156) !important;
-  background: rgb(129, 203, 83);
-}
-
-.leaflet-square-icon-yellow {
-  border: 1px solid lightgoldenrodyellow !important;
-  background: yellow;
-}
-
-.leaflet-square-icon-orange {
-  border: 1px solid rgb(245, 208, 140) !important;
-  background: orange;
-}
-
-.leaflet-square-icon-red{
-  border: 1px solid lightcoral !important;
-  background: red;
+  &.gray::before {
+    background: darkgray;
+  }
+  &.satisfied::before {
+    background: black;
+  }
+  &.high-satisfied::before {
+    background: #ffeb3b;
+  }
+  &.low-satisfied::before {
+    background: #ffc107;
+  }
+  &.unsatisfied::before {
+    background: #ff5722;
+  }
 }
 
 .leaflet-suggestion-icon {
@@ -1121,20 +1133,119 @@ form.vertical, .fields-vertical {
   align-items: center;
   justify-content: center;
   color: black;
+  border: 3px solid darkcyan !important;
+  background: cyan;
+  &[style] {
+    width: 16px !important;
+    height: 16px !important;
+    margin-top: -8px !important;
+    margin-left: -8px !important;
+  }
   > span {
     z-index: 1;
     font-weight: bold;
+    font-size: 14px;
+    padding-top: 1px;
+  }
+  > i {
+    z-index: 1;
+    color: black;
   }
   &::before {
     position: absolute;
     content: " ";
     display: block;
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     border: 3px solid darkcyan !important;
     background: cyan;
     transform: rotate(45deg);
   }
+  &::after {
+    content: "";
+    position: absolute;
+    background: cyan;
+    display: block;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.leaflet-container .mapbox-logo {
+  margin: 5px 8px 0 0;
+  cursor: pointer;
+}
+
+.map-reference-table {
+  font-family: "Roboto", sans-serif;
+  border-radius: 4px;
+  padding: 6px;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+  h1 {
+    color: #ccc;
+    text-transform: uppercase;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 0.025em;
+    margin: 0 0 4px 0;
+  }
+  hr {
+    margin: 6px -6px 6px -6px;
+    border: 1px solid #eee;
+  }
+  ul {
+    margin: 0;
+    padding: 0 0 0 4px;
+    list-style: none;
+  }
+  li {
+    margin: 0;
+    padding: 2px 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    i.material-icons {
+      margin-right: 6px;
+      font-size: 18px;
+    }
+    .leaflet-circle-icon {
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+    }
+  }
+  ul.scale {
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    margin-top: 8px;
+    li {
+      flex: 1;
+      border-bottom: 6px solid orange;
+      border-left: 1px dotted #999;
+      padding-left: 2px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #999;
+      &.q1 {
+        border-bottom-color: rgb(251,251,121);
+      }
+      &.q2 {
+        border-bottom-color: rgb(241,195,85);
+      }
+      &.q3 {
+        border-bottom-color: rgb(232,139,49);
+      }
+      &.q4 {
+        border-bottom-color: rgb(223,84,14);
+      }
+    }
+  }
+}
+
+.leaflet-container .map-reference-table {
+  margin: 18px;
 }
 
 .leaflet-legend-container {
@@ -1186,37 +1297,28 @@ form.vertical, .fields-vertical {
 .leaflet-circle-icon{
   border-radius: 50%;
   box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+
   &[style] {
-    margin-left: -8px !important;
-    margin-top: -8px !important;
-    width: 16px !important;
-    height: 16px !important;
+    margin-left: -9px !important;
+    margin-top: -9px !important;
+    width: 18px !important;
+    height: 18px !important;
   }
 
+  border: 2px white solid;
   &.idle-capacity {
-    background-color: #00bcd4;
-    border: 1px #00727e solid;
+    background-color: #673AB7;
   }
   &.at-capacity {
-    background-color: #4caf50;
-    border: 1px #327134 solid;
+    background-color: black;
   }
-  &.small-unsatisfied {
-    background-color: #ffeb3b;
-    border: 1px #ecca00 solid;
-
-  }
-  &.mid-unsatisfied {
-    background-color: #ffc107;
-    border: 1px #b88a00 solid;
-  }
-  &.unsatisfied {
+  &.small-unsatisfied, &.mid-unsatisfied, &.unsatisfied {
     background-color: #ff5722;
-    border: 1px #8f2100 solid;
   }
+
   &.upgradeable {
     background-color: #999;
-    border: 1px black solid;
   }
   &.selected[style] {
     width: 24px !important;
@@ -1225,11 +1327,32 @@ form.vertical, .fields-vertical {
     margin-top: -12px !important;
     border: 4px white solid !important;
   }
-}
 
-.leaflet-circle-for-change{
-  border: 2px white solid !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+  &.for-change {
+    border: 2px white solid !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    > i {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+      color: white;
+    }
+    &[style] {
+      margin-left: -14px !important;
+      margin-top: -14px !important;
+      width: 28px !important;
+      height: 28px !important;
+    }
+    &.selected[style] {
+      width: 32px !important;
+      height: 32px !important;
+      margin-left: -16px !important;
+      margin-top: -16px !important;
+      border: 4px white solid !important;
+    }
+  }
 }
 
 path.coverage-polygon {
@@ -1239,7 +1362,7 @@ path.coverage-polygon {
   stroke-dasharray: 1, 1;
   stroke-linecap: butt;
   fill: black;
-  fill-opacity: 0.1;
+  fill-opacity: 0.05;
 }
 
 .show-static-text {

@@ -52,10 +52,6 @@
 
 ;;; Providers layers
 
-(defn- provider-has-change?
-  [provider]
-  (some? (:change provider)))
-
 (defn- show-provider
   [{:keys [read-only? demand-unit capacity-unit]}
    {:keys [change matches-filters name capacity
@@ -113,19 +109,27 @@
     (> unsatisfied-demand 0)                                    "unsatisfied"
     :else                                                       "unsatisfied"))
 
+(defn- provider-has-change?
+  [provider]
+  (some? (:change provider)))
+
 (defn- provider-icon-function
   [{:keys [id change matches-filters required-capacity satisfied-demand unsatisfied-demand capacity free-capacity]
     :as   provider}
    selected-provider]
-  {:className
-   (join " " ["leaflet-circle-icon"
-              (when (= id (:id selected-provider)) "selected")
-              (when (and (not change) (not matches-filters)) "upgradeable")
-              (get-marker-class-for-provider provider)
-              (when (provider-has-change? provider)
-                "leaflet-circle-for-change")
-              (when (some? change)
-                (str "leaflet-" (:action change)))])})
+  (let [selected?   (= id (:id selected-provider))
+        has-change? (provider-has-change? provider)]
+    (if has-change?
+      {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
+       :className
+       (join " " ["leaflet-circle-icon for-change"
+                  (when selected? "selected")
+                  (get-marker-class-for-provider provider)])}
+      {:className
+       (join " " ["leaflet-circle-icon"
+                  (when selected? "selected")
+                  (when (not matches-filters) "upgradeable")
+                  (get-marker-class-for-provider provider)])})))
 
 (defn- scenario-providers-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
@@ -133,15 +137,16 @@
         searching?        @(subscribe [:scenarios/searching-providers?])
         matching-ids      @(subscribe [:scenarios/search-matching-ids])
         all-providers     @(subscribe [:scenarios/all-providers])]
-    (into [:feature-group {}]
+    (into [:feature-group {:key "providers-layer"}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
                        matching?    (or (not searching?) (contains? matching-ids id))
-                       marker-props {:key      id
-                                     :lat      (:lat location)
-                                     :lon      (:lon location)
-                                     :icon     (provider-icon-function provider selected-provider)
-                                     :provider provider}]
+                       marker-props {:key          id
+                                     :lat          (:lat location)
+                                     :lon          (:lon location)
+                                     :icon         (provider-icon-function provider selected-provider)
+                                     :provider     provider
+                                     :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
                    (if matching?
                      [:marker (merge marker-props
                                      {:tooltip      name
@@ -156,7 +161,8 @@
 (defn- scenario-selected-provider-layer
   []
   (when-let [selected-provider @(subscribe [:scenarios.map/selected-provider])]
-    [:geojson-layer {:data      (:coverage-geom selected-provider)
+    [:geojson-layer {:key       "selected-provider-layer"
+                     :data      (:coverage-geom selected-provider)
                      :group     {:pane "tilePane"}
                      :className "coverage-polygon"}]))
 
@@ -203,14 +209,12 @@
 
 (defn- suggestion-icon-function
   [suggestion selected-suggestion suggestion-type]
-  {:html (str "<span>" (:ranked suggestion) "</span>")
+  {:html (if (= :new-provider suggestion-type)
+           (str "<span>" (:ranked suggestion) "</span>")
+           "<i class='material-icons'>arrow_upward</i>")
    :className
    (->> ["leaflet-suggestion-icon"
-         (when (= suggestion selected-suggestion) "selected")
-         (case suggestion-type
-           :new-provider "leaflet-suggestion-new-provider"
-           :improvement  "leaflet-suggestion-new-improvement"
-           nil)]
+         (when (= suggestion selected-suggestion) "selected")]
         (filter some?)
         (join " "))})
 
@@ -222,7 +226,7 @@
         suggestion-type     (if (= view-state :new-provider)
                               :new-provider
                               :improvement)]
-    (into [:feature-group {}]
+    (into [:feature-group {:key "suggestions-layer"}]
           (map (fn [{:keys [location name] :as suggestion}]
                  [:marker {:lat          (:lat location)
                            :lon          (:lon location)
@@ -232,7 +236,8 @@
                            :suggestion   suggestion
                            :popup-fn     popup-fn
                            :mouseover-fn mouseover-fn
-                           :mouseout-fn  mouseout-fn}])
+                           :mouseout-fn  mouseout-fn
+                           :zIndexOffset 4000}])
                suggested-locations))))
 
 
@@ -259,24 +264,27 @@
         quantity-current (:quantity source)
         ratio            (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
         classname        (cond
-                           (= 0 quantity-initial) "leaflet-square-icon-gray"
-                           (<= ratio 0.25)        "leaflet-square-icon-green"
-                           (< 0.25 ratio 0.5)     "leaflet-sqaure-icon-yellow"
-                           (<= 0.5 ratio 0.75)    "leaflet-square-icon-orange"
-                           (> ratio 0.75)         "leaflet-square-icon-red")]
-    {:className classname}))
+                           (= 0 quantity-initial) "gray"
+                           (<= ratio 0.05)        "satisfied"
+                           (< 0.05 ratio 0.25)    "high-satisfied"
+                           (<= 0.25 ratio 0.5)    "low-satisfied"
+                           (> ratio 0.5)          "unsatisfied")]
+    {:className (->> ["leaflet-source-icon" classname]
+                     (filter some?)
+                     (join " "))}))
 
 (defn- scenario-sources-layer
   [{:keys [sources-data] :as scenario} {:keys [popup-fn]}]
-  (into [:feature-group {}]
+  (into [:feature-group {:key "sources-layer"}]
         (map (fn [{:keys [id lat lon name] :as source}]
-               [:marker {:key      id
-                         :lat      lat
-                         :lon      lon
-                         :icon     (source-icon-function source)
-                         :tooltip  name
-                         :source   source
-                         :popup-fn popup-fn}])
+               [:marker {:key          id
+                         :lat          lat
+                         :lon          lon
+                         :icon         (source-icon-function source)
+                         :tooltip      name
+                         :source       source
+                         :popup-fn     popup-fn
+                         :zIndexOffset 0}])
              sources-data)))
 
 
@@ -286,7 +294,8 @@
   [{:keys [raster] :as scenario}]
   (when raster
     [:wms-tile-layer
-     {:url         config/mapserver-url
+     {:keys        "demand-layer"
+      :url         config/mapserver-url
       :transparent true
       :layers      "scenario"
       :DATAFILE    (str raster ".map")
@@ -342,11 +351,14 @@
                       :on-position-changed #(reset! position %)
                       :on-zoom-changed     #(reset! zoom %)
                       :on-click            (cond (= state :new-provider) add-point)
-                      :controls            [[:legend {:provider-unit provider-unit}]]
+                      :controls            [:attribution
+                                            :reference-table
+                                            :mapbox-logo]
                       :initial-bbox        bbox
                       :pointer-class       (cond (= state :new-provider) "crosshair-pointer")}
-        mapping/default-base-tile-layer
+        mapping/base-tile-layer
         (scenario-demand-layer scenario)
+        mapping/labels-tile-layer
         (scenario-sources-layer scenario {:popup-fn source-popup-fn})
         (scenario-providers-layer {:popup-fn     provider-popup-fn
                                    :mouseover-fn provider-mouseover-fn

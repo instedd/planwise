@@ -193,7 +193,8 @@ MAP
       NAME "c1"
       EXPRESSION ([pixel] = 0)
       STYLE
-        COLOR 26 150 65
+        OPACITY 0
+        COLOR 251 251 121
       END
     END
 
@@ -201,7 +202,7 @@ MAP
       NAME "c2"
       EXPRESSION ([pixel] = 1)
       STYLE
-        COLOR 166 217 106
+        COLOR 251 251 121
       END
     END
 
@@ -209,7 +210,7 @@ MAP
       NAME "c3"
       EXPRESSION ([pixel] = 2)
       STYLE
-        COLOR 255 255 192
+        COLOR 241 195 85
       END
     END
 
@@ -217,7 +218,7 @@ MAP
       NAME "c4"
       EXPRESSION ([pixel] = 3)
       STYLE
-        COLOR 253 174 97
+        COLOR 232 139 49
       END
     END
 
@@ -225,7 +226,7 @@ MAP
       NAME "c5"
       EXPRESSION ([pixel] >= 4)
       STYLE
-        COLOR 215 25 28
+        COLOR 223 84 14
       END
     END
 
