@@ -9,7 +9,7 @@
 
 (def in-scenarios (rf/path [:scenarios]))
 
-;; Controller
+;;; Controller
 
 (routes/reg-controller
  {:id            :scenario
@@ -18,13 +18,13 @@
   :start         [:scenarios/get-scenario]
   :stop          [:scenarios/clear-current-scenario]})
 
-;; Db events
+;;; Generic data handlers
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :scenarios/save-current-scenario
  in-scenarios
- (fn [db [_ scenario]]
-   (assoc db :current-scenario scenario)))
+ (fn [{:keys [db]} [_ scenario]]
+   {:db (assoc db :current-scenario scenario)}))
 
 (rf/reg-event-db
  :scenarios/save-key
@@ -32,7 +32,8 @@
  (fn [db [_ path value]]
    (assoc-in db path value)))
 
-;; Loading scenario view
+
+;;; Loading scenario view
 
 (rf/reg-event-fx
  :scenarios/scenario-not-found
@@ -47,16 +48,24 @@
       :navigate (routes/scenarios {:project-id project-id :id id})})))
 
 ;; fields that may change when the deferred computation of demand finishes
-(def demand-fields [:state :demand-coverage :increase-coverage :effort :raster :label :sources-data :providers-data :error-message :source-demand :population-under-coverage])
+(def demand-fields [:state
+                    :demand-coverage
+                    :increase-coverage
+                    :effort
+                    :raster
+                    :label
+                    :sources-data
+                    :providers-data
+                    :error-message
+                    :source-demand
+                    :population-under-coverage])
 
 (defn- dispatch-track-demand-information-if-needed
   [scenario]
-  (let [should-track (= (:state scenario) "pending")]
-    (cond
-      should-track {:delayed-dispatch {:ms 1000
-                                       :key [:track-demand-information]
-                                       :dispatch [:scenarios/track-demand-information (:id scenario)]}}
-      :else {})))
+  (when (= (:state scenario) "pending")
+    {:delayed-dispatch {:ms       1000
+                        :key      [:track-demand-information]
+                        :dispatch [:scenarios/track-demand-information (:id scenario)]}}))
 
 ;; Updates the current scenario (if it's still the same one passed by the argument)
 ;; and if the scenario is still in pending, schedule a next dispatch for tracking
@@ -69,9 +78,10 @@
    (let [current-scenario (:current-scenario db)
          should-update    (= (:id current-scenario) (:id scenario))]
      (if should-update
-       (merge {:db (assoc db :current-scenario
-                          (merge current-scenario
-                                 (select-keys scenario demand-fields)))}
+       (merge {:db       (assoc db :current-scenario
+                                (merge current-scenario
+                                       (select-keys scenario demand-fields)))
+               :dispatch [:scenarios/refresh-search-providers]}
               (dispatch-track-demand-information-if-needed scenario))
        {}))))
 
@@ -194,7 +204,7 @@
       :dispatch [:scenarios/load-scenarios]})))
 
 
-;;; Scenario action editing
+;;; Scenario action editing (changesets)
 
 (defn new-provider-name
   [changeset]
@@ -224,10 +234,11 @@
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
  in-scenarios
- (fn [db [_ change]]
-   (assoc db
-          :open-dialog      :scenario-changeset
-          :changeset-dialog change)))
+ (fn [db [_ {:keys [change matches-filter] :as provider}]]
+   (let [change' (or change (db/new-action provider (if (not matches-filter) :upgrade :increase)))]
+     (assoc db
+            :open-dialog      :scenario-changeset
+            :changeset-dialog (assoc provider :change change')))))
 
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
@@ -260,7 +271,7 @@
       :db       (assoc db
                        :current-scenario updated-scenario
                        :changeset-dialog nil)
-      :dispatch [:scenarios/cancel-dialog]})))
+      :dispatch-n [[:scenarios/cancel-dialog]]})))
 
 
 ;; ----------------------------------------------------------------------------
@@ -311,12 +322,12 @@
      (let [scenario-id           (get-in db [:current-scenario :id])
            coverage-missing?     (nil? (get-in db [:coverage-cache provider-id]))
            fetch-coverage-effect (assoc (api/get-provider-geom scenario-id provider-id)
-                                        :on-success [:scenarios/update-geometry provider-id])]
+                                        :on-success [:scenarios/update-provider-coverage provider-id])]
        (cond-> {:db (assoc db :selected-provider provider)}
          coverage-missing? (assoc :api fetch-coverage-effect))))))
 
 (rf/reg-event-db
- :scenarios/update-geometry
+ :scenarios/update-provider-coverage
  in-scenarios
  (fn [db [_ provider-id geom]]
    (assoc-in db [:coverage-cache provider-id] (:coverage-geom geom))))
@@ -325,9 +336,12 @@
  :scenarios.map/unselect-provider
  in-scenarios
  (fn [db [_ provider]]
-   (if (= (:id provider) (get-in db [:selected-provider :id]))
+   (if (or (nil? provider) (= (:id provider) (get-in db [:selected-provider :id])))
      (assoc db :selected-provider nil)
      db)))
+
+
+;;; Suggestions list and selection
 
 (rf/reg-event-fx
  :scenarios.map/select-suggestion
@@ -353,7 +367,44 @@
        (assoc :view-state :current-scenario))))
 
 
-;; Creating new-providers
+;;; Creating new scenario providers
+
+(rf/reg-event-db
+ :scenarios.new-action/simple-create-provider
+ in-scenarios
+ (fn [db [_]]
+   (assoc db :view-state :new-provider)))
+
+
+;;; Suggestions management
+
+(rf/reg-event-fx
+ :scenarios.new-action/abort-fetching-suggestions
+ in-scenarios
+ (fn [{:keys [db]} [_]]
+   (let [view-state          (:view-state db)
+         request-action-name (case view-state
+                               :get-suggestions-for-new-provider :computing-best-locations
+                               :get-suggestions-for-improvements :computing-best-improvements
+                               nil)
+         request-key         (get-in db [:current-scenario request-action-name :state])]
+     (when (and request-action-name request-key)
+       {:db        (-> db
+                       (assoc-in [:current-scenario request-action-name :state] nil)
+                       (assoc :view-state :current-scenario))
+        :api-abort request-key}))))
+
+(rf/reg-event-fx
+ :scenarios/edit-suggestion
+ in-scenarios
+ (fn [{:keys [db]} [_ {:keys [location action-capacity] :as suggestion}]]
+   (let [{:keys [view-state]} db]
+     {:dispatch (if (= view-state :new-provider)
+                  [:scenarios/create-provider location {:required-capacity action-capacity}]
+                  [:scenarios/open-changeset-dialog suggestion])})))
+
+
+;;; Suggestions for new site locations
 
 (rf/reg-event-fx
  :scenarios.new-provider/fetch-suggested-locations
@@ -395,36 +446,8 @@
              (assoc-in [:current-scenario :computing-best-locations :state] nil)))
        db))))
 
-(rf/reg-event-db
- :scenarios.new-action/simple-create-provider
- in-scenarios
- (fn [db [_]]
-   (-> db (assoc :view-state :new-provider))))
 
-(rf/reg-event-fx
- :scenarios.new-action/abort-fetching-suggestions
- in-scenarios
- (fn [{:keys [db]} [_]]
-   (let [view-state          (:view-state db)
-         request-action-name (case view-state
-                               :get-suggestions-for-new-provider :computing-best-locations
-                               :get-suggestions-for-improvements :computing-best-improvements
-                               nil)
-         request-key         (get-in db [:current-scenario request-action-name :state])]
-     (when (and request-action-name request-key)
-       {:db        (-> db
-                       (assoc-in [:current-scenario request-action-name :state] nil)
-                       (assoc :view-state :current-scenario))
-        :api-abort request-key}))))
-
-(rf/reg-event-db
- :scenarios/show-scenario-settings
- in-scenarios
- (fn [db [_]]
-   (let [state (:view-state db)]
-     (assoc db :view-state (case state
-                             :show-scenario-settings :current-scenario
-                             :show-scenario-settings)))))
+;;; Suggestions for existing sites to improve
 
 (rf/reg-event-fx
  :scenarios.new-action/fetch-suggested-providers-to-improve
@@ -463,14 +486,24 @@
              (assoc-in [:current-scenario :computing-best-improvements :state] nil)))
        db))))
 
+
+;;; Providers search
+
 (rf/reg-event-fx
- :scenarios/edit-suggestion
+ :scenarios/start-searching
  in-scenarios
- (fn [{:keys [db]} [_ suggestion]]
-   (let [{:keys [view-state]} db]
-     {:dispatch (if (= view-state :new-provider)
-                  [:scenarios/create-provider (:location suggestion) {:required-capacity (:action-capacity suggestion)}]
-                  [:scenarios/open-changeset-dialog suggestion])})))
+ (fn [{:keys [db]}]
+   {:db       (assoc db :view-state :search-providers)
+    :dispatch [:scenarios/search-providers "" nil]}))
+
+(rf/reg-event-fx
+ :scenarios/cancel-search
+ in-scenarios
+ (fn [{:keys [db]}]
+   (when (= :search-providers (:view-state db))
+     {:db (-> db
+              (assoc :view-state :current-scenario)
+              (assoc :providers-search nil))})))
 
 (defn- provider-matcher
   [search-value]
@@ -478,32 +511,46 @@
     (fn [{:keys [name] :as provider}]
       (s/includes? (s/lower-case name) search-value))))
 
+(defn- search-providers
+  [db search-value direction]
+  (let [last-search-value  (get-in db [:providers-search :search-value])
+        last-occurrence    (get-in db [:providers-search :occurrence])
+        scenario           (:current-scenario db)
+        all-providers      (sort-by :name (db/all-providers scenario))
+        matching-providers (if-not (s/blank? search-value)
+                             (filterv (provider-matcher search-value) all-providers)
+                             all-providers)
+        match-count        (count matching-providers)
+        occurrence         (if (and (= last-search-value search-value)
+                                    (some? last-occurrence))
+                             (mod (case direction
+                                    :forward  (inc last-occurrence)
+                                    :backward (dec last-occurrence)
+                                    last-occurrence) match-count)
+                             0)
+        found-provider     (when (seq matching-providers) (nth matching-providers occurrence))]
+    (merge
+     {:db (assoc db :providers-search {:search-value search-value
+                                       :occurrence   occurrence
+                                       :matches      matching-providers})}
+     (cond
+       (and found-provider (some? direction))
+       {:dispatch [:scenarios.map/select-provider (assoc found-provider :hover? true)]}
+
+       (some? direction)
+       {:dispatch [:scenarios.map/unselect-provider nil]}))))
+
 (rf/reg-event-fx
  :scenarios/search-providers
  in-scenarios
- (fn [{:keys [db]} [_ search-value]]
-   (let [last-search-value  (get-in db [:providers-search :search-value])
-         last-occurrence    (get-in db [:providers-search :occurrence])
-         providers          (get-in db [:current-scenario :providers])
-         new-providers      (->> (get-in db [:current-scenario :changeset])
-                                 (filter (comp #{"create-provider"} :action)))
-         matching-providers (when-not (s/blank? search-value)
-                              (filterv (provider-matcher search-value) (concat providers new-providers)))
-         match-count        (count matching-providers)
-         occurrence         (if (and (= last-search-value search-value)
-                                     (some? last-occurrence))
-                              (mod (inc last-occurrence) match-count)
-                              0)
-         found-provider     (when (seq matching-providers) (nth matching-providers occurrence))]
-     {:db       (assoc db :providers-search {:search-value search-value
-                                             :match-count  match-count
-                                             :occurrence   occurrence})
-      :dispatch (if found-provider
-                  [:scenarios.map/select-provider found-provider]
-                  [:scenarios.map/unselect-provider])})))
+ (fn [{:keys [db]} [_ search-value direction]]
+   (let [direction (#{:forward :backward} direction :forward)]
+     (search-providers db search-value direction))))
 
 (rf/reg-event-fx
- :scenarios/clear-providers-search
+ :scenarios/refresh-search-providers
  in-scenarios
  (fn [{:keys [db]} [_]]
-   {:db (assoc db :providers-search nil)}))
+   (when (= :search-providers (:view-state db))
+     (let [last-search-value (get-in db [:providers-search :search-value])]
+       (search-providers db last-search-value nil)))))

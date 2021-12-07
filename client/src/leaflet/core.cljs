@@ -221,12 +221,18 @@
     (when (some? initial-bbox)
       (let [[[s w] [n e]]  initial-bbox
             lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
-        (.fitBounds leaflet lat-lng-bounds)))))
+        (.fitBounds leaflet lat-lng-bounds)))
+
+    (when-let [map-ref (:ref props)]
+      (map-ref leaflet))))
 
 (defn- leaflet-will-unmount
   [this]
   (let [state   (reagent/state this)
+        props   (reagent/props this)
         leaflet (:map state)]
+    (when-let [map-ref (:ref props)]
+      (map-ref nil))
     (.remove leaflet)))
 
 (defn- leaflet-did-update

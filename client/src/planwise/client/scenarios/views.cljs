@@ -119,10 +119,8 @@
    selected-provider]
   {:className
    (join " " ["leaflet-circle-icon"
-              (cond
-                (= id (:id selected-provider)) "selected"
-                (and (not change)
-                     (not matches-filters))    "not-matching")
+              (when (= id (:id selected-provider)) "selected")
+              (when (and (not change) (not matches-filters)) "upgradeable")
               (get-marker-class-for-provider provider)
               (when (provider-has-change? provider)
                 "leaflet-circle-for-change")
@@ -132,19 +130,27 @@
 (defn- scenario-providers-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
   (let [selected-provider @(subscribe [:scenarios.map/selected-provider])
+        searching?        @(subscribe [:scenarios/searching-providers?])
+        matching-ids      @(subscribe [:scenarios/search-matching-ids])
         all-providers     @(subscribe [:scenarios/all-providers])]
     (into [:feature-group {}]
           (map (fn [{:keys [id location name] :as provider}]
-                 [:marker {:key          id
-                           :lat          (:lat location)
-                           :lon          (:lon location)
-                           :icon         (provider-icon-function provider selected-provider)
-                           :tooltip      name
-                           :open?        (when (= id (:id selected-provider)) (:open? selected-provider))
-                           :provider     provider
-                           :popup-fn     popup-fn
-                           :mouseover-fn mouseover-fn
-                           :mouseout-fn  mouseout-fn}])
+                 (let [selected?    (= id (:id selected-provider))
+                       matching?    (or (not searching?) (contains? matching-ids id))
+                       marker-props {:key      id
+                                     :lat      (:lat location)
+                                     :lon      (:lon location)
+                                     :icon     (provider-icon-function provider selected-provider)
+                                     :provider provider}]
+                   (if matching?
+                     [:marker (merge marker-props
+                                     {:tooltip      name
+                                      :open?        (when selected? (:open? selected-provider))
+                                      :hover?       (when selected? (:hover? selected-provider))
+                                      :popup-fn     popup-fn
+                                      :mouseover-fn mouseover-fn
+                                      :mouseout-fn  mouseout-fn})]
+                     [:marker (assoc marker-props :opacity 0.2)])))
                all-providers))))
 
 (defn- scenario-selected-provider-layer
@@ -197,7 +203,8 @@
 
 (defn- suggestion-icon-function
   [suggestion selected-suggestion suggestion-type]
-  {:className
+  {:html (str "<span>" (:ranked suggestion) "</span>")
+   :className
    (->> ["leaflet-suggestion-icon"
          (when (= suggestion selected-suggestion) "selected")
          (case suggestion-type
@@ -289,9 +296,17 @@
 
 ;;; Screen components
 
+(def ^:private fit-options #js {:maxZoom            12
+                                :paddingTopLeft     (js/L.Point. 400 50)
+                                :paddingBottomRight (js/L.Point. 50 10)})
+
 (defn simple-map
   [project _ _ _ read-only?]
-  (let [view-state              (subscribe [:scenarios/view-state])
+  (let [map-ref                 (atom nil)
+        last-bbox               (atom nil)
+        view-state              (subscribe [:scenarios/view-state])
+        searching?              (subscribe [:scenarios/searching-providers?])
+        matches-bbox            (subscribe [:scenarios.map/search-matches-bbox])
         position                (r/atom mapping/map-preview-position)
         zoom                    (r/atom 3)
         demand-unit             (get-demand-unit project)
@@ -313,9 +328,17 @@
         suggestion-mouseover-fn (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/select-suggestion suggestion]))
         suggestion-mouseout-fn  (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/unselect-suggestion suggestion]))]
     (fn [{:keys [bbox] :as project} scenario state error read-only?]
+      ;; fit-bounds to search result matches
+      (when (and @searching? @matches-bbox (not= @last-bbox @matches-bbox))
+        (reset! last-bbox @matches-bbox)
+        (let [[[s w] [n e]] @matches-bbox
+              match-bbox    (js/L.latLngBounds (js/L.latLng s w) (js/L.latLng n e))]
+          (r/after-render #(when @map-ref (.fitBounds @map-ref match-bbox fit-options)))))
+
       [:div.map-container (when error {:class "gray-filter"})
        [l/map-widget {:zoom                @zoom
                       :position            @position
+                      :ref                 #(reset! map-ref %)
                       :on-position-changed #(reset! position %)
                       :on-zoom-changed     #(reset! zoom %)
                       :on-click            (cond (= state :new-provider) add-point)
@@ -436,7 +459,46 @@
        [:<>
         [changeset/listing-component {:demand-unit   demand-unit
                                       :capacity-unit capacity-unit}
-         providers]])]))
+         providers]
+        [:div.search-bottom-bar
+         {:on-click #(dispatch [:scenarios/start-searching])}
+         [m/Icon "search"]
+         [:span "Search facilities"]]])]))
+
+
+(defn- search-view
+  [project]
+  (let [search-value    (r/atom "")
+        close-fn        #(dispatch [:scenarios/cancel-search])
+        dispatch-search (utils/debounced #(dispatch [:scenarios/search-providers %1 %2]) 500)
+        update-search   (fn [value]
+                          (reset! search-value value)
+                          (dispatch-search value :forward))
+        search-again    (fn [direction]
+                          (dispatch-search :immediate @search-value direction))
+        matches         (subscribe [:scenarios/search-providers-matches])
+        demand-unit     (get-demand-unit project)
+        capacity-unit   (get-capacity-unit project)]
+    (fn [_]
+      [:<>
+       [:div.section.sidebar-title.search
+        [m/Icon "search"]
+        [:input {:type        :text
+                 :auto-focus  true
+                 :on-key-down (fn [evt]
+                                (case (.-which evt)
+                                  27      (close-fn)
+                                  38      (search-again :backward)
+                                  (13 40) (search-again :forward)
+                                  nil))
+                 :placeholder "Search facilities"
+                 :value       @search-value
+                 :on-change   #(update-search (-> % .-target .-value))}]
+        [close-button {:on-click close-fn}]]
+       (when (seq @matches)
+         [changeset/listing-component {:demand-unit   demand-unit
+                                       :capacity-unit capacity-unit}
+          @matches])])))
 
 (defn side-panel-view-2
   [current-scenario error]
@@ -444,16 +506,23 @@
         computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
         suggested-locations          (subscribe [:scenarios.new-provider/suggested-locations])
         view-state                   (subscribe [:scenarios/view-state])
+        searching?                   (subscribe [:scenarios/searching-providers?])
         providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])
         current-project              (subscribe [:projects2/current-project])
         computing-suggestions?       (or @computing-best-locations? @computing-best-improvements?)]
-    (if @suggested-locations
+    (cond
+      @searching?
+      [search-view @current-project]
+
+      @suggested-locations
       [suggestions-view {:suggestions     @suggested-locations
                          :suggestion-type (case @view-state
                                             :new-provider     :new-provider
                                             :new-intervention :improvement
                                             nil)
                          :project         @current-project}]
+
+      :else
       [scenario-view {:view-state                @view-state
                       :scenario                  current-scenario
                       :computing?                computing-suggestions?
@@ -501,47 +570,9 @@
                        ["arrow_right" :scenarios/expand-sidebar])]
     [:div.sidebar-expand-button
      [:div.sidebar-button {:on-click #(dispatch [event])}
-      [:div.sidebar-button-inner
-       [m/Icon icon]]]]))
+      [m/Icon icon]]]))
 
-(defn- sidebar-search
-  []
-  (let [expanded?       (r/atom false)
-        search-value    (r/atom "")
-        close-fn        (fn []
-                          (reset! expanded? false)
-                          (reset! search-value "")
-                          (dispatch [:scenarios/clear-providers-search]))
-        toggle-fn       (fn []
-                          (if @expanded? (close-fn) (reset! expanded? true)))
-        dispatch-search (utils/debounced #(dispatch [:scenarios/search-providers %]) 500)
-        update-search   (fn [value]
-                          (reset! search-value value)
-                          (dispatch-search value))
-        search-again    (fn []
-                          (dispatch-search :immediate @search-value))
-        matches         (subscribe [:scenarios/search-providers-matches])]
-    (fn []
-      [:div.sidebar-search
-       {:class (if @expanded? "expanded")}
-       (when @expanded?
-         [:<>
-          [:input {:type        :text
-                   :auto-focus  true
-                   :on-blur     close-fn
-                   :on-key-down (fn [evt]
-                                  (case (.-which evt)
-                                    27 (close-fn)
-                                    13 (search-again)
-                                    nil))
-                   :placeholder "Search providers"
-                   :value       @search-value
-                   :on-change   #(update-search (-> % .-target .-value))}]
-          (when-let [[occurrence total] @matches]
-            [:span (str occurrence "/" total)])])
-       [:div.sidebar-button
-        {:on-click toggle-fn}
-        [m/Icon {:use "search"}]]])))
+
 
 (defn- scenario-actions
   [{:keys [source-type]} {:keys [id] :as scenario}]
@@ -579,26 +610,26 @@
 
 (defn display-current-scenario
   [current-project current-scenario]
-  (let [read-only? (subscribe [:scenarios/read-only?])
-        state      (subscribe [:scenarios/view-state])
-        error      (subscribe [:scenarios/error])]
+  (let [expanded-sidebar?   (subscribe [:scenarios/sidebar-expanded?])
+        can-expand-sidebar? (subscribe [:scenarios/can-expand-sidebar?])
+        read-only?          (subscribe [:scenarios/read-only?])
+        state               (subscribe [:scenarios/view-state])
+        error               (subscribe [:scenarios/error])]
     (fn [current-project current-scenario]
-      (let [expanded-sidebar? (= @state :show-actions-table)]
-        [ui/full-screen
-         (merge (common2/nav-params)
-                {:main          [simple-map current-project current-scenario @state @error @read-only?]
-                 :title         [scenario-breadcrumb current-project current-scenario]
-                 :title-actions (scenario-actions current-project current-scenario)
-                 :sidebar-prop  {:class [(if expanded-sidebar? :expanded-sidebar :compact-sidebar)]}})
-         (if expanded-sidebar?
-           [actions-table-view current-scenario]
-           [side-panel-view current-scenario @error @read-only?])
-         [edit/rename-scenario-dialog]
-         [edit/delete-scenario-dialog]
-         [edit/changeset-dialog current-project current-scenario]
-         [sidebar-expand-button expanded-sidebar?]
-         (when-not expanded-sidebar?
-           [sidebar-search])]))))
+      [ui/full-screen
+       (merge (common2/nav-params)
+              {:main          [simple-map current-project current-scenario @state @error @read-only?]
+               :title         [scenario-breadcrumb current-project current-scenario]
+               :title-actions (scenario-actions current-project current-scenario)
+               :sidebar-prop  {:class [(if @expanded-sidebar? :expanded-sidebar :compact-sidebar)]}})
+       (if @expanded-sidebar?
+         [actions-table-view current-scenario]
+         [side-panel-view current-scenario @error @read-only?])
+       [edit/rename-scenario-dialog]
+       [edit/delete-scenario-dialog]
+       [edit/changeset-dialog current-project current-scenario]
+       (when @can-expand-sidebar?
+         [sidebar-expand-button @expanded-sidebar?])])))
 
 (defn scenarios-page
   []

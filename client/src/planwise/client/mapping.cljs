@@ -3,7 +3,7 @@
             [re-frame.utils :as c]
             [planwise.client.config :as config]))
 
-(def mapbox-mapid "instedd/ckml2dykm4cl917o08mxux07b")
+(def mapbox-mapid "instedd/ckwr39mj411tw14pofca8vinx")
 (def mapbox-access-token "pk.eyJ1IjoiaW5zdGVkZCIsImEiOiJja21ndHVrZ3cwMHQ5Mm9rZDgwaThkd3JoIn0.Kr3h9hO93IimCigXfYrBmw")
 
 (def map-preview-position

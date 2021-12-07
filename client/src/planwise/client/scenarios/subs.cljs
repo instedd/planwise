@@ -15,6 +15,18 @@
    (get-in db [:scenarios :view-state])))
 
 (rf/reg-sub
+ :scenarios/sidebar-expanded?
+ :<- [:scenarios/view-state]
+ (fn [view-state]
+   (= :show-actions-table view-state)))
+
+(rf/reg-sub
+ :scenarios/can-expand-sidebar?
+ :<- [:scenarios/view-state]
+ (fn [view-state]
+   (#{:current-scenario :show-actions-table} view-state)))
+
+(rf/reg-sub
  :scenarios/open-dialog
  (fn [db _]
    (get-in db [:scenarios :open-dialog])))
@@ -127,30 +139,11 @@
  (fn [db _]
    (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
 
-(defn update-capacity-and-demand
-  [{:keys [capacity] :as provider} providers-data]
-  (merge provider
-         (select-keys
-          (utils/find-by-id providers-data (:id provider))
-          [:capacity :satisfied-demand :unsatisfied-demand :free-capacity :required-capacity :reachable-demand])
-         {:initial-capacity capacity}))
-
-(defn apply-change
-  [providers [index change]]
-  (if (= (:action change) "create-provider")
-    (conj providers (db/new-provider-from-change change))
-    (utils/update-by-id providers (:id change) assoc :change change)))
-
 (rf/reg-sub
- :scenarios/all-providers :<- [:scenarios/current-scenario]
- (fn [{:keys [providers disabled-providers changeset providers-data] :as scenario} _]
-   (let [providers' (concat (map #(assoc % :matches-filters true)
-                                 providers)
-                            (map #(assoc % :matches-filters false :capacity 0)
-                                 disabled-providers))]
-     (map
-      #(update-capacity-and-demand % providers-data)
-      (reduce apply-change providers' (map-indexed vector changeset))))))
+ :scenarios/all-providers
+ :<- [:scenarios/current-scenario]
+ (fn [scenario _]
+   (db/all-providers scenario)))
 
 (rf/reg-sub
  :scenarios/providers-from-changeset
@@ -159,11 +152,6 @@
     (rf/subscribe [:scenarios/current-scenario])])
  (fn [[all-providers {:keys [changeset]}] _]
    (map #(utils/find-by-id all-providers (:id %)) changeset)))
-
-(rf/reg-sub
- :scenarios/scenario-menu-settings :<- [:scenarios/view-state]
- (fn [view-state [_]]
-   (= :show-scenario-settings view-state)))
 
 (rf/reg-sub
  :scenarios.current/source-demand
@@ -186,8 +174,39 @@
    (get-in db [:scenarios :sort-order])))
 
 (rf/reg-sub
+ :scenarios/searching-providers?
+ :<- [:scenarios/view-state]
+ (fn [view-state]
+   (= :search-providers view-state)))
+
+(rf/reg-sub
  :scenarios/search-providers-matches
  (fn [db _]
-   (let [{:keys [occurrence match-count]} (get-in db [:scenarios :providers-search])]
-     (when (pos? match-count)
-       [(inc occurrence) match-count]))))
+   (get-in db [:scenarios :providers-search :matches])))
+
+(rf/reg-sub
+ :scenarios/search-matching-ids
+ :<- [:scenarios/search-providers-matches]
+ (fn [matches]
+   (set (map :id matches))))
+
+(defn bbox-from-location
+  [{:keys [lat lon]}]
+  [[lat lon] [lat lon]])
+
+(rf/reg-sub
+ :scenarios.map/search-matches-bbox
+ :<- [:scenarios/search-providers-matches]
+ (fn [matches]
+   (cond
+     (empty? matches)
+     nil
+
+     (= 1 (count matches))
+     (bbox-from-location (:location (first matches)))
+
+     :else
+     (reduce (fn [[[s w] [n e]] {{:keys [lat lon]} :location}]
+               [[(min s lat) (min w lon)] [(max n lat) (max e lon)]])
+             (bbox-from-location (:location (first matches)))
+             (rest matches)))))

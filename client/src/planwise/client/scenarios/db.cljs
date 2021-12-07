@@ -1,5 +1,25 @@
 (ns planwise.client.scenarios.db
-  (:require [planwise.client.asdf :as asdf]))
+  (:require [planwise.client.asdf :as asdf]
+            [planwise.client.utils :as utils]))
+
+;; View state possible values
+;;
+;;                  :get-suggestions-for-new-provider
+;;                           ▲  │        │
+;;                           │  │        ▼
+;;                           │  │  ┌──►:new-provider
+;;          ┌─────────────┐  │  │  │     │   ┌────────────┐
+;;          │             │  │  ▼  │     ▼   │            │
+;;          ▼           ┌─┴──┴─────┴─────────┴─┐          ▼
+;; :show-actions-table  │  :current-scenario   │   :search-providers
+;;          │           └────┬─────────────────┘          │
+;;          │             ▲  │  ▲        ▲   ▲            │
+;;          └─────────────┘  │  │        │   └────────────┘
+;;                           │  │  :new-intervention
+;;                           │  │        ▲
+;;                           ▼  │        │
+;;                 :get-sugggestions-for-improvements
+
 
 (def initial-db
   {:view-state          :current-scenario
@@ -48,3 +68,34 @@
    :location       (:location change)
    :matches-filter true
    :change         change})
+
+(defn- apply-change
+  [providers-by-id change]
+  (if (= (:action change) "create-provider")
+    (let [new-provider (new-provider-from-change change)]
+      (conj providers-by-id [(:id new-provider) new-provider]))
+    (update providers-by-id (:id change) assoc :change change)))
+
+(defn- update-capacity-and-demand
+  [data-by-id {:keys [capacity] :as provider}]
+  (merge provider
+         (select-keys (data-by-id (:id provider))
+                      [:capacity
+                       :satisfied-demand
+                       :unsatisfied-demand
+                       :free-capacity
+                       :required-capacity
+                       :reachable-demand])
+         {:initial-capacity capacity}))
+
+(defn- all-providers
+  [{:keys [providers disabled-providers changeset providers-data]}]
+  (let [providers-by-id         (->> (concat (map #(assoc % :matches-filters true)
+                                                  providers)
+                                             (map #(assoc % :matches-filters false :capacity 0)
+                                                  disabled-providers))
+                                     (utils/index-by :id))
+        changed-providers-by-id (reduce apply-change providers-by-id changeset)
+        data-by-id              (utils/index-by :id providers-data)]
+    (map (partial update-capacity-and-demand data-by-id)
+         (vals changed-providers-by-id))))

@@ -170,12 +170,18 @@ footer {
 .layout.full-screen {
   aside#sidebar {
     z-index: 2000;
-    @include mdc-elevation(2);
+    @include mdc-elevation(4);
     background: #ffffff;
     position: relative;
     min-height: 0;
     display: flex;
     flex-direction: column;
+    border-radius: 4px;
+    > div:first-child {
+      z-index: 2;
+      background: #ffffff;
+      border-radius: 4px 4px 0 0;
+    }
   }
   aside#sidebar.hidden {
     display: none;
@@ -407,7 +413,7 @@ form.vertical, .fields-vertical {
   background: transparent;
   cursor: pointer;
   &:hover {
-    background: #e6e6e6;
+    background: rgba(0,0,0,0.1);
   }
 }
 
@@ -421,9 +427,23 @@ form.vertical, .fields-vertical {
     flex-direction: row;
     align-items: center;
     border-bottom: 1px solid #e6e6e6;
+    height: 64px;
+    padding: 0 1rem;
+    flex-shrink: 0;
     h1 {
       flex: 1;
       font-size: 1.3rem;
+    }
+    input {
+      flex: 1;
+    }
+  }
+  .sidebar-title.search {
+    background-color: #e6e6e6 !important;
+    color: #999999;
+    .icon-button {
+      margin-left: 1rem;
+      color: #999999;
     }
   }
   h1 {
@@ -452,6 +472,7 @@ form.vertical, .fields-vertical {
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
+    flex: 1;
 
     background: linear-gradient(#ffffff 30%, rgba(255,255,255, 0)), linear-gradient(rgba(255,255,255, 0), #ffffff 70%) 0 100%, radial-gradient(farthest-side at 50% 0, rgba(0,0,0, 0.2), rgba(0,0,0,0)), radial-gradient(farthest-side at 50% 100%, rgba(0,0,0, 0.2), rgba(0,0,0,0)) 0 100%;
     background-attachment: local, local, scroll, scroll;
@@ -459,6 +480,35 @@ form.vertical, .fields-vertical {
     background-size: 100% 30px, 100% 30px, 100% 15px, 100% 15px;
   }
 
+  .search input[type=text] {
+    font-size: 100%;
+    height: 32px;
+    border-radius: 2px;
+    margin-left: 10px;
+    padding: 0px 8px;
+    background-color: transparent;
+    color: black;
+    border: none;
+    &::placeholder {
+      color: #999999;
+    }
+    &:focus {
+      outline: none;
+    }
+  }
+
+  .search-bottom-bar {
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    color: #999999;
+    background-color: rgba(0,0,0,0.1);
+    cursor: pointer;
+    i {
+      margin-right: 1rem;
+    }
+  }
 }
 
 .icon-list {
@@ -476,8 +526,11 @@ form.vertical, .fields-vertical {
 
 .changeset-row {
   cursor: pointer;
-  &:hover {
+  &.selected {
     background-color: #f0f0f0;
+  }
+  &.upgradeable {
+    color: #777;
   }
   border-top: 1px solid #e6e6e6;
 }
@@ -1063,9 +1116,25 @@ form.vertical, .fields-vertical {
   background: red;
 }
 
-.leaflet-suggestion-icon{
-  border: 3px solid orange !important;
-  background: cyan;
+.leaflet-suggestion-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+  > span {
+    z-index: 1;
+    font-weight: bold;
+  }
+  &::before {
+    position: absolute;
+    content: " ";
+    display: block;
+    width: 12px;
+    height: 12px;
+    border: 3px solid darkcyan !important;
+    background: cyan;
+    transform: rotate(45deg);
+  }
 }
 
 .leaflet-legend-container {
@@ -1145,7 +1214,7 @@ form.vertical, .fields-vertical {
     background-color: #ff5722;
     border: 1px #8f2100 solid;
   }
-  &.not-matching {
+  &.upgradeable {
     background-color: #999;
     border: 1px black solid;
   }
@@ -1366,57 +1435,21 @@ path.coverage-polygon {
 
 .sidebar-expand-button {
   position: absolute;
-  right: -24px;
+  right: -20px;
 
   > .sidebar-button {
     position: relative;
-    min-width: 24px;
-    width: 24px;
+    z-index: 1;
+    width: 28px;
     padding: 0px;
     height: 64px;
     background-color: #404040;
-    color: white;
+    color: #999999;
     border-radius: 0px 4px 4px 0px;
     cursor: pointer;
-
-    > .sidebar-button-inner {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-    }
-  }
-}
-
-.sidebar-search {
-  position: absolute;
-  background-color: #404040;
-  border-radius: 0px 4px 4px 0px;
-  left: 100%;
-  bottom: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  height: 48px;
-  color: white;
-  > .sidebar-button {
-    cursor: pointer;
-  }
-  input[type=text] {
-    font-size: 100%;
-    height: 32px;
-    margin-left: 10px;
-    margin-right: 4px;
-    border-radius: 4px;
-    padding: 0px 8px;
-    background-color: #606060;
-    color: white;
-    border: none;
-    &::placeholder {
-      color: #e0e0e0;
-    }
-  }
-  span {
-    margin: 0px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: end;
   }
 }
 
