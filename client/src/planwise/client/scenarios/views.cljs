@@ -351,7 +351,9 @@
                       :on-position-changed #(reset! position %)
                       :on-zoom-changed     #(reset! zoom %)
                       :on-click            (cond (= state :new-provider) add-point)
-                      :controls            [:attribution [:legend {:provider-unit provider-unit}] :mapbox-logo]
+                      :controls            [:attribution
+                                            :reference-table
+                                            :mapbox-logo]
                       :initial-bbox        bbox
                       :pointer-class       (cond (= state :new-provider) "crosshair-pointer")}
         mapping/base-tile-layer

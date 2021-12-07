@@ -1,6 +1,7 @@
 (ns leaflet.core
   (:require [reagent.core :as reagent :refer [atom]]
             [leaflet.layers :as layers]
+            [leaflet.controls :as controls]
             [planwise.client.utils :as utils]))
 
 
@@ -134,31 +135,6 @@
             lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
         (.setMaxBounds leaflet lat-lng-bounds)))))
 
-(def ^:private MapboxLogo
-  (js/L.Control.extend
-   #js {:onAdd (fn []
-                 (let [container (js/L.DomUtil.create "a" "mapbox-logo")]
-                   (.setAttribute container "href" "https://www.mapbox.com/about/maps")
-                   (.setAttribute container "target" "_blank")
-                   (set! (.-innerHTML container) "MapBox")
-                   container))}))
-
-(defn- mapbox-logo
-  [options]
-  (new MapboxLogo (clj->js (merge {:position "topright"} options))))
-
-(defn- leaflet-create-control
-  [control-def]
-  (let [[type props] (if (vector? control-def) control-def [control-def {}])]
-    (case type
-      :zoom        (.zoom js/L.control)
-      :attribution (.attribution js/L.control #js {:prefix false})
-      :mapbox-logo (mapbox-logo props)
-      :legend      (.legend js/L.control #js {:pixelMaxValue (:pixel-max-value props)
-                                              :pixelArea     (:pixel-area props)
-                                              :providerUnit  (:provider-unit props)})
-      (throw (ex-info "Invalid control type" control-def)))))
-
 (def default-controls [:zoom :attribution :legend])
 
 (defn- leaflet-update-controls
@@ -173,7 +149,7 @@
           destroy-control-fn (fn [old-control]
                                (.removeControl leaflet old-control))
           create-control-fn  (fn [new-control-def]
-                               (let [new-control (leaflet-create-control new-control-def)]
+                               (let [new-control (controls/create-control new-control-def)]
                                  (.addControl leaflet new-control)
                                  new-control))
           update-control-fn  (fn [old-control new-control-def old-control-def]
