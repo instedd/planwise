@@ -141,11 +141,12 @@
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
                        matching?    (or (not searching?) (contains? matching-ids id))
-                       marker-props {:key      id
-                                     :lat      (:lat location)
-                                     :lon      (:lon location)
-                                     :icon     (provider-icon-function provider selected-provider)
-                                     :provider provider}]
+                       marker-props {:key          id
+                                     :lat          (:lat location)
+                                     :lon          (:lon location)
+                                     :icon         (provider-icon-function provider selected-provider)
+                                     :provider     provider
+                                     :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
                    (if matching?
                      [:marker (merge marker-props
                                      {:tooltip      name
@@ -235,7 +236,8 @@
                            :suggestion   suggestion
                            :popup-fn     popup-fn
                            :mouseover-fn mouseover-fn
-                           :mouseout-fn  mouseout-fn}])
+                           :mouseout-fn  mouseout-fn
+                           :zIndexOffset 4000}])
                suggested-locations))))
 
 
@@ -262,24 +264,27 @@
         quantity-current (:quantity source)
         ratio            (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
         classname        (cond
-                           (= 0 quantity-initial) "leaflet-square-icon-gray"
-                           (<= ratio 0.25)        "leaflet-square-icon-green"
-                           (< 0.25 ratio 0.5)     "leaflet-sqaure-icon-yellow"
-                           (<= 0.5 ratio 0.75)    "leaflet-square-icon-orange"
-                           (> ratio 0.75)         "leaflet-square-icon-red")]
-    {:className classname}))
+                           (= 0 quantity-initial) "gray"
+                           (<= ratio 0.05)        "satisfied"
+                           (< 0.05 ratio 0.25)    "high-satisfied"
+                           (<= 0.25 ratio 0.5)    "low-satisfied"
+                           (> ratio 0.5)          "unsatisfied")]
+    {:className (->> ["leaflet-source-icon" classname]
+                     (filter some?)
+                     (join " "))}))
 
 (defn- scenario-sources-layer
   [{:keys [sources-data] :as scenario} {:keys [popup-fn]}]
   (into [:feature-group {:key "sources-layer"}]
         (map (fn [{:keys [id lat lon name] :as source}]
-               [:marker {:key      id
-                         :lat      lat
-                         :lon      lon
-                         :icon     (source-icon-function source)
-                         :tooltip  name
-                         :source   source
-                         :popup-fn popup-fn}])
+               [:marker {:key          id
+                         :lat          lat
+                         :lon          lon
+                         :icon         (source-icon-function source)
+                         :tooltip      name
+                         :source       source
+                         :popup-fn     popup-fn
+                         :zIndexOffset 0}])
              sources-data)))
 
 

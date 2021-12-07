@@ -1092,29 +1092,39 @@ form.vertical, .fields-vertical {
   }
 }
 
-.leaflet-square-icon-gray {
-  border: 1px solid rgba(211, 211, 211, 0.53) !important;
-  background: rgba(189, 187, 187, 0.447);
+.leaflet-source-icon {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+
+  &::before {
+    position: absolute;
+    content: " ";
+    display: block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid white;
+    background: black;
+    transform: rotate(45deg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
   }
-
-.leaflet-square-icon-green {
-  border: 1px solid rgb(192, 233, 156) !important;
-  background: rgb(129, 203, 83);
-}
-
-.leaflet-square-icon-yellow {
-  border: 1px solid lightgoldenrodyellow !important;
-  background: yellow;
-}
-
-.leaflet-square-icon-orange {
-  border: 1px solid rgb(245, 208, 140) !important;
-  background: orange;
-}
-
-.leaflet-square-icon-red{
-  border: 1px solid lightcoral !important;
-  background: red;
+  &.gray::before {
+    background: darkgray;
+  }
+  &.satisfied::before {
+    background: black;
+  }
+  &.high-satisfied::before {
+    background: #ffeb3b;
+  }
+  &.low-satisfied::before {
+    background: #ffc107;
+  }
+  &.unsatisfied::before {
+    background: #ff5722;
+  }
 }
 
 .leaflet-suggestion-icon {
@@ -1122,6 +1132,8 @@ form.vertical, .fields-vertical {
   align-items: center;
   justify-content: center;
   color: black;
+  border: 3px solid darkcyan !important;
+  background: cyan;
   &[style] {
     width: 16px !important;
     height: 16px !important;
@@ -1147,6 +1159,14 @@ form.vertical, .fields-vertical {
     border: 3px solid darkcyan !important;
     background: cyan;
     transform: rotate(45deg);
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    background: cyan;
+    display: block;
+    width: 16px;
+    height: 16px;
   }
 }
 
