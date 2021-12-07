@@ -511,6 +511,21 @@ form.vertical, .fields-vertical {
       margin-right: 1rem;
     }
   }
+
+  .expand-center {
+    flex: 1;
+    display: flex;
+    justify-content: end;
+    flex-direction: column;
+    p {
+      font-size: 16px;
+      line-height: 1.5;
+      color: #999;
+    }
+  }
+  .actions {
+    margin-top: 10px;
+  }
 }
 
 .icon-list {

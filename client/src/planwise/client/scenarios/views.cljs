@@ -310,12 +310,13 @@
                                 :paddingBottomRight (js/L.Point. 50 10)})
 
 (defn simple-map
-  [project _ _ _ read-only?]
+  [project _ _ _]
   (let [map-ref                 (atom nil)
         last-bbox               (atom nil)
         view-state              (subscribe [:scenarios/view-state])
         searching?              (subscribe [:scenarios/searching-providers?])
         matches-bbox            (subscribe [:scenarios.map/search-matches-bbox])
+        initial-scenario?       (subscribe [:scenarios/initial-scenario?])
         position                (r/atom mapping/map-preview-position)
         zoom                    (r/atom 3)
         demand-unit             (get-demand-unit project)
@@ -323,7 +324,7 @@
         capacity-unit           (get-capacity-unit project)
         add-point               (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         source-popup-fn         (fn [{:keys [source]}] (show-source source))
-        provider-popup-fn       (fn [{:keys [provider]}] (show-provider {:read-only?    read-only?
+        provider-popup-fn       (fn [{:keys [provider]}] (show-provider {:read-only?    @initial-scenario?
                                                                          :demand-unit   demand-unit
                                                                          :capacity-unit capacity-unit}
                                                                         provider))
@@ -336,7 +337,7 @@
                                                            @view-state))
         suggestion-mouseover-fn (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/select-suggestion suggestion]))
         suggestion-mouseout-fn  (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/unselect-suggestion suggestion]))]
-    (fn [{:keys [bbox] :as project} scenario state error read-only?]
+    (fn [{:keys [bbox] :as project} scenario state error]
       ;; fit-bounds to search result matches
       (when (and @searching? @matches-bbox (not= @last-bbox @matches-bbox))
         (reset! last-bbox @matches-bbox)
@@ -352,7 +353,7 @@
                       :on-zoom-changed     #(reset! zoom %)
                       :on-click            (cond (= state :new-provider) add-point)
                       :controls            [:attribution
-                                            :reference-table
+                                            [:reference-table {:hide-actions? @initial-scenario?}]
                                             :mapbox-logo]
                       :initial-bbox        bbox
                       :pointer-class       (cond (= state :new-provider) "crosshair-pointer")}
@@ -377,19 +378,30 @@
   (utils/format-percentage (/ num denom) 2))
 
 (defn initial-scenario-panel
-  [{:keys [name demand-coverage state]}]
+  [{:keys [name demand-coverage] :as scenario}]
   (let [source-demand   (subscribe [:scenarios.current/source-demand])
         current-project (subscribe [:projects2/current-project])
-        demand-unit     (get-demand-unit @current-project)]
-    [:div
-     [:div {:class-name "section"}
-      [:h1 {:class-name "large"}
+        demand-unit     (get-demand-unit @current-project)
+        pending?        (scenario-pending? scenario)]
+    [:<>
+     [:div.section
+      [:h1.large
        [:small (str "Initial " demand-unit " coverage")]
        (cond
-         (= "pending" state) "loading..."
-         :else (str (utils/format-number demand-coverage) " (" (format-percentage demand-coverage @source-demand) ")"))]
-      [:p {:class-name "grey-text"}
-       (str "of a total of " (utils/format-number @source-demand))]]]))
+         pending? "loading..."
+         :else    (str (utils/format-number demand-coverage)
+                       " (" (format-percentage demand-coverage @source-demand) ")"))]
+      [:p.grey-text
+       (str "of a total of " (utils/format-number @source-demand))]]
+     [:div.section.expand-center
+      [:p
+       "This is the initial project scenario and cannot be modified. "
+       "To make changes, create a new one from here."]
+      [:div.actions
+       [m/Button {:disabled pending?
+                  :raised   true
+                  :on-click #(dispatch [:scenarios/copy-scenario (:id scenario)])}
+        "Create scenario"]]]]))
 
 (defn scenario-info
   [view-state current-scenario]
@@ -544,11 +556,10 @@
                       :error                     error}])))
 
 (defn side-panel-view
-  [current-scenario error read-only?]
-  [:<>
-   (if read-only?
-     [initial-scenario-panel current-scenario]
-     [side-panel-view-2 current-scenario error])])
+  [scenario error]
+  (if (db/initial-scenario? scenario)
+    [initial-scenario-panel scenario]
+    [side-panel-view-2 scenario error]))
 
 (defn scenario-line-info
   [{:keys [effort source-demand increase-coverage] :as current-scenario}]
@@ -624,19 +635,19 @@
   [current-project current-scenario]
   (let [expanded-sidebar?   (subscribe [:scenarios/sidebar-expanded?])
         can-expand-sidebar? (subscribe [:scenarios/can-expand-sidebar?])
-        read-only?          (subscribe [:scenarios/read-only?])
+        initial-scenario?   (subscribe [:scenarios/initial-scenario?])
         state               (subscribe [:scenarios/view-state])
         error               (subscribe [:scenarios/error])]
     (fn [current-project current-scenario]
       [ui/full-screen
        (merge (common2/nav-params)
-              {:main          [simple-map current-project current-scenario @state @error @read-only?]
+              {:main          [simple-map current-project current-scenario @state @error]
                :title         [scenario-breadcrumb current-project current-scenario]
-               :title-actions (scenario-actions current-project current-scenario)
+               :title-actions (when-not @initial-scenario? (scenario-actions current-project current-scenario))
                :sidebar-prop  {:class [(if @expanded-sidebar? :expanded-sidebar :compact-sidebar)]}})
        (if @expanded-sidebar?
          [actions-table-view current-scenario]
-         [side-panel-view current-scenario @error @read-only?])
+         [side-panel-view current-scenario @error])
        [edit/rename-scenario-dialog]
        [edit/delete-scenario-dialog]
        [edit/changeset-dialog current-project current-scenario]

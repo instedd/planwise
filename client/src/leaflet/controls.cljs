@@ -14,15 +14,17 @@
   (new MapboxLogo (clj->js (merge {:position "topright"} options))))
 
 (defn- reference-table-content
-  []
+  [{:keys [hide-actions?] :as options}]
   (crate/html
    [:div.map-reference-table
-    [:h1 "Actions"]
-    [:ul
-     [:li [:i.material-icons "domain"] "New provider"]
-     [:li [:i.material-icons "arrow_upward"] "Upgrade provider"]
-     [:li [:i.material-icons "add"] "Increase capacity"]]
-    [:hr]
+    (when-not hide-actions?
+      [:div
+       [:h1 "Actions"]
+       [:ul
+        [:li [:i.material-icons "domain"] "New provider"]
+        [:li [:i.material-icons "arrow_upward"] "Upgrade provider"]
+        [:li [:i.material-icons "add"] "Increase capacity"]]
+       [:hr]])
     [:h1 "Provider capacity"]
     [:ul
      [:li [:div.leaflet-circle-icon.idle-capacity] "Excess"]
@@ -38,7 +40,9 @@
 
 (def ^:private ReferenceTable
   (js/L.Control.extend
-   #js {:onAdd (fn [] (reference-table-content))}))
+   #js {:onAdd (fn []
+                 (let [options (js->clj (.-options (js-this)) :keywordize-keys true)]
+                   (reference-table-content options)))}))
 
 (defn- reference-table
   [options]
