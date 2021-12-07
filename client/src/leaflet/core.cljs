@@ -134,12 +134,26 @@
             lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
         (.setMaxBounds leaflet lat-lng-bounds)))))
 
+(def ^:private MapboxLogo
+  (js/L.Control.extend
+   #js {:onAdd (fn []
+                 (let [container (js/L.DomUtil.create "a" "mapbox-logo")]
+                   (.setAttribute container "href" "https://www.mapbox.com/about/maps")
+                   (.setAttribute container "target" "_blank")
+                   (set! (.-innerHTML container) "MapBox")
+                   container))}))
+
+(defn- mapbox-logo
+  [options]
+  (new MapboxLogo (clj->js (merge {:position "topright"} options))))
+
 (defn- leaflet-create-control
   [control-def]
   (let [[type props] (if (vector? control-def) control-def [control-def {}])]
     (case type
       :zoom        (.zoom js/L.control)
       :attribution (.attribution js/L.control #js {:prefix false})
+      :mapbox-logo (mapbox-logo props)
       :legend      (.legend js/L.control #js {:pixelMaxValue (:pixel-max-value props)
                                               :pixelArea     (:pixel-area props)
                                               :providerUnit  (:provider-unit props)})
@@ -183,15 +197,6 @@
             shiftKey      (aget originalEvent "shiftKey")]
         (on-click lat lon shiftKey)))))
 
-(defn- set-layer-blend-mode
-  "Create a handler that sets the mix-blend-mode for all leaflet layers."
-  [mode]
-  (fn [e]
-    (doseq [layer (array-seq (.querySelectorAll js/document ".leaflet-tile-pane > .leaflet-layer"))]
-      (-> layer
-          (.-style)
-          (.setProperty "mix-blend-mode" mode)))))
-
 (defn- leaflet-did-mount
   [this]
   (let [props        (reagent/props this)
@@ -207,13 +212,6 @@
     (leaflet-update-layers this)
     (leaflet-update-options this)
     (leaflet-update-viewport this)
-
-    ;; optimization: disable "expensive" blend mode while zooming
-    ;; TODO: try to remove coupling of this optimization with the css style
-    (let [multiply-off (set-layer-blend-mode "normal")
-          multiply-on  (utils/debounced (set-layer-blend-mode "multiply") 500)]
-      (mapv  #(.on leaflet % multiply-off) ["zoomstart"])
-      (mapv  #(.on leaflet % multiply-on) ["zoomend"]))
 
     (.on leaflet "moveend" (leaflet-moveend-handler this))
     (.on leaflet "click" (leaflet-click-handler this))

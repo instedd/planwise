@@ -346,11 +346,12 @@
                       :on-position-changed #(reset! position %)
                       :on-zoom-changed     #(reset! zoom %)
                       :on-click            (cond (= state :new-provider) add-point)
-                      :controls            [[:legend {:provider-unit provider-unit}]]
+                      :controls            [:attribution [:legend {:provider-unit provider-unit}] :mapbox-logo]
                       :initial-bbox        bbox
                       :pointer-class       (cond (= state :new-provider) "crosshair-pointer")}
-        mapping/default-base-tile-layer
+        mapping/base-tile-layer
         (scenario-demand-layer scenario)
+        mapping/labels-tile-layer
         (scenario-sources-layer scenario {:popup-fn source-popup-fn})
         (scenario-providers-layer {:popup-fn     provider-popup-fn
                                    :mouseover-fn provider-mouseover-fn

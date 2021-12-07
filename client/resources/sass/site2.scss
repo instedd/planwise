@@ -6,6 +6,7 @@ $small-font-size: 0.81em;
 @import "material-components-web/material-components-web";
 @import "@material/theme/_color-palette";
 @import "../css/data-table";
+@import "../css/mapbox";
 
 @mixin link-color($color, $hover-color: darken($color, 20%), $active-color: lighten($color, 20%)) {
   text-decoration: none;
@@ -1147,6 +1148,11 @@ form.vertical, .fields-vertical {
     background: cyan;
     transform: rotate(45deg);
   }
+}
+
+.leaflet-container .mapbox-logo {
+  margin: 5px 8px 0 0;
+  cursor: pointer;
 }
 
 .leaflet-legend-container {

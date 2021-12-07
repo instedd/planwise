@@ -3,7 +3,9 @@
             [re-frame.utils :as c]
             [planwise.client.config :as config]))
 
-(def mapbox-mapid "instedd/ckwr39mj411tw14pofca8vinx")
+(def mapbox-default-mapid "instedd/ckww8bpbs6d4f15qj408iip8c")
+(def mapbox-base-mapid "instedd/ckww8oi571asn14plvqixm5g4")
+(def mapbox-labels-mapid "instedd/ckww8sgct1auc15pcoeo01pv1")
 (def mapbox-access-token "pk.eyJ1IjoiaW5zdGVkZCIsImEiOiJja21ndHVrZ3cwMHQ5Mm9rZDgwaThkd3JoIn0.Kr3h9hO93IimCigXfYrBmw")
 
 (def map-preview-position
@@ -16,15 +18,26 @@
 (def layer-name
   "population")
 
-(def default-base-tile-layer
-  [:tile-layer {:key "base-layer"
-                :url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}"
-                :attribution "&copy; Mapbox"
-                :maxZoom 18
-                :zoomOffset -1
-                :tileSize 512
-                :mapid mapbox-mapid
+(defn- mapbox-layer
+  [{:keys [key mapid]}]
+  [:tile-layer {:key         key
+                :url         "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}"
+                :attribution (str "&copy; <a target='_blank' href='https://www.mapbox.com/about/maps'>Mapbox</a> "
+                                  "&copy; <a target='_blank' href='http://www.openstreetmap.org/about/'>OpenStreetMap</a>")
+                :maxZoom     18
+                :zoomOffset  -1
+                :tileSize    512
+                :mapid       mapid
                 :accessToken mapbox-access-token}])
+
+(def default-base-tile-layer
+  (mapbox-layer {:key "default-layer" :mapid mapbox-default-mapid}))
+
+(def base-tile-layer
+  (mapbox-layer {:key "base-layer" :mapid mapbox-base-mapid}))
+
+(def labels-tile-layer
+  (mapbox-layer {:key "labels-layer" :mapid mapbox-labels-mapid}))
 
 (def geojson-levels
   {1 {:ub 8, :simplify 0.1, :tileSize 10.0}
@@ -52,7 +65,7 @@
    (static-image geojson map-preview-size))
   ([geojson options]
    (fmt/format "https://api.mapbox.com/styles/v1/%s/static/geojson(%s)/auto/%dx%d@2x?access_token=%s&logo=false"
-               mapbox-mapid
+               mapbox-default-mapid
                (js/encodeURIComponent geojson)
                (:width options)
                (:height options)
