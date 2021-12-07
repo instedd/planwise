@@ -52,10 +52,6 @@
 
 ;;; Providers layers
 
-(defn- provider-has-change?
-  [provider]
-  (some? (:change provider)))
-
 (defn- show-provider
   [{:keys [read-only? demand-unit capacity-unit]}
    {:keys [change matches-filters name capacity
@@ -113,19 +109,27 @@
     (> unsatisfied-demand 0)                                    "unsatisfied"
     :else                                                       "unsatisfied"))
 
+(defn- provider-has-change?
+  [provider]
+  (some? (:change provider)))
+
 (defn- provider-icon-function
   [{:keys [id change matches-filters required-capacity satisfied-demand unsatisfied-demand capacity free-capacity]
     :as   provider}
    selected-provider]
-  {:className
-   (join " " ["leaflet-circle-icon"
-              (when (= id (:id selected-provider)) "selected")
-              (when (and (not change) (not matches-filters)) "upgradeable")
-              (get-marker-class-for-provider provider)
-              (when (provider-has-change? provider)
-                "leaflet-circle-for-change")
-              (when (some? change)
-                (str "leaflet-" (:action change)))])})
+  (let [selected?   (= id (:id selected-provider))
+        has-change? (provider-has-change? provider)]
+    (if has-change?
+      {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
+       :className
+       (join " " ["leaflet-circle-icon for-change"
+                  (when selected? "selected")
+                  (get-marker-class-for-provider provider)])}
+      {:className
+       (join " " ["leaflet-circle-icon"
+                  (when selected? "selected")
+                  (when (not matches-filters) "upgradeable")
+                  (get-marker-class-for-provider provider)])})))
 
 (defn- scenario-providers-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
@@ -133,7 +137,7 @@
         searching?        @(subscribe [:scenarios/searching-providers?])
         matching-ids      @(subscribe [:scenarios/search-matching-ids])
         all-providers     @(subscribe [:scenarios/all-providers])]
-    (into [:feature-group {}]
+    (into [:feature-group {:key "providers-layer"}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
                        matching?    (or (not searching?) (contains? matching-ids id))
@@ -156,7 +160,8 @@
 (defn- scenario-selected-provider-layer
   []
   (when-let [selected-provider @(subscribe [:scenarios.map/selected-provider])]
-    [:geojson-layer {:data      (:coverage-geom selected-provider)
+    [:geojson-layer {:key       "selected-provider-layer"
+                     :data      (:coverage-geom selected-provider)
                      :group     {:pane "tilePane"}
                      :className "coverage-polygon"}]))
 
@@ -203,14 +208,12 @@
 
 (defn- suggestion-icon-function
   [suggestion selected-suggestion suggestion-type]
-  {:html (str "<span>" (:ranked suggestion) "</span>")
+  {:html (if (= :new-provider suggestion-type)
+           (str "<span>" (:ranked suggestion) "</span>")
+           "<i class='material-icons'>arrow_upward</i>")
    :className
    (->> ["leaflet-suggestion-icon"
-         (when (= suggestion selected-suggestion) "selected")
-         (case suggestion-type
-           :new-provider "leaflet-suggestion-new-provider"
-           :improvement  "leaflet-suggestion-new-improvement"
-           nil)]
+         (when (= suggestion selected-suggestion) "selected")]
         (filter some?)
         (join " "))})
 
@@ -222,7 +225,7 @@
         suggestion-type     (if (= view-state :new-provider)
                               :new-provider
                               :improvement)]
-    (into [:feature-group {}]
+    (into [:feature-group {:key "suggestions-layer"}]
           (map (fn [{:keys [location name] :as suggestion}]
                  [:marker {:lat          (:lat location)
                            :lon          (:lon location)
@@ -268,7 +271,7 @@
 
 (defn- scenario-sources-layer
   [{:keys [sources-data] :as scenario} {:keys [popup-fn]}]
-  (into [:feature-group {}]
+  (into [:feature-group {:key "sources-layer"}]
         (map (fn [{:keys [id lat lon name] :as source}]
                [:marker {:key      id
                          :lat      lat
@@ -286,7 +289,8 @@
   [{:keys [raster] :as scenario}]
   (when raster
     [:wms-tile-layer
-     {:url         config/mapserver-url
+     {:keys        "demand-layer"
+      :url         config/mapserver-url
       :transparent true
       :layers      "scenario"
       :DATAFILE    (str raster ".map")

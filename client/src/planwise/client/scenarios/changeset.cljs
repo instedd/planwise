@@ -13,8 +13,8 @@
             [planwise.common :as common]))
 
 (def action-icons
-  {"create-provider" "domain"
-   "upgrade-provider" "arrow_upward"
+  {"create-provider"   "domain"
+   "upgrade-provider"  "arrow_upward"
    "increase-provider" "add"})
 
 (defn- action-description
@@ -34,7 +34,7 @@
 
 (defn- provider-icon
   [{:keys [change] :as provider}]
-  [m/Icon {} (get action-icons (:action change))])
+  [m/Icon (get action-icons (:action change) "domain")])
 
 (defn- changeset-row
   [props {:keys [name change matches-filters] :as provider}]
@@ -48,7 +48,7 @@
        :class          [(when (= (:id selected-provider) (:id provider)) "selected")
                         (when (and (nil? action) (false? matches-filters)) "upgradeable")]}
       [:div.icon-list
-       [m/Icon (get action-icons action "domain")]
+       [provider-icon provider]
        [:div.icon-list-text
         [:p.strong name]
         [:p.grey-text

@@ -1121,16 +1121,28 @@ form.vertical, .fields-vertical {
   align-items: center;
   justify-content: center;
   color: black;
+  &[style] {
+    width: 16px !important;
+    height: 16px !important;
+    margin-top: -8px !important;
+    margin-left: -8px !important;
+  }
   > span {
     z-index: 1;
     font-weight: bold;
+    font-size: 14px;
+    padding-top: 1px;
+  }
+  > i {
+    z-index: 1;
+    color: black;
   }
   &::before {
     position: absolute;
     content: " ";
     display: block;
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     border: 3px solid darkcyan !important;
     background: cyan;
     transform: rotate(45deg);
@@ -1186,37 +1198,28 @@ form.vertical, .fields-vertical {
 .leaflet-circle-icon{
   border-radius: 50%;
   box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+
   &[style] {
-    margin-left: -8px !important;
-    margin-top: -8px !important;
-    width: 16px !important;
-    height: 16px !important;
+    margin-left: -9px !important;
+    margin-top: -9px !important;
+    width: 18px !important;
+    height: 18px !important;
   }
 
+  border: 2px white solid;
   &.idle-capacity {
-    background-color: #00bcd4;
-    border: 1px #00727e solid;
+    background-color: #673AB7;
   }
   &.at-capacity {
-    background-color: #4caf50;
-    border: 1px #327134 solid;
+    background-color: black;
   }
-  &.small-unsatisfied {
-    background-color: #ffeb3b;
-    border: 1px #ecca00 solid;
-
-  }
-  &.mid-unsatisfied {
-    background-color: #ffc107;
-    border: 1px #b88a00 solid;
-  }
-  &.unsatisfied {
+  &.small-unsatisfied, &.mid-unsatisfied, &.unsatisfied {
     background-color: #ff5722;
-    border: 1px #8f2100 solid;
   }
+
   &.upgradeable {
     background-color: #999;
-    border: 1px black solid;
   }
   &.selected[style] {
     width: 24px !important;
@@ -1225,11 +1228,32 @@ form.vertical, .fields-vertical {
     margin-top: -12px !important;
     border: 4px white solid !important;
   }
-}
 
-.leaflet-circle-for-change{
-  border: 2px white solid !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+  &.for-change {
+    border: 2px white solid !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    > i {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+      color: white;
+    }
+    &[style] {
+      margin-left: -14px !important;
+      margin-top: -14px !important;
+      width: 28px !important;
+      height: 28px !important;
+    }
+    &.selected[style] {
+      width: 32px !important;
+      height: 32px !important;
+      margin-left: -16px !important;
+      margin-top: -16px !important;
+      border: 4px white solid !important;
+    }
+  }
 }
 
 path.coverage-polygon {
@@ -1239,7 +1263,7 @@ path.coverage-polygon {
   stroke-dasharray: 1, 1;
   stroke-linecap: butt;
   fill: black;
-  fill-opacity: 0.1;
+  fill-opacity: 0.05;
 }
 
 .show-static-text {

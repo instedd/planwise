@@ -17,7 +17,8 @@
   "population")
 
 (def default-base-tile-layer
-  [:tile-layer {:url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}"
+  [:tile-layer {:key "base-layer"
+                :url "https://api.mapbox.com/styles/v1/{mapid}/tiles/512/{z}/{x}/{y}@2x?access_token={accessToken}"
                 :attribution "&copy; Mapbox"
                 :maxZoom 18
                 :zoomOffset -1
