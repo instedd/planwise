@@ -42,11 +42,20 @@
 (defmethod content-pane :scenarios []
   [scenarios/scenarios-page])
 
-(defn intercom []
-  [(reagent/adapt-react-class (.-default react-intercom)) {:appID config/intercom-app-id
-                                                           :user_id config/user-email
-                                                           :email config/user-email
-                                                           :name config/user-email}])
+(defn- intercom-visible?
+  [{:keys [page section]}]
+  (cond
+    (= :scenarios page) false
+    :else               true))
+
+(defn intercom
+  []
+  (let [page-params @(subscribe [:page-params])]
+    (when (intercom-visible? page-params)
+      [(reagent/adapt-react-class (.-default react-intercom)) {:appID config/intercom-app-id
+                                                               :user_id config/user-email
+                                                               :email config/user-email
+                                                               :name config/user-email}])))
 
 (defn planwise-app []
   (let [current-page (subscribe [:current-page])]
