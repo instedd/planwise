@@ -240,8 +240,9 @@
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
  in-scenarios
- (fn [db [_ {:keys [change matches-filter] :as provider}]]
-   (let [change' (or change (db/new-action provider (if (not matches-filter) :upgrade :increase)))]
+ (fn [db [_ {:keys [change matches-filters] :as provider}]]
+   (js/console.log provider)
+   (let [change' (or change (db/new-action provider (if (not matches-filters) :upgrade :increase)))]
      (assoc db
             :open-dialog      :scenario-changeset
             :changeset-dialog (assoc provider :change change')))))

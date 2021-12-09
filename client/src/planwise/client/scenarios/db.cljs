@@ -67,11 +67,11 @@
 
 (defn new-provider-from-change
   [change]
-  {:id             (:id change)
-   :name           (:name change)
-   :location       (:location change)
-   :matches-filter true
-   :change         change})
+  {:id              (:id change)
+   :name            (:name change)
+   :location        (:location change)
+   :matches-filters true
+   :change          change})
 
 (defn- apply-change
   [providers-by-id change]
