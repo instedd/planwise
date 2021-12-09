@@ -37,9 +37,9 @@
          {:status 400})))
 
    (POST "/copy" {:keys [scenario project]}
-     (let [{:keys [project-id name changeset]} scenario
+     (let [{:keys [changeset]} scenario
 
-           next-name    (scenarios/next-scenario-name service project-id name)
+           next-name    (scenarios/next-scenario-name service scenario)
            new-scenario (scenarios/create-scenario service project {:name      next-name
                                                                     :changeset changeset})]
        (response new-scenario)))

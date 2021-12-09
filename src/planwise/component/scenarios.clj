@@ -6,8 +6,6 @@
             [planwise.boundary.jobrunner :as jr]
             [planwise.boundary.coverage :as coverage]
             [planwise.model.scenarios :as model]
-            [clojure.string :as str]
-            [planwise.util.str :as util-str]
             [integrant.core :as ig]
             [taoensso.timbre :as timbre]
             [planwise.model.providers :refer [merge-providers]]
@@ -337,18 +335,13 @@
     (db-update-scenario! db scenario)
     (db-update-scenarios-label! db {:project-id project-id})))
 
-(defn next-name-from-initial
-  [store project-id]
-  (util-str/next-alpha-name (:name (db-last-scenario-name (get-db store) {:project-id project-id}))))
-
-(defn next-scenario-name
-  [store project-id name]
-  ;; Relies that initial scenario's name is "Initial"
-  (if (= name "Initial") (next-name-from-initial store project-id)
-      (->> (db-list-scenarios-names (get-db store) {:project-id project-id :name name})
-           (map :name)
-           (cons name)
-           (util-str/next-name))))
+(defn- next-scenario-name
+  [store {:keys [name project-id] :as scenario}]
+  (let [existing-names (->> (db-list-scenarios-names (get-db store) {:project-id project-id})
+                            (map :name))]
+    (if (model/is-initial-scenario? scenario)
+      (model/next-name-from-initial existing-names)
+      (model/next-name-for-copy existing-names name))))
 
 (defn- created-provider-to-export
   [{:keys [id action capacity location name]}]
@@ -463,8 +456,8 @@
     (create-scenario store project props))
   (update-scenario [store project props]
     (update-scenario store project props))
-  (next-scenario-name [store project-id name]
-    (next-scenario-name store project-id name))
+  (next-scenario-name [store scenario]
+    (next-scenario-name store scenario))
   (reset-scenarios [store project-id]
     (reset-scenarios store project-id))
   (get-scenario-for-project [store scenario project]
