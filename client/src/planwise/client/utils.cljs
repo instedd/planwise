@@ -67,7 +67,7 @@
 
 (defn format-currency
   [value]
-  (str common/currency-symbol " " (format-number value)))
+  (str common/currency-symbol (format-number value)))
 
 (defn format-effort
   [effort analysis-type]
