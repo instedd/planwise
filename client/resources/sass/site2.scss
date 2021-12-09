@@ -60,7 +60,7 @@ body.mdc-select-scroll-lock {
   font-size: 1rem;
   display: grid;
   grid-template-columns: 40px auto 40px;
-  grid-template-rows: min-content 40px auto 40px 40px;
+  grid-template-rows: min-content 40px auto 40px 20px;
   grid-template-areas:
     "header header header"
     ".      .      .     "
@@ -75,7 +75,7 @@ body.mdc-select-scroll-lock {
   align-self: center;
   display: grid;
   grid-template-columns: 30px 370px auto 40px;
-  grid-template-rows: min-content 30px auto 20px 30px;
+  grid-template-rows: min-content 30px auto 20px 20px;
   grid-template-areas:
     "header header header header"
     "main   main   main   main"
@@ -163,9 +163,9 @@ footer {
   grid-area: footer;
   display: flex;
   align-items: center;
-  padding: 0px 14px;
+  padding: 0px 8px;
   border-top: 1px solid $material-color-grey-300;
-  font-size: $small-font-size;
+  font-size: 12px;
 }
 
 .layout.full-screen {
