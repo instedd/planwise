@@ -241,7 +241,6 @@
  :scenarios/open-changeset-dialog
  in-scenarios
  (fn [db [_ {:keys [change matches-filters] :as provider}]]
-   (js/console.log provider)
    (let [change' (or change (db/new-action provider (if (not matches-filters) :upgrade :increase)))]
      (assoc db
             :open-dialog      :scenario-changeset
