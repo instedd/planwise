@@ -18,8 +18,8 @@
   (update-scenario [this project props]
     "Updates the given scenario. Deferred computation will occur.")
 
-  (next-scenario-name [this project-id name]
-    "Returns a name for the following scenario to be created based on name")
+  (next-scenario-name [this scenario]
+    "Returns a name for a scenario to be created based on another one")
 
   (reset-scenarios [this project-id]
     "Reset scenarios information of project and clear engine state")

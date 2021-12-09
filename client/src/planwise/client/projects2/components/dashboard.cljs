@@ -143,8 +143,7 @@
          "Without coverage"]
         [scenarios-sortable-header {:class [:col-effort]
                                     :align :right
-                                    :sorting-key :effort
-                                    :tooltip effort-label}
+                                    :sorting-key :effort}
          effort-label]
         [:th.col-actions [:p "Actions"]]]]
       [:tbody

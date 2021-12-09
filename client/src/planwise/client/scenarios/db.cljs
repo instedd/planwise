@@ -36,6 +36,10 @@
    :sort-order          nil
    :providers-search    nil})
 
+(defn initial-scenario?
+  [scenario]
+  (= (:label scenario) "initial"))
+
 (defmulti new-action :action-name)
 
 (defmethod new-action :create

@@ -511,6 +511,21 @@ form.vertical, .fields-vertical {
       margin-right: 1rem;
     }
   }
+
+  .expand-center {
+    flex: 1;
+    display: flex;
+    justify-content: end;
+    flex-direction: column;
+    p {
+      font-size: 16px;
+      line-height: 1.5;
+      color: #999;
+    }
+  }
+  .actions {
+    margin-top: 10px;
+  }
 }
 
 .icon-list {
@@ -618,28 +633,18 @@ form.vertical, .fields-vertical {
     // Scenarios table
 
     .col-state {
-      width: 15%;
+      width: 10%;
       text-align: left;
     }
 
     .col-name {
-      width: 10%;
+      width: 15%;
       text-align: left;
     }
 
     .col-demand-coverage {
       width: 15%;
       text-align: right;
-    }
-
-    .col-effort {
-      width: 10%;
-      text-align: right;
-    }
-
-    .col-actions {
-      text-align: left;
-      width: 20%;
     }
 
     .col-pop-without-service {
@@ -650,6 +655,17 @@ form.vertical, .fields-vertical {
     .col-pop-without-coverage {
       text-align: right;
       width: 15%;
+    }
+
+    .col-effort {
+      width: 10%;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .col-actions {
+      text-align: left;
+      width: 20%;
     }
 
     .has-tooltip {
@@ -671,7 +687,7 @@ form.vertical, .fields-vertical {
     .has-tooltip:hover .tooltip {
       display: block;
       position: absolute;
-      width: 160px;
+      width: 200px;
       padding: 8px;
       background-color: #000;
       color: #ccc;

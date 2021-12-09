@@ -200,8 +200,14 @@
  (fn [{:keys [db]} [_]]
    (let [id (get-in db [:current-scenario :id])]
      {:api      (assoc (api/delete-scenario id)
-                       :on-success [:projects2/project-scenarios])
-      :dispatch [:scenarios/load-scenarios]})))
+                       :on-success [:scenarios/scenario-deleted])})))
+
+(rf/reg-event-fx
+ :scenarios/scenario-deleted
+ in-scenarios
+ (fn [{:keys [db]} _]
+   {:dispatch-n [[:scenarios/load-scenarios]
+                 [:projects2/project-scenarios]]}))
 
 
 ;;; Scenario action editing (changesets)

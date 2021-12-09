@@ -5,9 +5,20 @@
             [cljs.reader :as edn]))
 
 (rf/reg-sub
+ :scenarios/list
+ (fn [db _]
+   (get-in db [:scenarios :list])))
+
+(rf/reg-sub
  :scenarios/current-scenario
  (fn [db _]
    (get-in db [:scenarios :current-scenario])))
+
+(rf/reg-sub
+ :scenarios/initial-scenario?
+ :<- [:scenarios/current-scenario]
+ (fn [current-scenario [_]]
+   (db/initial-scenario? current-scenario)))
 
 (rf/reg-sub
  :scenarios/view-state
@@ -23,8 +34,10 @@
 (rf/reg-sub
  :scenarios/can-expand-sidebar?
  :<- [:scenarios/view-state]
- (fn [view-state]
-   (#{:current-scenario :show-actions-table} view-state)))
+ :<- [:scenarios/initial-scenario?]
+ (fn [[view-state initial-scenario?]]
+   (and (not initial-scenario?)
+        (#{:current-scenario :show-actions-table} view-state))))
 
 (rf/reg-sub
  :scenarios/open-dialog
@@ -64,16 +77,6 @@
  :<- [:scenarios/open-dialog]
  (fn [open-dialog]
    (= :scenario-changeset open-dialog)))
-
-(rf/reg-sub
- :scenarios/list
- (fn [db _]
-   (get-in db [:scenarios :list])))
-
-(rf/reg-sub
- :scenarios/read-only? :<- [:scenarios/current-scenario]
- (fn [current-scenario [_]]
-   (= (:label current-scenario) "initial")))
 
 (rf/reg-sub
  :scenarios.map/selected-provider
