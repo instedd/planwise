@@ -225,18 +225,13 @@
  :scenarios/create-provider
  in-scenarios
  (fn [{:keys [db]} [_ location suggestion]]
-   (let [{:keys [current-scenario]} db
-
+   (let [current-scenario (:current-scenario db)
          new-name         (new-provider-name (:changeset current-scenario))
          new-action       (db/new-action {:location location
                                           :name     new-name}
-                                         :create)
-         new-provider     (merge (db/new-provider-from-change new-action) suggestion)
-         updated-scenario (dissoc current-scenario :computing-best-locations)]
-     {:api      (assoc (api/update-scenario (:id current-scenario) updated-scenario)
-                       :on-success [:scenarios/update-demand-information])
-      :db       (assoc  db :current-scenario updated-scenario)
-      :dispatch [:scenarios/open-changeset-dialog new-provider]})))
+                                     :create)
+         new-provider     (merge (db/new-provider-from-change new-action) suggestion)]
+     {:dispatch [:scenarios/open-changeset-dialog new-provider]})))
 
 (rf/reg-event-db
  :scenarios/open-changeset-dialog
@@ -343,7 +338,9 @@
  in-scenarios
  (fn [{:keys [db]} [_ {provider-id :id :as provider}]]
    (when-not (= provider-id (get-in db [:selected-provider :id]))
-     (merge {:db (assoc db :selected-provider provider)}
+     (merge {:db (-> db
+                     (assoc :selected-provider provider)
+                     (assoc :selected-suggestion nil))}
             (procure-provider-coverage db provider-id)))))
 
 (rf/reg-event-db
@@ -377,7 +374,9 @@
  :scenarios.map/select-suggestion
  in-scenarios
  (fn [{:keys [db]} [_ suggestion]]
-   (merge {:db (assoc db :selected-suggestion suggestion)}
+   (merge {:db (-> db
+                   (assoc :selected-suggestion suggestion)
+                   (assoc :selected-provider nil))}
           (procure-suggestion-coverage db suggestion))))
 
 (rf/reg-event-db
