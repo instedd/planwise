@@ -35,6 +35,7 @@
    :sort-column         nil
    :sort-order          nil
    :suggestions         {:request-key  nil
+                         :coverages    nil
                          :locations    nil
                          :improvements nil}
    :providers-search    nil})

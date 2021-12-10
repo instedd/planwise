@@ -321,7 +321,7 @@
 
 ;;; Coverages
 
-(defn- maybe-dispatch-fetch-coverage
+(defn- procure-provider-coverage
   [db coverage-id]
   (when (and coverage-id (nil? (get-in db [:coverage-cache coverage-id])))
     (let [scenario-id (get-in db [:current-scenario :id])
@@ -344,7 +344,7 @@
  (fn [{:keys [db]} [_ {provider-id :id :as provider}]]
    (when-not (= provider-id (get-in db [:selected-provider :id]))
      (merge {:db (assoc db :selected-provider provider)}
-            (maybe-dispatch-fetch-coverage db provider-id)))))
+            (procure-provider-coverage db provider-id)))))
 
 (rf/reg-event-db
  :scenarios.map/unselect-provider
@@ -357,12 +357,28 @@
 
 ;;; Suggestions list and selection
 
+(defn- procure-suggestion-coverage
+  [db suggestion]
+  (if-let [iteration (:iteration suggestion)]
+    (when (nil? (get-in db [:suggestions :coverages iteration]))
+      (let [scenario-id (get-in db [:current-scenario :id])
+            api-request (assoc (api/get-suggestion-geom scenario-id iteration)
+                               :on-success [:scenarios/update-suggestion-coverage iteration])]
+        {:api api-request}))
+    (procure-provider-coverage db (:id suggestion))))
+
+(rf/reg-event-db
+ :scenarios/update-suggestion-coverage
+ in-scenarios
+ (fn [db [_ iteration geom]]
+   (assoc-in db [:suggestions :coverages iteration] (:coverage-geom geom))))
+
 (rf/reg-event-fx
  :scenarios.map/select-suggestion
  in-scenarios
  (fn [{:keys [db]} [_ suggestion]]
    (merge {:db (assoc db :selected-suggestion suggestion)}
-          (maybe-dispatch-fetch-coverage db (:id suggestion)))))
+          (procure-suggestion-coverage db suggestion))))
 
 (rf/reg-event-db
  :scenarios.map/unselect-suggestion
@@ -380,6 +396,7 @@
        (assoc :selected-suggestion nil)
        (assoc-in [:suggestions :locations] nil)
        (assoc-in [:suggestions :improvements] nil)
+       (assoc-in [:suggestions :coverages] nil)
        (assoc :view-state :current-scenario))))
 
 

@@ -91,9 +91,11 @@
 (rf/reg-sub
  :scenarios.map/selected-coverage
  (fn [db _]
-   (when-let [coverage-id (:id (or (get-in db [:scenarios :selected-suggestion])
-                                   (get-in db [:scenarios :selected-provider])))]
-     (get-in db [:scenarios :coverage-cache coverage-id]))))
+   (if-let [iteration (:iteration (get-in db [:scenarios :selected-suggestion]))]
+     (get-in db [:scenarios :suggestions :coverages iteration])
+     (when-let [coverage-id (:id (or (get-in db [:scenarios :selected-suggestion])
+                                     (get-in db [:scenarios :selected-provider])))]
+       (get-in db [:scenarios :coverage-cache coverage-id])))))
 
 (rf/reg-sub
  :scenarios/suggested-locations
