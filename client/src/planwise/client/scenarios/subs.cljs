@@ -90,57 +90,41 @@
    (get-in db [:scenarios :selected-suggestion])))
 
 (rf/reg-sub
- :scenarios.new-provider/new-suggested-locations
+ :scenarios/suggested-locations
  (fn [db _]
-   (get-in db [:scenarios :current-scenario :suggested-locations])))
+   (get-in db [:scenarios :suggestions :locations])))
 
 (rf/reg-sub
- :scenarios.new-intervention/suggested-providers
+ :scenarios/suggested-improvements
  (fn [db _]
-   (get-in db [:scenarios :current-scenario :suggested-providers])))
+   (get-in db [:scenarios :suggestions :improvements])))
 
-(defn update-action-with-suggestion
+(defn- update-action-with-suggestion
   [provider suggestion]
   (assoc-in provider [:change :capacity] (Math/ceil (:action-capacity suggestion))))
 
-(defn apply-suggestion-to-provider
-  [suggestion all-providers changes]
-  (let [provider             (utils/find-by-id all-providers (:id suggestion))
-        already-in-changeset (utils/find-by-id changes (:id suggestion))
-        provider-with-action (if already-in-changeset
-                               provider
-                               (assoc provider :change (db/new-action provider (if (not (:matches-filters provider)) :upgrade :increase))))]
+(defn- apply-suggestion-to-provider
+  [providers-by-id suggestion]
+  (let [provider (-> (get providers-by-id (:id suggestion))
+                     db/provider-with-change)]
     (merge
-     (update-action-with-suggestion provider-with-action suggestion)
+     (update-action-with-suggestion provider suggestion)
      suggestion)))
 
 (rf/reg-sub
- :scenarios.new-provider/suggested-locations
+ :scenarios/suggestions
  (fn [_]
    [(rf/subscribe [:scenarios/view-state])
-    (rf/subscribe [:scenarios.new-provider/new-suggested-locations])
-    (rf/subscribe [:scenarios.new-intervention/suggested-providers])
-    (rf/subscribe [:scenarios/all-providers])
-    (rf/subscribe [:scenarios/providers-from-changeset])])
- (fn [[view-state suggested-locations suggested-providers all-providers providers-from-changeset] _]
+    (rf/subscribe [:scenarios/suggested-locations])
+    (rf/subscribe [:scenarios/suggested-improvements])
+    (rf/subscribe [:scenarios/all-providers])])
+ (fn [[view-state suggested-locations suggested-providers all-providers] _]
    (case view-state
      :new-provider     suggested-locations
-     :new-intervention (map
-                        #(apply-suggestion-to-provider % all-providers providers-from-changeset)
-                        suggested-providers)
+     :new-intervention (let [providers-by-id (utils/index-by :id all-providers)]
+                         (map (partial apply-suggestion-to-provider providers-by-id)
+                              suggested-providers))
      nil)))
-
-
-(rf/reg-sub
- :scenarios.new-provider/computing-best-locations?
- (fn [db _]
-   (get-in db [:scenarios :current-scenario :computing-best-locations :state])))
-
-
-(rf/reg-sub
- :scenarios.new-intervention/computing-best-improvements?
- (fn [db _]
-   (get-in db [:scenarios :current-scenario :computing-best-improvements :state])))
 
 (rf/reg-sub
  :scenarios/all-providers
@@ -150,11 +134,9 @@
 
 (rf/reg-sub
  :scenarios/providers-from-changeset
- (fn [_]
-   [(rf/subscribe [:scenarios/all-providers])
-    (rf/subscribe [:scenarios/current-scenario])])
- (fn [[all-providers {:keys [changeset]}] _]
-   (map #(utils/find-by-id all-providers (:id %)) changeset)))
+ :<- [:scenarios/all-providers]
+ (fn [all-providers]
+   (filter (comp some? :change) all-providers)))
 
 (rf/reg-sub
  :scenarios.current/source-demand

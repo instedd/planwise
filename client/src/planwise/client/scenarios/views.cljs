@@ -220,7 +220,7 @@
 
 (defn- scenario-suggestions-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
-  (let [suggested-locations @(subscribe [:scenarios.new-provider/suggested-locations])
+  (let [suggestions         @(subscribe [:scenarios/suggestions])
         selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])
         view-state          @(subscribe [:scenarios/view-state])
         suggestion-type     (if (= view-state :new-provider)
@@ -238,7 +238,7 @@
                            :mouseover-fn mouseover-fn
                            :mouseout-fn  mouseout-fn
                            :zIndexOffset 4000}])
-               suggested-locations))))
+               suggestions))))
 
 
 ;;; Sources
@@ -464,20 +464,23 @@
        suggestions]]]))
 
 (defn scenario-view
-  [{:keys [view-state scenario computing? computing-best-locations? providers project error]}]
+  [{:keys [view-state scenario providers project error]}]
   (let [provider-unit (get-provider-unit project)
         demand-unit   (get-demand-unit project)
-        capacity-unit (get-capacity-unit project)]
+        capacity-unit (get-capacity-unit project)
+        state-message (case view-state
+                        :get-suggestions-for-new-provider "Computing best locations..."
+                        :get-suggestions-for-improvements "Computing best improvements..."
+                        :new-provider                     (str "Click on the map to add " provider-unit)
+                        nil)]
     [:<>
      [:div
       [scenario-info view-state scenario]
       [edit/create-new-action-component {:provider-unit provider-unit
                                          :disabled      (scenario-pending? scenario)}]
-      (if computing?
+      (when state-message
         [:div.info-computing-best-location
-         [:small (if computing-best-locations?
-                   "Computing best locations ..."
-                   "Computing best improvements...")]])]
+         [:small state-message]])]
      (if error
        [raise-alert scenario error]
        [:<>
@@ -526,20 +529,17 @@
 
 (defn side-panel-view-2
   [current-scenario error]
-  (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
-        computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
-        suggested-locations          (subscribe [:scenarios.new-provider/suggested-locations])
-        view-state                   (subscribe [:scenarios/view-state])
-        searching?                   (subscribe [:scenarios/searching-providers?])
-        providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])
-        current-project              (subscribe [:projects2/current-project])
-        computing-suggestions?       (or @computing-best-locations? @computing-best-improvements?)]
+  (let [view-state               (subscribe [:scenarios/view-state])
+        suggestions              (subscribe [:scenarios/suggestions])
+        searching?               (subscribe [:scenarios/searching-providers?])
+        providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
+        current-project          (subscribe [:projects2/current-project])]
     (cond
       @searching?
       [search-view @current-project]
 
-      @suggested-locations
-      [suggestions-view {:suggestions     @suggested-locations
+      @suggestions
+      [suggestions-view {:suggestions     @suggestions
                          :suggestion-type (case @view-state
                                             :new-provider     :new-provider
                                             :new-intervention :improvement
@@ -547,13 +547,11 @@
                          :project         @current-project}]
 
       :else
-      [scenario-view {:view-state                @view-state
-                      :scenario                  current-scenario
-                      :computing?                computing-suggestions?
-                      :computing-best-locations? @computing-best-locations?
-                      :providers                 @providers-from-changeset
-                      :project                   @current-project
-                      :error                     error}])))
+      [scenario-view {:view-state            @view-state
+                      :scenario              current-scenario
+                      :providers             @providers-from-changeset
+                      :project               @current-project
+                      :error                 error}])))
 
 (defn side-panel-view
   [scenario error]

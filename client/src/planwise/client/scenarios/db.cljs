@@ -18,7 +18,7 @@
 ;;                           │  │  :new-intervention
 ;;                           │  │        ▲
 ;;                           ▼  │        │
-;;                 :get-sugggestions-for-improvements
+;;                 :get-suggestions-for-improvements
 
 
 (def initial-db
@@ -34,6 +34,9 @@
    :list                (asdf/new nil)
    :sort-column         nil
    :sort-order          nil
+   :suggestions         {:request-key  nil
+                         :locations    nil
+                         :improvements nil}
    :providers-search    nil})
 
 (defn initial-scenario?
@@ -72,6 +75,12 @@
    :location        (:location change)
    :matches-filters true
    :change          change})
+
+(defn provider-with-change
+  [{:keys [change matches-filters] :as provider}]
+  (let [change' (or change
+                    (new-action provider (if (not matches-filters) :upgrade :increase)))]
+    (assoc provider :change change')))
 
 (defn- apply-change
   [providers-by-id change]
