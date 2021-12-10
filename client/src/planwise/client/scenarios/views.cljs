@@ -114,11 +114,11 @@
   (some? (:change provider)))
 
 (defn- provider-icon-function
-  [{:keys [id change matches-filters selected? matching?] :as provider}]
+  [{:keys [id change matches-filters selected? disabled?] :as provider}]
   (let [has-change?  (provider-has-change? provider)
         base-classes ["leaflet-circle-icon"
                       (when selected? "selected")
-                      (when-not matching? "disabled")
+                      (when disabled? "disabled")
                       (get-marker-class-for-provider provider)]]
     (if has-change?
       {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
@@ -129,31 +129,32 @@
 
 (defn- scenario-providers-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
-  (let [selected-provider @(subscribe [:scenarios.map/selected-provider])
-        searching?        @(subscribe [:scenarios/searching-providers?])
-        matching-ids      @(subscribe [:scenarios/search-matching-ids])
-        all-providers     @(subscribe [:scenarios/all-providers])]
+  (let [selected-provider    @(subscribe [:scenarios.map/selected-provider])
+        listing-suggestions? @(subscribe [:scenarios/listing-suggestions?])
+        searching?           @(subscribe [:scenarios/searching-providers?])
+        matching-ids         @(subscribe [:scenarios/search-matching-ids])
+        all-providers        @(subscribe [:scenarios/all-providers])]
     (into [:feature-group {:key "providers-layer"}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
-                       matching?    (or (not searching?) (contains? matching-ids id))
+                       disabled?    (or listing-suggestions?
+                                        (and searching? (not (contains? matching-ids id))))
                        marker-props {:key          id
                                      :lat          (:lat location)
                                      :lon          (:lon location)
                                      :icon         (provider-icon-function (assoc provider
                                                                                   :selected? selected?
-                                                                                  :matching? matching?))
+                                                                                  :disabled? disabled?))
                                      :provider     provider
                                      :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
-                   (if matching?
-                     [:marker (merge marker-props
+                   [:marker (merge marker-props
+                                   (when-not disabled?
                                      {:tooltip      name
                                       :open?        (when selected? (:open? selected-provider))
                                       :hover?       (when selected? (:hover? selected-provider))
                                       :popup-fn     popup-fn
                                       :mouseover-fn mouseover-fn
-                                      :mouseout-fn  mouseout-fn})]
-                     [:marker marker-props])))
+                                      :mouseout-fn  mouseout-fn}))]))
                all-providers))))
 
 (defn- scenario-selected-coverage-layer

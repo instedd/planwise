@@ -135,6 +135,12 @@
      nil)))
 
 (rf/reg-sub
+ :scenarios/listing-suggestions?
+ :<- [:scenarios/suggestions]
+ (fn [suggestions]
+   (seq suggestions)))
+
+(rf/reg-sub
  :scenarios/all-providers
  :<- [:scenarios/current-scenario]
  (fn [scenario _]
