@@ -318,25 +318,33 @@
           :sort-order order)))
 
 ;; ----------------------------------------------------------------------------
-;; Providers in map
+
+;;; Coverages
+
+(defn- maybe-dispatch-fetch-coverage
+  [db coverage-id]
+  (when (and coverage-id (nil? (get-in db [:coverage-cache coverage-id])))
+    (let [scenario-id (get-in db [:current-scenario :id])
+          api-request (assoc (api/get-provider-geom scenario-id coverage-id)
+                             :on-success [:scenarios/update-coverage-cache coverage-id])]
+      {:api api-request})))
+
+(rf/reg-event-db
+ :scenarios/update-coverage-cache
+ in-scenarios
+ (fn [db [_ coverage-id geom]]
+   (assoc-in db [:coverage-cache coverage-id] (:coverage-geom geom))))
+
+
+;;; Providers in map
 
 (rf/reg-event-fx
  :scenarios.map/select-provider
  in-scenarios
  (fn [{:keys [db]} [_ {provider-id :id :as provider}]]
    (when-not (= provider-id (get-in db [:selected-provider :id]))
-     (let [scenario-id           (get-in db [:current-scenario :id])
-           coverage-missing?     (nil? (get-in db [:coverage-cache provider-id]))
-           fetch-coverage-effect (assoc (api/get-provider-geom scenario-id provider-id)
-                                        :on-success [:scenarios/update-provider-coverage provider-id])]
-       (cond-> {:db (assoc db :selected-provider provider)}
-         coverage-missing? (assoc :api fetch-coverage-effect))))))
-
-(rf/reg-event-db
- :scenarios/update-provider-coverage
- in-scenarios
- (fn [db [_ provider-id geom]]
-   (assoc-in db [:coverage-cache provider-id] (:coverage-geom geom))))
+     (merge {:db (assoc db :selected-provider provider)}
+            (maybe-dispatch-fetch-coverage db provider-id)))))
 
 (rf/reg-event-db
  :scenarios.map/unselect-provider
@@ -353,7 +361,8 @@
  :scenarios.map/select-suggestion
  in-scenarios
  (fn [{:keys [db]} [_ suggestion]]
-   {:db (assoc db :selected-suggestion suggestion)}))
+   (merge {:db (assoc db :selected-suggestion suggestion)}
+          (maybe-dispatch-fetch-coverage db (:id suggestion)))))
 
 (rf/reg-event-db
  :scenarios.map/unselect-suggestion

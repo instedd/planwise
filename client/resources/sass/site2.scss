@@ -1333,9 +1333,12 @@ form.vertical, .fields-vertical {
   &.small-unsatisfied, &.mid-unsatisfied, &.unsatisfied {
     background-color: #ff5722;
   }
-
   &.upgradeable {
     background-color: #999;
+  }
+  &.disabled {
+    cursor: default;
+    opacity: 0.3;
   }
   &.selected[style] {
     width: 24px !important;

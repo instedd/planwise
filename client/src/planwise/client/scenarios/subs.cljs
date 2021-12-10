@@ -81,13 +81,19 @@
 (rf/reg-sub
  :scenarios.map/selected-provider
  (fn [db _]
-   (when-let [provider (get-in db [:scenarios :selected-provider])]
-     (assoc provider :coverage-geom (get-in db [:scenarios :coverage-cache (:id provider)])))))
+   (get-in db [:scenarios :selected-provider])))
 
 (rf/reg-sub
  :scenarios.map/selected-suggestion
  (fn [db _]
    (get-in db [:scenarios :selected-suggestion])))
+
+(rf/reg-sub
+ :scenarios.map/selected-coverage
+ (fn [db _]
+   (when-let [coverage-id (:id (or (get-in db [:scenarios :selected-suggestion])
+                                   (get-in db [:scenarios :selected-provider])))]
+     (get-in db [:scenarios :coverage-cache coverage-id]))))
 
 (rf/reg-sub
  :scenarios/suggested-locations

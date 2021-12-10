@@ -114,22 +114,18 @@
   (some? (:change provider)))
 
 (defn- provider-icon-function
-  [{:keys [id change matches-filters required-capacity satisfied-demand unsatisfied-demand capacity free-capacity]
-    :as   provider}
-   selected-provider]
-  (let [selected?   (= id (:id selected-provider))
-        has-change? (provider-has-change? provider)]
+  [{:keys [id change matches-filters selected? matching?] :as provider}]
+  (let [has-change?  (provider-has-change? provider)
+        base-classes ["leaflet-circle-icon"
+                      (when selected? "selected")
+                      (when-not matching? "disabled")
+                      (get-marker-class-for-provider provider)]]
     (if has-change?
       {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
        :className
-       (join " " ["leaflet-circle-icon for-change"
-                  (when selected? "selected")
-                  (get-marker-class-for-provider provider)])}
+       (join " " (conj base-classes "for-change"))}
       {:className
-       (join " " ["leaflet-circle-icon"
-                  (when selected? "selected")
-                  (when (not matches-filters) "upgradeable")
-                  (get-marker-class-for-provider provider)])})))
+       (join " " (conj base-classes (when (not matches-filters) "upgradeable")))})))
 
 (defn- scenario-providers-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
@@ -144,7 +140,9 @@
                        marker-props {:key          id
                                      :lat          (:lat location)
                                      :lon          (:lon location)
-                                     :icon         (provider-icon-function provider selected-provider)
+                                     :icon         (provider-icon-function (assoc provider
+                                                                                  :selected? selected?
+                                                                                  :matching? matching?))
                                      :provider     provider
                                      :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
                    (if matching?
@@ -155,14 +153,14 @@
                                       :popup-fn     popup-fn
                                       :mouseover-fn mouseover-fn
                                       :mouseout-fn  mouseout-fn})]
-                     [:marker (assoc marker-props :opacity 0.2)])))
+                     [:marker marker-props])))
                all-providers))))
 
-(defn- scenario-selected-provider-layer
+(defn- scenario-selected-coverage-layer
   []
-  (when-let [selected-provider @(subscribe [:scenarios.map/selected-provider])]
-    [:geojson-layer {:key       "selected-provider-layer"
-                     :data      (:coverage-geom selected-provider)
+  (when-let [selected-coverage @(subscribe [:scenarios.map/selected-coverage])]
+    [:geojson-layer {:key       "selected-coverage-layer"
+                     :data      selected-coverage
                      :group     {:pane "tilePane"}
                      :className "coverage-polygon"}]))
 
@@ -361,7 +359,7 @@
         (scenario-providers-layer {:popup-fn     provider-popup-fn
                                    :mouseover-fn provider-mouseover-fn
                                    :mouseout-fn  provider-mouseout-fn})
-        (scenario-selected-provider-layer)
+        (scenario-selected-coverage-layer)
         (scenario-suggestions-layer {:popup-fn     suggestion-popup-fn
                                      :mouseover-fn suggestion-mouseover-fn
                                      :mouseout-fn  suggestion-mouseout-fn})]])))
