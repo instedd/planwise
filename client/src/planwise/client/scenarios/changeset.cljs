@@ -70,7 +70,7 @@
        :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])
        :class         (when (= suggestion selected-suggestion) "selected")}
       [:div.icon-list
-       [m/Icon {} (get action-icons (get-in suggestion [:change :action]))]
+       [m/Icon (get action-icons (get-in suggestion [:change :action] "create-provider"))]
        [:div.icon-list-text
         [:p.strong (or name (str "Suggestion " ranked))]
         [:p.grey-text (str "Required Capacity: "
