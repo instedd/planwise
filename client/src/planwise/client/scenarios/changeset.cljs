@@ -70,7 +70,7 @@
        :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])
        :class         (when (= suggestion selected-suggestion) "selected")}
       [:div.icon-list
-       [m/Icon {} (get action-icons "create-provider")]
+       [m/Icon {} (get action-icons (get-in suggestion [:change :action]))]
        [:div.icon-list-text
         [:p.strong (or name (str "Suggestion " ranked))]
         [:p.grey-text (str "Required Capacity: "
@@ -83,7 +83,8 @@
 (defn suggestion-listing-component
   [props suggestions]
   [:div.suggestion-list
-   (map (fn [suggestion] [suggestion-row (merge props {:key (str (:name suggestion) (:ranked suggestion))}) suggestion])
+   (map (fn [suggestion]
+          [suggestion-row (merge props {:key (or (:id suggestion) (:ranked suggestion))}) suggestion])
         suggestions)])
 
 (defn- changeset-table-row

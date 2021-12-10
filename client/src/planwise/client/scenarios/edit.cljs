@@ -238,4 +238,4 @@
           [m/MenuItem
            {:on-click (close-and-dispatch [:scenarios.new-action/fetch-suggested-providers-to-improve])}
            [m/ListItemGraphic "arrow_upward"]
-           (str "Suggest " provider-unit " to increase capacity")]]]))))
+           (str "Suggest " provider-unit " to improve")]]]))))

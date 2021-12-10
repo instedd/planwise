@@ -1151,11 +1151,12 @@ form.vertical, .fields-vertical {
   color: black;
   border: 3px solid darkcyan !important;
   background: cyan;
+  box-sizing: border-box;
   &[style] {
-    width: 16px !important;
-    height: 16px !important;
-    margin-top: -8px !important;
-    margin-left: -8px !important;
+    width: 22px !important;
+    height: 22px !important;
+    margin-top: -11px !important;
+    margin-left: -11px !important;
   }
   > span {
     z-index: 1;

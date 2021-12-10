@@ -208,30 +208,27 @@
       [:div.actions (button-for-suggestion (label-for-suggestion suggestion state) suggestion)]])))
 
 (defn- suggestion-icon-function
-  [suggestion selected-suggestion suggestion-type]
-  {:html (if (= :new-provider suggestion-type)
-           (str "<span>" (:ranked suggestion) "</span>")
-           "<i class='material-icons'>arrow_upward</i>")
-   :className
-   (->> ["leaflet-suggestion-icon"
-         (when (= suggestion selected-suggestion) "selected")]
-        (filter some?)
-        (join " "))})
+  [{:keys [ranked change] :as suggestion} selected-suggestion]
+  (let [action-icon (get changeset/action-icons (:action change) "create-provider")]
+    {:html (if ranked
+             (str "<span>" ranked "</span>")
+             (str "<i class='material-icons'>" action-icon "</i>"))
+     :className
+     (->> ["leaflet-suggestion-icon"
+           (when (= suggestion selected-suggestion) "selected")]
+          (filter some?)
+          (join " "))}))
 
 (defn- scenario-suggestions-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
   (let [suggestions         @(subscribe [:scenarios/suggestions])
-        selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])
-        view-state          @(subscribe [:scenarios/view-state])
-        suggestion-type     (if (= view-state :new-provider)
-                              :new-provider
-                              :improvement)]
+        selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])]
     (into [:feature-group {:key "suggestions-layer"}]
           (map (fn [{:keys [location name] :as suggestion}]
                  [:marker {:lat          (:lat location)
                            :lon          (:lon location)
                            :tooltip      name
-                           :icon         (suggestion-icon-function suggestion selected-suggestion suggestion-type)
+                           :icon         (suggestion-icon-function suggestion selected-suggestion)
                            :open?        (= suggestion selected-suggestion)
                            :suggestion   suggestion
                            :popup-fn     popup-fn
@@ -451,7 +448,7 @@
         provider-unit (get-provider-unit project)
         title         (case suggestion-type
                         :new-provider (str "Locations for new " provider-unit)
-                        :improvement  (str (capitalize provider-unit) " for capacity increase")
+                        :improvement  (str (capitalize provider-unit) " for improvement")
                         "Suggestions")]
     [:<>
      [:div.section.sidebar-title
