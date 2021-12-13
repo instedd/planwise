@@ -79,7 +79,12 @@
    (GET "/geometry/:provider-id" [provider-id :as {:keys [scenario project]}]
      (if-let [geometry (scenarios/get-provider-geom service project scenario provider-id)]
        (response geometry)
-       (not-found {:error "Provider coverage not found"})))))
+       (not-found {:error "Provider coverage not found"})))
+
+   (GET "/coverage/suggestion/:iteration" [iteration :<< as-int :as {:keys [scenario project]}]
+     (if-let [geometry (scenarios/get-suggestion-geom service project scenario iteration)]
+       (response geometry)
+       (not-found {:error "Coverage not found"})))))
 
 (defn- wrap-fetch-scenario
   [handler {:keys [scenarios projects2]}]

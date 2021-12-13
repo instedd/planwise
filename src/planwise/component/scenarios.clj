@@ -156,6 +156,14 @@
     (when (:resolved query-result)
       {:coverage-geom (:geojson query-result)})))
 
+(defn get-suggestion-geom
+  [store project scenario iteration]
+  (let [context-id   [:suggestions (:id project) (:id scenario)]
+        query-id     [:iteration iteration]
+        query-result (first (coverage/query-coverages (:coverage store) context-id :geojson [query-id]))]
+    (when (:resolved query-result)
+      {:coverage-geom (:geojson query-result)})))
+
 (defn list-scenarios
   [store project]
   ;; TODO compute % coverage from initial scenario/project
@@ -468,8 +476,10 @@
     (export-sources-data store project scenario))
   (get-suggestions-for-new-provider-location [store project scenario]
     (get-suggestions-for-new-provider-location store project scenario))
-  (get-provider-geom [store scenario project provider-id]
-    (get-provider-geom store scenario project provider-id))
+  (get-provider-geom [store project scenario provider-id]
+    (get-provider-geom store project scenario provider-id))
+  (get-suggestion-geom [store project scenario iteration]
+    (get-suggestion-geom store project scenario iteration))
   (delete-scenario [store scenario-id]
     (delete-scenario store scenario-id))
   (get-suggestions-for-improving-providers [store project scenario]

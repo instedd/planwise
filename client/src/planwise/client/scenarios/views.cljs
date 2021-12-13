@@ -58,10 +58,7 @@
            free-capacity required-capacity
            satisfied-demand unsatisfied-demand reachable-demand]
     :as   provider}]
-  (let [format-number (fnil utils/format-number 0)
-        change*       (if (some? change)
-                        change
-                        (db/new-action provider (if (not matches-filters) :upgrade :increase)))]
+  (let [format-number (fnil utils/format-number 0)]
     (crate/html
      [:div.mdc-typography
       [:h3 name]
@@ -93,7 +90,9 @@
             (some? change)        "Edit"
             (not matches-filters) "Upgrade"
             :else                 "Increase")
-          #(dispatch [:scenarios/open-changeset-dialog (assoc provider :change change*)]))])])))
+          (if (some? change)
+            #(dispatch [:scenarios/edit-change-in-dialog provider])
+            #(dispatch [:scenarios/create-change-in-dialog provider])))])])))
 
 (defn- get-percentage
   [total relative]
@@ -114,55 +113,54 @@
   (some? (:change provider)))
 
 (defn- provider-icon-function
-  [{:keys [id change matches-filters required-capacity satisfied-demand unsatisfied-demand capacity free-capacity]
-    :as   provider}
-   selected-provider]
-  (let [selected?   (= id (:id selected-provider))
-        has-change? (provider-has-change? provider)]
+  [{:keys [id change matches-filters selected? disabled?] :as provider}]
+  (let [has-change?  (provider-has-change? provider)
+        base-classes ["leaflet-circle-icon"
+                      (when selected? "selected")
+                      (when disabled? "disabled")
+                      (get-marker-class-for-provider provider)]]
     (if has-change?
       {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
        :className
-       (join " " ["leaflet-circle-icon for-change"
-                  (when selected? "selected")
-                  (get-marker-class-for-provider provider)])}
+       (join " " (conj base-classes "for-change"))}
       {:className
-       (join " " ["leaflet-circle-icon"
-                  (when selected? "selected")
-                  (when (not matches-filters) "upgradeable")
-                  (get-marker-class-for-provider provider)])})))
+       (join " " (conj base-classes (when (not matches-filters) "upgradeable")))})))
 
 (defn- scenario-providers-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
-  (let [selected-provider @(subscribe [:scenarios.map/selected-provider])
-        searching?        @(subscribe [:scenarios/searching-providers?])
-        matching-ids      @(subscribe [:scenarios/search-matching-ids])
-        all-providers     @(subscribe [:scenarios/all-providers])]
+  (let [selected-provider    @(subscribe [:scenarios.map/selected-provider])
+        listing-suggestions? @(subscribe [:scenarios/listing-suggestions?])
+        searching?           @(subscribe [:scenarios/searching-providers?])
+        matching-ids         @(subscribe [:scenarios/search-matching-ids])
+        all-providers        @(subscribe [:scenarios/all-providers])]
     (into [:feature-group {:key "providers-layer"}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
-                       matching?    (or (not searching?) (contains? matching-ids id))
+                       disabled?    (or listing-suggestions?
+                                        (and searching? (not (contains? matching-ids id))))
                        marker-props {:key          id
                                      :lat          (:lat location)
                                      :lon          (:lon location)
-                                     :icon         (provider-icon-function provider selected-provider)
+                                     :icon         (provider-icon-function (assoc provider
+                                                                                  :selected? selected?
+                                                                                  :disabled? disabled?))
                                      :provider     provider
                                      :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
-                   (if matching?
-                     [:marker (merge marker-props
+                   [:marker (merge marker-props
+                                   (when-not disabled?
                                      {:tooltip      name
                                       :open?        (when selected? (:open? selected-provider))
                                       :hover?       (when selected? (:hover? selected-provider))
                                       :popup-fn     popup-fn
                                       :mouseover-fn mouseover-fn
-                                      :mouseout-fn  mouseout-fn})]
-                     [:marker (assoc marker-props :opacity 0.2)])))
+                                      :mouseout-fn  mouseout-fn}))]))
                all-providers))))
 
-(defn- scenario-selected-provider-layer
+(defn- scenario-selected-coverage-layer
   []
-  (when-let [selected-provider @(subscribe [:scenarios.map/selected-provider])]
-    [:geojson-layer {:key       "selected-provider-layer"
-                     :data      (:coverage-geom selected-provider)
+  (when-let [selected-coverage @(subscribe [:scenarios.map/selected-coverage])]
+    [:geojson-layer {:key       "selected-coverage-layer"
+                     :data      selected-coverage
                      :group     {:pane "tilePane"}
                      :className "coverage-polygon"}]))
 
@@ -208,37 +206,34 @@
       [:div.actions (button-for-suggestion (label-for-suggestion suggestion state) suggestion)]])))
 
 (defn- suggestion-icon-function
-  [suggestion selected-suggestion suggestion-type]
-  {:html (if (= :new-provider suggestion-type)
-           (str "<span>" (:ranked suggestion) "</span>")
-           "<i class='material-icons'>arrow_upward</i>")
-   :className
-   (->> ["leaflet-suggestion-icon"
-         (when (= suggestion selected-suggestion) "selected")]
-        (filter some?)
-        (join " "))})
+  [{:keys [ranked change] :as suggestion} selected-suggestion]
+  (let [action-icon (get changeset/action-icons (:action change) "create-provider")]
+    {:html (if ranked
+             (str "<span>" ranked "</span>")
+             (str "<i class='material-icons'>" action-icon "</i>"))
+     :className
+     (->> ["leaflet-suggestion-icon"
+           (when (= suggestion selected-suggestion) "selected")]
+          (filter some?)
+          (join " "))}))
 
 (defn- scenario-suggestions-layer
   [{:keys [popup-fn mouseover-fn mouseout-fn]}]
-  (let [suggested-locations @(subscribe [:scenarios.new-provider/suggested-locations])
-        selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])
-        view-state          @(subscribe [:scenarios/view-state])
-        suggestion-type     (if (= view-state :new-provider)
-                              :new-provider
-                              :improvement)]
+  (let [suggestions         @(subscribe [:scenarios/suggestions])
+        selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])]
     (into [:feature-group {:key "suggestions-layer"}]
           (map (fn [{:keys [location name] :as suggestion}]
                  [:marker {:lat          (:lat location)
                            :lon          (:lon location)
                            :tooltip      name
-                           :icon         (suggestion-icon-function suggestion selected-suggestion suggestion-type)
+                           :icon         (suggestion-icon-function suggestion selected-suggestion)
                            :open?        (= suggestion selected-suggestion)
                            :suggestion   suggestion
                            :popup-fn     popup-fn
                            :mouseover-fn mouseover-fn
                            :mouseout-fn  mouseout-fn
                            :zIndexOffset 4000}])
-               suggested-locations))))
+               suggestions))))
 
 
 ;;; Sources
@@ -364,7 +359,7 @@
         (scenario-providers-layer {:popup-fn     provider-popup-fn
                                    :mouseover-fn provider-mouseover-fn
                                    :mouseout-fn  provider-mouseout-fn})
-        (scenario-selected-provider-layer)
+        (scenario-selected-coverage-layer)
         (scenario-suggestions-layer {:popup-fn     suggestion-popup-fn
                                      :mouseover-fn suggestion-mouseover-fn
                                      :mouseout-fn  suggestion-mouseout-fn})]])))
@@ -451,7 +446,7 @@
         provider-unit (get-provider-unit project)
         title         (case suggestion-type
                         :new-provider (str "Locations for new " provider-unit)
-                        :improvement  (str (capitalize provider-unit) " for capacity increase")
+                        :improvement  (str (capitalize provider-unit) " for improvement")
                         "Suggestions")]
     [:<>
      [:div.section.sidebar-title
@@ -464,20 +459,23 @@
        suggestions]]]))
 
 (defn scenario-view
-  [{:keys [view-state scenario computing? computing-best-locations? providers project error]}]
+  [{:keys [view-state scenario providers project error]}]
   (let [provider-unit (get-provider-unit project)
         demand-unit   (get-demand-unit project)
-        capacity-unit (get-capacity-unit project)]
+        capacity-unit (get-capacity-unit project)
+        state-message (case view-state
+                        :get-suggestions-for-new-provider "Computing best locations..."
+                        :get-suggestions-for-improvements "Computing best improvements..."
+                        :new-provider                     (str "Click on the map to add " provider-unit)
+                        nil)]
     [:<>
      [:div
       [scenario-info view-state scenario]
       [edit/create-new-action-component {:provider-unit provider-unit
                                          :disabled      (scenario-pending? scenario)}]
-      (if computing?
+      (when state-message
         [:div.info-computing-best-location
-         [:small (if computing-best-locations?
-                   "Computing best locations ..."
-                   "Computing best improvements...")]])]
+         [:small state-message]])]
      (if error
        [raise-alert scenario error]
        [:<>
@@ -526,20 +524,17 @@
 
 (defn side-panel-view-2
   [current-scenario error]
-  (let [computing-best-locations?    (subscribe [:scenarios.new-provider/computing-best-locations?])
-        computing-best-improvements? (subscribe [:scenarios.new-intervention/computing-best-improvements?])
-        suggested-locations          (subscribe [:scenarios.new-provider/suggested-locations])
-        view-state                   (subscribe [:scenarios/view-state])
-        searching?                   (subscribe [:scenarios/searching-providers?])
-        providers-from-changeset     (subscribe [:scenarios/providers-from-changeset])
-        current-project              (subscribe [:projects2/current-project])
-        computing-suggestions?       (or @computing-best-locations? @computing-best-improvements?)]
+  (let [view-state               (subscribe [:scenarios/view-state])
+        suggestions              (subscribe [:scenarios/suggestions])
+        searching?               (subscribe [:scenarios/searching-providers?])
+        providers-from-changeset (subscribe [:scenarios/providers-from-changeset])
+        current-project          (subscribe [:projects2/current-project])]
     (cond
       @searching?
       [search-view @current-project]
 
-      @suggested-locations
-      [suggestions-view {:suggestions     @suggested-locations
+      @suggestions
+      [suggestions-view {:suggestions     @suggestions
                          :suggestion-type (case @view-state
                                             :new-provider     :new-provider
                                             :new-intervention :improvement
@@ -547,13 +542,11 @@
                          :project         @current-project}]
 
       :else
-      [scenario-view {:view-state                @view-state
-                      :scenario                  current-scenario
-                      :computing?                computing-suggestions?
-                      :computing-best-locations? @computing-best-locations?
-                      :providers                 @providers-from-changeset
-                      :project                   @current-project
-                      :error                     error}])))
+      [scenario-view {:view-state            @view-state
+                      :scenario              current-scenario
+                      :providers             @providers-from-changeset
+                      :project               @current-project
+                      :error                 error}])))
 
 (defn side-panel-view
   [scenario error]

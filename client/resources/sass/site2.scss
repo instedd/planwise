@@ -1151,11 +1151,12 @@ form.vertical, .fields-vertical {
   color: black;
   border: 3px solid darkcyan !important;
   background: cyan;
+  box-sizing: border-box;
   &[style] {
-    width: 16px !important;
-    height: 16px !important;
-    margin-top: -8px !important;
-    margin-left: -8px !important;
+    width: 22px !important;
+    height: 22px !important;
+    margin-top: -11px !important;
+    margin-left: -11px !important;
   }
   > span {
     z-index: 1;
@@ -1332,9 +1333,12 @@ form.vertical, .fields-vertical {
   &.small-unsatisfied, &.mid-unsatisfied, &.unsatisfied {
     background-color: #ff5722;
   }
-
   &.upgradeable {
     background-color: #999;
+  }
+  &.disabled {
+    cursor: default;
+    opacity: 0.3;
   }
   &.selected[style] {
     width: 24px !important;

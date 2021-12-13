@@ -39,8 +39,11 @@
   (get-suggestions-for-new-provider-location [store project scenario]
     "Get list of locations suggested for creating new provider")
 
-  (get-provider-geom [store scenario project provider-id]
+  (get-provider-geom [store project scenario provider-id]
     "Retrieves provider coverage geometries")
+
+  (get-suggestion-geom [store project scenario iteration]
+    "Retrieves suggested location coverage for iteration")
 
   (delete-scenario [store scenario-id]
     "Delete scenario by id.

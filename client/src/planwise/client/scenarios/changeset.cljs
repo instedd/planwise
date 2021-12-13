@@ -36,7 +36,7 @@
   [{:keys [change] :as provider}]
   [m/Icon (get action-icons (:action change) "domain")])
 
-(defn- changeset-row
+(defn- provider-row
   [props {:keys [name change matches-filters] :as provider}]
   (let [action            (:action change)
         selected-provider @(subscribe [:scenarios.map/selected-provider])]
@@ -44,7 +44,9 @@
      [:div.section.changeset-row
       {:on-mouse-over  #(dispatch [:scenarios.map/select-provider (assoc provider :hover? true)])
        :on-mouse-leave #(dispatch [:scenarios.map/unselect-provider provider])
-       :on-click       #(dispatch [:scenarios/open-changeset-dialog provider])
+       :on-click       (if (some? change)
+                         #(dispatch [:scenarios/edit-change-in-dialog provider])
+                         #(dispatch [:scenarios/create-change-in-dialog provider :keep-state]))
        :class          [(when (= (:id selected-provider) (:id provider)) "selected")
                         (when (and (nil? action) (false? matches-filters)) "upgradeable")]}
       [:div.icon-list
@@ -57,7 +59,7 @@
 (defn listing-component
   [props providers]
   [:div.scroll-list
-   (map (fn [provider] [changeset-row (merge props {:key (:id provider)}) provider])
+   (map (fn [provider] [provider-row (merge props {:key (:id provider)}) provider])
         providers)])
 
 (defn- suggestion-row
@@ -70,7 +72,7 @@
        :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])
        :class         (when (= suggestion selected-suggestion) "selected")}
       [:div.icon-list
-       [m/Icon {} (get action-icons "create-provider")]
+       [m/Icon (get action-icons (get-in suggestion [:change :action] "create-provider"))]
        [:div.icon-list-text
         [:p.strong (or name (str "Suggestion " ranked))]
         [:p.grey-text (str "Required Capacity: "
@@ -83,7 +85,8 @@
 (defn suggestion-listing-component
   [props suggestions]
   [:div.suggestion-list
-   (map (fn [suggestion] [suggestion-row (merge props {:key (str (:name suggestion) (:ranked suggestion))}) suggestion])
+   (map (fn [suggestion]
+          [suggestion-row (merge props {:key (or (:id suggestion) (:ranked suggestion))}) suggestion])
         suggestions)])
 
 (defn- changeset-table-row

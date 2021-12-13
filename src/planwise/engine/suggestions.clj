@@ -193,8 +193,9 @@
                 demand-covered (:demand-covered result)]
             (demand/multiply-population-under-coverage! raster p-coverage 0.0)
             (remove-demand-point! raster p-max)
-            {:location {:location (select-keys result [:lat :lon])
-                        :coverage demand-covered}
+            {:location {:location  (select-keys result [:lat :lon])
+                        :iteration iteration
+                        :coverage  demand-covered}
              :run-data run-data})
           (do
             ;; coverage for point cannot be resolved; remove it from the set and continue
