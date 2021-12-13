@@ -231,22 +231,33 @@
                                           :name     new-name}
                                      :create)
          new-provider     (merge (db/new-provider-from-change new-action) suggestion)]
-     {:dispatch [:scenarios/open-changeset-dialog new-provider]})))
+     {:dispatch [:scenarios/create-change-in-dialog new-provider]})))
 
 (rf/reg-event-db
- :scenarios/open-changeset-dialog
+ :scenarios/create-change-in-dialog
+ in-scenarios
+ (fn [db [_ provider keep-state?]]
+   (assoc db
+          :open-dialog      :scenario-changeset
+          :changeset-dialog {:provider     (db/provider-with-change provider)
+                             :reset-state? (not keep-state?)})))
+
+(rf/reg-event-db
+ :scenarios/edit-change-in-dialog
  in-scenarios
  (fn [db [_ provider]]
    (assoc db
           :open-dialog      :scenario-changeset
-          :changeset-dialog (db/provider-with-change provider))))
+          :changeset-dialog {:provider     provider
+                             :reset-state? false})))
 
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
  in-scenarios
  (fn [{:keys [db]} [_]]
    (let [current-scenario (get-in db [:current-scenario])
-         updated-provider (get-in db [:changeset-dialog])
+         updated-provider (get-in db [:changeset-dialog :provider])
+         reset-state?     (get-in db [:changeset-dialog :reset-state?])
          new-change?      (nil? (utils/find-by-id (:changeset current-scenario) (:id updated-provider)))
          updated-scenario (update current-scenario
                                   :changeset
@@ -257,8 +268,9 @@
      {:api (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                   :on-success [:scenarios/update-demand-information])
       :db  (-> db
-               (assoc-in [:current-scenario] updated-scenario)
-               (assoc-in [:open-dialog] nil))})))
+               (assoc :view-state (if reset-state? :current-scenario (:view-state db)))
+               (assoc :current-scenario updated-scenario)
+               (assoc :open-dialog nil))})))
 
 (rf/reg-event-fx
  :scenarios/delete-change
@@ -272,7 +284,7 @@
       :db       (assoc db
                        :current-scenario updated-scenario
                        :changeset-dialog nil)
-      :dispatch-n [[:scenarios/cancel-dialog]]})))
+      :dispatch [:scenarios/cancel-dialog]})))
 
 
 ;; ----------------------------------------------------------------------------
@@ -427,7 +439,7 @@
    (let [{:keys [view-state]} db]
      {:dispatch (if (= view-state :new-provider)
                   [:scenarios/create-provider location {:required-capacity action-capacity}]
-                  [:scenarios/open-changeset-dialog suggestion])})))
+                  [:scenarios/create-change-in-dialog suggestion])})))
 
 
 ;;; Suggestions for new site locations

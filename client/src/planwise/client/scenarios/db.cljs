@@ -26,7 +26,8 @@
    :open-dialog         nil
    :rename-dialog       nil
    :current-scenario    nil
-   :changeset-dialog    nil
+   :changeset-dialog    {:provider     nil
+                         :reset-state? false}
    :selected-provider   nil
    :selected-suggestion nil
    :coverage-cache      nil

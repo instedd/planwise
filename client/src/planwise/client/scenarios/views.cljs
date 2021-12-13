@@ -58,10 +58,7 @@
            free-capacity required-capacity
            satisfied-demand unsatisfied-demand reachable-demand]
     :as   provider}]
-  (let [format-number (fnil utils/format-number 0)
-        change*       (if (some? change)
-                        change
-                        (db/new-action provider (if (not matches-filters) :upgrade :increase)))]
+  (let [format-number (fnil utils/format-number 0)]
     (crate/html
      [:div.mdc-typography
       [:h3 name]
@@ -93,7 +90,9 @@
             (some? change)        "Edit"
             (not matches-filters) "Upgrade"
             :else                 "Increase")
-          #(dispatch [:scenarios/open-changeset-dialog (assoc provider :change change*)]))])])))
+          (if (some? change)
+            #(dispatch [:scenarios/edit-change-in-dialog provider])
+            #(dispatch [:scenarios/create-change-in-dialog provider])))])])))
 
 (defn- get-percentage
   [total relative]
