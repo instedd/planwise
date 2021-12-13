@@ -80,17 +80,12 @@
                              (seq (:increasing-costs props)))
     (seq (:building-costs props))))
 
-(defn new-provider?
-  [{:keys [change required-capacity free-capacity]}]
-  (and (= (:action change) "create-provider") (nil? free-capacity)))
-
 (defn changeset-dialog-content
   [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change]
     :as   provider}
    {:keys [budget? demand-unit capacity-unit]
     :as   props}]
-  (let [new?             (new-provider? provider)
-        increase?        (= (:action change) "increase-provider")
+  (let [increase?        (= (:action change) "increase-provider")
         create?          (= (:action change) "create-provider")
         idle?            (pos? free-capacity)
         update-change-fn (fn [field value]
@@ -174,10 +169,10 @@
         open?       (subscribe [:scenarios/changeset-dialog-open?])]
     (fn [{:keys [config] :as project} scenario]
       (let [provider      (:provider @dialog-data)
+            new-change?   (:new-change? @dialog-data)
             action        (get-in provider [:change :action])
             budget        (get-in config [:actions :budget])
             budget?       (common/is-budget (get-in config [:analysis-type]))
-            new?          (new-provider? provider)
             demand-unit   (common/get-demand-unit project)
             capacity-unit (common/get-capacity-unit project)]
         (dialog (merge {:open?       @open?
@@ -199,7 +194,7 @@
                                          :capacity-unit    capacity-unit}))
                         :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
                         :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}
-                       (when-not new?
+                       (when-not new-change?
                          {:delete-fn #(dispatch [:scenarios/delete-change (:id provider)])})))))))
 
 

@@ -240,6 +240,7 @@
    (assoc db
           :open-dialog      :scenario-changeset
           :changeset-dialog {:provider     (db/provider-with-change provider)
+                             :new-change?  true
                              :reset-state? (not keep-state?)})))
 
 (rf/reg-event-db
@@ -249,6 +250,7 @@
    (assoc db
           :open-dialog      :scenario-changeset
           :changeset-dialog {:provider     provider
+                             :new-change?  false
                              :reset-state? false})))
 
 (rf/reg-event-fx

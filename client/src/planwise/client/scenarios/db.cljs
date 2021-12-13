@@ -27,6 +27,7 @@
    :rename-dialog       nil
    :current-scenario    nil
    :changeset-dialog    {:provider     nil
+                         :new-change?  false
                          :reset-state? false}
    :selected-provider   nil
    :selected-suggestion nil
