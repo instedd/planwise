@@ -229,7 +229,7 @@
          new-name         (new-provider-name (:changeset current-scenario))
          new-action       (db/new-action {:location location
                                           :name     new-name}
-                                     :create)
+                                         :create)
          new-provider     (merge (db/new-provider-from-change new-action) suggestion)]
      {:dispatch [:scenarios/create-change-in-dialog new-provider]})))
 
