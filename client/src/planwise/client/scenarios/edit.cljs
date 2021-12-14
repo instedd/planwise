@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [dispatch subscribe]]
             [reagent.core :as r]
             [planwise.client.utils :as utils]
-            [planwise.client.dialog :refer [dialog]]
+            [planwise.client.ui.dialog :refer [dialog]]
             [planwise.client.ui.common :as ui]
             [planwise.client.scenarios.db :as db]
             [planwise.client.utils :as utils]
@@ -180,6 +180,7 @@
                                               ((fnil pos? 0) (get-in provider [:change :investment])))
                                           ((fnil pos? 0) (get-in provider [:change :capacity])))
                         :title       (action->title action)
+                        :class       "changeset-dialog"
                         :content     (when @open?
                                        (changeset-dialog-content
                                         (merge provider

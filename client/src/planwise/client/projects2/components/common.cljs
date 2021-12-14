@@ -1,5 +1,5 @@
 (ns planwise.client.projects2.components.common
-  (:require [planwise.client.dialog :refer [dialog]]
+  (:require [planwise.client.ui.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]))
 
 (defn delete-project-dialog

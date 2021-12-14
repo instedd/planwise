@@ -7,7 +7,7 @@
             [clojure.string :refer [join split capitalize]]
             [planwise.client.config :as config]
             [planwise.client.scenarios.db :as db]
-            [planwise.client.dialog :refer [dialog]]
+            [planwise.client.ui.dialog :refer [dialog]]
             [planwise.client.ui.common :as ui]
             [planwise.client.routes :as routes]
             [planwise.client.styles :as styles]
@@ -15,7 +15,6 @@
             [planwise.client.scenarios.api :as api]
             [planwise.client.scenarios.edit :as edit]
             [planwise.client.scenarios.changeset :as changeset]
-            [planwise.client.components.common :as common]
             [planwise.client.components.common2 :as common2]
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]
@@ -469,10 +468,6 @@
   (or (= view-state :new-provider)
       (= view-state :new-intervention)))
 
-(defn- close-button
-  [{:keys [on-click]}]
-  [:button.icon-button {:on-click on-click} [m/Icon "close"]])
-
 (defn suggestions-view
   [{:keys [project suggestions suggestion-type]}]
   (let [demand-unit   (get-demand-unit project)
@@ -485,7 +480,7 @@
     [:<>
      [:div.section.sidebar-title
       [:h1 title]
-      [close-button {:on-click #(dispatch [:scenarios/close-suggestions])}]]
+      [ui/close-button {:on-click #(dispatch [:scenarios/close-suggestions])}]]
      [:div.scroll-list
       [changeset/suggestion-listing-component
        {:demand-unit   demand-unit
@@ -550,7 +545,7 @@
                  :placeholder "Search facilities"
                  :value       @search-value
                  :on-change   #(update-search (-> % .-target .-value))}]
-        [close-button {:on-click close-fn}]]
+        [ui/close-button {:on-click close-fn}]]
        (when (seq @matches)
          [changeset/listing-component {:demand-unit   demand-unit
                                        :capacity-unit capacity-unit}

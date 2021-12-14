@@ -4,7 +4,7 @@
             [re-com.core :as rc]
             [clojure.string :refer [blank? join lower-case capitalize]]
             [planwise.client.asdf :as asdf]
-            [planwise.client.dialog :refer [dialog]]
+            [planwise.client.ui.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.coverage :refer [coverage-algorithm-filter-options]]

@@ -322,6 +322,21 @@ form.vertical, .fields-vertical {
   margin-top: 44px;
 }
 
+.mdc-dialog {
+  background-color: rgba(0,0,0,.2);
+  .mdc-dialog__surface {
+    border-radius: 6px;
+  }
+  .mdc-dialog__header {
+    background-color: #eee;
+    border-radius: 6px 6px 0 0;
+    padding: 18px 24px;
+  }
+}
+
+.mdc-dialog.changeset-dialog {
+}
+
 .mdc-select__native-control {
   -webkit-appearance: none;
 }
