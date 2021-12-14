@@ -57,7 +57,4 @@
       :attribution     (.attribution js/L.control #js {:prefix false})
       :mapbox-logo     (mapbox-logo props)
       :reference-table (reference-table props)
-      :legend          (.legend js/L.control #js {:pixelMaxValue (:pixel-max-value props)
-                                                  :pixelArea     (:pixel-area props)
-                                                  :providerUnit  (:provider-unit props)})
       (throw (ex-info "Invalid control type" control-def)))))

@@ -135,7 +135,7 @@
             lat-lng-bounds (.latLngBounds js/L (.latLng js/L s w) (.latLng js/L n e))]
         (.setMaxBounds leaflet lat-lng-bounds)))))
 
-(def default-controls [:zoom :attribution :legend])
+(def default-controls [:zoom :attribution])
 
 (defn- leaflet-update-controls
   [this]

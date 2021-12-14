@@ -1265,52 +1265,6 @@ form.vertical, .fields-vertical {
   margin: 18px;
 }
 
-.leaflet-legend-container {
-  font-family: "Roboto", sans-serif;
-  text-transform: uppercase;
-  border-radius: 4px;
-  padding: 6px;
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-  margin: 18px !important;
-  .categories {
-    margin-top: 6px;
-    display: flex;
-    align-items: flex-end;
-    .category {
-      width: 60px;
-      .leaflet-legend-label {
-        text-transform: initial;
-        font-size: 10px;
-        color: #999;
-        line-height: 12px;
-        text-align: right;
-        padding-right: 2px;
-        padding-bottom: 6px;
-        border-right: 1px rgba(0,0,0,0.1) solid;
-      }
-      .leaflet-color {
-        height: 6px;
-        &.idle-capacity {
-          background-color: #00bcd4;
-        }
-        &.at-capacity {
-          background-color: #4caf50;
-        }
-        &.small-unsatisfied {
-          background-color: #ffeb3b;
-        }
-        &.mid-unsatisfied {
-          background-color: #ffc107;
-        }
-        &.unsatisfied {
-          background-color: #ff5722;
-        }
-      }
-    }
-  }
-}
-
 .leaflet-circle-icon{
   border-radius: 50%;
   box-sizing: border-box;
