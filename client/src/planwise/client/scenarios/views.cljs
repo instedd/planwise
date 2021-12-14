@@ -52,65 +52,91 @@
 
 ;;; Providers layers
 
-(defn- show-provider
-  [{:keys [read-only? demand-unit capacity-unit]}
-   {:keys [change matches-filters name capacity
-           free-capacity required-capacity
-           satisfied-demand unsatisfied-demand reachable-demand]
-    :as   provider}]
-  (let [format-number (fnil utils/format-number 0)]
-    (crate/html
-     [:div.mdc-typography
-      [:h3 name]
-      [:table
-       [:tr
-        [:td "Capacity:"]
-        [:td (str (utils/format-number capacity) " " capacity-unit)]]
-       [:tr
-        [:td "Unsatisfied demand:"]
-        [:td (utils/format-number unsatisfied-demand)]]
-       [:tr
-        [:td "Required capacity:"]
-        [:td (utils/format-number (Math/ceil required-capacity))]]
-       (when (or matches-filters change)
-         [:tr
-          [:td "Satisfied demand:"]
-          [:td (utils/format-number satisfied-demand)]])
-       (when (or matches-filters change)
-         [:tr
-          [:td "Free capacity: "]
-          [:td (utils/format-number (Math/floor free-capacity))]])
-       [:tr
-        [:td (str (capitalize demand-unit) " under coverage:")]
-        [:td (utils/format-number (Math/ceil reachable-demand))]]]
-      (when-not read-only?
-        [:div.actions
-         (popup-connected-button
-          (cond
-            (some? change)        "Edit"
-            (not matches-filters) "Upgrade"
-            :else                 "Increase")
-          (if (some? change)
-            #(dispatch [:scenarios/edit-change-in-dialog provider])
-            #(dispatch [:scenarios/create-change-in-dialog provider])))])])))
-
 (defn- get-percentage
   [total relative]
   (* (/ relative total) 100))
 
-(defn- get-marker-class-for-provider
-  [{:keys [satisfied-demand unsatisfied-demand capacity free-capacity]}]
-  (cond
-    (> (get-percentage capacity free-capacity) 10)              "idle-capacity"
-    (and (>= free-capacity 0) (zero? unsatisfied-demand))       "at-capacity"
-    (< (get-percentage satisfied-demand unsatisfied-demand) 10) "small-unsatisfied"
-    (< (get-percentage satisfied-demand unsatisfied-demand) 30) "mid-unsatisfied"
-    (> unsatisfied-demand 0)                                    "unsatisfied"
-    :else                                                       "unsatisfied"))
-
 (defn- provider-has-change?
+  [{:keys [change]}]
+  (some? change))
+
+(defn- provider-needs-upgrade?
+  [{:keys [change matches-filters]}]
+  (and (not (some? change)) (not matches-filters)))
+
+(defn- provider-satisfaction
+  [{:keys [unsatisfied-demand capacity free-capacity]}]
+  (cond
+    (> (get-percentage capacity free-capacity) 10)        :excess
+    (and (>= free-capacity 0) (zero? unsatisfied-demand)) :covered
+    :else                                                 :unsatisfied))
+
+(defn- provider-tooltip
+  [{:keys [demand-unit capacity-unit]}
+   {:keys [name free-capacity required-capacity unsatisfied-demand] :as provider}]
+  (let [has-change?    (provider-has-change? provider)
+        satisfaction   (provider-satisfaction provider)
+        has-excess?    (= :excess satisfaction)
+        covered?       (= :covered satisfaction)
+        needs-upgrade? (provider-needs-upgrade? provider)]
+    (crate/html
+     [:div.mdc-typography
+      [:h3 name]
+      (cond
+        (and has-change? has-excess?)
+        [:p.excess
+         (utils/format-number (Math/floor free-capacity))
+         " added " capacity-unit " are not required."
+         [:br]
+         "Please relocate."]
+
+        (and has-change? covered?)
+        [:p.covered
+         "All demand covered."]
+
+        has-change?
+        [:p.unsatisfied
+         (utils/format-number (Math/ceil required-capacity))
+         " more " capacity-unit " required "
+         [:br]
+         "to cover "
+         (utils/format-number unsatisfied-demand) " " demand-unit
+         " without service."]
+
+        (and (not has-change?) has-excess?)
+        [:p.excess
+         "All demand covered"
+         [:br]
+         "with " (utils/format-number (Math/floor free-capacity))
+         " idle extra " capacity-unit "."]
+
+        (and (not has-change?) covered?)
+        [:p.covered
+         "All demand covered, no actions needed."]
+
+        (and (not has-change?) needs-upgrade?)
+        [:p.unsatisfied
+         "Upgrade and " (utils/format-number (Math/ceil required-capacity))
+         " " capacity-unit " required"
+         [:br]
+         "to provide service to "
+         (utils/format-number unsatisfied-demand) " " demand-unit "."]
+
+        :else
+        [:p.unsatisfied
+         (utils/format-number (Math/ceil required-capacity))
+         " " capacity-unit " required to cover "
+         [:br]
+         (utils/format-number unsatisfied-demand) " " demand-unit
+         " without service."])])))
+
+(defn- satisfaction->icon-class
   [provider]
-  (some? (:change provider)))
+  (case (provider-satisfaction provider)
+    :excess      "idle-capacity"
+    :covered     "at-capacity"
+    :unsatisfied "unsatisfied"
+    "unsatisfied"))
 
 (defn- provider-icon-function
   [{:keys [id change matches-filters selected? disabled?] :as provider}]
@@ -118,7 +144,7 @@
         base-classes ["leaflet-circle-icon"
                       (when selected? "selected")
                       (when disabled? "disabled")
-                      (get-marker-class-for-provider provider)]]
+                      (satisfaction->icon-class provider)]]
     (if has-change?
       {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
        :className
@@ -127,12 +153,14 @@
        (join " " (conj base-classes (when (not matches-filters) "upgradeable")))})))
 
 (defn- scenario-providers-layer
-  [{:keys [popup-fn mouseover-fn mouseout-fn]}]
+  [{:keys [project scenario click-fn popup-fn mouseover-fn mouseout-fn]}]
   (let [selected-provider    @(subscribe [:scenarios.map/selected-provider])
         listing-suggestions? @(subscribe [:scenarios/listing-suggestions?])
         searching?           @(subscribe [:scenarios/searching-providers?])
         matching-ids         @(subscribe [:scenarios/search-matching-ids])
-        all-providers        @(subscribe [:scenarios/all-providers])]
+        all-providers        @(subscribe [:scenarios/all-providers])
+        demand-unit          (get-demand-unit project)
+        capacity-unit        (get-capacity-unit project)]
     (into [:feature-group {:key "providers-layer"}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
@@ -148,9 +176,12 @@
                                      :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
                    [:marker (merge marker-props
                                    (when-not disabled?
-                                     {:tooltip      name
+                                     {:tooltip      (provider-tooltip {:demand-unit   demand-unit
+                                                                       :capacity-unit capacity-unit}
+                                                                      provider)
                                       :open?        (when selected? (:open? selected-provider))
                                       :hover?       (when selected? (:hover? selected-provider))
+                                      :click-fn     click-fn
                                       :popup-fn     popup-fn
                                       :mouseover-fn mouseover-fn
                                       :mouseout-fn  mouseout-fn}))]))
@@ -319,10 +350,11 @@
         capacity-unit           (get-capacity-unit project)
         add-point               (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
         source-popup-fn         (fn [{:keys [source]}] (show-source source))
-        provider-popup-fn       (fn [{:keys [provider]}] (show-provider {:read-only?    @initial-scenario?
-                                                                         :demand-unit   demand-unit
-                                                                         :capacity-unit capacity-unit}
-                                                                        provider))
+        provider-click-fn       (fn [{:keys [provider]}]
+                                  (when-not @initial-scenario?
+                                    (if (provider-has-change? provider)
+                                      (dispatch [:scenarios/edit-change-in-dialog provider])
+                                      (dispatch [:scenarios/create-change-in-dialog provider]))))
         provider-mouseover-fn   (fn [{:keys [provider]}] (dispatch [:scenarios.map/select-provider provider]))
         provider-mouseout-fn    (fn [{:keys [provider]}] (dispatch [:scenarios.map/unselect-provider provider]))
         suggestion-popup-fn     (fn [{:keys [suggestion]}]
@@ -356,7 +388,9 @@
         (scenario-demand-layer scenario)
         mapping/labels-tile-layer
         (scenario-sources-layer scenario {:popup-fn source-popup-fn})
-        (scenario-providers-layer {:popup-fn     provider-popup-fn
+        (scenario-providers-layer {:project      project
+                                   :scenario     scenario
+                                   :click-fn     provider-click-fn
                                    :mouseover-fn provider-mouseover-fn
                                    :mouseout-fn  provider-mouseout-fn})
         (scenario-selected-coverage-layer)

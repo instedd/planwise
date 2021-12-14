@@ -39,6 +39,8 @@
 
 (def ^:private tooltip-offset (js/L.Point. 0 -15))
 (def ^:private tooltip-options #js {:permanent false
+                                    :className "mdc-typography"
+                                    :opacity   1
                                     :direction "top"
                                     :offset    tooltip-offset})
 
@@ -50,7 +52,7 @@
                                   :autoPanPaddingBottomRight popup-padding-bottom-right})
 
 (defmethod create-layer :marker
-  [[_ {:keys [lat lon icon tooltip popup-fn mouseover-fn mouseout-fn] :as props}]]
+  [[_ {:keys [lat lon icon tooltip click-fn popup-fn mouseover-fn mouseout-fn] :as props}]]
   (let [latLng        (.latLng js/L lat lon)
         icon          (if icon
                         (.divIcon js/L (clj->js icon))
@@ -66,6 +68,8 @@
       ;; lazy-load the popup content
       (.bindPopup marker "" popup-options)
       (.on marker "popupopen" (fn [e] (.setContent (.-popup e) (popup-fn props)))))
+    (when click-fn
+      (.on marker "click" #(click-fn props)))
     (.on marker "mouseover"  (fn [e]
                                (when (and popup-fn (not (.isPopupOpen marker)))
                                  (.bindPopup marker (popup-fn props) popup-options))
