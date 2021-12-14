@@ -163,6 +163,23 @@
   [action]
   (get action-labels action))
 
+(defn- change-dialog-title
+  [project {:keys [change] :as provider}]
+  (let [capacity-unit (common/get-capacity-unit project)
+        [title subtitle]
+        (case (:action change)
+          "create-provider"   ["Add new provider"
+                               "Build a new provider at the location"]
+          "upgrade-provider"  ["Upgrade provider"
+                               (str "This provider is not operational and will be upgraded before adding new "
+                                    capacity-unit)]
+          "increase-provider" ["Increase capacity"
+                               (str "Add new " capacity-unit " to the existing provider")]
+          nil)]
+    [:<>
+     title
+     [:div.subtitle subtitle]]))
+
 (defn changeset-dialog
   [project scenario]
   (let [dialog-data (subscribe [:scenarios/changeset-dialog])
@@ -179,7 +196,7 @@
                         :acceptable? (and (or (not budget?)
                                               ((fnil pos? 0) (get-in provider [:change :investment])))
                                           ((fnil pos? 0) (get-in provider [:change :capacity])))
-                        :title       (action->title action)
+                        :title       (change-dialog-title project provider)
                         :class       "changeset-dialog"
                         :content     (when @open?
                                        (changeset-dialog-content

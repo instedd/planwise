@@ -331,6 +331,15 @@ form.vertical, .fields-vertical {
     background-color: #eee;
     border-radius: 6px 6px 0 0;
     padding: 18px 24px;
+    .icon-button {
+      color: #999999;
+    }
+    .subtitle {
+      font-weight: normal;
+      font-size: 1rem;
+      color: #999;
+      line-height: 1.5;
+    }
   }
 }
 
