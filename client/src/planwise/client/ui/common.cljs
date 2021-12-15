@@ -52,7 +52,7 @@
   (let [header-props (dissoc props :main :main-prop :sidebar-prop :footer)]
     [:div.layout.full-screen
      [:main main]
-     (into [:aside#sidebar sidebar-prop] children)
+     (into [:aside.sidebar sidebar-prop] children)
      footer
      [header header-props]]))
 

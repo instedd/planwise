@@ -29,6 +29,7 @@
             data-valid?   (seq scenario-name)]
         (dialog {:open?       @open?
                  :title       "Rename scenario"
+                 :class       "narrow"
                  :content     [common2/text-field {:label     "Name"
                                                    :value     (str scenario-name)
                                                    :on-change update-name-fn}]
@@ -45,7 +46,11 @@
     (fn []
       [dialog {:open?     @open?
                :title     (str "Delete " (:name @scenario))
-               :content   [:p "Do you want to remove current scenario from project?"]
+               :class     "narrow"
+               :content   [:p.dialog-prompt
+                           "Do you want to remove current scenario from project?"
+                           [:br]
+                           [:strong "This action cannot be undone."]]
                :delete-fn delete-fn
                :cancel-fn cancel-fn}])))
 

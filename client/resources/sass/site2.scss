@@ -169,7 +169,7 @@ footer {
 }
 
 .layout.full-screen {
-  aside#sidebar {
+  aside.sidebar {
     z-index: 2000;
     @include mdc-elevation(4);
     background: #ffffff;
@@ -184,16 +184,16 @@ footer {
       border-radius: 4px 4px 0 0;
     }
   }
-  aside#sidebar.hidden {
+  aside.sidebar.hidden {
     display: none;
   }
 
-  aside#sidebar.compact-sidebar {
+  aside.sidebar.compact-sidebar {
     grid-column: 2;
     grid-row: 3;
   }
 
-  aside#sidebar.expanded-sidebar {
+  aside.sidebar.expanded-sidebar {
     grid-column-start: 2;
     grid-column-end: 4;
     grid-row: 3;
@@ -341,6 +341,29 @@ form.vertical, .fields-vertical {
       line-height: 1.5;
     }
   }
+  footer {
+    border-top: none;
+    padding: 12px;
+    .mdc-button {
+      border-radius: 4px;
+      height: 40px;
+      font-size: 1rem;
+      letter-spacing: 0;
+    }
+  }
+}
+.flex-spacer {
+  flex: 1;
+}
+.dialog-prompt {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.mdc-dialog.narrow {
+  .mdc-dialog__surface {
+    max-width: 500px;
+  }
 }
 
 .mdc-dialog.changeset-dialog {
@@ -442,7 +465,7 @@ form.vertical, .fields-vertical {
   }
 }
 
-#sidebar {
+.sidebar {
   position: relative;
   .section {
     padding: 1rem;
@@ -711,7 +734,7 @@ form.vertical, .fields-vertical {
     .has-tooltip:hover .tooltip {
       display: block;
       position: absolute;
-      width: 200px;
+      width: 15rem;
       padding: 8px;
       background-color: #000;
       color: #ccc;
@@ -1018,7 +1041,7 @@ form.vertical, .fields-vertical {
   font-weight: 500;
 }
 
-#sidebar .action-button {
+.sidebar .action-button {
   position: absolute;
   right: 1rem;
   z-index: 2;

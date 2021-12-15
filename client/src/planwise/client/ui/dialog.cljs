@@ -17,7 +17,10 @@
      [:form.vertical {:on-submit (utils/prevent-default accept-fn)}
       content]]
     [m/DialogFooter
-     (when (some? delete-fn) [m/Button {:on-click delete-fn} "Delete"])
+     (when (some? delete-fn)
+       [:div {:class (when (some? accept-fn) "flex-spacer")}
+        [m/Button {:on-click delete-fn} "Delete"]])
      (when (some? cancel-fn) [m/DialogFooterButton {:cancel true} "Cancel"])
-     (when (some? accept-fn) [m/DialogFooterButton {:accept   true
-                                                    :disabled (not acceptable?)} "OK"])]]])
+     (when (some? accept-fn) [m/DialogFooterButton {:accept     true
+                                                    :unelevated true
+                                                    :disabled   (not acceptable?)} "OK"])]]])
