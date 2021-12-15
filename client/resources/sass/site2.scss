@@ -355,6 +355,15 @@ form.vertical, .fields-vertical {
 .flex-spacer {
   flex: 1;
 }
+
+.mdc-text-field > input {
+  font-size: 110%;
+  margin-top: 10px;
+}
+.full-width {
+  width: 100%;
+}
+
 .dialog-prompt {
   font-size: 1rem;
   line-height: 1.6;
@@ -367,6 +376,55 @@ form.vertical, .fields-vertical {
 }
 
 .mdc-dialog.changeset-dialog {
+  .mdc-dialog__surface {
+    width: 640px;
+  }
+  .columns {
+    margin: 1rem 0;
+    display: flex;
+    flex-direction: row;
+    > div {
+      margin: 0 10px;
+      flex: 2;
+      &:first-child {
+        margin-left: 0;
+      }
+      &:last-child {
+        margin-right: 0;
+      }
+      &.fixed-content {
+        flex: 1.2;
+      }
+    }
+    .label {
+      margin-top: 16px;
+      font-size: 14px;
+      transform: scale(0.75);
+      transform-origin: left top;
+    }
+  }
+
+  .text-helper {
+    font-size: 13px;
+    letter-spacing: 0;
+    line-height: 1.2;
+    margin-right: 2rem;
+    color: #999;
+    &.change-hint {
+      cursor: pointer;
+    }
+  }
+  .provider-name {
+    font-size: 1rem;
+    color: black;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    > span {
+      margin-left: 0.6rem;
+      letter-spacing: 0;
+    }
+  }
 }
 
 .mdc-select__native-control {
@@ -1442,10 +1500,6 @@ path.coverage-polygon {
 
 .inline {
   display: inline-grid;
-}
-
-.text-helper {
-  font-size: 12px;
 }
 
 .scenario-settings {

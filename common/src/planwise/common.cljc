@@ -7,6 +7,10 @@
 
 (def is-action (complement is-budget))
 
+(defn project-has-budget?
+  [project]
+  (= "budget" (get-in project [:config :analysis-type])))
+
 (def currency-symbol "$")
 
 (defn pluralize
