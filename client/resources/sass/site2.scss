@@ -1270,14 +1270,17 @@ path.coverage-polygon {
   &.satisfied::before {
     background: black;
   }
-  &.high-satisfied::before {
-    background: #ffeb3b;
+  &.q1::before {
+    background: rgb(251,251,121);
   }
-  &.low-satisfied::before {
-    background: #ffc107;
+  &.q2::before {
+    background: rgb(241,195,85);
   }
-  &.unsatisfied::before {
-    background: #ff5722;
+  &.q3::before {
+    background: rgb(232,139,49);
+  }
+  &.q4::before {
+    background: rgb(223,84,14);
   }
 }
 

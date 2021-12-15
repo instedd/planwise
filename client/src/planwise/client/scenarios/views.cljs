@@ -268,49 +268,56 @@
 
 ;;; Sources
 
-(defn- show-source
-  [{:keys [name initial-quantity quantity]}]
-  (let [display-initial-quantity (.toFixed (or initial-quantity 0) 2)
-        display-quantity         (.toFixed (or quantity 0) 2)]
-    (crate/html
-     [:div.mdc-typography
-      [:h3 name]
-      [:table
-       [:tr
-        [:td "Original quantity:"]
-        [:td display-initial-quantity]]
-       [:tr
-        [:td "Current quantity:"]
-        [:td display-quantity]]]])))
+(defn- source-satisfaction
+  [{:keys [quantity initial-quantity]}]
+  (let [ratio (if (pos? initial-quantity)
+                (/ quantity initial-quantity)
+                0)]
+    (cond
+      (= 0 initial-quantity) :no-demand
+      (<= ratio 0.05)        :covered
+      (< 0.05 ratio 0.25)    :q1
+      (<= 0.25 ratio 0.5)    :q2
+      (<= 0.5 ratio 0.75)    :q3
+      (> ratio 0.75)         :q4)))
+
+(defn- source-tooltip
+  [{:keys [demand-unit]} {:keys [name quantity] :as source}]
+  (crate/html
+   [:div.mdc-typography
+    [:h3 name]
+    (case (source-satisfaction source)
+      :no-demand [:p.covered "No demanding " demand-unit " at this source."]
+      :covered   [:p.covered "All service demand covered."]
+      [:p.unsatisfied
+       (utils/format-number (or quantity 0))
+       " " demand-unit " at this source are not covered."])]))
 
 (defn- source-icon-function
   [source]
-  (let [quantity-initial (:initial-quantity source)
-        quantity-current (:quantity source)
-        ratio            (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
-        classname        (cond
-                           (= 0 quantity-initial) "gray"
-                           (<= ratio 0.05)        "satisfied"
-                           (< 0.05 ratio 0.25)    "high-satisfied"
-                           (<= 0.25 ratio 0.5)    "low-satisfied"
-                           (> ratio 0.5)          "unsatisfied")]
-    {:className (->> ["leaflet-source-icon" classname]
-                     (filter some?)
-                     (join " "))}))
+  (let [classname (case (source-satisfaction source)
+                    :covered "satisfied"
+                    :q1      "q1"
+                    :q2      "q2"
+                    :q3      "q3"
+                    :q4      "q4"
+                    "gray")]
+    {:className (str "leaflet-source-icon " classname)}))
 
 (defn- scenario-sources-layer
-  [{:keys [sources-data] :as scenario} {:keys [popup-fn]}]
-  (into [:feature-group {:key "sources-layer"}]
-        (map (fn [{:keys [id lat lon name] :as source}]
-               [:marker {:key          id
-                         :lat          lat
-                         :lon          lon
-                         :icon         (source-icon-function source)
-                         :tooltip      name
-                         :source       source
-                         :popup-fn     popup-fn
-                         :zIndexOffset 0}])
-             sources-data)))
+  [{:keys [project scenario]}]
+  (let [demand-unit  (get-demand-unit project)
+        sources-data (:sources-data scenario)]
+    (into [:feature-group {:key "sources-layer"}]
+          (map (fn [{:keys [id lat lon name] :as source}]
+                 [:marker {:key          id
+                           :lat          lat
+                           :lon          lon
+                           :icon         (source-icon-function source)
+                           :tooltip      (source-tooltip {:demand-unit demand-unit} source)
+                           :source       source
+                           :zIndexOffset 0}])
+               sources-data))))
 
 
 ;;; Raster source layer
@@ -348,7 +355,6 @@
         provider-unit           (get-provider-unit project)
         capacity-unit           (get-capacity-unit project)
         add-point               (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
-        source-popup-fn         (fn [{:keys [source]}] (show-source source))
         provider-click-fn       (fn [{:keys [provider]}]
                                   (when-not @initial-scenario?
                                     (if (provider-has-change? provider)
@@ -386,7 +392,8 @@
         mapping/base-tile-layer
         (scenario-demand-layer scenario)
         mapping/labels-tile-layer
-        (scenario-sources-layer scenario {:popup-fn source-popup-fn})
+        (scenario-sources-layer {:project  project
+                                 :scenario scenario})
         (scenario-providers-layer {:project      project
                                    :scenario     scenario
                                    :click-fn     provider-click-fn
