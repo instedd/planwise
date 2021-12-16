@@ -236,7 +236,7 @@
          new-provider      (merge (db/new-provider-from-change new-action) suggestion)]
      {:dispatch [:scenarios/create-change-in-dialog new-provider]})))
 
-(defn- compute-remaining-budget
+(defn- compute-available-budget
   "Computes the remaining budget for the current scenario *without* considering
   the provider investment"
   [db provider]
@@ -255,7 +255,7 @@
    (-> db
        (assoc-in [:scenarios :open-dialog]      :scenario-changeset)
        (assoc-in [:scenarios :changeset-dialog] {:provider         (db/provider-with-change provider)
-                                                 :available-budget (compute-remaining-budget db nil)
+                                                 :available-budget (compute-available-budget db nil)
                                                  :new-change?      true
                                                  :reset-state?     (not keep-state?)}))))
 
@@ -265,7 +265,7 @@
    (-> db
        (assoc-in [:scenarios :open-dialog]      :scenario-changeset)
        (assoc-in [:scenarios :changeset-dialog] {:provider         provider
-                                                 :available-budget (compute-remaining-budget db provider)
+                                                 :available-budget (compute-available-budget db provider)
                                                  :new-change?      false
                                                  :reset-state?     false}))))
 

@@ -196,43 +196,34 @@
 
 ;;; Suggestions
 
-(defn- label-for-suggestion
-  [suggestion state]
-  (let [new-provider? (= state :new-provider)
-        action        (cond
-                        new-provider?                 :create
-                        (:matches-filters suggestion) :increase
-                        :else                         :upgrade)]
-    (case action
-      :create   "Create"
-      :upgrade  "Upgrade"
-      :increase "Increase")))
-
-(defn- button-for-suggestion
-  [label suggestion]
-  (popup-connected-button label #(dispatch [:scenarios/edit-suggestion suggestion])))
-
-(defn- show-suggested-provider
+(defn- suggestion-tooltip
   [{:keys [demand-unit capacity-unit]}
-   {:keys [action-capacity action-cost coverage name ranked] :as suggestion}
-   state]
-  (let [new-provider? (= state :new-provider)]
-    (crate/html
-     [:div.mdc-typography
-      [:h3 (if name name (str "Suggestion " ranked))]
-      [:table
-       [:tr
-        [:td "Needed capacity : "]
-        [:td (str (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]]
-       (when new-provider?
-         [:tr
-          [:td "Expected demand to satisfy:"]
-          [:td (str (utils/format-number coverage) " " demand-unit)]])
-       (when (and (not new-provider?) action-cost)
-         [:tr
-          [:td "Estimated investment:"]
-          [:td (utils/format-number action-cost)]])]
-      [:div.actions (button-for-suggestion (label-for-suggestion suggestion state) suggestion)]])))
+   {:keys [id action-capacity action-cost coverage name change ranked] :as suggestion}]
+  (let [create?         (or (nil? id) (nil? change))
+        increase?       (= "increase-provider" (:action change))
+        upgrade?        (= "upgrade-provider" (:action change))
+        action-capacity (Math/ceil action-capacity)]
+    [:div.mdc-typography
+     [:h3 (if name name (str "Suggestion " ranked))]
+     (cond
+       create?
+       [:p
+        "Build new provider with " (utils/format-units action-capacity capacity-unit)
+        " to provide service to " (utils/format-units coverage demand-unit) "."]
+
+       increase?
+       [:p
+        "Add " (utils/format-units action-capacity capacity-unit)
+        (if action-cost
+          (str " for an investment of " (utils/format-currency action-cost) ".")
+          ".")]
+
+       upgrade?
+       [:p
+        "Upgrade this provider and add " (utils/format-units action-capacity capacity-unit)
+        (if action-cost
+          (str " for an investment of " (utils/format-currency action-cost) ".")
+          ".")])]))
 
 (defn- suggestion-icon-function
   [{:keys [ranked change] :as suggestion} selected-suggestion]
@@ -247,17 +238,22 @@
           (join " "))}))
 
 (defn- scenario-suggestions-layer
-  [{:keys [popup-fn mouseover-fn mouseout-fn]}]
+  [{:keys [project click-fn mouseover-fn mouseout-fn]}]
   (let [suggestions         @(subscribe [:scenarios/suggestions])
-        selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])]
+        selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])
+        capacity-unit       (get-capacity-unit project)
+        demand-unit         (get-demand-unit project)]
     (into [:feature-group {:key "suggestions-layer"}]
           (map (fn [{:keys [location name] :as suggestion}]
                  [:marker {:lat          (:lat location)
                            :lon          (:lon location)
                            :icon         (suggestion-icon-function suggestion selected-suggestion)
-                           :open?        (= suggestion selected-suggestion)
+                           :tooltip      (suggestion-tooltip {:capacity-unit capacity-unit
+                                                              :demand-unit   demand-unit}
+                                                             suggestion)
+                           :hover?       (= suggestion selected-suggestion)
                            :suggestion   suggestion
-                           :popup-fn     popup-fn
+                           :click-fn     click-fn
                            :mouseover-fn mouseover-fn
                            :mouseout-fn  mouseout-fn
                            :zIndexOffset 4000}])
@@ -359,11 +355,7 @@
                                       (dispatch [:scenarios/create-change-in-dialog provider]))))
         provider-mouseover-fn   (fn [{:keys [provider]}] (dispatch [:scenarios.map/select-provider provider]))
         provider-mouseout-fn    (fn [{:keys [provider]}] (dispatch [:scenarios.map/unselect-provider provider]))
-        suggestion-popup-fn     (fn [{:keys [suggestion]}]
-                                  (show-suggested-provider {:demand-unit   demand-unit
-                                                            :capacity-unit capacity-unit}
-                                                           suggestion
-                                                           @view-state))
+        suggestion-click-fn     (fn [{:keys [suggestion]}] (dispatch [:scenarios/edit-suggestion suggestion]))
         suggestion-mouseover-fn (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/select-suggestion suggestion]))
         suggestion-mouseout-fn  (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/unselect-suggestion suggestion]))]
     (fn [{:keys [bbox] :as project} scenario state error]
@@ -397,7 +389,8 @@
                                    :mouseover-fn provider-mouseover-fn
                                    :mouseout-fn  provider-mouseout-fn})
         (scenario-selected-coverage-layer)
-        (scenario-suggestions-layer {:popup-fn     suggestion-popup-fn
+        (scenario-suggestions-layer {:project      project
+                                     :click-fn     suggestion-click-fn
                                      :mouseover-fn suggestion-mouseover-fn
                                      :mouseout-fn  suggestion-mouseout-fn})]])))
 
