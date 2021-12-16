@@ -27,9 +27,9 @@
        [:hr]])
     [:h1 "Provider capacity"]
     [:ul
-     [:li [:div.leaflet-circle-icon.idle-capacity] "Excess"]
-     [:li [:div.leaflet-circle-icon.at-capacity] "Covered"]
-     [:li [:div.leaflet-circle-icon.unsatisfied] "Shortage"]]
+     [:li [:div.marker-provider-icon.idle-capacity] "Excess"]
+     [:li [:div.marker-provider-icon.at-capacity] "Covered"]
+     [:li [:div.marker-provider-icon.unsatisfied] "Shortage"]]
     [:hr]
     [:h1 "Unsatisfied demand"]
     [:ul.scale

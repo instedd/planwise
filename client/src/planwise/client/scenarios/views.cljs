@@ -140,7 +140,7 @@
 (defn- provider-icon-function
   [{:keys [id change matches-filters selected? disabled?] :as provider}]
   (let [has-change?  (provider-has-change? provider)
-        base-classes ["leaflet-circle-icon"
+        base-classes ["marker-provider-icon"
                       (when selected? "selected")
                       (when disabled? "disabled")
                       (satisfaction->icon-class provider)]]
@@ -242,7 +242,7 @@
              (str "<span>" ranked "</span>")
              (str "<i class='material-icons'>" action-icon "</i>"))
      :className
-     (->> ["leaflet-suggestion-icon"
+     (->> ["marker-suggestion-icon"
            (when (= suggestion selected-suggestion) "selected")]
           (filter some?)
           (join " "))}))
@@ -302,7 +302,7 @@
                     :q3      "q3"
                     :q4      "q4"
                     "gray")]
-    {:className (str "leaflet-source-icon " classname)}))
+    {:className (str "marker-source-icon " classname)}))
 
 (defn- scenario-sources-layer
   [{:keys [project scenario]}]
