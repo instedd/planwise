@@ -141,8 +141,10 @@
         scenario-raster      (raster/read-raster-without-data scenario-raster-path)
         scale-factor         (common/compute-down-scaling-factor scenario-raster suggest-max-pixels)
         resized-raster-path  (scenario-raster-work-path project scenario)
-        resized-raster       (common/resize-raster (:runner engine) scenario-raster resized-raster-path scale-factor)]
-    (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
+        resized-raster       (common/resize-raster (:runner engine) scenario-raster resized-raster-path scale-factor)
+        resize-factor        (common/compute-resize-factor (:runner engine) scenario-raster resized-raster)]
+    (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)
+                "; resize factor " resize-factor))
 
     (let [resized-raster      (raster/read-raster (:file-path resized-raster))
           raster-resolution   (raster/raster-resolution resized-raster)
@@ -151,7 +153,7 @@
       (debug (str "Raster quartiles computed as " quartiles))
       {:raster                resized-raster
        :demand-cutoff         cutoff
-       :resize-factor         (* scale-factor scale-factor)
+       :resize-factor         resize-factor
        :context-id            (setup-context-for-suggestions! engine project scenario raster-resolution)})))
 
 (defn- remove-demand-point!
