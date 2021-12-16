@@ -189,23 +189,38 @@
  (fn [matches]
    (set (map :id matches))))
 
-(defn bbox-from-location
+(defn- location->bbox
   [{:keys [lat lon]}]
   [[lat lon] [lat lon]])
+
+(defn- locations->bbox
+  [locations]
+  (when (seq locations)
+    (reduce (fn [[[s w] [n e]] {:keys [lat lon]}]
+              [[(min s lat) (min w lon)] [(max n lat) (max e lon)]])
+            (location->bbox (first locations))
+            (rest locations))))
 
 (rf/reg-sub
  :scenarios.map/search-matches-bbox
  :<- [:scenarios/search-providers-matches]
  (fn [matches]
-   (cond
-     (empty? matches)
-     nil
+   (locations->bbox (map :location matches))))
 
-     (= 1 (count matches))
-     (bbox-from-location (:location (first matches)))
+(rf/reg-sub
+ :scenarios.map/suggestions-bbox
+ :<- [:scenarios/suggestions]
+ (fn [suggestions]
+   (locations->bbox (map :location suggestions))))
 
-     :else
-     (reduce (fn [[[s w] [n e]] {{:keys [lat lon]} :location}]
-               [[(min s lat) (min w lon)] [(max n lat) (max e lon)]])
-             (bbox-from-location (:location (first matches)))
-             (rest matches)))))
+(rf/reg-sub
+ :scenarios.map/wanted-bbox
+ :<- [:scenarios.map/search-matches-bbox]
+ :<- [:scenarios.map/suggestions-bbox]
+ (fn [[matches-bbox suggestions-bbox]]
+   (or suggestions-bbox matches-bbox)))
+
+(rf/reg-sub
+ :scenarios.map/focused-location
+ (fn [db]
+   (get-in db [:scenarios :focused-location])))

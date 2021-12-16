@@ -5,9 +5,11 @@
             [planwise.util.numbers :refer [abs float=]]
             [clojure.java.io :as io]
             [clojure.set :as set]
+            [clojure.string :as str]
             [taoensso.timbre :as timbre]))
 
 (def ^:dynamic *script-timeout-ms* 30000)
+(def ^:dynamic *bin-timeout-ms* 20000)
 
 (timbre/refer-timbre)
 
@@ -134,3 +136,28 @@
     (io/delete-file output-path :silent)
     (runner/run-external runner :scripts *script-timeout-ms* "crop-source-raster" args)
     (raster/read-raster-without-data output-path)))
+
+(defn count-raster-demand
+  "Using the external binary aggregate-population, compute the sum of all values
+  of the given raster."
+  [runner raster]
+  (let [input-path (:file-path raster)
+        args       [input-path]
+        output     (runner/run-external runner :bin *bin-timeout-ms* "aggregate-population" args)]
+    (-> output
+        (str/split #"\s+")
+        first
+        Long/parseLong)))
+
+(defn compute-resize-factor
+  "Given two rasters (presumably the second being a down-scaled version of the
+  first), compute the scaling factor to apply to each pixel such that the
+  aggregate of the values of the pixels are equal.
+  Since we are using PPP (population per pixel) rasters, we need this to account
+  for the down-scaling done for optimization."
+  [runner original-raster resized-raster]
+  (if (= original-raster resized-raster)
+    1.0
+    (let [original-demand (count-raster-demand runner original-raster)
+          resized-demand (count-raster-demand runner resized-raster)]
+      (double (/ original-demand resized-demand)))))

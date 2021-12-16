@@ -42,7 +42,7 @@
         selected-provider @(subscribe [:scenarios.map/selected-provider])]
     [:div
      [:div.section.changeset-row
-      {:on-mouse-over  #(dispatch [:scenarios.map/select-provider (assoc provider :hover? true)])
+      {:on-mouse-over  #(dispatch [:scenarios.map/select-provider (assoc provider :hover? true) :focus])
        :on-mouse-leave #(dispatch [:scenarios.map/unselect-provider provider])
        :on-click       (if (some? change)
                          #(dispatch [:scenarios/edit-change-in-dialog provider])
@@ -67,7 +67,7 @@
   (let [selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])]
     [:div
      [:div.section.changeset-row
-      {:on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion])
+      {:on-mouse-over #(dispatch [:scenarios.map/select-suggestion suggestion :focus])
        :on-mouse-out  #(dispatch [:scenarios.map/unselect-suggestion suggestion])
        :on-click      #(dispatch [:scenarios/edit-suggestion suggestion])
        :class         (when (= suggestion selected-suggestion) "selected")}

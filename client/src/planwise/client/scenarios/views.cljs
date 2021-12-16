@@ -196,43 +196,34 @@
 
 ;;; Suggestions
 
-(defn- label-for-suggestion
-  [suggestion state]
-  (let [new-provider? (= state :new-provider)
-        action        (cond
-                        new-provider?                 :create
-                        (:matches-filters suggestion) :increase
-                        :else                         :upgrade)]
-    (case action
-      :create   "Create"
-      :upgrade  "Upgrade"
-      :increase "Increase")))
-
-(defn- button-for-suggestion
-  [label suggestion]
-  (popup-connected-button label #(dispatch [:scenarios/edit-suggestion suggestion])))
-
-(defn- show-suggested-provider
+(defn- suggestion-tooltip
   [{:keys [demand-unit capacity-unit]}
-   {:keys [action-capacity action-cost coverage name ranked] :as suggestion}
-   state]
-  (let [new-provider? (= state :new-provider)]
-    (crate/html
-     [:div.mdc-typography
-      [:h3 (if name name (str "Suggestion " ranked))]
-      [:table
-       [:tr
-        [:td "Needed capacity : "]
-        [:td (str (utils/format-number (Math/ceil action-capacity)) " " capacity-unit)]]
-       (when new-provider?
-         [:tr
-          [:td "Expected demand to satisfy:"]
-          [:td (str (utils/format-number coverage) " " demand-unit)]])
-       (when (and (not new-provider?) action-cost)
-         [:tr
-          [:td "Estimated investment:"]
-          [:td (utils/format-number action-cost)]])]
-      [:div.actions (button-for-suggestion (label-for-suggestion suggestion state) suggestion)]])))
+   {:keys [id action-capacity action-cost coverage name change ranked] :as suggestion}]
+  (let [create?         (or (nil? id) (nil? change))
+        increase?       (= "increase-provider" (:action change))
+        upgrade?        (= "upgrade-provider" (:action change))
+        action-capacity (Math/ceil action-capacity)]
+    [:div.mdc-typography
+     [:h3 (if name name (str "Suggestion " ranked))]
+     (cond
+       create?
+       [:p
+        "Build new provider with " (utils/format-units action-capacity capacity-unit)
+        " to provide service to " (utils/format-units coverage demand-unit) "."]
+
+       increase?
+       [:p
+        "Add " (utils/format-units action-capacity capacity-unit)
+        (if action-cost
+          (str " for an investment of " (utils/format-currency action-cost) ".")
+          ".")]
+
+       upgrade?
+       [:p
+        "Upgrade this provider and add " (utils/format-units action-capacity capacity-unit)
+        (if action-cost
+          (str " for an investment of " (utils/format-currency action-cost) ".")
+          ".")])]))
 
 (defn- suggestion-icon-function
   [{:keys [ranked change] :as suggestion} selected-suggestion]
@@ -247,17 +238,22 @@
           (join " "))}))
 
 (defn- scenario-suggestions-layer
-  [{:keys [popup-fn mouseover-fn mouseout-fn]}]
+  [{:keys [project click-fn mouseover-fn mouseout-fn]}]
   (let [suggestions         @(subscribe [:scenarios/suggestions])
-        selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])]
+        selected-suggestion @(subscribe [:scenarios.map/selected-suggestion])
+        capacity-unit       (get-capacity-unit project)
+        demand-unit         (get-demand-unit project)]
     (into [:feature-group {:key "suggestions-layer"}]
           (map (fn [{:keys [location name] :as suggestion}]
                  [:marker {:lat          (:lat location)
                            :lon          (:lon location)
                            :icon         (suggestion-icon-function suggestion selected-suggestion)
-                           :open?        (= suggestion selected-suggestion)
+                           :tooltip      (suggestion-tooltip {:capacity-unit capacity-unit
+                                                              :demand-unit   demand-unit}
+                                                             suggestion)
+                           :hover?       (= suggestion selected-suggestion)
                            :suggestion   suggestion
-                           :popup-fn     popup-fn
+                           :click-fn     click-fn
                            :mouseover-fn mouseover-fn
                            :mouseout-fn  mouseout-fn
                            :zIndexOffset 4000}])
@@ -334,20 +330,50 @@
 
 ;;; Screen components
 
-(def ^:private fit-options #js {:maxZoom            12
+;; NB.: these values are arbitrarily hand-picked in an attempt to ensure that
+;; the markers and their tooltips are visible when panning/bounds fitting
+
+(def ^:private fit-options #js {:maxZoom            11
                                 :paddingTopLeft     (js/L.Point. 400 50)
-                                :paddingBottomRight (js/L.Point. 50 10)})
+                                :paddingBottomRight (js/L.Point. 100 10)})
+(def ^:private pan-options #js {:paddingTopLeft     (js/L.Point. 600 150)
+                                :paddingBottomRight (js/L.Point. 200 50)})
+
+(defn- bbox-fitter
+  [props]
+  (let [last-bbox   (atom nil)
+        wanted-bbox (subscribe [:scenarios.map/wanted-bbox])]
+    (fn [{:keys [map-ref]}]
+      (when (and @wanted-bbox (not= @last-bbox @wanted-bbox))
+        (reset! last-bbox @wanted-bbox)
+        (let [[[s w] [n e]] @wanted-bbox
+              match-bbox    (js/L.latLngBounds (js/L.latLng s w) (js/L.latLng n e))]
+          (r/after-render #(when @map-ref (.fitBounds @map-ref match-bbox fit-options)))))
+      nil)))
+
+(defn- auto-panner
+  [props]
+  (let [last-location    (atom nil)
+        focused-location (subscribe [:scenarios.map/focused-location])]
+    (fn [{:keys [map-ref]}]
+      (when (not= @last-location @focused-location)
+        (reset! last-location @focused-location)
+        (when @focused-location
+          (let [{:keys [lat lon]} @focused-location
+                location          (js/L.latLng lat lon)]
+            (r/after-render #(when @map-ref (.panInside @map-ref location pan-options))))))
+      nil)))
 
 (defn simple-map
   [project _ _ _]
   (let [map-ref                 (atom nil)
-        last-bbox               (atom nil)
+        set-ref-fn              #(reset! map-ref %)
         view-state              (subscribe [:scenarios/view-state])
-        searching?              (subscribe [:scenarios/searching-providers?])
-        matches-bbox            (subscribe [:scenarios.map/search-matches-bbox])
         initial-scenario?       (subscribe [:scenarios/initial-scenario?])
         position                (r/atom mapping/map-preview-position)
         zoom                    (r/atom 3)
+        set-position-fn         #(reset! position %)
+        set-zoom-fn             #(reset! zoom %)
         demand-unit             (get-demand-unit project)
         provider-unit           (get-provider-unit project)
         capacity-unit           (get-capacity-unit project)
@@ -359,27 +385,18 @@
                                       (dispatch [:scenarios/create-change-in-dialog provider]))))
         provider-mouseover-fn   (fn [{:keys [provider]}] (dispatch [:scenarios.map/select-provider provider]))
         provider-mouseout-fn    (fn [{:keys [provider]}] (dispatch [:scenarios.map/unselect-provider provider]))
-        suggestion-popup-fn     (fn [{:keys [suggestion]}]
-                                  (show-suggested-provider {:demand-unit   demand-unit
-                                                            :capacity-unit capacity-unit}
-                                                           suggestion
-                                                           @view-state))
+        suggestion-click-fn     (fn [{:keys [suggestion]}] (dispatch [:scenarios/edit-suggestion suggestion]))
         suggestion-mouseover-fn (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/select-suggestion suggestion]))
         suggestion-mouseout-fn  (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/unselect-suggestion suggestion]))]
     (fn [{:keys [bbox] :as project} scenario state error]
-      ;; fit-bounds to search result matches
-      (when (and @searching? @matches-bbox (not= @last-bbox @matches-bbox))
-        (reset! last-bbox @matches-bbox)
-        (let [[[s w] [n e]] @matches-bbox
-              match-bbox    (js/L.latLngBounds (js/L.latLng s w) (js/L.latLng n e))]
-          (r/after-render #(when @map-ref (.fitBounds @map-ref match-bbox fit-options)))))
-
       [:div.map-container (when error {:class "gray-filter"})
+       [bbox-fitter {:map-ref map-ref}]
+       [auto-panner {:map-ref map-ref}]
        [l/map-widget {:zoom                @zoom
                       :position            @position
-                      :ref                 #(reset! map-ref %)
-                      :on-position-changed #(reset! position %)
-                      :on-zoom-changed     #(reset! zoom %)
+                      :ref                 set-ref-fn
+                      :on-position-changed set-position-fn
+                      :on-zoom-changed     set-zoom-fn
                       :on-click            (cond (= state :new-provider) add-point)
                       :controls            [:attribution
                                             [:reference-table {:hide-actions? @initial-scenario?}]
@@ -397,7 +414,8 @@
                                    :mouseover-fn provider-mouseover-fn
                                    :mouseout-fn  provider-mouseout-fn})
         (scenario-selected-coverage-layer)
-        (scenario-suggestions-layer {:popup-fn     suggestion-popup-fn
+        (scenario-suggestions-layer {:project      project
+                                     :click-fn     suggestion-click-fn
                                      :mouseover-fn suggestion-mouseover-fn
                                      :mouseout-fn  suggestion-mouseout-fn})]])))
 

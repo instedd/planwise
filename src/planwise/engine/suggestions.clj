@@ -141,20 +141,19 @@
         scenario-raster      (raster/read-raster-without-data scenario-raster-path)
         scale-factor         (common/compute-down-scaling-factor scenario-raster suggest-max-pixels)
         resized-raster-path  (scenario-raster-work-path project scenario)
-        resized-raster       (common/resize-raster (:runner engine) scenario-raster resized-raster-path scale-factor)]
-    (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
+        resized-raster       (common/resize-raster (:runner engine) scenario-raster resized-raster-path scale-factor)
+        resize-factor        (common/compute-resize-factor (:runner engine) scenario-raster resized-raster)]
+    (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)
+                "; resize factor " resize-factor))
 
     (let [resized-raster      (raster/read-raster (:file-path resized-raster))
-                                        ; re-read raster with data this time
-          resized-raster-copy (raster/read-raster (:file-path resized-raster))
           raster-resolution   (raster/raster-resolution resized-raster)
           quartiles           (demand/compute-population-quartiles resized-raster)
           cutoff              (nth quartiles 3)]
       (debug (str "Raster quartiles computed as " quartiles))
       {:raster                resized-raster
-       :raster-for-coverage   resized-raster-copy
        :demand-cutoff         cutoff
-       :resize-factor         (* scale-factor scale-factor)
+       :resize-factor         resize-factor
        :context-id            (setup-context-for-suggestions! engine project scenario raster-resolution)})))
 
 (defn- remove-demand-point!
@@ -170,12 +169,11 @@
   (let [iter-id               [:iteration (:iteration run-data)]
         context-id            (:context-id run-data)
         raster                (:raster run-data)
-        raster-for-coverage   (:raster-for-coverage run-data)
         location              (assoc p :id iter-id)
         result                (coverage/resolve-single (:coverage engine) context-id location :raster)]
     (if (:resolved result)
       (let [p-coverage     (raster/read-raster (:raster-path result))
-            demand-covered (demand/count-population-under-coverage raster-for-coverage p-coverage)]
+            demand-covered (demand/count-population-under-coverage raster p-coverage)]
         (assoc result
                :demand-covered demand-covered
                :p-coverage p-coverage
@@ -184,7 +182,7 @@
       result)))
 
 (defn- raster-find-optimal-location
-  [engine {:keys [raster raster-for-coverage context-id iteration] :as run-data}]
+  [engine {:keys [raster raster context-id iteration] :as run-data}]
   (let [p-max (demand/find-max-demand raster)]
     (if (and p-max (pos? (:value p-max)))
       (let [result (raster-refine-suggested-location engine run-data p-max)]

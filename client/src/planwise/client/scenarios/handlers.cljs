@@ -236,7 +236,7 @@
          new-provider      (merge (db/new-provider-from-change new-action) suggestion)]
      {:dispatch [:scenarios/create-change-in-dialog new-provider]})))
 
-(defn- compute-remaining-budget
+(defn- compute-available-budget
   "Computes the remaining budget for the current scenario *without* considering
   the provider investment"
   [db provider]
@@ -255,7 +255,7 @@
    (-> db
        (assoc-in [:scenarios :open-dialog]      :scenario-changeset)
        (assoc-in [:scenarios :changeset-dialog] {:provider         (db/provider-with-change provider)
-                                                 :available-budget (compute-remaining-budget db nil)
+                                                 :available-budget (compute-available-budget db nil)
                                                  :new-change?      true
                                                  :reset-state?     (not keep-state?)}))))
 
@@ -265,7 +265,7 @@
    (-> db
        (assoc-in [:scenarios :open-dialog]      :scenario-changeset)
        (assoc-in [:scenarios :changeset-dialog] {:provider         provider
-                                                 :available-budget (compute-remaining-budget db provider)
+                                                 :available-budget (compute-available-budget db provider)
                                                  :new-change?      false
                                                  :reset-state?     false}))))
 
@@ -361,25 +361,48 @@
    (assoc-in db [:coverage-cache coverage-id] (:coverage-geom geom))))
 
 
+;;; Focused location (ie. a location which should be visible on the map)
+
+(rf/reg-event-fx
+ :scenarios.map/set-focused-location
+ in-scenarios
+ (fn [{:keys [db]} [_ location]]
+   {:db (assoc db :focused-location location)}))
+
+(defn- delayed-focus-location
+  [location]
+  {:delayed-dispatch {:key      [::focus-location]
+                      :ms       500
+                      :dispatch [:scenarios.map/set-focused-location location]}})
+
+(defn- cancel-focus-location
+  []
+  {:dispatch        [:scenarios.map/set-focused-location nil]
+   :cancel-dispatch [::focus-location]})
+
+
 ;;; Providers in map
 
 (rf/reg-event-fx
  :scenarios.map/select-provider
  in-scenarios
- (fn [{:keys [db]} [_ {provider-id :id :as provider}]]
+ (fn [{:keys [db]} [_ {provider-id :id :as provider} focus?]]
    (when-not (= provider-id (get-in db [:selected-provider :id]))
      (merge {:db (-> db
                      (assoc :selected-provider provider)
                      (assoc :selected-suggestion nil))}
+            (if focus?
+              (delayed-focus-location (:location provider))
+              (cancel-focus-location))
             (procure-provider-coverage db provider-id)))))
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :scenarios.map/unselect-provider
  in-scenarios
- (fn [db [_ provider]]
-   (if (or (nil? provider) (= (:id provider) (get-in db [:selected-provider :id])))
-     (assoc db :selected-provider nil)
-     db)))
+ (fn [{:keys [db]} [_ provider]]
+   (when (or (nil? provider) (= (:id provider) (get-in db [:selected-provider :id])))
+     (merge {:db (assoc db :selected-provider nil)}
+            (cancel-focus-location)))))
 
 
 ;;; Suggestions list and selection
@@ -403,19 +426,22 @@
 (rf/reg-event-fx
  :scenarios.map/select-suggestion
  in-scenarios
- (fn [{:keys [db]} [_ suggestion]]
+ (fn [{:keys [db]} [_ suggestion focus?]]
    (merge {:db (-> db
                    (assoc :selected-suggestion suggestion)
                    (assoc :selected-provider nil))}
+          (if focus?
+            (delayed-focus-location (:location suggestion))
+            (cancel-focus-location))
           (procure-suggestion-coverage db suggestion))))
 
-(rf/reg-event-db
+(rf/reg-event-fx
  :scenarios.map/unselect-suggestion
  in-scenarios
- (fn [db [_ suggestion]]
-   (if (= suggestion (:selected-suggestion db))
-     (assoc db :selected-suggestion nil)
-     db)))
+ (fn [{:keys [db]} [_ suggestion]]
+   (when (= suggestion (:selected-suggestion db))
+     (merge {:db (assoc db :selected-suggestion nil)}
+            (cancel-focus-location)))))
 
 (rf/reg-event-db
  :scenarios/close-suggestions

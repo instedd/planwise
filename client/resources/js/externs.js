@@ -3,6 +3,8 @@ var eventsKey = {};
 var L = {
   "version": {},
   "noConflict": function () {},
+  "toPoint": function() {},
+  "toBounds": function() {},
   "Util": {
     "extend": function () {},
     "bind": function () {},
@@ -68,9 +70,14 @@ var L = {
     "vml": {},
     "canvas": {}
   },
-  "Point": function () {},
+  "Point": {
+    "subtract": function() {},
+  },
   "point": function () {},
-  "Bounds": function () {},
+  "Bounds": {
+    "subtract": function() {},
+    "extend": function() {},
+  },
   "bounds": {
     "asLatLngBounds": function() {},
   },
@@ -650,6 +657,7 @@ var L = {
     "fitWorld": function () {},
     "panTo": function () {},
     "panInsideBounds": function () {},
+    "panInside": function() {},
     "panBy": function () {},
     "invalidateSize": function () {},
     "setMaxBounds": function () {},

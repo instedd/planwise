@@ -1373,7 +1373,7 @@ path.coverage-polygon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: black;
+  color: darkcyan;
   border: 3px solid darkcyan !important;
   background: cyan;
   box-sizing: border-box;
@@ -1391,6 +1391,13 @@ path.coverage-polygon {
   }
   > i {
     z-index: 1;
+    color: darkcyan;
+  }
+  &.selected, &.selected::before, &.selected::after {
+    background: lighten(cyan, 30%);
+    color: black;
+  }
+  &.selected > i {
     color: black;
   }
   &::before {
