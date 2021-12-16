@@ -330,20 +330,50 @@
 
 ;;; Screen components
 
-(def ^:private fit-options #js {:maxZoom            12
+;; NB.: these values are arbitrarily hand-picked in an attempt to ensure that
+;; the markers and their tooltips are visible when panning/bounds fitting
+
+(def ^:private fit-options #js {:maxZoom            11
                                 :paddingTopLeft     (js/L.Point. 400 50)
-                                :paddingBottomRight (js/L.Point. 50 10)})
+                                :paddingBottomRight (js/L.Point. 100 10)})
+(def ^:private pan-options #js {:paddingTopLeft     (js/L.Point. 600 150)
+                                :paddingBottomRight (js/L.Point. 200 50)})
+
+(defn- bbox-fitter
+  [props]
+  (let [last-bbox   (atom nil)
+        wanted-bbox (subscribe [:scenarios.map/wanted-bbox])]
+    (fn [{:keys [map-ref]}]
+      (when (and @wanted-bbox (not= @last-bbox @wanted-bbox))
+        (reset! last-bbox @wanted-bbox)
+        (let [[[s w] [n e]] @wanted-bbox
+              match-bbox    (js/L.latLngBounds (js/L.latLng s w) (js/L.latLng n e))]
+          (r/after-render #(when @map-ref (.fitBounds @map-ref match-bbox fit-options)))))
+      nil)))
+
+(defn- auto-panner
+  [props]
+  (let [last-location    (atom nil)
+        focused-location (subscribe [:scenarios.map/focused-location])]
+    (fn [{:keys [map-ref]}]
+      (when (not= @last-location @focused-location)
+        (reset! last-location @focused-location)
+        (when @focused-location
+          (let [{:keys [lat lon]} @focused-location
+                location          (js/L.latLng lat lon)]
+            (r/after-render #(when @map-ref (.panInside @map-ref location pan-options))))))
+      nil)))
 
 (defn simple-map
   [project _ _ _]
   (let [map-ref                 (atom nil)
-        last-bbox               (atom nil)
+        set-ref-fn              #(reset! map-ref %)
         view-state              (subscribe [:scenarios/view-state])
-        searching?              (subscribe [:scenarios/searching-providers?])
-        matches-bbox            (subscribe [:scenarios.map/search-matches-bbox])
         initial-scenario?       (subscribe [:scenarios/initial-scenario?])
         position                (r/atom mapping/map-preview-position)
         zoom                    (r/atom 3)
+        set-position-fn         #(reset! position %)
+        set-zoom-fn             #(reset! zoom %)
         demand-unit             (get-demand-unit project)
         provider-unit           (get-provider-unit project)
         capacity-unit           (get-capacity-unit project)
@@ -359,19 +389,14 @@
         suggestion-mouseover-fn (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/select-suggestion suggestion]))
         suggestion-mouseout-fn  (fn [{:keys [suggestion]}] (dispatch [:scenarios.map/unselect-suggestion suggestion]))]
     (fn [{:keys [bbox] :as project} scenario state error]
-      ;; fit-bounds to search result matches
-      (when (and @searching? @matches-bbox (not= @last-bbox @matches-bbox))
-        (reset! last-bbox @matches-bbox)
-        (let [[[s w] [n e]] @matches-bbox
-              match-bbox    (js/L.latLngBounds (js/L.latLng s w) (js/L.latLng n e))]
-          (r/after-render #(when @map-ref (.fitBounds @map-ref match-bbox fit-options)))))
-
       [:div.map-container (when error {:class "gray-filter"})
+       [bbox-fitter {:map-ref map-ref}]
+       [auto-panner {:map-ref map-ref}]
        [l/map-widget {:zoom                @zoom
                       :position            @position
-                      :ref                 #(reset! map-ref %)
-                      :on-position-changed #(reset! position %)
-                      :on-zoom-changed     #(reset! zoom %)
+                      :ref                 set-ref-fn
+                      :on-position-changed set-position-fn
+                      :on-zoom-changed     set-zoom-fn
                       :on-click            (cond (= state :new-provider) add-point)
                       :controls            [:attribution
                                             [:reference-table {:hide-actions? @initial-scenario?}]
