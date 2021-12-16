@@ -60,7 +60,6 @@
       (client-config (assoc endpoint :request request))
       (include-js "/assets/leaflet/leaflet.js")
       (include-js "/js/leaflet.grouprenderer.js")
-      (include-js "/js/leaflet.legend.js")
       (include-js "/js/main.js")
       [:script "planwise.client.core.main();"]])))
 

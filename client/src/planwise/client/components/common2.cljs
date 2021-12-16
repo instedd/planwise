@@ -36,25 +36,24 @@
 (defn mdc-input-field
   [props component-props]
 
-  (let [{:keys [id focus focus-extra-class label]} component-props
-        {:keys [prefix suffix]} props]
-    [:div.mdc-text-field.mdc-text-field--upgraded {:class (cond
-                                                            (:read-only props) focus-extra-class
-                                                            @focus (str "mdc-text-field--focused" focus-extra-class))}
-     (when-not (empty? prefix) [:i.prefix prefix])
-     (when-not (empty? suffix) [:i.suffix suffix])
-     [:input.mdc-text-field__input (apply dissoc (merge props {:id id
+  (let [{:keys [id focus class focus-extra-class label]} component-props
+        {:keys [prefix suffix]}                          props
+        floating-label?                                  (or (not (blank? (str (:value props)))) @focus)]
+    [:div.mdc-text-field.mdc-text-field--upgraded
+     {:class [class focus-extra-class (when (and @focus (not (:read-only props))) "mdc-text-field--focused")]}
+     (when-not (or (not floating-label?) (empty? prefix)) [:i.prefix prefix])
+     (when-not (or (not floating-label?) (empty? suffix)) [:i.suffix suffix])
+     [:input.mdc-text-field__input (apply dissoc (merge props {:id       id
                                                                :on-focus #(reset! focus true)
                                                                :on-blur  #(reset! focus false)})
                                           [:prefix :suffix])]
-     [:label.mdc-floating-label {:for id
-                                 :class (when (or (not (blank? (str (:value props))))
-                                                  @focus) "mdc-floating-label--float-above")}
+     [:label.mdc-floating-label {:for   id
+                                 :class (when floating-label? "mdc-floating-label--float-above")}
       label]
      [:div.mdc-line-ripple {:class (when @focus "mdc-line-ripple--active")}]]))
 
 (def extra-keys
-  [:label :focus-extra-class :sub-type :invalid-input :type])
+  [:label :class :focus-extra-class :sub-type :invalid-input :type])
 
 (defn text-field
   [props]

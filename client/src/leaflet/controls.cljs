@@ -27,9 +27,9 @@
        [:hr]])
     [:h1 "Provider capacity"]
     [:ul
-     [:li [:div.leaflet-circle-icon.idle-capacity] "Excess"]
-     [:li [:div.leaflet-circle-icon.at-capacity] "Covered"]
-     [:li [:div.leaflet-circle-icon.unsatisfied] "Shortage"]]
+     [:li [:div.marker-provider-icon.idle-capacity] "Excess"]
+     [:li [:div.marker-provider-icon.at-capacity] "Covered"]
+     [:li [:div.marker-provider-icon.unsatisfied] "Shortage"]]
     [:hr]
     [:h1 "Unsatisfied demand"]
     [:ul.scale
@@ -57,7 +57,4 @@
       :attribution     (.attribution js/L.control #js {:prefix false})
       :mapbox-logo     (mapbox-logo props)
       :reference-table (reference-table props)
-      :legend          (.legend js/L.control #js {:pixelMaxValue (:pixel-max-value props)
-                                                  :pixelArea     (:pixel-area props)
-                                                  :providerUnit  (:provider-unit props)})
       (throw (ex-info "Invalid control type" control-def)))))

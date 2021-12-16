@@ -1,6 +1,7 @@
 (ns planwise.client.scenarios.handlers
   (:require [re-frame.core :refer [register-handler dispatch] :as rf]
             [clojure.string :as s]
+            [planwise.common :as common]
             [planwise.client.asdf :as asdf]
             [planwise.client.routes :as routes]
             [planwise.client.utils :as utils]
@@ -225,33 +226,48 @@
  :scenarios/create-provider
  in-scenarios
  (fn [{:keys [db]} [_ location suggestion]]
-   (let [current-scenario (:current-scenario db)
-         new-name         (new-provider-name (:changeset current-scenario))
-         new-action       (db/new-action {:location location
-                                          :name     new-name}
-                                         :create)
-         new-provider     (merge (db/new-provider-from-change new-action) suggestion)]
+   (let [current-scenario  (:current-scenario db)
+         new-name          (new-provider-name (:changeset current-scenario))
+         required-capacity (or (:required-capacity suggestion) 0)
+         new-action        (db/new-action {:location location
+                                           :name     new-name
+                                           :capacity required-capacity}
+                                          :create)
+         new-provider      (merge (db/new-provider-from-change new-action) suggestion)]
      {:dispatch [:scenarios/create-change-in-dialog new-provider]})))
+
+(defn- compute-remaining-budget
+  "Computes the remaining budget for the current scenario *without* considering
+  the provider investment"
+  [db provider]
+  (let [project (get-in db [:projects2 :current-project])]
+    (when (common/project-has-budget? project)
+      (let [scenario       (get-in db [:scenarios :current-scenario])
+            initial-budget (get-in project [:config :actions :budget])
+            spent-budget   (get-in scenario [:effort])
+            investment     (or (get-in provider [:change :investment]) 0)]
+        (+ (- initial-budget spent-budget)
+           investment)))))
 
 (rf/reg-event-db
  :scenarios/create-change-in-dialog
- in-scenarios
  (fn [db [_ provider keep-state?]]
-   (assoc db
-          :open-dialog      :scenario-changeset
-          :changeset-dialog {:provider     (db/provider-with-change provider)
-                             :new-change?  true
-                             :reset-state? (not keep-state?)})))
+   (-> db
+       (assoc-in [:scenarios :open-dialog]      :scenario-changeset)
+       (assoc-in [:scenarios :changeset-dialog] {:provider         (db/provider-with-change provider)
+                                                 :available-budget (compute-remaining-budget db nil)
+                                                 :new-change?      true
+                                                 :reset-state?     (not keep-state?)}))))
 
 (rf/reg-event-db
  :scenarios/edit-change-in-dialog
- in-scenarios
  (fn [db [_ provider]]
-   (assoc db
-          :open-dialog      :scenario-changeset
-          :changeset-dialog {:provider     provider
-                             :new-change?  false
-                             :reset-state? false})))
+   (-> db
+       (assoc-in [:scenarios :open-dialog]      :scenario-changeset)
+       (assoc-in [:scenarios :changeset-dialog] {:provider         provider
+                                                 :available-budget (compute-remaining-budget db provider)
+                                                 :new-change?      false
+                                                 :reset-state?     false}))))
 
 (rf/reg-event-fx
  :scenarios/accept-changeset-dialog
@@ -437,10 +453,11 @@
 (rf/reg-event-fx
  :scenarios/edit-suggestion
  in-scenarios
- (fn [{:keys [db]} [_ {:keys [location action-capacity] :as suggestion}]]
+ (fn [{:keys [db]} [_ {:keys [location action-capacity coverage] :as suggestion}]]
    (let [{:keys [view-state]} db]
      {:dispatch (if (= view-state :new-provider)
-                  [:scenarios/create-provider location {:required-capacity action-capacity}]
+                  [:scenarios/create-provider location {:unsatisfied-demand coverage
+                                                        :required-capacity  action-capacity}]
                   [:scenarios/create-change-in-dialog suggestion])})))
 
 

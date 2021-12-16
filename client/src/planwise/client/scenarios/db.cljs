@@ -53,7 +53,7 @@
   {:action     "create-provider"
    :name       (:name props)
    :investment 0
-   :capacity   0
+   :capacity   (:capacity props)
    :location   (:location props)
    :id         (str (random-uuid))})
 

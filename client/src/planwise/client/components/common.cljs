@@ -1,14 +1,5 @@
 (ns planwise.client.components.common)
 
-;; Loading placeholder
-
-(defn loading-placeholder
-  ([]
-   (loading-placeholder "Loading..."))
-  ([legend]
-   [:div.loading
-    [:h3 (str legend)]]))
-
 ;; SVG based icons
 
 (defn icon [icon-name & [icon-class]]
@@ -20,21 +11,3 @@
            ; [:use {:xlinkHref (str "#icon-" icon-name)}]])
            :dangerouslySetInnerHTML {:__html (str "<use xlink:href=\"#icon-" icon-name "\" />")}}]))
 
-;; Modal dialog
-
-(defn modal-dialog [{:keys [on-backdrop-click] :as props} & children]
-  (let [children (if (map? props) children [props])]
-    [:div.modal
-     [:div.backdrop]
-     (into [:div.modal-container {:on-click
-                                  (fn [e] (when (and (= (aget e "target")
-                                                        (aget e "currentTarget"))
-                                                     on-backdrop-click)
-                                            (on-backdrop-click)))}]
-           children)]))
-
-(defn close-button [props]
-  [:button.mini.close (assoc props :type "button") "\u2716"])
-
-(defn refresh-button [props]
-  [:button.mini.refresh (assoc props :type "button") "\u21bb"])

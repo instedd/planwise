@@ -50,11 +50,15 @@
     :else value))
 
 (defn format-number
-  ([number]
-   (when number
-     (let [format-string (if (integer? number) "#,###" "#,###.00")
-           formatter (new goog.i18n.NumberFormat format-string)]
-       (.format formatter number)))))
+  [number]
+  (when number
+    (let [format-string (if (integer? number) "#,###" "#,###.00")
+          formatter (new goog.i18n.NumberFormat format-string)]
+      (.format formatter number))))
+
+(defn format-units
+  [number units]
+  (str (format-number number) " " units))
 
 (defn format-percentage
   ([x]

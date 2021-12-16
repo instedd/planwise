@@ -2,7 +2,7 @@
   (:require [re-frame.core :refer [dispatch subscribe]]
             [reagent.core :as r]
             [planwise.client.utils :as utils]
-            [planwise.client.dialog :refer [dialog]]
+            [planwise.client.ui.dialog :refer [dialog]]
             [planwise.client.ui.common :as ui]
             [planwise.client.scenarios.db :as db]
             [planwise.client.utils :as utils]
@@ -29,6 +29,7 @@
             data-valid?   (seq scenario-name)]
         (dialog {:open?       @open?
                  :title       "Rename scenario"
+                 :class       "narrow"
                  :content     [common2/text-field {:label     "Name"
                                                    :value     (str scenario-name)
                                                    :on-change update-name-fn}]
@@ -45,9 +46,16 @@
     (fn []
       [dialog {:open?     @open?
                :title     (str "Delete " (:name @scenario))
-               :content   [:p "Do you want to remove current scenario from project?"]
+               :class     "narrow"
+               :content   [:p.dialog-prompt
+                           "Do you want to remove current scenario from project?"
+                           [:br]
+                           [:strong "This action cannot be undone."]]
                :delete-fn delete-fn
                :cancel-fn cancel-fn}])))
+
+
+;;; Changeset dialogs
 
 (defn- get-investment-from-project-config
   [capacity costs]
@@ -70,132 +78,154 @@
     "upgrade-provider"  (+ (get-investment-from-project-config capacity increasing-costs)
                            upgrade-budget)
     "increase-provider" (get-investment-from-project-config capacity increasing-costs)
-    "create-provider"   (get-investment-from-project-config capacity building-costs)))
+    "create-provider"   (get-investment-from-project-config capacity building-costs)
+    nil))
 
-(defn configured-costs?
-  [props]
-  (case (get-in props [:change :action])
-    "increase-provider" (seq (:increasing-costs props))
-    "upgrade-provider"  (and (pos? (:upgrade-budget props))
-                             (seq (:increasing-costs props)))
-    (seq (:building-costs props))))
-
-(defn changeset-dialog-content
-  [{:keys [name initial-capacity capacity required-capacity free-capacity available-budget change]
-    :as   provider}
-   {:keys [budget? demand-unit capacity-unit]
-    :as   props}]
-  (let [increase?        (= (:action change) "increase-provider")
-        create?          (= (:action change) "create-provider")
-        idle?            (pos? free-capacity)
-        update-change-fn (fn [field value]
-                           (dispatch [:scenarios/save-key [:changeset-dialog :provider :change field] value]))]
+(defn- provider-name-input
+  [{:keys [provider update-change-fn]}]
+  (let [name (get-in provider [:change :name])]
     [:div
-     ;; Allow name change when creating a new provider
-     [common2/text-field (merge {:label "Name"
-                                 :value (if create? (:name change) name)}
-                                (if create?
-                                  {:on-change #(update-change-fn :name (-> % .-target .-value))}
-                                  {:on-change         #()
-                                   :read-only         true
-                                   :focus-extra-class "show-static-text"}))]
-     [:div
-      (when increase?
-        [common2/text-field {:label     (str "Current " capacity-unit)
-                             :read-only true
-                             :value     initial-capacity}])
-      [common2/numeric-field {:label     (if increase?
-                                           (str (capitalize capacity-unit) " to add")
-                                           (capitalize capacity-unit))
-                              :on-change (partial update-change-fn :capacity)
-                              :value     (:capacity change)}]
+     [common2/text-field {:label      "Name"
+                          :value      name
+                          :class      "full-width"
+                          :auto-focus true
+                          :on-change  #(update-change-fn :name (-> % .-target .-value))}]]))
 
-      ;; Show unsatisfied demand when data is available from an existing provider or
-      ;; when creating a provider from a suggestion
-      (when (or (some? capacity) (some? required-capacity))
-        (let [extra-capacity          (:capacity change)
-              total-required-capacity (if idle? (- capacity free-capacity) (+ capacity required-capacity))
-              required                (Math/ceil (- total-required-capacity initial-capacity extra-capacity))]
-          (cond
-            (not (neg? required))
-            [:div.inline
-             [common2/text-field {:label     (str "Required " capacity-unit)
-                                  :read-only true
-                                  :value     (utils/format-number (Math/abs required))}]
-             [:p.text-helper
-              (capitalize demand-unit)
-              " without service: "
-              (utils/format-number (* (:project-capacity props) (Math/abs required)))]]
+(defn- provider-name-render
+  [{:keys [provider]}]
+  [:div.provider-name
+   [m/Icon "domain"]
+   [:span (:name provider)]])
 
-            (neg? required)
-            [common2/text-field {:label     "Free capacity"
-                                 :read-only true
-                                 :value     (utils/format-number (Math/abs required))}])))]
+(defn- capacity-input-section
+  [{:keys [provider update-change-fn capacity-unit demand-unit project-capacity]}]
+  (let [{:keys [change initial-capacity satisfied-demand unsatisfied-demand]} provider
 
-     ;;; Budget control
-     (if budget?
-       (let [remaining-budget    (- available-budget (:investment change))
-             suggested-cost      (suggest-investment change props)
-             show-suggested-cost (or (configured-costs? props)
-                                     (:action-cost provider))]
-         [:div
-          [common2/numeric-field {:label         "Investment"
-                                  :sub-type      :float
-                                  :on-change     (partial update-change-fn :investment)
-                                  :invalid-input (< available-budget (:investment change))
-                                  :value         (:investment change)}]
-          [common2/numeric-field {:label     "Available budget"
-                                  :sub-type  :float
-                                  :read-only true
-                                  :value     (if (pos? remaining-budget) remaining-budget 0)}]
-          (when show-suggested-cost
-            [:p.text-helper
-             {:on-click #(update-change-fn :investment (min suggested-cost remaining-budget))}
-             "Suggested investment according to project configuration: "
-             (- suggested-cost (:investment change))])]))]))
+        demand-to-cover    (+ (or satisfied-demand 0) (or unsatisfied-demand 0))
+        ideal-capacity     (Math/ceil (- (/ demand-to-cover project-capacity) (or initial-capacity 0)))
+        formatted-ideal    (utils/format-units ideal-capacity capacity-unit)
+        formatted-demand   (utils/format-units demand-to-cover demand-unit)
+        creating-provider? (= "create-provider" (:action change))
+        accept-hint-fn     #(update-change-fn :capacity ideal-capacity)]
+    [:div
+     [common2/numeric-field {:label     (if creating-provider?
+                                          "Capacity to build"
+                                          "Capacity to add")
+                             :value     (:capacity change)
+                             :suffix    capacity-unit
+                             :on-change (partial update-change-fn :capacity)}]
+     (cond
+       (and creating-provider? (pos? ideal-capacity))
+       [:p.text-helper.change-hint
+        {:on-click accept-hint-fn}
+        "A total of " formatted-ideal " required to cover " formatted-demand "."]
 
-(def action-labels
-  {"create-provider" "Create"
-   "upgrade-provider" "Upgrade"
-   "increase-provider" "Increase"})
+       (pos? ideal-capacity)
+       [:p.text-helper.change-hint
+        {:on-click accept-hint-fn}
+        "Adding " formatted-ideal " is required to cover " formatted-demand "."]
 
-(defn- action->title
-  [action]
-  (get action-labels action))
+       (not creating-provider?)
+       [:p.text-helper
+        "This provider already satisfies the required demand."])]))
+
+(defn- existing-capacity-section
+  [{:keys [provider capacity-unit]}]
+  (let [{:keys [initial-capacity]} provider]
+    [:div.fixed-content
+     [:div.label "Existing capacity"]
+     [:div.value (utils/format-units initial-capacity capacity-unit)]]))
+
+(defn- investment-section
+  [{:keys [provider update-change-fn available-budget budget?] :as props}]
+  (let [change (:change provider)]
+    (if budget?
+      [:div
+       [common2/numeric-field {:label     "Investment"
+                               :value     (:investment change)
+                               :sub-type  :float
+                               :prefix    common/currency-symbol
+                               :on-change (partial update-change-fn :investment)}]
+       (let [suggested-investment (suggest-investment change props)]
+         [:p.text-helper.change-hint
+          {:on-click #(update-change-fn :investment suggested-investment)}
+          "Cost from configuration: "
+          (utils/format-currency suggested-investment)
+          [:br]
+          "Available budget: "
+          (utils/format-currency available-budget)])]
+      [:div])))
+
+(defn- changeset-dialog-content
+  [props]
+  (let [update-change-fn (fn [field value]
+                           (dispatch [:scenarios/save-key [:changeset-dialog :provider :change field] value]))
+        props            (merge props {:update-change-fn update-change-fn})
+        action           (get-in props [:provider :change :action])
+        creating?        (= "create-provider" action)
+        increasing?      (= "increase-provider" action)]
+    [:<>
+     (if creating?
+       [provider-name-input props]
+       [provider-name-render props])
+     [:div.columns
+      (when increasing? [existing-capacity-section props])
+      [capacity-input-section props]
+      [investment-section props]]]))
+
+(defn- change-dialog-title
+  [project {:keys [change] :as provider}]
+  (let [capacity-unit (common/get-capacity-unit project)
+        [title subtitle]
+        (case (:action change)
+          "create-provider"   ["Add new provider"
+                               "Build a new provider at the location"]
+          "upgrade-provider"  ["Upgrade provider"
+                               (str "This provider will need to be upgraded before adding new "
+                                    capacity-unit)]
+          "increase-provider" ["Increase capacity"
+                               (str "Add new " capacity-unit " to the existing provider")]
+          nil)]
+    [:<>
+     title
+     [:div.subtitle subtitle]]))
+
+(defn- change-valid?
+  [project change]
+  (and (or (not (common/project-has-budget? project))
+           (pos? (or (:investment change) 0)))
+       (pos? (or (:capacity change) 0))))
 
 (defn changeset-dialog
   [project scenario]
   (let [dialog-data (subscribe [:scenarios/changeset-dialog])
         open?       (subscribe [:scenarios/changeset-dialog-open?])]
     (fn [{:keys [config] :as project} scenario]
-      (let [provider      (:provider @dialog-data)
-            new-change?   (:new-change? @dialog-data)
-            action        (get-in provider [:change :action])
-            budget        (get-in config [:actions :budget])
-            budget?       (common/is-budget (get-in config [:analysis-type]))
-            demand-unit   (common/get-demand-unit project)
-            capacity-unit (common/get-capacity-unit project)]
-        (dialog (merge {:open?       @open?
-                        :acceptable? (and (or (not budget?)
-                                              ((fnil pos? 0) (get-in provider [:change :investment])))
-                                          ((fnil pos? 0) (get-in provider [:change :capacity])))
-                        :title       (action->title action)
-                        :content     (when @open?
-                                       (changeset-dialog-content
-                                        (merge provider
-                                               (if budget?
-                                                 {:available-budget (- budget (:effort scenario))}))
-                                        {:project-capacity (get-in config [:providers :capacity])
-                                         :upgrade-budget   (get-in config [:actions :upgrade-budget])
-                                         :building-costs   (sort-by :capacity (get-in config [:actions :build]))
-                                         :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))
-                                         :budget?          budget?
-                                         :demand-unit      demand-unit
-                                         :capacity-unit    capacity-unit}))
-                        :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
-                        :cancel-fn   #(dispatch [:scenarios/cancel-dialog])}
-                       (when-not new-change?
-                         {:delete-fn #(dispatch [:scenarios/delete-change (:id provider)])})))))))
+      (let [provider         (:provider @dialog-data)
+            new-change?      (:new-change? @dialog-data)
+            available-budget (:available-budget @dialog-data)
+            budget?          (common/project-has-budget? project)
+            demand-unit      (common/get-demand-unit project)
+            capacity-unit    (common/get-capacity-unit project)]
+        (dialog {:open?       @open?
+                 :acceptable? (change-valid? project (:change provider))
+                 :title       (change-dialog-title project provider)
+                 :class       "changeset-dialog"
+                 :content     (when @open?
+                                (changeset-dialog-content
+                                 {:provider         provider
+                                  :project-capacity (get-in config [:providers :capacity])
+                                  :upgrade-budget   (get-in config [:actions :upgrade-budget])
+                                  :building-costs   (sort-by :capacity (get-in config [:actions :build]))
+                                  :increasing-costs (sort-by :capacity (get-in config [:actions :upgrade]))
+                                  :budget?          budget?
+                                  :available-budget available-budget
+                                  :demand-unit      demand-unit
+                                  :capacity-unit    capacity-unit}))
+                 :accept-fn   #(dispatch [:scenarios/accept-changeset-dialog])
+                 :cancel-fn   #(dispatch [:scenarios/cancel-dialog])
+                 :delete-fn   (when-not new-change?
+                                #(dispatch [:scenarios/delete-change (:id provider)]))})))))
 
 
 ;;; "New" actions UI

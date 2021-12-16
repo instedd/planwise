@@ -7,7 +7,7 @@
             [clojure.string :refer [join split capitalize]]
             [planwise.client.config :as config]
             [planwise.client.scenarios.db :as db]
-            [planwise.client.dialog :refer [dialog]]
+            [planwise.client.ui.dialog :refer [dialog]]
             [planwise.client.ui.common :as ui]
             [planwise.client.routes :as routes]
             [planwise.client.styles :as styles]
@@ -15,7 +15,6 @@
             [planwise.client.scenarios.api :as api]
             [planwise.client.scenarios.edit :as edit]
             [planwise.client.scenarios.changeset :as changeset]
-            [planwise.client.components.common :as common]
             [planwise.client.components.common2 :as common2]
             [planwise.client.utils :as utils]
             [planwise.client.ui.rmwc :as m]
@@ -52,73 +51,98 @@
 
 ;;; Providers layers
 
-(defn- show-provider
-  [{:keys [read-only? demand-unit capacity-unit]}
-   {:keys [change matches-filters name capacity
-           free-capacity required-capacity
-           satisfied-demand unsatisfied-demand reachable-demand]
-    :as   provider}]
-  (let [format-number (fnil utils/format-number 0)]
-    (crate/html
-     [:div.mdc-typography
-      [:h3 name]
-      [:table
-       [:tr
-        [:td "Capacity:"]
-        [:td (str (utils/format-number capacity) " " capacity-unit)]]
-       [:tr
-        [:td "Unsatisfied demand:"]
-        [:td (utils/format-number unsatisfied-demand)]]
-       [:tr
-        [:td "Required capacity:"]
-        [:td (utils/format-number (Math/ceil required-capacity))]]
-       (when (or matches-filters change)
-         [:tr
-          [:td "Satisfied demand:"]
-          [:td (utils/format-number satisfied-demand)]])
-       (when (or matches-filters change)
-         [:tr
-          [:td "Free capacity: "]
-          [:td (utils/format-number (Math/floor free-capacity))]])
-       [:tr
-        [:td (str (capitalize demand-unit) " under coverage:")]
-        [:td (utils/format-number (Math/ceil reachable-demand))]]]
-      (when-not read-only?
-        [:div.actions
-         (popup-connected-button
-          (cond
-            (some? change)        "Edit"
-            (not matches-filters) "Upgrade"
-            :else                 "Increase")
-          (if (some? change)
-            #(dispatch [:scenarios/edit-change-in-dialog provider])
-            #(dispatch [:scenarios/create-change-in-dialog provider])))])])))
-
 (defn- get-percentage
   [total relative]
   (* (/ relative total) 100))
 
-(defn- get-marker-class-for-provider
-  [{:keys [satisfied-demand unsatisfied-demand capacity free-capacity]}]
-  (cond
-    (> (get-percentage capacity free-capacity) 10)              "idle-capacity"
-    (and (>= free-capacity 0) (zero? unsatisfied-demand))       "at-capacity"
-    (< (get-percentage satisfied-demand unsatisfied-demand) 10) "small-unsatisfied"
-    (< (get-percentage satisfied-demand unsatisfied-demand) 30) "mid-unsatisfied"
-    (> unsatisfied-demand 0)                                    "unsatisfied"
-    :else                                                       "unsatisfied"))
-
 (defn- provider-has-change?
+  [{:keys [change]}]
+  (some? change))
+
+(defn- provider-needs-upgrade?
+  [{:keys [change matches-filters]}]
+  (and (not (some? change)) (not matches-filters)))
+
+(defn- provider-satisfaction
+  [{:keys [unsatisfied-demand capacity free-capacity]}]
+  (cond
+    (> (get-percentage capacity free-capacity) 10)        :excess
+    (and (>= free-capacity 0) (zero? unsatisfied-demand)) :covered
+    :else                                                 :unsatisfied))
+
+(defn- provider-tooltip
+  [{:keys [demand-unit capacity-unit]}
+   {:keys [name free-capacity required-capacity unsatisfied-demand] :as provider}]
+  (let [has-change?    (provider-has-change? provider)
+        satisfaction   (provider-satisfaction provider)
+        has-excess?    (= :excess satisfaction)
+        covered?       (= :covered satisfaction)
+        needs-upgrade? (provider-needs-upgrade? provider)]
+    [:div.mdc-typography
+     [:h3 name]
+     (cond
+       (and has-change? has-excess?)
+       [:p.excess
+        (utils/format-number (Math/floor free-capacity))
+        " added " capacity-unit " are not required."
+        [:br]
+        "Please relocate."]
+
+       (and has-change? covered?)
+       [:p.covered
+        "All demand covered."]
+
+       has-change?
+       [:p.unsatisfied
+        (utils/format-number (Math/ceil required-capacity))
+        " more " capacity-unit " required "
+        [:br]
+        "to cover "
+        (utils/format-number unsatisfied-demand) " " demand-unit
+        " without service."]
+
+       (and (not has-change?) has-excess?)
+       [:p.excess
+        "All demand covered"
+        [:br]
+        "with " (utils/format-number (Math/floor free-capacity))
+        " idle extra " capacity-unit "."]
+
+       (and (not has-change?) covered?)
+       [:p.covered
+        "All demand covered, no actions needed."]
+
+       (and (not has-change?) needs-upgrade?)
+       [:p.unsatisfied
+        "Upgrade and " (utils/format-number (Math/ceil required-capacity))
+        " " capacity-unit " required"
+        [:br]
+        "to provide service to "
+        (utils/format-number unsatisfied-demand) " " demand-unit "."]
+
+       :else
+       [:p.unsatisfied
+        (utils/format-number (Math/ceil required-capacity))
+        " " capacity-unit " required to cover "
+        [:br]
+        (utils/format-number unsatisfied-demand) " " demand-unit
+        " without service."])]))
+
+(defn- satisfaction->icon-class
   [provider]
-  (some? (:change provider)))
+  (case (provider-satisfaction provider)
+    :excess      "idle-capacity"
+    :covered     "at-capacity"
+    :unsatisfied "unsatisfied"
+    "unsatisfied"))
 
 (defn- provider-icon-function
   [{:keys [id change matches-filters selected? disabled?] :as provider}]
   (let [has-change?  (provider-has-change? provider)
-        base-classes ["leaflet-circle-icon"
+        base-classes ["marker-provider-icon"
                       (when selected? "selected")
                       (when disabled? "disabled")
-                      (get-marker-class-for-provider provider)]]
+                      (satisfaction->icon-class provider)]]
     (if has-change?
       {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
        :className
@@ -127,12 +151,14 @@
        (join " " (conj base-classes (when (not matches-filters) "upgradeable")))})))
 
 (defn- scenario-providers-layer
-  [{:keys [popup-fn mouseover-fn mouseout-fn]}]
+  [{:keys [project scenario click-fn popup-fn mouseover-fn mouseout-fn]}]
   (let [selected-provider    @(subscribe [:scenarios.map/selected-provider])
         listing-suggestions? @(subscribe [:scenarios/listing-suggestions?])
         searching?           @(subscribe [:scenarios/searching-providers?])
         matching-ids         @(subscribe [:scenarios/search-matching-ids])
-        all-providers        @(subscribe [:scenarios/all-providers])]
+        all-providers        @(subscribe [:scenarios/all-providers])
+        demand-unit          (get-demand-unit project)
+        capacity-unit        (get-capacity-unit project)]
     (into [:feature-group {:key "providers-layer"}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
@@ -148,9 +174,12 @@
                                      :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
                    [:marker (merge marker-props
                                    (when-not disabled?
-                                     {:tooltip      name
+                                     {:tooltip      (provider-tooltip {:demand-unit   demand-unit
+                                                                       :capacity-unit capacity-unit}
+                                                                      provider)
                                       :open?        (when selected? (:open? selected-provider))
                                       :hover?       (when selected? (:hover? selected-provider))
+                                      :click-fn     click-fn
                                       :popup-fn     popup-fn
                                       :mouseover-fn mouseover-fn
                                       :mouseout-fn  mouseout-fn}))]))
@@ -212,7 +241,7 @@
              (str "<span>" ranked "</span>")
              (str "<i class='material-icons'>" action-icon "</i>"))
      :className
-     (->> ["leaflet-suggestion-icon"
+     (->> ["marker-suggestion-icon"
            (when (= suggestion selected-suggestion) "selected")]
           (filter some?)
           (join " "))}))
@@ -225,7 +254,6 @@
           (map (fn [{:keys [location name] :as suggestion}]
                  [:marker {:lat          (:lat location)
                            :lon          (:lon location)
-                           :tooltip      name
                            :icon         (suggestion-icon-function suggestion selected-suggestion)
                            :open?        (= suggestion selected-suggestion)
                            :suggestion   suggestion
@@ -238,49 +266,55 @@
 
 ;;; Sources
 
-(defn- show-source
-  [{:keys [name initial-quantity quantity]}]
-  (let [display-initial-quantity (.toFixed (or initial-quantity 0) 2)
-        display-quantity         (.toFixed (or quantity 0) 2)]
-    (crate/html
-     [:div.mdc-typography
-      [:h3 name]
-      [:table
-       [:tr
-        [:td "Original quantity:"]
-        [:td display-initial-quantity]]
-       [:tr
-        [:td "Current quantity:"]
-        [:td display-quantity]]]])))
+(defn- source-satisfaction
+  [{:keys [quantity initial-quantity]}]
+  (let [ratio (if (pos? initial-quantity)
+                (/ quantity initial-quantity)
+                0)]
+    (cond
+      (= 0 initial-quantity) :no-demand
+      (<= ratio 0.05)        :covered
+      (< 0.05 ratio 0.25)    :q1
+      (<= 0.25 ratio 0.5)    :q2
+      (<= 0.5 ratio 0.75)    :q3
+      (> ratio 0.75)         :q4)))
+
+(defn- source-tooltip
+  [{:keys [demand-unit]} {:keys [name quantity] :as source}]
+  [:div.mdc-typography
+   [:h3 name]
+   (case (source-satisfaction source)
+     :no-demand [:p.covered "No demanding " demand-unit " at this source."]
+     :covered   [:p.covered "All service demand covered."]
+     [:p.unsatisfied
+      (utils/format-number (or quantity 0))
+      " " demand-unit " at this source are not covered."])])
 
 (defn- source-icon-function
   [source]
-  (let [quantity-initial (:initial-quantity source)
-        quantity-current (:quantity source)
-        ratio            (if (pos? quantity-initial) (/ quantity-current quantity-initial) 0)
-        classname        (cond
-                           (= 0 quantity-initial) "gray"
-                           (<= ratio 0.05)        "satisfied"
-                           (< 0.05 ratio 0.25)    "high-satisfied"
-                           (<= 0.25 ratio 0.5)    "low-satisfied"
-                           (> ratio 0.5)          "unsatisfied")]
-    {:className (->> ["leaflet-source-icon" classname]
-                     (filter some?)
-                     (join " "))}))
+  (let [classname (case (source-satisfaction source)
+                    :covered "satisfied"
+                    :q1      "q1"
+                    :q2      "q2"
+                    :q3      "q3"
+                    :q4      "q4"
+                    "gray")]
+    {:className (str "marker-source-icon " classname)}))
 
 (defn- scenario-sources-layer
-  [{:keys [sources-data] :as scenario} {:keys [popup-fn]}]
-  (into [:feature-group {:key "sources-layer"}]
-        (map (fn [{:keys [id lat lon name] :as source}]
-               [:marker {:key          id
-                         :lat          lat
-                         :lon          lon
-                         :icon         (source-icon-function source)
-                         :tooltip      name
-                         :source       source
-                         :popup-fn     popup-fn
-                         :zIndexOffset 0}])
-             sources-data)))
+  [{:keys [project scenario]}]
+  (let [demand-unit  (get-demand-unit project)
+        sources-data (:sources-data scenario)]
+    (into [:feature-group {:key "sources-layer"}]
+          (map (fn [{:keys [id lat lon name] :as source}]
+                 [:marker {:key          id
+                           :lat          lat
+                           :lon          lon
+                           :icon         (source-icon-function source)
+                           :tooltip      (source-tooltip {:demand-unit demand-unit} source)
+                           :source       source
+                           :zIndexOffset 0}])
+               sources-data))))
 
 
 ;;; Raster source layer
@@ -318,11 +352,11 @@
         provider-unit           (get-provider-unit project)
         capacity-unit           (get-capacity-unit project)
         add-point               (fn [lat lon] (dispatch [:scenarios/create-provider {:lat lat :lon lon}]))
-        source-popup-fn         (fn [{:keys [source]}] (show-source source))
-        provider-popup-fn       (fn [{:keys [provider]}] (show-provider {:read-only?    @initial-scenario?
-                                                                         :demand-unit   demand-unit
-                                                                         :capacity-unit capacity-unit}
-                                                                        provider))
+        provider-click-fn       (fn [{:keys [provider]}]
+                                  (when-not @initial-scenario?
+                                    (if (provider-has-change? provider)
+                                      (dispatch [:scenarios/edit-change-in-dialog provider])
+                                      (dispatch [:scenarios/create-change-in-dialog provider]))))
         provider-mouseover-fn   (fn [{:keys [provider]}] (dispatch [:scenarios.map/select-provider provider]))
         provider-mouseout-fn    (fn [{:keys [provider]}] (dispatch [:scenarios.map/unselect-provider provider]))
         suggestion-popup-fn     (fn [{:keys [suggestion]}]
@@ -355,8 +389,11 @@
         mapping/base-tile-layer
         (scenario-demand-layer scenario)
         mapping/labels-tile-layer
-        (scenario-sources-layer scenario {:popup-fn source-popup-fn})
-        (scenario-providers-layer {:popup-fn     provider-popup-fn
+        (scenario-sources-layer {:project  project
+                                 :scenario scenario})
+        (scenario-providers-layer {:project      project
+                                   :scenario     scenario
+                                   :click-fn     provider-click-fn
                                    :mouseover-fn provider-mouseover-fn
                                    :mouseout-fn  provider-mouseout-fn})
         (scenario-selected-coverage-layer)
@@ -435,10 +472,6 @@
   (or (= view-state :new-provider)
       (= view-state :new-intervention)))
 
-(defn- close-button
-  [{:keys [on-click]}]
-  [:button.icon-button {:on-click on-click} [m/Icon "close"]])
-
 (defn suggestions-view
   [{:keys [project suggestions suggestion-type]}]
   (let [demand-unit   (get-demand-unit project)
@@ -451,7 +484,7 @@
     [:<>
      [:div.section.sidebar-title
       [:h1 title]
-      [close-button {:on-click #(dispatch [:scenarios/close-suggestions])}]]
+      [ui/close-button {:on-click #(dispatch [:scenarios/close-suggestions])}]]
      [:div.scroll-list
       [changeset/suggestion-listing-component
        {:demand-unit   demand-unit
@@ -516,7 +549,7 @@
                  :placeholder "Search facilities"
                  :value       @search-value
                  :on-change   #(update-search (-> % .-target .-value))}]
-        [close-button {:on-click close-fn}]]
+        [ui/close-button {:on-click close-fn}]]
        (when (seq @matches)
          [changeset/listing-component {:demand-unit   demand-unit
                                        :capacity-unit capacity-unit}

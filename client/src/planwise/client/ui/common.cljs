@@ -3,6 +3,12 @@
             [planwise.client.components.common :refer [icon]]
             [planwise.client.ui.rmwc :as m]))
 
+
+
+(defn close-button
+  [{:keys [on-click]}]
+  [:button.icon-button {:on-click on-click} [m/Icon "close"]])
+
 (defn- secondary-actions-menu
   [_ secondary-actions]
   (let [open (r/atom false)]
@@ -46,7 +52,7 @@
   (let [header-props (dissoc props :main :main-prop :sidebar-prop :footer)]
     [:div.layout.full-screen
      [:main main]
-     (into [:aside#sidebar sidebar-prop] children)
+     (into [:aside.sidebar sidebar-prop] children)
      footer
      [header header-props]]))
 

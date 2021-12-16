@@ -7,7 +7,7 @@
             [planwise.client.providers-set.components.new-provider-set :refer [new-provider-set-dialog]]
             [planwise.client.ui.common :as ui]
             [planwise.client.ui.rmwc :as m]
-            [planwise.client.dialog :refer [dialog]]
+            [planwise.client.ui.dialog :refer [dialog]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.components.common :as components]
             [planwise.common :as common]))
