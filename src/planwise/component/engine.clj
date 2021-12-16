@@ -30,7 +30,6 @@
   "Maximum number of pixels for raster scenarios. Sources will be scaled down by
   integer factors for the resulting number of pixels to be below this threshold"
   (* 25 1024 1024))
-(def ^:dynamic *bin-timeout-ms* 20000)
 
 (def min-demand-per-km2 "Population per km2" 1)
 
@@ -203,31 +202,6 @@
         region-ids    (set (regions/enum-regions-intersecting-envelope regions envelope))]
     (contains? region-ids region-id)))
 
-(defn count-raster-demand
-  "Using the external binary aggregate-population, compute the sum of all values
-  of the given raster."
-  [engine raster]
-  (let [input-path (:file-path raster)
-        args       [input-path]
-        output     (runner/run-external (:runner engine) :bin *bin-timeout-ms* "aggregate-population" args)]
-    (-> output
-        (str/split #"\s+")
-        first
-        Long/parseLong)))
-
-(defn compute-resize-factor
-  "Given two rasters (presumably the second being a down-scaled version of the
-  first), compute the scaling factor to apply to each pixel such that the
-  aggregate of the values of the pixels are equal.
-  Since we are using PPP (population per pixel) rasters, we need this to account
-  for the down-scaling done for optimization."
-  [engine original-raster resized-raster]
-  (if (= original-raster resized-raster)
-    1.0
-    (let [original-demand (count-raster-demand engine original-raster)
-          resized-demand (count-raster-demand engine resized-raster)]
-      (double (/ original-demand resized-demand)))))
-
 (defn process-base-demand-raster
   "Reads the source original raster file, resizes to a manageable resolution,
   crops to the project region and applies scaling and project target factor.
@@ -238,6 +212,7 @@
   (let [project-id      (:id project)
         source-set      (sources-set/get-source-set-by-id (:sources-set engine) (:source-set-id project))
         source-raster   (read-raster-from-source-set source-set)
+        runner          (:runner engine)
         regions-service (:regions engine)
         region-id       (:region-id project)]
 
@@ -264,13 +239,13 @@
 
       ;; Scale down the source raster if necessary
       (let [resized-raster-path  (project-raster-path project-id "/source-scaled")
-            resized-raster       (common/resize-raster (:runner engine) source-raster resized-raster-path scale-factor)
-            resize-demand-factor (compute-resize-factor engine source-raster resized-raster)]
+            resized-raster       (common/resize-raster runner source-raster resized-raster-path scale-factor)
+            resize-demand-factor (common/compute-resize-factor runner source-raster resized-raster)]
         (debug (str "Resized raster is " (:xsize resized-raster) "x" (:ysize resized-raster)))
         (debug (str "Need to apply a resize factor of " resize-demand-factor))
 
         ;; Cut the source raster using the region outline
-        (let [cropped-raster (common/crop-raster-by-cutline (:runner engine) resized-raster (:geojson region) (project-path project-id))]
+        (let [cropped-raster (common/crop-raster-by-cutline runner resized-raster (:geojson region) (project-path project-id))]
           (debug "Cropped source raster to working region:" (:file-path cropped-raster))
           (debug (str "Project raster is " (:xsize cropped-raster) "x" (:ysize cropped-raster)))
 
