@@ -1,4 +1,5 @@
-(ns leaflet.layers)
+(ns leaflet.layers
+  (:require [crate.core :as crate]))
 
 
 (defn- js-data
@@ -53,17 +54,22 @@
 
 (defmethod create-layer :marker
   [[_ {:keys [lat lon icon tooltip click-fn popup-fn mouseover-fn mouseout-fn] :as props}]]
-  (let [latLng        (.latLng js/L lat lon)
-        icon          (if icon
-                        (.divIcon js/L (clj->js icon))
-                        (js/L.Icon.Default.))
-        attrs         (-> props
-                          (assoc :riseOnHover true)
-                          (assoc :icon icon)
-                          (dissoc :lat :lon :tooltip :popup-fn))
-        marker        (.marker js/L latLng (clj->js attrs))]
+  (let [latLng (.latLng js/L lat lon)
+        icon   (if icon
+                 (.divIcon js/L (clj->js icon))
+                 (js/L.Icon.Default.))
+        attrs  (-> props
+                   (assoc :riseOnHover true)
+                   (assoc :icon icon)
+                   (dissoc :lat :lon :tooltip :popup-fn))
+        marker (.marker js/L latLng (clj->js attrs))]
     (when tooltip
-      (.bindTooltip marker tooltip tooltip-options))
+      (let [content (cond
+                      (vector? tooltip)                  (crate/html tooltip)
+                      (string? tooltip)                  tooltip
+                      (instance? js/HTMLElement tooltip) tooltip
+                      :else                              (str tooltip))]
+        (.bindTooltip marker content tooltip-options)))
     (when popup-fn
       ;; lazy-load the popup content
       (.bindPopup marker "" popup-options)

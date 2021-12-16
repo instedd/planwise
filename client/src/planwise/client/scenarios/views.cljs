@@ -78,56 +78,55 @@
         has-excess?    (= :excess satisfaction)
         covered?       (= :covered satisfaction)
         needs-upgrade? (provider-needs-upgrade? provider)]
-    (crate/html
-     [:div.mdc-typography
-      [:h3 name]
-      (cond
-        (and has-change? has-excess?)
-        [:p.excess
-         (utils/format-number (Math/floor free-capacity))
-         " added " capacity-unit " are not required."
-         [:br]
-         "Please relocate."]
+    [:div.mdc-typography
+     [:h3 name]
+     (cond
+       (and has-change? has-excess?)
+       [:p.excess
+        (utils/format-number (Math/floor free-capacity))
+        " added " capacity-unit " are not required."
+        [:br]
+        "Please relocate."]
 
-        (and has-change? covered?)
-        [:p.covered
-         "All demand covered."]
+       (and has-change? covered?)
+       [:p.covered
+        "All demand covered."]
 
-        has-change?
-        [:p.unsatisfied
-         (utils/format-number (Math/ceil required-capacity))
-         " more " capacity-unit " required "
-         [:br]
-         "to cover "
-         (utils/format-number unsatisfied-demand) " " demand-unit
-         " without service."]
+       has-change?
+       [:p.unsatisfied
+        (utils/format-number (Math/ceil required-capacity))
+        " more " capacity-unit " required "
+        [:br]
+        "to cover "
+        (utils/format-number unsatisfied-demand) " " demand-unit
+        " without service."]
 
-        (and (not has-change?) has-excess?)
-        [:p.excess
-         "All demand covered"
-         [:br]
-         "with " (utils/format-number (Math/floor free-capacity))
-         " idle extra " capacity-unit "."]
+       (and (not has-change?) has-excess?)
+       [:p.excess
+        "All demand covered"
+        [:br]
+        "with " (utils/format-number (Math/floor free-capacity))
+        " idle extra " capacity-unit "."]
 
-        (and (not has-change?) covered?)
-        [:p.covered
-         "All demand covered, no actions needed."]
+       (and (not has-change?) covered?)
+       [:p.covered
+        "All demand covered, no actions needed."]
 
-        (and (not has-change?) needs-upgrade?)
-        [:p.unsatisfied
-         "Upgrade and " (utils/format-number (Math/ceil required-capacity))
-         " " capacity-unit " required"
-         [:br]
-         "to provide service to "
-         (utils/format-number unsatisfied-demand) " " demand-unit "."]
+       (and (not has-change?) needs-upgrade?)
+       [:p.unsatisfied
+        "Upgrade and " (utils/format-number (Math/ceil required-capacity))
+        " " capacity-unit " required"
+        [:br]
+        "to provide service to "
+        (utils/format-number unsatisfied-demand) " " demand-unit "."]
 
-        :else
-        [:p.unsatisfied
-         (utils/format-number (Math/ceil required-capacity))
-         " " capacity-unit " required to cover "
-         [:br]
-         (utils/format-number unsatisfied-demand) " " demand-unit
-         " without service."])])))
+       :else
+       [:p.unsatisfied
+        (utils/format-number (Math/ceil required-capacity))
+        " " capacity-unit " required to cover "
+        [:br]
+        (utils/format-number unsatisfied-demand) " " demand-unit
+        " without service."])]))
 
 (defn- satisfaction->icon-class
   [provider]
@@ -255,7 +254,6 @@
           (map (fn [{:keys [location name] :as suggestion}]
                  [:marker {:lat          (:lat location)
                            :lon          (:lon location)
-                           :tooltip      name
                            :icon         (suggestion-icon-function suggestion selected-suggestion)
                            :open?        (= suggestion selected-suggestion)
                            :suggestion   suggestion
@@ -283,15 +281,14 @@
 
 (defn- source-tooltip
   [{:keys [demand-unit]} {:keys [name quantity] :as source}]
-  (crate/html
-   [:div.mdc-typography
-    [:h3 name]
-    (case (source-satisfaction source)
-      :no-demand [:p.covered "No demanding " demand-unit " at this source."]
-      :covered   [:p.covered "All service demand covered."]
-      [:p.unsatisfied
-       (utils/format-number (or quantity 0))
-       " " demand-unit " at this source are not covered."])]))
+  [:div.mdc-typography
+   [:h3 name]
+   (case (source-satisfaction source)
+     :no-demand [:p.covered "No demanding " demand-unit " at this source."]
+     :covered   [:p.covered "All service demand covered."]
+     [:p.unsatisfied
+      (utils/format-number (or quantity 0))
+      " " demand-unit " at this source are not covered."])])
 
 (defn- source-icon-function
   [source]
