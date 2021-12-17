@@ -23,6 +23,6 @@
            :cancel-fn   cancel-fn
            :content     [:p.dialog-prompt
                          "Do you want to reset this project? "
-                         "This will delete all your current scenarios, but will allow changes in configuration."
+                         "This will delete all your current scenarios, but will allow changes in the project settings."
                          [:br]
                          [:strong "This action cannot be undone."]]}])
