@@ -34,3 +34,5 @@ node_modules
 /scripts/population/data
 /client/.shadow-cljs
 /client/target
+.clj-kondo/
+.lsp/
