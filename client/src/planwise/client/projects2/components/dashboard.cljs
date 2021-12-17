@@ -4,7 +4,6 @@
             [re-com.core :as rc]
             [clojure.string :refer [blank? capitalize]]
             [planwise.client.asdf :as asdf]
-            [planwise.client.projects2.components.common :refer [delete-project-dialog]]
             [planwise.client.components.common2 :as common2]
             [planwise.client.routes :as routes]
             [planwise.client.ui.common :as ui]
@@ -25,11 +24,11 @@
    [m/Tab "Settings"]])
 
 (defn- project-secondary-actions
-  [project delete?]
-  [[ui/menu-item {:on-click #(dispatch [:projects2/reset-project (:id project)])
+  []
+  [[ui/menu-item {:on-click #(dispatch [:projects2/open-reset-dialog])
                   :icon     "undo"}
     "Back to draft"]
-   [ui/menu-item {:on-click #(reset! delete? true)
+   [ui/menu-item {:on-click #(dispatch [:projects2/open-delete-dialog])
                   :icon     "delete"}
     "Delete project"]])
 
@@ -162,9 +161,6 @@
 (defn view-current-project
   [active-tab]
   (let [current-project (rf/subscribe [:projects2/current-project])
-        delete?         (r/atom false)
-        hide-dialog     (fn [] (reset! delete? false))
-        id              (:id @current-project)
         scenarios-sub   (rf/subscribe [:scenarios/list])
         page-params     (rf/subscribe [:page-params])]
     (fn [active-tab]
@@ -173,14 +169,12 @@
           (rf/dispatch [:scenarios/load-scenarios]))
         (cond
           (asdf/reloading? scenarios) [common2/loading-placeholder]
+
           :else
           [ui/fixed-width (merge (common2/nav-params)
-                                 {:title (:name @current-project)
-                                  :tabs [project-tabs {:active active-tab}]
-                                  :secondary-actions (project-secondary-actions @current-project delete?)})
-           [delete-project-dialog {:open? @delete?
-                                   :cancel-fn hide-dialog
-                                   :delete-fn #(rf/dispatch [:projects2/delete-project id])}]
+                                 {:title             (:name @current-project)
+                                  :tabs              [project-tabs {:active active-tab}]
+                                  :secondary-actions (project-secondary-actions)})
            [ui/panel {}
             (case active-tab
               :scenarios [scenarios-list scenarios @current-project]

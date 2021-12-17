@@ -44,3 +44,8 @@
  :projects2/new-project-coverage :<- [:projects2/current-project]
  (fn [current-project [_]]
    (get-in current-project [:coverage-algorithm])))
+
+(rf/reg-sub
+ :projects2/open-dialog
+ (fn [db _]
+   (get-in db [:projects2 :open-dialog])))

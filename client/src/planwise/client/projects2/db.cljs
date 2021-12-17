@@ -5,4 +5,5 @@
 (def initial-db
   {:current-project         nil
    :list                    nil
+   :open-dialog             nil
    :source-types            #{"raster" "points"}})

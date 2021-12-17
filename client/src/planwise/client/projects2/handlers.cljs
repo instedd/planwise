@@ -15,6 +15,7 @@
   [db]
   (assoc db
          :current-project nil
+         :open-dialog     nil
          :source-types    #{"raster" "points"}))
 
 ;; Controllers
@@ -35,7 +36,7 @@
                           (= :projects2 page)) id
                      (= :scenarios page)       project-id))
   :start         [:projects2/get-project]
-  :stop          nil})
+  :stop          [:projects2/unload-project]})
 
 ;;------------------------------------------------------------------------------
 ;; Creating New Project
@@ -66,6 +67,12 @@
  (fn [{:keys [db]} [_ templates]]
    {:db     (-> db
                 (assoc :templates templates))}))
+
+(rf/reg-event-fx
+ :projects2/unload-project
+ in-projects2
+ (fn [{:keys [db]} [_]]
+   {:db (clear-current-project db)}))
 
 (rf/reg-event-fx
  :projects2/project-created
@@ -144,13 +151,34 @@
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
+
+(rf/reg-event-fx
+ :projects2/open-delete-dialog
+ in-projects2
+ (fn [{:keys [db]} [_]]
+   {:db (assoc db :open-dialog :delete)}))
+
+(rf/reg-event-fx
+ :projects2/open-reset-dialog
+ in-projects2
+ (fn [{:keys [db]} [_]]
+   {:db (assoc db :open-dialog :reset)}))
+
+(rf/reg-event-fx
+ :projects2/dismiss-dialog
+ in-projects2
+ (fn [{:keys [db]} [_]]
+   {:db (assoc db :open-dialog nil)}))
+
+
 ;; NOTE: the reset-project only works for the current project since
 ;; upon callback we are updating the local db current-project
 (rf/reg-event-fx
  :projects2/reset-project
  in-projects2
  (fn [{:keys [db]} [_ id]]
-   {:api (assoc (api/reset-project! id)
+   {:db  (assoc db :open-dialog nil)
+    :api (assoc (api/reset-project! id)
                 :on-success [:projects2/save-project-data]
                 :on-failure [:projects2/project-not-found])}))
 
@@ -162,6 +190,7 @@
     :navigate  (routes/projects2)
     :dispatch [:providers-set/load-providers-set]
     :db   (-> db
+              (assoc :open-dialog nil)
               (assoc :current-project nil)
               (update :list #(seq (utils/remove-by-id % id))))}))
 
