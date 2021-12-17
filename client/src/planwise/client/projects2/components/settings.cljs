@@ -84,10 +84,11 @@
    "Continue"])
 
 (defn- project-delete-button
-  [state]
+  []
   [m/Button {:type     "button"
              :theme    ["text-secondary-on-secondary-light"]
-             :on-click #(reset! state true)} "Delete"])
+             :on-click #(dispatch [:projects2/open-delete-dialog])}
+   "Delete"])
 
 (defn- project-back-button
   [project step]
@@ -472,9 +473,7 @@
 (defn edit-current-project
   []
   (let [page-params     (subscribe [:page-params])
-        current-project (subscribe [:projects2/current-project])
-        delete?         (r/atom false)
-        hide-dialog     (fn [] (reset! delete? false))]
+        current-project (subscribe [:projects2/current-project])]
     (fn []
       [ui/fixed-width (common2/nav-params)
        [ui/panel {}
@@ -483,9 +482,6 @@
         [:div {:class-name "project-settings-actions"}
          (let [previous-step (:step (first (filter #(= (:next-step %) (:step @page-params)) sections)))]
            (if (nil? previous-step)
-             [project-delete-button delete?]
+             [project-delete-button]
              [project-back-button @current-project previous-step]))
-         [project-next-step-button @current-project (:next-step (first (filter #(= (:step %) (:step @page-params)) sections)))]]]
-       [delete-project-dialog {:open? @delete?
-                               :cancel-fn hide-dialog
-                               :delete-fn #(dispatch [:projects2/delete-project (:id @current-project)])}]])))
+         [project-next-step-button @current-project (:next-step (first (filter #(= (:step %) (:step @page-params)) sections)))]]]])))

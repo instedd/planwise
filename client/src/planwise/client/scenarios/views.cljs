@@ -83,10 +83,10 @@
      (cond
        (and has-change? has-excess?)
        [:p.excess
-        (utils/format-number (Math/floor free-capacity))
-        " added " capacity-unit " are not required."
+        "Relocation might be needed."
         [:br]
-        "Please relocate."]
+        "There's an excess of "
+        (utils/format-units (Math/floor free-capacity) capacity-unit) "."]
 
        (and has-change? covered?)
        [:p.covered
@@ -94,11 +94,10 @@
 
        has-change?
        [:p.unsatisfied
-        (utils/format-number (Math/ceil required-capacity))
-        " more " capacity-unit " required "
+        "Requires increase of "
+        (utils/format-units (Math/ceil required-capacity) capacity-unit)
         [:br]
-        "to cover "
-        (utils/format-number unsatisfied-demand) " " demand-unit
+        "to cover " (utils/format-units unsatisfied-demand demand-unit)
         " without service."]
 
        (and (not has-change?) has-excess?)
@@ -110,22 +109,23 @@
 
        (and (not has-change?) covered?)
        [:p.covered
-        "All demand covered, no actions needed."]
+        "All demand covered."]
 
        (and (not has-change?) needs-upgrade?)
        [:p.unsatisfied
-        "Upgrade and " (utils/format-number (Math/ceil required-capacity))
-        " " capacity-unit " required"
+        "Requires upgrade and increase of "
         [:br]
-        "to provide service to "
-        (utils/format-number unsatisfied-demand) " " demand-unit "."]
+        (utils/format-units (Math/ceil required-capacity) capacity-unit)
+        " to cover "
+        (utils/format-units unsatisfied-demand demand-unit) "."]
 
        :else
        [:p.unsatisfied
-        (utils/format-number (Math/ceil required-capacity))
-        " " capacity-unit " required to cover "
+        "Requires increase of "
+        (utils/format-units (Math/ceil required-capacity) capacity-unit)
+        " to cover "
         [:br]
-        (utils/format-number unsatisfied-demand) " " demand-unit
+        (utils/format-units unsatisfied-demand demand-unit)
         " without service."])]))
 
 (defn- satisfaction->icon-class

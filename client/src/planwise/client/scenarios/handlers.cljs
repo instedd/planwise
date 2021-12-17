@@ -214,6 +214,15 @@
 
 ;;; Scenario action editing (changesets)
 
+(defn- reset-view-state
+  [db]
+  (-> db
+      (assoc :selected-suggestion nil)
+      (assoc-in [:suggestions :locations] nil)
+      (assoc-in [:suggestions :improvements] nil)
+      (assoc-in [:suggestions :coverages] nil)
+      (assoc :view-state :current-scenario)))
+
 (defn new-provider-name
   [changeset]
   (let [new-providers (filter #(= (:action %) "create-provider") changeset)]
@@ -285,8 +294,7 @@
                                       (utils/replace-by-id c (:change updated-provider)))))]
      {:api (assoc (api/update-scenario (:id current-scenario) updated-scenario)
                   :on-success [:scenarios/update-demand-information])
-      :db  (-> db
-               (assoc :view-state (if reset-state? :current-scenario (:view-state db)))
+      :db  (-> (if reset-state? (reset-view-state db) db)
                (assoc :current-scenario updated-scenario)
                (assoc :open-dialog nil))})))
 
@@ -447,12 +455,7 @@
  :scenarios/close-suggestions
  in-scenarios
  (fn [db [_ _]]
-   (-> db
-       (assoc :selected-suggestion nil)
-       (assoc-in [:suggestions :locations] nil)
-       (assoc-in [:suggestions :improvements] nil)
-       (assoc-in [:suggestions :coverages] nil)
-       (assoc :view-state :current-scenario))))
+   (reset-view-state db)))
 
 
 ;;; Creating new scenario providers
@@ -461,7 +464,8 @@
  :scenarios.new-action/simple-create-provider
  in-scenarios
  (fn [db [_]]
-   (assoc db :view-state :new-provider)))
+   (-> db
+       (assoc :view-state :new-provider))))
 
 
 ;;; Suggestions management
