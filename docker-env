@@ -1,0 +1,8 @@
+DATABASE_URL="jdbc:postgresql://db/planwise?user=planwise&password=planwise"
+TEST_DATABASE_URL="jdbc:postgresql://db/planwise-test?user=planwise&password=planwise"
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+POSTGRES_USER=planwise
+POSTGRES_PASSWORD=planwise
+POSTGRES_DB=planwise
+BIN_PATH=cpp/

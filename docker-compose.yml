@@ -11,15 +11,8 @@ services:
       - "~/.lein:/root/.lein"
     links:
       - db
-    environment:
-      DATABASE_URL: "jdbc:postgresql://db/planwise?user=planwise&password=planwise"
-      TEST_DATABASE_URL: "jdbc:postgresql://db/planwise-test?user=planwise&password=planwise"
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: planwise
-      POSTGRES_PASSWORD: planwise
-      POSTGRES_DB: planwise
-      BIN_PATH: cpp/
+    env_file:
+      - ./docker-env
     command: "lein repl :headless"
     ports:
       - "47480:47480"
@@ -65,6 +58,16 @@ services:
       - "./mapserver/planwise.map:/etc/mapserver/planwise.map:ro"
     ports:
       - "5001:80"
+
+  tools:
+    build:
+      context: scripts/tools
+    env_file:
+      - ./docker-env
+    volumes:
+      - "./data:/data"
+    links:
+      - db
 
 volumes:
   db:
