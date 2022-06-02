@@ -16,14 +16,16 @@ WORKDIR /tmp
 RUN \
   curl -sLO https://raw.githubusercontent.com/babashka/babashka/master/install && \
   chmod +x ./install && \
-  ./install
+  ./install --version 0.8.2
 
 # Preload required pods
 RUN \
-  bb -e "(require '[babashka.pods :as pods]) (pods/load-pod 'org.babashka/postgresql \"0.0.8\")"
+  bb -e "(require '[babashka.pods :as pods]) (pods/load-pod 'org.babashka/postgresql \"0.1.0\")"
 
 # Add sources for tools
 ADD update-region-previews /tools/
 RUN chmod +x /tools/update-region-previews
 
 WORKDIR /tools
+
+ENTRYPOINT /bin/bash
