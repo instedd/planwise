@@ -1,5 +1,7 @@
 # Importing friction data
 
+NOTE: this tool is available in the Planwise Tools Docker image. See scripts/Dockerfile and scripts/tools/README
+
 Download the global friction raster from The Malaria Atlas Project: 
 https://malariaatlas.org/research-project/accessibility_to_cities/
 

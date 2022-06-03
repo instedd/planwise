@@ -1,5 +1,0 @@
-#! /bin/bash
-
-source $(dirname "${BASH_SOURCE}")/env-vars
-
-$(dirname "${BASH_SOURCE}")${APP_FOLDER}/scripts/build-binaries
