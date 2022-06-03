@@ -34,8 +34,12 @@ RUN \
   cd /tools/geojson && npm install -g
 
 # Add load-regions script
+ADD population/load-regions /tools/
+RUN chmod +x /tools/load-regions
 
 # Add friction layer tools
+ADD friction/load-friction-raster /tools/
+RUN chmod +x /tools/load-friction-raster
 
 # Add docker-entrypoint.sh overriding the base default
 ADD tools/docker-entrypoint.sh /usr/local/bin/

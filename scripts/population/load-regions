@@ -1,8 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-source $(dirname "${BASH_SOURCE}")/env-vars
 export PGPASSWORD=$POSTGRES_PASSWORD;
+
+if [ $# -lt 2 ]; then
+    echo "Usage $0 <ISO> <Country Name>"
+    exit 1
+fi
 
 COUNTRY_CODE=$1
 COUNTRY_NAME=$2
@@ -19,9 +23,7 @@ if [ ${REGIONS_LEN} -gt 0 ]; then
   exit 0
 fi
 
-cd $(dirname "${BASH_SOURCE}")${APP_FOLDER}
-
-DATA_PATH=${DATA_PATH:-data}/geojson
+DATA_PATH=${DATA_PATH:-/data}/geojson
 
 mkdir -p ${DATA_PATH}
 
@@ -54,20 +56,5 @@ SQL_SCRIPT
   echo " done!"
 done;
 
-echo -n "   -> Calculating geometry previews ... "
-psql -A -t -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
-  SELECT calculate_regions_previews();
-SQL_SCRIPT
-# TODO: print errors
-echo "   -> done!"
-
-echo -n "   -> Making regions valid...  $FILE ... "
-psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
-
-  UPDATE "regions"
-    SET the_geom = ST_MakeValid(the_geom)
-    WHERE NOT ST_IsValid(the_geom);
-
-SQL_SCRIPT
-  # TODO: print errors
-  echo " done!"
+echo "Don't forget to update the region previews by running"
+echo "  update-region-previews gen"
