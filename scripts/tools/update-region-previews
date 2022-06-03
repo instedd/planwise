@@ -1,0 +1,175 @@
+#!/usr/bin/env bb
+
+(require '[babashka.pods :as pods])
+(pods/load-pod 'org.babashka/postgresql "0.1.0")
+
+(require '[pod.babashka.postgresql :as pg]
+         '[clojure.java.shell :refer [sh]]
+         '[clojure.java.io :as io]
+         '[clojure.string :as string]
+         '[clojure.pprint :refer [print-table]]
+         '[clojure.tools.cli :refer [parse-opts]])
+
+
+(def db {:dbtype   "postgresql"
+         :host     (or (System/getenv "POSTGRES_HOST") "localhost")
+         :dbname   (or (System/getenv "POSTGRES_DB") "planwise")
+         :user     (or (System/getenv "POSTGRES_USER") "planwise")
+         :password (or (System/getenv "POSTGRES_PASSWORD") "planwise")
+         :port     (or (some-> (System/getenv "POSTGRES_PORT") Integer/parseInt) 5432)})
+
+(defn- get-region-sizes
+  []
+  (pg/execute! db ["select id, admin_level, country, name, length(st_asgeojson(preview_geom)) as preview_size from regions order by id"]))
+
+(defn- get-regions
+  []
+  (pg/execute! db ["select id, admin_level, country, name from regions order by id"]))
+
+(defn- get-region
+  [id]
+  (pg/execute-one! db ["select id, admin_level, country, name from regions where id = ?" id]))
+
+(defn- read-region-geom
+  [region-id]
+  (->> (pg/execute-one! db ["select st_asgeojson(the_geom) as result from regions where id = ?" region-id])
+       :result))
+
+(defn- write-region-preview
+  [region-id geojson]
+  (pg/execute! db ["update regions set preview_geom = st_setsrid(st_collectionextract(st_geomfromgeojson(?),3),4326) where id = ?" geojson region-id]))
+
+(defn- temp-filename
+  [suffix]
+  (-> (doto (File/createTempFile "planwise" suffix) (.deleteOnExit))
+      .getPath))
+
+(defn- run-mapshaper-simplify
+  [filename amount]
+  (sh "mapshaper" filename "-simplify" (str amount "%") "-o" filename "force" "format=geojson"))
+
+(defn- simplify-amount
+  [file-size desired-size]
+  (-> (/ desired-size file-size)
+      (* 100)
+      (min 90)
+      (max 10)
+      double))
+
+(defn- shrink-geojson
+  [geojson desired-size]
+  (let [tempfile (temp-filename ".json")]
+
+    (spit tempfile geojson)
+    (loop [last-size     0
+           last-simplify 50]
+      (let [file-size (.length (io/file tempfile))]
+        (print file-size)
+        (if (> file-size desired-size)
+          (do
+            (print "... ")
+            (flush)
+            (let [simplify-amount    (if (= file-size last-size)
+                                       (* last-simplify 0.75)
+                                       (simplify-amount file-size desired-size))
+                  {:keys [exit out]} (run-mapshaper-simplify tempfile simplify-amount)]
+              (if (zero? exit)
+                (recur file-size simplify-amount)
+                (println "\nSome error occurred simplifying the GeoJSON:\n" out))))
+          (println ""))))
+    (slurp tempfile)))
+
+(def *desired-geojson-size* (* 4 1024))
+
+(defn- generate-preview
+  [region-id]
+  (when-let [{:regions/keys [id name country]} (get-region region-id)]
+    (print (str "Region #" id ": " name " (" country ") ..."))
+    (flush)
+    (-> (read-region-geom region-id)
+        (shrink-geojson *desired-geojson-size*)
+        (->> (write-region-preview region-id)))))
+
+
+(defn- generate-all-previews
+  []
+  (let [regions (get-regions)]
+    (println (str "Generating preview for " (count regions) " regions"))
+    (dorun
+     (for [region regions]
+       (let [{:regions/keys [id]} region]
+         (generate-preview id))))))
+
+(defn- generate-missing-previews
+  []
+  (let [regions          (get-region-sizes)
+        missing-previews (filter #(or (nil? (:preview_size %))
+                                      (zero? (:preview_size %)))
+                                 regions)]
+    (if (seq missing-previews)
+      (do
+        (println (str "Generating preview for " (count missing-previews) " regions"))
+        (dorun
+         (for [region missing-previews]
+           (let [{:regions/keys [id]} region]
+             (generate-preview id)))))
+      (println "All regions have a valid preview"))))
+
+(defn- list-regions
+  [options]
+  (print-table (get-region-sizes)))
+
+(defn- generate-previews
+  [{:keys [all region]}]
+  (cond
+    (some? all)    (generate-all-previews)
+    (some? region) (generate-preview region)
+    :else          (generate-missing-previews)))
+
+(def cli-options
+  [["-a" "--all" "Re-process all regions previews"]
+   ["-r" "--region ID" "Generate preview for a single region by ID"
+    :parse-fn #(Integer/parseInt %)]
+   ["-h" "--help"]])
+
+(defn- usage [options-summary]
+  (->> ["Generates preview geometries for available regions."
+        ""
+        "Usage: update-region-previews [options] action"
+        ""
+        "Options:"
+        options-summary
+        ""
+        "Actions:"
+        "  list     List available regions"
+        "  gen      Generate preview for regions"
+        "           (by default, only regions with missing previews are processed)"]
+       (string/join \newline)))
+
+(defn- error-msg [errors]
+  (str "The following errors occurred while parsing your command:\n\n"
+       (string/join \newline errors)))
+
+(defn- validate-args
+  [args]
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+    (cond
+      (:help options) {:exit-message (usage summary) :ok? true}
+      errors          {:exit-message (error-msg errors)}
+
+      (and (= 1 (count arguments))
+           (#{"list" "gen"} (first arguments)))
+      {:action (first arguments) :options options}
+
+      :else {:exit-message (usage summary)})))
+
+(defn- exit [status msg]
+  (println msg)
+  (System/exit status))
+
+(let [{:keys [action options exit-message ok?]} (validate-args *command-line-args*)]
+  (if exit-message
+    (exit (if ok? 0 1) exit-message)
+    (case action
+      "list" (list-regions options)
+      "gen"  (generate-previews options))))
