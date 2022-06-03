@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const fs = require('fs'),
       request = require('request'),
       AdmZip = require('adm-zip'),
@@ -39,19 +41,25 @@ const fs = require('fs'),
     process.exit(1)
   }
 
+  outputPath = outputPath || `${process.env.DATA_PATH || '/data'}/geojson`;
+  tmpPath = tmpPath || '/tmp';
+
+  // GADM 4.0 let baseUrl = 'http://geodata.ucdavis.edu/data/gadm4.0/kmz/'
+  let baseUrl = 'http://biogeo.ucdavis.edu/data/gadm2.8/kmz/'
   console.log(`> Country code: ${countryCode}`)
   console.log(`> Output path: ${outputPath}`)
   console.log(`> Temporary path: ${tmpPath}`)
+  console.log(`> Downloading GADM data in KMZ format from ${baseUrl}`)
 
   console.info(`> Starting ... ${countryCode}`)
 
   const config = {
     path: {
-      out: outputPath || '/output',
-      tmp: tmpPath || '/tmp'
+      out: outputPath,
+      tmp: tmpPath
     },
     url: {
-      base: 'http://biogeo.ucdavis.edu/data/gadm2.8/kmz/'
+      base: baseUrl
     }
   }
 
@@ -151,12 +159,14 @@ const downloadAt = function(url, kmzFilename, outPath) {
 const processCountry = function(code, level, config) {
   console.info(`- Processing country ${code} with level ${level}`)
 
+  // For GADM 4.0 the filename template changes to `gadm40_${code}_${level}`
   const filename = `${code}_adm${level}`
   const kmzFilename = `${filename}.kmz`
   const kmlFilename = `${filename}.kml`
   const geojsonFilename = `${filename}.geojson`
 
   const url = new URL(kmzFilename, config.url.base)
+  console.log(`Downloading ${url}`)
   const outPath = path.join(config.path.out, code)
 
   return downloadAt(url.href, kmzFilename, config.path.tmp)

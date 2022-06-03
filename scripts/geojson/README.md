@@ -40,10 +40,10 @@ If the output folder is `../../data/geojson` then the files will be:
 ## Example country code
 [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)
 
-  Country | Code
-  ---| :---:
-  Kenya | KEN
-  Pakistan | PAK
-  Philippines | PHL
-  Nepal | NPL
+  Country      | Code
+  -------------| :---:
+  Kenya        | KEN
+  Pakistan     | PAK
+  Philippines  | PHL
+  Nepal        | NPL
   Burkina Faso | BFA
