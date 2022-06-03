@@ -4,7 +4,7 @@ export PATH=/tools:$PATH
 
 echo This is the Planwise Tools Docker image
 echo You can find several helper scripts and tools in the /tools directory to manage data from a Planwise installation.
-echo Check the README file there for more information.
+echo Check the /tools/README file for more information.
 echo
 
 if [ -z "$DATA_PATH" ]; then
@@ -23,6 +23,15 @@ if [ -z "$POSTGRES_HOST" ] || [ -z "$POSTGRES_PORT" ] || [ -z "$POSTGRES_USER" ]
     echo PostgreSQL configuration is missing or incomplete. Some tools will not work properly.
     echo Check the POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_DB and POSTGRES_PASSWORD environment variables.
     echo
+else
+    export PGDATABASE=$POSTGRES_DB
+    export PGHOST=$POSTGRES_HOST
+    export PGPORT=$POSTGRES_PORT
+    export PGUSER=$POSTGRES_USER
+fi
+
+if [ -d "$DATA_PATH" ]; then
+    cd $DATA_PATH
 fi
 
 exec "$@"
