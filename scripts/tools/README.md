@@ -65,12 +65,12 @@ transformed first.
 * Move file to any folder below `$DATA_PATH`
 
 Then we need to create a record in the `source_set` table to point to the
-downloaded raster file. Get access to the database and run the following SQL
-snippet:
+downloaded raster file. You can use the provided `update-source-sets` tool for
+this (or insert the database record manually).
 
-```sql
-INSERT INTO source_set (name, type, unit, raster_file) VALUES ('Uruguay PPP v2b 2015', 'raster', 'people', 'URY_ppp_v2b_2015.tif');
+```sh
+update-source-sets add "Uruguay PPP v2b 2015" URY_ppp_v2b_2015.tif
 ```
 
-The important bit of information is the last field. That should be a relative
-path from the `DATA_PATH` directory to the downloaded raster file.
+The path to the raster file must be given relative to the `DATA_PATH`
+environment variable.

@@ -32,6 +32,8 @@ RUN \
 # Add sources for tools
 ADD tools/update-region-previews /tools/
 RUN chmod +x /tools/update-region-previews
+ADD tools/update-source-sets /tools/
+RUN chmod +x /tools/update-source-sets
 
 # Add geojson tool
 ADD geojson/ /tools/geojson/

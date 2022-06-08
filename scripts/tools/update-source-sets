@@ -1,0 +1,142 @@
+#!/usr/bin/env bb
+
+(require '[babashka.pods :as pods])
+(pods/load-pod 'org.babashka/postgresql "0.1.0")
+
+(require '[pod.babashka.postgresql :as pg]
+         '[babashka.fs :as fs]
+         '[clojure.java.io :as io]
+         '[clojure.string :as string]
+         '[clojure.pprint :refer [pprint print-table]]
+         '[clojure.tools.cli :refer [parse-opts]])
+
+(def db {:dbtype   "postgresql"
+         :host     (or (System/getenv "POSTGRES_HOST") "localhost")
+         :dbname   (or (System/getenv "POSTGRES_DB") "planwise")
+         :user     (or (System/getenv "POSTGRES_USER") "planwise")
+         :password (or (System/getenv "POSTGRES_PASSWORD") "planwise")
+         :port     (or (some-> (System/getenv "POSTGRES_PORT") Integer/parseInt) 5432)})
+
+(def data-path (or (System/getenv "DATA_PATH") "."))
+
+
+(defn- get-source-sets
+  []
+  (pg/execute! db ["select id, name, type, unit, raster_file from source_set where \"owner-id\" is null"]))
+
+(defn- find-source-set-by-raster-file
+  [raster-file]
+  (pg/execute-one! db ["select id, name, type, unit, raster_file from source_set where raster_file = ? limit 1" raster-file]))
+
+(defn- insert-raster-source-set
+  [{:keys [name raster-file unit]}]
+  (pg/execute-one! db ["insert into source_set (name, type, unit, raster_file) values (?, 'raster', ?, ?) returning id" name unit raster-file]))
+
+(defn- list-source-sets
+  [options]
+  (print-table (get-source-sets)))
+
+(defn- add-source-set
+  [{:keys [unit name raster-file] :or {unit "people"} :as options}]
+  (let [raster-file-file (fs/file data-path raster-file)]
+    (if (fs/exists? raster-file-file)
+      (if-let [existing-source-set (find-source-set-by-raster-file raster-file)]
+        (do
+          (println "A source set with the given raster file already exists")
+          (pprint existing-source-set)
+          (System/exit 1))
+        (let [new-source-set (insert-raster-source-set {:name name :raster-file raster-file :unit unit})]
+          (println (str "Created new source set with ID " (:source_set/id new-source-set)))))
+      (do
+        (println (str raster-file " not found in DATA_PATH " data-path))
+        (System/exit 1)))))
+
+(defn- delete-source-set
+  [{:keys [id]}]
+  (try
+    (let [result (pg/execute-one! db ["delete from source_set where id = ? and \"owner-id\" is null" id])]
+      (println (str (:next.jdbc/update-count result) " records deleted")))
+    (catch clojure.lang.ExceptionInfo ex
+      (println "Failed to delete source set")
+      (println (ex-message ex)))))
+
+(defn- rename-source-set
+  [{:keys [id new-name]}]
+  (try
+    (let [result (pg/execute-one! db ["update source_set set name = ? where id = ? and \"owner-id\" is null" new-name id])]
+      (println (str (:next.jdbc/update-count result) " records updated")))
+    (catch clojure.lang.ExceptionInfo ex
+      (println "Failed to rename source set")
+      (println (ex-message ex)))))
+
+(def cli-options
+  [["-u" "--unit UNIT" "Set the unit of demand to use when adding a new raster"]
+   ["-h" "--help"]])
+
+(defn- usage [options-summary]
+  (->> ["Manages the system source sets in the database."
+        ""
+        "Usage: update-source-sets [options] action"
+        ""
+        "Options:"
+        options-summary
+        ""
+        "Actions:"
+        "  list                      List available system source sets"
+        "  add <name> <raster_file>  Add a new system raster source set"
+        "  delete <id>               Removes the given system source set by ID"
+        "  rename <id> <new_name>    Updates the name of a system source set"]
+       (string/join \newline)))
+
+(defn- error-msg [errors]
+  (str "The following errors occurred while parsing your command:\n\n"
+       (string/join \newline errors)))
+
+(defn- try-parse-id
+  [id then]
+  (try
+    (then (Integer/parseInt id))
+    (catch Exception e
+      {:exit-message (str id " is not a valid ID")})))
+
+(defn- validate-args
+  [args]
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)
+        [action & params]                          arguments]
+    (cond
+      (:help options) {:exit-message (usage summary) :ok? true}
+      errors          {:exit-message (error-msg errors)}
+
+      (#{"list"} action)
+      {:action (keyword action) :options options}
+
+      (and (= "add" action)
+           (= 2 (count params)))
+      {:action :add :options (assoc options
+                                    :name (first params)
+                                    :raster-file (second params))}
+
+      (and (= "delete" action)
+           (= 1 (count params)))
+      (try-parse-id (first params)
+                    (fn [id] {:action :delete :options (assoc options :id id)}))
+
+      (and (= "rename" action)
+           (= 2 (count params)))
+      (try-parse-id (first params)
+                    (fn [id] {:action :rename :options (assoc options :id id :new-name (second params))}))
+
+      :else {:exit-message (usage summary)})))
+
+(defn- exit [status msg]
+  (println msg)
+  (System/exit status))
+
+(let [{:keys [action options exit-message ok?]} (validate-args *command-line-args*)]
+  (if exit-message
+    (exit (if ok? 0 1) exit-message)
+    (case action
+      :list   (list-source-sets options)
+      :add    (add-source-set options)
+      :delete (delete-source-set options)
+      :rename (rename-source-set options))))
