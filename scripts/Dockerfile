@@ -38,7 +38,7 @@ RUN chmod +x /tools/update-source-sets
 # Add geojson tool
 ADD geojson/ /tools/geojson/
 RUN \
-  cd /tools/geojson && npm install -g
+  cd /tools/geojson && npm install && npm install -g
 
 # Add load-regions script
 ADD population/load-regions /tools/
