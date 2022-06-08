@@ -59,9 +59,13 @@ Planwise uses raster files with population data, aka. PPP or population per
 pixel. Other data sets (such as population density rasters) need to be
 transformed first.
 
-* Download file `URY_ppp_v2b_2015.tif` from [worldpop.org.ok - Uruguay 100m Population](http://www.worldpop.org.uk/data/summary/?id=29)
-  (click in "Browse Individual Files" and then "Switch to file view")
-* You can use `wget`, `curl` or any other tool you may want
+* Download file raster file with the population count. The preferred source is 
+  [Worldpop.org](https://hub.worldpop.org/project/categories?id=3). For our
+  example, you can find a link to download the 2020 constrained UN adjusted
+  population in Uruguay from
+  [here](https://hub.worldpop.org/geodata/summary?id=50091). Look for the
+  "Download entire data set" or "Browse individual files" button.
+* You can use `wget`, `curl` or any other tool you may want.
 * Move file to any folder below `$DATA_PATH`
 
 Then we need to create a record in the `source_set` table to point to the
@@ -69,7 +73,7 @@ downloaded raster file. You can use the provided `update-source-sets` tool for
 this (or insert the database record manually).
 
 ```sh
-update-source-sets add "Uruguay PPP v2b 2015" URY_ppp_v2b_2015.tif
+update-source-sets add "Uruguay 2020 UN adjusted" ury_ppp_2020_UNadj_constrained.tif
 ```
 
 The path to the raster file must be given relative to the `DATA_PATH`
