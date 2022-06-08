@@ -59,9 +59,9 @@ Planwise uses raster files with population data, aka. PPP or population per
 pixel. Other data sets (such as population density rasters) need to be
 transformed first.
 
-* Download file `URY_ppp_v2b_2015.tif` from [worldpop.org.ok - Uruguay 100m
-  Population](http://www.worldpop.org.uk/data/summary/?id=29) (click in "Browse
-  Individual Files" and then "Switch to file view")
+* Download file `URY_ppp_v2b_2015.tif` from [worldpop.org.ok - Uruguay 100m Population](http://www.worldpop.org.uk/data/summary/?id=29)
+  (click in "Browse Individual Files" and then "Switch to file view")
+* You can use `wget`, `curl` or any other tool you may want
 * Move file to any folder below `$DATA_PATH`
 
 Then we need to create a record in the `source_set` table to point to the
