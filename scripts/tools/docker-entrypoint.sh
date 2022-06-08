@@ -2,9 +2,9 @@
 
 export PATH=/tools:$PATH
 
-echo This is the Planwise Tools Docker image
-echo You can find several helper scripts and tools in the /tools directory to manage data from a Planwise installation.
-echo Check the /tools/README.md file for more information.
+echo "This is the Planwise Tools Docker image"
+echo "You can find several helper scripts and tools in the /tools directory to manage data from a Planwise installation."
+echo "Check the /tools/README.md file for more information (you can use the readme command)"
 echo
 
 if [ -z "$DATA_PATH" ]; then

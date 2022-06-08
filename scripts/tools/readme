@@ -1,0 +1,3 @@
+#!/bin/bash
+
+glow -p /tools/README.md
