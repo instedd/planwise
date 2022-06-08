@@ -356,7 +356,13 @@ lein test
 
 ### Importing a new country
 
-See `scripts/population/README.md`.
+Use the Planwise Tools Docker image to manage geographic and base source sets in the database. In development, this can be spawned by running:
+
+```sh
+docker-compose run tools
+```
+
+Then follow the instructions given in `scripts/tools/README.md`.
 
 
 ### Intercom

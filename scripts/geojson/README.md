@@ -1,5 +1,7 @@
 # Kml to GeoJson script
 
+NOTE: this tool is available in the Planwise Tools Docker image. See scripts/Dockerfile and scripts/tools/README
+
 ## Running the script
 
 ### To run local:
@@ -13,13 +15,6 @@ $ ./gadm2geojson ARG ../../data/geojson
 __Note:__ If you prefer to run the script directly with Node.js, you could replace the last line with:
 ```
 $ node gadm2geojson.js ARG ../../data/geojson
-```
-
-### To use docker:
-(in project root)
-```
-$ docker build -t instedd/planwise:geojson-fetcher ./scripts/geojson
-$ docker run --rm -v $(pwd)/data/geojson:/output instedd/planwise:geojson-fetcher ARG
 ```
 
 ### Output files:
@@ -40,10 +35,10 @@ If the output folder is `../../data/geojson` then the files will be:
 ## Example country code
 [ISO 3166-1 alpha-3](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)
 
-  Country | Code
-  ---| :---:
-  Kenya | KEN
-  Pakistan | PAK
-  Philippines | PHL
-  Nepal | NPL
+  Country      | Code
+  -------------| :---:
+  Kenya        | KEN
+  Pakistan     | PAK
+  Philippines  | PHL
+  Nepal        | NPL
   Burkina Faso | BFA

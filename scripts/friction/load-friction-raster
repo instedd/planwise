@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-DATA_PATH=${DATA_PATH:-data}
+DATA_PATH=${DATA_PATH:-/data}
 OUTPUT_PATH=${DATA_PATH}/friction/regions
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
@@ -12,11 +12,16 @@ if [ ! -d $DATA_PATH ]; then
 fi
 
 raster_file=
+force=
 while [ $# -gt 0 ]; do
     case $1 in
         -h|--help)
-            echo Usage: $0 raster_file
+            echo "Usage: $0 [-f] raster_file"
+            echo "Only missing regions will be processed, unless the option -f is present"
             exit 0
+            ;;
+        -f|--force)
+            force=1
             ;;
         *)
             if [ ! -z "$raster_file" ]; then
@@ -42,13 +47,19 @@ mkdir -p $OUTPUT_PATH
 regions="$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c 'SELECT id FROM regions WHERE admin_level = 0;')"
 
 for region in $regions; do
-    echo Clipping for region $region
-    rm -f $OUTPUT_PATH/$region.tif
-    # TODO: we may want to cut by the envelope (even buffer it a little) instead
-    # of the region itself to avoid errors and abrupt cuts in the region border
-    gdalwarp -co COMPRESS=DEFLATE \
-             -dstnodata -3.4e+38 \
-             -crop_to_cutline -csql "SELECT the_geom FROM regions WHERE id = ${region}" \
-             -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
-             $raster_file $OUTPUT_PATH/$region.tif
+    echo -n Clipping for region $region ...
+    output_file=$OUTPUT_PATH/$region.tif
+    if [ ! -f "$output_file" ] || [ "$force" = "1" ]; then
+        rm -f $output_file
+        echo
+        # TODO: we may want to cut by the envelope (even buffer it a little) instead
+        # of the region itself to avoid errors and abrupt cuts in the region border
+        gdalwarp -co COMPRESS=DEFLATE \
+                 -dstnodata -3.4e+38 \
+                 -crop_to_cutline -csql "SELECT the_geom FROM regions WHERE id = ${region}" \
+                 -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
+                 $raster_file $output_file
+    else
+        echo Clipped friction exists for region
+    fi
 done

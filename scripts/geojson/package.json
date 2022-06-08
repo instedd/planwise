@@ -2,9 +2,12 @@
   "name": "gadm2geojson",
   "version": "1.0.0",
   "description": "Tool to create country administrative boundaries data (in geojson format) from GADM data.",
-  "main": "index.js",
+  "main": "./gadm2geojson.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "gadm2geojson": "./gadm2geojson.js"
   },
   "author": "",
   "license": "ISC",

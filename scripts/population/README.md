@@ -1,5 +1,7 @@
 # Importing country population data
 
+NOTE: these instructions may be outdated. The preferred way to import a country population data is to use the Planwise Tools Docker image. See scripts/Dockerfile and scripts/tools/README.
+
 We use Uruguay as an example in the following sections.
 
 ## Import the region

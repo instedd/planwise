@@ -60,8 +60,9 @@ services:
       - "5001:80"
 
   tools:
+    image: instedd/planwise-tools
     build:
-      context: scripts/tools
+      context: scripts
     env_file:
       - ./docker-env
     volumes:
