@@ -10,6 +10,7 @@ Tools included:
 - `load-regions` to load the GeoJSON of the country/province regions into the database
 - `update-region-previews` to generate low detail polygon of the regions for preview (uses mapshaper)
 - `load-friction-raster` to generate cuts of the global friction raster for each region
+- `update-source-sets` to manage system-wide raster source sets
 
 
 ## Importing country population data
