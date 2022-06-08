@@ -2,6 +2,8 @@
 
 This is a Docker image to manage Planwise data installations, in particular country regions, friction layer and base demand raster layers of population.
 
+NOTE: if running from a container exec shell (such as a Rancher console) try the `tools` command to get a properly setup shell.
+
 Tools included:
 - `psql`, `curl`, `vim`, `wget`, GDAL binary tools
 - `gadm2geojson` for downloading gadm country regions and transforming them into GeoJSON

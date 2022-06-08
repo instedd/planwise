@@ -7,7 +7,7 @@ WORKDIR /tmp
 # Install some basic tools
 RUN \
   apt-get update \
-  && DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget less vim postgresql-client gdal-bin \
+  && DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget less vim procps postgresql-client gdal-bin \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
@@ -55,6 +55,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 ADD tools/README.md /tools/
 ADD tools/readme /usr/local/bin/
 RUN chmod +x /usr/local/bin/readme
+ADD tools/tools /usr/local/bin/
+RUN chmod +x /usr/local/bin/tools
 
 WORKDIR /tools
 

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Use this script if you are running from a container exec shell
+
+# for a Rancher console this helps
+export TERM=vt100
+
+/usr/local/bin/docker-entrypoint.sh /bin/bash
