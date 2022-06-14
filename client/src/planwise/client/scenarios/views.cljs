@@ -51,6 +51,12 @@
 
 ;;; Providers layers
 
+;; Minimum percentage of free capacity (over total capacity) for a provider to be considered with excess capacity
+(def ^:private excess-threshold 10)
+
+;; Max percentage of unsatisfied demand (over reachable demand) for a provider to be considered with satisfaction covered
+(def ^:private cover-threshold  1)
+
 (defn- get-percentage
   [total relative]
   (* (/ relative total) 100))
@@ -64,11 +70,12 @@
   (and (not (some? change)) (not matches-filters)))
 
 (defn- provider-satisfaction
-  [{:keys [unsatisfied-demand capacity free-capacity]}]
+  [{:keys [unsatisfied-demand reachable-demand capacity free-capacity] :as provider}]
   (cond
-    (> (get-percentage capacity free-capacity) 10)        :excess
-    (and (>= free-capacity 0) (zero? unsatisfied-demand)) :covered
-    :else                                                 :unsatisfied))
+    (> (get-percentage capacity free-capacity) excess-threshold)                   :excess
+    (and (>= free-capacity 0)
+         (< (get-percentage reachable-demand unsatisfied-demand) cover-threshold)) :covered
+    :else                                                                          :unsatisfied))
 
 (defn- provider-tooltip
   [{:keys [demand-unit capacity-unit]}
@@ -90,7 +97,7 @@
 
        (and has-change? covered?)
        [:p.covered
-        "All demand covered."]
+        (str "Demand covered (within " cover-threshold "% margin)")]
 
        has-change?
        [:p.unsatisfied

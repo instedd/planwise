@@ -278,7 +278,7 @@
         capacity         (:capacity provider)
         scaled-capacity  (* capacity capacity-multiplier)
         reachable-demand (demand/count-population-under-coverage demand-raster coverage-raster)
-        new-reachable    (demand/count-population-under-coverage base-demand-raster coverage-raster)
+        base-reachable   (demand/count-population-under-coverage base-demand-raster coverage-raster)
         satisfied-demand (min scaled-capacity reachable-demand)
         used-capacity    (float (/ satisfied-demand capacity-multiplier))]
     (debug "Applying provider" (:id provider) "with capacity" capacity
@@ -290,7 +290,7 @@
      :satisfied-demand satisfied-demand
      :capacity         capacity
      :used-capacity    used-capacity
-     :reachable-demand new-reachable
+     :reachable-demand base-reachable
      :free-capacity    (- capacity used-capacity)}))
 
 (defn raster-add-coverage!
