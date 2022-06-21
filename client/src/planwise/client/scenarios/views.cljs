@@ -164,9 +164,6 @@
       {:className
        (join " " (conj base-classes (when (not matches-filters) "upgradeable")))})))
 
-(defn- spiderfy-cluster [cluster]
-  (.spiderfy (. cluster -layer)))
-
 (defn- provider-cluster-icon-fn
   [cluster]
   (let [markers (.getAllChildMarkers cluster)
@@ -188,12 +185,8 @@
         all-providers        @(subscribe [:scenarios/all-providers])
         demand-unit          (get-demand-unit project)
         capacity-unit        (get-capacity-unit project)]
-    (into [:cluster-group {:key                 "providers-layer"
-                           :showCoverageOnHover false
-                           :zoomToBoundsOnClick false
-                           :maxClusterRadius    50
-                           :cluster-icon-fn     provider-cluster-icon-fn
-                           :cluster-click-fn    spiderfy-cluster}]
+    (into [:cluster-group {:key             "providers-layer"
+                           :cluster-icon-fn provider-cluster-icon-fn}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
                        disabled?    (or listing-suggestions?
@@ -362,12 +355,8 @@
   [{:keys [project scenario]}]
   (let [demand-unit  (get-demand-unit project)
         sources-data (:sources-data scenario)]
-    (into [:cluster-group {:key                 "sources-layer"
-                           :showCoverageOnHover false
-                           :zoomToBoundsOnClick false
-                           :maxClusterRadius    50
-                           :cluster-icon-fn     source-cluster-icon-fn
-                           :cluster-click-fn    spiderfy-cluster}]
+    (into [:cluster-group {:key             "sources-layer"
+                           :cluster-icon-fn source-cluster-icon-fn}]
           (map (fn [{:keys [id lat lon name] :as source}]
                  [:marker {:key          id
                            :lat          lat

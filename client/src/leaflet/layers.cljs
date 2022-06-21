@@ -52,6 +52,30 @@
                                     :direction "top"
                                     :offset    tooltip-offset})
 
+(defn- deactivate-marker
+  [marker]
+  (.off marker "click")
+  (.off marker "mouseover")
+  (.off marker "mouseout")
+  (.unbindTooltip marker))
+
+(defn- activate-marker
+  [marker]
+  (let [{:keys [tooltip hover? click-fn mouseover-fn mouseout-fn] :as props} (.-__props marker)]
+    (when tooltip
+      (let [content (cond
+                      (vector? tooltip)                  (crate/html tooltip)
+                      (string? tooltip)                  tooltip
+                      (instance? js/HTMLElement tooltip) tooltip
+                      :else                              (str tooltip))]
+        (.bindTooltip marker content tooltip-options)))
+    (when click-fn (.on marker "click" #(click-fn props)))
+    (when mouseover-fn (.on marker "mouseover" #(mouseover-fn props)))
+    (when mouseout-fn  (.on marker "mouseout"  #(mouseout-fn props)))
+    (if hover?
+      (.openTooltip marker)
+      (.closeTooltip marker))))
+
 (defmethod create-layer :marker
   [[_ {:keys [lat lon icon tooltip click-fn mouseover-fn mouseout-fn] :as props}]]
   (let [latLng (.latLng js/L lat lon)
@@ -63,16 +87,8 @@
                    (assoc :icon icon)
                    (dissoc :lat :lon :tooltip :click-fn :mouseover-fn :mouseout-fn))
         marker (.marker js/L latLng (clj->js attrs))]
-    (when tooltip
-      (let [content (cond
-                      (vector? tooltip)                  (crate/html tooltip)
-                      (string? tooltip)                  tooltip
-                      (instance? js/HTMLElement tooltip) tooltip
-                      :else                              (str tooltip))]
-        (.bindTooltip marker content tooltip-options)))
-    (when click-fn (.on marker "click" #(click-fn props)))
-    (when mouseover-fn (.on marker "mouseover" #(mouseover-fn props)))
-    (when mouseout-fn  (.on marker "mouseout"  #(mouseout-fn props)))
+    (set! (.-__props marker) props)
+    (activate-marker marker)
     (when (and tooltip (:hover? props))
       (.on marker "add" #(.openTooltip marker)))
     marker))
@@ -91,24 +107,9 @@
                        (js/L.Icon.Default.))))
   (when (not= opacity (:opacity old-props))
     (.setOpacity marker opacity))
-  (when (not= tooltip (:tooltip old-props))
-    (.unbindTooltip marker)
-    (when tooltip
-      (let [content (cond
-                      (vector? tooltip)                  (crate/html tooltip)
-                      (string? tooltip)                  tooltip
-                      (instance? js/HTMLElement tooltip) tooltip
-                      :else                              (str tooltip))]
-        (.bindTooltip marker content tooltip-options))))
-  (.off marker "click")
-  (.off marker "mouseover")
-  (.off marker "mouseout")
-  (when-let [click-fn (:click-fn props)] (.on marker "click" #(click-fn props)))
-  (when-let [mouseover-fn (:mouseover-fn props)] (.on marker "mouseover" #(mouseover-fn props)))
-  (when-let [mouseout-fn (:mouseout-fn props)] (.on marker "mouseout"  #(mouseout-fn props)))
-  (if (:hover? props)
-    (.openTooltip marker)
-    (.closeTooltip marker))
+  (deactivate-marker marker)
+  (set! (.-__props marker) props)
+  (activate-marker marker)
   marker)
 
 
@@ -175,30 +176,36 @@
   [instance [_ props & children] _]
   (update-layer-children! instance children))
 
+(defn- spiderfy-cluster
+  [cluster]
+  ;; deactivate markers in cluster to avoid mouseover events/tooltips while the animation is running
+  (doseq [marker (.getAllChildMarkers (.-layer cluster))]
+    (deactivate-marker marker))
+  (.spiderfy (. cluster -layer)))
+
 (defn- cluster-spiderfied
   [event]
-  (js/console.log event))
-
-(defn- cluster-unspiderfied
-  [event]
-  (js/console.log event))
+  ;; re-activate markers after they are fully spiderfied
+  (doseq [marker (.-markers event)]
+    (activate-marker marker)))
 
 (defmethod create-layer :cluster-group
-  [[_ {:keys [cluster-click-fn cluster-icon-fn] :as props} & children]]
+  [[_ {:keys [cluster-icon-fn] :as props} & children]]
   (let [props (cond-> props
-                :always         (dissoc :cluster-click-fn :cluster-icon-fn)
+                :always         (-> (dissoc :cluster-click-fn :cluster-icon-fn)
+                                    (assoc :showCoverageOnHover false
+                                           :zoomToBoundsOnClick false
+                                           :maxClusterRadius 50))
                 cluster-icon-fn (assoc :iconCreateFunction #(.divIcon js/L (clj->js (cluster-icon-fn %)))))
         layer (.markerClusterGroup js/L (clj->js props))]
-    (when cluster-click-fn (.on layer "clusterclick" cluster-click-fn))
-    (.on layer "unspiderfied" cluster-unspiderfied)
+
+    (.on layer "clusterclick" spiderfy-cluster)
     (.on layer "spiderfied" cluster-spiderfied)
 
     (add-children-to-layer! layer children)))
 
 (defmethod update-layer :cluster-group
-  [instance [_ {:keys [cluster-click-fn cluster-icon-fn] :as props} & children] _]
-  (.off instance "clusterclick")
-  (when cluster-click-fn (.on instance "clusterclick" cluster-click-fn))
+  [instance [_ {:keys [cluster-icon-fn] :as props} & children] _]
   (let [icon-create-function (when cluster-icon-fn #(.divIcon js/L (clj->js (cluster-icon-fn %))))]
     (set! (.-iconCreateFunction (.-options instance)) icon-create-function))
   (update-layer-children! instance children)
