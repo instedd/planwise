@@ -1313,6 +1313,45 @@ form.vertical, .fields-vertical {
   }
 }
 
+.cluster-provider-icon {
+  border-radius: 50%;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.38),
+              0 4px 0 #eee,
+              0 4px 2px rgba(0,0,0,0.68),
+              0 8px 0 #eee,
+              0 8px 2px rgba(0,0,0,0.68);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+
+  &[style] {
+    margin-left: -14px !important;
+    margin-top: -14px !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  b {
+    color: white;
+  }
+
+  border: 2px white solid;
+  &.idle-capacity {
+    background-color: #673AB7;
+  }
+  &.at-capacity {
+    background-color: black;
+  }
+  &.unsatisfied {
+    background-color: #ff5722;
+  }
+  &.upgradeable {
+    background-color: #999;
+  }
+}
+
 path.coverage-polygon {
   stroke: black;
   stroke-opacity: 1;

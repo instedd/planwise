@@ -77,6 +77,13 @@
          (< (get-percentage reachable-demand unsatisfied-demand) cover-threshold)) :covered
     :else                                                                          :unsatisfied))
 
+(defn- subsume-satisfaction
+  [a b]
+  (cond
+    (or (= :unsatisfied a) (= :unsatisfied b)) :unsatisfied
+    (or (= :covered a) (= :covered b))         :covered
+    :else                                      :excess))
+
 (defn- provider-tooltip
   [{:keys [demand-unit capacity-unit]}
    {:keys [name free-capacity required-capacity unsatisfied-demand] :as provider}]
@@ -136,8 +143,8 @@
         " without service."])]))
 
 (defn- satisfaction->icon-class
-  [provider]
-  (case (provider-satisfaction provider)
+  [satisfaction]
+  (case satisfaction
     :excess      "idle-capacity"
     :covered     "at-capacity"
     :unsatisfied "unsatisfied"
@@ -149,7 +156,7 @@
         base-classes ["marker-provider-icon"
                       (when selected? "selected")
                       (when disabled? "disabled")
-                      (satisfaction->icon-class provider)]]
+                      (satisfaction->icon-class (provider-satisfaction provider))]]
     (if has-change?
       {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
        :className
@@ -159,6 +166,18 @@
 
 (defn- spiderfy-cluster [cluster]
   (.spiderfy (. cluster -layer)))
+
+(defn- provider-cluster-icon-fn
+  [cluster]
+  (let [markers (.getAllChildMarkers cluster)
+        length  (count markers)]
+    (let [providers     (map #(js->clj (.-provider (.-options %)) :keywordize-keys true) markers)
+          cluster-class (->> providers
+                             (map provider-satisfaction)
+                             (reduce subsume-satisfaction)
+                             satisfaction->icon-class)]
+      {:html      (str "<b>" (if (> length 9) "9+" length) "</b>")
+       :className (str "cluster-provider-icon " cluster-class)})))
 
 (defn- scenario-providers-layer
   [{:keys [project scenario click-fn popup-fn mouseover-fn mouseout-fn]}]
@@ -173,6 +192,7 @@
                            :showCoverageOnHover false
                            :zoomToBoundsOnClick false
                            :maxClusterRadius    50
+                           :cluster-icon-fn     provider-cluster-icon-fn
                            :cluster-click-fn    spiderfy-cluster}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))

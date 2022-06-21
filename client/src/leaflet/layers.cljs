@@ -1,5 +1,6 @@
 (ns leaflet.layers
-  (:require [crate.core :as crate]))
+  (:require [crate.core :as crate]
+            [goog.object]))
 
 
 (defn- js-data
@@ -17,6 +18,12 @@
     (.geoJson js/L nil #js {:clickable false
                             :renderer  renderer
                             :style     (constantly (clj->js attrs))})))
+
+;; sets a JS object properties from a Clojure map, effectively updating the target object
+(defn- merge-props
+  [target props]
+  (doseq [[key value] props]
+    (goog.object/set target (name key) (clj->js value))))
 
 
 (defmulti create-layer (fn [layer-def] (first layer-def)))
@@ -71,7 +78,11 @@
     marker))
 
 (defmethod update-layer :marker
-  [marker [_ {:keys [lat lon icon tooltip opacity] :as props}] [_ old-props]]
+  [marker [_ {:keys [lat lon icon tooltip opacity zIndexOffset] :as props}] [_ old-props]]
+  (merge-props (.-options marker)
+               (dissoc props :lat :lon :tooltip :icon :opacity :mouseover-fn :mouseout-fn :zIndexOffset))
+  (when (not= zIndexOffset (:zIndexOffset old-props))
+    (.setZIndexOffset marker zIndexOffset))
   (when (not= [lat lon] [(:lat old-props) (:lon old-props)])
     (.setLatLng marker (.latLng js/L lat lon)))
   (when (not= icon (:icon old-props))
@@ -173,8 +184,10 @@
   (js/console.log event))
 
 (defmethod create-layer :cluster-group
-  [[_ {:keys [cluster-click-fn] :as props} & children]]
-  (let [props (dissoc props :cluster-click-fn)
+  [[_ {:keys [cluster-click-fn cluster-icon-fn] :as props} & children]]
+  (let [props (cond-> props
+                :always         (dissoc :cluster-click-fn :cluster-icon-fn)
+                cluster-icon-fn (assoc :iconCreateFunction #(.divIcon js/L (clj->js (cluster-icon-fn %)))))
         layer (.markerClusterGroup js/L (clj->js props))]
     (when cluster-click-fn (.on layer "clusterclick" cluster-click-fn))
     (.on layer "unspiderfied" cluster-unspiderfied)
@@ -183,8 +196,14 @@
     (add-children-to-layer! layer children)))
 
 (defmethod update-layer :cluster-group
-  [instance [_ props & children] _]
-  (update-layer-children! instance children))
+  [instance [_ {:keys [cluster-click-fn cluster-icon-fn] :as props} & children] _]
+  (.off instance "clusterclick")
+  (when cluster-click-fn (.on instance "clusterclick" cluster-click-fn))
+  (let [icon-create-function (when cluster-icon-fn #(.divIcon js/L (clj->js (cluster-icon-fn %))))]
+    (set! (.-iconCreateFunction (.-options instance)) icon-create-function))
+  (update-layer-children! instance children)
+  (.refreshClusters instance)
+  instance)
 
 (defmethod create-layer :geojson-layer
   [[_ props & children]]

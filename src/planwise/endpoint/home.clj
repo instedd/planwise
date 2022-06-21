@@ -29,7 +29,6 @@
    [:title "PlanWise"]
    (include-css "/assets/leaflet/leaflet.css")
    (include-css "/assets/leaflet-markercluster/MarkerCluster.css")
-   (include-css "/assets/leaflet-markercluster/MarkerCluster.Default.css")
    (include-css "/css/site2.css")
    [:link {:href "https://fonts.googleapis.com/css?family=Roboto:300,400,500" :rel "stylesheet"}]
    [:link {:href "https://fonts.googleapis.com/icon?family=Material+Icons" :rel "stylesheet"}]])
