@@ -189,6 +189,9 @@
   (doseq [marker (.-markers event)]
     (activate-marker marker)))
 
+;; TODO(gus): the cluster-icon-fn interface can be improved; in particular we
+;; may want to pass the markers props to the function instead of the cluster
+;; layer to avoid having the client code tamper with Leaflet internal functions
 (defmethod create-layer :cluster-group
   [[_ {:keys [cluster-icon-fn] :as props} & children]]
   (let [props (cond-> props
