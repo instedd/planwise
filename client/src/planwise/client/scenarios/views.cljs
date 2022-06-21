@@ -77,7 +77,7 @@
          (< (get-percentage reachable-demand unsatisfied-demand) cover-threshold)) :covered
     :else                                                                          :unsatisfied))
 
-(defn- subsume-satisfaction
+(defn- subsume-provider-satisfaction
   [a b]
   (cond
     (or (= :unsatisfied a) (= :unsatisfied b)) :unsatisfied
@@ -174,7 +174,7 @@
     (let [providers     (map #(js->clj (.-provider (.-options %)) :keywordize-keys true) markers)
           cluster-class (->> providers
                              (map provider-satisfaction)
-                             (reduce subsume-satisfaction)
+                             (reduce subsume-provider-satisfaction)
                              satisfaction->icon-class)]
       {:html      (str "<b>" (if (> length 9) "9+" length) "</b>")
        :className (str "cluster-provider-icon " cluster-class)})))
@@ -310,6 +310,16 @@
       (<= 0.5 ratio 0.75)    :q3
       (> ratio 0.75)         :q4)))
 
+(defn- subsume-source-satisfaction
+  [a b]
+  (cond
+    (or (= :q4 a) (= :q4 b))           :q4
+    (or (= :q3 a) (= :q3 b))           :q3
+    (or (= :q2 a) (= :q2 b))           :q2
+    (or (= :q1 a) (= :q1 b))           :q1
+    (or (= :covered a) (= :covered b)) :covered
+    :else                              :no-demand))
+
 (defn- source-tooltip
   [{:keys [demand-unit]} {:keys [name quantity] :as source}]
   [:div.mdc-typography
@@ -321,22 +331,43 @@
       (utils/format-number (or quantity 0))
       " " demand-unit " at this source are not covered."])])
 
+(defn- source-satisfaction->icon-class
+  [satisfaction]
+  (case satisfaction
+    :covered "satisfied"
+    :q1      "q1"
+    :q2      "q2"
+    :q3      "q3"
+    :q4      "q4"
+    "gray"))
+
 (defn- source-icon-function
   [source]
-  (let [classname (case (source-satisfaction source)
-                    :covered "satisfied"
-                    :q1      "q1"
-                    :q2      "q2"
-                    :q3      "q3"
-                    :q4      "q4"
-                    "gray")]
+  (let [classname (source-satisfaction->icon-class (source-satisfaction source))]
     {:className (str "marker-source-icon " classname)}))
+
+(defn- source-cluster-icon-fn
+  [cluster]
+  (let [markers (.getAllChildMarkers cluster)
+        length  (count markers)]
+    (let [sources       (map #(js->clj (.-source (.-options %)) :keywordize-keys true) markers)
+          cluster-class (->> sources
+                             (map source-satisfaction)
+                             (reduce subsume-source-satisfaction)
+                             source-satisfaction->icon-class)]
+      {:html      (str "<b>" (if (> length 9) "9+" length) "</b>")
+       :className (str "cluster-source-icon " cluster-class)})))
 
 (defn- scenario-sources-layer
   [{:keys [project scenario]}]
   (let [demand-unit  (get-demand-unit project)
         sources-data (:sources-data scenario)]
-    (into [:feature-group {:key "sources-layer"}]
+    (into [:cluster-group {:key                 "sources-layer"
+                           :showCoverageOnHover false
+                           :zoomToBoundsOnClick false
+                           :maxClusterRadius    50
+                           :cluster-icon-fn     source-cluster-icon-fn
+                           :cluster-click-fn    spiderfy-cluster}]
           (map (fn [{:keys [id lat lon name] :as source}]
                  [:marker {:key          id
                            :lat          lat

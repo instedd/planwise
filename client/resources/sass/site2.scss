@@ -1404,6 +1404,57 @@ path.coverage-polygon {
   }
 }
 
+.cluster-source-icon {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+
+  b {
+    color: black;
+    font-size: 16px;
+    position: absolute;
+  }
+  &.satisfied b {
+    color: white;
+  }
+
+  &::before {
+    position: absolute;
+    content: " ";
+    display: block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid white;
+    background: black;
+    transform: rotate(45deg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.34),
+                3px 3px 0 #eee,
+                3px 3px 2px rgba(0,0,0,0.68),
+                6px 6px 0 #eee,
+                6px 6px 2px rgba(0,0,0,0.68);
+  }
+  &.gray::before {
+    background: darkgray;
+  }
+  &.satisfied::before {
+    background: black;
+  }
+  &.q1::before {
+    background: rgb(251,251,121);
+  }
+  &.q2::before {
+    background: rgb(241,195,85);
+  }
+  &.q3::before {
+    background: rgb(232,139,49);
+  }
+  &.q4::before {
+    background: rgb(223,84,14);
+  }
+}
+
 //
 // Suggestions markers
 //
