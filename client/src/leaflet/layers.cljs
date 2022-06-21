@@ -45,15 +45,8 @@
                                     :direction "top"
                                     :offset    tooltip-offset})
 
-(def ^:private popup-offset (js/L.Point. 0 -10))
-(def ^:private popup-padding-top-left (js/L.Point. 600 50))
-(def ^:private popup-padding-bottom-right (js/L.Point. 200 50))
-(def ^:private popup-options #js {:offset                    popup-offset
-                                  :autoPanPaddingTopLeft     popup-padding-top-left
-                                  :autoPanPaddingBottomRight popup-padding-bottom-right})
-
 (defmethod create-layer :marker
-  [[_ {:keys [lat lon icon tooltip click-fn popup-fn mouseover-fn mouseout-fn] :as props}]]
+  [[_ {:keys [lat lon icon tooltip click-fn mouseover-fn mouseout-fn] :as props}]]
   (let [latLng (.latLng js/L lat lon)
         icon   (if icon
                  (.divIcon js/L (clj->js icon))
@@ -61,7 +54,7 @@
         attrs  (-> props
                    (assoc :riseOnHover true)
                    (assoc :icon icon)
-                   (dissoc :lat :lon :tooltip :popup-fn))
+                   (dissoc :lat :lon :tooltip :click-fn :mouseover-fn :mouseout-fn))
         marker (.marker js/L latLng (clj->js attrs))]
     (when tooltip
       (let [content (cond
@@ -70,45 +63,128 @@
                       (instance? js/HTMLElement tooltip) tooltip
                       :else                              (str tooltip))]
         (.bindTooltip marker content tooltip-options)))
-    (when popup-fn
-      ;; lazy-load the popup content
-      (.bindPopup marker "" popup-options)
-      (.on marker "popupopen" (fn [e] (.setContent (.-popup e) (popup-fn props)))))
-    (when click-fn
-      (.on marker "click" #(click-fn props)))
-    (.on marker "mouseover"  (fn [e]
-                               (when (and popup-fn (not (.isPopupOpen marker)))
-                                 (.bindPopup marker (popup-fn props) popup-options))
-                               (when mouseover-fn (mouseover-fn props))))
-    (when mouseout-fn
-      (.on marker "mouseout"   #(when-not (.isPopupOpen marker) (mouseout-fn props))))
-    (.on marker "popupopen"  (fn [_]
-                               ;; "hide" the tooltip while the popup is open
-                               (some-> (.getTooltip marker) (.setOpacity 0))
-                               (.closeTooltip marker)))
-    (.on marker "popupclose" (fn [_]
-                               ;; "restore" the tooltip while once the popup is closed
-                               (some-> (.getTooltip marker) (.setOpacity 100))
-                               (when mouseout-fn (mouseout-fn props))))
-    (when (:open? props)
-      (.on marker "add" #(.openPopup marker)))
+    (when click-fn (.on marker "click" #(click-fn props)))
+    (when mouseover-fn (.on marker "mouseover" #(mouseover-fn props)))
+    (when mouseout-fn  (.on marker "mouseout"  #(mouseout-fn props)))
     (when (and tooltip (:hover? props))
       (.on marker "add" #(.openTooltip marker)))
     marker))
 
+(defmethod update-layer :marker
+  [marker [_ {:keys [lat lon icon tooltip opacity] :as props}] [_ old-props]]
+  (when (not= [lat lon] [(:lat old-props) (:lon old-props)])
+    (.setLatLng marker (.latLng js/L lat lon)))
+  (when (not= icon (:icon old-props))
+    (.setIcon marker (if icon
+                       (.divIcon js/L (clj->js icon))
+                       (js/L.Icon.Default.))))
+  (when (not= opacity (:opacity old-props))
+    (.setOpacity marker opacity))
+  (when (not= tooltip (:tooltip old-props))
+    (.unbindTooltip marker)
+    (when tooltip
+      (let [content (cond
+                      (vector? tooltip)                  (crate/html tooltip)
+                      (string? tooltip)                  tooltip
+                      (instance? js/HTMLElement tooltip) tooltip
+                      :else                              (str tooltip))]
+        (.bindTooltip marker content tooltip-options))))
+  (.off marker "click")
+  (.off marker "mouseover")
+  (.off marker "mouseout")
+  (when-let [click-fn (:click-fn props)] (.on marker "click" #(click-fn props)))
+  (when-let [mouseover-fn (:mouseover-fn props)] (.on marker "mouseover" #(mouseover-fn props)))
+  (when-let [mouseout-fn (:mouseout-fn props)] (.on marker "mouseout"  #(mouseout-fn props)))
+  (if (:hover? props)
+    (.openTooltip marker)
+    (.closeTooltip marker))
+  marker)
+
+
+;; LayerGroup children handling
+
+(defn- add-children-to-layer!
+  [layer children]
+  (let [child-layers (mapv create-layer children)]
+    (if (.-addLayers layer)
+      (.addLayers layer (clj->js child-layers))
+      (doseq [child-layer child-layers]
+        (.addLayer layer child-layer)))
+    (set! (.-__children layer) children)
+    (set! (.-__layers layer) child-layers)
+    layer))
+
+(defn- update-layer-children!
+  [layer children]
+  (let [old-children (.-__children layer)
+        old-layers   (.-__layers layer)
+        new-layers   (loop [old-layers   old-layers
+                            old-children old-children
+                            new-layers   []
+                            new-children children]
+                       (if (and (empty? old-children) (empty? new-children))
+                         new-layers
+                         (let [old-child (first old-children)
+                               new-child (first new-children)
+                               old-layer (first old-layers)
+                               new-layer (cond
+                                           (= old-child new-child)
+                                           old-layer
+
+                                           (nil? new-child)
+                                           (do (.removeLayer layer old-layer) nil)
+
+                                           (nil? old-child)
+                                           (let [new-layer (create-layer new-child)]
+                                             (.addLayer layer new-layer)
+                                             new-layer)
+
+                                           :else
+                                           (if (update-layer old-layer new-child old-child)
+                                             old-layer
+                                             (let [new-layer (create-layer new-child)]
+                                               (.removeLayer layer old-layer)
+                                               (.addLayer layer new-layer)
+                                               new-layer)))]
+
+                           (recur (rest old-layers)
+                                  (rest old-children)
+                                  (conj new-layers new-layer)
+                                  (rest new-children)))))]
+    (set! (.-__children layer) children)
+    (set! (.-__layers layer) new-layers)
+    layer))
+
 (defmethod create-layer :feature-group
   [[_ props & children]]
   (let [layer (.featureGroup js/L (clj->js props))]
-    (doseq [child children]
-      (.addLayer layer (create-layer child)))
-    layer))
+    (add-children-to-layer! layer children)))
 
 (defmethod update-layer :feature-group
   [instance [_ props & children] _]
-  (.clearLayers instance)
-  (doseq [child children]
-    (.addLayer instance (create-layer child)))
-  instance)
+  (update-layer-children! instance children))
+
+(defn- cluster-spiderfied
+  [event]
+  (js/console.log event))
+
+(defn- cluster-unspiderfied
+  [event]
+  (js/console.log event))
+
+(defmethod create-layer :cluster-group
+  [[_ {:keys [cluster-click-fn] :as props} & children]]
+  (let [props (dissoc props :cluster-click-fn)
+        layer (.markerClusterGroup js/L (clj->js props))]
+    (when cluster-click-fn (.on layer "clusterclick" cluster-click-fn))
+    (.on layer "unspiderfied" cluster-unspiderfied)
+    (.on layer "spiderfied" cluster-spiderfied)
+
+    (add-children-to-layer! layer children)))
+
+(defmethod update-layer :cluster-group
+  [instance [_ props & children] _]
+  (update-layer-children! instance children))
 
 (defmethod create-layer :geojson-layer
   [[_ props & children]]

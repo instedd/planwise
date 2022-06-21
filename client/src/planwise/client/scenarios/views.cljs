@@ -157,6 +157,9 @@
       {:className
        (join " " (conj base-classes (when (not matches-filters) "upgradeable")))})))
 
+(defn- spiderfy-cluster [cluster]
+  (.spiderfy (. cluster -layer)))
+
 (defn- scenario-providers-layer
   [{:keys [project scenario click-fn popup-fn mouseover-fn mouseout-fn]}]
   (let [selected-provider    @(subscribe [:scenarios.map/selected-provider])
@@ -166,7 +169,11 @@
         all-providers        @(subscribe [:scenarios/all-providers])
         demand-unit          (get-demand-unit project)
         capacity-unit        (get-capacity-unit project)]
-    (into [:feature-group {:key "providers-layer"}]
+    (into [:cluster-group {:key                 "providers-layer"
+                           :showCoverageOnHover false
+                           :zoomToBoundsOnClick false
+                           :maxClusterRadius    50
+                           :cluster-click-fn    spiderfy-cluster}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
                        disabled?    (or listing-suggestions?
@@ -180,12 +187,13 @@
                                      :provider     provider
                                      :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
                    [:marker (merge marker-props
-                                   (when-not disabled?
+                                   (if disabled?
+                                     {:opacity 0.3}
                                      {:tooltip      (provider-tooltip {:demand-unit   demand-unit
                                                                        :capacity-unit capacity-unit}
                                                                       provider)
-                                      :open?        (when selected? (:open? selected-provider))
-                                      :hover?       (when selected? (:hover? selected-provider))
+                                      :opacity      1.0
+                                      :hover?       selected?
                                       :click-fn     click-fn
                                       :popup-fn     popup-fn
                                       :mouseover-fn mouseover-fn
