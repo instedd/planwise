@@ -767,7 +767,11 @@ var L = {
   "MarkerCluster": {
     "spiderfy": function() {},
     "getAllChildMarkers": function() {},
-    "": function() {},
+  },
+  "MarkerClusterEvent": {
+    "layer": {},
+    "markers": {},
+    "cluster": {}
   },
   "FeatureGroup": function () {},
   "featureGroup": function () {},
