@@ -335,9 +335,9 @@
     "gray"))
 
 (defn- source-icon-function
-  [source]
+  [source disabled?]
   (let [classname (source-satisfaction->icon-class (source-satisfaction source))]
-    {:className (str "marker-source-icon " classname)}))
+    {:className (join " " ["marker-source-icon" classname (when disabled? "disabled")])}))
 
 (defn- source-cluster-icon-fn
   [cluster]
@@ -353,18 +353,23 @@
 
 (defn- scenario-sources-layer
   [{:keys [project scenario]}]
-  (let [demand-unit  (get-demand-unit project)
-        sources-data (:sources-data scenario)]
+  (let [listing-suggestions? @(subscribe [:scenarios/listing-suggestions?])
+        disabled?            listing-suggestions?
+        demand-unit          (get-demand-unit project)
+        sources-data         (:sources-data scenario)]
     (into [:cluster-group {:key             "sources-layer"
                            :cluster-icon-fn source-cluster-icon-fn}]
           (map (fn [{:keys [id lat lon name] :as source}]
-                 [:marker {:key          id
-                           :lat          lat
-                           :lon          lon
-                           :icon         (source-icon-function source)
-                           :tooltip      (source-tooltip {:demand-unit demand-unit} source)
-                           :source       source
-                           :zIndexOffset 0}])
+                 [:marker (merge {:key          id
+                                  :lat          lat
+                                  :lon          lon
+                                  :icon         (source-icon-function source disabled?)
+                                  :source       source
+                                  :zIndexOffset 0}
+                                 (if disabled?
+                                   {:opacity 0.3}
+                                   {:opacity 1.0
+                                    :tooltip (source-tooltip {:demand-unit demand-unit} source)}))])
                sources-data))))
 
 

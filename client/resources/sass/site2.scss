@@ -1249,19 +1249,14 @@ form.vertical, .fields-vertical {
 // Provider markers
 //
 
-.marker-provider-icon {
+.marker-provider-icon, .cluster-provider-icon {
+  border: 2px white solid;
   border-radius: 50%;
   box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  &[style] {
-    margin-left: -9px !important;
-    margin-top: -9px !important;
-    width: 18px !important;
-    height: 18px !important;
-  }
-
-  border: 2px white solid;
   &.idle-capacity {
     background-color: #673AB7;
   }
@@ -1274,9 +1269,20 @@ form.vertical, .fields-vertical {
   &.upgradeable {
     background-color: #999;
   }
+}
+
+.marker-provider-icon {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+
+  &[style] {
+    margin-left: -9px !important;
+    margin-top: -9px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+
   &.disabled {
     cursor: default;
-    opacity: 0.3;
   }
   &.selected[style] {
     width: 24px !important;
@@ -1314,17 +1320,11 @@ form.vertical, .fields-vertical {
 }
 
 .cluster-provider-icon {
-  border-radius: 50%;
-  box-sizing: border-box;
   box-shadow: 0 1px 3px rgba(0,0,0,0.38),
               0 4px 0 #eee,
               0 4px 2px rgba(0,0,0,0.68),
               0 8px 0 #eee,
               0 8px 2px rgba(0,0,0,0.68);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
 
   &[style] {
     margin-left: -14px !important;
@@ -1334,21 +1334,8 @@ form.vertical, .fields-vertical {
   }
 
   b {
+    font-size: 16px;
     color: white;
-  }
-
-  border: 2px white solid;
-  &.idle-capacity {
-    background-color: #673AB7;
-  }
-  &.at-capacity {
-    background-color: black;
-  }
-  &.unsatisfied {
-    background-color: #ff5722;
-  }
-  &.upgradeable {
-    background-color: #999;
   }
 }
 
@@ -1366,24 +1353,13 @@ path.coverage-polygon {
 // Source markers
 //
 
-.marker-source-icon {
+.marker-source-icon, .cluster-source-icon {
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   color: black;
 
-  &::before {
-    position: absolute;
-    content: " ";
-    display: block;
-    width: 12px;
-    height: 12px;
-    border: 2px solid white;
-    background: black;
-    transform: rotate(45deg);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
-  }
   &.gray::before {
     background: darkgray;
   }
@@ -1404,13 +1380,24 @@ path.coverage-polygon {
   }
 }
 
-.cluster-source-icon {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: black;
+.marker-source-icon {
+  &::before {
+    position: absolute;
+    content: " ";
+    display: block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid white;
+    background: black;
+    transform: rotate(45deg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+  }
+  &.disabled {
+    cursor: default;
+  }
+}
 
+.cluster-source-icon {
   b {
     color: black;
     font-size: 16px;
@@ -1434,24 +1421,6 @@ path.coverage-polygon {
                 3px 3px 2px rgba(0,0,0,0.68),
                 6px 6px 0 #eee,
                 6px 6px 2px rgba(0,0,0,0.68);
-  }
-  &.gray::before {
-    background: darkgray;
-  }
-  &.satisfied::before {
-    background: black;
-  }
-  &.q1::before {
-    background: rgb(251,251,121);
-  }
-  &.q2::before {
-    background: rgb(241,195,85);
-  }
-  &.q3::before {
-    background: rgb(232,139,49);
-  }
-  &.q4::before {
-    background: rgb(223,84,14);
   }
 }
 
