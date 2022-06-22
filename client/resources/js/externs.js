@@ -730,6 +730,7 @@ var L = {
     "openTooltip": function() {},
     "closeTooltip": function() {},
     "toGeoJSON": function () {},
+    "unbindTooltip": function() {},
   },
   "DivIcon": function () {},
   "divIcon": function () {},
@@ -759,6 +760,19 @@ var L = {
     "onAdd": function () {},
     "onRemove": function () {},
    },
+  "markerClusterGroup": function() {},
+  "MarkerClusterGroup": {
+    "refreshClusters": function() {},
+  },
+  "MarkerCluster": {
+    "spiderfy": function() {},
+    "getAllChildMarkers": function() {},
+  },
+  "MarkerClusterEvent": {
+    "layer": {},
+    "markers": {},
+    "cluster": {}
+  },
   "FeatureGroup": function () {},
   "featureGroup": function () {},
   "Path": {

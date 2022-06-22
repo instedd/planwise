@@ -1249,19 +1249,14 @@ form.vertical, .fields-vertical {
 // Provider markers
 //
 
-.marker-provider-icon {
+.marker-provider-icon, .cluster-provider-icon {
+  border: 2px white solid;
   border-radius: 50%;
   box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  &[style] {
-    margin-left: -9px !important;
-    margin-top: -9px !important;
-    width: 18px !important;
-    height: 18px !important;
-  }
-
-  border: 2px white solid;
   &.idle-capacity {
     background-color: #673AB7;
   }
@@ -1274,9 +1269,20 @@ form.vertical, .fields-vertical {
   &.upgradeable {
     background-color: #999;
   }
+}
+
+.marker-provider-icon {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+
+  &[style] {
+    margin-left: -9px !important;
+    margin-top: -9px !important;
+    width: 18px !important;
+    height: 18px !important;
+  }
+
   &.disabled {
     cursor: default;
-    opacity: 0.3;
   }
   &.selected[style] {
     width: 24px !important;
@@ -1313,6 +1319,26 @@ form.vertical, .fields-vertical {
   }
 }
 
+.cluster-provider-icon {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.38),
+              0 4px 0 #eee,
+              0 4px 2px rgba(0,0,0,0.68),
+              0 8px 0 #eee,
+              0 8px 2px rgba(0,0,0,0.68);
+
+  &[style] {
+    margin-left: -14px !important;
+    margin-top: -14px !important;
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  b {
+    font-size: 16px;
+    color: white;
+  }
+}
+
 path.coverage-polygon {
   stroke: black;
   stroke-opacity: 1;
@@ -1327,24 +1353,13 @@ path.coverage-polygon {
 // Source markers
 //
 
-.marker-source-icon {
+.marker-source-icon, .cluster-source-icon {
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   color: black;
 
-  &::before {
-    position: absolute;
-    content: " ";
-    display: block;
-    width: 12px;
-    height: 12px;
-    border: 2px solid white;
-    background: black;
-    transform: rotate(45deg);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
-  }
   &.gray::before {
     background: darkgray;
   }
@@ -1362,6 +1377,50 @@ path.coverage-polygon {
   }
   &.q4::before {
     background: rgb(223,84,14);
+  }
+}
+
+.marker-source-icon {
+  &::before {
+    position: absolute;
+    content: " ";
+    display: block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid white;
+    background: black;
+    transform: rotate(45deg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.48);
+  }
+  &.disabled {
+    cursor: default;
+  }
+}
+
+.cluster-source-icon {
+  b {
+    color: black;
+    font-size: 16px;
+    position: absolute;
+  }
+  &.satisfied b {
+    color: white;
+  }
+
+  &::before {
+    position: absolute;
+    content: " ";
+    display: block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid white;
+    background: black;
+    transform: rotate(45deg);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.34),
+                3px 3px 0 #eee,
+                3px 3px 2px rgba(0,0,0,0.68),
+                6px 6px 0 #eee,
+                6px 6px 2px rgba(0,0,0,0.68);
   }
 }
 

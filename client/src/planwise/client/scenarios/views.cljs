@@ -77,6 +77,13 @@
          (< (get-percentage reachable-demand unsatisfied-demand) cover-threshold)) :covered
     :else                                                                          :unsatisfied))
 
+(defn- subsume-provider-satisfaction
+  [a b]
+  (cond
+    (or (= :unsatisfied a) (= :unsatisfied b)) :unsatisfied
+    (or (= :covered a) (= :covered b))         :covered
+    :else                                      :excess))
+
 (defn- provider-tooltip
   [{:keys [demand-unit capacity-unit]}
    {:keys [name free-capacity required-capacity unsatisfied-demand] :as provider}]
@@ -136,8 +143,8 @@
         " without service."])]))
 
 (defn- satisfaction->icon-class
-  [provider]
-  (case (provider-satisfaction provider)
+  [satisfaction]
+  (case satisfaction
     :excess      "idle-capacity"
     :covered     "at-capacity"
     :unsatisfied "unsatisfied"
@@ -149,13 +156,25 @@
         base-classes ["marker-provider-icon"
                       (when selected? "selected")
                       (when disabled? "disabled")
-                      (satisfaction->icon-class provider)]]
+                      (satisfaction->icon-class (provider-satisfaction provider))]]
     (if has-change?
       {:html (str "<i class='material-icons'>" (get changeset/action-icons (:action change)) "</i>")
        :className
        (join " " (conj base-classes "for-change"))}
       {:className
        (join " " (conj base-classes (when (not matches-filters) "upgradeable")))})))
+
+(defn- provider-cluster-icon-fn
+  [cluster]
+  (let [markers (.getAllChildMarkers cluster)
+        length  (count markers)]
+    (let [providers     (map #(js->clj (.-provider (.-options %)) :keywordize-keys true) markers)
+          cluster-class (->> providers
+                             (map provider-satisfaction)
+                             (reduce subsume-provider-satisfaction)
+                             satisfaction->icon-class)]
+      {:html      (str "<b>" (if (> length 9) "9+" length) "</b>")
+       :className (str "cluster-provider-icon " cluster-class)})))
 
 (defn- scenario-providers-layer
   [{:keys [project scenario click-fn popup-fn mouseover-fn mouseout-fn]}]
@@ -166,7 +185,8 @@
         all-providers        @(subscribe [:scenarios/all-providers])
         demand-unit          (get-demand-unit project)
         capacity-unit        (get-capacity-unit project)]
-    (into [:feature-group {:key "providers-layer"}]
+    (into [:cluster-group {:key             "providers-layer"
+                           :cluster-icon-fn provider-cluster-icon-fn}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
                        disabled?    (or listing-suggestions?
@@ -180,12 +200,13 @@
                                      :provider     provider
                                      :zIndexOffset (if (provider-has-change? provider) 3000 2000)}]
                    [:marker (merge marker-props
-                                   (when-not disabled?
+                                   (if disabled?
+                                     {:opacity 0.3}
                                      {:tooltip      (provider-tooltip {:demand-unit   demand-unit
                                                                        :capacity-unit capacity-unit}
                                                                       provider)
-                                      :open?        (when selected? (:open? selected-provider))
-                                      :hover?       (when selected? (:hover? selected-provider))
+                                      :opacity      1.0
+                                      :hover?       selected?
                                       :click-fn     click-fn
                                       :popup-fn     popup-fn
                                       :mouseover-fn mouseover-fn
@@ -282,6 +303,16 @@
       (<= 0.5 ratio 0.75)    :q3
       (> ratio 0.75)         :q4)))
 
+(defn- subsume-source-satisfaction
+  [a b]
+  (cond
+    (or (= :q4 a) (= :q4 b))           :q4
+    (or (= :q3 a) (= :q3 b))           :q3
+    (or (= :q2 a) (= :q2 b))           :q2
+    (or (= :q1 a) (= :q1 b))           :q1
+    (or (= :covered a) (= :covered b)) :covered
+    :else                              :no-demand))
+
 (defn- source-tooltip
   [{:keys [demand-unit]} {:keys [name quantity] :as source}]
   [:div.mdc-typography
@@ -293,30 +324,52 @@
       (utils/format-number (or quantity 0))
       " " demand-unit " at this source are not covered."])])
 
+(defn- source-satisfaction->icon-class
+  [satisfaction]
+  (case satisfaction
+    :covered "satisfied"
+    :q1      "q1"
+    :q2      "q2"
+    :q3      "q3"
+    :q4      "q4"
+    "gray"))
+
 (defn- source-icon-function
-  [source]
-  (let [classname (case (source-satisfaction source)
-                    :covered "satisfied"
-                    :q1      "q1"
-                    :q2      "q2"
-                    :q3      "q3"
-                    :q4      "q4"
-                    "gray")]
-    {:className (str "marker-source-icon " classname)}))
+  [source disabled?]
+  (let [classname (source-satisfaction->icon-class (source-satisfaction source))]
+    {:className (join " " ["marker-source-icon" classname (when disabled? "disabled")])}))
+
+(defn- source-cluster-icon-fn
+  [cluster]
+  (let [markers (.getAllChildMarkers cluster)
+        length  (count markers)]
+    (let [sources       (map #(js->clj (.-source (.-options %)) :keywordize-keys true) markers)
+          cluster-class (->> sources
+                             (map source-satisfaction)
+                             (reduce subsume-source-satisfaction)
+                             source-satisfaction->icon-class)]
+      {:html      (str "<b>" (if (> length 9) "9+" length) "</b>")
+       :className (str "cluster-source-icon " cluster-class)})))
 
 (defn- scenario-sources-layer
   [{:keys [project scenario]}]
-  (let [demand-unit  (get-demand-unit project)
-        sources-data (:sources-data scenario)]
-    (into [:feature-group {:key "sources-layer"}]
+  (let [listing-suggestions? @(subscribe [:scenarios/listing-suggestions?])
+        disabled?            listing-suggestions?
+        demand-unit          (get-demand-unit project)
+        sources-data         (:sources-data scenario)]
+    (into [:cluster-group {:key             "sources-layer"
+                           :cluster-icon-fn source-cluster-icon-fn}]
           (map (fn [{:keys [id lat lon name] :as source}]
-                 [:marker {:key          id
-                           :lat          lat
-                           :lon          lon
-                           :icon         (source-icon-function source)
-                           :tooltip      (source-tooltip {:demand-unit demand-unit} source)
-                           :source       source
-                           :zIndexOffset 0}])
+                 [:marker (merge {:key          id
+                                  :lat          lat
+                                  :lon          lon
+                                  :icon         (source-icon-function source disabled?)
+                                  :source       source
+                                  :zIndexOffset 0}
+                                 (if disabled?
+                                   {:opacity 0.3}
+                                   {:opacity 1.0
+                                    :tooltip (source-tooltip {:demand-unit demand-unit} source)}))])
                sources-data))))
 
 

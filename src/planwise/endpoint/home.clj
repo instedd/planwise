@@ -28,6 +28,7 @@
            :content "width=device-width, initial-scale=1"}]
    [:title "PlanWise"]
    (include-css "/assets/leaflet/leaflet.css")
+   (include-css "/assets/leaflet-markercluster/MarkerCluster.css")
    (include-css "/css/site2.css")
    [:link {:href "https://fonts.googleapis.com/css?family=Roboto:300,400,500" :rel "stylesheet"}]
    [:link {:href "https://fonts.googleapis.com/icon?family=Material+Icons" :rel "stylesheet"}]])
@@ -59,6 +60,7 @@
       (anti-forgery-field)
       (client-config (assoc endpoint :request request))
       (include-js "/assets/leaflet/leaflet.js")
+      (include-js "/assets/leaflet-markercluster/leaflet.markercluster.js")
       (include-js "/js/leaflet.ext.js")
       (include-js "/js/main.js")
       [:script "planwise.client.core.main();"]])))

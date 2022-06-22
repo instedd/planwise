@@ -50,7 +50,8 @@
 
                  ; Client assets and components
                  [org.webjars/normalize.css "5.0.0"]
-                 [org.webjars/leaflet "1.3.1"]
+                 [org.webjars/leaflet "1.7.1"]
+                 [org.webjars/leaflet-markercluster "1.4.1"]
 
                  ; Database access
                  [org.clojure/java.jdbc "0.7.5"]
