@@ -168,7 +168,7 @@
   [cluster]
   (let [markers (.getAllChildMarkers cluster)
         length  (count markers)]
-    (let [providers     (map #(js->clj (.-provider (.-options %)) :keywordize-keys true) markers)
+    (let [providers     (map #(js->clj (aget (aget % "options") "provider") :keywordize-keys true) markers)
           cluster-class (->> providers
                              (map provider-satisfaction)
                              (reduce subsume-provider-satisfaction)
@@ -343,7 +343,7 @@
   [cluster]
   (let [markers (.getAllChildMarkers cluster)
         length  (count markers)]
-    (let [sources       (map #(js->clj (.-source (.-options %)) :keywordize-keys true) markers)
+    (let [sources       (map #(js->clj (aget (aget % "options") "source") :keywordize-keys true) markers)
           cluster-class (->> sources
                              (map source-satisfaction)
                              (reduce subsume-source-satisfaction)
