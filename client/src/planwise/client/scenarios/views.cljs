@@ -185,7 +185,8 @@
         all-providers        @(subscribe [:scenarios/all-providers])
         demand-unit          (get-demand-unit project)
         capacity-unit        (get-capacity-unit project)]
-    (into [:cluster-group {:key             "providers-layer"
+    ;; TODO: maybe change for :cluster-group
+    (into [:feature-group {:key             "providers-layer"
                            :cluster-icon-fn provider-cluster-icon-fn}]
           (map (fn [{:keys [id location name] :as provider}]
                  (let [selected?    (= id (:id selected-provider))
@@ -357,7 +358,8 @@
         disabled?            listing-suggestions?
         demand-unit          (get-demand-unit project)
         sources-data         (:sources-data scenario)]
-    (into [:cluster-group {:key             "sources-layer"
+    ;; TODO: maybe change to :cluster-group if we ever improve it
+    (into [:feature-group {:key             "sources-layer"
                            :cluster-icon-fn source-cluster-icon-fn}]
           (map (fn [{:keys [id lat lon name] :as source}]
                  [:marker (merge {:key          id
