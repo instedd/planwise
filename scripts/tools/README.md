@@ -71,6 +71,55 @@ transformed first.
 * You can use `wget`, `curl` or any other tool you may want.
 * Move file to any folder below `$DATA_PATH`
 
+Planwise needs the files to be encoded with Float32 data. You can check that using `gdalinfo`:
+
+```
+$ gdalinfo lbr_ppp_2020_UNadj.tif | grep 'Type='
+Band 1 Block=4945x512 Type=Float32, ColorInterp=Gray
+```
+
+If you get a different Type (for example, `Type=Int32`), convert the file using `gdal_translate`:
+
+```
+$ gdalinfo landscan-global-2022.tif | grep 'Type='
+Band 1 Block=512x512 Type=Int32, ColorInterp=Gray
+$ gdal_translate -ot Float32 landscan-global-2022.tif landscan-global-2022-floats.tif
+Input file size is 43200, 21600
+0...10...20...30...40...50...60...70...80...90...100 - done.
+$ gdalinfo landscan-global-2022-floats.tif | grep 'Type='
+Band 1 Block=43200x1 Type=Float32, ColorInterp=Gray
+```
+
+When doing this, beware of the file size - uncompressed, the files can turn big:
+
+```
+$ ls -lh landscan-global-2022-floats.tif
+-rw-r--r-- 1 node node  3.5G Mar  5 17:47 landscan-global-2022-floats.tif
+```
+
+You can check which compression algorithm the source data used:
+
+```
+$ gdalinfo landscan-global-2022.tif | grep COMPRESS
+  COMPRESSION=DEFLATE
+```
+
+And apply the same compression algorithm during translation:
+
+```
+$ gdal_translate -ot Float32 -co "COMPRESS=DEFLATE" landscan-global-2022.tif landscan-global-2022-floats-deflate.tif
+Input file size is 43200, 21600
+0...10...20...30...40...50...60...70...80...90...100 - done.
+$ ls -lh landscan-global-2022*tif
+-rw-r--r--  1 node  node    90M Mar  5 17:51 landscan-global-2022-floats-deflate.tif
+-rw-r--r--  1 node  node   3.5G Mar  5 17:47 landscan-global-2022-floats.tif
+-rw-r--r--@ 1 node  node    86M Jul 18  2023 landscan-global-2022.tif
+```
+
+You can also try different compression algorithms and compare the sizes.
+
+The compressed, Float32 file is the one you should add as a source set.
+
 Then we need to create a record in the `source_set` table to point to the
 downloaded raster file. You can use the provided `update-source-sets` tool for
 this (or insert the database record manually).
