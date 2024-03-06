@@ -11,10 +11,10 @@ jobs:
       - name: Test internal connectivity
         run: |
           docker compose up --wait db
-          PGPASSWORD="${POSTGRES_PASSWORD}" psql --host db --username planwise --list || true
-          timeout 60s sh -c "while ! nc -z $(docker inspect planwise-db-1 | jq -r '.[0].NetworkSettings.Networks.planwise_default.IPAddress') 3306; do sleep 1; done" || true
+          docker compose run --rm -e PGPASSWORD="${POSTGRES_PASSWORD}" db psql --host db --username planwise --list || true
+          timeout 60s sh -c "while ! nc -z $(docker inspect planwise-db-1 | jq -r '.[0].NetworkSettings.Networks.planwise_default.IPAddress') 5432; do sleep 1; done" || true
           docker inspect planwise-db-1
-          PGPASSWORD="${POSTGRES_PASSWORD}" psql --host db --username planwise --list || true
+          docker compose run --rm -e PGPASSWORD="${POSTGRES_PASSWORD}" db psql --host db --username planwise --list || true
           exit 1
 
       - name: Set environment up
