@@ -1,5 +1,8 @@
 FROM clojure:lein-2.8.1
 
+RUN echo 'deb http://archive.debian.org/debian stretch main\n\
+          deb http://archive.debian.org/debian-security stretch/updates main' > /etc/apt/sources.list
+
 RUN apt update && \
     apt install -y build-essential cmake \
                    libboost-timer-dev libboost-program-options-dev \
@@ -11,4 +14,3 @@ RUN apt update && \
     apt-get install -y nodejs
 
 WORKDIR /app
-
