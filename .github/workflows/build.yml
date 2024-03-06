@@ -17,10 +17,9 @@ jobs:
       - name: Run specs
         env:
           JVM_OPTS: -Xmx3200m
-          TEST_DATABASE_URL: jdbc:postgresql://db/planwise?user=planwise&password=planwise
         run: |
           docker compose up --wait db
-          docker compose run --rm -e JVM_OPTS -e TEST_DATABASE_URL app lein test
+          docker compose run --rm -e JVM_OPTS app lein test
           docker compose run --rm client npm run test
           docker compose run --rm app lein check-format
 
