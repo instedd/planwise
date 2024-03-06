@@ -12,7 +12,8 @@ jobs:
         run: |
           docker compose up --wait db
           PGPASSWORD="${POSTGRES_PASSWORD}" psql --host db --username planwise --list || true
-          sleep 20
+          timeout 60s sh -c "while ! nc -z $(docker inspect planwise-db-1 | jq -r '.[0].NetworkSettings.Networks.planwise_default.IPAddress') 3306; do sleep 1; done" || true
+          docker inspect planwise-db-1
           PGPASSWORD="${POSTGRES_PASSWORD}" psql --host db --username planwise --list || true
           exit 1
 
