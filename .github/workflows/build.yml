@@ -8,6 +8,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Test internal connectivity
+        run: |
+          docker compose up --wait db
+          PGPASSWORD="${POSTGRES_PASSWORD}" psql --host db --username planwise --list || true
+          sleep 20
+          PGPASSWORD="${POSTGRES_PASSWORD}" psql --host db --username planwise --list || true
+          exit 1
+
       - name: Set environment up
         run: |
           docker compose pull
