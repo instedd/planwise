@@ -7,7 +7,12 @@ dockerSetup
 echo $VERSION > VERSION
 echo $VERSION > resources/planwise/version
 
+if [[ -z "$DOCKER_TAG" ]]; then
+  echo "Not building because DOCKER_TAG is undefined"
+  exit 0
+fi
+
 dockerBuildAndPush
-# FIXME: build & push mapcache
-# FIXME: build & push mapserver
-# FIXME: build & push tools
+dockerBuildAndPush -d mapserver -s "-mapserver" -t "-mapserver" -o "-f Dockerfile.mapserver"
+dockerBuildAndPush -d mapserver -s "-mapserver" -t "-mapcache" -o "-f Dockerfile.mapcache"
+dockerBuildAndPush -d scripts -s "-tools"
