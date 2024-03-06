@@ -10,6 +10,7 @@ jobs:
 
       - name: Test internal connectivity
         run: |
+          cp docker-compose.ci.yml docker-compose.override.yml
           docker compose up --wait db
           docker compose run --rm -e PGPASSWORD="${POSTGRES_PASSWORD}" db psql --host db --username planwise --list || true
           timeout 60s sh -c "while ! nc -z $(docker inspect planwise-db-1 | jq -r '.[0].NetworkSettings.Networks.planwise_default.IPAddress') 5432; do sleep 1; done" || true
@@ -21,6 +22,7 @@ jobs:
 
       - name: Set environment up
         run: |
+          mv docker-compose.ci.yml docker-compose.override.yml
           docker compose pull
           docker compose build
           docker compose run --rm client npm install
