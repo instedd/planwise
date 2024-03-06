@@ -8,18 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Test internal connectivity
-        run: |
-          cp docker-compose.ci.yml docker-compose.override.yml
-          docker compose up --wait db
-          docker compose run --rm -e PGPASSWORD="${POSTGRES_PASSWORD}" db psql --host db --username planwise --list || true
-          timeout 60s sh -c "while ! nc -z $(docker inspect planwise-db-1 | jq -r '.[0].NetworkSettings.Networks.planwise_default.IPAddress') 5432; do sleep 1; done" || true
-          docker inspect planwise-db-1
-          docker compose run --rm -e PGPASSWORD="${POSTGRES_PASSWORD}" db psql --host db --username planwise --list || true
-          docker compose ps
-          docker compose logs db
-          exit 1
-
       - name: Set environment up
         run: |
           mv docker-compose.ci.yml docker-compose.override.yml
