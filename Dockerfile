@@ -1,3 +1,26 @@
+FROM clojure:lein-2.8.1 AS build
+
+RUN echo 'deb http://archive.debian.org/debian stretch main\n\
+          deb http://archive.debian.org/debian-security stretch/updates main' > /etc/apt/sources.list
+
+RUN apt update && \
+    apt install -y build-essential cmake \
+                   libboost-timer-dev libboost-program-options-dev \
+                   libboost-filesystem-dev \
+                   libpq-dev libgdal-dev postgresql-client libpq-dev \
+                   gdal-bin python-gdal libgdal-java \
+                   && \
+    curl -sL https://deb.nodesource.com/setup_9.x | bash - && \
+    apt-get install -y nodejs
+
+WORKDIR /app
+
+COPY . /app
+
+RUN cd client && npm install && npm run release
+RUN lein uberjar
+RUN scripts/build-binaries --release
+
 FROM openjdk:8u242-jre-stretch
 
 RUN echo 'deb http://archive.debian.org/debian stretch main\n\
@@ -13,17 +36,20 @@ RUN for i in {1..5}; do \
   && rm -rf /var/lib/apt/lists/*
 
 # Add scripts
-ADD scripts/ /app/scripts/
+COPY --from=build /app/scripts/ /app/scripts/
 ENV SCRIPTS_PATH /app/scripts/
 
 # Add project compiled binaries
-ADD cpp/build-linux-x86_64/aggregate-population /app/bin/aggregate-population
-ADD cpp/build-linux-x86_64/walking-coverage /app/bin/walking-coverage
+COPY --from=build /app/cpp/build-linux-x86_64/aggregate-population /app/bin/aggregate-population
+COPY --from=build /app/cpp/build-linux-x86_64/walking-coverage /app/bin/walking-coverage
 ENV BIN_PATH /app/bin/
 
 # Add uberjar with app
-ADD ./target/uberjar/planwise-standalone.jar /app/lib/
+COPY --from=build /app/target/uberjar/planwise-standalone.jar /app/lib/
 ENV JAR_PATH /app/lib/planwise-standalone.jar
+
+# Expose JNI libs to app
+ENV LD_LIBRARY_PATH=/usr/lib/jni
 
 # Exposed port
 ENV PORT 80
