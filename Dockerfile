@@ -48,6 +48,9 @@ ENV BIN_PATH /app/bin/
 COPY --from=build /app/target/uberjar/planwise-standalone.jar /app/lib/
 ENV JAR_PATH /app/lib/planwise-standalone.jar
 
+# Add app version file
+COPY --from=build /app/resources/planwise/version /app/VERSION
+
 # Expose JNI libs to app
 ENV LD_LIBRARY_PATH=/usr/lib/jni
 

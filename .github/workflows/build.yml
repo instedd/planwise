@@ -1,0 +1,36 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set environment up
+        run: |
+          docker compose pull
+          docker compose build
+          docker compose run --rm client npm install
+
+      - name: Run specs
+        env:
+          JVM_OPTS: -Xmx3200m
+          TEST_DATABASE_URL: jdbc:postgresql://db/planwise?user=planwise&password=planwise
+        run: |
+          docker compose run --rm -e JVM_OPTS -e TEST_DATABASE_URL app lein test
+          docker compose run --rm client npm run test
+          docker compose run --rm app lein check-format
+
+  build:
+    needs: test
+    runs-on: ubuntu-22.04
+    env:
+      DOCKER_REPOSITORY: 'instedd/planwise'
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image & push to Docker Hub
+        run: ./build.sh
