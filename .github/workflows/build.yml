@@ -12,7 +12,9 @@ jobs:
         run: |
           mv docker-compose.ci.yml docker-compose.override.yml
           docker compose pull
+          docker compose up --wait db
           docker compose build
+          docker compose exec db createdb planwise-test -U postgres
           docker compose run --rm client npm install
 
       - name: Run specs
