@@ -1,0 +1,39 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set environment up
+        run: |
+          mv docker-compose.ci.yml docker-compose.override.yml
+          docker compose pull
+          docker compose up --wait db
+          docker compose build
+          docker compose exec db createdb planwise-test -U postgres
+          docker compose run --rm client npm install
+
+      - name: Run specs
+        env:
+          JVM_OPTS: -Xmx3200m
+        run: |
+          docker compose up --wait db
+          docker compose run --rm -e JVM_OPTS app lein test
+          docker compose run --rm client npm run test
+          docker compose run --rm app lein check-format
+
+  build:
+    needs: test
+    runs-on: ubuntu-22.04
+    env:
+      DOCKER_REPOSITORY: 'instedd/planwise'
+      DOCKER_USER: ${{ secrets.DOCKER_USER }}
+      DOCKER_PASS: ${{ secrets.DOCKER_PASS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image & push to Docker Hub
+        run: ./build.sh
