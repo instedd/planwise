@@ -103,6 +103,7 @@
                                          session-config
                                          {:session {:flash true
                                                     :store session-store}
+                                          :proxy true
                                           :static  {:resources "planwise/public"}})]
     (let [middleware [#(wrap-not-found % (html-response error-404))
                       wrap-webjars
