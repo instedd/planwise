@@ -5,11 +5,12 @@ services:
     build:
       dockerfile: Dockerfile-dev
       context: .
+    platform: linux/amd64
     volumes:
       - ".:/app"
       - m2:/root/.m2
-      - "~/.lein:/root/.lein"
-    links:
+      - "lein:/root/.lein"
+    depends_on:
       - db
     env_file:
       - ./docker-env
@@ -22,6 +23,7 @@ services:
     build:
       dockerfile: Dockerfile-dev
       context: .
+    platform: linux/amd64
     volumes:
       - ".:/app"
       - m2:/root/.m2
@@ -46,7 +48,7 @@ services:
     image: camptocamp/mapcache:1.4
     volumes:
       - "./mapserver/mapcache.xml:/mapcache/mapcache.xml:ro"
-    links:
+    depends_on:
       - mapserver
     ports:
       - "5002:80"
@@ -61,16 +63,18 @@ services:
 
   tools:
     image: instedd/planwise-tools
+    platform: linux/amd64
     build:
       context: scripts
     env_file:
       - ./docker-env
     volumes:
       - "./data:/data"
-    links:
+    depends_on:
       - db
 
 volumes:
   db:
+  lein:
   m2:
   node_modules:
