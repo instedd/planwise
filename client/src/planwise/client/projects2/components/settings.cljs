@@ -217,7 +217,7 @@
      (when-not read-only
        [sources-type-component {:label "Data type"}])
      [sources-dropdown-component {:label     "Consumer Dataset"
-                                  :value     (:source-set-id @current-project)
+                                  :model     (:source-set-id @current-project)
                                   :on-change #(dispatch [:projects2/save-key :source-set-id %])
                                   :disabled? read-only}]
      [current-project-input {:label "Consumers Unit" :path [:config :demographics :unit-name] :type "text" :disabled read-only :empty-label (capitalize consumer-unit)}]
