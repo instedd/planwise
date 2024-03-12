@@ -1,4 +1,4 @@
-FROM clojure:lein-2.8.1 AS build
+FROM clojure:lein-2.8.1 AS base
 
 RUN echo 'deb http://archive.debian.org/debian stretch main\n\
           deb http://archive.debian.org/debian-security stretch/updates main' > /etc/apt/sources.list
@@ -14,6 +14,8 @@ RUN apt update && \
     apt-get install -y nodejs
 
 WORKDIR /app
+
+FROM base as build
 
 COPY . /app
 
