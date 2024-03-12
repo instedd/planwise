@@ -21,12 +21,12 @@ web:
     - mapserver-data
 
 mapcache:
-  image: instedd/planwise-mapserver:kenya-mapcache
+  image: instedd/planwise-mapcache:kenya
   autorestart: always
   autoredeploy: true
 
 mapserver:
-  image: instedd/planwise-mapserver:kenya-mapserver
+  image: instedd/planwise-mapserver:kenya
   autorestart: always
   autoredeploy: true
   volumes_from:

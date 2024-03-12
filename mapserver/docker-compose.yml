@@ -1,5 +1,5 @@
 mapcache:
-  image: instedd/planwise-mapserver:mapcache
+  image: instedd/planwise-mapcache
   # build: .
   # dockerfile: Dockerfile.mapcache
   volumes:
@@ -10,7 +10,7 @@ mapcache:
     - "5002:80"
 
 mapserver:
-  image: instedd/planwise-mapserver:mapserver
+  image: instedd/planwise-mapserver
   # build: .
   # dockerfile: Dockerfile.mapserver
   volumes:
