@@ -29,13 +29,10 @@ RUN echo 'deb http://archive.debian.org/debian stretch main\n\
           deb http://archive.debian.org/debian-security stretch/updates main' > /etc/apt/sources.list
 
 # Install package dependencies and add precompiled binary
-RUN for i in {1..5}; do \
-       (apt-get update \
-        && apt-get -y install postgresql-client gdal-bin python-gdal libgdal-java \
-        && break) \
-       || (sleep 5; false); done \
-  && apt-get clean \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get -y install postgresql-client gdal-bin python-gdal libgdal-java && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Add scripts
 COPY --from=build /app/scripts/ /app/scripts/
