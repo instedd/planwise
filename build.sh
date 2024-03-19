@@ -13,6 +13,6 @@ if [[ -z "$DOCKER_TAG" ]]; then
 fi
 
 dockerBuildAndPush
-dockerBuildAndPush -d mapserver -s "-mapserver" -t "-mapserver" -o "-f mapserver/Dockerfile.mapserver"
-dockerBuildAndPush -d mapserver -s "-mapserver" -t "-mapcache" -o "-f mapserver/Dockerfile.mapcache"
+dockerBuildAndPush -d mapserver -s "-mapserver" -o "-f mapserver/Dockerfile.mapserver"
+dockerBuildAndPush -d mapserver -s "-mapcache" -o "-f mapserver/Dockerfile.mapcache"
 dockerBuildAndPush -d scripts -s "-tools"

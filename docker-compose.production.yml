@@ -34,12 +34,12 @@ services:
 
   mapcache:
     container_name: planwise-prod-mapcache
-    image: instedd/planwise-mapserver:kenya-mapcache
+    image: instedd/planwise-mapcache:kenya
     pid: host
 
   mapserver:
     container_name: planwise-prod-mapserver
-    image: instedd/planwise-mapserver:kenya-mapserver
+    image: instedd/planwise-mapserver:kenya
     pid: host
     volumes:
       - data:/data

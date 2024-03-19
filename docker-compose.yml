@@ -3,8 +3,8 @@ version: '2'
 services:
   app:
     build:
-      dockerfile: Dockerfile-dev
       context: .
+      target: base
     platform: linux/amd64
     volumes:
       - ".:/app"
@@ -21,8 +21,8 @@ services:
 
   client:
     build:
-      dockerfile: Dockerfile-dev
       context: .
+      target: base
     platform: linux/amd64
     volumes:
       - ".:/app"
