@@ -236,7 +236,6 @@
         provider-unit   (get-provider-unit @current-project)
         demand-unit     (get-demand-unit @current-project)
         capacity-unit   (get-capacity-unit @current-project)]
-    (dispatch [:providers-set/load-providers-set])
     [:section {:class-name "project-settings-section"}
      [section-header 3 "Providers"]
      [providers-set-dropdown-component {:label     "Provider Dataset"
