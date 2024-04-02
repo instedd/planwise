@@ -15,9 +15,9 @@
      (->> providers
           (map (fn [provider-set]
                  (let [{:keys [id name]} provider-set]
-                   {:value id :label name})))
+                   {:value id :label name :id id})))
           (sort-by :label)
-          (into [{:value nil :label "None"}])))))
+          (into [{:value nil :label "None" :id nil}])))))
 
 (rf/reg-sub
  :providers-set/view-state

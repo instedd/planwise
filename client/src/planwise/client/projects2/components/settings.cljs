@@ -236,10 +236,11 @@
         provider-unit   (get-provider-unit @current-project)
         demand-unit     (get-demand-unit @current-project)
         capacity-unit   (get-capacity-unit @current-project)]
+    (dispatch [:providers-set/load-providers-set])
     [:section {:class-name "project-settings-section"}
      [section-header 3 "Providers"]
      [providers-set-dropdown-component {:label     "Provider Dataset"
-                                        :value     (:provider-set-id @current-project)
+                                        :model     (:provider-set-id @current-project)
                                         :on-change #(dispatch [:projects2/save-key :provider-set-id %])
                                         :disabled? read-only}]
 
