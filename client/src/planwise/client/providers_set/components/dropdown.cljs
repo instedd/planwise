@@ -9,7 +9,7 @@
         props (merge {:choices   @(rf/subscribe [:providers-set/dropdown-options])
                       :label-fn  :label
                       :render-fn (fn [provider-set] [:div.option-row
-                                               [:span (:label provider-set)]])}
+                                                     [:span (:label provider-set)]])}
                      attrs)]
     (when (asdf/should-reload? @list)
       (rf/dispatch [:providers-set/load-providers-set]))
