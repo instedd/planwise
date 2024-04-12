@@ -57,8 +57,9 @@ fn aggregate_band(dataset: Dataset, band_no: isize) -> errors::Result<(f64, f32)
             unsafe {
                 data.set_len(pixels);
             };
-
             let raw_data = data.as_slice();
+            // End low-level, unsafe section of code
+            
             for iy in 0..span_y {
                 for ix in 0..span_x {
                     let value = raw_data[ix + iy * block_x_size];
