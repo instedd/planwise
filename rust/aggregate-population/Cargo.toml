@@ -1,0 +1,10 @@
+[package]
+name = "aggregate-population"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gdal = { version = "^0.16.0", features = ["ndarray"] }
+gdal-sys = "^0.9.1"
