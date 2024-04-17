@@ -1,0 +1,15 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+resolver = "2"
+members = [
+"rust/aggregate-population",
+"rust/walking-coverage",
+]
+
+[workspace.dependencies]
+gdal = { version = "^0.16.0", features = ["ndarray"] }
+gdal-sys = "^0.9.1"
