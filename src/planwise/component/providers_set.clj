@@ -9,6 +9,7 @@
             [hugsql.core :as hugsql]
             [clojure.edn :as edn]
             [planwise.util.files :as files]
+            [planwise.util.collections :refer [csv-data->maps]]
             [clojure.string :as str]
             [clojure.set :as set]))
 
@@ -22,14 +23,6 @@
 (defn get-db
   [store]
   (get-in store [:db :spec]))
-
-(defn- csv-data->maps
-  [csv-data]
-  (map zipmap
-       (->> (first csv-data)
-            (map keyword)
-            repeat)
-       (rest csv-data)))
 
 (defn- import-provider
   [store provider-set-id version csv-provider-data]

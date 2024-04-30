@@ -14,7 +14,7 @@
             [planwise.util.geo :as geo]
             [planwise.util.files :as files]
             [planwise.util.numbers :refer [abs float=]]
-            [planwise.model.providers :refer [merge-providers merge-provider]]
+            [planwise.model.providers :refer [merge-providers]]
             [planwise.util.collections :refer [sum-by merge-collections-by]]
             [integrant.core :as ig]
             [clojure.java.io :as io]
