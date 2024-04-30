@@ -10,6 +10,7 @@
             [clojure.edn :as edn]
             [planwise.util.files :as files]
             [planwise.util.collections :refer [csv-data->maps]]
+            [planwise.common :as common]
             [clojure.string :as str]
             [clojure.set :as set]))
 
@@ -104,8 +105,10 @@
                              :version         version
                              :region-id       (:region-id filter-options)}
         all-providers       (db-find-providers-in-region db-spec config)
+        filter-tags         (->> (:tags filter-options)
+                                 (map common/sanitize-tag))
         providers-partition (group-by
-                             #(provider-matches-tags? % (:tags filter-options))
+                             #(provider-matches-tags? % filter-tags)
                              all-providers)]
     {:providers          (or (get providers-partition true) [])
      :disabled-providers (or (get providers-partition false) [])}))
@@ -115,7 +118,9 @@
    (count-providers-filter-by-tags store provider-set-id region-id tags nil))
   ([store provider-set-id region-id tags version]
    (let [db-spec  (get-db store)
-         tags     (str/join " & " tags)
+         tags     (->> tags
+                       (map common/sanitize-tag)
+                       (str/join " & "))
          count-fn (fn [tags version]
                     (let [{:keys [last-version]} (get-provider-set store provider-set-id)]
                       (:count (db-count-providers-with-tags db-spec {:provider-set-id provider-set-id

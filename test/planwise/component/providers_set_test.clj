@@ -5,6 +5,7 @@
             [planwise.component.providers-set :as providers-set]
             [planwise.boundary.projects2 :as projects2]
             [planwise.test-system :as test-system]
+            [planwise.common :as common]
             [clj-time.core :as time]
             [integrant.core :as ig])
   (:import [org.postgis PGgeometry]))
@@ -159,7 +160,7 @@
 
 (defn- validate-filter-count
   [store id tags number]
-  (is (= (:filtered (providers-set/count-providers-filter-by-tags store id 1 tags)) number)))
+  (is (= number (:filtered (providers-set/count-providers-filter-by-tags store id 1 tags)))))
 
 (deftest filtering-providers
   (test-system/with-system (test-config fixture-filtering-providers-tags)
@@ -170,7 +171,14 @@
       (validate-filter-count store 1 ["inexistent"] 0)
       (validate-filter-count store 1 ["private"] 2)
       (validate-filter-count store 2 ["private"] 0)
-      (validate-filter-count store 2 ["-"] 0))))
+      (validate-filter-count store 2 ["-"] 0)
+      ;; sanitizes input tags
+      (validate-filter-count store 1 ["pri&vate"] 2))))
+
+(deftest sanitize-tag
+  (is (= "" (common/sanitize-tag "&|")))
+  (is (= "general-medicine" (common/sanitize-tag "general medicine")))
+  (is (= "private" (common/sanitize-tag "pri&vate"))))
 
 ;; ----------------------------------------------------------------------
 ;; Testing deleting provider-set

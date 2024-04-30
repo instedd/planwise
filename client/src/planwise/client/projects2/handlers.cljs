@@ -6,6 +6,8 @@
             [planwise.client.effects :as effects]
             [planwise.client.projects2.db :as db]
             [planwise.client.utils :as utils]
+            [planwise.common :as common]
+            [clojure.string :as string]
             [clojure.spec.alpha :as s]))
 
 
@@ -270,10 +272,12 @@
  :projects2/save-tag
  in-projects2
  (fn [{:keys [db]} [_ tag]]
-   (let [path [:current-project :config :providers :tags]
-         n (count (get-in db path))]
-     {:db       (update-in db path (comp vec conj) tag)
-      :dispatch [:projects2/persist-current-project]})))
+   (let [tag  (common/sanitize-tag tag)
+         path [:current-project :config :providers :tags]
+         n    (count (get-in db path))]
+     (when-not (string/blank? tag)
+       {:db       (update-in db path (comp vec conj) tag)
+        :dispatch [:projects2/persist-current-project]}))))
 
 (rf/reg-event-fx
  :projects2/delete-tag
