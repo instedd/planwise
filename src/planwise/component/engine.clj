@@ -148,7 +148,9 @@
     (filter some? (map assoc-raster-path providers coverages))))
 
 (defn- providers-in-project-with-coverage
-  "Returns the providers relevant for this project with their coverages already resolved"
+  "Returns the providers relevant for this project with their coverages already
+  resolved. NOTE: This function discards any provider for which we cannot compute a
+  coverage raster."
   [engine project]
   (let [providers (common/providers-in-project (:providers-set engine) project)]
     (query-provider-coverages engine project providers)))

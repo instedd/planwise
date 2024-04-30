@@ -522,4 +522,15 @@
   (def changes  (subvec providers-and-changes (count initial-providers)))
 
   (def capacity-sat    (Math/abs (- initial-demand final-demand)))
-  (>= (reduce + (mapv :satisfied changes)) capacity-sat))
+  (>= (reduce + (mapv :satisfied changes)) capacity-sat)
+
+  ;; Testing issue #727
+  (let [store         (:planwise.component/scenarios integrant.repl.state/system)
+        project-store (:planwise.component/projects2 integrant.repl.state/system)
+        project       (planwise.boundary.projects2/get-project project-store 40)
+        scenario      (get-scenario store 128)
+        engine        (:planwise.component/engine integrant.repl.state/system)
+        settings      {:analysis-type "action", :available-budget 0, :no-action-costs true}]
+    (get-suggestions-for-improving-providers store project scenario))
+
+  )
