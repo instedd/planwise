@@ -1,5 +1,5 @@
 (ns planwise.common
-  (:require [clojure.string :refer [lower-case]]))
+  (:require [clojure.string :as string :refer [lower-case]]))
 
 (defn is-budget
   [analysis-type]
@@ -47,3 +47,10 @@
    (get-capacity-unit project true))
   ([project lowercase?]
    (get-project-unit project [:config :providers :capacity-unit] "units" lowercase?)))
+
+(defn sanitize-tag
+  [tag]
+  (-> tag
+      string/trim
+      (string/replace #"\s+" "-")
+      (string/replace #"[^a-zA-Z0-9.-]" "")))
