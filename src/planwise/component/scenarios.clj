@@ -374,9 +374,16 @@
                                                 provider-set-id
                                                 (:provider-set-version project)
                                                 filter-options)
-        disabled-providers                     (map #(assoc % :capacity 0) disabled-providers)
         new-providers                          (new-providers-to-export (:changeset scenario))
-        fields                                 [:id :type :name :lat :lon :tags :capacity :required-capacity :used-capacity :satisfied-demand :unsatisfied-demand]]
+        ;; final capacity for the scenario is stored in the scenario's :providers-data
+        ;; so we remove it from the "base" collections to avoid adding them up
+        ;; (and duplicating it) by merge-providers
+        disabled-providers                     (map #(dissoc % :capacity) disabled-providers)
+        providers                              (map #(dissoc % :capacity) providers)
+        new-providers                          (map #(dissoc % :capacity) new-providers)
+        fields                                 [:id :type :name :lat :lon :tags
+                                                :capacity :required-capacity :used-capacity
+                                                :satisfied-demand :unsatisfied-demand]]
     (map->csv
      (merge-providers providers disabled-providers new-providers (:providers-data scenario))
      fields)))

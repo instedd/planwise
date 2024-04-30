@@ -16,3 +16,13 @@
 (defn map-vals
   [f m]
   (reduce-kv (fn [acc k v] (assoc acc k (f v))) {} m))
+
+(defn csv-data->maps
+  "Converts the result of csv/read-csv (ie. a collection of vectors of strings)
+  into a collection of maps using the first row (converted to keywords) as keys"
+  [csv-data]
+  (map zipmap
+       (->> (first csv-data)
+            (map keyword)
+            repeat)
+       (rest csv-data)))
