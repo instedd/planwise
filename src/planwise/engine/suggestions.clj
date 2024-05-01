@@ -422,8 +422,8 @@
   (let [budget?              (c/is-budget analysis-type)
         intervention-builder (if budget? get-provider-capacity-and-cost get-provider-capacity-and-unsatisfied-demand)
         requirements         (get-information-from-demand providers-data
-                                                        (:id provider)
-                                                        [:required-capacity :unsatisfied-demand])]
+                                                          (:id provider)
+                                                          [:required-capacity :unsatisfied-demand])]
     (when (seq requirements)
       (when-let [intervention (intervention-builder (merge provider requirements) settings)]
         (merge provider intervention)))))

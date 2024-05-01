@@ -531,6 +531,4 @@
         scenario      (get-scenario store 128)
         engine        (:planwise.component/engine integrant.repl.state/system)
         settings      {:analysis-type "action", :available-budget 0, :no-action-costs true}]
-    (get-suggestions-for-improving-providers store project scenario))
-
-  )
+    (get-suggestions-for-improving-providers store project scenario)))
