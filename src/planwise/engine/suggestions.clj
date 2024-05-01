@@ -7,11 +7,12 @@
             [planwise.engine.common :as common]
             [planwise.component.coverage.rasterize :as rasterize]
             [planwise.engine.demand :as demand]
+            [planwise.util.collections :refer [find-by]]
             [planwise.util.files :as files]
             [planwise.util.geo :as geo]
+            [planwise.common :as c]
             [clojure.set :refer [rename-keys]]
-            [taoensso.timbre :as timbre]
-            [planwise.common :as c])
+            [taoensso.timbre :as timbre])
   (:import [planwise.engine Algorithm]))
 
 (timbre/refer-timbre)
@@ -369,77 +370,77 @@
 
 (defn get-provider-capacity-and-cost
   [provider settings]
-  (let [max-capacity      (:max-capacity settings)
-        action-capacity   (if max-capacity
-                            (min (:required-capacity provider) (:max-capacity settings))
-                            (:required-capacity provider))
-        action-cost       (get-increasing-cost
-                           {:action (if (:applicable? provider)
+  (let [max-capacity    (:max-capacity settings)
+        action-capacity (if max-capacity
+                          (min (:required-capacity provider) (:max-capacity settings))
+                          (:required-capacity provider))
+        action-cost     (get-increasing-cost
+                         {:action   (if (:applicable? provider)
                                       "increase-provider"
                                       "upgrade-provider")
-                            :capacity action-capacity}
-                           settings)]
+                          :capacity action-capacity}
+                         settings)
+        ratio           (if-not (zero? action-cost)
+                          (/ action-capacity action-cost)
+                          0)]
     (cond
       (< (:available-budget settings) action-cost) nil
-      :else {:action-capacity action-capacity
-             :action-cost     action-cost})))
+      :else                                        {:action-capacity action-capacity
+                                                    :action-cost     action-cost
+                                                    :ratio           ratio})))
 
-(defn insert-in-sorted-coll
+(defn- insert-in-sorted-coll
   [coll value criteria]
   (sort-by criteria > (conj coll value)))
 
-(defn get-information-from-demand
+(defn- get-information-from-demand
   [all-providers id keys]
-  (select-keys
-   (first (filter #(= id (:id %)) all-providers))
-   keys))
+  (-> all-providers
+      (find-by :id id)
+      (select-keys keys)))
 
 (defn get-provider-capacity-and-unsatisfied-demand
   [{:keys [unsatisfied-demand required-capacity] :as provider} {:keys [max-capacity] :as settings}]
-  (let [action-capacity (if max-capacity
-                          (min required-capacity max-capacity)
-                          required-capacity)
-        action-cost     (get-increasing-cost
-                         {:action (if (:applicable? provider)
-                                    "increase-provider"
-                                    "upgrade-provider")
-                          :capacity action-capacity}
-                         settings)]
-    {:unsatisfied-demand unsatisfied-demand
+  (let [required-capacity (or required-capacity 0)
+        action-capacity   (if max-capacity
+                            (min required-capacity max-capacity)
+                            required-capacity)
+        action-cost       (get-increasing-cost
+                           {:action   (if (:applicable? provider)
+                                        "increase-provider"
+                                        "upgrade-provider")
+                            :capacity action-capacity}
+                           settings)]
+    ;; We provide 0 default values to handle edge cases when the provider has no
+    ;; previous data computed for the scenario.
+    {:unsatisfied-demand (or unsatisfied-demand 0)
      :action-capacity    action-capacity
      :action-cost        action-cost}))
 
 (defn- provider-with-data
   [provider providers-data {:keys [analysis-type] :as settings}]
-  (let [budget? (c/is-budget analysis-type)]
-    (when-let [intervention ((if budget? get-provider-capacity-and-cost get-provider-capacity-and-unsatisfied-demand)
-                             (merge
-                              provider
-                              (get-information-from-demand
-                               providers-data
-                               (:id provider)
-                               (if budget? [:required-capacity] [:required-capacity :unsatisfied-demand])))
-                             settings)]
-      (merge
-       provider
-       intervention
-       (if budget?
-         (let [{:keys [action-capacity action-cost]} intervention]
-           {:ratio (if (not (zero? action-cost))
-                     (/ action-capacity action-cost)
-                     0)}))))))
+  (let [budget?              (c/is-budget analysis-type)
+        intervention-builder (if budget? get-provider-capacity-and-cost get-provider-capacity-and-unsatisfied-demand)
+        requirements         (get-information-from-demand providers-data
+                                                          (:id provider)
+                                                          [:required-capacity :unsatisfied-demand])]
+    (when (seq requirements)
+      (when-let [intervention (intervention-builder (merge provider requirements) settings)]
+        (merge provider intervention)))))
 
 (defn get-sorted-providers-interventions
   [engine project {:keys [providers-data changeset] :as scenario} {:keys [analysis-type] :as settings}]
-  (let [{:keys [engine-config config provider-set-id region-id coverage-algorithm]} project
-        providers-collection (common/providers-in-project (:providers-set engine) project)
-        sort-key (if (c/is-budget analysis-type) :ratio :unsatisfied-demand)]
+  (let [{:keys [engine-config
+                provider-set-id
+                region-id
+                coverage-algorithm]} project
+        providers-collection         (common/providers-in-project (:providers-set engine) project)
+        sort-key                     (if (c/is-budget analysis-type) :ratio :unsatisfied-demand)]
     (reduce
      (fn [suggestions provider]
-       (insert-in-sorted-coll
-        suggestions
-        (provider-with-data provider providers-data settings)
-        sort-key))
+       (if-let [suggestion (provider-with-data provider providers-data settings)]
+         (insert-in-sorted-coll suggestions suggestion sort-key)
+         suggestions))
      []
      providers-collection)))
 
