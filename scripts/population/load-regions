@@ -4,12 +4,35 @@ set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
 if [ $# -lt 2 ]; then
-    echo "Usage $0 <ISO> <Country Name>"
+    echo "Usage $0 [-f] <ISO> <Country Name>"
+    echo "The option -f forces updating an existing country geometry"
     exit 1
 fi
 
-COUNTRY_CODE=$1
-COUNTRY_NAME=$2
+FORCE=
+COUNTRY_CODE=
+COUNTRY_NAME=
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        -f|--force)
+            FORCE=1
+            ;;
+        *)
+            if [ ! -z "$COUNTRY_NAME" ]; then
+                echo Unknown arguments specified
+                exit 1;
+            elif [ ! -z "$COUNTRY_CODE" ]; then
+                COUNTRY_NAME=$1
+            else
+                COUNTRY_CODE=$1
+            fi
+            ;;
+    esac
+    shift
+done
+
+
 #LEVELS=${2:-2,4}
 LEVELS=(0,1)
 echo "   -> Importing $COUNTRY_NAME at levels $LEVELS"
@@ -18,7 +41,7 @@ echo "   -> Importing $COUNTRY_NAME at levels $LEVELS"
 REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, country FROM regions WHERE country = '$COUNTRY_NAME';")
 REGIONS_LEN=$(echo $REGIONS | wc -w | tr -d '[[:space:]]')
 
-if [ ${REGIONS_LEN} -gt 0 ]; then
+if [ ${REGIONS_LEN} -gt 0 -a -z $FORCE ]; then
   echo "   -> Regions for country $COUNTRY_NAME already imported."
   exit 0
 fi
@@ -37,9 +60,12 @@ fi
 # From mapshaper wiki https://github.com/mbloch/mapshaper/wiki/Command-Reference#-simplify
 #
 # interval= Specify simplification amount in units of distance.
-#           Uses meters when simplifying unprojected datasets in 3D space (see planar option below),
+#           Uses meters when simplifying unprojected datasets in 3D space,
 #           otherwise uses the same units as the source data.
-INTERVAL_DISTANCE=${INTERVAL_DISTANCE-1000}
+#           In our case since our GeoJSON are not projected (ie. use WGS84 coordinates)
+#           then this means the resolution for the simplified shape will be in meters.
+
+INTERVAL_DISTANCE=${INTERVAL_DISTANCE-100}
 
 IFS=',';
 for i in $LEVELS; do
@@ -52,23 +78,49 @@ for i in $LEVELS; do
     OFILE=${DATA_PATH}/${COUNTRY_CODE}/${COUNTRY_CODE}_adm${i}_${INTERVAL_DISTANCE}.geojson
 
     mapshaper $FILE -simplify interval=$INTERVAL_DISTANCE -o $OFILE
+
+    SIZE=$(stat --printf="%s" $FILE)
+    OSIZE=$(stat --printf="%s" $OFILE)
+
+    echo "   -> Finished file size went from $SIZE to $OSIZE"
   fi
 
-  psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+  if [ "$FORCE" = "1" ]; then
+    psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 
-    WITH data AS (SELECT \$$`cat $OFILE`\$$::json AS fc)
-    INSERT INTO "regions" (country, name, admin_level, the_geom)
-    SELECT
-      '${COUNTRY_NAME}',
-      feat#>>'{properties,name}' AS name,
-      ${i},
-      ST_SetSRID(ST_CollectionExtract(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 3), 4326) as the_geom
-    FROM (
-      SELECT json_array_elements(fc->'features') AS feat
-      FROM data
-    ) AS f;
+      WITH data AS (SELECT \$$`cat $OFILE`\$$::json AS fc)
+      UPDATE "regions" SET the_geom=f.the_geom
+      FROM (
+        SELECT
+          '${COUNTRY_NAME}' as country,
+          feat#>>'{properties,name}' AS name,
+          ${i} as admin_level,
+          ST_SetSRID(ST_CollectionExtract(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 3), 4326) as the_geom
+        FROM (
+          SELECT json_array_elements(fc->'features') AS feat
+          FROM data
+        ) AS dummy
+      ) AS f
+      WHERE regions.country=f.country AND regions.name=f.name AND regions.admin_level=f.admin_level;
 
 SQL_SCRIPT
+  else
+    psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+
+      WITH data AS (SELECT \$$`cat $OFILE`\$$::json AS fc)
+      INSERT INTO "regions" (country, name, admin_level, the_geom)
+      SELECT
+        '${COUNTRY_NAME}',
+        feat#>>'{properties,name}' AS name,
+        ${i},
+        ST_SetSRID(ST_CollectionExtract(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 3), 4326) as the_geom
+      FROM (
+        SELECT json_array_elements(fc->'features') AS feat
+        FROM data
+      ) AS f;
+
+SQL_SCRIPT
+  fi
   # TODO: print errors
   echo " done!"
 done;

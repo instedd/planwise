@@ -15,6 +15,19 @@ $ docker-compose run --rm app bash
 /app$ scripts/population/load-regions URY Uruguay
 ```
 
+### Geometry simplification
+
+The script simplifies the regions using mapshaper by a distance between points.
+We can adjust this parameter with the environment `INTERVAL_DISTANCE`.
+
+For example to simplify with 120 meters distance
+
+```sh
+$ INTERVAL_DISTANCE=120 ./load-regions -f URY Uruguay
+```
+
+Here `-f` is used to force updating an existing region.
+
 ## Clip friction layer for new regions
 
 The friction raster is clipped to the country-level regions for quicker access
@@ -46,4 +59,3 @@ INSERT INTO source_set (name, type, unit, raster_file) VALUES ('Uruguay PPP v2b 
 
 The important bit of information is the last field. That should be a relative
 path from the `DATA_PATH` directory to the downloaded raster file.
-
