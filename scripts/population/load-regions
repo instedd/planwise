@@ -33,13 +33,30 @@ if [[ ! -e ${DATA_PATH}/$COUNTRY_CODE ]]; then
   exit 1
 fi
 
+# Simplification parameter
+# From mapshaper wiki https://github.com/mbloch/mapshaper/wiki/Command-Reference#-simplify
+#
+# interval= Specify simplification amount in units of distance.
+#           Uses meters when simplifying unprojected datasets in 3D space (see planar option below),
+#           otherwise uses the same units as the source data.
+INTERVAL_DISTANCE=${INTERVAL_DISTANCE-1000}
+
 IFS=',';
 for i in $LEVELS; do
   FILE=${DATA_PATH}/${COUNTRY_CODE}/${COUNTRY_CODE}_adm${i}.geojson
   echo -n "   -> Processing $FILE ... "
+
+  OFILE=$FILE
+  if [[ ! -z $INTERVAL_DISTANCE ]]; then
+    # Simplify using distance
+    OFILE=${DATA_PATH}/${COUNTRY_CODE}/${COUNTRY_CODE}_adm${i}_${INTERVAL_DISTANCE}.geojson
+
+    mapshaper $FILE -simplify interval=$INTERVAL_DISTANCE -o $OFILE
+  fi
+
   psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 
-    WITH data AS (SELECT \$$`cat $FILE`\$$::json AS fc)
+    WITH data AS (SELECT \$$`cat $OFILE`\$$::json AS fc)
     INSERT INTO "regions" (country, name, admin_level, the_geom)
     SELECT
       '${COUNTRY_NAME}',
