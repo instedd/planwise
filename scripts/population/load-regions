@@ -48,7 +48,7 @@ fi
 
 DATA_PATH=${DATA_PATH:-/data}/geojson
 
-mkdir -p ${DATA_PATH}
+mkdir -p "${DATA_PATH}"
 
 # if the folder (still) doesn't exist then exit with error
 if [[ ! -e ${DATA_PATH}/$COUNTRY_CODE ]]; then
@@ -77,38 +77,18 @@ for i in $LEVELS; do
     # Simplify using distance
     OFILE=${DATA_PATH}/${COUNTRY_CODE}/${COUNTRY_CODE}_adm${i}_${INTERVAL_DISTANCE}.geojson
 
-    mapshaper $FILE -simplify interval=$INTERVAL_DISTANCE -o $OFILE
+    mapshaper "$FILE" -simplify interval=$INTERVAL_DISTANCE -o "$OFILE"
 
-    SIZE=$(stat --printf="%s" $FILE)
-    OSIZE=$(stat --printf="%s" $OFILE)
+    SIZE=$(stat --printf="%s" "$FILE")
+    OSIZE=$(stat --printf="%s" "$OFILE")
 
     echo "   -> Finished file size went from $SIZE to $OSIZE"
   fi
 
-  if [ "$FORCE" = "1" ]; then
-    psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
+  psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 
-      WITH data AS (SELECT \$$`cat $OFILE`\$$::json AS fc)
-      UPDATE "regions" SET the_geom=f.the_geom
-      FROM (
-        SELECT
-          '${COUNTRY_NAME}' as country,
-          feat#>>'{properties,name}' AS name,
-          ${i} as admin_level,
-          ST_SetSRID(ST_CollectionExtract(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 3), 4326) as the_geom
-        FROM (
-          SELECT json_array_elements(fc->'features') AS feat
-          FROM data
-        ) AS dummy
-      ) AS f
-      WHERE regions.country=f.country AND regions.name=f.name AND regions.admin_level=f.admin_level;
-
-SQL_SCRIPT
-  else
-    psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
-
-      WITH data AS (SELECT \$$`cat $OFILE`\$$::json AS fc)
-      INSERT INTO "regions" (country, name, admin_level, the_geom)
+    WITH data AS (SELECT \$$`cat "$OFILE"`\$$::json AS fc)
+    INSERT INTO "regions" (country, name, admin_level, the_geom)
       SELECT
         '${COUNTRY_NAME}',
         feat#>>'{properties,name}' AS name,
@@ -117,10 +97,12 @@ SQL_SCRIPT
       FROM (
         SELECT json_array_elements(fc->'features') AS feat
         FROM data
-      ) AS f;
+      ) AS f
+    ON CONFLICT ON CONSTRAINT regions_name_index DO
+      UPDATE SET the_geom=excluded.the_geom;
 
 SQL_SCRIPT
-  fi
+
   # TODO: print errors
   echo " done!"
 done;
