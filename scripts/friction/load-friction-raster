@@ -57,6 +57,7 @@ for region in $regions; do
         gdalwarp -co COMPRESS=DEFLATE \
                  -dstnodata -3.4e+38 \
                  -crop_to_cutline -csql "SELECT the_geom FROM regions WHERE id = ${region}" \
+                 -cblend 1 \
                  -cutline PG:"dbname=${POSTGRES_DB} host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD}" \
                  $raster_file $output_file
     else

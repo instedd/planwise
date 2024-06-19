@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pgrouting;
+
 -- Copied from pgRouting and modified
 -- Original file: src/alpha_shape/sql/alpha_shape.sql
 -- Original copyright notice follows

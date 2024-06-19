@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS pgrouting;
+
 -- find closest node to a point
 CREATE OR REPLACE FUNCTION closest_node (original geometry(point, 4326))
 returns integer as $$

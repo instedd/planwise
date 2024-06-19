@@ -4,12 +4,35 @@ set -euo pipefail
 export PGPASSWORD=$POSTGRES_PASSWORD;
 
 if [ $# -lt 2 ]; then
-    echo "Usage $0 <ISO> <Country Name>"
+    echo "Usage $0 [-f] <ISO> <Country Name>"
+    echo "The option -f forces updating an existing country geometry"
     exit 1
 fi
 
-COUNTRY_CODE=$1
-COUNTRY_NAME=$2
+FORCE=
+COUNTRY_CODE=
+COUNTRY_NAME=
+
+while [ $# -gt 0 ]; do
+    case $1 in
+        -f|--force)
+            FORCE=1
+            ;;
+        *)
+            if [ ! -z "$COUNTRY_NAME" ]; then
+                echo Unknown arguments specified
+                exit 1;
+            elif [ ! -z "$COUNTRY_CODE" ]; then
+                COUNTRY_NAME=$1
+            else
+                COUNTRY_CODE=$1
+            fi
+            ;;
+    esac
+    shift
+done
+
+
 #LEVELS=${2:-2,4}
 LEVELS=(0,1)
 echo "   -> Importing $COUNTRY_NAME at levels $LEVELS"
@@ -18,14 +41,14 @@ echo "   -> Importing $COUNTRY_NAME at levels $LEVELS"
 REGIONS=$(psql -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT -t -A -c "SELECT id, country FROM regions WHERE country = '$COUNTRY_NAME';")
 REGIONS_LEN=$(echo $REGIONS | wc -w | tr -d '[[:space:]]')
 
-if [ ${REGIONS_LEN} -gt 0 ]; then
+if [ ${REGIONS_LEN} -gt 0 -a -z $FORCE ]; then
   echo "   -> Regions for country $COUNTRY_NAME already imported."
   exit 0
 fi
 
 DATA_PATH=${DATA_PATH:-/data}/geojson
 
-mkdir -p ${DATA_PATH}
+mkdir -p "${DATA_PATH}"
 
 # if the folder (still) doesn't exist then exit with error
 if [[ ! -e ${DATA_PATH}/$COUNTRY_CODE ]]; then
@@ -33,25 +56,53 @@ if [[ ! -e ${DATA_PATH}/$COUNTRY_CODE ]]; then
   exit 1
 fi
 
+# Simplification parameter
+# From mapshaper wiki https://github.com/mbloch/mapshaper/wiki/Command-Reference#-simplify
+#
+# interval= Specify simplification amount in units of distance.
+#           Uses meters when simplifying unprojected datasets in 3D space,
+#           otherwise uses the same units as the source data.
+#           In our case since our GeoJSON are not projected (ie. use WGS84 coordinates)
+#           then this means the resolution for the simplified shape will be in meters.
+
+INTERVAL_DISTANCE=${INTERVAL_DISTANCE-100}
+
 IFS=',';
 for i in $LEVELS; do
   FILE=${DATA_PATH}/${COUNTRY_CODE}/${COUNTRY_CODE}_adm${i}.geojson
   echo -n "   -> Processing $FILE ... "
+
+  OFILE=$FILE
+  if [[ ! -z $INTERVAL_DISTANCE ]]; then
+    # Simplify using distance
+    OFILE=${DATA_PATH}/${COUNTRY_CODE}/${COUNTRY_CODE}_adm${i}_${INTERVAL_DISTANCE}.geojson
+
+    mapshaper "$FILE" -simplify interval=$INTERVAL_DISTANCE -o "$OFILE"
+
+    SIZE=$(stat --printf="%s" "$FILE")
+    OSIZE=$(stat --printf="%s" "$OFILE")
+
+    echo "   -> Finished file size went from $SIZE to $OSIZE"
+  fi
+
   psql -q -d $POSTGRES_DB -U $POSTGRES_USER -h $POSTGRES_HOST -p $POSTGRES_PORT << SQL_SCRIPT
 
-    WITH data AS (SELECT \$$`cat $FILE`\$$::json AS fc)
+    WITH data AS (SELECT \$$`cat "$OFILE"`\$$::json AS fc)
     INSERT INTO "regions" (country, name, admin_level, the_geom)
-    SELECT
-      '${COUNTRY_NAME}',
-      feat#>>'{properties,name}' AS name,
-      ${i},
-      ST_SetSRID(ST_CollectionExtract(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 3), 4326) as the_geom
-    FROM (
-      SELECT json_array_elements(fc->'features') AS feat
-      FROM data
-    ) AS f;
+      SELECT
+        '${COUNTRY_NAME}',
+        feat#>>'{properties,name}' AS name,
+        ${i},
+        ST_SetSRID(ST_CollectionExtract(ST_Multi(ST_GeomFromGeoJSON(feat->>'geometry')), 3), 4326) as the_geom
+      FROM (
+        SELECT json_array_elements(fc->'features') AS feat
+        FROM data
+      ) AS f
+    ON CONFLICT ON CONSTRAINT regions_name_index DO
+      UPDATE SET the_geom=excluded.the_geom;
 
 SQL_SCRIPT
+
   # TODO: print errors
   echo " done!"
 done;
